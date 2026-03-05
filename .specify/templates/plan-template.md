@@ -31,7 +31,11 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] Documentation reviewed and lean?
+- [ ] Testing strategy includes E2E (mandatory) and Unit/Integration?
+- [ ] Quality gates runnable?
+- [ ] Static UI + Supabase backend constraints respected?
+- [ ] Context-specific conventions applied?
 
 ## Project Structure
 

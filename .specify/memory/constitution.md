@@ -1,50 +1,45 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!-- Sync Impact Report:
+Version change: initial -> 1.0.0
+Modified principles: 
+- [PRINCIPLE_1_NAME] -> I. Documentation First
+- [PRINCIPLE_2_NAME] -> II. Test Everything You Build
+- [PRINCIPLE_3_NAME] -> III. Run Quality Gates
+- [PRINCIPLE_4_NAME] -> IV. Architecture & Security Constraints
+- [PRINCIPLE_5_NAME] -> V. Context-Specific Conventions
+Added sections: None
+Removed sections: None
+Templates requiring updates: 
+- ✅ .specify/templates/plan-template.md 
+- ✅ .specify/templates/spec-template.md 
+- ✅ .specify/templates/tasks-template.md
+-->
+# Mystery Game Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Documentation First
+Before starting any significant task, you MUST load and review core project documentation as defined in AGENTS.md.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Test Everything You Build (NON-NEGOTIABLE)
+Tests MUST be written and pass for all features. Follow the testing constraints from docs/testing.md.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Run Quality Gates
+Before finalizing any work, all Quality Gates MUST be executed and pass: Linting, Type Checking, Unit Tests, Integration Tests, and E2E Tests. Never bypass these checks.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Architecture & Security Constraints
+Ensure you follow the archtiectural constraints from docs/architecture.md.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Context-Specific Conventions
+Developers MUST load relevant convention files based on the type of task being executed as defined in AGENTS.md.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Development Workflow
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- All work should follow the AI Agent Guidelines detailed in `AGENTS.md`.
+- Changes MUST be summarized clearly for user review.
+- Complexity must be justified and documented explicitly if deviating from standard architectural patterns.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This Constitution supersedes all other practices. Amendments require documentation, approval, and a migration plan if necessary. All PRs and code reviews MUST verify compliance with these core principles. Use `AGENTS.md` and `docs/` for runtime development guidance.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-05

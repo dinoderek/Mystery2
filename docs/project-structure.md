@@ -6,3 +6,4 @@ We expect to document two levels of folders from root, with a clear description 
 - `blueprints/`: Stores generated mystery JSON blueprint files.
 - `docs/`: Contains core project architecture, game, and development documentation.
 - `supabase/`: Contains backend logic, Edge Functions, database schemas, and shared utilities (e.g. blueprint schema and generator prompts).
+- `plan/`: Contains feature plans to be eventually fed into `speckit.specify`

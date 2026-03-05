@@ -6,7 +6,7 @@
 **Input**: User description: "Setup Supabase as per existing architectural documents. Define API contract following detailed spec at plan/B1-api-contract.md. Implement API contract on top of Supabase using Supabase Edge Functions and Supabase SQL. Create tests for all the API methods. Create an E2E test using a mock blueprint and mock AI that goes through a full investigation."
 **API Contract Reference**: [`plan/B1-api-contract.md`](file:///Users/dinohughes/Projects/my2/w1/plan/B1-api-contract.md) — the plan MUST follow this contract when designing the API endpoints, request/response shapes, and game flows.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Browse and Start a Game (Priority: P1)
 
@@ -116,7 +116,7 @@ A developer or QA engineer can run a fully automated investigation from start to
 - What happens when a game session ID does not exist?
 - How does the system handle concurrent requests to the same game session?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -145,7 +145,7 @@ A developer or QA engineer can run a fully automated investigation from start to
 - **Clue**: A piece of evidence discovered through search or interrogation. Once found, a clue is permanently associated with the player's session.
 - **Turn Event**: An immutable record of a game action (move, search, talk, ask, accuse, etc.) appended to the session log, used to derive state and support auditability.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

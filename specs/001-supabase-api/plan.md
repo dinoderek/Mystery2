@@ -21,7 +21,7 @@ Implement the full Mystery Game backend API on Supabase. This covers: Postgres s
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - [x] Documentation reviewed and lean? (`architecture.md`, `testing.md`, `game.md`, `B1-api-contract.md` all read)
 - [x] Testing strategy includes E2E (mandatory) and Unit/Integration? (Unit: Deno test; Integration: Vitest + local Supabase; E2E: Playwright with mock AI)
@@ -147,15 +147,18 @@ apps/web/tests/                          # (Stub locations — UI work in separa
 All tests require the local Supabase stack running (`supabase start`).
 
 #### Unit Tests (Deno)
+
 ```bash
 # Run pure Edge Function unit tests
 deno test supabase/functions/ --allow-env --allow-net
 ```
+
 - State machine: valid/invalid transitions for all mode pairs
 - Zod schemas: valid and invalid blueprint payloads
 - Prompt builder utilities: correct character context assembly
 
 #### Integration Tests (Vitest)
+
 ```bash
 # Ensure local Supabase is running first
 supabase start
@@ -163,7 +166,9 @@ supabase start
 # Run integration test suite
 npm run test:integration
 ```
+
 Tests in `apps/web/tests/integration/`:
+
 - `blueprints.test.ts` — lists blueprints, returns correct metadata shape
 - `game-start.test.ts` — creates session, returns full state, mock AI narration
 - `game-move.test.ts` — valid move updates state; invalid destination returns 400
@@ -176,6 +181,7 @@ Tests in `apps/web/tests/integration/`:
 - RLS: session A cannot be read with session B's ID
 
 #### E2E Test (Playwright)
+
 ```bash
 # Ensure local Supabase + SvelteKit dev server are running
 supabase start
@@ -184,7 +190,9 @@ npm run dev  # (in apps/web)
 # Run E2E suite
 npm run test:e2e
 ```
+
 Test `e2e/full-investigation.test.ts` covers:
+
 1. Load blueprint list — assert at least 1 blueprint
 2. Start game with `mock-blueprint.json` fixture, assert opening state
 3. Move to a non-starting location, assert narration + updated location

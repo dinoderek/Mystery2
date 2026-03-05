@@ -1,0 +1,9 @@
+{
+  "name": "@my2/shared",
+  "version": "1.0.0",
+  "main": "src/api-types.ts",
+  "types": "src/api-types.ts",
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}

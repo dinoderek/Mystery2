@@ -15,11 +15,13 @@ We will build the Mystery Game using:
   - **Model provider**: OpenRouter called from Edge Functions using server-side secrets
 
 Primary goals:
+
 - **Local dev simplicity**: one command starts UI + backend + database.
 - **Testability**: unit, integration, and E2E tests that exercise each component and the full stack.
 - **Simplicity**: minimize bespoke backend infrastructure; keep secrets off the client.
 
 Non-goals (for now):
+
 - SSR hosting for the app itself (we accept static UI + client-side data loading).
 - Always-on custom backend server.
 
@@ -28,36 +30,48 @@ Non-goals (for now):
 ## Components and responsibilities
 
 ### UI (SvelteKit static)
+
 Responsibilities:
+
 - Render gameplay UI, manage client state, and call backend APIs.
 - Handle authentication UX using Supabase client SDK.
 - Call Edge Functions for AI-backed turns (never call OpenRouter directly).
 
 Constraints:
+
 - **No secrets** in the browser bundle.
 - Be tolerant of network failures (retries, optimistic UI as needed).
 
 ### Supabase Auth
+
 Responsibilities:
+
 - Issue user sessions/tokens.
 - Support optional auth (some features may be public).
 
 ### Postgres (Supabase)
+
 Responsibilities:
+
 - Persist game sessions, event logs, and derived state.
 - Enforce authorization via **RLS**.
 
 Recommended pattern:
+
 - Maintain an **append-only event log** for turns and actions.
 - Maintain a current “session snapshot” for fast reads.
 
 ### Supabase Storage
+
 Responsibilities:
+
 - Store user uploads, generated images, and other blobs.
 - Access is controlled via Storage policies and/or DB checks.
 
 ### Supabase Edge Functions
+
 Responsibilities:
+
 - Verify identity (optional auth depending on route).
 - Perform server-side operations that must remain secret:
   - OpenRouter calls (API key)
@@ -90,6 +104,7 @@ The only “name” required by the UI to call a function is `<function-name>`, 
 ### 1) Public UI load (no auth)
 
 **High-level**
+
 - Browser loads HTML/JS/CSS from UI host (Cloudflare Pages or local dev server).
 - No Supabase calls required.
 
@@ -107,6 +122,7 @@ sequenceDiagram
 ### 2) Optional authentication
 
 **Goal**
+
 - User signs in; browser obtains an authenticated session.
 - Optional: create/refresh a profile record in Postgres.
 
@@ -127,12 +143,14 @@ sequenceDiagram
 ```
 
 Notes:
+
 - In static UI mode, the **browser** holds the session and sends tokens when needed.
 - RLS policies must ensure users can only access their own records.
 
 ### 3) Authenticated non-AI operations (DB / Storage)
 
 **Examples**
+
 - Create or continue a game session.
 - Fetch session history.
 - Upload/download an asset.
@@ -158,9 +176,11 @@ sequenceDiagram
 ### 4) Optional AI turn (Edge Function + OpenRouter)
 
 **Goal**
+
 - Perform an AI-assisted action (e.g., "take a turn") while keeping OpenRouter key server-side.
 
 **Hops**
+
 - UI → Edge Function (with optional auth)
 - Edge Function → verify/identify user (if auth required)
 - Edge Function → Postgres (read current state, write event)
@@ -204,6 +224,7 @@ sequenceDiagram
 ```
 
 Failure-handling expectations:
+
 - OpenRouter failure: return error payload; optionally persist an “AI failure” event.
 - DB failure: return error; UI can refresh and retry.
 - Always design requests to be idempotent or safely retryable.
@@ -233,15 +254,16 @@ This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI
 ## Local development model
 
 - A single script starts:
-  1) Supabase local stack (Postgres/Auth/Storage/Functions)
-  2) SvelteKit dev server (Vite)
+  1. Supabase local stack (Postgres/Auth/Storage/Functions)
+  2. SvelteKit dev server (Vite)
 
 See `docs/local-dev.md`.
 
 ---
 
 ## Target Folder structure (opinionated)
-This is the current planned target folder structure. 
+
+This is the current planned target folder structure.
 This documentation will eventually be superseded by `project-structure.md` once the project is built
 
 ```text
@@ -255,11 +277,6 @@ This documentation will eventually be superseded by `project-structure.md` once 
 │     │  │  ├─ domain/               # core game types/logic, schemas, reducers
 │     │  │  └─ ui/                   # components
 │     │  └─ routes/                  # SvelteKit routes (static build)
-│     ├─ tests/
-│     │  ├─ unit/
-│     │  ├─ integration/
-│     │  └─ e2e/
-│     ├─ playwright.config.*
 │     ├─ svelte.config.*             # adapter-static
 │     └─ vite.config.*
 │
@@ -275,6 +292,7 @@ This documentation will eventually be superseded by `project-structure.md` once 
 │  └─ config.toml
 │
 ├─ packages/
+│  ├─ apitests/                      # API-specific tests (unit, integration, e2e)
 │  ├─ shared/                        # shared TS types + request/response schemas
 │  └─ testkit/                       # helpers: seeding, auth helpers, fixtures
 │

@@ -1,9 +1,26 @@
 # Project structure
-This document should be filled in with project structure documentation as the project is built. 
-We expect to document two levels of folders from root, with a clear description for each folder.
+
+This document outlines the current primary project structure of our Monorepo.
 
 ## Root Directories
-- `blueprints/`: Stores generated mystery JSON blueprint files.
-- `docs/`: Contains core project architecture, game, and development documentation.
-- `supabase/`: Contains backend logic, Edge Functions, database schemas, and shared utilities (e.g. blueprint schema and generator prompts).
-- `plan/`: Contains feature plans to be eventually fed into `speckit.specify`
+
+- `web/`: (Future) Front-end SvelteKit application for the player UI.
+- `blueprints/`: Stores deterministic, AI-generated JSON blueprint files acting as mystery configurations.
+- `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
+- `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
+  - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend.
+- `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
+- `scripts/`: Assorted scripts needed for development (e.g., seeding storage script).
+- `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
+- `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
+  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions.
+  - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
+  - `seed/`: Deterministic testing seed files (such as local `mock-blueprint.json` uploads).
+- `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
+  - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
+  - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).
+
+## Configuration Files
+- `package.json`: Main workspace root defining all top-level scripts like test coordination.
+- `eslint.config.mjs`: Centralized ESLint configuration using flat config layout.
+- `tsconfig.json`: Base configuration inherited by all local packages.

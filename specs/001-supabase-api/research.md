@@ -13,6 +13,7 @@
 **Rationale**: Supabase Edge Functions are deployed as individual Deno scripts under `supabase/functions/<name>/index.ts`. Grouping all routes into a single function is possible but creates a single point of failure and makes individual function deployment harder. One function per operation mirrors the API contract directly, enables granular local testing, and aligns with Supabase conventions.
 
 **Alternatives considered**:
+
 - Router-in-one-function (e.g., Hono inside a single function): Reduces function count but does not align with Supabase's first-party tooling and complicates log isolation.
 - RPC calls directly from UI to Postgres: Rejected — game logic requires server-side AI calls and secret handling.
 
@@ -25,6 +26,7 @@
 **Rationale**: Architecture doc explicitly recommends this pattern. The event log provides a complete, auditable history of every turn; the snapshot provides O(1) state reads without replaying the log on every request.
 
 **Alternatives considered**:
+
 - Snapshot-only (mutate in place): Simpler, but loses audit trail and makes debugging harder.
 - Replay-on-read (event sourcing without snapshot): Correct but slow for games with many turns.
 
@@ -37,6 +39,7 @@
 **Rationale**: Blueprints are pre-authored content, not user data. Supabase Storage is the natural fit. Loading from Storage inside the Edge Function keeps the binary small and allows blueprints to be updated without redeployment.
 
 **Alternatives considered**:
+
 - Embedded in Edge Function filesystem: Inflexible; requires redeployment to add blueprints.
 - Stored in Postgres JSONB column: Workable but makes blueprint management (adding/editing) less intuitive than managing files.
 
@@ -49,6 +52,7 @@
 **Rationale**: The full game loop can be built, tested, and validated end-to-end using the mock AI. Keeping OpenRouter out of this feature reduces scope, eliminates the need for secret management in this iteration, and keeps all tests fully deterministic. The interface boundary means adding OpenRouter later requires zero changes to function logic.
 
 **Alternatives considered**:
+
 - Inline `if (TEST_MODE)` checks in functions: Creates messy production code and risks accidental test paths in production.
 - HTTP interceptors in tests: Fragile and couples tests to HTTP implementation details.
 - Implement OpenRouter now: Out of scope as per user decision.
@@ -62,6 +66,7 @@
 **Rationale**: The API contract defines specific modes and only certain operations are valid per mode (e.g., `ask` is only valid in `talk` mode). A central state machine guard prevents invalid state writes and simplifies individual function logic.
 
 **Alternatives considered**:
+
 - Validate inline per function: Duplicates logic and risks inconsistency.
 
 ---
@@ -73,6 +78,7 @@
 **Rationale**: Architecture doc notes auth is optional. The spec explicitly calls this out as an assumption. The migration path to user-scoped sessions is straightforward: add a `user_id` FK and tighten RLS policies.
 
 **Alternatives considered**:
+
 - Require Supabase Auth from day one: Higher friction for an MVP, premature given the feature scope.
 
 ---
@@ -80,6 +86,7 @@
 ## 7. Testing Stack
 
 **Decision**:
+
 - **Unit tests**: Deno's built-in test runner (`deno test`) for pure Edge Function logic (state machine, prompt builders, schema validators).
 - **Integration tests**: Vitest running against a live local Supabase instance. Uses `packages/testkit` helpers for seeding and cleanup.
 - **E2E tests**: Playwright targeting the SvelteKit UI + local Supabase. Uses a mock blueprint fixture file and `AI_PROVIDER=mock` env variable.

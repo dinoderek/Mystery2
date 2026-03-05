@@ -1,0 +1,67 @@
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "metadata": {
+    "title": "Mock Blueprint",
+    "one_liner": "A simple test mystery.",
+    "target_age": 10,
+    "time_budget": 10
+  },
+  "narrative": {
+    "premise": "Someone stole the cookies.",
+    "starting_knowledge": ["The cookie jar was open."]
+  },
+  "world": {
+    "starting_location_id": "Kitchen",
+    "locations": [
+      {
+        "name": "Kitchen",
+        "description": "A messy kitchen.",
+        "clues": ["A crumb on the floor."]
+      },
+      {
+        "name": "Living Room",
+        "description": "A cozy living room.",
+        "clues": ["A wrapper on the sofa.", "A half-eaten cookie."]
+      }
+    ],
+    "characters": [
+      {
+        "first_name": "Alice",
+        "last_name": "Smith",
+        "location": "Kitchen",
+        "sex": "female",
+        "appearance": "Tall with red hair.",
+        "background": "The resident baker.",
+        "personality": "Nervous and fidgety.",
+        "initial_attitude_towards_investigator": "suspicious",
+        "location_id": "Kitchen",
+        "mystery_action_real": "Ate the cookies.",
+        "stated_alibi": "I was reading.",
+        "motive": "Was hungry.",
+        "is_culprit": true,
+        "knowledge": ["Bob was in the living room."]
+      },
+      {
+        "first_name": "Bob",
+        "last_name": "Jones",
+        "location": "Living Room",
+        "sex": "male",
+        "appearance": "Short with glasses.",
+        "background": "A guest in the house.",
+        "personality": "Calm and collected.",
+        "initial_attitude_towards_investigator": "helpful",
+        "location_id": "Living Room",
+        "mystery_action_real": "Watching TV.",
+        "stated_alibi": "I was watching TV.",
+        "motive": null,
+        "is_culprit": false,
+        "knowledge": ["Alice loves cookies."]
+      }
+    ]
+  },
+  "ground_truth": {
+    "what_happened": "Alice ate the cookies because she was hungry.",
+    "why_it_happened": "She was hungry.",
+    "timeline": ["12:00 Alice bakes cookies", "12:15 Alice eats them"]
+  }
+}

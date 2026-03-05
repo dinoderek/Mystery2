@@ -1,0 +1,29 @@
+{
+    "name": "my2",
+    "private": true,
+    "workspaces": [
+        "packages/*",
+        "tests/*",
+        "web"
+    ],
+    "scripts": {
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "typecheck": "tsc --noEmit",
+        "test:unit": "vitest run tests/api/unit",
+        "test:integration": "vitest run tests/api/integration",
+        "test:e2e": "npx supabase status || npx supabase start && vitest run tests/api/e2e",
+        "test:all": "npm run lint && npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e"
+    },
+    "devDependencies": {
+        "@types/node": "^25.3.3",
+        "eslint": "^9.0.0",
+        "prettier": "^3.0.0",
+        "typescript": "^5.0.0",
+        "typescript-eslint": "^8.56.1",
+        "vitest": "^4.0.18"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.98.0"
+    }
+}

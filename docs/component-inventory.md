@@ -4,9 +4,10 @@ This document serves as an inventory of reusable Svelte components in this proje
 
 ## Global UI (`src/lib/ui/`)
 
-*(Add components here as they are built. Example format below)*
+_(Add components here as they are built. Example format below)_
 
 ### `TerminalMessage.svelte`
+
 - **Purpose**: Renders a single block of text (chat message, narration, or system feedback) in the UI.
 - **Props**:
   - `role`: `'narrator' | 'character' | 'investigator' | 'system'` (determines color/alignment)
@@ -14,6 +15,7 @@ This document serves as an inventory of reusable Svelte components in this proje
   - `name`: `string` (optional label for the speaker)
 
 ### `TerminalInput.svelte`
+
 - **Purpose**: The main text input area for the user to type commands.
 - **Props**:
   - `disabled`: `boolean` (freezes input while waiting for backend)
@@ -21,4 +23,4 @@ This document serves as an inventory of reusable Svelte components in this proje
 
 ## Layout Components
 
-*(Add layout wrappers here)*
+_(Add layout wrappers here)_

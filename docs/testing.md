@@ -118,7 +118,7 @@ At least the following should be tested:
 
 ## Quality Gates
 
-Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion:
+Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion. A single-shot quality gate script (e.g., `npm run test:all` or `scripts/quality-gate.sh`) should be provided to run all these checks in one go:
 
 1. **Linting & Formatting:** Ensure code conforms to stylistic guidelines (`npm run lint` / `npm run format`).
 2. **Type Checking:** Ensure the TypeScript compiler passes with no errors (`npm run typecheck`).

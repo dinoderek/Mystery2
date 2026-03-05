@@ -1,0 +1,115 @@
+{
+    "id": "9c6a1e58-6927-4638-b77a-2f46b281f692",
+    "metadata": {
+        "title": "The Case of the Vanished Spring Feast",
+        "one_liner": "The grand elderberry cake and candied truffles have disappeared from the Town Hall!",
+        "target_age": 9,
+        "time_budget": 20
+    },
+    "narrative": {
+        "premise": "The idyllic village of Brunilia is in an uproar! The centerpiece of the Annual Spring Solstice Party—a magnificent elderberry cake and a dozen candied truffles—has vanished from the Town Hall kitchen just hours before the celebration. The villagers are worried the party will be ruined. As Brunilia's top detective, you must piece together the clues, expose the culprit, and save the Spring Feast!",
+        "starting_knowledge": [
+            "The elderberry cake and candied truffles were stolen from the Town Hall Kitchen.",
+            "The thief must have known the kitchen schedule to sneak in unnoticed."
+        ]
+    },
+    "world": {
+        "starting_location_id": "Town Hall Kitchen",
+        "locations": [
+            {
+                "name": "Town Hall Kitchen",
+                "description": "A large, airy kitchen with marble countertops. The display stand where the cake sat is completely empty, and the window screen is torn.",
+                "clues": [
+                    "There is a tuft of gray fur snagged on the torn window screen.",
+                    "A small, shiny blue button is lying on the floor near the empty cake stand."
+                ]
+            },
+            {
+                "name": "The Babbling Brook",
+                "description": "A peaceful stream with clear water sparkling in the sun and smooth river stones on the banks.",
+                "clues": [
+                    "There is a fresh set of paw prints near the water's edge, alongside a pile of washed berries."
+                ]
+            },
+            {
+                "name": "The Great Oak Tree",
+                "description": "The oldest tree in Brunilia, featuring sturdy branches and a hollow trunk used for storage.",
+                "clues": [
+                    "There are purple elderberry stains on the bark leading up to the hollow.",
+                    "A discarded, empty truffle wrapper is hidden under some roots."
+                ]
+            }
+        ],
+        "characters": [
+            {
+                "first_name": "Silas",
+                "last_name": "Squirrel",
+                "location": "The Great Oak Tree",
+                "sex": "male",
+                "appearance": "A nimble gray squirrel wearing a green vest that is missing a blue button.",
+                "background": "Silas is known for hoarding food and has a huge sweet tooth. He prides himself on his winter stash.",
+                "personality": "Fast-talking, nervous, and quick to defend himself.",
+                "initial_attitude_towards_investigator": "Defensive and jumpy.",
+                "location_id": "The Great Oak Tree",
+                "mystery_action_real": "He tore the kitchen window screen, snagged his vest, lost a button, and stole the feast.",
+                "stated_alibi": "I was organizing my acorn collection up in my tree all morning. I didn't go anywhere near the Town Hall!",
+                "motive": "He wanted to add the luxurious elderberry cake and truffles to his legendary hidden food stash.",
+                "is_culprit": true,
+                "knowledge": [
+                    "I think someone else lost a blue button recently.",
+                    "I noticed my vest snagged on a branch earlier today."
+                ]
+            },
+            {
+                "first_name": "Penelope",
+                "last_name": "Raccoon",
+                "location": "The Babbling Brook",
+                "sex": "female",
+                "appearance": "A sleek raccoon with gray fur and a distinctive black mask, wearing a purple ribbon.",
+                "background": "Penelope is fascinated by shiny objects and delicious sweets. She frequently visits the Town Hall.",
+                "personality": "Curious, confident, and a bit mischievous.",
+                "initial_attitude_towards_investigator": "Relaxed and cooperative.",
+                "location_id": "The Babbling Brook",
+                "mystery_action_real": "She was washing fresh berries at the brook all morning.",
+                "stated_alibi": "I've been at the Babbling Brook since breakfast washing these berries. You can see my paw prints on the muddy bank!",
+                "motive": "She loves sweets and was seen looking longingly at the cake yesterday.",
+                "is_culprit": false,
+                "knowledge": [
+                    "I heard a tearing sound coming from the direction of the Town Hall.",
+                    "Silas told me he was planning to find something special for his stash today."
+                ]
+            },
+            {
+                "first_name": "Chef",
+                "last_name": "Badger",
+                "location": "Town Hall Kitchen",
+                "sex": "male",
+                "appearance": "A sturdy badger in a crisp white chef's hat and a perfectly buttoned blue tunic.",
+                "background": "He spent three days creating the perfect elderberry cake for the Spring Solstice Party.",
+                "personality": "Proud, strict, and currently very dramatic about his lost masterpiece.",
+                "initial_attitude_towards_investigator": "Frantic and demanding justice.",
+                "location_id": "Town Hall Kitchen",
+                "mystery_action_real": "He was in the cellar fetching more flour when the theft occurred.",
+                "stated_alibi": "I stepped into the cellar for just five minutes to get flour. When I came back up, my masterpiece was gone!",
+                "motive": null,
+                "is_culprit": false,
+                "knowledge": [
+                    "I made sure the kitchen window was securely closed before I went to the cellar.",
+                    "All the buttons on my chef tunic are securely attached."
+                ]
+            }
+        ]
+    },
+    "ground_truth": {
+        "what_happened": "Silas the Squirrel tore through the kitchen window screen while Chef Badger was in the cellar. Silas lost a button, snagged his fur, and stole the feast to hide in his Great Oak Tree.",
+        "why_it_happened": "Silas's obsession with hoarding food led him to steal the Spring Feast to add to his personal stash.",
+        "timeline": [
+            "8:00 AM - Chef Badger finishes the elderberry cake and places it on the stand.",
+            "8:30 AM - Penelope Raccoon goes to the Babbling Brook to wash berries.",
+            "9:00 AM - Chef Badger goes down to the cellar for five minutes.",
+            "9:02 AM - Silas the Squirrel tears the window screen, dropping a button and leaving a tuft of fur.",
+            "9:03 AM - Silas takes the cake and truffles to the Great Oak Tree.",
+            "9:05 AM - Chef Badger returns to find the kitchen empty."
+        ]
+    }
+}

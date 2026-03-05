@@ -1,0 +1,113 @@
+{
+    "id": "52a8dd96-189f-4318-aff5-430c7cefcffb",
+    "metadata": {
+        "title": "The Missing Honey Cakes",
+        "one_liner": "Someone took all the yummy honey cakes before the Spring Party!",
+        "target_age": 6,
+        "time_budget": 15
+    },
+    "narrative": {
+        "premise": "Welcome to Brunilia! Everyone is excited for the big Spring Party. Mrs. Rabbit baked delicious honey cakes for everyone, but they are gone from the Bakery! Can you help us find them before the party begins?",
+        "starting_knowledge": [
+            "The honey cakes were taken from the Bakery.",
+            "The Spring Party starts very soon."
+        ]
+    },
+    "world": {
+        "starting_location_id": "Town Square",
+        "locations": [
+            {
+                "name": "Town Square",
+                "description": "A sunny square filled with colorful spring flowers and party decorations.",
+                "clues": [
+                    "A piece of pink party ribbon is on the ground."
+                ]
+            },
+            {
+                "name": "The Bakery",
+                "description": "It smells like sweet bread and sugar. The display window is empty!",
+                "clues": [
+                    "There are sticky, muddy paw prints on the window sill.",
+                    "An empty jar of strawberry jam is left on the counter."
+                ]
+            },
+            {
+                "name": "The Woods",
+                "description": "A quiet place with tall green trees and soft moss.",
+                "clues": [
+                    "You can hear a happy humming sound coming from behind a big oak tree."
+                ]
+            }
+        ],
+        "characters": [
+            {
+                "first_name": "Barnaby",
+                "last_name": "Bear",
+                "location": "The Woods",
+                "sex": "male",
+                "appearance": "A small, fluffy brown bear cub wearing a little red scarf. His paws look very sticky.",
+                "background": "Barnaby is a young bear who loves sweet foods more than anything.",
+                "personality": "Playful, friendly, but a little bit sneaky when he is hungry.",
+                "initial_attitude_towards_investigator": "Nervous but tries to smile.",
+                "location_id": "The Woods",
+                "mystery_action_real": "He climbed through the Bakery window to eat the honey cakes.",
+                "stated_alibi": "I was in the Woods playing and eating strawberry jam!",
+                "motive": "He was too hungry to wait for the party.",
+                "is_culprit": true,
+                "knowledge": [
+                    "I dropped my jam jar somewhere...",
+                    "I like to climb things."
+                ]
+            },
+            {
+                "first_name": "Mrs.",
+                "last_name": "Rabbit",
+                "location": "The Bakery",
+                "sex": "female",
+                "appearance": "A white rabbit wearing a white baker's apron full of flour.",
+                "background": "She is the best baker in Brunilia and made the honey cakes.",
+                "personality": "Kind, warm, and very worried about her cakes.",
+                "initial_attitude_towards_investigator": "Very happy to see you and asking for help.",
+                "location_id": "The Bakery",
+                "mystery_action_real": "She was putting up pink ribbons in the Town Square.",
+                "stated_alibi": "I was in the Town Square hanging pink ribbons for the party.",
+                "motive": null,
+                "is_culprit": false,
+                "knowledge": [
+                    "I left the cakes on the window sill to cool.",
+                    "I left my pink ribbons in the Town Square."
+                ]
+            },
+            {
+                "first_name": "Mayor",
+                "last_name": "Owl",
+                "location": "Town Square",
+                "sex": "male",
+                "appearance": "A wise gray owl wearing a tiny top hat and spectacles.",
+                "background": "He is in charge of the Spring Party.",
+                "personality": "Serious but very polite and loves rules.",
+                "initial_attitude_towards_investigator": "Helpful and official.",
+                "location_id": "Town Square",
+                "mystery_action_real": "He was writing speeches in the Town Square.",
+                "stated_alibi": "I have been sitting right here in the Town Square writing my speech all morning.",
+                "motive": "He really loves honey cakes and always wants the first bite.",
+                "is_culprit": false,
+                "knowledge": [
+                    "I saw Mrs. Rabbit hanging ribbons here earlier.",
+                    "I have not left the Town Square all morning."
+                ]
+            }
+        ]
+    },
+    "ground_truth": {
+        "what_happened": "Barnaby Bear climbed through the Bakery window, took the honey cakes, and hid in the Woods to eat them.",
+        "why_it_happened": "He loves sweets and couldn't wait for the party to begin.",
+        "timeline": [
+            "10:00 AM - Mrs. Rabbit finishes baking the honey cakes and leaves them to cool.",
+            "10:15 AM - Mrs. Rabbit goes to the Town Square to hang pink ribbons.",
+            "10:30 AM - Barnaby Bear sneaks into the Bakery, leaving his empty jam jar behind.",
+            "10:45 AM - Barnaby takes the cakes to the Woods.",
+            "11:00 AM - Mrs. Rabbit returns to find the cakes missing."
+        ]
+    }
+}

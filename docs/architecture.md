@@ -285,9 +285,10 @@ This documentation will eventually be superseded by `project-structure.md` once 
 │  └─ db-reset                       # deterministic resets (local)
 │
 └─ docs/                             # Source of truth documentation / agent initial memory
-   ├─ architecture.md
-   ├─ local-dev.md
-   └─ testing.md
+   ├─ architecture.md                # Target game architecture
+   |- game.md                        # Target game design
+   ├─ local-dev.md                   # Local development guide
+   └─ testing.md                     # Testing approach
 ```
 
 ---

@@ -1,28 +1,30 @@
 <script lang="ts">
-  import { gameSessionStore } from '$lib/domain/store.svelte';
-  
-  let inputValue = $state('');
-  
+  import { gameSessionStore } from "$lib/domain/store.svelte";
+
+  let inputValue = $state("");
+
   let placeholder = $derived(
-    gameSessionStore.state?.mode === 'talk' ? '> Talk mode...' :
-    gameSessionStore.state?.mode === 'accuse' ? '> Accuse mode...' :
-    '> Explore mode...'
+    gameSessionStore.state?.mode === "talk"
+      ? "> Talk mode..."
+      : gameSessionStore.state?.mode === "accuse"
+        ? "> Accuse mode..."
+        : "> Explore mode...",
   );
 
-  let disabled = $derived(gameSessionStore.status === 'loading');
+  let disabled = $derived(gameSessionStore.status === "loading");
 
   async function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && inputValue.trim()) {
+    if (e.key === "Enter" && inputValue.trim()) {
       const text = inputValue;
-      inputValue = '';
+      inputValue = "";
       await gameSessionStore.submitInput(text);
     }
   }
 </script>
 
 <div class="mt-4 border-t border-green-500/30 pt-4">
-  <input 
-    type="text" 
+  <input
+    type="text"
     bind:value={inputValue}
     onkeydown={handleKeydown}
     {placeholder}

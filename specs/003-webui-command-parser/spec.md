@@ -108,22 +108,21 @@ When the game server returns an error for a submitted command, the UI distinguis
 - **FR-007**: The parser MUST recognize aliases for quit, including at minimum: "quit" and "exit"
 - **FR-008**: The parser MUST be mode-aware — the set of valid commands must depend on the current game mode (explore, talk, accuse, ended)
 - **FR-009**: All player input MUST be normalized before parsing — leading/trailing whitespace stripped, casing folded to lowercase, and common punctuation removed — so that variations like "Go To  The Kitchen!" are treated identically to "go to the kitchen"
-- **FR-010**: For move and talk commands, the parser MUST validate that a target was provided and that it matches the current known list of locations or characters respectively before submitting to the backend
-- **FR-011**: A move or talk command recognized as requiring a target but typed with no target (e.g., bare "go" or "talk to") MUST be treated identically to an invalid target — the player sees the list of valid targets for that command
+- **FR-010**: For commands requiring a target (move, talk, accuse), the parser MUST validate that a target was provided and that it matches the current known list of characters or locations before submitting to the backend
+- **FR-011**: A command recognized as requiring a target but typed with no target (e.g., bare "go" or "talk to") MUST be treated identically to an invalid target — the player sees the list of valid targets for that command
 - **FR-012**: Target matching MUST support matching against a location's full name, a character's first name, and a character's surname (case-insensitive)
 - **FR-013**: When a movement target is not found or missing, the UI MUST display valid movement targets, comprising both locations and characters currently at the player's current location
-- **FR-014**: When a talk target is not found or missing, the UI MUST display the valid characters available in the current scene
+- **FR-014**: When a talk/accuse target is not found or missing, the UI MUST display the valid characters available in the current scene
 - **FR-015**: The parser MUST recognize "locations" (and natural aliases like "where can I go") as a command that displays all locations and the characters present at each
 - **FR-016**: The parser MUST recognize "characters" (and natural aliases like "who is here") as a command that displays all characters currently present in the scene
 - **FR-017**: When a command is unrecognized, the UI MUST display a brief, inline list of commands valid for the current mode (fitting in one or two lines) and a short prompt to type "help" for full details
 - **FR-018**: Typing "help" MUST display an extended help message covering all commands, their aliases, and usage, appropriate to the current mode
-- **FR-019**: In talk mode and accuse mode, the parser MUST use **exact match** on the normalized input for system commands (end_talk aliases, quit, help); anything not matching exactly is passed through as an `ask` (question) without further parsing or validation
-- **FR-020**: Accuse mode MUST behave like talk mode: the only exit commands are "quit" and "exit" (which terminate the game); all other input is treated as an `ask` sent to the accusation conversation; there is no target to validate in accuse mode (the accused was committed when the mode was entered)
-- **FR-021**: The UI MUST NOT send commands with invalid or missing targets to the backend
-- **FR-022**: For transient backend errors (network failure, server unavailable), the UI MUST automatically retry the command up to 3 times before displaying a failure message
-- **FR-023**: For permanent backend errors (e.g., invalid game state responses), the UI MUST display a clear, human-readable error message without retrying
-- **FR-024**: While a retry is in progress, the UI MUST show a visible status indicator to the player
-- **FR-025**: After all retries are exhausted, the player MUST be offered a manual retry option and the input field must remain usable
+- **FR-019**: System commands (help, quit/exit, accuse) MUST be recognized regardless of mode, except where a mode explicitly prohibits them
+- **FR-020**: The UI MUST NOT send commands with invalid or missing targets to the backend
+- **FR-021**: For transient backend errors (network failure, server unavailable), the UI MUST automatically retry the command up to 3 times before displaying a failure message
+- **FR-022**: For permanent backend errors (e.g., invalid game state responses), the UI MUST display a clear, human-readable error message without retrying
+- **FR-023**: While a retry is in progress, the UI MUST show a visible status indicator to the player
+- **FR-024**: After all retries are exhausted, the player MUST be offered a manual retry option and the input field must remain usable
 
 ### Key Entities
 

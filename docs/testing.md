@@ -30,6 +30,17 @@ Covers:
 - UI component logic (where practical)
 - prompt construction and parsing utilities
 
+Web-specific command parser coverage:
+
+- `web/src/lib/domain/parser.test.ts` validates:
+  - alias recognition (move/talk/search/end/help/quit/list)
+  - mode-aware behavior across explore/talk/accuse/ended
+  - client-side missing/invalid target branches and suggestions
+  - unrecognized inline hint generation
+- `web/src/lib/domain/store.retry.test.ts` validates:
+  - transient vs permanent error classification
+  - exponential backoff sequencing used by the store retry loop
+
 ### 2) Integration tests (real Supabase local, no browser)
 
 Location:
@@ -87,6 +98,16 @@ Guidance:
 
 - Keep E2E tests few but high value.
 - Use integration tests for most behavior; reserve E2E for critical journeys.
+
+Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`) must include:
+
+- alias submissions resolving to successful backend calls
+- missing/invalid targets blocked client-side (no backend call)
+- inline `locations`/`characters` list rendering
+- brief unrecognized-command inline guidance
+- detailed help modal on `help`
+- transient failure retries and retry-exhaustion/manual-retry UX
+- no retry on permanent 4xx failures
 
 ## Test Isolation Strategy (Logical Isolation)
 

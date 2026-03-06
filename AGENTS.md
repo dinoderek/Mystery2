@@ -10,7 +10,6 @@ Explicitly read these files located in the `docs/` directory:
 
 - `docs/architecture.md`
 - `docs/game.md`
-- `docs/local-dev.md`
 - `docs/project-structure.md`
 - `docs/testing.md`
 

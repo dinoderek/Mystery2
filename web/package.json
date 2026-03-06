@@ -11,7 +11,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:e2e": "playwright test",
-    "test:unit": "echo 'No unit tests yet' && exit 0"
+    "test:unit": "vitest run src/lib/domain"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -25,7 +25,8 @@
     "svelte-check": "^4.4.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

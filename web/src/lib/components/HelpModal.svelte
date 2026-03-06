@@ -32,19 +32,28 @@
           <h3 class="text-green-400 font-bold mb-1">EXPLORE MODE</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
             <li>
-              <span class="text-green-300">move to [location]</span> - Travel to a
-              new room
+              <span class="text-green-300">go to / move to / travel to / head towards / go / move [location]</span>
+              - Move to a location
             </li>
             <li>
-              <span class="text-green-300">search</span> - Look for clues in current
-              location
+              <span class="text-green-300">talk to / speak to / speak with [character]</span>
+              - Start a conversation
             </li>
             <li>
-              <span class="text-green-300">talk to [character]</span> - Start a conversation
+              <span class="text-green-300">search / look around / inspect / look</span>
+              - Search the current location
             </li>
             <li>
-              <span class="text-green-300">accuse [character]</span> - Make your final
-              accusation
+              <span class="text-green-300">accuse [character]</span>
+              - Make your final accusation
+            </li>
+            <li>
+              <span class="text-green-300">locations / where can i go</span>
+              - Show all locations and who is there
+            </li>
+            <li>
+              <span class="text-green-300">characters / who is here</span>
+              - Show characters in the current location
             </li>
           </ul>
         </section>
@@ -53,11 +62,11 @@
           <h3 class="text-green-400 font-bold mb-1">TALK MODE</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
             <li>
-              <span class="text-green-300">[any question]</span> - Ask the character
-              directly
+              <span class="text-green-300">[any question]</span> - Ask the current character
             </li>
             <li>
-              <span class="text-green-300">bye</span> - End the conversation
+              <span class="text-green-300">bye / leave / end / goodbye / see you</span>
+              - End the conversation
             </li>
           </ul>
         </section>
@@ -65,7 +74,8 @@
         <section>
           <h3 class="text-green-400 font-bold mb-1">GENERAL</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
-            <li><span class="text-green-300">help</span> - Show this menu</li>
+            <li><span class="text-green-300">help</span> - Open this detailed command reference</li>
+            <li><span class="text-green-300">quit / exit</span> - End the current session</li>
           </ul>
         </section>
       </div>

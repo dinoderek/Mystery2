@@ -131,6 +131,7 @@
 - [ ] T036 [P] Document manual verification scenarios for this feature in /Users/dinohughes/Projects/my2/w1/specs/003-webui-command-parser/quickstart.md
 - [ ] T037 [P] Update command parsing and retry guidance in /Users/dinohughes/Projects/my2/w1/docs/testing.md
 - [ ] T038 Run full quality gates from /Users/dinohughes/Projects/my2/w1 via `npm run test:all`
+- [ ] T039 Completion gate: update all impacted documentation under /Users/dinohughes/Projects/my2/w1/docs/* and re-run full test suite via `npm run test:all` from /Users/dinohughes/Projects/my2/w1 before marking the feature complete
 
 ---
 

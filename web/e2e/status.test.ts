@@ -12,7 +12,10 @@ test.describe('US2 - Status Bar', () => {
                     game_id: 'g1',
                     state: {
                         locations: [{ name: 'kitchen' }, { name: 'garden' }],
-                        characters: [{ first_name: 'Bob', last_name: 'Smith', location_name: 'kitchen' }],
+                        characters: [
+                            { first_name: 'Bob', last_name: 'Smith', location_name: 'kitchen' },
+                            { first_name: 'Alice', last_name: 'Brown', location_name: 'garden' }
+                        ],
                         time_remaining: 8,
                         location: 'kitchen',
                         mode: 'explore',
@@ -34,7 +37,8 @@ test.describe('US2 - Status Bar', () => {
         await expect(page.locator('text=LOCATION: kitchen')).toBeVisible();
         await expect(page.locator('text=TIME: 8')).toBeVisible();
         await expect(page.locator("text=type 'help' to see commands")).toBeVisible();
-        // Ensure character Bob is listed if visible_characters is parsed
-        await expect(page.locator('text=Bob')).toBeVisible();
+        // Only characters in the current location should be shown.
+        await expect(page.locator('text=Bob Smith')).toBeVisible();
+        await expect(page.locator('text=Alice Brown')).toHaveCount(0);
     });
 });

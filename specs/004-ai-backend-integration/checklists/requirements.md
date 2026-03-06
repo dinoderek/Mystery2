@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-06  
-**Feature**: [spec.md](/Users/dinohughes/Projects/my2/w1/specs/001-ai-backend-integration/spec.md)
+**Feature**: [spec.md](/Users/dinohughes/Projects/my2/w1/specs/004-ai-backend-integration/spec.md)
 
 ## Content Quality
 

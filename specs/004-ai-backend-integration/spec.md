@@ -1,6 +1,6 @@
 # Feature Specification: AI Backend Integration for Narrative Turns
 
-**Feature Branch**: `[001-ai-backend-integration]`  
+**Feature Branch**: `[004-ai-backend-integration]`  
 **Created**: 2026-03-06  
 **Status**: Draft  
 **Input**: User description: "Integrate AI with backend using role-specific prompting, constrained outputs, and dedicated live-AI test coverage based on `plan/B4-AI-integration.md`."
@@ -88,7 +88,7 @@ As a QA owner, I want dedicated live-AI integration and end-to-end tests that ru
 - **FR-010**: The product MUST provide dedicated live-AI integration and end-to-end test modes that run a predefined case and investigator script in two execution profiles (default and cost-control).
 - **FR-011**: Live-AI tests MUST include intentional off-path player behavior (for example, unsupported commands and discovery/help requests) before completing a plausible case-solving route within allotted turns.
 - **FR-012**: Default quality-gate test execution MUST exclude live-AI suites unless explicitly enabled.
-- **FR-013**: Project documentation MUST be updated to reflect AI interaction decisions, mystery schema implications, and generator guidance changes introduced by this feature.
+- **FR-013**: Project documentation MUST include (a) one in-depth AI runtime document describing role prompts, context boundaries, output contracts, and failure handling, and (b) concise overview updates in existing core docs summarizing what changed and why.
 
 ### Key Entities *(include if feature involves data)*
 

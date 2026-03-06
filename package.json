@@ -7,13 +7,14 @@
         "web"
     ],
     "scripts": {
+        "dev": "npx supabase status || npx supabase start && npm -w web run dev",
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",
         "test:unit": "vitest run tests/api/unit",
         "test:integration": "vitest run tests/api/integration",
         "test:e2e": "npx supabase status || npx supabase start && vitest run tests/api/e2e",
-        "test:all": "npm run lint && npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e"
+        "test:all": "npm run lint && npm run typecheck && npm -w web run check && npm run test:unit && npm run test:integration && npm run test:e2e && npm -w web run test:e2e"
     },
     "devDependencies": {
         "@types/node": "^25.3.3",

@@ -21,6 +21,31 @@ _(Add components here as they are built. Example format below)_
   - `disabled`: `boolean` (freezes input while waiting for backend)
   - `placeholder`: `string`
 
+### `Header.svelte`
+
+- **Purpose**: Displays the top-level game title and active session ID.
+- **Props**: None (reads from store)
+
+### `StatusBar.svelte`
+
+- **Purpose**: Shows current location, time, hints, and visible characters.
+- **Props**: None (reads from store)
+
+### `NarrationBox.svelte`
+
+- **Purpose**: Auto-scrolling container for the history of game events and latest narration.
+- **Props**: None (reads from store)
+
+### `InputBox.svelte`
+
+- **Purpose**: Text input for the player to enter commands, submitting to the store.
+- **Props**: None (reads from store)
+
+### `HelpModal.svelte`
+
+- **Purpose**: Modal overlay displaying available commands in different modes.
+- **Props**: None (reads from store)
+
 ## Layout Components
 
 _(Add layout wrappers here)_

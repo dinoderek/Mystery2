@@ -27,6 +27,14 @@ The backend relies on Supabase for the database, auth, and edge functions.
    node scripts/seed-storage.mjs
    ```
 
+3. **Start the Web UI:**
+   In a new terminal, navigate to the `web/` directory and start Vite:
+   ```bash
+   cd web
+   npm run dev
+   ```
+   *The UI will usually be available at `http://localhost:5173`.*
+
 ## Testing everything
 We have a unified Quality Gate script that checks linting, type-safety, and all test tiers (Unit, Integration, and E2E API flow).
 

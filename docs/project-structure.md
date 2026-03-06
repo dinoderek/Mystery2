@@ -4,7 +4,7 @@ This document outlines the current primary project structure of our Monorepo.
 
 ## Root Directories
 
-- `web/`: (Future) Front-end SvelteKit application for the player UI.
+- `web/`: Front-end SvelteKit application for the player UI.
 - `blueprints/`: Stores deterministic, AI-generated JSON blueprint files acting as mystery configurations.
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).

@@ -64,7 +64,7 @@ Runner:
 
 Location:
 
-- `packages/apitests/e2e`
+- `web/e2e` for Playwright E2E tests
 
 Harness:
 

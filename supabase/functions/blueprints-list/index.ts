@@ -2,9 +2,19 @@ import { createClient } from "../_shared/db.ts";
 import { internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 Deno.serve(async (req) => {
-  if (req.method !== "GET") {
-    return new Response("Method not allowed", { status: 405 });
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -15,12 +25,15 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error(error);
-      return internalError("Failed to list blueprints");
+      return new Response(JSON.stringify({ error: "Failed to list blueprints" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!files || files.length === 0) {
       return new Response(JSON.stringify({ blueprints: [] }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -64,10 +77,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ blueprints }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error(err);
-    return internalError("Failed to fetch blueprints");
+    return new Response(JSON.stringify({ error: "Failed to fetch blueprints" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

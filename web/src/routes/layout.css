@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@layer base {
+    body {
+        @apply bg-black text-green-400 font-mono tracking-wide selection:bg-green-500/30 selection:text-green-300;
+    }
+}
+
+/* Custom scrollbar for terminal aesthetic */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-black border-l border-green-500/20;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-green-500/50 hover:bg-green-500/80;
+}

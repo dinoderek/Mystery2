@@ -15,6 +15,7 @@ export default tseslint.config(
       "**/build/**",
       "**/coverage/**",
       "**/*.min.js",
+      "**/.svelte-kit/**"
     ],
   },
 );

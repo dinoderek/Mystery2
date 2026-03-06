@@ -38,8 +38,8 @@ When making significant or complex changes, suggest the creation of additional, 
 
 Depending on the task at hand, you must dynamically load the following convention files to ensure you write code in the correct paradigm:
 
-- If working on the SvelteKit UI styling or theme, load `docs/styling-conventions.md`.
-- If creating new UI elements or trying to reuse existing ones, load `docs/component-inventory.md`.
-- If working on SvelteKit routing or page architecture, load `docs/screen-navigation.md`.
+- If working on the SvelteKit UI styling or theme in the `web/` directory, load `docs/styling-conventions.md`.
+- If creating new UI elements or trying to reuse existing ones in `web/`, load `docs/component-inventory.md`.
+- If working on SvelteKit routing or page architecture in `web/`, load `docs/screen-navigation.md`.
 - If working on Edge Functions, API contracts, or the database, load `docs/backend-conventions.md`.
 - If modifying the structural data model of a mystery, read `supabase/functions/_shared/blueprints/blueprint-schema.ts`.

@@ -257,7 +257,7 @@ This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI
   1. Supabase local stack (Postgres/Auth/Storage/Functions)
   2. SvelteKit dev server (Vite)
 
-See `docs/local-dev.md`.
+For local development commands, use the scripts documented in the repository root `package.json`.
 
 ---
 
@@ -305,7 +305,6 @@ This documentation will eventually be superseded by `project-structure.md` once 
 └─ docs/                             # Source of truth documentation / agent initial memory
    ├─ architecture.md                # Target game architecture
    |- game.md                        # Target game design
-   ├─ local-dev.md                   # Local development guide
    └─ testing.md                     # Testing approach
 ```
 

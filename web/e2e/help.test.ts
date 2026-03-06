@@ -1,41 +1,68 @@
-import { test, expect } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test.describe('US4 - Help Modal', () => {
-    test('toggles help modal using command', async ({ page }) => {
-        await page.route('**/functions/v1/blueprints-list', async route => {
-            await route.fulfill({ json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] } });
-        });
+const baseState = {
+  locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
+  characters: [{ first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' }],
+  time_remaining: 10,
+  location: 'Kitchen',
+  mode: 'explore',
+  current_talk_character: null,
+  clues: [],
+  narration: 'You enter the kitchen.',
+  history: [],
+};
 
-        await page.route('**/functions/v1/game-start', async route => {
-            await route.fulfill({
-                json: {
-                    game_id: 'g1',
-                    state: {
-                        locations: [], characters: [], time_remaining: 10, location: 'kitchen', mode: 'explore', current_talk_character: null, clues: [],
-                        narration: 'You enter the kitchen.', history: []
-                    }
-                }
-            });
-        });
-
-        await page.goto('/');
-        await expect(page.getByText('B1')).toBeVisible();
-        await page.keyboard.press('1');
-        await expect(page).toHaveURL(/.*\/session/);
-
-        // Type 'help'
-        const input = page.locator('input[type="text"]');
-        await input.fill('help');
-        await input.press('Enter');
-
-        // Modal should appear
-        const helpModal = page.locator('text=COMMAND REFERENCE');
-        await expect(helpModal).toBeVisible();
-
-        // Close the modal
-        await page.locator('button:has-text("[ CLOSE ]")').click();
-
-        // Modal should disappear
-        await expect(helpModal).toBeHidden();
+async function bootstrapSession(page: Page) {
+  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await route.fulfill({
+      json: {
+        blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }],
+      },
     });
+  });
+
+  await page.route('**/functions/v1/game-start*', async (route) => {
+    await route.fulfill({
+      json: {
+        game_id: 'g1',
+        state: baseState,
+      },
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('B1')).toBeVisible();
+  await page.keyboard.press('1');
+  await expect(page).toHaveURL(/.*\/session/);
+}
+
+test.describe('Help and inline guidance', () => {
+  test('keeps unrecognized guidance inline and brief', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('fly to moon');
+    await input.press('Enter');
+
+    await expect(
+      page.getByText(/Commands: go, talk, search, accuse, locations, characters, help, quit/),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'COMMAND REFERENCE' })).toBeHidden();
+  });
+
+  test('opens detailed help modal with aliases on help command', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('help');
+    await input.press('Enter');
+
+    await expect(page.getByRole('heading', { name: 'COMMAND REFERENCE' })).toBeVisible();
+    await expect(page.getByText(/travel to/)).toBeVisible();
+    await expect(page.getByText(/where can i go/)).toBeVisible();
+    await expect(page.getByText(/quit \/ exit/)).toBeVisible();
+
+    await page.locator('button:has-text("[ CLOSE ]")').click();
+    await expect(page.getByRole('heading', { name: 'COMMAND REFERENCE' })).toBeHidden();
+  });
 });

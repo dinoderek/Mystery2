@@ -1,5 +1,17 @@
 <script lang="ts">
   import { gameSessionStore } from "$lib/domain/store.svelte";
+
+  const visibleCharacters = $derived.by(() => {
+    const state = gameSessionStore.state;
+    if (!state) {
+      return [];
+    }
+
+    const currentLocation = state.location.trim().toLowerCase();
+    return state.characters.filter(
+      (character) => character.location_name.trim().toLowerCase() === currentLocation,
+    );
+  });
 </script>
 
 <div
@@ -14,13 +26,10 @@
 >
   <span class="text-green-500/70">VISIBLE:</span>
   <div>
-    {#if gameSessionStore.state?.characters && gameSessionStore.state.characters.length > 0}
-      {#each gameSessionStore.state.characters as char, i}
+    {#if visibleCharacters.length > 0}
+      {#each visibleCharacters as char, i}
         <span
-          >{char.first_name}
-          {char.last_name}{i < gameSessionStore.state.characters.length - 1
-            ? ", "
-            : ""}</span
+          >{char.first_name} {char.last_name}{i < visibleCharacters.length - 1 ? ", " : ""}</span
         >
       {/each}
     {:else}

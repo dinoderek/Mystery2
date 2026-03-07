@@ -72,13 +72,7 @@ Alternatively, you can run tests in isolation:
 ## Optional live-AI suites
 Live suites are opt-in and intentionally excluded from `npm run test:all` to keep baseline checks deterministic.
 
-1. Configure server-side AI environment:
-   ```bash
-   export AI_PROVIDER="openrouter"
-   export OPENROUTER_API_KEY="<server-only-secret>"
-   export AI_MODEL_PAID="google/gemini-3-flash-preview"
-   export AI_MODEL_FREE="z-ai/glm-4.5-air:free"
-   ```
+1. Ensure `.env.ai.free.local` and `.env.ai.paid.local` are configured (same files used by `dev:ai:*`).
 2. Run live suites:
    - `npm run test:integration:live:free`
    - `npm run test:integration:live:paid`

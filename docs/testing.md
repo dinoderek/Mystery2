@@ -162,8 +162,7 @@ These suites are intentionally excluded from `npm run test:all` and only run whe
 Live suites require:
 
 - `AI_LIVE=1`
-- explicit model selection via `AI_MODEL_FREE` / `AI_MODEL_PAID` (the live scripts pass selected values into `AI_MODEL`)
-- provider config (`AI_PROVIDER=openrouter`) and `OPENROUTER_API_KEY` when running against real models
+- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER`, `AI_MODEL`, and `OPENROUTER_API_KEY`
 
 ## RLS policy testing (minimum bar)
 

@@ -7,7 +7,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 ## Root Directories
 
 - `web/`: Front-end SvelteKit application for the player UI.
-- `blueprints/`: Stores deterministic, AI-generated JSON blueprint files acting as mystery configurations.
+- `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend.
@@ -17,7 +17,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
   - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions.
   - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
-  - `seed/`: Deterministic testing seed files (such as local `mock-blueprint.json` uploads).
+  - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json`).
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).

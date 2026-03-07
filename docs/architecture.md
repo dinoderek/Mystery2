@@ -16,7 +16,7 @@ We will build the Mystery Game using:
 
 Primary goals:
 
-- **Local dev simplicity**: one command starts UI + backend + database.
+- **Local dev simplicity**: one command starts UI + backend + database and seeds blueprint storage.
 - **Testability**: unit, integration, and E2E tests that exercise each component and the full stack.
 - **Simplicity**: minimize bespoke backend infrastructure; keep secrets off the client.
 

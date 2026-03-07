@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 const API_URL = "http://127.0.0.1:54331/functions/v1";
+const MOCK_BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("Full E2E API Investigation Flow", () => {
   it("completes a full investigation from start to correct accusation", async () => {
@@ -13,7 +14,13 @@ describe("Full E2E API Investigation Flow", () => {
     const listRes = await fetch(`${API_URL}/blueprints-list`, { headers });
     expect(listRes.status).toBe(200);
     const listData = await listRes.json();
-    const blueprintId = listData.blueprints[0].id;
+    const mockBlueprint = listData.blueprints.find(
+      (blueprint: { id: string }) => blueprint.id === MOCK_BLUEPRINT_ID,
+    );
+    if (!mockBlueprint) {
+      throw new Error(`Mock blueprint ${MOCK_BLUEPRINT_ID} not found`);
+    }
+    const blueprintId = mockBlueprint.id;
 
     // 2. POST game-start
     const startRes = await fetch(`${API_URL}/game-start`, {

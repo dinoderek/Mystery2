@@ -128,20 +128,23 @@ Integration/E2E tests should rely on:
 
 ## Test execution
 
-Before running tests, developers or CI must ensure the Supabase stack is running (`supabase start` or via the dev script). Tests should reuse the existing instance.
+Before running tests, developers or CI can rely on the npm scripts to start Supabase when required and reseed storage blueprints before API-level suites.
 
 ### Integration test script
 
 `npm run test:integration`:
 
-1. Uses Vitest to run the integration test suite against the running Supabase instance (handling its own data isolation)
+1. Starts Supabase if needed
+2. Seeds storage blueprints from local blueprint directories
+3. Uses Vitest to run the integration test suite (handling its own data isolation)
 
 ### E2E test script
 
 `npm run test:e2e`:
 
 1. Starts Supabase if it isn't running already
-2. Runs Vitest against the running Edge Functions to validate full player journeys
+2. Seeds storage blueprints from local blueprint directories
+3. Runs Vitest against the running Edge Functions to validate full player journeys
 
 ### Live-AI suites (opt-in)
 

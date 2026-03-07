@@ -3,7 +3,6 @@ import {
   getAIProvider,
   isLiveAIEnabled,
   resolveAIProfile,
-  resolveLiveProfiles,
 } from "../../../supabase/functions/_shared/ai-provider.ts";
 import {
   parseSearchOutput,
@@ -11,36 +10,25 @@ import {
   parseTalkStartOutput,
 } from "../../../supabase/functions/_shared/ai-contracts.ts";
 
-describe("ai-provider profile resolution", () => {
+describe("ai-provider runtime resolution", () => {
   it("fails when required env is missing", () => {
     expect(() => resolveAIProfile({})).toThrow("AI_PROVIDER");
-    expect(() => resolveAIProfile({ AI_PROVIDER: "mock" })).toThrow(
-      "AI_PROFILE",
-    );
-    expect(() =>
-      resolveAIProfile({ AI_PROVIDER: "mock", AI_PROFILE: "default" }),
-    ).toThrow("AI_MODEL");
+    expect(() => resolveAIProfile({ AI_PROVIDER: "mock" })).toThrow("AI_MODEL");
   });
 
-  it("resolves profile/provider/model from env", () => {
+  it("resolves provider/model from env", () => {
     const profile = resolveAIProfile({
-      AI_PROFILE: "cost_control",
       AI_PROVIDER: "openrouter",
       AI_MODEL: "test/cost-model",
     });
 
     expect(profile).toEqual({
-      name: "cost_control",
       provider: "openrouter",
       model: "test/cost-model",
     });
   });
 
-  it("parses live profile list and live toggle", () => {
-    expect(
-      resolveLiveProfiles({ AI_LIVE_PROFILES: "cost_control,default" }),
-    ).toEqual(["cost_control", "default"]);
-    expect(() => resolveLiveProfiles({})).toThrow("AI_LIVE_PROFILES");
+  it("parses live toggle", () => {
     expect(isLiveAIEnabled({ AI_LIVE: "1" })).toBe(true);
     expect(isLiveAIEnabled({ AI_LIVE: "false" })).toBe(false);
   });
@@ -50,7 +38,6 @@ describe("ai-provider mock role output", () => {
   it("returns parseable role payloads", async () => {
     const provider = getAIProvider({
       AI_PROVIDER: "mock",
-      AI_PROFILE: "default",
       AI_MODEL: "mock/default",
     });
     const output = await provider.generateRoleOutput({
@@ -66,7 +53,6 @@ describe("ai-provider mock role output", () => {
   it("supports accusation continue and resolved rounds", async () => {
     const provider = getAIProvider({
       AI_PROVIDER: "mock",
-      AI_PROFILE: "default",
       AI_MODEL: "mock/default",
     });
 
@@ -92,7 +78,6 @@ describe("ai-provider mock role output", () => {
   it("generates search narration from location context only", async () => {
     const provider = getAIProvider({
       AI_PROVIDER: "mock",
-      AI_PROFILE: "default",
       AI_MODEL: "mock/default",
     });
 
@@ -109,7 +94,6 @@ describe("ai-provider mock role output", () => {
   it("fails parsing when output shape is invalid", async () => {
     const provider = getAIProvider({
       AI_PROVIDER: "mock",
-      AI_PROFILE: "default",
       AI_MODEL: "mock/default",
     });
 
@@ -128,7 +112,6 @@ describe("ai-provider mock role output", () => {
   it("fails mock generation when required context is missing", async () => {
     const provider = getAIProvider({
       AI_PROVIDER: "mock",
-      AI_PROFILE: "default",
       AI_MODEL: "mock/default",
     });
 

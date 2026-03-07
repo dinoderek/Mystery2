@@ -7,8 +7,8 @@ This document defines how AI-assisted narration is executed in Supabase Edge Fun
 ## Runtime Components
 
 - `supabase/functions/_shared/ai-provider.ts`
-  - Strict provider/model resolution from environment (`AI_PROVIDER`, `AI_PROFILE`, `AI_MODEL`)
-  - Live-suite helpers (`AI_LIVE`, profile parsing)
+  - Strict provider/model resolution from environment (`AI_PROVIDER`, `AI_MODEL`)
+  - Live-suite helpers (`AI_LIVE`, AI mode labeling)
 - `supabase/functions/_shared/ai-contracts.ts`
   - Role output parsing and validation before state mutation
 - `supabase/functions/_shared/ai-context.ts`
@@ -110,16 +110,16 @@ For `game-move` (narration-only provider path):
    - emits `accuse_round` when resolution is `continue`
    - emits `accuse_resolved` and transitions to `ended` on `win|lose`
 
-## Profiles and Live Suites
+## Runtime Model Selection and Live Suites
 
-- Profile models:
+- Runtime model selection:
   - `AI_MODEL` is required at runtime
-  - profile labels (`AI_PROFILE`) are metadata only (`default` or `cost_control`)
+  - no runtime `AI_PROFILE` is required or parsed
 - Provider:
   - `AI_PROVIDER=mock` for deterministic suites
   - `AI_PROVIDER=openrouter` + `OPENROUTER_API_KEY` for live model runs
 - Live suite commands:
-  - `npm run test:integration:live:default`
-  - `npm run test:integration:live:cost-control`
-  - `npm run test:e2e:live:default`
-  - `npm run test:e2e:live:cost-control`
+  - `npm run test:integration:live:free`
+  - `npm run test:integration:live:paid`
+  - `npm run test:e2e:live:free`
+  - `npm run test:e2e:live:paid`

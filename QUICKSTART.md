@@ -35,7 +35,26 @@ The backend relies on Supabase for the database, auth, and edge functions.
    ```
    *The UI will usually be available at `http://localhost:5173`.*
 
-Tip: `npm run dev` from the repository root starts Supabase if needed, seeds storage blueprints, then starts the web UI.
+Tip: `npm run dev` from the repository root restarts Supabase in deterministic mock-AI mode, seeds storage blueprints, then starts the web UI.
+
+## Local human testing with AI
+Use mode-specific local env files (gitignored) to run the full local stack against real models.
+
+1. Create `.env.ai.free.local`:
+   ```bash
+   AI_PROVIDER="openrouter"
+   AI_MODEL="z-ai/glm-4.5-air:free"
+   OPENROUTER_API_KEY="<server-only-secret>"
+   ```
+2. Create `.env.ai.paid.local`:
+   ```bash
+   AI_PROVIDER="openrouter"
+   AI_MODEL="google/gemini-3-flash-preview"
+   OPENROUTER_API_KEY="<server-only-secret>"
+   ```
+3. Start local stack in AI mode:
+   - Free model: `npm run dev:ai:free`
+   - Paid model: `npm run dev:ai:paid`
 
 ## Testing everything
 We have a unified Quality Gate script that checks linting, type-safety, and all test tiers (Unit, Integration, and E2E API flow).
@@ -47,8 +66,8 @@ npm run test:all
 
 Alternatively, you can run tests in isolation:
 - **Unit Logic Tests:** `npm run test:unit`
-- **Integration Tests:** `npm run test:integration` (Starts Supabase if needed and reseeds storage blueprints)
-- **E2E API Tests:** `npm run test:e2e` (Starts Supabase if needed and reseeds storage blueprints)
+- **Integration Tests:** `npm run test:integration` (Restarts Supabase in mock-AI mode and reseeds storage blueprints)
+- **E2E API Tests:** `npm run test:e2e` (Restarts Supabase in mock-AI mode and reseeds storage blueprints)
 
 ## Optional live-AI suites
 Live suites are opt-in and intentionally excluded from `npm run test:all` to keep baseline checks deterministic.
@@ -57,14 +76,22 @@ Live suites are opt-in and intentionally excluded from `npm run test:all` to kee
    ```bash
    export AI_PROVIDER="openrouter"
    export OPENROUTER_API_KEY="<server-only-secret>"
-   export AI_PROFILE_DEFAULT_MODEL="google/gemini-2.5-flash"
-   export AI_PROFILE_COST_CONTROL_MODEL="z-ai/glm-4.5-air:free"
+   export AI_MODEL_PAID="google/gemini-3-flash-preview"
+   export AI_MODEL_FREE="z-ai/glm-4.5-air:free"
    ```
 2. Run live suites:
-   - `npm run test:integration:live:default`
-   - `npm run test:integration:live:cost-control`
-   - `npm run test:e2e:live:default`
-   - `npm run test:e2e:live:cost-control`
+   - `npm run test:integration:live:free`
+   - `npm run test:integration:live:paid`
+   - `npm run test:e2e:live:free`
+   - `npm run test:e2e:live:paid`
+
+## Cloud Supabase secrets
+Local `.env.ai.*.local` files are only for local Docker/Supabase CLI workflows.
+
+For hosted Supabase, set project secrets per environment (for example staging vs production) in Supabase Dashboard or via CLI:
+```bash
+supabase secrets set AI_PROVIDER=openrouter AI_MODEL=<model-id> OPENROUTER_API_KEY=<secret> --project-ref <project-ref>
+```
 
 ## Viewing the Database
 You can explore the local Postgres database and functions via the local Supabase dashboard:

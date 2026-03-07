@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   getLiveSuiteTitle,
   isLiveAIEnabled,
-  resolveLiveAIProfile,
+  resolveLiveAILabel,
 } from "../../../testkit/src/live-ai.ts";
 
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
-  it("runs talk and search with active live profile", async () => {
-    const profile = resolveLiveAIProfile();
+  it("runs talk and search with active live model", async () => {
+    const label = resolveLiveAILabel();
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.ANON_KEY}`,
@@ -46,7 +46,7 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
     expect(typeof talkData.narration).toBe("string");
     expect(talkData.mode === "talk" || talkData.mode === "accuse").toBe(true);
 
-    // Ensure profile configuration is wired in the environment for visibility.
-    expect(profile === "default" || profile === "cost_control").toBe(true);
+    // Ensure live AI labeling is wired for test run visibility.
+    expect(label.length).toBeGreaterThan(0);
   });
 });

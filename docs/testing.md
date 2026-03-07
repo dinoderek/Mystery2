@@ -134,7 +134,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 `npm run test:integration`:
 
-1. Starts Supabase if needed
+1. Restarts Supabase in deterministic mock-AI mode
 2. Seeds storage blueprints from local blueprint directories
 3. Uses Vitest to run the integration test suite (handling its own data isolation)
 
@@ -142,7 +142,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 `npm run test:e2e`:
 
-1. Starts Supabase if it isn't running already
+1. Restarts Supabase in deterministic mock-AI mode
 2. Seeds storage blueprints from local blueprint directories
 3. Runs Vitest against the running Edge Functions to validate full player journeys
 
@@ -151,19 +151,18 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 These suites are intentionally excluded from `npm run test:all` and only run when explicitly requested.
 
 - Integration (live harness):
-  - `npm run test:integration:live:default`
-  - `npm run test:integration:live:cost-control`
+  - `npm run test:integration:live:free`
+  - `npm run test:integration:live:paid`
 - API E2E (investigator script):
-  - `npm run test:e2e:live:default`
-  - `npm run test:e2e:live:cost-control`
+  - `npm run test:e2e:live:free`
+  - `npm run test:e2e:live:paid`
 - Browser smoke (optional):
   - `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
 
 Live suites require:
 
 - `AI_LIVE=1`
-- profile selection via `AI_PROFILE`
-- explicit model selection via `AI_MODEL` (the live scripts derive this from profile-specific env vars)
+- explicit model selection via `AI_MODEL_FREE` / `AI_MODEL_PAID` (the live scripts pass selected values into `AI_MODEL`)
 - provider config (`AI_PROVIDER=openrouter`) and `OPENROUTER_API_KEY` when running against real models
 
 ## RLS policy testing (minimum bar)

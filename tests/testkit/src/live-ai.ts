@@ -1,6 +1,3 @@
-export const LIVE_AI_PROFILES = ["default", "cost_control"] as const;
-export type LiveAIProfile = (typeof LIVE_AI_PROFILES)[number];
-
 export function isLiveAIEnabled(
   env: Record<string, string | undefined> = process.env as Record<
     string,
@@ -11,16 +8,22 @@ export function isLiveAIEnabled(
   return raw === "1" || raw.toLowerCase() === "true";
 }
 
-export function resolveLiveAIProfile(
+export function resolveLiveAILabel(
   env: Record<string, string | undefined> = process.env as Record<
     string,
     string | undefined
   >,
-): LiveAIProfile {
-  return env.AI_PROFILE === "cost_control" ? "cost_control" : "default";
+): string {
+  const label = env.AI_LIVE_LABEL?.trim();
+  if (label) return label;
+
+  const model = env.AI_MODEL?.trim();
+  if (model) return model;
+
+  return "custom";
 }
 
 export function getLiveSuiteTitle(base: string): string {
-  const profile = resolveLiveAIProfile();
-  return `${base} [profile=${profile}]`;
+  const label = resolveLiveAILabel();
+  return `${base} [ai=${label}]`;
 }

@@ -1,11 +1,9 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
 import { RetriableAIError } from "./errors.ts";
 
-export type AIProfileName = "default" | "cost_control";
 export type AIProviderName = "mock" | "openrouter";
 
 export interface AIRuntimeProfile {
-  name: AIProfileName;
   provider: AIProviderName;
   model: string;
 }
@@ -71,16 +69,6 @@ function parseProviderName(rawProviderName: string): AIProviderName {
   );
 }
 
-function parseProfileName(rawProfileName: string): AIProfileName {
-  if (rawProfileName === "default" || rawProfileName === "cost_control") {
-    return rawProfileName;
-  }
-
-  throw new Error(
-    `Invalid AI_PROFILE "${rawProfileName}". Expected "default" or "cost_control".`,
-  );
-}
-
 function requireContextString(
   role: AIRoleName,
   context: Record<string, unknown>,
@@ -122,11 +110,9 @@ function requireContextBoolean(
 
 export function resolveAIProfile(env = getRuntimeEnv()): AIRuntimeProfile {
   const provider = parseProviderName(requireEnv(env, "AI_PROVIDER"));
-  const name = parseProfileName(requireEnv(env, "AI_PROFILE"));
   const model = requireEnv(env, "AI_MODEL");
 
   return {
-    name,
     provider,
     model,
   };
@@ -135,21 +121,6 @@ export function resolveAIProfile(env = getRuntimeEnv()): AIRuntimeProfile {
 export function isLiveAIEnabled(env = getRuntimeEnv()): boolean {
   const raw = env.AI_LIVE ?? "";
   return raw === "1" || raw.toLowerCase() === "true";
-}
-
-export function resolveLiveProfiles(env = getRuntimeEnv()): AIProfileName[] {
-  const raw = requireEnv(env, "AI_LIVE_PROFILES");
-
-  const profiles = raw
-    .split(",")
-    .map((value) => parseProfileName(value.trim()))
-    .filter((value, index, all) => all.indexOf(value) === index);
-
-  if (profiles.length === 0) {
-    throw new Error("AI_LIVE_PROFILES must include at least one profile");
-  }
-
-  return profiles;
 }
 
 class MockAIProvider implements AIProvider {

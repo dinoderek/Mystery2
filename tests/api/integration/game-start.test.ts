@@ -22,7 +22,7 @@ describe("game-start endpoint", () => {
     expect(data.state).toBeDefined();
     expect(data.state.mode).toBe("explore");
     expect(data.state.time_remaining).toBe(10);
-    expect(Array.isArray(data.state.clues)).toBe(true);
+    expect(data.state.clues).toBeUndefined();
     expect(data.state.narration).toContain("[Mock]");
   });
 });

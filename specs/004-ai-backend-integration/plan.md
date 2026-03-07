@@ -75,8 +75,7 @@ supabase/
 packages/
 └── shared/
     └── src/
-        ├── api-types.ts
-        └── schemas.ts                      # new shared boundary Zod contracts
+        └── mystery-api-contracts.ts        # shared public API contracts + inferred types
 
 tests/
 └── api/

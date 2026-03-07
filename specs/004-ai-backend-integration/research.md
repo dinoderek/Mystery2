@@ -75,7 +75,7 @@
 
 ## 7. Shared Boundary Schema Location
 
-**Decision**: Add `packages/shared/src/schemas.ts` as the public API boundary source-of-truth and keep blueprint ground-truth schema private in `supabase/functions/_shared/blueprints/blueprint-schema.ts`.
+**Decision**: Add `packages/shared/src/mystery-api-contracts.ts` as the public API boundary source-of-truth and keep blueprint ground-truth schema private in `supabase/functions/_shared/blueprints/blueprint-schema.ts`.
 
 **Rationale**: Matches backend conventions: public UI/backend contract in shared schemas, private truth model confined to backend.
 

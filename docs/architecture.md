@@ -229,6 +229,16 @@ Failure-handling expectations:
 - DB failure: return error; UI can refresh and retry.
 - Always design requests to be idempotent or safely retryable.
 
+### AI Runtime Contract (Current)
+
+- Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
+- Prompt role files live under `supabase/functions/_shared/ai-prompts/`.
+- Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
+- Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.
+- `accusation_judge` is the only role allowed to receive full `ground_truth_context`.
+- Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
+- Full implementation details are documented in `docs/ai-runtime.md`.
+
 ---
 
 ## Security model

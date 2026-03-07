@@ -1,7 +1,6 @@
 import { createClient } from "../_shared/db.ts";
 import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
-import { generateClueId } from "../_shared/clue-ids.ts";
 import { getAIProvider } from "../_shared/ai-provider.ts";
 
 Deno.serve(async (req) => {
@@ -54,12 +53,6 @@ Deno.serve(async (req) => {
     const blueprint = BlueprintSchema.parse(rawBlueprint);
     const startLoc = blueprint.world.starting_location_id;
 
-    // Generate initial clue IDs
-    const startingClueIds: string[] = [];
-    for (const clue of blueprint.narrative.starting_knowledge) {
-      startingClueIds.push(await generateClueId(clue));
-    }
-
     // Insert game_session
     const { data: sessionData, error: sessionError } = await supabase
       .from("game_sessions")
@@ -68,7 +61,6 @@ Deno.serve(async (req) => {
         mode: "explore",
         current_location_id: startLoc,
         time_remaining: blueprint.metadata.time_budget,
-        discovered_clues: startingClueIds,
       })
       .select("id")
       .single();
@@ -93,7 +85,6 @@ Deno.serve(async (req) => {
       event_type: "start",
       actor: "system",
       narration: narration,
-      clues_revealed: startingClueIds,
     });
 
     if (eventError) {
@@ -112,7 +103,6 @@ Deno.serve(async (req) => {
       location: startLoc,
       mode: "explore",
       current_talk_character: null,
-      clues: startingClueIds,
       narration: narration,
     };
 

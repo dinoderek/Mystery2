@@ -9,7 +9,7 @@ When we refer to the "Shared Boundary," we mean **specifically the data exchange
 - The backend will hold comprehensive data models internally (e.g., the full `Blueprint` with internal reasoning).
 - The frontend will only receive specific, sanitized _views_ of this data via API payloads (e.g., `PlayerVisibleBlueprint`).
 - All data shapes at this network boundary (e.g., the `TurnRequest`, `TurnResponse`) must be defined as Zod schemas.
-- The single source of truth for these API contracts will live in `packages/shared/schemas.ts`.
+- The single source of truth for these API contracts lives in `packages/shared/src/mystery-api-contracts.ts`.
 - TypeScript types are inferred from these Zod schemas (e.g., `export type TurnResponse = z.infer<typeof TurnResponseSchema>;`).
 - AI Agents must always update these contract schemas first whenever the API boundary changes.
 

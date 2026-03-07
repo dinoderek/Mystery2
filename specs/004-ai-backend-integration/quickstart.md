@@ -34,17 +34,10 @@ npm run test:all
 Run live integration and API E2E suites explicitly per profile.
 
 ```bash
-# Default profile live integration
-AI_LIVE=1 AI_PROFILE=default vitest run tests/api/integration/live-ai
-
-# Cost-control profile live integration
-AI_LIVE=1 AI_PROFILE=cost_control vitest run tests/api/integration/live-ai
-
-# Default profile live API E2E investigator script
-AI_LIVE=1 AI_PROFILE=default vitest run tests/api/e2e/live-ai-flow.test.ts
-
-# Cost-control profile live API E2E investigator script
-AI_LIVE=1 AI_PROFILE=cost_control vitest run tests/api/e2e/live-ai-flow.test.ts
+npm run test:integration:live:default
+npm run test:integration:live:cost-control
+npm run test:e2e:live:default
+npm run test:e2e:live:cost-control
 ```
 
 ## Manual Verification Checklist
@@ -64,3 +57,23 @@ AI_LIVE=1 AI_PROFILE=cost_control vitest run tests/api/e2e/live-ai-flow.test.ts
 - Contract compliance: role output validation failures logged by Edge Functions.
 - Live profile parity: compare investigator script checkpoints across `default` and `cost_control` profiles.
 - Documentation completeness: verify `docs/ai-runtime.md` exists and core docs include a concise overview of AI integration changes.
+
+## Execution Status (2026-03-07)
+
+### Deterministic Quality Gates
+
+- `npm run test:all` => PASS
+  - Includes lint, typecheck, web check, unit, integration, API E2E, and Playwright suites
+  - `svelte-check` reported one non-blocking warning (`a11y_autofocus`) and zero errors
+
+### Live Profile Suite Results
+
+- `npm run test:integration:live:default` => PASS
+- `npm run test:integration:live:cost-control` => PASS
+- `npm run test:e2e:live:default` => PASS
+- `npm run test:e2e:live:cost-control` => PASS
+
+Validation note:
+- These runs executed with `AI_LIVE=1`, profile switching, and explicit `AI_MODEL` values.
+- With `AI_PROVIDER=mock`, suites validate the live harness and profile wiring without external model calls.
+- To validate against real OpenRouter models, set `AI_PROVIDER=openrouter`, `OPENROUTER_API_KEY`, and the profile model env vars before running the same commands.

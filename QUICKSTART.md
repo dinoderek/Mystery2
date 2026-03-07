@@ -48,6 +48,22 @@ Alternatively, you can run tests in isolation:
 - **Integration Tests:** `npm run test:integration` (Expects local Supabase to be running)
 - **E2E API Tests:** `npm run test:e2e` (Ensures local Supabase is running before execution)
 
+## Optional live-AI suites
+Live suites are opt-in and intentionally excluded from `npm run test:all` to keep baseline checks deterministic.
+
+1. Configure server-side AI environment:
+   ```bash
+   export AI_PROVIDER="openrouter"
+   export OPENROUTER_API_KEY="<server-only-secret>"
+   export AI_PROFILE_DEFAULT_MODEL="google/gemini-2.5-flash"
+   export AI_PROFILE_COST_CONTROL_MODEL="z-ai/glm-4.5-air:free"
+   ```
+2. Run live suites:
+   - `npm run test:integration:live:default`
+   - `npm run test:integration:live:cost-control`
+   - `npm run test:e2e:live:default`
+   - `npm run test:e2e:live:cost-control`
+
 ## Viewing the Database
 You can explore the local Postgres database and functions via the local Supabase dashboard:
 ```bash

@@ -68,7 +68,6 @@ The investigator repeatedly chooses actions until:
 - **Talk** (interrogate / question)
 - **Move** (go to a location)
 - **Search** (look for clues)
-- **Clues** (review discovered info)
 - **Accuse** (endgame)
 - **Help**
 - **Quit**
@@ -106,6 +105,7 @@ When time is exhausted:
 - Investigator asks questions (typed input).
 - Narrator responds _as that character_, consistent with blueprint.
 - Character should remember prior interactions in the same game (continuity).
+- Backend accepts free-form question payloads (`player_input`).
 
 **Exit Talk Mode**
 
@@ -171,7 +171,10 @@ Optionally later: `search <sub-location>` once sub-locations exist.
   - who did it
   - why / reasoning
   - key supporting clues
-- Narrator may ask follow-up questions if reasoning is incomplete (to help the child articulate).
+- Accusation now runs as a two-stage backend flow:
+  - `accuse_start`: suspect declaration + framing narration + follow-up prompt
+  - `accuse_judge` rounds: iterative reasoning with `continue|win|lose` adjudication
+- Narrator may ask follow-up questions if reasoning is incomplete.
 - Narrator reveals outcome:
   - If correct: explanation + how clues connect + timeline
   - If incorrect: explanation + correct culprit + where reasoning diverged
@@ -290,6 +293,5 @@ Modes:
 - `end` (exit talk mode)
 - `move to <place>` / `go <place>`
 - `search`
-- `clues`
 - `accuse <name>`
 - `quit`

@@ -40,8 +40,7 @@ describe("Full E2E API Investigation Flow", () => {
       body: JSON.stringify({ game_id }),
     });
     expect(searchRes.status).toBe(200);
-    const searchData = await searchRes.json();
-    const discoveredClueId = searchData.discovered_clue_id;
+    await searchRes.json();
 
     // 5. POST game-talk to Alice
     const talkRes = await fetch(`${API_URL}/game-talk`, {
@@ -52,14 +51,15 @@ describe("Full E2E API Investigation Flow", () => {
     expect(talkRes.status).toBe(200);
 
     // 6. POST game-ask
-    if (discoveredClueId) {
-      const askRes = await fetch(`${API_URL}/game-ask`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ game_id, clue_id: discoveredClueId }),
-      });
-      expect(askRes.status).toBe(200);
-    }
+    const askRes = await fetch(`${API_URL}/game-ask`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        game_id,
+        player_input: "Where were you when this happened?",
+      }),
+    });
+    expect(askRes.status).toBe(200);
 
     // 7. POST game-end-talk
     const endRes = await fetch(`${API_URL}/game-end-talk`, {
@@ -77,19 +77,47 @@ describe("Full E2E API Investigation Flow", () => {
     const getData = await getRes.json();
     expect(getData.state.history.length).toBeGreaterThan(0);
 
-    // 9. POST game-accuse
-    const accuseRes = await fetch(`${API_URL}/game-accuse`, {
+    // 9. POST game-accuse (start phase)
+    const accuseStartRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers,
       body: JSON.stringify({ game_id, accused_character_id: "Alice" }),
     });
-    expect(accuseRes.status).toBe(200);
-    const accuseData = await accuseRes.json();
+    expect(accuseStartRes.status).toBe(200);
+    const accuseStartData = await accuseStartRes.json();
+    expect(accuseStartData.mode).toBe("accuse");
 
-    // 10. Check outcome
-    expect(accuseData.result).toBe("win");
+    // 10. POST game-accuse (judge round 1)
+    const accuseRoundOneRes = await fetch(`${API_URL}/game-accuse`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        game_id,
+        player_reasoning: "Alice was nearby and behaved nervously.",
+      }),
+    });
+    expect(accuseRoundOneRes.status).toBe(200);
+    const accuseRoundOneData = await accuseRoundOneRes.json();
+    expect(accuseRoundOneData.mode).toBe("accuse");
+    expect(accuseRoundOneData.follow_up_prompt).toBeTruthy();
 
-    // 11. Final state check
+    // 11. POST game-accuse (judge round 2, resolve)
+    const accuseResolveRes = await fetch(`${API_URL}/game-accuse`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        game_id,
+        player_reasoning:
+          "Alice had motive, opportunity, and the clues match her timeline.",
+      }),
+    });
+    expect(accuseResolveRes.status).toBe(200);
+    const accuseResolveData = await accuseResolveRes.json();
+
+    // 12. Check outcome
+    expect(accuseResolveData.result).toBe("win");
+
+    // 13. Final state check
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
     });

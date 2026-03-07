@@ -28,45 +28,43 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameTalkRequest'
+              $ref: "#/components/schemas/GameTalkRequest"
       responses:
-        '200':
+        "200":
           description: Talk started
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TalkStartResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/TalkStartResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /game-ask:
     post:
       tags: [Talk]
       summary: Continue conversation with current talk character
       description: |
-        Existing endpoint retained. AI integration hardening is internal.
-        Implementations may accept either legacy clue-driven asks or free-form input,
-        but endpoint path and core response shape remain stable.
+        Existing endpoint retained with free-form question input only.
       operationId: gameAsk
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameAskRequest'
+              $ref: "#/components/schemas/GameAskRequest"
       responses:
-        '200':
+        "200":
           description: Character response generated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TalkAskResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/TalkAskResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /game-end-talk:
     post:
@@ -78,18 +76,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameSessionRequest'
+              $ref: "#/components/schemas/GameSessionRequest"
       responses:
-        '200':
+        "200":
           description: Talk closed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TalkEndResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/TalkEndResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /game-search:
     post:
@@ -101,18 +99,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameSessionRequest'
+              $ref: "#/components/schemas/GameSessionRequest"
       responses:
-        '200':
-          description: Search narration and optional deterministic clue discovery
+        "200":
+          description: Search narration response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /game-accuse:
     post:
@@ -127,18 +125,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameAccuseRequest'
+              $ref: "#/components/schemas/GameAccuseRequest"
       responses:
-        '200':
+        "200":
           description: Accusation response (resolved or follow-up)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccuseResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/AccuseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /game-get:
     get:
@@ -153,18 +151,18 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Session state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameGetResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/GameGetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
 components:
   responses:
@@ -173,19 +171,19 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: Missing resource
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     InternalError:
       description: Internal processing failure
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     ErrorResponse:
@@ -218,32 +216,30 @@ components:
 
     GameAskRequest:
       type: object
-      required: [game_id]
+      required: [game_id, player_input]
       properties:
         game_id:
           type: string
           format: uuid
-        clue_id:
-          type: string
-          description: Legacy clue-driven ask input (still supported).
         player_input:
           type: string
           minLength: 1
-          description: Optional free-form ask input.
+          description: Free-form question asked to the active character.
 
     GameAccuseRequest:
       type: object
-      required: [game_id, accused_character_id]
+      required: [game_id]
       properties:
         game_id:
           type: string
           format: uuid
         accused_character_id:
           type: string
+          description: Required when starting accusation from explore mode.
         player_reasoning:
           type: string
           minLength: 1
-          description: Optional reasoning text for iterative accusation handling.
+          description: Required on subsequent accusation-judge rounds.
 
     TalkStartResponse:
       type: object
@@ -274,10 +270,6 @@ components:
         current_talk_character:
           type: string
           nullable: true
-        discovered_clue_id:
-          type: string
-          nullable: true
-          description: Existing deterministic clue-discovery output.
 
     TalkEndResponse:
       type: object
@@ -291,11 +283,11 @@ components:
           type: string
           enum: [explore]
         current_talk_character:
-          type: 'null'
+          type: "null"
 
     SearchResponse:
       type: object
-      required: [narration, time_remaining, mode, discovered_clue_id]
+      required: [narration, time_remaining, mode]
       properties:
         narration:
           type: string
@@ -304,9 +296,6 @@ components:
         mode:
           type: string
           enum: [explore, accuse]
-        discovered_clue_id:
-          type: string
-          nullable: true
 
     AccuseResponse:
       type: object
@@ -332,7 +321,7 @@ components:
       required: [state]
       properties:
         state:
-          $ref: '#/components/schemas/GameState'
+          $ref: "#/components/schemas/GameState"
 
     GameState:
       type: object
@@ -343,18 +332,17 @@ components:
         - location
         - mode
         - current_talk_character
-        - clues
         - narration
         - history
       properties:
         locations:
           type: array
           items:
-            $ref: '#/components/schemas/LocationSummary'
+            $ref: "#/components/schemas/LocationSummary"
         characters:
           type: array
           items:
-            $ref: '#/components/schemas/CharacterSummary'
+            $ref: "#/components/schemas/CharacterSummary"
         time_remaining:
           type: integer
         location:
@@ -365,16 +353,12 @@ components:
         current_talk_character:
           type: string
           nullable: true
-        clues:
-          type: array
-          items:
-            type: string
         narration:
           type: string
         history:
           type: array
           items:
-            $ref: '#/components/schemas/HistoryEntry'
+            $ref: "#/components/schemas/HistoryEntry"
 
     LocationSummary:
       type: object

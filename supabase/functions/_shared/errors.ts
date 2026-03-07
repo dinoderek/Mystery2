@@ -1,21 +1,46 @@
-export function badRequest(msg: string): Response {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 400,
-    headers: { "Content-Type": "application/json" },
-  });
+export interface ErrorDetails {
+  retriable?: boolean;
+  code?: string;
+  [key: string]: unknown;
 }
 
-export function notFound(msg: string): Response {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 404,
-    headers: { "Content-Type": "application/json" },
-  });
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+function jsonError(
+  status: number,
+  error: string,
+  details?: ErrorDetails,
+): Response {
+  return new Response(
+    JSON.stringify(details ? { error, details } : { error }),
+    { status, headers: JSON_HEADERS },
+  );
 }
 
-export function internalError(msg: string): Response {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 500,
-    headers: { "Content-Type": "application/json" },
+export function badRequest(msg: string, details?: ErrorDetails): Response {
+  return jsonError(400, msg, details);
+}
+
+export function notFound(msg: string, details?: ErrorDetails): Response {
+  return jsonError(404, msg, details);
+}
+
+export function unauthorized(msg: string, details?: ErrorDetails): Response {
+  return jsonError(401, msg, details);
+}
+
+export function internalError(msg: string, details?: ErrorDetails): Response {
+  return jsonError(500, msg, details);
+}
+
+export function aiRetriableError(
+  msg = "AI request failed; safe to retry",
+  details?: ErrorDetails,
+): Response {
+  return jsonError(503, msg, {
+    retriable: true,
+    code: "AI_TEMPORARY_FAILURE",
+    ...details,
   });
 }
 
@@ -23,5 +48,26 @@ export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "BadRequestError";
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+  }
+}
+
+export class RetriableAIError extends Error {
+  readonly details: ErrorDetails;
+
+  constructor(message: string, details?: ErrorDetails) {
+    super(message);
+    this.name = "RetriableAIError";
+    this.details = {
+      retriable: true,
+      code: "AI_TEMPORARY_FAILURE",
+      ...details,
+    };
   }
 }

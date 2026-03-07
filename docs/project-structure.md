@@ -2,6 +2,8 @@
 
 This document outlines the current primary project structure of our Monorepo.
 
+Rule: keep this document directory-level only. Do not add file-level indexes here.
+
 ## Root Directories
 
 - `web/`: Front-end SvelteKit application for the player UI.

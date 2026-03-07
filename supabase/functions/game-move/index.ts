@@ -3,6 +3,7 @@ import { badRequest, internalError } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
 import { getAIProvider } from "../_shared/ai-provider.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
@@ -45,12 +46,25 @@ Deno.serve(async (req) => {
     let nextMode = session.mode;
     let eventType = "move";
 
-    let aiPrompt = `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}.`;
+    const { data: historyRows } = await db
+      .from("game_events")
+      .select("sequence,event_type,actor,narration,payload")
+      .eq("session_id", game_id)
+      .order("sequence", { ascending: true });
+    const locationHistory = selectLocationConversationHistory(
+      historyRows ?? [],
+      destLoc.name,
+    );
+    const locationHistoryJson = JSON.stringify(locationHistory);
+
+    let aiPrompt =
+      `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
 
     if (newTime <= 0) {
       nextMode = "accuse";
       eventType = "forced_endgame";
-      aiPrompt = `The player moves to ${destLoc.name}. Time has run out! Narrate that the investigation is over and they must make an accusation now.`;
+      aiPrompt =
+        `The player moves to ${destLoc.name}. Time has run out! Narrate that the investigation is over and they must make an accusation now. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
     }
 
     const ai = getAIProvider();
@@ -83,7 +97,10 @@ Deno.serve(async (req) => {
       sequence: nextSeq,
       event_type: eventType,
       actor: "system",
-      payload: { destination },
+      payload: {
+        destination,
+        location_name: destLoc.name,
+      },
       narration: narration,
     });
 

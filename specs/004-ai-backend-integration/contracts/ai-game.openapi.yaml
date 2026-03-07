@@ -1,0 +1,393 @@
+openapi: 3.1.0
+info:
+  title: Mystery Game Backend API (AI Integration Revision)
+  version: 0.2.0
+  description: |
+    API contract for feature 004-ai-backend-integration.
+    Focus is backend<->AI interaction hardening while keeping the existing backend endpoint surface stable.
+servers:
+  - url: http://127.0.0.1:54331/functions/v1
+    description: Local Supabase
+  - url: https://<project-ref>.supabase.co/functions/v1
+    description: Hosted Supabase
+
+tags:
+  - name: Talk
+  - name: Search
+  - name: Accusation
+  - name: Session
+
+paths:
+  /game-talk:
+    post:
+      tags: [Talk]
+      summary: Start talk interaction with a visible character
+      operationId: gameTalk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameTalkRequest"
+      responses:
+        "200":
+          description: Talk started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TalkStartResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-ask:
+    post:
+      tags: [Talk]
+      summary: Continue conversation with current talk character
+      description: |
+        Existing endpoint retained with free-form question input only.
+      operationId: gameAsk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameAskRequest"
+      responses:
+        "200":
+          description: Character response generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TalkAskResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-end-talk:
+    post:
+      tags: [Talk]
+      summary: End talk interaction and return to explore mode
+      operationId: gameEndTalk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameSessionRequest"
+      responses:
+        "200":
+          description: Talk closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TalkEndResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-search:
+    post:
+      tags: [Search]
+      summary: Search current location
+      operationId: gameSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameSessionRequest"
+      responses:
+        "200":
+          description: Search narration response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-accuse:
+    post:
+      tags: [Accusation]
+      summary: Execute accusation flow
+      description: |
+        Existing endpoint retained. Two-stage accusation behavior is implemented internally
+        in backend<->AI orchestration with minimal backward-compatible payload/response changes.
+      operationId: gameAccuse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameAccuseRequest"
+      responses:
+        "200":
+          description: Accusation response (resolved or follow-up)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccuseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-get:
+    get:
+      tags: [Session]
+      summary: Retrieve current game state and history
+      operationId: gameGet
+      parameters:
+        - in: query
+          name: game_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameGetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid request payload or invalid mode transition
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Missing resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal processing failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    GameSessionRequest:
+      type: object
+      required: [game_id]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+
+    GameTalkRequest:
+      type: object
+      required: [game_id, character_name]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        character_name:
+          type: string
+
+    GameAskRequest:
+      type: object
+      required: [game_id, player_input]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        player_input:
+          type: string
+          minLength: 1
+          description: Free-form question asked to the active character.
+
+    GameAccuseRequest:
+      type: object
+      required: [game_id]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        accused_character_id:
+          type: string
+          description: Required when starting accusation from explore mode.
+        player_reasoning:
+          type: string
+          minLength: 1
+          description: Required on subsequent accusation-judge rounds.
+
+    TalkStartResponse:
+      type: object
+      required: [narration, time_remaining, mode, current_talk_character]
+      properties:
+        narration:
+          type: string
+        time_remaining:
+          type: integer
+        mode:
+          type: string
+          enum: [talk, accuse]
+        current_talk_character:
+          type: string
+          nullable: true
+
+    TalkAskResponse:
+      type: object
+      required: [narration, time_remaining, mode, current_talk_character]
+      properties:
+        narration:
+          type: string
+        time_remaining:
+          type: integer
+        mode:
+          type: string
+          enum: [talk, accuse]
+        current_talk_character:
+          type: string
+          nullable: true
+
+    TalkEndResponse:
+      type: object
+      required: [narration, time_remaining, mode, current_talk_character]
+      properties:
+        narration:
+          type: string
+        time_remaining:
+          type: integer
+        mode:
+          type: string
+          enum: [explore]
+        current_talk_character:
+          type: "null"
+
+    SearchResponse:
+      type: object
+      required: [narration, time_remaining, mode]
+      properties:
+        narration:
+          type: string
+        time_remaining:
+          type: integer
+        mode:
+          type: string
+          enum: [explore, accuse]
+
+    AccuseResponse:
+      type: object
+      required: [narration, mode]
+      properties:
+        narration:
+          type: string
+        mode:
+          type: string
+          enum: [accuse, ended]
+        result:
+          type: string
+          enum: [win, lose]
+          nullable: true
+          description: Present when accusation is resolved.
+        follow_up_prompt:
+          type: string
+          nullable: true
+          description: Present when additional reasoning is requested.
+
+    GameGetResponse:
+      type: object
+      required: [state]
+      properties:
+        state:
+          $ref: "#/components/schemas/GameState"
+
+    GameState:
+      type: object
+      required:
+        - locations
+        - characters
+        - time_remaining
+        - location
+        - mode
+        - current_talk_character
+        - narration
+        - history
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationSummary"
+        characters:
+          type: array
+          items:
+            $ref: "#/components/schemas/CharacterSummary"
+        time_remaining:
+          type: integer
+        location:
+          type: string
+        mode:
+          type: string
+          enum: [explore, talk, accuse, ended]
+        current_talk_character:
+          type: string
+          nullable: true
+        narration:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+
+    LocationSummary:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    CharacterSummary:
+      type: object
+      required: [first_name, last_name, location_name]
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        location_name:
+          type: string
+
+    HistoryEntry:
+      type: object
+      required: [sequence, event_type, actor, narration]
+      properties:
+        sequence:
+          type: integer
+        event_type:
+          type: string
+        actor:
+          type: string
+          enum: [player, system]
+        narration:
+          type: string

@@ -27,3 +27,17 @@ export function validateTransition(
     );
   }
 }
+
+export function resolveAccusationAction(currentMode: GameMode): ActionType {
+  if (currentMode === "explore") {
+    return "accuse";
+  }
+
+  if (currentMode === "accuse") {
+    return "accuse_reasoning";
+  }
+
+  throw new BadRequestError(
+    `Invalid accusation attempt while in mode '${currentMode}'`,
+  );
+}

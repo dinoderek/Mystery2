@@ -32,5 +32,6 @@ describe("game-talk endpoint", () => {
     expect(data.mode).toBe("talk");
     expect(data.time_remaining).toBe(9);
     expect(data.narration).toContain("[Mock]");
+    expect(data.narration).not.toContain("because she was hungry");
   });
 });

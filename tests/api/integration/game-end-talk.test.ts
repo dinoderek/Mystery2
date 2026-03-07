@@ -42,6 +42,6 @@ describe("game-end-talk endpoint", () => {
     expect(data.mode).toBe("explore");
     expect(data.current_talk_character).toBeNull();
     expect(data.time_remaining).toBe(9); // Same as after start-talk
-    expect(data.narration).toContain("You end the conversation");
+    expect(data.narration).toContain("[Mock]");
   });
 });

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { validateTransition } from "../../../supabase/functions/_shared/state-machine.ts";
+import {
+    resolveAccusationAction,
+    validateTransition,
+} from "../../../supabase/functions/_shared/state-machine.ts";
 
 describe("State Machine validateTransition", () => {
     it("allows valid explore actions", () => {
@@ -33,5 +36,11 @@ describe("State Machine validateTransition", () => {
         expect(() => validateTransition("ended", "talk")).toThrow("Invalid action");
         expect(() => validateTransition("ended", "ask")).toThrow("Invalid action");
         expect(() => validateTransition("ended", "accuse")).toThrow("Invalid action");
+    });
+
+    it("maps accusation actions by mode", () => {
+        expect(resolveAccusationAction("explore")).toBe("accuse");
+        expect(resolveAccusationAction("accuse")).toBe("accuse_reasoning");
+        expect(() => resolveAccusationAction("talk")).toThrow("Invalid accusation");
     });
 });

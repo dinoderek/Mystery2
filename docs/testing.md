@@ -60,12 +60,16 @@ What we test:
   - valid token → success
 - DB writes/reads for session lifecycle and event log
 - Storage policies if used for user assets
+- Conversation/search API contract behavior:
+  - `game-ask` requires non-empty `player_input`
+  - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
 
 AI calls:
 
 - Never call OpenRouter in integration tests.
 - Instead, configure Edge Functions to use a mock provider when `AI_PROVIDER=mock` (or similar config).
 - Assert the persisted DB side effects match expectations.
+- Live provider checks are isolated in dedicated opt-in suites (see below).
 
 Runner:
 
@@ -138,6 +142,26 @@ Before running tests, developers or CI must ensure the Supabase stack is running
 
 1. Starts Supabase if it isn't running already
 2. Runs Vitest against the running Edge Functions to validate full player journeys
+
+### Live-AI suites (opt-in)
+
+These suites are intentionally excluded from `npm run test:all` and only run when explicitly requested.
+
+- Integration (live harness):
+  - `npm run test:integration:live:default`
+  - `npm run test:integration:live:cost-control`
+- API E2E (investigator script):
+  - `npm run test:e2e:live:default`
+  - `npm run test:e2e:live:cost-control`
+- Browser smoke (optional):
+  - `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
+
+Live suites require:
+
+- `AI_LIVE=1`
+- profile selection via `AI_PROFILE`
+- explicit model selection via `AI_MODEL` (the live scripts derive this from profile-specific env vars)
+- provider config (`AI_PROVIDER=openrouter`) and `OPENROUTER_API_KEY` when running against real models
 
 ## RLS policy testing (minimum bar)
 

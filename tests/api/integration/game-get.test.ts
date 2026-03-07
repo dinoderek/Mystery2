@@ -37,6 +37,7 @@ describe("game-get endpoint", () => {
     const getData = await getRes.json();
     expect(getData.state).toBeDefined();
     expect(getData.state.mode).toBe("explore");
+    expect(getData.state.clues).toBeUndefined();
     expect(getData.state.history.length).toBe(1);
     expect(getData.state.history[0].event_type).toBe("start");
     expect(getData.state.history[0].actor).toBe("system");

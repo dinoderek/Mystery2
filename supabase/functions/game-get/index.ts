@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     const history = events.map((e) => ({
       sequence: e.sequence,
       event_type: e.event_type,
-      actor: e.actor,
+      actor: e.actor === "player" ? "player" : "system",
       narration: e.narration,
     }));
 
@@ -91,7 +91,6 @@ Deno.serve(async (req) => {
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
-      clues: session.discovered_clues || [],
       narration: currentNarration,
       history: history,
     };

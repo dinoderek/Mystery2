@@ -45,7 +45,7 @@ test.describe('Help and inline guidance', () => {
     await input.press('Enter');
 
     await expect(
-      page.getByText(/Commands: go, talk, search, accuse, locations, characters, help, quit/),
+      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit/),
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'COMMAND REFERENCE' })).toBeHidden();
   });

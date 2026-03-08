@@ -46,6 +46,12 @@ _(Add components here as they are built. Example format below)_
 - **Purpose**: Modal overlay displaying available commands in different modes.
 - **Props**: None (reads from store)
 
+### `TerminalSpinner.svelte`
+
+- **Purpose**: Terminal-style ASCII spinner for loading/wait states in narration and startup flows.
+- **Props**:
+  - `text`: `string` (optional status text shown next to the spinner)
+
 ## Layout Components
 
 _(Add layout wrappers here)_

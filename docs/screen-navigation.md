@@ -11,22 +11,25 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 
 ## Current Routes
 
-_(Add routes here as they are built. Example format below)_
-
 ### `/` (Start Page)
 
 - **Directory**: `src/routes/+page.svelte`
-- **Purpose**: The landing page where the user selects a mystery blueprint to play or views their historical games.
-- **State Dependencies**: Needs to fetch available `Blueprints` from the backend API.
+- **Purpose**: The landing page where the player selects a mystery blueprint to begin.
+- **State Dependencies**: Fetches available `Blueprints` from the backend API.
+- **Special behavior**:
+  - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
 
-### `/play/[id]` (Game Page)
+### `/session` (Game Page)
 
-- **Directory**: `src/routes/play/[id]/+page.svelte`
+- **Directory**: `src/routes/session/+page.svelte`
 - **Purpose**: The main text-adventure interface.
 - **State Dependencies**:
-  - Loads the specific game session by `id`.
-  - Maintains the event log string and the remaining time.
+  - Reads the active in-memory session from the game store.
+  - Maintains narration/event history, mode, and remaining time.
 - **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
+- **Special behavior**:
+  - During backend waits, narration shows a terminal spinner.
+  - On accusation resolution (`win`/`lose`), input is replaced by a terminal end-state prompt and any key returns to `/`.
 
 ## Navigation Patterns
 

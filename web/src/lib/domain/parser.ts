@@ -43,9 +43,10 @@ const QUIT_ALIASES = ['quit', 'exit'] as const;
 const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
-  explore: "Commands: go, talk, search, accuse, locations, characters, help, quit. Type 'help' for details.",
-  talk: "Commands: ask, bye, help, quit. Type 'help' for details.",
-  accuse: "Commands: ask, help, quit. Type 'help' for details.",
+  explore:
+    "Commands: move to/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit. Type 'help' for details.",
+  talk: "Commands: <question>, bye, help, quit. Type 'help' for details.",
+  accuse: "Commands: <reasoning>, help, quit. Type 'help' for details.",
   ended: "Commands: help, quit. Type 'help' for details.",
 };
 

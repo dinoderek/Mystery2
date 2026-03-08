@@ -178,6 +178,9 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 - Narrator reveals outcome:
   - If correct: explanation + how clues connect + timeline
   - If incorrect: explanation + correct culprit + where reasoning diverged
+- After accusation resolves (`win` or `lose`), gameplay input ends for that session and the UI shows an end-state terminal prompt:
+  - explicit success/failure status
+  - `press any key to go back to the mystery list`
 
 **Hard requirement:** The explanation must make sense and align with:
 

@@ -134,7 +134,7 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(
-      page.getByText(/Commands: go, talk, search, accuse, locations, characters, help, quit/),
+      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit/),
     ).toBeVisible();
   });
 
@@ -236,10 +236,62 @@ test.describe('Command Input', () => {
     await input.fill('He had crumbs on his coat.');
     await input.press('Enter');
     await expect(page.getByText('Case closed.')).toBeVisible();
+    await expect(page.getByTestId('accusation-end-state')).toBeVisible();
+    await expect(page.getByText('[ CASE SOLVED ]')).toBeVisible();
+    await expect(page.getByTestId('return-to-list-prompt')).toBeVisible();
+    await expect(input).toHaveCount(0);
+
+    await page.keyboard.press('x');
+    await expect(page).toHaveURL(/\/$/);
 
     expect(accuseCalls).toBe(2);
     expect(askCalls).toBe(0);
     expect(secondAccusePayload?.player_reasoning).toBe('He had crumbs on his coat.');
+  });
+
+  test('shows failure end-state and returns to list on any key', async ({ page }) => {
+    let accuseCalls = 0;
+
+    await page.route('**/functions/v1/game-accuse*', async (route) => {
+      accuseCalls += 1;
+
+      if (accuseCalls === 1) {
+        await route.fulfill({
+          json: {
+            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            mode: 'accuse',
+            follow_up_prompt: 'Why do you think Mayor Fox did it?',
+            result: null,
+          },
+        });
+        return;
+      }
+
+      await route.fulfill({
+        json: {
+          narration: 'The accusation fails.',
+          mode: 'ended',
+          result: 'lose',
+          follow_up_prompt: null,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('accuse mayor');
+    await input.press('Enter');
+    await expect(page.getByText('You accuse Mayor Fox. Explain your reasoning.')).toBeVisible();
+
+    await input.fill('My theory is weak.');
+    await input.press('Enter');
+    await expect(page.getByText('The accusation fails.')).toBeVisible();
+    await expect(page.getByText('[ CASE UNSOLVED ]')).toBeVisible();
+    await expect(page.getByTestId('return-to-list-prompt')).toBeVisible();
+
+    await page.keyboard.press('z');
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test('keeps parsing narrator reasoning across multiple accuse rounds', async ({ page }) => {
@@ -335,6 +387,30 @@ test.describe('Command Input', () => {
     expect(searchCalls).toBe(0);
     expect(accusePayloads[1]?.player_reasoning).toBe('go to kitchen because he hid the tray there');
     expect(accusePayloads[2]?.player_reasoning).toBe('talk to rosie confirms he was lying');
+  });
+
+  test('shows terminal loading indicator while waiting for backend narration', async ({ page }) => {
+    await page.route('**/functions/v1/game-search*', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      await route.fulfill({
+        json: {
+          narration: 'Search complete.',
+          time_remaining: 9,
+          mode: 'explore',
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('Enter');
+
+    await expect(page.getByTestId('terminal-spinner')).toBeVisible();
+    await expect(page.getByText('Narrator is thinking...')).toBeVisible();
+    await expect(page.getByText('Search complete.')).toBeVisible();
+    await expect(page.getByTestId('terminal-spinner')).toHaveCount(0);
   });
 
   test('retries transient backend failures and succeeds', async ({ page }) => {

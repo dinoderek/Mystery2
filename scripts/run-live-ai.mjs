@@ -1,6 +1,10 @@
-import { spawnSync } from "node:child_process";
-import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  loadEnvFile,
+  npmBin,
+  runCommand,
+  smartStartSupabase,
+} from "./supabase-utils.mjs";
 
 const suite = process.argv[2];
 const mode = process.argv[3];
@@ -13,63 +17,6 @@ if ((suite !== "integration" && suite !== "e2e") || (mode !== "free" && mode !==
 const rootDir = process.cwd();
 const baseEnvPath = path.join(rootDir, ".env.local");
 const modeEnvPath = path.join(rootDir, `.env.ai.${mode}.local`);
-
-function parseEnvLine(line) {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith("#")) return null;
-  const firstEq = trimmed.indexOf("=");
-  if (firstEq === -1) return null;
-
-  const key = trimmed.slice(0, firstEq).trim();
-  if (!key) return null;
-
-  let value = trimmed.slice(firstEq + 1).trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    value = value.slice(1, -1);
-  }
-
-  return [key, value];
-}
-
-async function loadEnvFile(filePath, required = false) {
-  let contents;
-  try {
-    contents = await fs.readFile(filePath, "utf-8");
-  } catch {
-    if (required) {
-      throw new Error(`Missing required env file: ${path.basename(filePath)}`);
-    }
-    return {};
-  }
-
-  const vars = {};
-  for (const line of contents.split(/\r?\n/u)) {
-    const parsed = parseEnvLine(line);
-    if (!parsed) continue;
-    const [key, value] = parsed;
-    vars[key] = value;
-  }
-  return vars;
-}
-
-function runCommand(command, args, env, allowFailure = false) {
-  const result = spawnSync(command, args, {
-    stdio: "inherit",
-    env,
-  });
-
-  if (result.error) throw result.error;
-  if (allowFailure) return;
-  if ((result.status ?? 1) !== 0) {
-    process.exit(result.status ?? 1);
-  }
-}
-
-const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
-const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
@@ -105,8 +52,7 @@ try {
   };
 
   console.log(`Running ${suite} live AI tests in "${mode}" mode...`);
-  runCommand(npxBin, ["supabase", "stop"], env, true);
-  runCommand(npxBin, ["supabase", "start"], env);
+  await smartStartSupabase(rootDir, mode, env, { forceRestart: true });
   runCommand(npmBin, ["run", "seed:storage"], env);
   runCommand(
     npmBin,

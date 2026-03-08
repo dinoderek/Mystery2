@@ -1,10 +1,8 @@
 import path from "node:path";
 import {
-  npxBin,
   loadEnvFile,
-  runCommand,
   getRecordedMode,
-  writeRecordedMode,
+  smartStartSupabase,
 } from "./supabase-utils.mjs";
 
 const rootDir = process.cwd();
@@ -39,7 +37,5 @@ if (recordedMode === "mock") {
 }
 
 console.log(`Restarting supabase in "${recordedMode}" AI mode...`);
-runCommand(npxBin, ["supabase", "stop"], env, true);
-runCommand(npxBin, ["supabase", "start"], env);
-await writeRecordedMode(rootDir, recordedMode);
+await smartStartSupabase(rootDir, recordedMode, env, { forceRestart: true });
 console.log("Done.");

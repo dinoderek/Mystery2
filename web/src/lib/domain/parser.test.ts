@@ -184,8 +184,8 @@ describe('parseCommand - target validation and lists', () => {
     const result = parseCommand('wander to market', 'explore', context);
     expect(result.type).toBe('unrecognized');
     if (result.type === 'unrecognized') {
-      expect(result.hint).toContain('go');
-      expect(result.hint).toContain('talk');
+      expect(result.hint).toContain('move to/go to');
+      expect(result.hint).toContain('talk to');
       expect(result.hint).toContain('help');
     }
   });

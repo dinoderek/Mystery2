@@ -2,6 +2,7 @@
   import { tick } from "svelte";
   import { gameSessionStore } from "$lib/domain/store.svelte";
   import TerminalMessage from "./TerminalMessage.svelte";
+  import TerminalSpinner from "./TerminalSpinner.svelte";
 
   let sentinel: HTMLDivElement;
 
@@ -33,6 +34,10 @@
           type={event.actor === "player" ? "player" : "system"}
         />
       {/each}
+    {/if}
+
+    {#if gameSessionStore.status === "loading" && gameSessionStore.state}
+      <TerminalSpinner text="Narrator is thinking..." />
     {/if}
   </div>
   <!-- Sentinel element used as scroll target -->

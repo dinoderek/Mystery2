@@ -13,7 +13,19 @@
       goto('/');
     }
   });
+
+  async function handleKeydown(event: KeyboardEvent) {
+    if (!gameSessionStore.awaitingReturnToList) {
+      return;
+    }
+
+    event.preventDefault();
+    gameSessionStore.clearSessionForMysteryList();
+    await goto('/');
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <main class="min-h-screen bg-black text-green-400 font-mono p-4 flex flex-col h-screen max-w-4xl mx-auto">
   <Header />

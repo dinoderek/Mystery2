@@ -1,12 +1,31 @@
 import { describe, it, expect } from "vitest";
 
 const API_URL = "http://127.0.0.1:54331/functions/v1";
+const REST_URL = "http://127.0.0.1:54331/rest/v1";
+
+async function fetchSessionSnapshot(gameId: string, anonKey: string) {
+  const res = await fetch(
+    `${REST_URL}/game_sessions?id=eq.${gameId}&select=mode,outcome`,
+    {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+    },
+  );
+
+  expect(res.status).toBe(200);
+  const rows = await res.json();
+  expect(rows).toHaveLength(1);
+  return rows[0] as { mode: string; outcome: string | null };
+}
 
 describe("game-accuse endpoint", () => {
   it("runs a two-stage accusation flow and resolves to win", async () => {
+    const anonKey = process.env.ANON_KEY ?? "";
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.ANON_KEY}`,
+      Authorization: `Bearer ${anonKey}`,
     };
 
     const startRes = await fetch(`${API_URL}/game-start`, {
@@ -56,12 +75,27 @@ describe("game-accuse endpoint", () => {
     const accuseRoundTwoData = await accuseRoundTwoRes.json();
     expect(accuseRoundTwoData.mode).toBe("ended");
     expect(accuseRoundTwoData.result).toBe("win");
+
+    const sessionAfterResolution = await fetchSessionSnapshot(game_id, anonKey);
+    expect(sessionAfterResolution.mode).toBe("ended");
+    expect(sessionAfterResolution.outcome).toBe("win");
+
+    const accuseAfterEndedRes = await fetch(`${API_URL}/game-accuse`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        game_id,
+        player_reasoning: "One more argument after ending.",
+      }),
+    });
+    expect(accuseAfterEndedRes.status).toBe(400);
   });
 
   it("resolves to lose for an incorrect suspect", async () => {
+    const anonKey = process.env.ANON_KEY ?? "";
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.ANON_KEY}`,
+      Authorization: `Bearer ${anonKey}`,
     };
 
     const startRes = await fetch(`${API_URL}/game-start`, {
@@ -101,5 +135,19 @@ describe("game-accuse endpoint", () => {
     const resolveData = await resolveRes.json();
     expect(resolveData.mode).toBe("ended");
     expect(resolveData.result).toBe("lose");
+
+    const sessionAfterResolution = await fetchSessionSnapshot(game_id, anonKey);
+    expect(sessionAfterResolution.mode).toBe("ended");
+    expect(sessionAfterResolution.outcome).toBe("lose");
+
+    const accuseAfterEndedRes = await fetch(`${API_URL}/game-accuse`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        game_id,
+        player_reasoning: "Trying to accuse again after outcome.",
+      }),
+    });
+    expect(accuseAfterEndedRes.status).toBe(400);
   });
 });

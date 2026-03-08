@@ -29,6 +29,8 @@ export class GameSessionStore {
   isRetrying = $state(false);
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
+  accusationOutcome = $state<'win' | 'lose' | null>(null);
+  awaitingReturnToList = $state(false);
 
   async loadBlueprints() {
     this.status = 'loading';
@@ -54,6 +56,8 @@ export class GameSessionStore {
       this.game_id = data.game_id;
       this.state = data.state;
       this.lastFailedInput = null;
+      this.accusationOutcome = null;
+      this.awaitingReturnToList = false;
       this.status = 'active';
     }
   }
@@ -68,7 +72,7 @@ export class GameSessionStore {
   }
 
   async submitInput(input: string) {
-    if (!this.state || !this.game_id || this.status === 'loading') {
+    if (!this.state || !this.game_id || this.status === 'loading' || this.awaitingReturnToList) {
       return;
     }
 
@@ -211,7 +215,22 @@ export class GameSessionStore {
     this.isRetrying = false;
     this.retryCount = 0;
     this.lastFailedInput = null;
+    this.accusationOutcome = null;
+    this.awaitingReturnToList = false;
     this.appendSystemFeedback("Session ended. Type 'help' for options or start a new game.");
+  }
+
+  clearSessionForMysteryList() {
+    this.game_id = null;
+    this.state = null;
+    this.status = 'idle';
+    this.error = null;
+    this.showHelp = false;
+    this.isRetrying = false;
+    this.retryCount = 0;
+    this.lastFailedInput = null;
+    this.accusationOutcome = null;
+    this.awaitingReturnToList = false;
   }
 
   private getBackendInvocation(command: ActionCommand): BackendInvocation {
@@ -316,6 +335,17 @@ export class GameSessionStore {
     if (typeof data.current_talk_character === 'string' || data.current_talk_character === null) {
       this.state.current_talk_character = data.current_talk_character;
     }
+
+    const outcome = data.result;
+    const isAccuseEnded = endpoint === 'game-accuse' && data.mode === 'ended';
+    if (isAccuseEnded && (outcome === 'win' || outcome === 'lose')) {
+      this.accusationOutcome = outcome;
+      this.awaitingReturnToList = true;
+      return;
+    }
+
+    this.accusationOutcome = null;
+    this.awaitingReturnToList = false;
   }
 
   private async submitValidCommand(command: ActionCommand, rawInput: string) {

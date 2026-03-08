@@ -35,6 +35,7 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/parser.test.ts` validates:
   - alias recognition (move/talk/search/end/help/quit/list)
   - mode-aware behavior across explore/talk/accuse/ended
+  - canonical command hint text accuracy (`move to/go to`, `talk to`, `accuse <character>`)
   - accuse-mode command-like input (for example `go ...`, `talk ...`) stays narrator-facing and is treated as reasoning text
   - client-side missing/invalid target branches and suggestions
   - unrecognized inline hint generation
@@ -70,6 +71,7 @@ AI calls:
 - Never call OpenRouter in integration tests.
 - Instead, configure Edge Functions to use a mock provider when `AI_PROVIDER=mock` (or similar config).
 - Assert the persisted DB side effects match expectations.
+  - accusation resolution persists `game_sessions.mode='ended'` and `game_sessions.outcome='win'|'lose'`
 - Live provider checks are isolated in dedicated opt-in suites (see below).
 
 Runner:
@@ -115,6 +117,10 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - no retry on permanent 4xx failures
 - parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
 - accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
+- accusation end-state UX: success/failure message, input lock, and `press any key` return-to-list prompt
+- terminal loading indicators:
+  - narration-area wait spinner during backend calls
+  - centered start-screen spinner while a selected mystery is initializing
 
 Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
 
@@ -142,6 +148,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 1. Restarts Supabase in deterministic mock-AI mode
 2. Seeds storage blueprints from local blueprint directories
 3. Uses Vitest to run the integration test suite (handling its own data isolation)
+4. Uses the shared restart path (`scripts/run-mock-tests.mjs` → `smartStartSupabase`) so mode tracking is consistent with dev/live scripts
 
 ### E2E test script
 
@@ -150,6 +157,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 1. Restarts Supabase in deterministic mock-AI mode
 2. Seeds storage blueprints from local blueprint directories
 3. Runs Vitest against the running Edge Functions to validate full player journeys
+4. Uses the shared restart path (`scripts/run-mock-tests.mjs` → `smartStartSupabase`) so mode tracking is consistent with dev/live scripts
 
 ### Live-AI suites (opt-in)
 

@@ -86,9 +86,23 @@ export async function writeRecordedMode(rootDir, mode) {
  * Start supabase only if not already running in the desired mode.
  * Writes the mode to .supabase-ai-mode on (re)start.
  */
-export async function smartStartSupabase(rootDir, mode, env) {
+export async function smartStartSupabase(
+  rootDir,
+  mode,
+  env,
+  options = {},
+) {
+  const { forceRestart = false } = options;
   const recordedMode = await getRecordedMode(rootDir);
   const running = isSupabaseRunning(env);
+
+  if (forceRestart) {
+    console.log(`Force restarting supabase in "${mode}" AI mode...`);
+    runCommand(npxBin, ["supabase", "stop"], env, true);
+    runCommand(npxBin, ["supabase", "start"], env);
+    await writeRecordedMode(rootDir, mode);
+    return;
+  }
 
   if (running && recordedMode === mode) {
     console.log(`Supabase already running in "${mode}" AI mode — skipping restart.`);

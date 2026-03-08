@@ -35,7 +35,7 @@ The backend relies on Supabase for the database, auth, and edge functions.
    ```
    *The UI will usually be available at `http://localhost:5173`.*
 
-Tip: `npm run dev` from the repository root restarts Supabase in deterministic mock-AI mode, seeds storage blueprints, then starts the web UI.
+Tip: `npm run dev` from the repository root starts Supabase in deterministic mock-AI mode (skipping the restart if it is already running in that mode), seeds storage blueprints, then starts the web UI.
 
 ## Local human testing with AI
 Use mode-specific local env files (gitignored) to run the full local stack against real models.
@@ -55,6 +55,13 @@ Use mode-specific local env files (gitignored) to run the full local stack again
 3. Start local stack in AI mode:
    - Free model: `npm run dev:ai:free`
    - Paid model: `npm run dev:ai:paid`
+
+   Each script detects whether Supabase is already running in the requested AI mode. If so, it skips the restart — switching modes will trigger a restart automatically.
+
+4. To force a restart of Supabase in the current AI mode (e.g. after a config change):
+   ```bash
+   npm run supabase:restart
+   ```
 
 ## Accessing Edge Function Logs
 To inspect structured AI/provider logs without OrbStack UI:

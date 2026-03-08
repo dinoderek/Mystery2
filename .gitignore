@@ -13,3 +13,4 @@ Thumbs.db
 .vscode/
 .idea/
 .supabase-ai-mode
+.claude/

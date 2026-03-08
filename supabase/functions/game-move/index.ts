@@ -1,17 +1,29 @@
 import { createClient } from "../_shared/db.ts";
-import { badRequest, internalError } from "../_shared/errors.ts";
+import {
+  asRetriableAIResponse,
+  badRequest,
+  internalError,
+  RetriableAIError,
+} from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { getAIProvider } from "../_shared/ai-provider.ts";
+import {
+  createAIRequestMetadata,
+  getAIProvider,
+} from "../_shared/ai-provider.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
     return new Response("Method not allowed", { status: 405 });
+  const logger = createRequestLogger(req, "game-move");
+  const { requestId, log, logError } = logger;
 
   try {
     const body = await req.json();
     if (!body || !body.game_id || !body.destination) {
+      log("request.invalid", { reason: "missing_game_id_or_destination" });
       return badRequest("Missing game_id or destination");
     }
 
@@ -25,7 +37,10 @@ Deno.serve(async (req) => {
       .eq("id", game_id)
       .single();
 
-    if (sessionError || !session) return badRequest("Game session not found");
+    if (sessionError || !session) {
+      log("request.invalid", { reason: "session_not_found", game_id: game_id });
+      return badRequest("Game session not found");
+    }
 
     validateTransition(session.mode, "move");
 
@@ -33,14 +48,27 @@ Deno.serve(async (req) => {
     const { data: fileData, error: downloadError } = await db.storage
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
-    if (downloadError) return internalError("Blueprint missing");
+    if (downloadError) {
+      logError("request.error", {
+        reason: "blueprint_missing",
+        game_id: game_id,
+      });
+      return internalError("Blueprint missing");
+    }
     const blueprintText = await fileData.text();
     const blueprint = BlueprintSchema.parse(JSON.parse(blueprintText));
 
     const destLoc = blueprint.world.locations.find(
       (l) => l.name === destination,
     );
-    if (!destLoc) return badRequest("Invalid destination");
+    if (!destLoc) {
+      log("request.invalid", {
+        reason: "invalid_destination",
+        game_id: game_id,
+        destination,
+      });
+      return badRequest("Invalid destination");
+    }
 
     let newTime = session.time_remaining - 1;
     let nextMode = session.mode;
@@ -68,7 +96,13 @@ Deno.serve(async (req) => {
     }
 
     const ai = getAIProvider();
-    const narration = await ai.generateNarration(aiPrompt);
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-move",
+      action: "move",
+      game_id: game_id,
+    });
+    const narration = await ai.generateNarration(aiPrompt, aiMetadata);
 
     // Update Session
     const { error: updateError } = await db
@@ -81,7 +115,13 @@ Deno.serve(async (req) => {
       })
       .eq("id", game_id);
 
-    if (updateError) return internalError("Failed to update session");
+    if (updateError) {
+      logError("request.error", {
+        reason: "session_update_failed",
+        game_id: game_id,
+      });
+      return internalError("Failed to update session");
+    }
 
     // Record Event
     const { data: events } = await db
@@ -119,8 +159,26 @@ Deno.serve(async (req) => {
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
-    if (err.name === "BadRequestError") return badRequest(err.message);
-    console.error(err);
+    if (err instanceof RetriableAIError) {
+      log("request.ai_retriable", {
+        code: err.details.code ?? null,
+        status: err.details.status ?? null,
+        error: err.message,
+      });
+      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
+    }
+    const aiResponse = asRetriableAIResponse(err);
+    if (aiResponse) return aiResponse;
+    if (err instanceof Error && err.name === "BadRequestError") {
+      log("request.invalid", {
+        reason: "bad_request_error",
+        message: err.message,
+      });
+      return badRequest(err.message);
+    }
+    logError("request.unhandled_error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return internalError("Internal Server Error");
   }
 });

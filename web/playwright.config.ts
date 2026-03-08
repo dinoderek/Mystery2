@@ -1,4 +1,43 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+function parseEnvFile(filePath: string): Record<string, string> {
+  if (!fs.existsSync(filePath)) return {};
+  const contents = fs.readFileSync(filePath, 'utf8');
+  const vars: Record<string, string> = {};
+
+  for (const line of contents.split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const firstEq = trimmed.indexOf('=');
+    if (firstEq === -1) continue;
+
+    const key = trimmed.slice(0, firstEq).trim();
+    let value = trimmed.slice(firstEq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    vars[key] = value;
+  }
+
+  return vars;
+}
+
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const rootEnv = parseEnvFile(path.resolve(configDir, '../.env.local'));
+const webServerEnv = {
+  ...process.env,
+  VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? rootEnv.API_URL ?? 'http://127.0.0.1:54331',
+  VITE_SUPABASE_ANON_KEY:
+    process.env.VITE_SUPABASE_ANON_KEY ??
+    rootEnv.ANON_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY,
+};
 
 /**
  * Read environment variables from file.
@@ -75,5 +114,6 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
+    env: webServerEnv,
   },
 });

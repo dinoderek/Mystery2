@@ -12,6 +12,7 @@ export default tseslint.config(
       "scripts/**",
       ".specify/**", // speckit
       ".agent/**", // speckit
+      ".claude/**", // local agent worktrees
       "**/build/**",
       "**/coverage/**",
       "**/*.min.js",

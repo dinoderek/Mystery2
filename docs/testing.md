@@ -35,6 +35,7 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/parser.test.ts` validates:
   - alias recognition (move/talk/search/end/help/quit/list)
   - mode-aware behavior across explore/talk/accuse/ended
+  - accuse-mode command-like input (for example `go ...`, `talk ...`) stays narrator-facing and is treated as reasoning text
   - client-side missing/invalid target branches and suggestions
   - unrecognized inline hint generation
 - `web/src/lib/domain/store.retry.test.ts` validates:
@@ -112,6 +113,10 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - detailed help modal on `help`
 - transient failure retries and retry-exhaustion/manual-retry UX
 - no retry on permanent 4xx failures
+- parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
+- accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
+
+Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
 
 ## Test Isolation Strategy (Logical Isolation)
 
@@ -163,6 +168,19 @@ Live suites require:
 
 - `AI_LIVE=1`
 - mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER`, `AI_MODEL`, and `OPENROUTER_API_KEY`
+- resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
+- higher timeout budget for real model latency (default 600s per live test)
+- live suites may short-circuit with a warning when retries are exhausted by upstream transient failures
+
+Live API E2E investigator coverage must exercise all actions:
+
+- `move`
+- `search`
+- `talk`
+- `ask`
+- `end_talk`
+- `accuse_start`
+- `accuse_reasoning`
 
 ## RLS policy testing (minimum bar)
 
@@ -182,6 +200,8 @@ At least the following should be tested:
   - Playwright screenshots/traces (E2E)
   - Edge Function logs from local Supabase (integration)
   - DB state snapshot for debugging (optional helper in testkit)
+- Preferred local log tail command:
+  - `npm run logs:edge`
 
 ## Quality Gates
 

@@ -6,7 +6,11 @@ import {
   RetriableAIError,
 } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { getAIProvider } from "../_shared/ai-provider.ts";
+import {
+  createAIRequestMetadata,
+  getAIProvider,
+} from "../_shared/ai-provider.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkStartContext } from "../_shared/ai-context.ts";
@@ -30,10 +34,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
+  const logger = createRequestLogger(req, "game-talk");
+  const { requestId, log, logError } = logger;
 
   try {
     const body = await req.json();
     if (!body || !body.game_id || !body.character_name) {
+      log("request.invalid", { reason: "missing_game_id_or_character_name" });
       return badRequest("Missing game_id or character_name");
     }
 
@@ -47,6 +54,7 @@ Deno.serve(async (req) => {
       .eq("id", gameId)
       .single();
     if (sessionError || !session) {
+      log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
 
@@ -56,6 +64,10 @@ Deno.serve(async (req) => {
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
     if (downloadError) {
+      logError("request.error", {
+        reason: "blueprint_missing",
+        game_id: gameId,
+      });
       return internalError("Blueprint missing");
     }
 
@@ -66,6 +78,12 @@ Deno.serve(async (req) => {
         character.location === session.current_location_id,
     );
     if (!activeCharacter) {
+      log("request.invalid", {
+        reason: "character_not_found_in_location",
+        game_id: gameId,
+        character_name: characterName,
+        location_name: session.current_location_id,
+      });
       return badRequest(
         `Character ${characterName} not found in ${session.current_location_id}`,
       );
@@ -92,6 +110,12 @@ Deno.serve(async (req) => {
       location_name: session.current_location_id,
       target_age: blueprint.metadata.target_age,
     });
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-talk",
+      action: "talk",
+      game_id: gameId,
+    });
 
     const aiProvider = getAIProvider();
     let talkStartOutput: ReturnType<typeof parseTalkStartOutput>;
@@ -101,11 +125,23 @@ Deno.serve(async (req) => {
         prompt,
         context: aiContext,
         parse: parseTalkStartOutput,
+        metadata: aiMetadata,
       });
     } catch (error) {
       if (error instanceof RetriableAIError) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          code: error.details.code ?? null,
+          status: error.details.status ?? null,
+          error: error.message,
+        });
         return aiRetriableError(error.message, error.details);
       }
+      log("request.ai_retriable", {
+        game_id: gameId,
+        code: "AI_INVALID_OUTPUT",
+        error: "AI output validation failed",
+      });
       return aiRetriableError("AI output validation failed", {
         code: "AI_INVALID_OUTPUT",
       });
@@ -128,6 +164,10 @@ Deno.serve(async (req) => {
       })
       .eq("id", gameId);
     if (updateError) {
+      logError("request.error", {
+        reason: "session_update_failed",
+        game_id: gameId,
+      });
       return internalError("Failed to update session");
     }
 
@@ -160,9 +200,15 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     if (error instanceof Error && error.name === "BadRequestError") {
+      log("request.invalid", {
+        reason: "bad_request_error",
+        message: error.message,
+      });
       return badRequest(error.message);
     }
-    console.error(error);
+    logError("request.unhandled_error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return internalError("Internal Server Error");
   }
 });

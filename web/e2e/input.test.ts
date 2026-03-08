@@ -138,6 +138,205 @@ test.describe('Command Input', () => {
     ).toBeVisible();
   });
 
+  test('sends player_input payload when asking in talk mode', async ({ page }) => {
+    let talkCalls = 0;
+    let askCalls = 0;
+    let askPayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      talkCalls += 1;
+      await route.fulfill({
+        json: {
+          narration: 'Mayor Fox nods and listens carefully.',
+          mode: 'talk',
+          time_remaining: 9,
+          current_talk_character: 'Mayor',
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-ask*', async (route) => {
+      askCalls += 1;
+      askPayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        json: {
+          narration: 'Mayor Fox answers your question.',
+          mode: 'talk',
+          time_remaining: 8,
+          current_talk_character: 'Mayor',
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await expect(page.getByText('Mayor Fox nods and listens carefully.')).toBeVisible();
+
+    await input.fill('Where were you?');
+    await input.press('Enter');
+    await expect(page.getByText('Mayor Fox answers your question.')).toBeVisible();
+
+    expect(talkCalls).toBe(1);
+    expect(askCalls).toBe(1);
+    expect(askPayload?.player_input).toBe('Where were you?');
+    expect(askPayload && 'question' in askPayload).toBe(false);
+  });
+
+  test('routes accuse-mode free text to game-accuse reasoning (not game-ask)', async ({ page }) => {
+    let accuseCalls = 0;
+    let askCalls = 0;
+    let secondAccusePayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-ask*', async (route) => {
+      askCalls += 1;
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unexpected game-ask call' }),
+      });
+    });
+
+    await page.route('**/functions/v1/game-accuse*', async (route) => {
+      accuseCalls += 1;
+      const payload = route.request().postDataJSON() as Record<string, unknown>;
+
+      if (accuseCalls === 1) {
+        await route.fulfill({
+          json: {
+            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            mode: 'accuse',
+            follow_up_prompt: 'Why do you think Mayor Fox did it?',
+            result: null,
+          },
+        });
+        return;
+      }
+
+      secondAccusePayload = payload;
+      await route.fulfill({
+        json: {
+          narration: 'Case closed.',
+          mode: 'ended',
+          result: 'win',
+          follow_up_prompt: null,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('accuse mayor');
+    await input.press('Enter');
+    await expect(page.getByText('You accuse Mayor Fox. Explain your reasoning.')).toBeVisible();
+
+    await input.fill('He had crumbs on his coat.');
+    await input.press('Enter');
+    await expect(page.getByText('Case closed.')).toBeVisible();
+
+    expect(accuseCalls).toBe(2);
+    expect(askCalls).toBe(0);
+    expect(secondAccusePayload?.player_reasoning).toBe('He had crumbs on his coat.');
+  });
+
+  test('keeps parsing narrator reasoning across multiple accuse rounds', async ({ page }) => {
+    let accuseCalls = 0;
+    let askCalls = 0;
+    let moveCalls = 0;
+    let talkCalls = 0;
+    let searchCalls = 0;
+    const accusePayloads: Record<string, unknown>[] = [];
+
+    await page.route('**/functions/v1/game-ask*', async (route) => {
+      askCalls += 1;
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unexpected game-ask call' }),
+      });
+    });
+
+    await page.route('**/functions/v1/game-move*', async (route) => {
+      moveCalls += 1;
+      await route.fulfill({ json: { narration: 'unexpected move call' } });
+    });
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      talkCalls += 1;
+      await route.fulfill({ json: { narration: 'unexpected talk call' } });
+    });
+
+    await page.route('**/functions/v1/game-search*', async (route) => {
+      searchCalls += 1;
+      await route.fulfill({ json: { narration: 'unexpected search call' } });
+    });
+
+    await page.route('**/functions/v1/game-accuse*', async (route) => {
+      accuseCalls += 1;
+      const payload = route.request().postDataJSON() as Record<string, unknown>;
+      accusePayloads.push(payload);
+
+      if (accuseCalls === 1) {
+        await route.fulfill({
+          json: {
+            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            mode: 'accuse',
+            follow_up_prompt: 'Why do you think Mayor Fox did it?',
+            result: null,
+          },
+        });
+        return;
+      }
+
+      if (accuseCalls === 2) {
+        await route.fulfill({
+          json: {
+            narration: 'I need stronger evidence. Keep explaining.',
+            mode: 'accuse',
+            follow_up_prompt: 'What clue ties the suspect to the scene?',
+            result: null,
+          },
+        });
+        return;
+      }
+
+      await route.fulfill({
+        json: {
+          narration: 'Final verdict reached.',
+          mode: 'ended',
+          result: 'win',
+          follow_up_prompt: null,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('accuse mayor');
+    await input.press('Enter');
+    await expect(page.getByText('You accuse Mayor Fox. Explain your reasoning.')).toBeVisible();
+
+    await input.fill('go to kitchen because he hid the tray there');
+    await input.press('Enter');
+    await expect(page.getByText('I need stronger evidence. Keep explaining.')).toBeVisible();
+
+    await input.fill('talk to rosie confirms he was lying');
+    await input.press('Enter');
+    await expect(page.getByText('Final verdict reached.')).toBeVisible();
+
+    expect(accuseCalls).toBe(3);
+    expect(askCalls).toBe(0);
+    expect(moveCalls).toBe(0);
+    expect(talkCalls).toBe(0);
+    expect(searchCalls).toBe(0);
+    expect(accusePayloads[1]?.player_reasoning).toBe('go to kitchen because he hid the tray there');
+    expect(accusePayloads[2]?.player_reasoning).toBe('talk to rosie confirms he was lying');
+  });
+
   test('retries transient backend failures and succeeds', async ({ page }) => {
     let searchCalls = 0;
 

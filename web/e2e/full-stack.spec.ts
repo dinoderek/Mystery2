@@ -1,0 +1,34 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('Full stack browser flow', () => {
+  test('covers parser + store + backend state machine for talk/ask', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('MYSTERY GAME TERMINAL')).toBeVisible();
+
+    try {
+      await expect(page.locator('h2.text-xl').first()).toBeVisible({ timeout: 8000 });
+    } catch {
+      test.skip(true, 'Requires local Supabase running with seeded blueprints.');
+      return;
+    }
+
+    const caseTitles = await page.locator('h2.text-xl').allTextContents();
+    const honeyCakeIndex = caseTitles.findIndex((title) => title.includes('Missing Honey Cakes'));
+    test.skip(honeyCakeIndex === -1, 'Missing Honey Cakes blueprint is not available in local storage seed.');
+
+    await page.keyboard.press(String(honeyCakeIndex + 1));
+    await expect(page).toHaveURL(/.*\/session/);
+
+    const input = page.locator("input[type='text']");
+
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await expect(page.getByText(/\[Mock\] Mayor greets you/i)).toBeVisible();
+
+    await input.fill('Where were you when the cakes disappeared?');
+    await input.press('Enter');
+
+    await expect(page.getByText(/\[Mock\] Mayor responds thoughtfully to:/i)).toBeVisible();
+    await expect(page.getByText(/Request failed:/i)).toHaveCount(0);
+  });
+});

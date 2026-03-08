@@ -26,6 +26,11 @@ export const investigatorScript: InvestigatorScriptCase = {
   max_turns: 10,
   steps: [
     {
+      action: "move",
+      payload: { destination: "Kitchen" },
+      expect_mode: "explore",
+    },
+    {
       action: "search",
       payload: {},
       expect_mode: "explore",

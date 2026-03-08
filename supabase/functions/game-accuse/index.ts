@@ -9,7 +9,11 @@ import {
   resolveAccusationAction,
   validateTransition,
 } from "../_shared/state-machine.ts";
-import { getAIProvider } from "../_shared/ai-provider.ts";
+import {
+  createAIRequestMetadata,
+  getAIProvider,
+} from "../_shared/ai-provider.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import {
   parseAccusationJudgeOutput,
@@ -69,10 +73,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
+  const logger = createRequestLogger(req, "game-accuse");
+  const { requestId, log, logError } = logger;
 
   try {
     const body = await req.json();
     if (!body || !body.game_id) {
+      log("request.invalid", { reason: "missing_game_id" });
       return badRequest("Missing game_id");
     }
 
@@ -95,6 +102,7 @@ Deno.serve(async (req) => {
       .eq("id", gameId)
       .single();
     if (sessionError || !session) {
+      log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
 
@@ -102,6 +110,10 @@ Deno.serve(async (req) => {
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
     if (downloadError) {
+      logError("request.error", {
+        reason: "blueprint_missing",
+        game_id: gameId,
+      });
       return internalError("Blueprint missing");
     }
     const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
@@ -118,6 +130,10 @@ Deno.serve(async (req) => {
     if (session.mode === "explore") {
       validateTransition(session.mode, resolveAccusationAction(session.mode));
       if (!accusedCharacterInput) {
+        log("request.invalid", {
+          reason: "missing_accused_character_id",
+          game_id: gameId,
+        });
         return badRequest("Missing accused_character_id");
       }
 
@@ -126,6 +142,11 @@ Deno.serve(async (req) => {
         accusedCharacterInput,
       );
       if (!accusedCharacter) {
+        log("request.invalid", {
+          reason: "character_not_found_in_blueprint",
+          game_id: gameId,
+          accused_character_id: accusedCharacterInput,
+        });
         return badRequest("Character not found in blueprint");
       }
 
@@ -143,6 +164,12 @@ Deno.serve(async (req) => {
       const prompt = renderPrompt(promptTemplate, {
         accused_character: accusedCharacter.first_name,
       });
+      const aiMetadata = createAIRequestMetadata(req, {
+        request_id: requestId,
+        endpoint: "game-accuse",
+        action: "accuse_start",
+        game_id: gameId,
+      });
 
       let startOutput: ReturnType<typeof parseAccusationStartOutput>;
       try {
@@ -151,11 +178,25 @@ Deno.serve(async (req) => {
           prompt,
           context: aiContext,
           parse: parseAccusationStartOutput,
+          metadata: aiMetadata,
         });
       } catch (error) {
         if (error instanceof RetriableAIError) {
+          log("request.ai_retriable", {
+            game_id: gameId,
+            action: "accuse_start",
+            code: error.details.code ?? null,
+            status: error.details.status ?? null,
+            error: error.message,
+          });
           return aiRetriableError(error.message, error.details);
         }
+        log("request.ai_retriable", {
+          game_id: gameId,
+          action: "accuse_start",
+          code: "AI_INVALID_OUTPUT",
+          error: "AI output validation failed",
+        });
         return aiRetriableError("AI output validation failed", {
           code: "AI_INVALID_OUTPUT",
         });
@@ -170,6 +211,11 @@ Deno.serve(async (req) => {
         })
         .eq("id", gameId);
       if (updateError) {
+        logError("request.error", {
+          reason: "session_update_failed",
+          game_id: gameId,
+          action: "accuse_start",
+        });
         return internalError("Failed to update session");
       }
 
@@ -200,6 +246,10 @@ Deno.serve(async (req) => {
     if (session.mode === "accuse") {
       validateTransition(session.mode, resolveAccusationAction(session.mode));
       if (playerReasoning.length === 0) {
+        log("request.invalid", {
+          reason: "missing_player_reasoning",
+          game_id: gameId,
+        });
         return badRequest("Missing player_reasoning");
       }
 
@@ -211,6 +261,10 @@ Deno.serve(async (req) => {
         getAccusedCharacterFromStartEvent(latestAccuseStart) ??
         null;
       if (!accusedCharacterId) {
+        log("request.invalid", {
+          reason: "missing_accused_character_context",
+          game_id: gameId,
+        });
         return badRequest("Unable to determine accused character");
       }
 
@@ -219,6 +273,11 @@ Deno.serve(async (req) => {
         accusedCharacterId,
       );
       if (!accusedCharacter) {
+        log("request.invalid", {
+          reason: "character_not_found_in_blueprint",
+          game_id: gameId,
+          accused_character_id: accusedCharacterId,
+        });
         return badRequest("Character not found in blueprint");
       }
 
@@ -240,6 +299,12 @@ Deno.serve(async (req) => {
       const prompt = renderPrompt(promptTemplate, {
         accused_character: accusedCharacter.first_name,
       });
+      const aiMetadata = createAIRequestMetadata(req, {
+        request_id: requestId,
+        endpoint: "game-accuse",
+        action: "accuse_reasoning",
+        game_id: gameId,
+      });
 
       let judgeOutput: ReturnType<typeof parseAccusationJudgeOutput>;
       try {
@@ -252,11 +317,25 @@ Deno.serve(async (req) => {
             is_culprit: accusedCharacter.is_culprit,
           },
           parse: parseAccusationJudgeOutput,
+          metadata: aiMetadata,
         });
       } catch (error) {
         if (error instanceof RetriableAIError) {
+          log("request.ai_retriable", {
+            game_id: gameId,
+            action: "accuse_reasoning",
+            code: error.details.code ?? null,
+            status: error.details.status ?? null,
+            error: error.message,
+          });
           return aiRetriableError(error.message, error.details);
         }
+        log("request.ai_retriable", {
+          game_id: gameId,
+          action: "accuse_reasoning",
+          code: "AI_INVALID_OUTPUT",
+          error: "AI output validation failed",
+        });
         return aiRetriableError("AI output validation failed", {
           code: "AI_INVALID_OUTPUT",
         });
@@ -300,6 +379,11 @@ Deno.serve(async (req) => {
         })
         .eq("id", gameId);
       if (updateError) {
+        logError("request.error", {
+          reason: "session_update_failed",
+          game_id: gameId,
+          action: "accuse_reasoning",
+        });
         return internalError("Failed to update session");
       }
 
@@ -332,9 +416,15 @@ Deno.serve(async (req) => {
     return badRequest(`Cannot accuse while in mode "${session.mode}"`);
   } catch (error) {
     if (error instanceof Error && error.name === "BadRequestError") {
+      log("request.invalid", {
+        reason: "bad_request_error",
+        message: error.message,
+      });
       return badRequest(error.message);
     }
-    console.error(error);
+    logError("request.unhandled_error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return internalError("Internal Server Error");
   }
 });

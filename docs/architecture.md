@@ -237,6 +237,7 @@ Failure-handling expectations:
 - Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.
 - `accusation_judge` is the only role allowed to receive full `ground_truth_context`.
 - Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
+- OpenRouter provider calls use bounded retry/backoff and emit structured JSON logs (`request_id`, endpoint/action, role, attempt, latency, outcome).
 - Full implementation details are documented in `docs/ai-runtime.md`.
 
 ---

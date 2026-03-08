@@ -44,6 +44,13 @@ export function aiRetriableError(
   });
 }
 
+export function asRetriableAIResponse(error: unknown): Response | null {
+  if (error instanceof RetriableAIError) {
+    return aiRetriableError(error.message, error.details);
+  }
+  return null;
+}
+
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);

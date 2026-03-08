@@ -42,6 +42,10 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/store.retry.test.ts` validates:
   - transient vs permanent error classification
   - exponential backoff sequencing used by the store retry loop
+- `web/src/lib/domain/theme-store.test.ts` validates:
+  - theme listing, switching by id and name, invalid theme handling
+  - localStorage persistence and initialization
+  - CSS custom property application to DOM
 
 ### 2) Integration tests (real Supabase local, no browser)
 
@@ -121,6 +125,14 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - terminal loading indicators:
   - narration-area wait spinner during backend calls
   - centered start-screen spinner while a selected mystery is initializing
+
+Theme command E2E coverage (`web/e2e/theme.test.ts`) must include:
+
+- `themes` listing available themes without player input echo in narration
+- `theme <name>` switching CSS custom properties and confirming without player echo
+- theme persistence across page navigation (localStorage)
+- invalid theme name error feedback with available theme list
+- theme commands working across all game modes (not just explore)
 
 Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
 

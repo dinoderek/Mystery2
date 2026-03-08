@@ -190,3 +190,44 @@ describe('parseCommand - target validation and lists', () => {
     }
   });
 });
+
+describe('parseCommand - theme commands', () => {
+  it('parses "themes" as theme-list in all modes', () => {
+    expect(parseCommand('themes', 'explore', context)).toEqual({ type: 'theme-list' });
+    expect(parseCommand('themes', 'talk', context)).toEqual({ type: 'theme-list' });
+    expect(parseCommand('themes', 'accuse', context)).toEqual({ type: 'theme-list' });
+    expect(parseCommand('themes', 'ended', context)).toEqual({ type: 'theme-list' });
+  });
+
+  it('parses "theme <name>" as theme-set in all modes', () => {
+    expect(parseCommand('theme amber', 'explore', context)).toEqual({
+      type: 'theme-set',
+      themeName: 'amber',
+    });
+    expect(parseCommand('theme ice', 'talk', context)).toEqual({
+      type: 'theme-set',
+      themeName: 'ice',
+    });
+    expect(parseCommand('theme noir', 'accuse', context)).toEqual({
+      type: 'theme-set',
+      themeName: 'noir',
+    });
+    expect(parseCommand('theme classic green', 'ended', context)).toEqual({
+      type: 'theme-set',
+      themeName: 'classic green',
+    });
+  });
+
+  it('normalizes casing for theme commands', () => {
+    expect(parseCommand('Themes', 'explore', context)).toEqual({ type: 'theme-list' });
+    expect(parseCommand('THEME Amber', 'explore', context)).toEqual({
+      type: 'theme-set',
+      themeName: 'amber',
+    });
+  });
+
+  it('does not parse bare "theme" without a name as theme-set', () => {
+    const result = parseCommand('theme', 'explore', context);
+    expect(result.type).not.toBe('theme-set');
+  });
+});

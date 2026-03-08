@@ -27,7 +27,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="min-h-screen bg-black text-green-400 font-mono p-4 flex flex-col h-screen max-w-4xl mx-auto">
+<main class="min-h-screen bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-4xl mx-auto">
   <Header />
   <NarrationBox />
   <StatusBar />

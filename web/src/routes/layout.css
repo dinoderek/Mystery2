@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+:root {
+    --t-bg: #000000;
+    --t-primary: #4ade80;
+    --t-bright: #86efac;
+    --t-muted: #22c55e;
+    --t-dim: #16a34a;
+    --t-dialogue: #facc15;
+    --t-error: #f87171;
+    --t-warning: #fcd34d;
+    --t-glow: rgba(34, 197, 94, 0.3);
+}
+
+@theme {
+    --color-t-bg: var(--t-bg);
+    --color-t-primary: var(--t-primary);
+    --color-t-bright: var(--t-bright);
+    --color-t-muted: var(--t-muted);
+    --color-t-dim: var(--t-dim);
+    --color-t-dialogue: var(--t-dialogue);
+    --color-t-error: var(--t-error);
+    --color-t-warning: var(--t-warning);
+}
+
 @layer base {
     body {
-        @apply bg-black text-green-400 font-mono tracking-wide selection:bg-green-500/30 selection:text-green-300;
+        @apply bg-t-bg text-t-primary font-mono tracking-wide selection:bg-t-muted/30 selection:text-t-bright;
     }
 }
 
@@ -12,9 +35,9 @@
 }
 
 ::-webkit-scrollbar-track {
-    @apply bg-black border-l border-green-500/20;
+    @apply bg-t-bg border-l border-t-muted/20;
 }
 
 ::-webkit-scrollbar-thumb {
-    @apply bg-green-500/50 hover:bg-green-500/80;
+    @apply bg-t-muted/50 hover:bg-t-muted/80;
 }

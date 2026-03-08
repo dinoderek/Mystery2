@@ -35,6 +35,7 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/parser.test.ts` validates:
   - alias recognition (move/talk/search/end/help/quit/list)
   - mode-aware behavior across explore/talk/accuse/ended
+  - accuse-mode command-like input (for example `go ...`, `talk ...`) stays narrator-facing and is treated as reasoning text
   - client-side missing/invalid target branches and suggestions
   - unrecognized inline hint generation
 - `web/src/lib/domain/store.retry.test.ts` validates:
@@ -113,6 +114,7 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - transient failure retries and retry-exhaustion/manual-retry UX
 - no retry on permanent 4xx failures
 - parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
+- accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
 
 Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
 

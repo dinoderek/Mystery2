@@ -82,6 +82,18 @@ describe('parseCommand - aliases and modes', () => {
     });
   });
 
+  it('treats command-like input as reasoning while in accuse mode', () => {
+    expect(parseCommand('talk to mayor', 'accuse', context)).toEqual({
+      type: 'valid',
+      command: { type: 'ask', question: 'talk to mayor' },
+    });
+
+    expect(parseCommand('search under the table', 'accuse', context)).toEqual({
+      type: 'valid',
+      command: { type: 'ask', question: 'search under the table' },
+    });
+  });
+
   it('returns unrecognized with mode hint in ended mode', () => {
     const result = parseCommand('jump over fence', 'ended', context);
     expect(result.type).toBe('unrecognized');

@@ -13,6 +13,7 @@ import {
   sleep,
   type InvokeFailure,
 } from './store.retry';
+import { themeStore } from './theme-store.svelte';
 
 interface BackendInvocation {
   endpoint: string;
@@ -80,6 +81,25 @@ export class GameSessionStore {
     const parsed = parseCommand(input, this.state.mode, parseContext);
 
     this.error = null;
+
+    if (parsed.type === 'theme-list') {
+      const names = themeStore.getThemeList().map((t) => t.name).join(', ');
+      const active = themeStore.getActiveThemeName();
+      this.appendSystemFeedback(`Themes: ${names}. Active: ${active}.`);
+      return;
+    }
+
+    if (parsed.type === 'theme-set') {
+      const success = themeStore.setTheme(parsed.themeName);
+      if (success) {
+        this.appendSystemFeedback(`Theme: ${themeStore.getActiveThemeName()}.`);
+      } else {
+        const names = themeStore.getThemeList().map((t) => t.name.toLowerCase()).join(', ');
+        this.appendSystemFeedback(`Unknown theme "${parsed.themeName}". Available: ${names}.`);
+      }
+      return;
+    }
+
     this.appendHistory('input', 'player', input);
 
     switch (parsed.type) {

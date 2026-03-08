@@ -30,7 +30,9 @@ export type ParseResult =
   | { type: 'list'; listType: 'locations' | 'characters'; items: ListItem[] }
   | { type: 'unrecognized'; raw: string; hint: string }
   | { type: 'help' }
-  | { type: 'quit' };
+  | { type: 'quit' }
+  | { type: 'theme-list' }
+  | { type: 'theme-set'; themeName: string };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
 const TALK_ALIASES = ['speak with', 'speak to', 'talk to'] as const;
@@ -41,6 +43,8 @@ const CHARACTER_LIST_ALIASES = ['who is here', 'characters'] as const;
 const HELP_ALIASES = ['help'] as const;
 const QUIT_ALIASES = ['quit', 'exit'] as const;
 const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
+const THEME_LIST_ALIASES = ['themes'] as const;
+const THEME_SET_PREFIX = 'theme' as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
@@ -373,8 +377,28 @@ export function normalizeInput(rawInput: string): string {
     .trim();
 }
 
+function parseGlobalThemeCommand(text: string): ParseResult | null {
+  if (isAliasExact(text, THEME_LIST_ALIASES)) {
+    return { type: 'theme-list' };
+  }
+
+  if (isAliasPrefix(text, THEME_SET_PREFIX)) {
+    const target = extractAliasTarget(text, THEME_SET_PREFIX);
+    if (target !== '') {
+      return { type: 'theme-set', themeName: target };
+    }
+  }
+
+  return null;
+}
+
 export function parseCommand(rawInput: string, mode: GameMode, context: ParseContext): ParseResult {
   const normalized = normalizeInput(rawInput);
+
+  const themeResult = parseGlobalThemeCommand(normalized);
+  if (themeResult) {
+    return themeResult;
+  }
 
   switch (mode) {
     case 'explore':

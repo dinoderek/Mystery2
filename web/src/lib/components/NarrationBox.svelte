@@ -21,7 +21,7 @@
   });
 </script>
 
-<div class="flex-1 overflow-y-auto border border-green-500/30 p-4 font-mono">
+<div class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
   <div class="space-y-4">
     {#if gameSessionStore.state?.narration}
       <TerminalMessage text={gameSessionStore.state.narration} type="system" />

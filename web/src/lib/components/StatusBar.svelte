@@ -15,16 +15,16 @@
 </script>
 
 <div
-  class="flex justify-between items-center border border-green-500/30 p-2 bg-green-500/5 mt-4 text-sm"
+  class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm"
 >
   <span>LOCATION: {gameSessionStore.state?.location || "UNKNOWN"}</span>
-  <span class="text-green-500/50">type 'help' to see commands</span>
+  <span class="text-t-muted/50">type 'help' to see commands</span>
   <span>TIME: {gameSessionStore.state?.time_remaining || 0}</span>
 </div>
 <div
-  class="border border-green-500/30 p-2 bg-green-500/5 mt-2 text-sm flex gap-2"
+  class="border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm flex gap-2"
 >
-  <span class="text-green-500/70">VISIBLE:</span>
+  <span class="text-t-muted/70">VISIBLE:</span>
   <div>
     {#if visibleCharacters.length > 0}
       {#each visibleCharacters as char, i}
@@ -33,7 +33,7 @@
         >
       {/each}
     {:else}
-      <span class="text-green-500/50">None</span>
+      <span class="text-t-muted/50">None</span>
     {/if}
   </div>
 </div>

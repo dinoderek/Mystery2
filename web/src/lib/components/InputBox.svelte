@@ -28,23 +28,23 @@
   }
 </script>
 
-<div class="mt-4 border-t border-green-500/30 pt-4">
+<div class="mt-4 border-t border-t-muted/30 pt-4">
   {#if gameSessionStore.awaitingReturnToList}
     <div class="space-y-2 text-sm" data-testid="accusation-end-state">
       {#if gameSessionStore.accusationOutcome === "win"}
-        <p class="text-green-300 font-bold">[ CASE SOLVED ]</p>
+        <p class="text-t-bright font-bold">[ CASE SOLVED ]</p>
         <p>The accusation is correct. Justice is served.</p>
       {:else if gameSessionStore.accusationOutcome === "lose"}
-        <p class="text-red-300 font-bold">[ CASE UNSOLVED ]</p>
+        <p class="text-t-error font-bold">[ CASE UNSOLVED ]</p>
         <p>The accusation is incorrect. The mystery remains unresolved.</p>
       {/if}
-      <p class="text-green-300 animate-pulse" data-testid="return-to-list-prompt">
+      <p class="text-t-bright animate-pulse" data-testid="return-to-list-prompt">
         [ PRESS ANY KEY TO GO BACK TO THE MYSTERY LIST ]
       </p>
     </div>
   {:else}
     {#if gameSessionStore.isRetrying}
-      <div class="mb-2 text-xs text-yellow-300" data-testid="retry-indicator">
+      <div class="mb-2 text-xs text-t-warning" data-testid="retry-indicator">
         Retrying request ({gameSessionStore.retryCount}/3)...
       </div>
     {/if}
@@ -55,7 +55,7 @@
       onkeydown={handleKeydown}
       {placeholder}
       {disabled}
-      class="w-full bg-transparent border-none outline-none text-green-300 placeholder-green-500/50 font-mono disabled:opacity-50"
+      class="w-full bg-transparent border-none outline-none text-t-bright placeholder-t-muted/50 font-mono disabled:opacity-50"
       autocomplete="off"
       spellcheck="false"
       autofocus
@@ -65,7 +65,7 @@
       <button
         type="button"
         onclick={retryLastCommand}
-        class="mt-3 border border-yellow-400/60 px-2 py-1 text-xs text-yellow-300 hover:bg-yellow-400/10 cursor-pointer"
+        class="mt-3 border border-t-warning/60 px-2 py-1 text-xs text-t-warning hover:bg-t-dialogue/10 cursor-pointer"
         data-testid="retry-last-command"
       >
         [ RETRY LAST COMMAND ]

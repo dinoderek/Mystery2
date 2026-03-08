@@ -17,7 +17,7 @@
   });
 </script>
 
-<div class="text-green-400/80 text-sm" data-testid="terminal-spinner">
+<div class="text-t-primary/80 text-sm" data-testid="terminal-spinner">
   <span class="inline-block w-8">[{frames[frameIndex]}]</span>
   <span>{text}</span>
 </div>

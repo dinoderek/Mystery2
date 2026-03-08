@@ -236,9 +236,15 @@ export class GameSessionStore {
           body: { game_id: this.game_id, character_name: command.character_name },
         };
       case 'ask':
+        if (this.state?.mode === 'accuse') {
+          return {
+            endpoint: 'game-accuse',
+            body: { game_id: this.game_id, player_reasoning: command.question },
+          };
+        }
         return {
           endpoint: 'game-ask',
-          body: { game_id: this.game_id, question: command.question },
+          body: { game_id: this.game_id, player_input: command.question },
         };
       case 'end_talk':
         return {

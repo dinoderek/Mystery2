@@ -7,9 +7,11 @@
         "web"
     ],
     "scripts": {
-        "dev": "(npx supabase stop || true) && AI_PROVIDER=mock AI_MODEL=mock/runtime-default npx supabase start && npm run seed:storage && npm -w web run dev",
+        "dev": "node scripts/dev-mock.mjs",
         "dev:ai:free": "node scripts/dev-ai.mjs free",
         "dev:ai:paid": "node scripts/dev-ai.mjs paid",
+        "supabase:restart": "node scripts/supabase-restart.mjs",
+        "logs:edge": "node scripts/tail-edge-logs.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",
         "lint": "eslint .",
         "format": "prettier --write .",

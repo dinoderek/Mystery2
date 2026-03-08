@@ -6,7 +6,11 @@ import {
   RetriableAIError,
 } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { getAIProvider } from "../_shared/ai-provider.ts";
+import {
+  createAIRequestMetadata,
+  getAIProvider,
+} from "../_shared/ai-provider.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
@@ -31,9 +35,13 @@ Deno.serve(async (req) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  const logger = createRequestLogger(req, "game-ask");
+  const { requestId, log, logError } = logger;
+
   try {
     const body = await req.json();
     if (!body || !body.game_id) {
+      log("request.invalid", { reason: "missing_game_id" });
       return badRequest("Missing game_id");
     }
 
@@ -42,6 +50,7 @@ Deno.serve(async (req) => {
       typeof body.player_input === "string" ? body.player_input.trim() : "";
 
     if (playerInput.length === 0) {
+      log("request.invalid", { reason: "missing_player_input", game_id: gameId });
       return badRequest("Missing player_input");
     }
 
@@ -52,11 +61,13 @@ Deno.serve(async (req) => {
       .eq("id", gameId)
       .single();
     if (sessionError || !session) {
+      log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
 
     validateTransition(session.mode, "ask");
     if (!session.current_talk_character_id) {
+      log("request.invalid", { reason: "no_active_talk_character", game_id: gameId });
       return badRequest("Not talking to anyone");
     }
 
@@ -96,6 +107,12 @@ Deno.serve(async (req) => {
       character_name: activeCharacter.first_name,
       player_input: playerInput,
     });
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-ask",
+      action: "ask",
+      game_id: gameId,
+    });
 
     const aiProvider = getAIProvider();
     let talkOutput: ReturnType<typeof parseTalkConversationOutput>;
@@ -105,11 +122,23 @@ Deno.serve(async (req) => {
         prompt,
         context: aiContext,
         parse: parseTalkConversationOutput,
+        metadata: aiMetadata,
       });
     } catch (error) {
       if (error instanceof RetriableAIError) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          code: error.details.code ?? null,
+          status: error.details.status ?? null,
+          error: error.message,
+        });
         return aiRetriableError(error.message, error.details);
       }
+      log("request.ai_retriable", {
+        game_id: gameId,
+        code: "AI_INVALID_OUTPUT",
+        error: "AI output validation failed",
+      });
       return aiRetriableError("AI output validation failed", {
         code: "AI_INVALID_OUTPUT",
       });
@@ -163,9 +192,12 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     if (error instanceof Error && error.name === "BadRequestError") {
+      log("request.invalid", { reason: "bad_request_error", message: error.message });
       return badRequest(error.message);
     }
-    console.error(error);
+    logError("request.unhandled_error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return internalError("Internal Server Error");
   }
 });

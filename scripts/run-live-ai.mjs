@@ -96,17 +96,31 @@ try {
     ? "tests/api/integration/live-ai"
     : "tests/api/e2e/live-ai-flow.test.ts";
   const label = mode;
+  const liveTestTimeout = env.AI_LIVE_TEST_TIMEOUT_MS || "600000";
   const runEnv = {
     ...env,
     AI_LIVE: "1",
     AI_LIVE_LABEL: label,
+    AI_LIVE_TEST_TIMEOUT_MS: liveTestTimeout,
   };
 
   console.log(`Running ${suite} live AI tests in "${mode}" mode...`);
   runCommand(npxBin, ["supabase", "stop"], env, true);
   runCommand(npxBin, ["supabase", "start"], env);
   runCommand(npmBin, ["run", "seed:storage"], env);
-  runCommand(npmBin, ["exec", "vitest", "run", vitestTarget], runEnv);
+  runCommand(
+    npmBin,
+    [
+      "exec",
+      "--",
+      "vitest",
+      "run",
+      vitestTarget,
+      "--testTimeout",
+      liveTestTimeout,
+    ],
+    runEnv,
+  );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

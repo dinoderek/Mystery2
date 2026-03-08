@@ -1,16 +1,29 @@
 import { createClient } from "../_shared/db.ts";
-import { badRequest, notFound, internalError } from "../_shared/errors.ts";
+import {
+  asRetriableAIResponse,
+  badRequest,
+  internalError,
+  notFound,
+  RetriableAIError,
+} from "../_shared/errors.ts";
+import {
+  createAIRequestMetadata,
+  getAIProvider,
+} from "../_shared/ai-provider.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
-import { getAIProvider } from "../_shared/ai-provider.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
+  const logger = createRequestLogger(req, "game-start");
+  const { requestId, log, logError } = logger;
 
   try {
     const body = await req.json();
     if (!body || typeof body.blueprint_id !== "string") {
+      log("request.invalid", { reason: "missing_or_invalid_blueprint_id" });
       return badRequest("Missing or invalid blueprint_id");
     }
 
@@ -21,7 +34,10 @@ Deno.serve(async (req) => {
     const { data: files, error: listError } = await supabase.storage
       .from("blueprints")
       .list();
-    if (listError) return internalError("Failed to access blueprints");
+    if (listError) {
+      logError("request.error", { reason: "storage_list_failed" });
+      return internalError("Failed to access blueprints");
+    }
 
     let blueprintText: string | null = null;
 
@@ -46,6 +62,10 @@ Deno.serve(async (req) => {
     }
 
     if (!blueprintText) {
+      log("request.invalid", {
+        reason: "blueprint_not_found",
+        blueprint_id,
+      });
       return notFound("Blueprint not found");
     }
 
@@ -66,7 +86,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (sessionError) {
-      console.error(sessionError);
+      logError("request.error", {
+        reason: "session_create_failed",
+        blueprint_id: blueprint.id,
+        error: sessionError.message,
+      });
       return internalError("Failed to create session");
     }
 
@@ -74,8 +98,15 @@ Deno.serve(async (req) => {
 
     // Generate opening narration
     const aiProvider = getAIProvider();
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-start",
+      action: "start",
+      game_id: sessionId,
+    });
     const narration = await aiProvider.generateNarration(
       blueprint.narrative.premise,
+      aiMetadata,
     );
 
     // Insert start event
@@ -88,7 +119,11 @@ Deno.serve(async (req) => {
     });
 
     if (eventError) {
-      console.error(eventError);
+      logError("request.error", {
+        reason: "event_insert_failed",
+        game_id: sessionId,
+        error: eventError.message,
+      });
       return internalError("Failed to record start event");
     }
 
@@ -116,7 +151,19 @@ Deno.serve(async (req) => {
       },
     );
   } catch (err) {
-    console.error(err);
+    if (err instanceof RetriableAIError) {
+      log("request.ai_retriable", {
+        code: err.details.code ?? null,
+        status: err.details.status ?? null,
+        error: err.message,
+      });
+      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
+    }
+    const aiResponse = asRetriableAIResponse(err);
+    if (aiResponse) return aiResponse;
+    logError("request.unhandled_error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return internalError("Internal Server Error");
   }
 });

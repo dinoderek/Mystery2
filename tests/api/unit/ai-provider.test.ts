@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createAIRequestMetadata,
   getAIProvider,
   isLiveAIEnabled,
   resolveAIProfile,
@@ -9,6 +10,13 @@ import {
   parseAccusationJudgeOutput,
   parseTalkStartOutput,
 } from "../../../supabase/functions/_shared/ai-contracts.ts";
+
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+  vi.restoreAllMocks();
+});
 
 describe("ai-provider runtime resolution", () => {
   it("fails when required env is missing", () => {
@@ -31,6 +39,108 @@ describe("ai-provider runtime resolution", () => {
   it("parses live toggle", () => {
     expect(isLiveAIEnabled({ AI_LIVE: "1" })).toBe(true);
     expect(isLiveAIEnabled({ AI_LIVE: "false" })).toBe(false);
+  });
+});
+
+describe("ai-provider openrouter retry behavior", () => {
+  it("retries transient provider errors and eventually succeeds", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "rate limited" }), {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "{\"narration\":\"Recovered\"}" } }],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      );
+
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const provider = getAIProvider({
+      AI_PROVIDER: "openrouter",
+      AI_MODEL: "test/openrouter-model",
+      OPENROUTER_API_KEY: "test-key",
+      AI_OPENROUTER_MAX_ATTEMPTS: "3",
+      AI_OPENROUTER_BASE_BACKOFF_MS: "1",
+      AI_OPENROUTER_TIMEOUT_MS: "1000",
+    });
+
+    const output = await provider.generateRoleOutput({
+      role: "search",
+      prompt: "Search prompt",
+      context: { location_name: "Kitchen" },
+      parse: parseSearchOutput,
+    });
+
+    expect(output.narration).toBe("Recovered");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("maps abort failures to retriable timeout errors", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(
+      new DOMException("Aborted", "AbortError"),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const provider = getAIProvider({
+      AI_PROVIDER: "openrouter",
+      AI_MODEL: "test/openrouter-model",
+      OPENROUTER_API_KEY: "test-key",
+      AI_OPENROUTER_MAX_ATTEMPTS: "1",
+      AI_OPENROUTER_TIMEOUT_MS: "1000",
+    });
+
+    await expect(
+      provider.generateNarration("Hello narrator"),
+    ).rejects.toMatchObject({
+      name: "RetriableAIError",
+      details: {
+        retriable: true,
+        code: "OPENROUTER_TIMEOUT",
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ai-provider request metadata", () => {
+  it("preserves incoming request ids", () => {
+    const req = new Request("http://localhost/test", {
+      headers: { "x-request-id": "req-123" },
+    });
+
+    const metadata = createAIRequestMetadata(req, {
+      endpoint: "game-ask",
+      action: "ask",
+      game_id: "game-1",
+    });
+    expect(metadata).toEqual({
+      request_id: "req-123",
+      endpoint: "game-ask",
+      action: "ask",
+      game_id: "game-1",
+    });
+  });
+
+  it("generates request ids when missing", () => {
+    const req = new Request("http://localhost/test");
+    const metadata = createAIRequestMetadata(req, {
+      endpoint: "game-search",
+      action: "search",
+    });
+
+    expect(metadata.endpoint).toBe("game-search");
+    expect(metadata.action).toBe("search");
+    expect(metadata.request_id.length).toBeGreaterThan(0);
   });
 });
 

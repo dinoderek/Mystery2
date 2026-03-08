@@ -56,6 +56,23 @@ Use mode-specific local env files (gitignored) to run the full local stack again
    - Free model: `npm run dev:ai:free`
    - Paid model: `npm run dev:ai:paid`
 
+## Accessing Edge Function Logs
+To inspect structured AI/provider logs without OrbStack UI:
+
+```bash
+npm run logs:edge
+```
+
+Optional custom tail length:
+
+```bash
+npm run logs:edge -- --tail 500
+```
+
+This tails the active local Supabase edge runtime container automatically using the project ID from `supabase/config.toml`.
+
+For request validation failures (for example missing `player_input` in `game-ask`), logs now include structured `request.invalid` events with a `reason` field. Retriable AI/provider failures log as `request.ai_retriable`.
+
 ## Testing everything
 We have a unified Quality Gate script that checks linting, type-safety, and all test tiers (Unit, Integration, and E2E API flow).
 
@@ -78,6 +95,13 @@ Live suites are opt-in and intentionally excluded from `npm run test:all` to kee
    - `npm run test:integration:live:paid`
    - `npm run test:e2e:live:free`
    - `npm run test:e2e:live:paid`
+
+Live suites are configured to retry retriable `503` AI errors and use a larger timeout budget because free models can be rate-limited or slow.
+
+If you still see repeated `429` or timeout failures, tune these optional env vars:
+- `AI_OPENROUTER_TIMEOUT_MS`
+- `AI_OPENROUTER_MAX_ATTEMPTS`
+- `AI_OPENROUTER_BASE_BACKOFF_MS`
 
 ## Cloud Supabase secrets
 Local `.env.ai.*.local` files are only for local Docker/Supabase CLI workflows.

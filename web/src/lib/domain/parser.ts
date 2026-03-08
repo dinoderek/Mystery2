@@ -324,7 +324,7 @@ function parseTalkCommand(text: string, rawInput: string): ParseResult {
 
   return {
     type: 'valid',
-    command: { type: 'ask', question: text },
+    command: { type: 'ask', question: rawInput.trim() },
   };
 }
 
@@ -343,7 +343,7 @@ function parseAccuseCommand(text: string, rawInput: string): ParseResult {
 
   return {
     type: 'valid',
-    command: { type: 'ask', question: text },
+    command: { type: 'ask', question: rawInput.trim() },
   };
 }
 

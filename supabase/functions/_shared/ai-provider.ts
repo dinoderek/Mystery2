@@ -3,6 +3,31 @@ import { RetriableAIError } from "./errors.ts";
 
 export type AIProviderName = "mock" | "openrouter";
 
+export interface AIRequestMetadata {
+  request_id: string;
+  endpoint: string;
+  action: string;
+  game_id?: string;
+}
+
+export function createAIRequestMetadata(
+  req: Request,
+  base: Omit<AIRequestMetadata, "request_id"> & { request_id?: string },
+): AIRequestMetadata {
+  const { request_id: requestIdFromBase, ...metadataBase } = base;
+  const explicitRequestId = requestIdFromBase?.trim();
+  const headerRequestId = req.headers.get("x-request-id")?.trim();
+  return {
+    request_id:
+      explicitRequestId && explicitRequestId.length > 0
+        ? explicitRequestId
+        : headerRequestId && headerRequestId.length > 0
+        ? headerRequestId
+        : crypto.randomUUID(),
+    ...metadataBase,
+  };
+}
+
 export interface AIRuntimeProfile {
   provider: AIProviderName;
   model: string;
@@ -13,6 +38,7 @@ export interface AIRoleOutputRequest<T> {
   prompt: string;
   context: Record<string, unknown>;
   parse: (payload: unknown) => T;
+  metadata?: AIRequestMetadata;
 }
 
 export interface ReasoningEvaluation {
@@ -24,14 +50,17 @@ export interface ReasoningEvaluation {
 
 export interface AIProvider {
   profile: AIRuntimeProfile;
-  generateNarration(prompt: string): Promise<string>;
+  generateNarration(
+    prompt: string,
+    metadata?: AIRequestMetadata,
+  ): Promise<string>;
   generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T>;
   evaluateReasoning(context: {
     history: unknown[];
     accused_character: string;
     is_culprit: boolean;
     player_reasoning: string;
-  }): Promise<ReasoningEvaluation>;
+  }, metadata?: AIRequestMetadata): Promise<ReasoningEvaluation>;
 }
 
 function getRuntimeEnv(): Record<string, string | undefined> {
@@ -123,6 +152,42 @@ export function isLiveAIEnabled(env = getRuntimeEnv()): boolean {
   return raw === "1" || raw.toLowerCase() === "true";
 }
 
+function parsePositiveInt(
+  env: Record<string, string | undefined>,
+  key: string,
+  defaultValue: number,
+): number {
+  const raw = env[key]?.trim();
+  if (!raw) return defaultValue;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(
+      `Invalid ${key} "${raw}". Expected a positive integer value.`,
+    );
+  }
+  return parsed;
+}
+
+interface OpenRouterRuntimeConfig {
+  timeout_ms: number;
+  max_attempts: number;
+  base_backoff_ms: number;
+}
+
+function resolveOpenRouterRuntimeConfig(
+  env: Record<string, string | undefined>,
+): OpenRouterRuntimeConfig {
+  return {
+    timeout_ms: parsePositiveInt(env, "AI_OPENROUTER_TIMEOUT_MS", 45_000),
+    max_attempts: parsePositiveInt(env, "AI_OPENROUTER_MAX_ATTEMPTS", 3),
+    base_backoff_ms: parsePositiveInt(
+      env,
+      "AI_OPENROUTER_BASE_BACKOFF_MS",
+      750,
+    ),
+  };
+}
+
 class MockAIProvider implements AIProvider {
   readonly profile: AIRuntimeProfile;
 
@@ -130,7 +195,10 @@ class MockAIProvider implements AIProvider {
     this.profile = profile;
   }
 
-  async generateNarration(prompt: string): Promise<string> {
+  async generateNarration(
+    prompt: string,
+    _metadata?: AIRequestMetadata,
+  ): Promise<string> {
     return `[Mock] Narration for: ${prompt.slice(0, 70)}...`;
   }
 
@@ -144,7 +212,7 @@ class MockAIProvider implements AIProvider {
     accused_character: string;
     is_culprit: boolean;
     player_reasoning: string;
-  }): Promise<ReasoningEvaluation> {
+  }, _metadata?: AIRequestMetadata): Promise<ReasoningEvaluation> {
     const rounds = Array.isArray(context.history) ? context.history.length : 0;
     if (rounds < 1) {
       return {
@@ -262,18 +330,28 @@ class OpenRouterProvider implements AIProvider {
   readonly profile: AIRuntimeProfile;
   readonly #apiKey: string;
   readonly #baseUrl: string;
+  readonly #runtimeConfig: OpenRouterRuntimeConfig;
 
-  constructor(profile: AIRuntimeProfile, apiKey: string, baseUrl?: string) {
+  constructor(
+    profile: AIRuntimeProfile,
+    apiKey: string,
+    runtimeConfig: OpenRouterRuntimeConfig,
+    baseUrl?: string,
+  ) {
     if (!apiKey) {
       throw new Error("Missing OPENROUTER_API_KEY for provider=openrouter");
     }
 
     this.profile = profile;
     this.#apiKey = apiKey;
+    this.#runtimeConfig = runtimeConfig;
     this.#baseUrl = baseUrl ?? "https://openrouter.ai/api/v1/chat/completions";
   }
 
-  async generateNarration(prompt: string): Promise<string> {
+  async generateNarration(
+    prompt: string,
+    metadata?: AIRequestMetadata,
+  ): Promise<string> {
     const content = await this.callOpenRouter([
       {
         role: "system",
@@ -281,7 +359,7 @@ class OpenRouterProvider implements AIProvider {
           "You are the narrator for a kids mystery game. Return plain text only.",
       },
       { role: "user", content: prompt },
-    ]);
+    ], undefined, metadata, "narration");
 
     return content.trim();
   }
@@ -302,6 +380,8 @@ class OpenRouterProvider implements AIProvider {
         },
       ],
       { type: "json_object" },
+      request.metadata,
+      request.role,
     );
 
     let parsed: unknown;
@@ -321,7 +401,7 @@ class OpenRouterProvider implements AIProvider {
     accused_character: string;
     is_culprit: boolean;
     player_reasoning: string;
-  }): Promise<ReasoningEvaluation> {
+  }, metadata?: AIRequestMetadata): Promise<ReasoningEvaluation> {
     const rounds = Array.isArray(context.history) ? context.history.length : 0;
     const resolved = rounds > 0;
 
@@ -330,6 +410,7 @@ class OpenRouterProvider implements AIProvider {
       outcome: resolved ? (context.is_culprit ? "win" : "lose") : undefined,
       narration: await this.generateNarration(
         `Accused: ${context.accused_character}. Reasoning: ${context.player_reasoning}`,
+        metadata,
       ),
       follow_up_prompt: resolved
         ? null
@@ -340,9 +421,76 @@ class OpenRouterProvider implements AIProvider {
   private async callOpenRouter(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     responseFormat?: { type: "json_object" },
+    metadata?: AIRequestMetadata,
+    role = "narration",
+  ): Promise<string> {
+    const baseLogData: Record<string, unknown> = {
+      request_id: metadata?.request_id ?? "untracked",
+      endpoint: metadata?.endpoint ?? "unknown",
+      action: metadata?.action ?? "unknown",
+      game_id: metadata?.game_id ?? null,
+      role,
+      provider: this.profile.provider,
+      model: this.profile.model,
+    };
+
+    for (let attempt = 1; attempt <= this.#runtimeConfig.max_attempts; attempt += 1) {
+      const startedAt = Date.now();
+      try {
+        const content = await this.callOpenRouterOnce(messages, responseFormat);
+        this.logStructured({
+          ...baseLogData,
+          outcome: "success",
+          attempt,
+          latency_ms: Date.now() - startedAt,
+        });
+        return content;
+      } catch (error) {
+        const latencyMs = Date.now() - startedAt;
+        if (error instanceof RetriableAIError) {
+          const isRetrying = attempt < this.#runtimeConfig.max_attempts;
+          this.logStructured({
+            ...baseLogData,
+            outcome: isRetrying ? "retry" : "failure",
+            attempt,
+            latency_ms: latencyMs,
+            retriable: true,
+            retriable_code: error.details.code ?? null,
+            retriable_status: error.details.status ?? null,
+            error: error.message,
+          });
+
+          if (isRetrying) {
+            await this.sleep(this.computeBackoff(attempt));
+            continue;
+          }
+        } else {
+          this.logStructured({
+            ...baseLogData,
+            outcome: "failure",
+            attempt,
+            latency_ms: latencyMs,
+            retriable: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+
+        throw error;
+      }
+    }
+
+    throw new Error("OpenRouter retry loop exited unexpectedly");
+  }
+
+  private async callOpenRouterOnce(
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    responseFormat?: { type: "json_object" },
   ): Promise<string> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20_000);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      this.#runtimeConfig.timeout_ms,
+    );
 
     try {
       const response = await fetch(this.#baseUrl, {
@@ -406,14 +554,35 @@ class OpenRouterProvider implements AIProvider {
       clearTimeout(timeout);
     }
   }
+
+  private computeBackoff(attempt: number): number {
+    const multiplier = Math.max(1, 2 ** (attempt - 1));
+    return Math.min(this.#runtimeConfig.base_backoff_ms * multiplier, 15_000);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private logStructured(payload: Record<string, unknown>): void {
+    console.log(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event: "ai.openrouter.call",
+        ...payload,
+      }),
+    );
+  }
 }
 
 export function getAIProvider(env = getRuntimeEnv()): AIProvider {
   const profile = resolveAIProfile(env);
   if (profile.provider === "openrouter") {
+    const runtimeConfig = resolveOpenRouterRuntimeConfig(env);
     return new OpenRouterProvider(
       profile,
       requireEnv(env, "OPENROUTER_API_KEY"),
+      runtimeConfig,
       env.OPENROUTER_URL,
     );
   }

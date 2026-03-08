@@ -8,6 +8,8 @@ This document defines how AI-assisted narration is executed in Supabase Edge Fun
 
 - `supabase/functions/_shared/ai-provider.ts`
   - Strict provider/model resolution from environment (`AI_PROVIDER`, `AI_MODEL`)
+  - OpenRouter retry/backoff and timeout controls
+  - Structured AI call logs (JSON) with request/action metadata
   - Live-suite helpers (`AI_LIVE`, AI mode labeling)
 - `supabase/functions/_shared/ai-contracts.ts`
   - Role output parsing and validation before state mutation
@@ -68,11 +70,31 @@ Invalid output returns a retriable error and does not finalize turn state.
 ## Failure and Retry Model
 
 - AI calls are executed before session mutations.
+- OpenRouter calls use bounded server-side retries with exponential backoff for transient failures.
+- Retry/timeout settings are environment-driven:
+  - `AI_OPENROUTER_TIMEOUT_MS` (default `45000`)
+  - `AI_OPENROUTER_MAX_ATTEMPTS` (default `3`)
+  - `AI_OPENROUTER_BASE_BACKOFF_MS` (default `750`)
 - Retriable provider failures return:
   - HTTP `503`
   - `{ error, details: { retriable: true, code, ... } }`
 - Output-contract failures are also returned as retriable AI failures.
 - Web UI retry logic remains the owner of retry policy.
+- `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
+
+## Structured AI and Request Logs
+
+- AI calls emit JSON logs to edge runtime stdout with:
+  - `request_id`, `endpoint`, `action`, optional `game_id`
+  - `role`, `provider`, `model`
+  - `attempt`, `latency_ms`, `outcome` (`success|retry|failure`)
+  - retriable diagnostics (`retriable_code`, `retriable_status`) when applicable
+- AI endpoints also emit structured request logs for invalid/unhandled paths:
+  - `request.invalid` for validation and mode-transition failures
+  - `request.ai_retriable` for retriable AI/provider/output failures
+  - `request.unhandled_error` for unexpected failures
+- For local development, tail these logs via:
+  - `npm run logs:edge`
 
 ## Serving Request Flow
 

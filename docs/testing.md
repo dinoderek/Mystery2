@@ -73,6 +73,7 @@ What we test:
 - Edge Function authentication behavior:
   - no token → 401/403 (where required)
   - valid token → success
+  - CORS behavior: `OPTIONS` preflight returns success and auth failures still include CORS headers
 - Authenticated request setup:
   - provision users through `tests/testkit/src/auth.ts` (`setupTestAuth`, `createTestUser`, `signIn`)
   - include bearer auth headers from testkit helpers for all protected function calls

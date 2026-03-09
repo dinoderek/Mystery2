@@ -17,8 +17,9 @@ import {
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
-Deno.serve(async (req) => {
+serveWithCors(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }

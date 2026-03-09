@@ -8,6 +8,7 @@ import {
   readSpeaker,
   type Speaker,
 } from "../_shared/speaker.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -44,7 +45,7 @@ function getEventSpeaker(event: {
   return getFallbackSpeaker(event);
 }
 
-Deno.serve(async (req) => {
+serveWithCors(async (req) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
   }

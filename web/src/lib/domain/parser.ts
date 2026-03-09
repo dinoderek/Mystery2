@@ -11,7 +11,7 @@ export type ActionCommand =
   | { type: 'search' }
   | { type: 'talk'; character_name: string }
   | { type: 'ask'; question: string }
-  | { type: 'accuse'; accused_character_id: string }
+  | { type: 'accuse'; reasoning: string | null }
   | { type: 'end_talk' };
 
 export type ListItem =
@@ -20,10 +20,10 @@ export type ListItem =
 
 export type ParseResult =
   | { type: 'valid'; command: ActionCommand }
-  | { type: 'missing-target'; commandType: 'move' | 'talk' | 'accuse'; suggestions: string[] }
+  | { type: 'missing-target'; commandType: 'move' | 'talk'; suggestions: string[] }
   | {
       type: 'invalid-target';
-      commandType: 'move' | 'talk' | 'accuse';
+      commandType: 'move' | 'talk';
       attempted: string;
       suggestions: string[];
     }
@@ -48,7 +48,7 @@ const THEME_SET_PREFIX = 'theme' as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
-    "Commands: move to/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit. Type 'help' for details.",
+    "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, help, quit. Type 'help' for details.",
   talk: "Commands: <question>, bye, help, quit. Type 'help' for details.",
   accuse: "Commands: <reasoning>, help, quit. Type 'help' for details.",
   ended: "Commands: help, quit. Type 'help' for details.",
@@ -111,10 +111,6 @@ function sceneCharacterSuggestions(context: ParseContext): string[] {
   return uniqueNames(getCharactersInCurrentLocation(context).map(displayNameOf));
 }
 
-function accuseSuggestions(context: ParseContext): string[] {
-  return uniqueNames(context.characters.map(displayNameOf));
-}
-
 function resolveLocation(target: string, context: ParseContext): string | null {
   const normalizedTarget = normalizeTargetForMatch(target);
   for (const location of context.locations) {
@@ -128,20 +124,6 @@ function resolveLocation(target: string, context: ParseContext): string | null {
 function resolveSceneCharacter(target: string, context: ParseContext): string | null {
   const normalizedTarget = normalizeInput(target);
   for (const character of getCharactersInCurrentLocation(context)) {
-    const first = normalizeInput(character.first_name);
-    const last = normalizeInput(character.last_name);
-    const full = normalizeInput(displayNameOf(character));
-
-    if (normalizedTarget === first || normalizedTarget === last || normalizedTarget === full) {
-      return character.first_name;
-    }
-  }
-  return null;
-}
-
-function resolveAnyCharacter(target: string, context: ParseContext): string | null {
-  const normalizedTarget = normalizeInput(target);
-  for (const character of context.characters) {
     const first = normalizeInput(character.first_name);
     const last = normalizeInput(character.last_name);
     const full = normalizeInput(displayNameOf(character));
@@ -276,27 +258,9 @@ function parseExploreCommand(text: string, rawInput: string, context: ParseConte
     }
 
     const target = extractAliasTarget(text, alias);
-    if (target === '') {
-      return {
-        type: 'missing-target',
-        commandType: 'accuse',
-        suggestions: accuseSuggestions(context),
-      };
-    }
-
-    const accusedCharacterId = resolveAnyCharacter(target, context);
-    if (!accusedCharacterId) {
-      return {
-        type: 'invalid-target',
-        commandType: 'accuse',
-        attempted: target,
-        suggestions: accuseSuggestions(context),
-      };
-    }
-
     return {
       type: 'valid',
-      command: { type: 'accuse', accused_character_id: accusedCharacterId },
+      command: { type: 'accuse', reasoning: target === '' ? null : rawInput.trim().slice(alias.length).trim() || target },
     };
   }
 

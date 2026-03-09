@@ -162,7 +162,7 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 
 ## Accuse (Endgame)
 
-**Command:** `accuse <character>`
+**Command:** `accuse [statement]`
 
 ### Endgame Flow
 
@@ -171,9 +171,10 @@ Optionally later: `search <sub-location>` once sub-locations exist.
   - who did it
   - why / reasoning
   - key supporting clues
-- Accusation now runs as a two-stage backend flow:
-  - `accuse_start`: suspect declaration + framing narration + follow-up prompt
-  - `accuse_judge` rounds: iterative reasoning with `continue|win|lose` adjudication
+- Accusation now runs as a reasoning-first backend flow:
+  - `accuse_start`: optional framing narration when the player enters accuse mode without initial reasoning
+  - `accuse_judge` rounds: iterative reasoning with `continue|win|lose` adjudication and suspect inference from the reasoning itself
+- If time runs out during explore/talk/search/move/ask, the game forces accuse mode with urgent accusation-start narration and then continues with normal accuse rounds.
 - Narrator may ask follow-up questions if reasoning is incomplete.
 - Narrator reveals outcome:
   - If correct: explanation + how clues connect + timeline
@@ -188,6 +189,8 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 - alibis
 - clue placement
 - motives
+
+Implementation detail reference: `docs/accusation-flow.md`.
 
 ---
 
@@ -244,6 +247,11 @@ Modes:
   - Narrator
   - Characters
   - Investigator
+- Every rendered block must include an explicit actor label derived from speaker metadata:
+  - `You` for player input lines
+  - `Narrator` for start/move/search/talk-start/talk-end/accuse narration
+  - Active character name for `game-ask` responses
+  - `System` for local-only help/validation/retry feedback
 - Each block includes a label/title (e.g., “NARRATOR”, “MAYA”, “YOU”).
 
 ### Status Bar

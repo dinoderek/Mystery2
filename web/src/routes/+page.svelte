@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { gameSessionStore } from '$lib/domain/store.svelte';
+  import { gameSessionStore, type ThemeName } from '$lib/domain/store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
   onMount(() => {
@@ -21,6 +21,12 @@
     }
   }
 
+  const themeOptions: ThemeName[] = ['matrix', 'amber'];
+
+  function selectTheme(theme: ThemeName) {
+    gameSessionStore.setTheme(theme);
+  }
+
   const isStartingGame = $derived(gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length > 0);
 </script>
 
@@ -36,6 +42,23 @@
     </div>
   {:else}
     <div class="max-w-2xl mx-auto border border-t-muted/30 p-8 rounded">
+      <div class="mb-4 flex items-center justify-end gap-2 text-xs">
+        <span class="text-t-muted/70">THEME</span>
+        {#each themeOptions as theme}
+          <button
+            type="button"
+            class={`cursor-pointer border px-2 py-1 transition-colors ${
+              gameSessionStore.theme === theme
+                ? 'border-t-bright text-t-bright bg-t-muted/10'
+                : 'border-t-muted/40 text-t-muted/80 hover:bg-t-muted/10'
+            }`}
+            onclick={() => selectTheme(theme)}
+            data-testid={`theme-${theme}`}
+          >
+            {theme.toUpperCase()}
+          </button>
+        {/each}
+      </div>
       <h1 class="text-3xl font-bold mb-2">MYSTERY GAME TERMINAL</h1>
       <p class="text-t-muted/70 mb-8 border-b border-t-muted/30 pb-4">Select a case blueprint to begin investigation</p>
 

@@ -44,8 +44,8 @@ Depending on the task at hand, you must dynamically load the following conventio
 - If modifying the structural data model of a mystery, read `supabase/functions/_shared/blueprints/blueprint-schema.ts`.
 
 ## Active Technologies
-- TypeScript (Deno runtime for Supabase Edge Functions), TypeScript 5.x for tests and shared package + Supabase Edge Functions, Supabase JS client v2, Zod, OpenRouter HTTP API, Vitest, Playwrigh (004-ai-backend-integration)
-- Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage blueprints (004-ai-backend-integration)
+- Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage blueprints (004-ai-backend-integration, 006-actor-aware-messaging)
+- TypeScript 5.x (SvelteKit web + shared package), TypeScript on Deno runtime for Supabase Edge Functions + SvelteKit, Tailwind CSS, Supabase Edge Functions, Supabase JS client v2, Zod, Vitest, Playwrigh (006-actor-aware-messaging)
 
 ## Recent Changes
 - 004-ai-backend-integration: Added TypeScript (Deno runtime for Supabase Edge Functions), TypeScript 5.x for tests and shared package + Supabase Edge Functions, Supabase JS client v2, Zod, OpenRouter HTTP API, Vitest, Playwrigh

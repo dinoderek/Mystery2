@@ -1,5 +1,6 @@
 import { createClient } from "../_shared/db.ts";
 import {
+  aiRetriableError,
   asRetriableAIResponse,
   badRequest,
   internalError,
@@ -12,7 +13,9 @@ import {
 } from "../_shared/ai-provider.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
+import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
@@ -85,24 +88,60 @@ Deno.serve(async (req) => {
     );
     const locationHistoryJson = JSON.stringify(locationHistory);
 
-    let aiPrompt =
-      `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
+    let narration: string;
 
     if (newTime <= 0) {
       nextMode = "accuse";
       eventType = "forced_endgame";
-      aiPrompt =
-        `The player moves to ${destLoc.name}. Time has run out! Narrate that the investigation is over and they must make an accusation now. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
+      try {
+        const forcedOutput = await generateForcedAccusationStartNarration({
+          req,
+          request_id: requestId,
+          endpoint: "game-move",
+          game_id: game_id,
+          session: {
+            ...session,
+            current_location_id: destLoc.name,
+          },
+          blueprint,
+          conversation_history: historyRows ?? [],
+          scene_summary:
+            `The investigator moved to ${destLoc.name}, and that final movement exhausted all remaining time.`,
+        });
+        narration = forcedOutput.narration;
+      } catch (error) {
+        if (error instanceof RetriableAIError) {
+          log("request.ai_retriable", {
+            game_id: game_id,
+            action: "forced_endgame_start",
+            code: error.details.code ?? null,
+            status: error.details.status ?? null,
+            error: error.message,
+          });
+          return aiRetriableError(error.message, error.details);
+        }
+        log("request.ai_retriable", {
+          game_id: game_id,
+          action: "forced_endgame_start",
+          code: "AI_INVALID_OUTPUT",
+          error: "AI output validation failed",
+        });
+        return aiRetriableError("AI output validation failed", {
+          code: "AI_INVALID_OUTPUT",
+        });
+      }
+    } else {
+      const aiPrompt =
+        `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
+      const ai = getAIProvider();
+      const aiMetadata = createAIRequestMetadata(req, {
+        request_id: requestId,
+        endpoint: "game-move",
+        action: "move",
+        game_id: game_id,
+      });
+      narration = await ai.generateNarration(aiPrompt, aiMetadata);
     }
-
-    const ai = getAIProvider();
-    const aiMetadata = createAIRequestMetadata(req, {
-      request_id: requestId,
-      endpoint: "game-move",
-      action: "move",
-      game_id: game_id,
-    });
-    const narration = await ai.generateNarration(aiPrompt, aiMetadata);
 
     // Update Session
     const { error: updateError } = await db
@@ -131,16 +170,21 @@ Deno.serve(async (req) => {
       .order("sequence", { ascending: false })
       .limit(1);
     const nextSeq = events && events.length > 0 ? events[0].sequence + 1 : 1;
+    const eventPayload: Record<string, unknown> = {
+      destination,
+      location_name: destLoc.name,
+      speaker: NARRATOR_SPEAKER,
+    };
+    if (eventType === "forced_endgame") {
+      eventPayload.trigger = "timeout";
+    }
 
     await db.from("game_events").insert({
       session_id: game_id,
       sequence: nextSeq,
       event_type: eventType,
       actor: "system",
-      payload: {
-        destination,
-        location_name: destLoc.name,
-      },
+      payload: eventPayload,
       narration: narration,
     });
 
@@ -155,6 +199,7 @@ Deno.serve(async (req) => {
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,
+        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

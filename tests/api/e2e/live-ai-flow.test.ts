@@ -17,7 +17,6 @@ const endpointByAction: Record<string, string> = {
   talk: "game-talk",
   ask: "game-ask",
   end_talk: "game-end-talk",
-  accuse_start: "game-accuse",
   accuse_reasoning: "game-accuse",
 };
 

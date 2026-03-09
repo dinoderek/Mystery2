@@ -229,6 +229,7 @@ describe("ai-context guardrails", () => {
         game_id: "game-1",
         role_name: "search",
         mode: "explore",
+        forced_by_timeout: false,
         location_name: "Kitchen",
         character_name: null,
         accused_character: null,

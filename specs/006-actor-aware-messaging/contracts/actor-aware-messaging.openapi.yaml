@@ -1,0 +1,474 @@
+openapi: 3.1.0
+info:
+  title: Mystery Game Speaker-Aware API Contract
+  version: 0.1.0
+  description: |
+    Contract for gameplay endpoints after actor-aware message rendering upgrade.
+    Every narration-bearing response includes explicit speaker metadata.
+servers:
+  - url: http://127.0.0.1:54331/functions/v1
+security:
+  - bearerAuth: []
+paths:
+  /game-start:
+    post:
+      summary: Start a new game session
+      operationId: gameStart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameStartRequest'
+      responses:
+        '200':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-move:
+    post:
+      summary: Move to a destination location
+      operationId: gameMove
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameMoveRequest'
+      responses:
+        '200':
+          description: Move resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameMoveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-search:
+    post:
+      summary: Search current location
+      operationId: gameSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameSessionRequest'
+      responses:
+        '200':
+          description: Search resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-talk:
+    post:
+      summary: Start talking to a character
+      operationId: gameTalk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameTalkRequest'
+      responses:
+        '200':
+          description: Conversation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameTalkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-ask:
+    post:
+      summary: Ask question during active talk mode
+      operationId: gameAsk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameAskRequest'
+      responses:
+        '200':
+          description: Character response returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameAskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-end-talk:
+    post:
+      summary: End active conversation
+      operationId: gameEndTalk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameSessionRequest'
+      responses:
+        '200':
+          description: Conversation ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameEndTalkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-accuse:
+    post:
+      summary: Start or continue accusation flow
+      operationId: gameAccuse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameAccuseRequest'
+      responses:
+        '200':
+          description: Accusation narration returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameAccuseResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /game-get:
+    get:
+      summary: Fetch game state and persisted narration history
+      operationId: gameGet
+      parameters:
+        - in: query
+          name: game_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameGetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected backend failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Speaker:
+      type: object
+      additionalProperties: false
+      required: [kind, key, label]
+      properties:
+        kind:
+          type: string
+          enum: [investigator, narrator, character, system]
+        key:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+    Mode:
+      type: string
+      enum: [explore, talk, accuse, ended]
+    Outcome:
+      type: string
+      enum: [win, lose]
+    ErrorResponse:
+      type: object
+      additionalProperties: true
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    GameSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [game_id]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+    GameStartRequest:
+      type: object
+      additionalProperties: false
+      required: [blueprint_id]
+      properties:
+        blueprint_id:
+          type: string
+          format: uuid
+    GameMoveRequest:
+      allOf:
+        - $ref: '#/components/schemas/GameSessionRequest'
+        - type: object
+          additionalProperties: false
+          required: [destination]
+          properties:
+            destination:
+              type: string
+              minLength: 1
+    GameTalkRequest:
+      allOf:
+        - $ref: '#/components/schemas/GameSessionRequest'
+        - type: object
+          additionalProperties: false
+          required: [character_name]
+          properties:
+            character_name:
+              type: string
+              minLength: 1
+    GameAskRequest:
+      allOf:
+        - $ref: '#/components/schemas/GameSessionRequest'
+        - type: object
+          additionalProperties: false
+          required: [player_input]
+          properties:
+            player_input:
+              type: string
+              minLength: 1
+    GameAccuseRequest:
+      allOf:
+        - $ref: '#/components/schemas/GameSessionRequest'
+        - type: object
+          additionalProperties: false
+          properties:
+            accused_character_id:
+              type: string
+              minLength: 1
+            player_reasoning:
+              type: string
+              minLength: 1
+    LocationSummary:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+    CharacterSummary:
+      type: object
+      additionalProperties: false
+      required: [first_name, last_name, location_name]
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        location_name:
+          type: string
+    VisibleCharacter:
+      type: object
+      additionalProperties: false
+      required: [first_name, last_name]
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+    HistoryEntry:
+      type: object
+      additionalProperties: false
+      required: [sequence, event_type, narration, speaker]
+      properties:
+        sequence:
+          type: integer
+          minimum: 1
+        event_type:
+          type: string
+        narration:
+          type: string
+        speaker:
+          $ref: '#/components/schemas/Speaker'
+    GameState:
+      type: object
+      additionalProperties: false
+      required:
+        - locations
+        - characters
+        - time_remaining
+        - location
+        - mode
+        - current_talk_character
+        - narration
+        - narration_speaker
+        - history
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationSummary'
+        characters:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacterSummary'
+        time_remaining:
+          type: integer
+        location:
+          type: string
+        mode:
+          $ref: '#/components/schemas/Mode'
+        current_talk_character:
+          type: [string, 'null']
+        narration:
+          type: string
+        narration_speaker:
+          $ref: '#/components/schemas/Speaker'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+    GameStartResponse:
+      type: object
+      additionalProperties: false
+      required: [game_id, state]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/GameState'
+    NarrationWithSpeaker:
+      type: object
+      required: [narration, speaker, mode]
+      properties:
+        narration:
+          type: string
+        speaker:
+          $ref: '#/components/schemas/Speaker'
+        mode:
+          $ref: '#/components/schemas/Mode'
+    GameMoveResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          required: [current_location, visible_characters, time_remaining]
+          properties:
+            current_location:
+              type: string
+            visible_characters:
+              type: array
+              items:
+                $ref: '#/components/schemas/VisibleCharacter'
+            time_remaining:
+              type: integer
+    GameSearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          required: [time_remaining]
+          properties:
+            time_remaining:
+              type: integer
+    GameTalkResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          required: [time_remaining, current_talk_character]
+          properties:
+            time_remaining:
+              type: integer
+            current_talk_character:
+              type: [string, 'null']
+    GameAskResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          required: [time_remaining, current_talk_character]
+          properties:
+            time_remaining:
+              type: integer
+            current_talk_character:
+              type: [string, 'null']
+    GameEndTalkResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          required: [time_remaining, current_talk_character]
+          properties:
+            time_remaining:
+              type: integer
+            current_talk_character:
+              type: 'null'
+    GameAccuseResponse:
+      allOf:
+        - $ref: '#/components/schemas/NarrationWithSpeaker'
+        - type: object
+          additionalProperties: false
+          properties:
+            result:
+              oneOf:
+                - $ref: '#/components/schemas/Outcome'
+                - type: 'null'
+            follow_up_prompt:
+              type: [string, 'null']
+    GameGetResponse:
+      type: object
+      additionalProperties: false
+      required: [state]
+      properties:
+        state:
+          $ref: '#/components/schemas/GameState'

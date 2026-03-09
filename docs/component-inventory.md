@@ -8,11 +8,11 @@ _(Add components here as they are built. Example format below)_
 
 ### `TerminalMessage.svelte`
 
-- **Purpose**: Renders a single block of text (chat message, narration, or system feedback) in the UI.
+- **Purpose**: Renders a single speaker-aware message block (label + narration body) in the terminal stream.
 - **Props**:
-  - `role`: `'narrator' | 'character' | 'investigator' | 'system'` (determines color/alignment)
-  - `content`: `string` (the text to display)
-  - `name`: `string` (optional label for the speaker)
+  - `text`: `string` (message content)
+  - `speaker`: `{ kind, key, label }` (canonical actor metadata from store/backend)
+  - `theme`: `'matrix' | 'amber'` (active theme key used for speaker-kind classes)
 
 ### `TerminalInput.svelte`
 

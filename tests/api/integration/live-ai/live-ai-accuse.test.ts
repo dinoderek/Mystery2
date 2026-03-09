@@ -37,10 +37,15 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
         stepLabel: "game-accuse (start)",
         body: {
           game_id,
-          accused_character_id: "Alice",
+          player_reasoning:
+            "I accuse Alice because the clues point to her timeline.",
         },
       });
-      expect(accuseStartData.mode).toBe("accuse");
+      expect(accuseStartData.mode === "accuse" || accuseStartData.mode === "ended").toBe(true);
+
+      if (accuseStartData.mode === "ended") {
+        return;
+      }
 
       let responseMode: string | null = null;
       let finalResult: string | null = null;

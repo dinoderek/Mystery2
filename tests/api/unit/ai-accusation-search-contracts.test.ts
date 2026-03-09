@@ -30,11 +30,13 @@ describe("search and accusation AI output contracts", () => {
         narration: "I need more detail.",
         accusation_resolution: "continue",
         follow_up_prompt: "Which clue proves motive?",
+        inferred_accused_character: null,
       }),
     ).toEqual({
       narration: "I need more detail.",
       accusation_resolution: "continue",
       follow_up_prompt: "Which clue proves motive?",
+      inferred_accused_character: null,
     });
   });
 
@@ -44,11 +46,13 @@ describe("search and accusation AI output contracts", () => {
         narration: "Case closed.",
         accusation_resolution: "win",
         follow_up_prompt: null,
+        inferred_accused_character: "Alice",
       }),
     ).toEqual({
       narration: "Case closed.",
       accusation_resolution: "win",
       follow_up_prompt: null,
+      inferred_accused_character: "Alice",
     });
   });
 
@@ -67,5 +71,14 @@ describe("search and accusation AI output contracts", () => {
         follow_up_prompt: null,
       }),
     ).toThrow("follow_up_prompt");
+
+    expect(() =>
+      parseAccusationJudgeOutput({
+        narration: "Resolved but unclear suspect",
+        accusation_resolution: "lose",
+        follow_up_prompt: null,
+        inferred_accused_character: null,
+      }),
+    ).toThrow("inferred_accused_character");
   });
 });

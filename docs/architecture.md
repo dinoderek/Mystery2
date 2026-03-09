@@ -232,6 +232,7 @@ Failure-handling expectations:
 ### AI Runtime Contract (Current)
 
 - Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
+- Gameplay responses now carry explicit `speaker` metadata (`kind`, `key`, `label`) and `game-get` state includes `narration_speaker` plus `history[].speaker` for deterministic UI labeling.
 - Prompt role files live under `supabase/functions/_shared/ai-prompts/`.
 - Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
 - Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.
@@ -239,6 +240,7 @@ Failure-handling expectations:
 - Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
 - OpenRouter provider calls use bounded retry/backoff and emit structured JSON logs (`request_id`, endpoint/action, role, attempt, latency, outcome).
 - Full implementation details are documented in `docs/ai-runtime.md`.
+- Accusation-specific flow details (reasoning-first rounds, suspect inference, and timeout-forced endgame entry) are documented in `docs/accusation-flow.md`.
 
 ---
 

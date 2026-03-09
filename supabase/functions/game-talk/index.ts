@@ -18,6 +18,7 @@ import { buildTalkStartContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
 async function getNextSequence(
   db: AuthResult["client"],
@@ -33,7 +34,7 @@ async function getNextSequence(
   return events && events.length > 0 ? events[0].sequence + 1 : 1;
 }
 
-Deno.serve(async (req) => {
+serveWithCors(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }

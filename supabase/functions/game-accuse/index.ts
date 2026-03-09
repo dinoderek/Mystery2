@@ -26,6 +26,7 @@ import {
 } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
 type BlueprintCharacter = ReturnType<
   typeof BlueprintSchema.parse
@@ -106,7 +107,7 @@ function buildCharacterTruthMap(
   return result;
 }
 
-Deno.serve(async (req) => {
+serveWithCors(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }

@@ -226,6 +226,7 @@ Failure-handling expectations:
 - OpenRouter failure: return error payload; optionally persist an “AI failure” event.
 - DB failure: return error; UI can refresh and retry.
 - Always design requests to be idempotent or safely retryable.
+- Browser-origin calls must support CORS preflight (`OPTIONS`) and include CORS headers on both success and error responses.
 
 ### AI Runtime Contract (Current)
 

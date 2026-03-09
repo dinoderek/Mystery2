@@ -17,8 +17,9 @@ import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
-Deno.serve(async (req) => {
+serveWithCors(async (req) => {
   if (req.method !== "POST")
     return new Response("Method not allowed", { status: 405 });
   const logger = createRequestLogger(req, "game-move");

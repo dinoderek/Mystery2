@@ -1,20 +1,11 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { serveWithCors } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-Deno.serve(async (req) => {
-
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
+serveWithCors(async (req) => {
   if (req.method !== "GET" && req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    return new Response("Method not allowed", { status: 405 });
   }
 
   try {
@@ -30,13 +21,13 @@ Deno.serve(async (req) => {
       console.error(error);
       return new Response(JSON.stringify({ error: "Failed to list blueprints" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     if (!files || files.length === 0) {
       return new Response(JSON.stringify({ blueprints: [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -80,13 +71,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ blueprints }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: "Failed to fetch blueprints" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   }
 });

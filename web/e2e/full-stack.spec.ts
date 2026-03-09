@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { loginWithSeedUser } from './test-auth';
 
 test.describe('Full stack browser flow', () => {
   test('covers parser + store + backend state machine for talk/ask', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByText('MYSTERY GAME TERMINAL')).toBeVisible();
+    await loginWithSeedUser(page);
 
     try {
       await expect(page.locator('h2.text-xl').first()).toBeVisible({ timeout: 8000 });

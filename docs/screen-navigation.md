@@ -8,6 +8,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 
 - **NO Server Routes**: Do not use `+page.server.ts` or `+layout.server.ts`.
 - **Client Loading**: Initialize data fetching in `+page.ts` (with `export const ssr = false;`).
+- **Auth Gate**: Root layout (`src/routes/+layout.svelte`) enforces authentication for all app routes except `/login`.
 
 ## Current Routes
 
@@ -18,6 +19,18 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **State Dependencies**: Fetches available `Blueprints` from the backend API.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
+  - Includes a logout action that clears browser auth session.
+
+### `/login` (Login Page)
+
+- **Directory**: `src/routes/login/+page.svelte`
+- **Purpose**: Email/password authentication entry point.
+- **State Dependencies**:
+  - Uses `authStore` (`src/lib/domain/auth-store.svelte.ts`) via `LoginForm.svelte`.
+- **Special behavior**:
+  - Validates required fields inline.
+  - Displays auth errors (invalid credentials, expired session).
+  - Redirects to intended target path after successful sign-in.
 
 ### `/session` (Game Page)
 
@@ -30,8 +43,12 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
   - On accusation resolution (`win`/`lose`), input is replaced by a terminal end-state prompt and any key returns to `/`.
+  - Includes a logout action that clears browser auth session.
 
 ## Navigation Patterns
 
 - Use standard HTML `<a>` tags for standard links to leverage SvelteKit's built-in client-side router.
 - Use `goto('/path')` from `$app/navigation` for programmatic navigation (e.g., redirecting to a game session after clicking "Start").
+- Auth redirect rules:
+  - Unauthenticated access to protected routes redirects to `/login`.
+  - Authenticated navigation to `/login` redirects back to the stored intended path (or `/`).

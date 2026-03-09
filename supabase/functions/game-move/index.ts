@@ -1,4 +1,4 @@
-import { createClient } from "../_shared/db.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -27,11 +27,15 @@ Deno.serve(async (req) => {
       return badRequest("Missing game_id or destination");
     }
 
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (isAuthError(authResult)) return authResult;
+    const { client: userClient } = authResult;
+
     const { game_id, destination } = body;
-    const db = createClient();
 
     // Fetch session
-    const { data: session, error: sessionError } = await db
+    const { data: session, error: sessionError } = await userClient
       .from("game_sessions")
       .select("*")
       .eq("id", game_id)
@@ -45,7 +49,7 @@ Deno.serve(async (req) => {
     validateTransition(session.mode, "move");
 
     // Fetch blueprint locations
-    const { data: fileData, error: downloadError } = await db.storage
+    const { data: fileData, error: downloadError } = await userClient.storage
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
     if (downloadError) {
@@ -74,7 +78,7 @@ Deno.serve(async (req) => {
     let nextMode = session.mode;
     let eventType = "move";
 
-    const { data: historyRows } = await db
+    const { data: historyRows } = await userClient
       .from("game_events")
       .select("sequence,event_type,actor,narration,payload")
       .eq("session_id", game_id)
@@ -105,7 +109,7 @@ Deno.serve(async (req) => {
     const narration = await ai.generateNarration(aiPrompt, aiMetadata);
 
     // Update Session
-    const { error: updateError } = await db
+    const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
         current_location_id: destLoc.name,
@@ -124,7 +128,7 @@ Deno.serve(async (req) => {
     }
 
     // Record Event
-    const { data: events } = await db
+    const { data: events } = await userClient
       .from("game_events")
       .select("sequence")
       .eq("session_id", game_id)
@@ -132,7 +136,7 @@ Deno.serve(async (req) => {
       .limit(1);
     const nextSeq = events && events.length > 0 ? events[0].sequence + 1 : 1;
 
-    await db.from("game_events").insert({
+    await userClient.from("game_events").insert({
       session_id: game_id,
       sequence: nextSeq,
       event_type: eventType,

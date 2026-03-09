@@ -1,15 +1,21 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("game-ask endpoint", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("game-ask");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("requires non-empty player_input", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),
@@ -19,20 +25,14 @@ describe("game-ask endpoint", () => {
     // Start talk
     await fetch(`${API_URL}/game-talk`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
 
     // Ask
     const askRes = await fetch(`${API_URL}/game-ask`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({ game_id }),
     });
 
@@ -42,10 +42,7 @@ describe("game-ask endpoint", () => {
   it("accepts free-form player_input asks and preserves talk continuity", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),
@@ -54,19 +51,13 @@ describe("game-ask endpoint", () => {
 
     await fetch(`${API_URL}/game-talk`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
 
     const askRes = await fetch(`${API_URL}/game-ask`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         game_id,
         player_input: "Where were you when the cookies disappeared?",

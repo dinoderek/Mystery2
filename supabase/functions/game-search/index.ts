@@ -1,4 +1,4 @@
-import { createClient } from "../_shared/db.ts";
+import { requireAuth, isAuthError, type AuthResult } from "../_shared/auth.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -17,7 +17,7 @@ import { buildSearchContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 
 async function getNextSequence(
-  db: ReturnType<typeof createClient>,
+  db: AuthResult["client"],
   gameId: string,
 ): Promise<number> {
   const { data: events } = await db
@@ -44,10 +44,14 @@ Deno.serve(async (req) => {
       return badRequest("Missing game_id");
     }
 
-    const gameId = String(body.game_id);
-    const db = createClient();
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (isAuthError(authResult)) return authResult;
+    const { client: userClient } = authResult;
 
-    const { data: session, error: sessionError } = await db
+    const gameId = String(body.game_id);
+
+    const { data: session, error: sessionError } = await userClient
       .from("game_sessions")
       .select("*")
       .eq("id", gameId)
@@ -59,7 +63,7 @@ Deno.serve(async (req) => {
     }
     validateTransition(session.mode, "search");
 
-    const { data: fileData, error: downloadError } = await db.storage
+    const { data: fileData, error: downloadError } = await userClient.storage
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
     if (downloadError) {
@@ -83,7 +87,7 @@ Deno.serve(async (req) => {
       return internalError("Current location not found in blueprint");
     }
 
-    const { data: historyRows } = await db
+    const { data: historyRows } = await userClient
       .from("game_events")
       .select("sequence,event_type,actor,narration,payload")
       .eq("session_id", gameId)
@@ -143,7 +147,7 @@ Deno.serve(async (req) => {
     const nextMode = isForcedEndgame ? "accuse" : session.mode;
     const eventType = isForcedEndgame ? "forced_endgame" : "search";
 
-    const { error: updateError } = await db
+    const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
         time_remaining: newTime,
@@ -159,8 +163,8 @@ Deno.serve(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const nextSequence = await getNextSequence(db, gameId);
-    await db.from("game_events").insert({
+    const nextSequence = await getNextSequence(userClient, gameId);
+    await userClient.from("game_events").insert({
       session_id: gameId,
       sequence: nextSequence,
       event_type: eventType,

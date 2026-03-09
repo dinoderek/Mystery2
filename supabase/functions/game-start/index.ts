@@ -1,4 +1,4 @@
-import { createClient } from "../_shared/db.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -21,6 +21,11 @@ Deno.serve(async (req) => {
   const { requestId, log, logError } = logger;
 
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (isAuthError(authResult)) return authResult;
+    const { client: supabase, user: authUser } = authResult;
+
     const body = await req.json();
     if (!body || typeof body.blueprint_id !== "string") {
       log("request.invalid", { reason: "missing_or_invalid_blueprint_id" });
@@ -28,7 +33,6 @@ Deno.serve(async (req) => {
     }
 
     const { blueprint_id } = body;
-    const supabase = createClient();
 
     // Find blueprint in Storage
     const { data: files, error: listError } = await supabase.storage
@@ -73,10 +77,11 @@ Deno.serve(async (req) => {
     const blueprint = BlueprintSchema.parse(rawBlueprint);
     const startLoc = blueprint.world.starting_location_id;
 
-    // Insert game_session
+    // Insert game_session (user_id from authenticated user)
     const { data: sessionData, error: sessionError } = await supabase
       .from("game_sessions")
       .insert({
+        user_id: authUser.id,
         blueprint_id: blueprint.id,
         mode: "explore",
         current_location_id: startLoc,

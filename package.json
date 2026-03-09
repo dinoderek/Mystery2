@@ -12,6 +12,7 @@
         "dev:ai:paid": "node scripts/dev-ai.mjs paid",
         "supabase:restart": "node scripts/supabase-restart.mjs",
         "logs:edge": "node scripts/tail-edge-logs.mjs",
+        "seed:auth": "node scripts/seed-auth-users.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",
         "lint": "eslint .",
         "format": "prettier --write .",

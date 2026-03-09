@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { loginWithSeedUser } from "./test-auth";
 
 test.skip(
   process.env.AI_LIVE !== "1",
@@ -7,7 +8,7 @@ test.skip(
 
 test.describe("Live AI smoke", () => {
   test("loads a real session and executes one live command", async ({ page }) => {
-    await page.goto("/");
+    await loginWithSeedUser(page);
 
     await expect(page.getByText("Mock Blueprint")).toBeVisible();
     await page.keyboard.press("1");

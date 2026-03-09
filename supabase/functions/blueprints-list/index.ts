@@ -1,4 +1,4 @@
-import { createClient } from "../_shared/db.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 
@@ -18,8 +18,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient();
-    const { data: files, error } = await supabase.storage
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (isAuthError(authResult)) return authResult;
+    const { client: userClient } = authResult;
+    const { data: files, error } = await userClient.storage
       .from("blueprints")
       .list();
 
@@ -41,7 +44,7 @@ Deno.serve(async (req) => {
     for (const file of files) {
       if (!file.name.endsWith(".json")) continue;
 
-      const { data: fileData, error: downloadError } = await supabase.storage
+      const { data: fileData, error: downloadError } = await userClient.storage
         .from("blueprints")
         .download(file.name);
 

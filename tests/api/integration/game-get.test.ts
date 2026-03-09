@@ -1,13 +1,22 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("game-get endpoint", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("game-get");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("returns 404 for missing or invalid game_id", async () => {
     const res = await fetch(
       `${API_URL}/game-get?game_id=123e4567-e89b-12d3-a456-426614174999`,
       {
-        headers: { Authorization: `Bearer ${process.env.ANON_KEY}` },
+        headers: auth.headers,
       },
     );
     expect(res.status).toBe(404);
@@ -17,10 +26,7 @@ describe("game-get endpoint", () => {
     // 1. Start a new game
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),
@@ -30,7 +36,7 @@ describe("game-get endpoint", () => {
 
     // 2. Retrieve game state
     const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
-      headers: { Authorization: `Bearer ${process.env.ANON_KEY}` },
+      headers: auth.headers,
     });
     expect(getRes.status).toBe(200);
 

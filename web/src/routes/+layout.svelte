@@ -1,15 +1,55 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { themeStore } from '$lib/domain/theme-store.svelte';
+	import { authStore } from '$lib/domain/auth-store.svelte';
+	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		themeStore.init();
 	});
+
+	function isE2EAuthBypassEnabled(): boolean {
+		if (!import.meta.env.VITE_E2E_AUTH_BYPASS) return false;
+		if (typeof window === 'undefined') return false;
+		return window.localStorage.getItem('mystery-e2e-auth-bypass') === '1';
+	}
+
+	// Reactive auth gate
+	$effect(() => {
+		if (isE2EAuthBypassEnabled()) return;
+		if (authStore.loading) return;
+
+		const currentPath = $page.url.pathname;
+		const currentTarget = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
+		const isLoginPage = currentPath === '/login';
+
+		if (!authStore.session && !isLoginPage) {
+			// Save intended path for post-login redirect
+			if (!authStore.intendedPath) {
+				authStore.intendedPath = currentTarget;
+			}
+			goto('/login', { replaceState: true });
+		} else if (authStore.session && isLoginPage) {
+			// Redirect authenticated users away from login
+			const target = authStore.intendedPath || '/';
+			authStore.intendedPath = null;
+			goto(target, { replaceState: true });
+		}
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+
+{#if authStore.loading}
+	<main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center">
+		<TerminalSpinner text="Initializing secure session..." />
+	</main>
+{:else}
+	{@render children()}
+{/if}

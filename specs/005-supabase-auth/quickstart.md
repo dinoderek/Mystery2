@@ -18,16 +18,20 @@ npm run dev
 
 This starts the Supabase local stack (Postgres/Auth/Storage/Functions) and the SvelteKit dev server.
 
-### 2. Test accounts (auto-provisioned)
+### 2. Provision test accounts
 
-After `supabase db reset` or stack start, these test accounts are available:
+Create local auth users with:
+
+```bash
+npm run seed:auth
+```
+
+This ensures the following test accounts exist:
 
 | Email | Password | Notes |
 |-------|----------|-------|
 | `player1@test.local` | `password123` | Primary test player |
 | `player2@test.local` | `password123` | For RLS isolation tests |
-
-These are seeded via `supabase/seed/seed-auth-users.sql`.
 
 ### 3. Login
 
@@ -43,7 +47,7 @@ Navigate to `http://localhost:5173`. You'll see the login screen. Enter test cre
 | `web/src/routes/+layout.svelte` | Auth gate (redirects unauthenticated users) |
 | `supabase/functions/_shared/auth.ts` | Edge Function auth helper |
 | `supabase/functions/_shared/db.ts` | Enhanced with `createUserClient(req)` |
-| `supabase/migrations/000X_add_user_id.sql` | Schema migration for user ownership |
+| `supabase/migrations/0004_add_user_id_and_auth_policies.sql` | Schema migration for user ownership |
 
 ## Running Tests
 

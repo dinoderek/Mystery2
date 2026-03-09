@@ -245,7 +245,7 @@ Failure-handling expectations:
 ## Security model
 
 - **No secrets in UI**.
-- **OpenRouter key lives only in Edge Function secrets**.
+- **OpenRouter key is server-side only** (stored in `ai_profiles.openrouter_api_key` or supplied via Edge Function env fallback).
 - **All data access** is controlled by Postgres **RLS** (and explicit checks where appropriate).
 - UI calls Edge Functions with a bearer token; functions validate it on every request.
 - RLS ownership design:
@@ -277,9 +277,11 @@ Runbook and failure handling details live in `docs/deployment.md`.
 
 ## Local development model
 
-- A single script starts:
-  1. Supabase local stack (Postgres/Auth/Storage/Functions)
-  2. SvelteKit dev server (Vite)
+- A single setup script initializes local development:
+  1. Ensures Supabase local stack is running (no restart by default)
+  2. Seeds storage/auth/AI profile data
+- Dev/test scripts avoid restarts by default and use logical isolation instead of DB resets.
+- AI runtime profile selection is session-scoped (`game-start.ai_profile`) and does not require Supabase restarts.
 
 For local development commands, use the scripts documented in the repository root `package.json`.
 

@@ -1,7 +1,5 @@
-import {
-  createAIRequestMetadata,
-  getAIProvider,
-} from "./ai-provider.ts";
+import type { AIProvider } from "./ai-provider.ts";
+import { createAIRequestMetadata } from "./ai-provider.ts";
 import { parseAccusationStartOutput } from "./ai-contracts.ts";
 import {
   buildAccusationStartContext,
@@ -16,12 +14,12 @@ export async function generateForcedAccusationStartNarration(input: {
   request_id: string;
   endpoint: string;
   game_id: string;
+  aiProvider: AIProvider;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
   conversation_history: ConversationFragment[];
   scene_summary: string;
 }): Promise<{ narration: string; follow_up_prompt: string }> {
-  const aiProvider = getAIProvider();
   const aiContext = buildAccusationStartContext({
     game_id: input.game_id,
     session: {
@@ -45,7 +43,7 @@ export async function generateForcedAccusationStartNarration(input: {
     game_id: input.game_id,
   });
 
-  return await aiProvider.generateRoleOutput({
+  return await input.aiProvider.generateRoleOutput({
     role: "accusation_start",
     prompt,
     context: aiContext,

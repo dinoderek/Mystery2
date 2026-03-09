@@ -9,8 +9,9 @@ import {
 import { validateTransition } from "../_shared/state-machine.ts";
 import {
   createAIRequestMetadata,
-  getAIProvider,
+  createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
+import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -50,6 +51,19 @@ Deno.serve(async (req) => {
     }
 
     validateTransition(session.mode, "move");
+
+    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    if (!aiProfile) {
+      logError("request.error", {
+        reason: "ai_profile_missing",
+        game_id: game_id,
+        ai_profile_id: session.ai_profile_id ?? null,
+      });
+      return internalError("AI profile not found");
+    }
+    const aiProvider = createAIProviderFromProfile(aiProfile, {
+      openrouterApiKey: aiProfile.openrouter_api_key,
+    });
 
     // Fetch blueprint locations
     const { data: fileData, error: downloadError } = await userClient.storage
@@ -103,6 +117,7 @@ Deno.serve(async (req) => {
           request_id: requestId,
           endpoint: "game-move",
           game_id: game_id,
+          aiProvider,
           session: {
             ...session,
             current_location_id: destLoc.name,
@@ -137,14 +152,13 @@ Deno.serve(async (req) => {
     } else {
       const aiPrompt =
         `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
-      const ai = getAIProvider();
       const aiMetadata = createAIRequestMetadata(req, {
         request_id: requestId,
         endpoint: "game-move",
         action: "move",
         game_id: game_id,
       });
-      narration = await ai.generateNarration(aiPrompt, aiMetadata);
+      narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
     }
 
     // Update Session

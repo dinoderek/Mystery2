@@ -31,6 +31,7 @@ export type ThemeName = 'matrix' | 'amber';
 
 const THEME_STORAGE_KEY = 'mystery-theme';
 const THEME_NAMES: ThemeName[] = ['matrix', 'amber'];
+const DEFAULT_AI_PROFILE = (import.meta.env.VITE_AI_PROFILE || 'mock').trim() || 'mock';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -119,7 +120,7 @@ export class GameSessionStore {
   async startGame(blueprintId: string) {
     this.status = 'loading';
     const { data, error } = await supabase.functions.invoke('game-start', {
-      body: { blueprint_id: blueprintId },
+      body: { blueprint_id: blueprintId, ai_profile: DEFAULT_AI_PROFILE },
     });
     if (error) {
       this.error = error.message;

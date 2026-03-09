@@ -1,9 +1,10 @@
 import path from "node:path";
 import {
+  ensureSupabaseRunning,
   npmBin,
   loadEnvFile,
+  parseScriptOptions,
   runCommand,
-  smartStartSupabase,
 } from "./supabase-utils.mjs";
 
 const mode = process.argv[2];
@@ -15,6 +16,7 @@ if (mode !== "free" && mode !== "paid") {
 const rootDir = process.cwd();
 const baseEnvPath = path.join(rootDir, ".env.local");
 const modeEnvPath = path.join(rootDir, `.env.ai.${mode}.local`);
+const options = parseScriptOptions(process.argv.slice(3));
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
@@ -23,6 +25,7 @@ try {
     ...baseVars,
     ...modeVars,
     ...process.env,
+    VITE_AI_PROFILE: mode,
   };
 
   if (!env.AI_PROVIDER) {
@@ -37,9 +40,16 @@ try {
     );
   }
 
-  console.log(`Starting local stack in "${mode}" AI mode...`);
-  await smartStartSupabase(rootDir, mode, env);
-  runCommand(npmBin, ["run", "seed:storage"], env);
+  console.log(`Starting local stack with AI profile "${mode}"...`);
+  await ensureSupabaseRunning(env, { restart: options.restart });
+  if (options.seedStorage === "always") {
+    runCommand(npmBin, ["run", "seed:storage"], env);
+  } else if (options.seedStorage === "if-missing") {
+    runCommand(npmBin, ["run", "seed:storage", "--", "--if-missing"], env);
+  }
+  if (options.seedAI) {
+    runCommand(npmBin, ["run", "seed:ai", "--", "--only", mode], env);
+  }
   runCommand(npmBin, ["-w", "web", "run", "dev"], env);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

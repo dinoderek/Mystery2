@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GameAccuseRequestSchema,
   GameAskRequestSchema,
+  GameStartRequestSchema,
   GameStateSchema,
   SearchResponseSchema,
   SpeakerSchema,
@@ -15,6 +16,26 @@ const narratorSpeaker = {
 } as const;
 
 describe("shared mystery API contracts", () => {
+  it("accepts game-start requests with optional ai_profile", () => {
+    expect(
+      GameStartRequestSchema.parse({
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    ).toEqual({
+      blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+    });
+
+    expect(
+      GameStartRequestSchema.parse({
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        ai_profile: "free",
+      }),
+    ).toEqual({
+      blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+      ai_profile: "free",
+    });
+  });
+
   it("requires player_input for game-ask requests", () => {
     expect(() =>
       GameAskRequestSchema.parse({

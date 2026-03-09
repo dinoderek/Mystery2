@@ -1,9 +1,10 @@
 import path from "node:path";
 import {
+  ensureSupabaseRunning,
   loadEnvFile,
   npmBin,
+  parseScriptOptions,
   runCommand,
-  smartStartSupabase,
 } from "./supabase-utils.mjs";
 
 const suite = process.argv[2];
@@ -13,6 +14,7 @@ if ((suite !== "integration" && suite !== "e2e") || (mode !== "free" && mode !==
   console.error("Usage: node scripts/run-live-ai.mjs <integration|e2e> <free|paid>");
   process.exit(1);
 }
+const options = parseScriptOptions(process.argv.slice(4));
 
 const rootDir = process.cwd();
 const baseEnvPath = path.join(rootDir, ".env.local");
@@ -52,8 +54,15 @@ try {
   };
 
   console.log(`Running ${suite} live AI tests in "${mode}" mode...`);
-  await smartStartSupabase(rootDir, mode, env, { forceRestart: true });
-  runCommand(npmBin, ["run", "seed:storage"], env);
+  await ensureSupabaseRunning(env, { restart: options.restart });
+  if (options.seedStorage === "always") {
+    runCommand(npmBin, ["run", "seed:storage"], env);
+  } else if (options.seedStorage === "if-missing") {
+    runCommand(npmBin, ["run", "seed:storage", "--", "--if-missing"], env);
+  }
+  if (options.seedAI) {
+    runCommand(npmBin, ["run", "seed:ai", "--", "--only", mode], env);
+  }
   runCommand(
     npmBin,
     [

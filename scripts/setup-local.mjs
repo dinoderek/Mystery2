@@ -1,8 +1,8 @@
 import path from "node:path";
 import {
   ensureSupabaseRunning,
-  npmBin,
   loadEnvFile,
+  npmBin,
   parseScriptOptions,
   runCommand,
 } from "./supabase-utils.mjs";
@@ -13,23 +13,23 @@ const options = parseScriptOptions(process.argv.slice(2));
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
-  const env = {
-    ...baseVars,
-    ...process.env,
-    VITE_AI_PROFILE: "mock",
-  };
+  const env = { ...baseVars, ...process.env };
 
-  console.log('Starting local stack with AI profile "mock"...');
   await ensureSupabaseRunning(env, { restart: options.restart });
+
   if (options.seedStorage === "always") {
     runCommand(npmBin, ["run", "seed:storage"], env);
   } else if (options.seedStorage === "if-missing") {
     runCommand(npmBin, ["run", "seed:storage", "--", "--if-missing"], env);
   }
+
+  runCommand(npmBin, ["run", "seed:auth"], env);
+
   if (options.seedAI) {
-    runCommand(npmBin, ["run", "seed:ai", "--", "--only", "mock"], env);
+    runCommand(npmBin, ["run", "seed:ai"], env);
   }
-  runCommand(npmBin, ["-w", "web", "run", "dev"], env);
+
+  console.log("Local setup complete.");
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

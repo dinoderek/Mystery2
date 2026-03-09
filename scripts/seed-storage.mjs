@@ -4,6 +4,12 @@ import path from "path";
 
 const ROOT_DIR = process.cwd();
 const SOURCE_DIRS = ["blueprints", "supabase/seed/blueprints"];
+const args = process.argv.slice(2);
+
+function resolveSeedMode() {
+  if (args.includes("--if-missing")) return "if-missing";
+  return "always";
+}
 
 function parseEnvLine(line) {
   const trimmed = line.trim();
@@ -75,6 +81,24 @@ if (!supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+const seedMode = resolveSeedMode();
+
+if (seedMode === "if-missing") {
+  const { data: existing, error: listError } = await supabase.storage
+    .from("blueprints")
+    .list("", { limit: 1 });
+  if (listError) {
+    console.error(`Unable to check existing blueprints: ${listError.message}`);
+    process.exit(1);
+  }
+  if ((existing ?? []).length > 0) {
+    console.log(
+      "Storage seed skipped: blueprint objects already present (use npm run seed:storage to force).",
+    );
+    process.exit(0);
+  }
+}
+
 const blueprintFiles = await collectBlueprintFiles();
 
 if (blueprintFiles.length === 0) {

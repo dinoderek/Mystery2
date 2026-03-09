@@ -124,17 +124,90 @@ function requireContextNumber(
   return value;
 }
 
-function requireContextBoolean(
-  role: AIRoleName,
+function readOptionalContextString(
   context: Record<string, unknown>,
   key: string,
-): boolean {
+): string | null {
   const value = context[key];
-  if (typeof value !== "boolean") {
-    throw new Error(`Missing required ${role} boolean context field: ${key}`);
+  if (typeof value !== "string") {
+    return null;
   }
 
-  return value;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function inferMockAccusedCharacter(
+  context: Record<string, unknown>,
+): string | null {
+  const explicitAccused = readOptionalContextString(context, "accused_character");
+  if (explicitAccused) {
+    return explicitAccused;
+  }
+
+  const playerInput = readOptionalContextString(context, "player_input");
+  if (!playerInput) {
+    return null;
+  }
+  const normalizedInput = playerInput.toLowerCase();
+
+  const sharedMysteryContext = context.shared_mystery_context;
+  if (
+    typeof sharedMysteryContext !== "object" ||
+    sharedMysteryContext === null ||
+    Array.isArray(sharedMysteryContext)
+  ) {
+    return null;
+  }
+
+  const characterNamesRaw = (
+    sharedMysteryContext as Record<string, unknown>
+  ).character_names;
+  if (!Array.isArray(characterNamesRaw)) {
+    return null;
+  }
+
+  for (const value of characterNamesRaw) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const fullName = value.trim();
+    if (!fullName) {
+      continue;
+    }
+    const firstName = fullName.split(/\s+/u)[0] ?? "";
+    if (!firstName) {
+      continue;
+    }
+    if (normalizedInput.includes(firstName.toLowerCase())) {
+      return firstName;
+    }
+  }
+
+  return null;
+}
+
+function resolveMockCharacterTruth(
+  context: Record<string, unknown>,
+  inferredAccusedCharacter: string,
+): boolean | null {
+  const truthMapRaw = context.character_truth;
+  if (
+    typeof truthMapRaw !== "object" ||
+    truthMapRaw === null ||
+    Array.isArray(truthMapRaw)
+  ) {
+    return null;
+  }
+
+  const firstNameMatch = (truthMapRaw as Record<string, unknown>)[
+    inferredAccusedCharacter
+  ];
+  if (typeof firstNameMatch === "boolean") {
+    return firstNameMatch;
+  }
+
+  return null;
 }
 
 export function resolveAIProfile(env = getRuntimeEnv()): AIRuntimeProfile {
@@ -286,40 +359,67 @@ class MockAIProvider implements AIProvider {
         };
       }
       case "accusation_start": {
-        const accusedCharacter = requireContextString(
-          role,
+        const accusedCharacter = readOptionalContextString(
           context,
           "accused_character",
         );
+        const forcedByTimeout = context.forced_by_timeout === true;
+        const stagePrompt = forcedByTimeout
+          ? "Time is up. You must make your accusation now."
+          : "The final accusation begins.";
+        const suspectPrompt = accusedCharacter
+          ? ` You are focusing on ${accusedCharacter}.`
+          : "";
         return {
-          narration: `[Mock] You accuse ${accusedCharacter}. Present your reasoning before judgment.`,
+          narration: `[Mock] ${stagePrompt}${suspectPrompt} Present your reasoning before judgment.`,
           follow_up_prompt:
-            "Explain your evidence, timeline, and motive in one clear argument.",
+            "Who do you accuse, and what evidence, timeline, and motive support your case?",
         };
       }
       case "accusation_judge": {
-        const accusedCharacter = requireContextString(
-          role,
-          context,
-          "accused_character",
-        );
         const round = requireContextNumber(role, context, "round");
-        const isCulprit = requireContextBoolean(role, context, "is_culprit");
-        const accusationResolution: AccusationResolution =
-          round < 1 ? "continue" : isCulprit ? "win" : "lose";
+        const inferredAccusedCharacter = inferMockAccusedCharacter(context);
+        if (!inferredAccusedCharacter) {
+          return {
+            narration:
+              "[Mock] I still cannot identify who you are accusing from your explanation.",
+            accusation_resolution: "continue",
+            follow_up_prompt:
+              "State the suspect's name clearly, then explain why the evidence supports that accusation.",
+            inferred_accused_character: null,
+          };
+        }
+
+        const truthFromMap = resolveMockCharacterTruth(
+          context,
+          inferredAccusedCharacter,
+        );
+        const isCulprit =
+          truthFromMap ??
+          (context.is_culprit === true
+            ? true
+            : context.is_culprit === false
+              ? false
+              : false);
+        const accusationResolution: AccusationResolution = round < 1
+          ? "continue"
+          : isCulprit
+          ? "win"
+          : "lose";
 
         return {
           narration:
             accusationResolution === "continue"
-              ? `[Mock] I need a stronger chain of evidence before deciding on ${accusedCharacter}.`
+              ? `[Mock] I need a stronger chain of evidence before deciding on ${inferredAccusedCharacter}.`
               : accusationResolution === "win"
-                ? `[Mock] The evidence is decisive. ${accusedCharacter} is guilty.`
-                : `[Mock] The evidence does not support accusing ${accusedCharacter}.`,
+                ? `[Mock] The evidence is decisive. ${inferredAccusedCharacter} is guilty.`
+                : `[Mock] The evidence does not support accusing ${inferredAccusedCharacter}.`,
           accusation_resolution: accusationResolution,
           follow_up_prompt:
             accusationResolution === "continue"
               ? "Which evidence directly connects this suspect to the event?"
               : null,
+          inferred_accused_character: inferredAccusedCharacter,
         };
       }
     }

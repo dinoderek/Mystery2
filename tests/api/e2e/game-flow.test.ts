@@ -84,17 +84,21 @@ describe("Full E2E API Investigation Flow", () => {
     const getData = await getRes.json();
     expect(getData.state.history.length).toBeGreaterThan(0);
 
-    // 9. POST game-accuse (start phase)
+    // 9. POST game-accuse (reasoning round 1 from explore)
     const accuseStartRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id, accused_character_id: "Alice" }),
+      body: JSON.stringify({
+        game_id,
+        player_reasoning:
+          "I accuse Alice because she was nearby and acted nervous.",
+      }),
     });
     expect(accuseStartRes.status).toBe(200);
     const accuseStartData = await accuseStartRes.json();
     expect(accuseStartData.mode).toBe("accuse");
 
-    // 10. POST game-accuse (judge round 1)
+    // 10. POST game-accuse (judge resolve round)
     const accuseRoundOneRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers,
@@ -105,26 +109,10 @@ describe("Full E2E API Investigation Flow", () => {
     });
     expect(accuseRoundOneRes.status).toBe(200);
     const accuseRoundOneData = await accuseRoundOneRes.json();
-    expect(accuseRoundOneData.mode).toBe("accuse");
-    expect(accuseRoundOneData.follow_up_prompt).toBeTruthy();
+    expect(accuseRoundOneData.mode).toBe("ended");
+    expect(accuseRoundOneData.result).toBe("win");
 
-    // 11. POST game-accuse (judge round 2, resolve)
-    const accuseResolveRes = await fetch(`${API_URL}/game-accuse`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        game_id,
-        player_reasoning:
-          "Alice had motive, opportunity, and the clues match her timeline.",
-      }),
-    });
-    expect(accuseResolveRes.status).toBe(200);
-    const accuseResolveData = await accuseResolveRes.json();
-
-    // 12. Check outcome
-    expect(accuseResolveData.result).toBe("win");
-
-    // 13. Final state check
+    // 11. Final state check
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
     });

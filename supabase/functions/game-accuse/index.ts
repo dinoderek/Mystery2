@@ -25,6 +25,10 @@ import {
 } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 
+type BlueprintCharacter = ReturnType<
+  typeof BlueprintSchema.parse
+>["world"]["characters"][number];
+
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
   gameId: string,
@@ -39,9 +43,26 @@ async function getNextSequence(
   return events && events.length > 0 ? events[0].sequence + 1 : 1;
 }
 
-type BlueprintCharacter = ReturnType<
-  typeof BlueprintSchema.parse
->["world"]["characters"][number];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readPayloadString(
+  payload: unknown,
+  key: string,
+): string | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const value = payload[key];
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 function findCharacter(
   characters: BlueprintCharacter[],
@@ -54,19 +75,33 @@ function findCharacter(
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getAccusedCharacterFromStartEvent(
-  event: { payload: unknown } | undefined,
+function getLatestInferredAccusedCharacter(
+  history: Array<{ payload: unknown }>,
 ): string | null {
-  if (!event || !isRecord(event.payload)) {
-    return null;
+  const reversed = [...history].reverse();
+
+  for (const entry of reversed) {
+    const inferred =
+      readPayloadString(entry.payload, "inferred_accused_character") ??
+      readPayloadString(entry.payload, "accused_character") ??
+      readPayloadString(entry.payload, "accused_character_id");
+
+    if (inferred) {
+      return inferred;
+    }
   }
 
-  const accused = event.payload.accused_character_id;
-  return typeof accused === "string" ? accused : null;
+  return null;
+}
+
+function buildCharacterTruthMap(
+  characters: BlueprintCharacter[],
+): Record<string, boolean> {
+  const result: Record<string, boolean> = {};
+  for (const character of characters) {
+    result[character.first_name] = character.is_culprit;
+  }
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -88,10 +123,6 @@ Deno.serve(async (req) => {
       typeof body.player_reasoning === "string"
         ? body.player_reasoning.trim()
         : "";
-    const accusedCharacterInput =
-      typeof body.accused_character_id === "string"
-        ? body.accused_character_id
-        : null;
     const accusationHistoryMode =
       body.accusation_history_mode === "none" ? "none" : "all";
 
@@ -127,168 +158,23 @@ Deno.serve(async (req) => {
 
     const aiProvider = getAIProvider();
 
-    if (session.mode === "explore") {
-      validateTransition(session.mode, resolveAccusationAction(session.mode));
-      if (!accusedCharacterInput) {
-        log("request.invalid", {
-          reason: "missing_accused_character_id",
-          game_id: gameId,
-        });
-        return badRequest("Missing accused_character_id");
-      }
-
-      const accusedCharacter = findCharacter(
-        blueprint.world.characters,
-        accusedCharacterInput,
-      );
-      if (!accusedCharacter) {
-        log("request.invalid", {
-          reason: "character_not_found_in_blueprint",
-          game_id: gameId,
-          accused_character_id: accusedCharacterInput,
-        });
-        return badRequest("Character not found in blueprint");
-      }
-
-      const aiContext = buildAccusationStartContext({
-        game_id: gameId,
-        session,
-        blueprint,
-        accused_character: accusedCharacter.first_name,
-        player_input: playerReasoning || null,
-        conversation_history: history,
-        history_mode: accusationHistoryMode,
-      });
-
-      const promptTemplate = await loadPromptTemplate("accusation_start");
-      const prompt = renderPrompt(promptTemplate, {
-        accused_character: accusedCharacter.first_name,
-      });
-      const aiMetadata = createAIRequestMetadata(req, {
-        request_id: requestId,
-        endpoint: "game-accuse",
-        action: "accuse_start",
-        game_id: gameId,
-      });
-
-      let startOutput: ReturnType<typeof parseAccusationStartOutput>;
-      try {
-        startOutput = await aiProvider.generateRoleOutput({
-          role: "accusation_start",
-          prompt,
-          context: aiContext,
-          parse: parseAccusationStartOutput,
-          metadata: aiMetadata,
-        });
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            action: "accuse_start",
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          action: "accuse_start",
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-
-      const { error: updateError } = await db
-        .from("game_sessions")
-        .update({
-          mode: "accuse",
-          current_talk_character_id: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", gameId);
-      if (updateError) {
-        logError("request.error", {
-          reason: "session_update_failed",
-          game_id: gameId,
-          action: "accuse_start",
-        });
-        return internalError("Failed to update session");
-      }
-
-      const nextSequence = await getNextSequence(db, gameId);
-      await db.from("game_events").insert({
-        session_id: gameId,
-        sequence: nextSequence,
-        event_type: "accuse_start",
-        actor: "player",
-        payload: {
-          role: "accusation_start",
-          accused_character_id: accusedCharacter.first_name,
-        },
-        narration: startOutput.narration,
-      });
-
-      return new Response(
-        JSON.stringify({
-          narration: startOutput.narration,
-          mode: "accuse",
-          result: null,
-          follow_up_prompt: startOutput.follow_up_prompt,
-        }),
-        { headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    if (session.mode === "accuse") {
-      validateTransition(session.mode, resolveAccusationAction(session.mode));
-      if (playerReasoning.length === 0) {
-        log("request.invalid", {
-          reason: "missing_player_reasoning",
-          game_id: gameId,
-        });
-        return badRequest("Missing player_reasoning");
-      }
-
-      const latestAccuseStart = [...history]
-        .reverse()
-        .find((entry) => entry.event_type === "accuse_start");
-      const accusedCharacterId =
-        accusedCharacterInput ??
-        getAccusedCharacterFromStartEvent(latestAccuseStart) ??
-        null;
-      if (!accusedCharacterId) {
-        log("request.invalid", {
-          reason: "missing_accused_character_context",
-          game_id: gameId,
-        });
-        return badRequest("Unable to determine accused character");
-      }
-
-      const accusedCharacter = findCharacter(
-        blueprint.world.characters,
-        accusedCharacterId,
-      );
-      if (!accusedCharacter) {
-        log("request.invalid", {
-          reason: "character_not_found_in_blueprint",
-          game_id: gameId,
-          accused_character_id: accusedCharacterId,
-        });
-        return badRequest("Character not found in blueprint");
-      }
-
+    const runReasoningRound = async (
+      contextSession: typeof session,
+    ): Promise<Response> => {
       const accusationRounds = history.filter(
         (entry) => entry.event_type === "accuse_round",
       ).length;
+
+      const inferredFromHistory = getLatestInferredAccusedCharacter(history);
       const aiContext = buildAccusationJudgeContext({
         game_id: gameId,
-        session,
+        session: {
+          ...contextSession,
+          mode: "accuse",
+          current_talk_character_id: null,
+        },
         blueprint,
-        accused_character: accusedCharacter.first_name,
+        accused_character: inferredFromHistory,
         player_input: playerReasoning,
         round: accusationRounds,
         conversation_history: history,
@@ -297,7 +183,7 @@ Deno.serve(async (req) => {
 
       const promptTemplate = await loadPromptTemplate("accusation_judge");
       const prompt = renderPrompt(promptTemplate, {
-        accused_character: accusedCharacter.first_name,
+        forced_context: "",
       });
       const aiMetadata = createAIRequestMetadata(req, {
         request_id: requestId,
@@ -305,6 +191,8 @@ Deno.serve(async (req) => {
         action: "accuse_reasoning",
         game_id: gameId,
       });
+
+      const characterTruthMap = buildCharacterTruthMap(blueprint.world.characters);
 
       let judgeOutput: ReturnType<typeof parseAccusationJudgeOutput>;
       try {
@@ -314,7 +202,7 @@ Deno.serve(async (req) => {
           context: {
             ...aiContext,
             round: accusationRounds,
-            is_culprit: accusedCharacter.is_culprit,
+            character_truth: characterTruthMap,
           },
           parse: parseAccusationJudgeOutput,
           metadata: aiMetadata,
@@ -341,7 +229,43 @@ Deno.serve(async (req) => {
         });
       }
 
+      const inferredAccusedCharacter =
+        judgeOutput.inferred_accused_character ?? inferredFromHistory;
+      const inferredCharacter = inferredAccusedCharacter
+        ? findCharacter(blueprint.world.characters, inferredAccusedCharacter)
+        : null;
+
+      if (inferredAccusedCharacter && !inferredCharacter) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          action: "accuse_reasoning",
+          code: "AI_INVALID_OUTPUT",
+          error: `Inferred character not found: ${inferredAccusedCharacter}`,
+        });
+        return aiRetriableError("AI output validation failed", {
+          code: "AI_INVALID_OUTPUT",
+        });
+      }
+
       if (judgeOutput.accusation_resolution === "continue") {
+        const { error: updateError } = await db
+          .from("game_sessions")
+          .update({
+            mode: "accuse",
+            outcome: null,
+            current_talk_character_id: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", gameId);
+        if (updateError) {
+          logError("request.error", {
+            reason: "session_update_failed",
+            game_id: gameId,
+            action: "accuse_reasoning",
+          });
+          return internalError("Failed to update session");
+        }
+
         const nextSequence = await getNextSequence(db, gameId);
         await db.from("game_events").insert({
           session_id: gameId,
@@ -350,7 +274,7 @@ Deno.serve(async (req) => {
           actor: "system",
           payload: {
             role: "accusation_judge",
-            accused_character_id: accusedCharacter.first_name,
+            inferred_accused_character: inferredAccusedCharacter,
             player_reasoning: playerReasoning,
             judge_result: "continue",
           },
@@ -368,7 +292,19 @@ Deno.serve(async (req) => {
         );
       }
 
-      const outcome = judgeOutput.accusation_resolution;
+      if (!inferredCharacter) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          action: "accuse_reasoning",
+          code: "AI_INVALID_OUTPUT",
+          error: "Terminal accusation response without inferred character",
+        });
+        return aiRetriableError("AI output validation failed", {
+          code: "AI_INVALID_OUTPUT",
+        });
+      }
+
+      const outcome = inferredCharacter.is_culprit ? "win" : "lose";
       const { error: updateError } = await db
         .from("game_sessions")
         .update({
@@ -395,7 +331,7 @@ Deno.serve(async (req) => {
         actor: "system",
         payload: {
           role: "accusation_judge",
-          accused_character_id: accusedCharacter.first_name,
+          inferred_accused_character: inferredCharacter.first_name,
           player_reasoning: playerReasoning,
           judge_result: outcome,
         },
@@ -411,6 +347,126 @@ Deno.serve(async (req) => {
         }),
         { headers: { "Content-Type": "application/json" } },
       );
+    };
+
+    if (session.mode === "explore") {
+      validateTransition(session.mode, resolveAccusationAction(session.mode));
+
+      if (playerReasoning.length === 0) {
+        const aiContext = buildAccusationStartContext({
+          game_id: gameId,
+          session: {
+            ...session,
+            mode: "accuse",
+            current_talk_character_id: null,
+          },
+          blueprint,
+          player_input: null,
+          conversation_history: history,
+          history_mode: accusationHistoryMode,
+        });
+
+        const promptTemplate = await loadPromptTemplate("accusation_start");
+        const prompt = renderPrompt(promptTemplate, {
+          forced_context: "",
+        });
+        const aiMetadata = createAIRequestMetadata(req, {
+          request_id: requestId,
+          endpoint: "game-accuse",
+          action: "accuse_start",
+          game_id: gameId,
+        });
+
+        let startOutput: ReturnType<typeof parseAccusationStartOutput>;
+        try {
+          startOutput = await aiProvider.generateRoleOutput({
+            role: "accusation_start",
+            prompt,
+            context: aiContext,
+            parse: parseAccusationStartOutput,
+            metadata: aiMetadata,
+          });
+        } catch (error) {
+          if (error instanceof RetriableAIError) {
+            log("request.ai_retriable", {
+              game_id: gameId,
+              action: "accuse_start",
+              code: error.details.code ?? null,
+              status: error.details.status ?? null,
+              error: error.message,
+            });
+            return aiRetriableError(error.message, error.details);
+          }
+          log("request.ai_retriable", {
+            game_id: gameId,
+            action: "accuse_start",
+            code: "AI_INVALID_OUTPUT",
+            error: "AI output validation failed",
+          });
+          return aiRetriableError("AI output validation failed", {
+            code: "AI_INVALID_OUTPUT",
+          });
+        }
+
+        const { error: updateError } = await db
+          .from("game_sessions")
+          .update({
+            mode: "accuse",
+            current_talk_character_id: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", gameId);
+        if (updateError) {
+          logError("request.error", {
+            reason: "session_update_failed",
+            game_id: gameId,
+            action: "accuse_start",
+          });
+          return internalError("Failed to update session");
+        }
+
+        const nextSequence = await getNextSequence(db, gameId);
+        await db.from("game_events").insert({
+          session_id: gameId,
+          sequence: nextSequence,
+          event_type: "accuse_start",
+          actor: "player",
+          payload: {
+            role: "accusation_start",
+            trigger: "player",
+          },
+          narration: startOutput.narration,
+        });
+
+        return new Response(
+          JSON.stringify({
+            narration: startOutput.narration,
+            mode: "accuse",
+            result: null,
+            follow_up_prompt: startOutput.follow_up_prompt,
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      return await runReasoningRound({
+        ...session,
+        mode: "accuse",
+        current_talk_character_id: null,
+      });
+    }
+
+    if (session.mode === "accuse") {
+      validateTransition(session.mode, resolveAccusationAction(session.mode));
+      if (playerReasoning.length === 0) {
+        log("request.invalid", {
+          reason: "missing_player_reasoning",
+          game_id: gameId,
+        });
+        return badRequest("Missing player_reasoning");
+      }
+
+      return await runReasoningRound(session);
     }
 
     return badRequest(`Cannot accuse while in mode "${session.mode}"`);

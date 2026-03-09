@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  GameAccuseRequestSchema,
   GameAskRequestSchema,
   GameStateSchema,
   SearchResponseSchema,
@@ -22,6 +23,26 @@ describe("shared mystery API contracts", () => {
     ).toEqual({
       game_id: "123e4567-e89b-12d3-a456-426614174000",
       player_input: "Where were you?",
+    });
+  });
+
+  it("accepts reasoning-first game-accuse requests", () => {
+    expect(
+      GameAccuseRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    ).toEqual({
+      game_id: "123e4567-e89b-12d3-a456-426614174000",
+    });
+
+    expect(
+      GameAccuseRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+        player_reasoning: "I accuse Alice because of the timeline.",
+      }),
+    ).toEqual({
+      game_id: "123e4567-e89b-12d3-a456-426614174000",
+      player_reasoning: "I accuse Alice because of the timeline.",
     });
   });
 

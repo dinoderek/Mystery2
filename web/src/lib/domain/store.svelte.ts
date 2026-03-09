@@ -163,11 +163,7 @@ export class GameSessionStore {
       return `Where to? Try: ${this.formatSuggestions(result.suggestions)}.`;
     }
 
-    if (result.commandType === 'talk') {
-      return `Who do you want to talk to? Try: ${this.formatSuggestions(result.suggestions)}.`;
-    }
-
-    return `Who are you accusing? Try: ${this.formatSuggestions(result.suggestions)}.`;
+    return `Who do you want to talk to? Try: ${this.formatSuggestions(result.suggestions)}.`;
   }
 
   private formatInvalidTargetMessage(result: Extract<ParseResult, { type: 'invalid-target' }>): string {
@@ -271,9 +267,14 @@ export class GameSessionStore {
           body: { game_id: this.game_id },
         };
       case 'accuse':
-        return {
+        return command.reasoning
+          ? {
           endpoint: 'game-accuse',
-          body: { game_id: this.game_id, accused_character_id: command.accused_character_id },
+          body: { game_id: this.game_id, player_reasoning: command.reasoning },
+        }
+          : {
+          endpoint: 'game-accuse',
+          body: { game_id: this.game_id },
         };
       default:
         throw new Error('Unsupported command.');

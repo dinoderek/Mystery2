@@ -4,7 +4,6 @@ export type InvestigatorAction =
   | "talk"
   | "ask"
   | "end_talk"
-  | "accuse_start"
   | "accuse_reasoning";
 
 export interface InvestigatorStep {
@@ -53,13 +52,11 @@ export const investigatorScript: InvestigatorScriptCase = {
       expect_mode: "explore",
     },
     {
-      action: "accuse_start",
-      payload: { accused_character_id: "Alice" },
-      expect_mode: "accuse",
-    },
-    {
       action: "accuse_reasoning",
-      payload: { player_reasoning: "Alice looked nervous near the cookie jar." },
+      payload: {
+        player_reasoning:
+          "I accuse Alice. She looked nervous near the cookie jar.",
+      },
       expect_mode: "accuse",
     },
     {

@@ -239,6 +239,7 @@ Failure-handling expectations:
 - Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
 - OpenRouter provider calls use bounded retry/backoff and emit structured JSON logs (`request_id`, endpoint/action, role, attempt, latency, outcome).
 - Full implementation details are documented in `docs/ai-runtime.md`.
+- Accusation-specific flow details (reasoning-first rounds, suspect inference, and timeout-forced endgame entry) are documented in `docs/accusation-flow.md`.
 
 ---
 

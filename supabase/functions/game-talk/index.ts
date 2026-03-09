@@ -14,6 +14,7 @@ import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkStartContext } from "../_shared/ai-context.ts";
+import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 
 async function getNextSequence(
@@ -95,62 +96,116 @@ Deno.serve(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const aiContext = buildTalkStartContext({
-      game_id: gameId,
-      session,
-      blueprint,
-      character_name: activeCharacter.first_name,
-      location_name: session.current_location_id,
-      conversation_history: historyRows ?? [],
-    });
-
-    const promptTemplate = await loadPromptTemplate("talk_start");
-    const prompt = renderPrompt(promptTemplate, {
-      character_name: activeCharacter.first_name,
-      location_name: session.current_location_id,
-      target_age: blueprint.metadata.target_age,
-    });
-    const aiMetadata = createAIRequestMetadata(req, {
-      request_id: requestId,
-      endpoint: "game-talk",
-      action: "talk",
-      game_id: gameId,
-    });
-
-    const aiProvider = getAIProvider();
-    let talkStartOutput: ReturnType<typeof parseTalkStartOutput>;
-    try {
-      talkStartOutput = await aiProvider.generateRoleOutput({
-        role: "talk_start",
-        prompt,
-        context: aiContext,
-        parse: parseTalkStartOutput,
-        metadata: aiMetadata,
-      });
-    } catch (error) {
-      if (error instanceof RetriableAIError) {
-        log("request.ai_retriable", {
-          game_id: gameId,
-          code: error.details.code ?? null,
-          status: error.details.status ?? null,
-          error: error.message,
-        });
-        return aiRetriableError(error.message, error.details);
-      }
-      log("request.ai_retriable", {
-        game_id: gameId,
-        code: "AI_INVALID_OUTPUT",
-        error: "AI output validation failed",
-      });
-      return aiRetriableError("AI output validation failed", {
-        code: "AI_INVALID_OUTPUT",
-      });
-    }
-
     const newTime = session.time_remaining - 1;
     const isForcedEndgame = newTime <= 0;
     const nextMode = isForcedEndgame ? "accuse" : "talk";
     const eventType = isForcedEndgame ? "forced_endgame" : "talk";
+    let narration: string;
+    let eventPayload: Record<string, unknown>;
+
+    if (isForcedEndgame) {
+      try {
+        const forcedOutput = await generateForcedAccusationStartNarration({
+          req,
+          request_id: requestId,
+          endpoint: "game-talk",
+          game_id: gameId,
+          session,
+          blueprint,
+          conversation_history: historyRows ?? [],
+          scene_summary:
+            `The investigator started talking to ${activeCharacter.first_name}, but time expired before the interview could continue.`,
+        });
+        narration = forcedOutput.narration;
+        eventPayload = {
+          role: "accusation_start",
+          character_name: activeCharacter.first_name,
+          location_name: session.current_location_id,
+          trigger: "timeout",
+          follow_up_prompt: forcedOutput.follow_up_prompt,
+        };
+      } catch (error) {
+        if (error instanceof RetriableAIError) {
+          log("request.ai_retriable", {
+            game_id: gameId,
+            action: "forced_endgame_start",
+            code: error.details.code ?? null,
+            status: error.details.status ?? null,
+            error: error.message,
+          });
+          return aiRetriableError(error.message, error.details);
+        }
+        log("request.ai_retriable", {
+          game_id: gameId,
+          action: "forced_endgame_start",
+          code: "AI_INVALID_OUTPUT",
+          error: "AI output validation failed",
+        });
+        return aiRetriableError("AI output validation failed", {
+          code: "AI_INVALID_OUTPUT",
+        });
+      }
+    } else {
+      const aiContext = buildTalkStartContext({
+        game_id: gameId,
+        session,
+        blueprint,
+        character_name: activeCharacter.first_name,
+        location_name: session.current_location_id,
+        conversation_history: historyRows ?? [],
+      });
+
+      const promptTemplate = await loadPromptTemplate("talk_start");
+      const prompt = renderPrompt(promptTemplate, {
+        character_name: activeCharacter.first_name,
+        location_name: session.current_location_id,
+        target_age: blueprint.metadata.target_age,
+      });
+      const aiMetadata = createAIRequestMetadata(req, {
+        request_id: requestId,
+        endpoint: "game-talk",
+        action: "talk",
+        game_id: gameId,
+      });
+
+      const aiProvider = getAIProvider();
+      let talkStartOutput: ReturnType<typeof parseTalkStartOutput>;
+      try {
+        talkStartOutput = await aiProvider.generateRoleOutput({
+          role: "talk_start",
+          prompt,
+          context: aiContext,
+          parse: parseTalkStartOutput,
+          metadata: aiMetadata,
+        });
+      } catch (error) {
+        if (error instanceof RetriableAIError) {
+          log("request.ai_retriable", {
+            game_id: gameId,
+            code: error.details.code ?? null,
+            status: error.details.status ?? null,
+            error: error.message,
+          });
+          return aiRetriableError(error.message, error.details);
+        }
+        log("request.ai_retriable", {
+          game_id: gameId,
+          code: "AI_INVALID_OUTPUT",
+          error: "AI output validation failed",
+        });
+        return aiRetriableError("AI output validation failed", {
+          code: "AI_INVALID_OUTPUT",
+        });
+      }
+      narration = talkStartOutput.narration;
+      eventPayload = {
+        role: "talk_start",
+        character: activeCharacter.first_name,
+        character_name: activeCharacter.first_name,
+        location_name: session.current_location_id,
+        context_version: "v1",
+      };
+    }
 
     const { error: updateError } = await db
       .from("game_sessions")
@@ -177,19 +232,13 @@ Deno.serve(async (req) => {
       sequence: nextSequence,
       event_type: eventType,
       actor: "system",
-      payload: {
-        role: "talk_start",
-        character: activeCharacter.first_name,
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        context_version: "v1",
-      },
-      narration: talkStartOutput.narration,
+      payload: eventPayload,
+      narration,
     });
 
     return new Response(
       JSON.stringify({
-        narration: talkStartOutput.narration,
+        narration,
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character: isForcedEndgame

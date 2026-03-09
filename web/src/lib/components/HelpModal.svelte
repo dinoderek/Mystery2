@@ -44,8 +44,8 @@
               - Search the current location
             </li>
             <li>
-              <span class="text-green-300">accuse [character]</span>
-              - Make your final accusation
+              <span class="text-green-300">accuse [statement]</span>
+              - Begin or continue your final accusation reasoning
             </li>
             <li>
               <span class="text-green-300">locations / where can i go</span>

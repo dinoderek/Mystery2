@@ -22,7 +22,6 @@ export const GameAskRequestSchema = GameSessionRequestSchema.extend({
 });
 
 export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({
-  accused_character_id: z.string().min(1).optional(),
   player_reasoning: z.string().min(1).optional(),
 });
 

@@ -4,6 +4,8 @@
 
 This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping deterministic game-state rules and spoiler boundaries intact.
 
+For accusation lifecycle specifics, see `docs/accusation-flow.md`.
+
 ## Runtime Components
 
 - `supabase/functions/_shared/ai-provider.ts`
@@ -34,9 +36,9 @@ This document defines how AI-assisted narration is executed in Supabase Edge Fun
 - `search`
   - Produces search narration for the current location
 - `accusation_start`
-  - Frames accusation scene and requests reasoning
+  - Frames accusation scene and requests accusation + reasoning
 - `accusation_judge`
-  - Evaluates iterative reasoning rounds and returns `continue|win|lose`
+  - Infers accused suspect from reasoning, then evaluates iterative rounds and returns `continue|win|lose`
 
 ## Context Boundaries
 
@@ -64,6 +66,7 @@ All AI role outputs are validated before any session/event writes:
   - `narration`
   - `accusation_resolution` in `win|lose|continue`
   - `follow_up_prompt` required when resolution is `continue`
+  - `inferred_accused_character` nullable for `continue`, required for `win|lose`
 
 Invalid output returns a retriable error and does not finalize turn state.
 
@@ -113,22 +116,20 @@ For endpoints using AI roles (`game-talk`, `game-ask`, `game-end-talk`, `game-se
 8. If validation/provider fails, return retriable error and skip state mutation.
 9. If valid, persist session/event changes and return API payload.
 
-For `game-move` (narration-only provider path):
+For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`, `game-ask` when time reaches zero):
 
 1. Validate request payload and mode transition.
-2. Load session and destination location from blueprint.
-3. Load full game event history and select all-and-only destination-relative history via `selectLocationConversationHistory`.
-4. Build move narration prompt including the destination-relative history.
-5. Call provider `generateNarration`.
-6. Persist move/forced-endgame event and session updates.
+2. Build `accusation_start` context with `forced_by_timeout=true`.
+3. Generate urgency narration that time is over and accusation must begin immediately.
+4. Persist `forced_endgame` event and transition session mode to `accuse`.
 
 ## Accusation Round Lifecycle
 
 1. `game-accuse` from `explore`:
-   - validates suspect
-   - enters `accuse` mode
-   - emits `accuse_start`
+   - with no `player_reasoning`: enters `accuse` mode and emits `accuse_start`
+   - with `player_reasoning`: runs immediate judge round and can emit `accuse_round` or `accuse_resolved`
 2. `game-accuse` from `accuse` with reasoning:
+   - infers suspect from reasoning + history
    - emits `accuse_round` when resolution is `continue`
    - emits `accuse_resolved` and transitions to `ended` on `win|lose`
 

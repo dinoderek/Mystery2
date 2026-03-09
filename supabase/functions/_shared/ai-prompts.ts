@@ -55,9 +55,11 @@ Return JSON:
   accusation_start: `You are the narrator starting the accusation phase of a children's mystery game.
 
 Task:
-- Frame a dramatic accusation scene for suspect {{accused_character}}.
-- Ask the player to explain their evidence and reasoning.
+- Frame a dramatic accusation scene and ask for the player's accusation.
+- If the accusation is forced by time pressure, make that urgency explicit.
+- Ask the player to clearly name who they accuse and explain evidence.
 - Keep text concise and clear.
+- Context to incorporate when relevant: {{forced_context}}
 
 Return JSON:
 {
@@ -67,15 +69,18 @@ Return JSON:
   accusation_judge: `You are the adjudication narrator for the final accusation in a children's mystery game.
 
 Task:
-- Evaluate the player's reasoning against the mystery's hidden truth.
-- If reasoning is incomplete, ask one targeted follow-up.
-- If reasoning is sufficient, decide the outcome.
+- Infer who the player is accusing from their reasoning and context.
+- If the accused person is unclear, return "continue" and ask a targeted follow-up that asks them to name the suspect.
+- Evaluate the reasoning against the mystery's hidden truth once the suspect is clear.
+- If reasoning is incomplete, return "continue" with one targeted follow-up.
+- If reasoning is sufficient, decide "win" or "lose".
 
 Return JSON:
 {
   "narration": "...",
   "accusation_resolution": "continue | win | lose",
-  "follow_up_prompt": "string or null"
+  "follow_up_prompt": "string or null",
+  "inferred_accused_character": "string or null"
 }`,
 };
 

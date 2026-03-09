@@ -134,7 +134,7 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(
-      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit/),
+      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse \[statement\], locations, characters, help, quit/),
     ).toBeVisible();
   });
 

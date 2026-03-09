@@ -52,6 +52,18 @@ describe('parseCommand - aliases and modes', () => {
     });
   });
 
+  it('maps explore accuse commands to reasoning-first payloads', () => {
+    expect(parseCommand('accuse', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'accuse', reasoning: null },
+    });
+
+    expect(parseCommand('accuse mayor fox took the cookies', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'accuse', reasoning: 'mayor fox took the cookies' },
+    });
+  });
+
   it('matches end-talk aliases in talk mode', () => {
     expect(parseCommand('goodbye', 'talk', context)).toEqual({
       type: 'valid',
@@ -186,6 +198,7 @@ describe('parseCommand - target validation and lists', () => {
     if (result.type === 'unrecognized') {
       expect(result.hint).toContain('move to/go to');
       expect(result.hint).toContain('talk to');
+      expect(result.hint).toContain('accuse [statement]');
       expect(result.hint).toContain('help');
     }
   });

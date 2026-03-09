@@ -35,7 +35,7 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/parser.test.ts` validates:
   - alias recognition (move/talk/search/end/help/quit/list)
   - mode-aware behavior across explore/talk/accuse/ended
-  - canonical command hint text accuracy (`move to/go to`, `talk to`, `accuse <character>`)
+  - canonical command hint text accuracy (`move to/go to`, `talk to`, `accuse [statement]`)
   - accuse-mode command-like input (for example `go ...`, `talk ...`) stays narrator-facing and is treated as reasoning text
   - client-side missing/invalid target branches and suggestions
   - unrecognized inline hint generation
@@ -65,6 +65,7 @@ What we test:
 - Conversation/search API contract behavior:
   - `game-ask` requires non-empty `player_input`
   - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
+  - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
 
 AI calls:
 
@@ -187,7 +188,6 @@ Live API E2E investigator coverage must exercise all actions:
 - `talk`
 - `ask`
 - `end_talk`
-- `accuse_start`
 - `accuse_reasoning`
 
 ## RLS policy testing (minimum bar)

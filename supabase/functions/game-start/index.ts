@@ -12,6 +12,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
@@ -115,6 +116,9 @@ Deno.serve(async (req) => {
       sequence: 1,
       event_type: "start",
       actor: "system",
+      payload: {
+        speaker: NARRATOR_SPEAKER,
+      },
       narration: narration,
     });
 
@@ -139,6 +143,15 @@ Deno.serve(async (req) => {
       mode: "explore",
       current_talk_character: null,
       narration: narration,
+      narration_speaker: NARRATOR_SPEAKER,
+      history: [
+        {
+          sequence: 1,
+          event_type: "start",
+          narration,
+          speaker: NARRATOR_SPEAKER,
+        },
+      ],
     };
 
     return new Response(

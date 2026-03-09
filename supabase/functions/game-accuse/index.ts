@@ -24,6 +24,7 @@ import {
   buildAccusationStartContext,
 } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
@@ -224,10 +225,11 @@ Deno.serve(async (req) => {
         session_id: gameId,
         sequence: nextSequence,
         event_type: "accuse_start",
-        actor: "player",
+        actor: "system",
         payload: {
           role: "accusation_start",
           accused_character_id: accusedCharacter.first_name,
+          speaker: NARRATOR_SPEAKER,
         },
         narration: startOutput.narration,
       });
@@ -238,6 +240,7 @@ Deno.serve(async (req) => {
           mode: "accuse",
           result: null,
           follow_up_prompt: startOutput.follow_up_prompt,
+          speaker: NARRATOR_SPEAKER,
         }),
         { headers: { "Content-Type": "application/json" } },
       );
@@ -353,6 +356,7 @@ Deno.serve(async (req) => {
             accused_character_id: accusedCharacter.first_name,
             player_reasoning: playerReasoning,
             judge_result: "continue",
+            speaker: NARRATOR_SPEAKER,
           },
           narration: judgeOutput.narration,
         });
@@ -363,6 +367,7 @@ Deno.serve(async (req) => {
             mode: "accuse",
             result: null,
             follow_up_prompt: judgeOutput.follow_up_prompt,
+            speaker: NARRATOR_SPEAKER,
           }),
           { headers: { "Content-Type": "application/json" } },
         );
@@ -398,6 +403,7 @@ Deno.serve(async (req) => {
           accused_character_id: accusedCharacter.first_name,
           player_reasoning: playerReasoning,
           judge_result: outcome,
+          speaker: NARRATOR_SPEAKER,
         },
         narration: judgeOutput.narration,
       });
@@ -408,6 +414,7 @@ Deno.serve(async (req) => {
           mode: "ended",
           result: outcome,
           follow_up_prompt: null,
+          speaker: NARRATOR_SPEAKER,
         }),
         { headers: { "Content-Type": "application/json" } },
       );

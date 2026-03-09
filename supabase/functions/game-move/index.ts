@@ -13,6 +13,7 @@ import {
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
@@ -140,6 +141,7 @@ Deno.serve(async (req) => {
       payload: {
         destination,
         location_name: destLoc.name,
+        speaker: NARRATOR_SPEAKER,
       },
       narration: narration,
     });
@@ -155,6 +157,7 @@ Deno.serve(async (req) => {
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,
+        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

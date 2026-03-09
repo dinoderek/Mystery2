@@ -18,6 +18,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **State Dependencies**: Fetches available `Blueprints` from the backend API.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
+  - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
 
 ### `/session` (Game Page)
 

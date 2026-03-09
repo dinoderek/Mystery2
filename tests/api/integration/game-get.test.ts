@@ -13,14 +13,15 @@ describe("game-get endpoint", () => {
     expect(res.status).toBe(404);
   });
 
-  it("retrieves full game state including history", async () => {
-    // 1. Start a new game
+  it("returns speaker-enriched persisted state and history", async () => {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.ANON_KEY}`,
+    };
+
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),
@@ -28,7 +29,18 @@ describe("game-get endpoint", () => {
     const startData = await startRes.json();
     const gameId = startData.game_id;
 
-    // 2. Retrieve game state
+    await fetch(`${API_URL}/game-talk`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ game_id: gameId, character_name: "Alice" }),
+    });
+
+    await fetch(`${API_URL}/game-ask`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ game_id: gameId, player_input: "Where were you?" }),
+    });
+
     const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
       headers: { Authorization: `Bearer ${process.env.ANON_KEY}` },
     });
@@ -36,10 +48,26 @@ describe("game-get endpoint", () => {
 
     const getData = await getRes.json();
     expect(getData.state).toBeDefined();
-    expect(getData.state.mode).toBe("explore");
-    expect(getData.state.clues).toBeUndefined();
-    expect(getData.state.history.length).toBe(1);
+    expect(getData.state.mode).toBe("talk");
+    expect(getData.state.history.length).toBeGreaterThanOrEqual(3);
     expect(getData.state.history[0].event_type).toBe("start");
-    expect(getData.state.history[0].actor).toBe("system");
+    expect(getData.state.history[0].speaker).toMatchObject({
+      kind: "narrator",
+      key: "narrator",
+      label: "Narrator",
+    });
+
+    const askHistory = getData.state.history.find((entry: { event_type: string }) => entry.event_type === "ask");
+    expect(askHistory?.speaker).toMatchObject({
+      kind: "character",
+      key: "character:alice",
+      label: "Alice",
+    });
+
+    expect(getData.state.narration_speaker.kind).toBe("character");
+    const persistedSystemLines = getData.state.history.filter(
+      (entry: { speaker: { kind: string } }) => entry.speaker.kind === "system",
+    );
+    expect(persistedSystemLines).toHaveLength(0);
   });
 });

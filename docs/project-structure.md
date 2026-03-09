@@ -10,12 +10,12 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
-  - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend.
+  - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
 - `scripts/`: Assorted scripts needed for development (e.g., storage seeding, local AI-mode startup launchers, and local edge-runtime log tailing).
 - `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
-  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions.
+  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions and server-side speaker attribution.
   - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
   - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json`).
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.

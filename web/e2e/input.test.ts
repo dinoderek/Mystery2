@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
+const characterSpeaker = (name: string) => ({
+  kind: 'character' as const,
+  key: `character:${name.toLowerCase()}`,
+  label: name,
+});
+
 const baseState = {
   locations: [{ name: 'Kitchen' }, { name: 'Garden' }, { name: 'Barn' }],
   characters: [
@@ -11,8 +18,8 @@ const baseState = {
   location: 'Kitchen',
   mode: 'explore',
   current_talk_character: null,
-  clues: [],
   narration: 'You enter the kitchen.',
+  narration_speaker: narratorSpeaker,
   history: [],
 };
 
@@ -56,6 +63,7 @@ test.describe('Command Input', () => {
           visible_characters: ['Bob'],
           time_remaining: 9,
           mode: 'explore',
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -67,6 +75,8 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText('You travel to the garden.')).toBeVisible();
+    await expect(page.locator('[data-speaker-kind="investigator"]').last()).toContainText('You:');
+    await expect(page.locator('[data-speaker-kind="narrator"]').last()).toContainText('Narrator:');
     expect(moveCalls).toBe(1);
   });
 
@@ -87,6 +97,7 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText(/Where to\? Try:/)).toBeVisible();
+    await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
     expect(moveCalls).toBe(0);
   });
 
@@ -109,6 +120,7 @@ test.describe('Command Input', () => {
     await expect(
       page.getByText(/"zyx" is not a valid destination\. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox\./),
     ).toBeVisible();
+    await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
     expect(moveCalls).toBe(0);
   });
 
@@ -136,6 +148,7 @@ test.describe('Command Input', () => {
     await expect(
       page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse <character>, locations, characters, help, quit/),
     ).toBeVisible();
+    await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
   });
 
   test('sends player_input payload when asking in talk mode', async ({ page }) => {
@@ -151,6 +164,7 @@ test.describe('Command Input', () => {
           mode: 'talk',
           time_remaining: 9,
           current_talk_character: 'Mayor',
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -164,6 +178,7 @@ test.describe('Command Input', () => {
           mode: 'talk',
           time_remaining: 8,
           current_talk_character: 'Mayor',
+          speaker: characterSpeaker('Mayor'),
         },
       });
     });
@@ -174,15 +189,84 @@ test.describe('Command Input', () => {
     await input.fill('talk to mayor');
     await input.press('Enter');
     await expect(page.getByText('Mayor Fox nods and listens carefully.')).toBeVisible();
+    await expect(page.locator('[data-speaker-kind="narrator"]').last()).toContainText('Narrator:');
 
     await input.fill('Where were you?');
     await input.press('Enter');
     await expect(page.getByText('Mayor Fox answers your question.')).toBeVisible();
+    const characterLine = page.locator('[data-speaker-kind="character"]').last();
+    await expect(characterLine).toContainText('Mayor:');
+    await expect(characterLine).toHaveClass(/speaker-character-generic/);
 
     expect(talkCalls).toBe(1);
     expect(askCalls).toBe(1);
     expect(askPayload?.player_input).toBe('Where were you?');
     expect(askPayload && 'question' in askPayload).toBe(false);
+  });
+
+  test('renders one generic style class for all character speakers', async ({ page }) => {
+    let activeCharacter = 'Mayor';
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      const payload = route.request().postDataJSON() as { character_name?: string };
+      activeCharacter = payload.character_name ?? 'Mayor';
+      await route.fulfill({
+        json: {
+          narration: `${activeCharacter} joins the conversation.`,
+          mode: 'talk',
+          time_remaining: 9,
+          current_talk_character: activeCharacter,
+          speaker: narratorSpeaker,
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-ask*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration: `${activeCharacter} responds to your question.`,
+          mode: 'talk',
+          time_remaining: 8,
+          current_talk_character: activeCharacter,
+          speaker: characterSpeaker(activeCharacter),
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-end-talk*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration: 'Conversation ended.',
+          mode: 'explore',
+          time_remaining: 8,
+          current_talk_character: null,
+          speaker: narratorSpeaker,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await input.fill('Where were you?');
+    await input.press('Enter');
+
+    await input.fill('bye');
+    await input.press('Enter');
+    await input.fill('talk to rosie');
+    await input.press('Enter');
+    await input.fill('What did you see?');
+    await input.press('Enter');
+
+    const characterRows = page.locator('[data-speaker-kind="character"]');
+    await expect(characterRows).toHaveCount(2);
+    const classList = await characterRows.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('class') ?? ''),
+    );
+    expect(new Set(classList).size).toBe(1);
+    expect(classList[0]).toContain('speaker-character-generic');
   });
 
   test('routes accuse-mode free text to game-accuse reasoning (not game-ask)', async ({ page }) => {
@@ -210,6 +294,7 @@ test.describe('Command Input', () => {
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
+            speaker: narratorSpeaker,
           },
         });
         return;
@@ -222,6 +307,7 @@ test.describe('Command Input', () => {
           mode: 'ended',
           result: 'win',
           follow_up_prompt: null,
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -262,6 +348,7 @@ test.describe('Command Input', () => {
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
+            speaker: narratorSpeaker,
           },
         });
         return;
@@ -273,6 +360,7 @@ test.describe('Command Input', () => {
           mode: 'ended',
           result: 'lose',
           follow_up_prompt: null,
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -338,6 +426,7 @@ test.describe('Command Input', () => {
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
+            speaker: narratorSpeaker,
           },
         });
         return;
@@ -350,6 +439,7 @@ test.describe('Command Input', () => {
             mode: 'accuse',
             follow_up_prompt: 'What clue ties the suspect to the scene?',
             result: null,
+            speaker: narratorSpeaker,
           },
         });
         return;
@@ -361,6 +451,7 @@ test.describe('Command Input', () => {
           mode: 'ended',
           result: 'win',
           follow_up_prompt: null,
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -397,6 +488,7 @@ test.describe('Command Input', () => {
           narration: 'Search complete.',
           time_remaining: 9,
           mode: 'explore',
+          speaker: narratorSpeaker,
         },
       });
     });
@@ -435,6 +527,7 @@ test.describe('Command Input', () => {
           narration: 'Recovered after retry.',
           time_remaining: 9,
           mode: 'explore',
+          speaker: narratorSpeaker,
         },
       });
     });

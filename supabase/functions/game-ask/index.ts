@@ -15,6 +15,7 @@ import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { createCharacterSpeaker } from "../_shared/speaker.ts";
 
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
@@ -148,6 +149,7 @@ Deno.serve(async (req) => {
     const isForcedEndgame = newTime <= 0;
     const nextMode = isForcedEndgame ? "accuse" : "talk";
     const eventType = isForcedEndgame ? "forced_endgame" : "ask";
+    const responseSpeaker = createCharacterSpeaker(activeCharacter.first_name);
 
     const { error: updateError } = await db
       .from("game_sessions")
@@ -175,6 +177,7 @@ Deno.serve(async (req) => {
         character_name: activeCharacter.first_name,
         location_name: session.current_location_id,
         player_input: playerInput,
+        speaker: responseSpeaker,
       },
       narration: talkOutput.narration,
     });
@@ -187,6 +190,7 @@ Deno.serve(async (req) => {
         current_talk_character: isForcedEndgame
           ? null
           : activeCharacter.first_name,
+        speaker: responseSpeaker,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

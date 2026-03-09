@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 
 describe("game-search endpoint", () => {
-  it("narrates location search and decreases time", async () => {
+  it("narrates search with narrator speaker and decreases time", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: {
@@ -16,7 +16,6 @@ describe("game-search endpoint", () => {
     });
     const { game_id } = await startRes.json();
 
-    // Search Kitchen
     const searchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
       headers: {
@@ -33,8 +32,12 @@ describe("game-search endpoint", () => {
     expect(data.time_remaining).toBe(9);
     expect(data.narration).toContain("[Mock]");
     expect(data.mode).toBe("explore");
+    expect(data.speaker).toMatchObject({
+      kind: "narrator",
+      key: "narrator",
+      label: "Narrator",
+    });
 
-    // Search again -> still narration-only response with decremented time.
     const searchRes2 = await fetch(`${API_URL}/game-search`, {
       method: "POST",
       headers: {
@@ -47,5 +50,6 @@ describe("game-search endpoint", () => {
     expect(data2.discovered_clue_id).toBeUndefined();
     expect(data2.time_remaining).toBe(8);
     expect(data2.narration).toContain("[Mock]");
+    expect(data2.speaker.kind).toBe("narrator");
   });
 });

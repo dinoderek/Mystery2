@@ -16,7 +16,6 @@ describe("game-ask endpoint", () => {
     });
     const { game_id } = await startRes.json();
 
-    // Start talk
     await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: {
@@ -26,7 +25,6 @@ describe("game-ask endpoint", () => {
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
 
-    // Ask
     const askRes = await fetch(`${API_URL}/game-ask`, {
       method: "POST",
       headers: {
@@ -39,7 +37,7 @@ describe("game-ask endpoint", () => {
     expect(askRes.status).toBe(400);
   });
 
-  it("accepts free-form player_input asks and preserves talk continuity", async () => {
+  it("returns character speaker for talk questions", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: {
@@ -81,5 +79,10 @@ describe("game-ask endpoint", () => {
     expect(data.time_remaining).toBe(8);
     expect(data.discovered_clue_id).toBeUndefined();
     expect(data.narration).toContain("[Mock]");
+    expect(data.speaker).toMatchObject({
+      kind: "character",
+      key: "character:alice",
+      label: "Alice",
+    });
   });
 });

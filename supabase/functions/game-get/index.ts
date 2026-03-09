@@ -1,6 +1,48 @@
 import { createClient } from "../_shared/db.ts";
 import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  createCharacterSpeaker,
+  INVESTIGATOR_SPEAKER,
+  NARRATOR_SPEAKER,
+  readSpeaker,
+  type Speaker,
+} from "../_shared/speaker.ts";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getFallbackSpeaker(event: {
+  actor: string;
+  event_type: string;
+  payload: unknown;
+}): Speaker {
+  if (event.event_type === "ask" && isRecord(event.payload)) {
+    const characterName = event.payload.character_name;
+    if (typeof characterName === "string" && characterName.length > 0) {
+      return createCharacterSpeaker(characterName);
+    }
+  }
+
+  if (event.actor === "player") {
+    return INVESTIGATOR_SPEAKER;
+  }
+
+  return NARRATOR_SPEAKER;
+}
+
+function getEventSpeaker(event: {
+  actor: string;
+  event_type: string;
+  payload: unknown;
+}): Speaker {
+  if (isRecord(event.payload)) {
+    return readSpeaker(event.payload.speaker, getFallbackSpeaker(event));
+  }
+
+  return getFallbackSpeaker(event);
+}
 
 Deno.serve(async (req) => {
   if (req.method !== "GET") {
@@ -69,16 +111,18 @@ Deno.serve(async (req) => {
       return internalError("Failed to fetch game events");
     }
 
-    const history = events.map((e) => ({
+    const history = (events ?? []).map((e) => ({
       sequence: e.sequence,
       event_type: e.event_type,
-      actor: e.actor === "player" ? "player" : "system",
       narration: e.narration,
+      speaker: getEventSpeaker(e),
     }));
 
     // Most recent event narration
     const currentNarration =
       history.length > 0 ? history[history.length - 1].narration : "";
+    const currentNarrationSpeaker =
+      history.length > 0 ? history[history.length - 1].speaker : NARRATOR_SPEAKER;
 
     const gameState = {
       locations: blueprint.world.locations.map((l) => ({ name: l.name })),
@@ -92,6 +136,7 @@ Deno.serve(async (req) => {
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
       narration: currentNarration,
+      narration_speaker: currentNarrationSpeaker,
       history: history,
     };
 

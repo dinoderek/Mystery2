@@ -15,6 +15,7 @@ import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseSearchOutput } from "../_shared/ai-contracts.ts";
 import { buildSearchContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
@@ -168,6 +169,7 @@ Deno.serve(async (req) => {
       payload: {
         role: "search",
         location_name: currentLocation.name,
+        speaker: NARRATOR_SPEAKER,
       },
       narration: searchOutput.narration,
     });
@@ -177,6 +179,7 @@ Deno.serve(async (req) => {
         narration: searchOutput.narration,
         time_remaining: newTime,
         mode: nextMode,
+        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "email": "player1@test.local",
+      "password": "password123",
+      "email_confirm": true
+    },
+    {
+      "email": "player2@test.local",
+      "password": "password123",
+      "email_confirm": true
+    }
+  ]
+}

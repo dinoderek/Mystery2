@@ -29,6 +29,12 @@ Covers:
 - request/response schema validation
 - UI component logic (where practical)
 - prompt construction and parsing utilities
+- deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
+  - deploy CLI arg parsing and validation
+  - strict deploy env/manifest contract enforcement
+  - edge-function discovery (`supabase/functions/*`, excluding `_shared`)
+  - command plan assembly for `dev|staging|prod`
+  - skip behavior (`--skip-seed`, `--skip-users`) and bootstrap-user config validation
 
 Web-specific command parser coverage:
 
@@ -193,6 +199,10 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 2. Seeds storage blueprints from local blueprint directories
 3. Runs Vitest against the running Edge Functions to validate full player journeys
 4. Uses the shared restart path (`scripts/run-mock-tests.mjs` → `smartStartSupabase`) so mode tracking is consistent with dev/live scripts
+
+### Deploy dry-run checks
+
+`npm run test:unit` includes deploy helper dry-run coverage by asserting the command plan generated for each target environment and negative-path validation for missing variables/targets. Full remote deploy verification remains manual via `npm run deploy -- --env <env> --dry-run` and live deploy smoke checks.
 
 ### Live-AI suites (opt-in)
 

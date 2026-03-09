@@ -261,8 +261,17 @@ Failure-handling expectations:
 - Backend: Supabase hosted project:
   - Auth, Postgres, Storage
   - Edge Functions deployed via Supabase tooling
+- Environment topology:
+  - `dev`: isolated Pages project + isolated Supabase project
+  - `staging`: isolated Pages project + isolated Supabase project
+  - `prod`: isolated Pages project + isolated Supabase project
+- Deployment operator flow:
+  - one local orchestrator (`scripts/deploy.mjs`) drives web deploy, backend deploy/provisioning, and smoke checks
+  - env mapping is committed in `deploy/targets.json`
+  - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files
 
 This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI calls”.
+Runbook and failure handling details live in `docs/deployment.md`.
 
 ---
 

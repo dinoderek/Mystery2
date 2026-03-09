@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "email": "player1-staging@test.local",
+      "password": "password123",
+      "email_confirm": true
+    },
+    {
+      "email": "player2-staging@test.local",
+      "password": "password123",
+      "email_confirm": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "pagesProjectName": "mystery-game-dev",
+    "pagesBranch": "dev",
+    "supabaseProjectRef": "replace-dev-ref",
+    "expectedFrontendUrl": "https://dev.example.com",
+    "expectedSupabaseUrl": "https://replace-dev-ref.supabase.co"
+  },
+  "staging": {
+    "pagesProjectName": "mystery-game-staging",
+    "pagesBranch": "staging",
+    "supabaseProjectRef": "replace-staging-ref",
+    "expectedFrontendUrl": "https://staging.example.com",
+    "expectedSupabaseUrl": "https://replace-staging-ref.supabase.co"
+  },
+  "prod": {
+    "pagesProjectName": "mystery-game-prod",
+    "pagesBranch": "main",
+    "supabaseProjectRef": "replace-prod-ref",
+    "expectedFrontendUrl": "https://www.example.com",
+    "expectedSupabaseUrl": "https://replace-prod-ref.supabase.co"
+  }
+}

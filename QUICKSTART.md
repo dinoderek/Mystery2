@@ -37,6 +37,29 @@ The backend relies on Supabase for the database, auth, and edge functions.
 
 Tip: `npm run dev` from the repository root starts Supabase in deterministic mock-AI mode (skipping the restart if it is already running in that mode), seeds storage blueprints, then starts the web UI.
 
+## Blueprint management
+Blueprints are source-controlled JSON files that are uploaded into the Supabase Storage `blueprints` bucket for local runtime and tests.
+
+- Source directories loaded by `npm run seed:storage`:
+  - `blueprints/`
+  - `supabase/seed/blueprints/` (includes deterministic fixtures like `mock-blueprint.json`)
+- Upload keying:
+  - Each file must contain a top-level `id` field.
+  - Files are uploaded as `<id>.json` with `upsert: true`, so reseeding updates existing objects with the same id.
+- Validation behavior during seeding:
+  - Invalid JSON files or files missing `id` are skipped with a console warning.
+- Operational note:
+  - `npm run dev`, `npm run test:integration`, and `npm run test:e2e` reseed storage blueprints automatically.
+  - To refresh blueprints manually after editing JSON files, run `npm run seed:storage`.
+
+### Blueprint schema and generation prompt (Supabase)
+The canonical blueprint contract and generation instructions live in the Supabase function shared folder:
+
+- Schema: `supabase/functions/_shared/blueprints/blueprint-schema.ts`
+- Generation prompt: `supabase/functions/_shared/blueprints/generator-prompt.md`
+
+When changing blueprint structure or AI blueprint generation behavior, update both files together to keep schema validation and generation output aligned.
+
 ## Local human testing with AI
 Use mode-specific local env files (gitignored) to run the full local stack against real models.
 

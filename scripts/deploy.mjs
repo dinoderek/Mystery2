@@ -65,17 +65,46 @@ async function runStep(title, action) {
   }
 }
 
+function quoteList(items, fallback = "(none)") {
+  if (!Array.isArray(items) || items.length === 0) return fallback;
+  return items.map((item) => `"${item}"`).join(", ");
+}
+
+function outputSnippet(text, max = 500) {
+  if (typeof text !== "string" || text.length === 0) return "(empty output)";
+  return text.length <= max ? text : `${text.slice(0, max)}...`;
+}
+
 async function validatePagesProject(target, deployEnv, rootDir) {
-  const output = runCommand(
-    [npxBin, "wrangler", "pages", "project", "list", "--json"],
-    { cwd: rootDir, env: deployEnv, capture: true },
-  );
+  let output;
+  try {
+    output = runCommand(
+      [npxBin, "wrangler", "pages", "project", "list", "--json"],
+      { cwd: rootDir, env: deployEnv, capture: true },
+    );
+  } catch (error) {
+    const accountId = deployEnv.CLOUDFLARE_ACCOUNT_ID || "(missing)";
+    const message = error instanceof Error ? error.message : String(error);
+    const invalidAccountHint = message.includes("code: 7003")
+      ? "\nHint: CLOUDFLARE_ACCOUNT_ID appears invalid for this token/account. Use the Cloudflare account id (not API token, not zone id)."
+      : "";
+    throw new Error(
+      [
+        "Cloudflare Pages project list request failed.",
+        `CLOUDFLARE_ACCOUNT_ID: "${accountId}"`,
+        message + invalidAccountHint,
+      ].join("\n"),
+    );
+  }
 
   let parsed;
   try {
     parsed = JSON.parse(output);
   } catch {
-    throw new Error("Unable to parse Cloudflare Pages project list JSON output");
+    throw new Error(
+      `Unable to parse Cloudflare Pages project list JSON output.\n` +
+      `Raw output snippet: ${outputSnippet(output)}`,
+    );
   }
 
   const projects = Array.isArray(parsed)
@@ -84,28 +113,60 @@ async function validatePagesProject(target, deployEnv, rootDir) {
       ? parsed.projects
       : [];
 
-  const found = projects.some(
-    (project) => project && project.name === target.pagesProjectName,
-  );
+  const projectNames = projects
+    .map((project) => {
+      if (!project || typeof project !== "object") return null;
+      return (
+        project.name ||
+        project.project_name ||
+        project.projectName ||
+        project["Project Name"] ||
+        null
+      );
+    })
+    .filter((name) => typeof name === "string" && name.length > 0)
+    .sort();
+
+  const found = projectNames.includes(target.pagesProjectName);
 
   if (!found) {
+    const accountId = deployEnv.CLOUDFLARE_ACCOUNT_ID || "(missing)";
     throw new Error(
-      `Cloudflare Pages project \"${target.pagesProjectName}\" not found for target environment`,
+      [
+        `Cloudflare Pages project mismatch.`,
+        `expected pagesProjectName: "${target.pagesProjectName}"`,
+        `projects returned (${projectNames.length}): ${quoteList(projectNames)}`,
+        `CLOUDFLARE_ACCOUNT_ID: "${accountId}"`,
+      ].join("\n"),
     );
   }
 }
 
 async function validateSupabaseProject(target, deployEnv, rootDir) {
-  const output = runCommand(
-    [npxBin, "supabase", "projects", "list", "--output", "json"],
-    { cwd: rootDir, env: deployEnv, capture: true },
-  );
+  let output;
+  try {
+    output = runCommand(
+      [npxBin, "supabase", "projects", "list", "--output", "json"],
+      { cwd: rootDir, env: deployEnv, capture: true },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      [
+        "Supabase project list request failed.",
+        message,
+      ].join("\n"),
+    );
+  }
 
   let parsed;
   try {
     parsed = JSON.parse(output);
   } catch {
-    throw new Error("Unable to parse Supabase projects list JSON output");
+    throw new Error(
+      `Unable to parse Supabase projects list JSON output.\n` +
+      `Raw output snippet: ${outputSnippet(output)}`,
+    );
   }
 
   const projects = Array.isArray(parsed)
@@ -113,6 +174,18 @@ async function validateSupabaseProject(target, deployEnv, rootDir) {
     : Array.isArray(parsed?.projects)
       ? parsed.projects
       : [];
+
+  const availableRefs = [...new Set(projects.flatMap((project) => {
+    const candidates = [
+      project?.id,
+      project?.ref,
+      project?.project_ref,
+      project?.reference,
+    ];
+    return candidates.filter(
+      (value) => typeof value === "string" && value.length > 0,
+    );
+  }))].sort();
 
   const found = projects.some((project) => {
     const candidates = [
@@ -126,7 +199,11 @@ async function validateSupabaseProject(target, deployEnv, rootDir) {
 
   if (!found) {
     throw new Error(
-      `Supabase project ref \"${target.supabaseProjectRef}\" was not found for the current access token`,
+      [
+        `Supabase project ref mismatch.`,
+        `expected supabaseProjectRef: "${target.supabaseProjectRef}"`,
+        `project refs returned (${availableRefs.length}): ${quoteList(availableRefs)}`,
+      ].join("\n"),
     );
   }
 }
@@ -202,14 +279,24 @@ async function listAllUserEmails(adminClient) {
 }
 
 async function assertFrontendReachable(url) {
-  const response = await fetch(url, {
-    method: "GET",
-    redirect: "follow",
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+    });
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Frontend URL health check failed for ${url}: ${cause}. ` +
+      `Update deploy/targets.json expectedFrontendUrl to a live Pages/custom domain for this environment.`,
+    );
+  }
 
   if (!response.ok) {
     throw new Error(
-      `Frontend URL health check failed (${response.status}) at ${url}`,
+      `Frontend URL health check failed (${response.status}) at ${url}. ` +
+      `Update deploy/targets.json expectedFrontendUrl if this environment uses a different domain.`,
     );
   }
 }

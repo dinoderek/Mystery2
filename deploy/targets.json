@@ -1,14 +1,14 @@
 {
   "dev": {
-    "pagesProjectName": "mystery",
-    "pagesBranch": "dev",
+    "pagesProjectName": "mystery-dev",
+    "pagesBranch": "main",
     "supabaseProjectRef": "huvcyjsmmrtlmnggrujr",
-    "expectedFrontendUrl": "https://dev.example.com",
+    "expectedFrontendUrl": "https://mystery-dev-ebu.pages.dev",
     "expectedSupabaseUrl": "https://huvcyjsmmrtlmnggrujr.supabase.co"
   },
   "staging": {
-    "pagesProjectName": "mystery",
-    "pagesBranch": "staging",
+    "pagesProjectName": "mystery-staging",
+    "pagesBranch": "main",
     "supabaseProjectRef": "replace-staging-ref",
     "expectedFrontendUrl": "https://staging.example.com",
     "expectedSupabaseUrl": "https://replace-staging-ref.supabase.co"

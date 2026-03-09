@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { enableAuthBypass } from './test-auth';
 
 test.describe('US2 - Status Bar', () => {
     test('displays correct status information (location, hints, time)', async ({ page }) => {
+        await enableAuthBypass(page);
         await page.route('**/functions/v1/blueprints-list', async route => {
             await route.fulfill({ json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] } });
         });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { enableAuthBypass } from './test-auth';
 
 const narratorSpeaker = {
   kind: 'narrator',
@@ -33,6 +34,8 @@ const startState = {
 
 test.describe('US2/US3 - Narration Rendering', () => {
   test.beforeEach(async ({ page }) => {
+    await enableAuthBypass(page);
+
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enableAuthBypass } from './test-auth';
 
 const baseState = {
   locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
@@ -13,6 +14,8 @@ const baseState = {
 };
 
 async function bootstrapSession(page: Page) {
+  await enableAuthBypass(page);
+
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {

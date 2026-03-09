@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { gameSessionStore, type ThemeName } from '$lib/domain/store.svelte';
+  import { authStore } from '$lib/domain/auth-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
   onMount(() => {
@@ -33,6 +34,15 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <main class="min-h-screen bg-t-bg text-t-primary p-8 font-mono">
+  <div class="mx-auto mb-4 flex max-w-2xl justify-end">
+    <button
+      type="button"
+      class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+      onclick={() => authStore.signOut()}
+    >
+      LOGOUT
+    </button>
+  </div>
   {#if isStartingGame}
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center">
       <div class="text-center space-y-4">

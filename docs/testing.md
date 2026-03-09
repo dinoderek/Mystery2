@@ -67,6 +67,9 @@ What we test:
 - Edge Function authentication behavior:
   - no token → 401/403 (where required)
   - valid token → success
+- Authenticated request setup:
+  - provision users through `tests/testkit/src/auth.ts` (`setupTestAuth`, `createTestUser`, `signIn`)
+  - include bearer auth headers from testkit helpers for all protected function calls
 - DB writes/reads for session lifecycle and event log
 - Storage policies if used for user assets
 - Conversation/search API contract behavior:
@@ -105,7 +108,11 @@ Runs against:
 What we test:
 
 - user can load UI
-- optional: user can sign up/sign in
+- user can sign in with a provisioned account
+- unauthenticated users are redirected to `/login`
+- authenticated users are redirected away from `/login`
+- session persistence and token refresh behavior
+- logout clears session and re-protects game routes
 - user can create/continue a game session
 - user can perform an action that triggers an Edge Function
 - UI renders returned payload and state remains consistent after refresh
@@ -142,6 +149,15 @@ Theme command E2E coverage (`web/e2e/theme.test.ts`) must include:
 - theme commands working across all game modes (not just explore)
 
 Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
+
+Auth browser coverage (`web/e2e/auth.spec.ts`) must include:
+
+- required-field validation for login form
+- invalid credential feedback
+- successful login redirect behavior
+- session persistence across reload
+- refresh-failure path redirecting to `/login` with a friendly message
+- logout flow and route protection (`/` and `/session`)
 
 ## Test Isolation Strategy (Logical Isolation)
 

@@ -52,6 +52,14 @@ _(Add components here as they are built. Example format below)_
 - **Props**:
   - `text`: `string` (optional status text shown next to the spinner)
 
+### `LoginForm.svelte`
+
+- **Purpose**: Reusable email/password sign-in form for the `/login` route.
+- **Props**: None (reads and updates `authStore` directly).
+- **Usage**:
+  - Rendered by `src/routes/login/+page.svelte`.
+  - Handles required-field validation and displays authentication failures.
+
 ## Layout Components
 
 _(Add layout wrappers here)_

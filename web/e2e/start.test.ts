@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { enableAuthBypass } from './test-auth';
 
 test.describe('US1 - Start Screen', () => {
     test('loads blueprints and starts game on numeric key press', async ({ page }) => {
+        await enableAuthBypass(page);
         // Mock blueprints-list
         await page.route('**/functions/v1/blueprints-list', async route => {
             const json = {
@@ -38,6 +40,7 @@ test.describe('US1 - Start Screen', () => {
     });
 
     test('clears start screen and shows centered loading indicator while starting game', async ({ page }) => {
+        await enableAuthBypass(page);
         await page.route('**/functions/v1/blueprints-list', async route => {
             await route.fulfill({ json: { blueprints: [{ id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }] } });
         });

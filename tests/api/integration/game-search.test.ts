@@ -1,15 +1,21 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("game-search endpoint", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("game-search");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("narrates search with narrator speaker and decreases time", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),
@@ -18,10 +24,7 @@ describe("game-search endpoint", () => {
 
     const searchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({ game_id }),
     });
 
@@ -40,10 +43,7 @@ describe("game-search endpoint", () => {
 
     const searchRes2 = await fetch(`${API_URL}/game-search`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({ game_id }),
     });
     const data2 = await searchRes2.json();

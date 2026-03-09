@@ -1,15 +1,21 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("game-start endpoint", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("game-start");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("starts a game with narrator speaker metadata", async () => {
     const res = await fetch(`${API_URL}/game-start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      },
+      headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
       }),

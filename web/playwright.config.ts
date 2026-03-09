@@ -37,6 +37,7 @@ const webServerEnv = {
     process.env.VITE_SUPABASE_ANON_KEY ??
     rootEnv.ANON_KEY ??
     process.env.VITE_SUPABASE_ANON_KEY,
+  VITE_E2E_AUTH_BYPASS: '1',
 };
 
 /**

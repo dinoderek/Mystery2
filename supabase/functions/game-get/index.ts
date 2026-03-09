@@ -1,4 +1,4 @@
-import { createClient } from "../_shared/db.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import {
@@ -50,6 +50,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (isAuthError(authResult)) return authResult;
+    const { client: userClient } = authResult;
+
     const url = new URL(req.url);
     const gameId = url.searchParams.get("game_id");
 
@@ -57,10 +62,8 @@ Deno.serve(async (req) => {
       return badRequest("Missing game_id parameter");
     }
 
-    const supabase = createClient();
-
     // Fetch session
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await userClient
       .from("game_sessions")
       .select("*")
       .eq("id", gameId)
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
     if (!session) return notFound("Game session not found");
 
     // Fetch blueprint to hydrate static world details
-    const { data: files, error: listError } = await supabase.storage
+    const { data: files, error: listError } = await userClient.storage
       .from("blueprints")
       .list();
     if (listError) return internalError("Failed to access blueprints");
@@ -79,7 +82,7 @@ Deno.serve(async (req) => {
 
     for (const file of files || []) {
       if (!file.name.endsWith(".json")) continue;
-      const { data: fileData, error: downloadError } = await supabase.storage
+      const { data: fileData, error: downloadError } = await userClient.storage
         .from("blueprints")
         .download(file.name);
       if (downloadError) continue;
@@ -101,7 +104,7 @@ Deno.serve(async (req) => {
     const blueprint = BlueprintSchema.parse(JSON.parse(blueprintText));
 
     // Fetch events for history
-    const { data: events, error: eventsError } = await supabase
+    const { data: events, error: eventsError } = await userClient
       .from("game_events")
       .select("*")
       .eq("session_id", gameId)

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enableAuthBypass } from './test-auth';
 
 const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
 const characterSpeaker = (name: string) => ({
@@ -24,6 +25,8 @@ const baseState = {
 };
 
 async function bootstrapSession(page: Page) {
+  await enableAuthBypass(page);
+
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {

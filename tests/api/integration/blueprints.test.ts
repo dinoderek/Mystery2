@@ -1,11 +1,20 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("blueprints-list endpoint", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("blueprints");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("returns available mock blueprint", async () => {
     const res = await fetch(`${API_URL}/blueprints-list`, {
-      headers: { Authorization: `Bearer ${process.env.ANON_KEY}` },
+      headers: auth.headers,
     });
     expect(res.status).toBe(200);
     const data = await res.json();

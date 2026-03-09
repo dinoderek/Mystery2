@@ -1,14 +1,24 @@
-import { describe, it, expect } from "vitest";
-
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  API_URL,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "../integration/auth-helpers";
 const MOCK_BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("Full E2E API Investigation Flow", () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("api-e2e-flow");
+  });
+
+  afterEach(async () => {
+    await auth.cleanup();
+  });
+
   it("completes a full investigation from start to correct accusation", async () => {
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.ANON_KEY}`,
-    };
+    const headers = auth.headers;
 
     const listRes = await fetch(`${API_URL}/blueprints-list`, { headers });
     expect(listRes.status).toBe(200);

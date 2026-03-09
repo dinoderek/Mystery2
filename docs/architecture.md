@@ -7,7 +7,7 @@ We will build the Mystery Game using:
 - **UI**: SvelteKit + Vite, deployed as a **static site** (no SSR runtime in cloud).
 - **Hosting (UI)**: Cloudflare Pages serves the static bundle.
 - **Backend platform**: Supabase
-  - **AuthN**: Supabase Auth (optional depending on features)
+  - **AuthN**: Supabase Auth (required)
   - **AuthZ**: Postgres Row Level Security (RLS)
   - **Database**: Postgres
   - **Blob storage**: Supabase Storage
@@ -47,7 +47,7 @@ Constraints:
 Responsibilities:
 
 - Issue user sessions/tokens.
-- Support optional auth (some features may be public).
+- Enforce required sign-in before gameplay/API usage.
 
 ### Postgres (Supabase)
 
@@ -72,7 +72,7 @@ Responsibilities:
 
 Responsibilities:
 
-- Verify identity (optional auth depending on route).
+- Verify identity (required on all player-facing endpoints).
 - Perform server-side operations that must remain secret:
   - OpenRouter calls (API key)
   - privileged DB mutations
@@ -119,12 +119,12 @@ sequenceDiagram
   UI-->>B: JS/CSS/Images
 ```
 
-### 2) Optional authentication
+### 2) Required authentication
 
 **Goal**
 
 - User signs in; browser obtains an authenticated session.
-- Optional: create/refresh a profile record in Postgres.
+- Optional profile hydration can happen after sign-in if needed.
 
 ```mermaid
 sequenceDiagram
@@ -173,7 +173,7 @@ sequenceDiagram
   end
 ```
 
-### 4) Optional AI turn (Edge Function + OpenRouter)
+### 4) Authenticated AI turn (Edge Function + OpenRouter)
 
 **Goal**
 
@@ -181,8 +181,8 @@ sequenceDiagram
 
 **Hops**
 
-- UI → Edge Function (with optional auth)
-- Edge Function → verify/identify user (if auth required)
+- UI → Edge Function (with required auth header)
+- Edge Function → verify/identify user
 - Edge Function → Postgres (read current state, write event)
 - Edge Function → OpenRouter (optional)
 - Edge Function → Postgres (persist AI result)
@@ -196,12 +196,10 @@ sequenceDiagram
   participant DB as Supabase Postgres
   participant OR as OpenRouter
 
-  B->>F: POST /functions/v1/<function-name> (optional Authorization header)
-  alt Auth required for this operation
-    F->>F: Verify/Decode JWT and identify user
-    alt token missing or invalid
-      F-->>B: 401/403 (no DB/AI call)
-    end
+  B->>F: POST /functions/v1/<function-name> (Authorization: Bearer <token>)
+  F->>F: Verify/Decode JWT and identify user
+  alt token missing or invalid
+    F-->>B: 401/403 (no DB/AI call)
   end
 
   F->>DB: Read session state (RLS + checks)
@@ -249,7 +247,11 @@ Failure-handling expectations:
 - **No secrets in UI**.
 - **OpenRouter key lives only in Edge Function secrets**.
 - **All data access** is controlled by Postgres **RLS** (and explicit checks where appropriate).
-- UI calls Edge Functions with a bearer token when required; functions validate it.
+- UI calls Edge Functions with a bearer token; functions validate it on every request.
+- RLS ownership design:
+  - `game_sessions.user_id` stores session owner (`auth.users.id` FK)
+  - `game_events` ownership is inherited through `session_id -> game_sessions.id`
+  - policies use the `authenticated` role pattern instead of permissive `anon` policies
 
 ---
 

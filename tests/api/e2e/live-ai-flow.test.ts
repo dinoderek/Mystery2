@@ -1,11 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   callLiveEndpointWithRetry,
   getLiveTestTimeoutMs,
   getLiveSuiteTitle,
   isLiveAIEnabled,
   LiveAIRetriableExhaustedError,
+  resolveLiveAILabel,
 } from "../../testkit/src/live-ai.ts";
+import {
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "../integration/auth-helpers.ts";
 import { investigatorScript } from "./live-ai/investigator-script.ts";
 
 const API_URL = "http://127.0.0.1:54331/functions/v1";
@@ -21,19 +26,31 @@ const endpointByAction: Record<string, string> = {
 };
 
 runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
+  let auth: ApiAuthContext;
+
+  beforeAll(async () => {
+    auth = await setupApiTestAuth("live-ai-e2e-flow");
+  });
+
+  afterAll(async () => {
+    await auth.cleanup();
+  });
+
   it("executes the deterministic investigator script", async () => {
     try {
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      };
+      const label = resolveLiveAILabel().toLowerCase();
+      const profile = label === "free" || label === "paid" ? label : "free";
+      const headers = auth.headers;
 
       const startData = await callLiveEndpointWithRetry<{ game_id: string }>({
         apiUrl: API_URL,
         endpoint: "game-start",
         headers,
         stepLabel: "game-start",
-        body: { blueprint_id: investigatorScript.blueprint_id },
+        body: {
+          blueprint_id: investigatorScript.blueprint_id,
+          ai_profile: profile,
+        },
       });
       const { game_id } = startData;
       expect(typeof game_id).toBe("string");

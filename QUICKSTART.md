@@ -1,149 +1,160 @@
 # Quickstart Guide
 
-Welcome to the development environment!
-
 ## Prerequisites
-Ensure you have the following installed:
+Install:
 - [Node.js](https://nodejs.org/) (v18+ recommended)
 - [npm](https://www.npmjs.com/)
-- [Docker](https://www.docker.com/) (Required for local Supabase)
+- [Docker](https://www.docker.com/) (required for local Supabase)
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
-- [Deno](https://deno.land/) (Required for Edge Functions language server)
+- [Deno](https://deno.land/) (for Edge Functions language tooling)
 
-## Running the Backend Locally
-The backend relies on Supabase for the database, auth, and edge functions.
-
-1. **Start Supabase:**
-   ```bash
-   npx supabase start
-   ```
-   *This command spins up the Docker containers and applies all database migrations.*
-
-2. **Seed Local Storage (Blueprints):**
-   Run the seeding script to upload all local blueprint JSON files into your local Supabase Storage bucket:
-   - `blueprints/*.json`
-   - `supabase/seed/blueprints/*.json` (including `mock-blueprint.json` used by tests)
-   ```bash
-   npm run seed:storage
-   ```
-
-3. **Start the Web UI:**
-   In a new terminal, navigate to the `web/` directory and start Vite:
-   ```bash
-   cd web
-   npm run dev
-   ```
-   *The UI will usually be available at `http://localhost:5173`.*
-
-Tip: `npm run dev` from the repository root starts Supabase in deterministic mock-AI mode (skipping the restart if it is already running in that mode), seeds storage blueprints, then starts the web UI.
-
-## Blueprint management
-Blueprints are source-controlled JSON files that are uploaded into the Supabase Storage `blueprints` bucket for local runtime and tests.
-
-- Source directories loaded by `npm run seed:storage`:
-  - `blueprints/`
-  - `supabase/seed/blueprints/` (includes deterministic fixtures like `mock-blueprint.json`)
-- Upload keying:
-  - Each file must contain a top-level `id` field.
-  - Files are uploaded as `<id>.json` with `upsert: true`, so reseeding updates existing objects with the same id.
-- Validation behavior during seeding:
-  - Invalid JSON files or files missing `id` are skipped with a console warning.
-- Operational note:
-  - `npm run dev`, `npm run test:integration`, and `npm run test:e2e` reseed storage blueprints automatically.
-  - To refresh blueprints manually after editing JSON files, run `npm run seed:storage`.
-
-### Blueprint schema and generation prompt (Supabase)
-The canonical blueprint contract and generation instructions live in the Supabase function shared folder:
-
-- Schema: `supabase/functions/_shared/blueprints/blueprint-schema.ts`
-- Generation prompt: `supabase/functions/_shared/blueprints/generator-prompt.md`
-
-When changing blueprint structure or AI blueprint generation behavior, update both files together to keep schema validation and generation output aligned.
-
-## Local human testing with AI
-Use mode-specific local env files (gitignored) to run the full local stack against real models.
-
-1. Create `.env.ai.free.local`:
-   ```bash
-   AI_PROVIDER="openrouter"
-   AI_MODEL="z-ai/glm-4.5-air:free"
-   OPENROUTER_API_KEY="<server-only-secret>"
-   ```
-2. Create `.env.ai.paid.local`:
-   ```bash
-   AI_PROVIDER="openrouter"
-   AI_MODEL="google/gemini-3-flash-preview"
-   OPENROUTER_API_KEY="<server-only-secret>"
-   ```
-3. Start local stack in AI mode:
-   - Free model: `npm run dev:ai:free`
-   - Paid model: `npm run dev:ai:paid`
-
-   Each script detects whether Supabase is already running in the requested AI mode. If so, it skips the restart — switching modes will trigger a restart automatically.
-
-4. To force a restart of Supabase in the current AI mode (e.g. after a config change):
-   ```bash
-   npm run supabase:restart
-   ```
-
-## Accessing Edge Function Logs
-To inspect structured AI/provider logs without OrbStack UI:
+## First-Time Local Setup (Human)
+Run one command from repo root:
 
 ```bash
-npm run logs:edge
+npm run setup:local
 ```
 
-Optional custom tail length:
+This does the initial bootstrap:
+1. Ensures local Supabase is running.
+2. Seeds blueprint storage (only if bucket is empty).
+3. Seeds auth test users.
+4. Seeds AI profiles in Postgres:
+   - always seeds `mock`,
+   - seeds `free` / `paid` only when `.env.ai.free.local` / `.env.ai.paid.local` exist.
+
+Then start the app:
 
 ```bash
-npm run logs:edge -- --tail 500
+npm run dev
 ```
 
-This tails the active local Supabase edge runtime container automatically using the project ID from `supabase/config.toml`.
+## Daily Development Workflows
 
-For request validation failures (for example missing `player_input` in `game-ask`), logs now include structured `request.invalid` events with a `reason` field. Retriable AI/provider failures log as `request.ai_retriable`.
+### Deterministic local development (mock AI)
+```bash
+npm run dev
+```
+- Uses `VITE_AI_PROFILE=mock` in the web app.
+- Does not restart Supabase if already running.
+- Seeds storage if missing and refreshes the `mock` AI profile.
 
-## Testing everything
-We have a unified Quality Gate script that checks linting, type-safety, and all test tiers (Unit, Integration, and E2E API flow).
+### Local development against real AI profiles
+Configure mode files (gitignored):
 
-Simply run:
+`.env.ai.free.local`
+```bash
+AI_PROVIDER="openrouter"
+AI_MODEL="z-ai/glm-4.5-air:free"
+OPENROUTER_API_KEY="<server-only-secret>"
+```
+
+`.env.ai.paid.local`
+```bash
+AI_PROVIDER="openrouter"
+AI_MODEL="google/gemini-3-flash-preview"
+OPENROUTER_API_KEY="<server-only-secret>"
+```
+
+Run:
+- Free: `npm run dev:ai:free`
+- Paid: `npm run dev:ai:paid`
+
+These commands:
+- keep Supabase running by default (no restart),
+- sync the selected profile row in `ai_profiles`,
+- start the web app with `VITE_AI_PROFILE` set to that mode.
+
+### Switching AI profile without restart
+You do not need to restart Supabase to switch modes.
+- Start with `npm run dev` (`mock`) or `npm run dev:ai:free|paid`.
+- `game-start` stores the selected profile on the new session.
+- Existing sessions keep their stored `ai_profile_id`; new sessions use current selection.
+
+## Updating Keys/Models (No Restart Required)
+When a model id or key changes:
+1. Edit `.env.ai.<mode>.local` (`free` or `paid`).
+2. Sync that profile to Postgres:
+   ```bash
+   npm run seed:ai -- --only <mode>
+   ```
+   Example:
+   ```bash
+   npm run seed:ai -- --only free
+   ```
+3. Continue testing. Supabase restart is not required.
+
+Notes:
+- OpenRouter key resolves from `ai_profiles.openrouter_api_key` first.
+- If profile key is null, runtime falls back to `OPENROUTER_API_KEY` env.
+
+## Optional Reseed / Restart Controls
+
+Manual storage reseed:
+```bash
+npm run seed:storage
+```
+
+Seed storage only when empty:
+```bash
+npm run seed:storage -- --if-missing
+```
+
+Force Supabase restart (manual only):
+```bash
+npm run supabase:restart
+```
+
+## Testing
+Run all quality gates:
 ```bash
 npm run test:all
 ```
 
-Alternatively, you can run tests in isolation:
-- **Unit Logic Tests:** `npm run test:unit`
-- **Integration Tests:** `npm run test:integration` (Restarts Supabase in mock-AI mode and reseeds storage blueprints)
-- **E2E API Tests:** `npm run test:e2e` (Restarts Supabase in mock-AI mode and reseeds storage blueprints)
+Run suites individually:
+- Unit: `npm run test:unit`
+- Integration: `npm run test:integration`
+- API E2E: `npm run test:e2e`
 
-## Optional live-AI suites
-Live suites are opt-in and intentionally excluded from `npm run test:all` to keep baseline checks deterministic.
+By default, integration/E2E scripts:
+- ensure Supabase is running (no restart),
+- seed storage if missing,
+- seed required AI profiles.
 
-1. Ensure `.env.ai.free.local` and `.env.ai.paid.local` are configured (same files used by `dev:ai:*`).
-2. Run live suites:
-   - `npm run test:integration:live:free`
-   - `npm run test:integration:live:paid`
-   - `npm run test:e2e:live:free`
-   - `npm run test:e2e:live:paid`
-
-Live suites are configured to retry retriable `503` AI errors and use a larger timeout budget because free models can be rate-limited or slow.
-
-If you still see repeated `429` or timeout failures, tune these optional env vars:
-- `AI_OPENROUTER_TIMEOUT_MS`
-- `AI_OPENROUTER_MAX_ATTEMPTS`
-- `AI_OPENROUTER_BASE_BACKOFF_MS`
-
-## Cloud Supabase secrets
-Local `.env.ai.*.local` files are only for local Docker/Supabase CLI workflows.
-
-For hosted Supabase, set project secrets per environment (for example staging vs production) in Supabase Dashboard or via CLI:
+You can opt into restart/reseed flags when needed:
 ```bash
-supabase secrets set AI_PROVIDER=openrouter AI_MODEL=<model-id> OPENROUTER_API_KEY=<secret> --project-ref <project-ref>
+npm run test:integration -- --restart --seed-storage=always
 ```
 
-## Viewing the Database
-You can explore the local Postgres database and functions via the local Supabase dashboard:
+## Optional Live-AI Suites
+Live suites are opt-in:
+- `npm run test:integration:live:free`
+- `npm run test:integration:live:paid`
+- `npm run test:e2e:live:free`
+- `npm run test:e2e:live:paid`
+
+They use profile-based selection (`free`/`paid`) and larger timeout budgets.
+
+## Accessing Edge Function Logs
+```bash
+npm run logs:edge
+```
+
+Optional tail length:
+```bash
+npm run logs:edge -- --tail 500
+```
+
+## Cloud Supabase Secrets
+For hosted Supabase environments, set runtime env secrets per project:
+
+```bash
+supabase secrets set OPENROUTER_API_KEY=<secret> --project-ref <project-ref>
+```
+
+Model/provider selection can still be driven by DB `ai_profiles` rows in that environment.
+
+## Viewing Local Database/Services
 ```bash
 npx supabase status
 ```
-*Look for the "Studio URL" in the output, typically `http://127.0.0.1:54323`.*

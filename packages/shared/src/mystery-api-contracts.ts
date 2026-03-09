@@ -23,6 +23,11 @@ export const GameSessionRequestSchema = z.object({
   game_id: z.string().uuid(),
 });
 
+export const GameStartRequestSchema = z.object({
+  blueprint_id: z.string().uuid(),
+  ai_profile: z.string().min(1).optional(),
+});
+
 export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
   character_name: z.string().min(1),
 });
@@ -118,6 +123,7 @@ export const BlueprintSummarySchema = z.object({
 export type SpeakerKind = z.infer<typeof SpeakerKindSchema>;
 export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+export type GameStartRequest = z.infer<typeof GameStartRequestSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;

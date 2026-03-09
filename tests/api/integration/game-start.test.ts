@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import {
+  API_URL,
+  REST_URL,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "./auth-helpers";
 
 describe("game-start endpoint", () => {
   let auth: ApiAuthContext;
@@ -11,6 +16,22 @@ describe("game-start endpoint", () => {
   afterEach(async () => {
     await auth.cleanup();
   });
+
+  async function fetchSessionAIProfile(gameId: string): Promise<string> {
+    const res = await fetch(
+      `${REST_URL}/game_sessions?id=eq.${gameId}&select=ai_profile_id`,
+      {
+        headers: {
+          apikey: process.env.ANON_KEY ?? "",
+          Authorization: `Bearer ${auth.accessToken}`,
+        },
+      },
+    );
+    expect(res.status).toBe(200);
+    const rows = await res.json();
+    expect(rows).toHaveLength(1);
+    return rows[0].ai_profile_id as string;
+  }
 
   it("starts a game with narrator speaker metadata", async () => {
     const res = await fetch(`${API_URL}/game-start`, {
@@ -43,5 +64,35 @@ describe("game-start endpoint", () => {
         label: "Narrator",
       },
     });
+    expect(await fetchSessionAIProfile(data.game_id)).toBe("mock");
+  });
+
+  it("accepts ai_profile and persists it on the session", async () => {
+    const res = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        ai_profile: "mock",
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.game_id).toBeDefined();
+    expect(await fetchSessionAIProfile(data.game_id)).toBe("mock");
+  });
+
+  it("rejects unknown ai_profile", async () => {
+    const res = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        ai_profile: "does-not-exist",
+      }),
+    });
+
+    expect(res.status).toBe(400);
   });
 });

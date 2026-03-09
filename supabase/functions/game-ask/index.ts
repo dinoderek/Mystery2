@@ -8,8 +8,9 @@ import {
 import { validateTransition } from "../_shared/state-machine.ts";
 import {
   createAIRequestMetadata,
-  getAIProvider,
+  createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
+import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
@@ -80,6 +81,19 @@ Deno.serve(async (req) => {
       return badRequest("Not talking to anyone");
     }
 
+    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    if (!aiProfile) {
+      logError("request.error", {
+        reason: "ai_profile_missing",
+        game_id: gameId,
+        ai_profile_id: session.ai_profile_id ?? null,
+      });
+      return internalError("AI profile not found");
+    }
+    const aiProvider = createAIProviderFromProfile(aiProfile, {
+      openrouterApiKey: aiProfile.openrouter_api_key,
+    });
+
     const { data: fileData, error: downloadError } = await userClient.storage
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
@@ -117,6 +131,7 @@ Deno.serve(async (req) => {
           request_id: requestId,
           endpoint: "game-ask",
           game_id: gameId,
+          aiProvider,
           session,
           blueprint,
           conversation_history: historyRows ?? [],
@@ -178,7 +193,6 @@ Deno.serve(async (req) => {
         game_id: gameId,
       });
 
-      const aiProvider = getAIProvider();
       let talkOutput: ReturnType<typeof parseTalkConversationOutput>;
       try {
         talkOutput = await aiProvider.generateRoleOutput({

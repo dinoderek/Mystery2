@@ -87,7 +87,7 @@ What we test:
 AI calls:
 
 - Never call OpenRouter in integration tests.
-- Instead, configure Edge Functions to use a mock provider when `AI_PROVIDER=mock` (or similar config).
+- Instead, use the seeded `mock` profile in `ai_profiles` (either as the default profile or by passing `ai_profile: "mock"` to `game-start`).
 - Assert the persisted DB side effects match expectations.
   - accusation resolution persists `game_sessions.mode='ended'` and `game_sessions.outcome='win'|'lose'`
 - Live provider checks are isolated in dedicated opt-in suites (see below).
@@ -186,19 +186,19 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 `npm run test:integration`:
 
-1. Restarts Supabase in deterministic mock-AI mode
-2. Seeds storage blueprints from local blueprint directories
-3. Uses Vitest to run the integration test suite (handling its own data isolation)
-4. Uses the shared restart path (`scripts/run-mock-tests.mjs` → `smartStartSupabase`) so mode tracking is consistent with dev/live scripts
+1. Ensures Supabase is running (no restart by default)
+2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
+3. Seeds/refreshes the `mock` AI profile in Postgres (`ai_profiles`)
+4. Uses Vitest to run the integration test suite (handling its own data isolation)
 
 ### E2E test script
 
 `npm run test:e2e`:
 
-1. Restarts Supabase in deterministic mock-AI mode
-2. Seeds storage blueprints from local blueprint directories
-3. Runs Vitest against the running Edge Functions to validate full player journeys
-4. Uses the shared restart path (`scripts/run-mock-tests.mjs` → `smartStartSupabase`) so mode tracking is consistent with dev/live scripts
+1. Ensures Supabase is running (no restart by default)
+2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
+3. Seeds/refreshes the `mock` AI profile in Postgres (`ai_profiles`)
+4. Runs Vitest against the running Edge Functions to validate full player journeys
 
 ### Deploy dry-run checks
 
@@ -220,7 +220,8 @@ These suites are intentionally excluded from `npm run test:all` and only run whe
 Live suites require:
 
 - `AI_LIVE=1`
-- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER`, `AI_MODEL`, and `OPENROUTER_API_KEY`
+- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER` and `AI_MODEL`
+- `npm run seed:ai -- --only <free|paid>` to sync profile model/key into Postgres for the selected live mode
 - resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
 - higher timeout budget for real model latency (default 600s per live test)
 - live suites may short-circuit with a warning when retries are exhausted by upstream transient failures

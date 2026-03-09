@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   callLiveEndpointWithRetry,
   getLiveTestTimeoutMs,
@@ -7,18 +7,30 @@ import {
   LiveAIRetriableExhaustedError,
   resolveLiveAILabel,
 } from "../../../testkit/src/live-ai.ts";
+import {
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "../auth-helpers.ts";
 
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
+  let auth: ApiAuthContext;
+
+  beforeAll(async () => {
+    auth = await setupApiTestAuth("live-ai-talk-search");
+  });
+
+  afterAll(async () => {
+    await auth.cleanup();
+  });
+
   it("runs talk and search with active live model", async () => {
     try {
-      const label = resolveLiveAILabel();
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ANON_KEY}`,
-      };
+      const label = resolveLiveAILabel().toLowerCase();
+      const profile = label === "free" || label === "paid" ? label : "free";
+      const headers = auth.headers;
 
       const startData = await callLiveEndpointWithRetry<{ game_id: string }>({
         apiUrl: API_URL,
@@ -27,6 +39,7 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
         stepLabel: "game-start",
         body: {
           blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+          ai_profile: profile,
         },
       });
       const { game_id } = startData;

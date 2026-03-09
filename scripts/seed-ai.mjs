@@ -1,0 +1,131 @@
+import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
+import { loadEnvFile } from "./supabase-utils.mjs";
+
+const ROOT_DIR = process.cwd();
+const VALID_PROFILES = new Set(["mock", "free", "paid"]);
+
+function parseOnlyArg(args) {
+  const inline = args.find((arg) => arg.startsWith("--only="));
+  if (inline) {
+    return inline.slice("--only=".length).trim();
+  }
+
+  const index = args.findIndex((arg) => arg === "--only");
+  if (index === -1) {
+    return null;
+  }
+
+  return args[index + 1]?.trim() ?? "";
+}
+
+function resolveTargets(args) {
+  const only = parseOnlyArg(args);
+  if (!only) {
+    return ["mock", "free", "paid"];
+  }
+
+  if (!VALID_PROFILES.has(only)) {
+    throw new Error(`Invalid --only value "${only}". Use one of: mock, free, paid.`);
+  }
+
+  return [only];
+}
+
+async function loadModeProfile(rootEnv, mode) {
+  if (mode === "mock") {
+    return {
+      id: "mock",
+      provider: "mock",
+      model: "mock/runtime-default",
+      openrouter_api_key: null,
+      is_default: true,
+    };
+  }
+
+  const modeEnvPath = path.join(ROOT_DIR, `.env.ai.${mode}.local`);
+  const modeEnv = await loadEnvFile(modeEnvPath, false);
+  if (Object.keys(modeEnv).length === 0) {
+    return null;
+  }
+
+  const provider = modeEnv.AI_PROVIDER?.trim();
+  const model = modeEnv.AI_MODEL?.trim();
+  if (!provider || !model) {
+    throw new Error(
+      `Missing AI_PROVIDER/AI_MODEL in ${path.basename(modeEnvPath)}.`,
+    );
+  }
+
+  const openrouterKey = modeEnv.OPENROUTER_API_KEY?.trim() ||
+    rootEnv.OPENROUTER_API_KEY?.trim() ||
+    null;
+
+  return {
+    id: mode,
+    provider,
+    model,
+    openrouter_api_key: openrouterKey,
+    is_default: false,
+  };
+}
+
+const targets = resolveTargets(process.argv.slice(2));
+const baseEnv = await loadEnvFile(path.join(ROOT_DIR, ".env.local"), false);
+const env = { ...baseEnv, ...process.env };
+
+const supabaseUrl = env.API_URL || "http://127.0.0.1:54331";
+const serviceRoleKey = env.SERVICE_ROLE_KEY;
+if (!serviceRoleKey) {
+  console.error("Missing SERVICE_ROLE_KEY (expected in env or .env.local)");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+const rows = [];
+for (const target of targets) {
+  const profile = await loadModeProfile(env, target);
+  if (!profile) {
+    console.warn(
+      `Skipping profile "${target}": missing .env.ai.${target}.local`,
+    );
+    continue;
+  }
+  rows.push(profile);
+}
+
+if (rows.length === 0) {
+  console.warn("No AI profiles were seeded.");
+  process.exit(0);
+}
+
+if (rows.some((row) => row.id === "mock")) {
+  const { error: clearDefaultError } = await supabase
+    .from("ai_profiles")
+    .update({ is_default: false, updated_at: new Date().toISOString() })
+    .eq("is_default", true);
+  if (clearDefaultError) {
+    console.error(`Failed to reset default profile: ${clearDefaultError.message}`);
+    process.exit(1);
+  }
+}
+
+const payload = rows.map((row) => ({
+  ...row,
+  updated_at: new Date().toISOString(),
+}));
+
+const { error } = await supabase
+  .from("ai_profiles")
+  .upsert(payload, { onConflict: "id" });
+if (error) {
+  console.error(`Failed to seed AI profiles: ${error.message}`);
+  process.exit(1);
+}
+
+console.log(
+  `Seeded AI profiles: ${rows.map((row) => row.id).join(", ")}`,
+);

@@ -11,8 +11,9 @@ import {
 } from "../_shared/state-machine.ts";
 import {
   createAIRequestMetadata,
-  getAIProvider,
+  createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
+import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import {
@@ -160,7 +161,18 @@ Deno.serve(async (req) => {
       .order("sequence", { ascending: true });
     const history = historyRows ?? [];
 
-    const aiProvider = getAIProvider();
+    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    if (!aiProfile) {
+      logError("request.error", {
+        reason: "ai_profile_missing",
+        game_id: gameId,
+        ai_profile_id: session.ai_profile_id ?? null,
+      });
+      return internalError("AI profile not found");
+    }
+    const aiProvider = createAIProviderFromProfile(aiProfile, {
+      openrouterApiKey: aiProfile.openrouter_api_key,
+    });
 
     const runReasoningRound = async (
       contextSession: typeof session,

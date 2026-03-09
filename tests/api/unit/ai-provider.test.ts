@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createAIProviderFromProfile,
   createAIRequestMetadata,
   getAIProvider,
   isLiveAIEnabled,
@@ -39,6 +40,20 @@ describe("ai-provider runtime resolution", () => {
   it("parses live toggle", () => {
     expect(isLiveAIEnabled({ AI_LIVE: "1" })).toBe(true);
     expect(isLiveAIEnabled({ AI_LIVE: "false" })).toBe(false);
+  });
+
+  it("builds provider from explicit runtime profile", async () => {
+    const provider = createAIProviderFromProfile(
+      { provider: "mock", model: "mock/runtime-default" },
+    );
+
+    const output = await provider.generateRoleOutput({
+      role: "search",
+      prompt: "Search prompt",
+      context: { location_name: "Kitchen" },
+      parse: parseSearchOutput,
+    });
+    expect(output.narration).toContain("Kitchen");
   });
 });
 

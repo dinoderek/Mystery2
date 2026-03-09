@@ -9,10 +9,13 @@ For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 ## Runtime Components
 
 - `supabase/functions/_shared/ai-provider.ts`
-  - Strict provider/model resolution from environment (`AI_PROVIDER`, `AI_MODEL`)
+  - Runtime provider/model resolution from session-linked AI profiles
   - OpenRouter retry/backoff and timeout controls
   - Structured AI call logs (JSON) with request/action metadata
   - Live-suite helpers (`AI_LIVE`, AI mode labeling)
+- `supabase/functions/_shared/ai-profile.ts`
+  - Service-role access to `ai_profiles`
+  - Default profile and per-session profile lookup
 - `supabase/functions/_shared/ai-contracts.ts`
   - Role output parsing and validation before state mutation
 - `supabase/functions/_shared/ai-context.ts`
@@ -111,7 +114,7 @@ For endpoints using AI roles (`game-talk`, `game-ask`, `game-end-talk`, `game-se
    - search => location-relative only
    - accuse => all or none (mode-controlled)
 5. Render prompt template for the role.
-6. Call provider (`mock` or `openrouter`) through `getAIProvider`.
+6. Resolve the session AI profile and build provider (`mock` or `openrouter`) via `createAIProviderFromProfile`.
 7. Parse and validate role output contract.
 8. If validation/provider fails, return retriable error and skip state mutation.
 9. If valid, persist session/event changes and return API payload.
@@ -136,11 +139,15 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 ## Runtime Model Selection and Live Suites
 
 - Runtime model selection:
-  - `AI_MODEL` is required at runtime
-  - no runtime `AI_PROFILE` is required or parsed
-- Provider:
-  - `AI_PROVIDER=mock` for deterministic suites
-  - `AI_PROVIDER=openrouter` + `OPENROUTER_API_KEY` for live model runs
+  - `game-start` accepts optional `ai_profile` and persists it on `game_sessions.ai_profile_id`
+  - all subsequent AI endpoints resolve provider/model/key from that stored profile id
+  - default profile is the row with `ai_profiles.is_default=true` (seeded as `mock` in local dev)
+- Provider secrets:
+  - OpenRouter API key resolves from `ai_profiles.openrouter_api_key` first
+  - falls back to `OPENROUTER_API_KEY` env when profile key is null
+- Local profile seeding:
+  - `npm run seed:ai` seeds `mock`, `free`, and `paid` profile rows
+  - `npm run seed:ai -- --only free` (or `paid`) updates model/key without restarting Supabase
 - Live suite commands:
   - `npm run test:integration:live:free`
   - `npm run test:integration:live:paid`

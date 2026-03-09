@@ -33,6 +33,11 @@ export interface AIRuntimeProfile {
   model: string;
 }
 
+export interface AIProviderFactoryOptions {
+  env?: Record<string, string | undefined>;
+  openrouterApiKey?: string | null;
+}
+
 export interface AIRoleOutputRequest<T> {
   role: AIRoleName;
   prompt: string;
@@ -259,6 +264,18 @@ function resolveOpenRouterRuntimeConfig(
       750,
     ),
   };
+}
+
+function resolveOpenRouterApiKey(
+  env: Record<string, string | undefined>,
+  explicitApiKey?: string | null,
+): string {
+  const keyFromProfile = explicitApiKey?.trim();
+  if (keyFromProfile) {
+    return keyFromProfile;
+  }
+
+  return requireEnv(env, "OPENROUTER_API_KEY");
 }
 
 class MockAIProvider implements AIProvider {
@@ -675,17 +692,28 @@ class OpenRouterProvider implements AIProvider {
   }
 }
 
-export function getAIProvider(env = getRuntimeEnv()): AIProvider {
-  const profile = resolveAIProfile(env);
+export function createAIProviderFromProfile(
+  profile: AIRuntimeProfile,
+  options: AIProviderFactoryOptions = {},
+): AIProvider {
+  const env = options.env ?? getRuntimeEnv();
   if (profile.provider === "openrouter") {
     const runtimeConfig = resolveOpenRouterRuntimeConfig(env);
     return new OpenRouterProvider(
       profile,
-      requireEnv(env, "OPENROUTER_API_KEY"),
+      resolveOpenRouterApiKey(env, options.openrouterApiKey),
       runtimeConfig,
       env.OPENROUTER_URL,
     );
   }
 
   return new MockAIProvider(profile);
+}
+
+export function getAIProvider(env = getRuntimeEnv()): AIProvider {
+  const profile = resolveAIProfile(env);
+  return createAIProviderFromProfile(profile, {
+    env,
+    openrouterApiKey: env.OPENROUTER_API_KEY,
+  });
 }

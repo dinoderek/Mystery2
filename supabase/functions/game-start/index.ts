@@ -8,8 +8,12 @@ import {
 } from "../_shared/errors.ts";
 import {
   createAIRequestMetadata,
-  getAIProvider,
+  createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
+import {
+  getAIProfileById,
+  getDefaultAIProfile,
+} from "../_shared/ai-profile.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
@@ -32,8 +36,34 @@ Deno.serve(async (req) => {
       log("request.invalid", { reason: "missing_or_invalid_blueprint_id" });
       return badRequest("Missing or invalid blueprint_id");
     }
+    if (
+      body.ai_profile !== undefined &&
+      (typeof body.ai_profile !== "string" || body.ai_profile.trim().length === 0)
+    ) {
+      log("request.invalid", { reason: "invalid_ai_profile" });
+      return badRequest("Invalid ai_profile");
+    }
 
     const { blueprint_id } = body;
+    const requestedAIProfile = typeof body.ai_profile === "string"
+      ? body.ai_profile.trim()
+      : null;
+
+    const aiProfile = requestedAIProfile
+      ? await getAIProfileById(requestedAIProfile)
+      : await getDefaultAIProfile();
+
+    if (requestedAIProfile && !aiProfile) {
+      log("request.invalid", {
+        reason: "unknown_ai_profile",
+        ai_profile: requestedAIProfile,
+      });
+      return badRequest("Invalid ai_profile");
+    }
+    if (!aiProfile) {
+      logError("request.error", { reason: "default_ai_profile_missing" });
+      return internalError("No default AI profile configured");
+    }
 
     // Find blueprint in Storage
     const { data: files, error: listError } = await supabase.storage
@@ -84,6 +114,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: authUser.id,
         blueprint_id: blueprint.id,
+        ai_profile_id: aiProfile.id,
         mode: "explore",
         current_location_id: startLoc,
         time_remaining: blueprint.metadata.time_budget,
@@ -103,7 +134,9 @@ Deno.serve(async (req) => {
     const sessionId = sessionData.id;
 
     // Generate opening narration
-    const aiProvider = getAIProvider();
+    const aiProvider = createAIProviderFromProfile(aiProfile, {
+      openrouterApiKey: aiProfile.openrouter_api_key,
+    });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
       endpoint: "game-start",

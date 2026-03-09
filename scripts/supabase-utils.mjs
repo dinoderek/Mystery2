@@ -5,8 +5,6 @@ import path from "node:path";
 export const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 export const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 
-const AI_MODE_FILE = ".supabase-ai-mode";
-
 export function parseEnvLine(line) {
   const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith("#")) return null;
@@ -69,55 +67,68 @@ export function isSupabaseRunning(env) {
   return (result.status ?? 1) === 0;
 }
 
-export async function getRecordedMode(rootDir) {
-  try {
-    const content = await fs.readFile(path.join(rootDir, AI_MODE_FILE), "utf-8");
-    return content.trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-export async function writeRecordedMode(rootDir, mode) {
-  await fs.writeFile(path.join(rootDir, AI_MODE_FILE), mode, "utf-8");
-}
-
-/**
- * Start supabase only if not already running in the desired mode.
- * Writes the mode to .supabase-ai-mode on (re)start.
- */
-export async function smartStartSupabase(
-  rootDir,
-  mode,
-  env,
-  options = {},
-) {
-  const { forceRestart = false } = options;
-  const recordedMode = await getRecordedMode(rootDir);
+export async function ensureSupabaseRunning(env, options = {}) {
+  const { restart = false } = options;
   const running = isSupabaseRunning(env);
 
-  if (forceRestart) {
-    console.log(`Force restarting supabase in "${mode}" AI mode...`);
+  if (restart) {
+    console.log("Restarting supabase...");
     runCommand(npxBin, ["supabase", "stop"], env, true);
     runCommand(npxBin, ["supabase", "start"], env);
-    await writeRecordedMode(rootDir, mode);
-    return;
-  }
-
-  if (running && recordedMode === mode) {
-    console.log(`Supabase already running in "${mode}" AI mode — skipping restart.`);
     return;
   }
 
   if (running) {
-    console.log(
-      `Supabase running in "${recordedMode ?? "unknown"}" mode, switching to "${mode}"...`,
-    );
-  } else {
-    console.log(`Starting supabase in "${mode}" AI mode...`);
+    console.log("Supabase already running — skipping restart.");
+    return;
+  }
+  console.log("Starting supabase...");
+  runCommand(npxBin, ["supabase", "start"], env);
+}
+
+function parseSeedStorageArg(value) {
+  if (!value || value === "if-missing") return "if-missing";
+  if (value === "always") return "always";
+  if (value === "skip") return "skip";
+  throw new Error(
+    `Invalid --seed-storage value "${value}". Use one of: if-missing, always, skip.`,
+  );
+}
+
+export function parseScriptOptions(args) {
+  const options = {
+    restart: false,
+    seedStorage: "if-missing",
+    seedAI: true,
+  };
+
+  for (const arg of args) {
+    if (arg === "--restart") {
+      options.restart = true;
+      continue;
+    }
+    if (arg === "--skip-seed-ai" || arg === "--seed-ai=skip") {
+      options.seedAI = false;
+      continue;
+    }
+    if (arg === "--seed-ai") {
+      options.seedAI = true;
+      continue;
+    }
+    if (arg === "--skip-seed-storage") {
+      options.seedStorage = "skip";
+      continue;
+    }
+    if (arg === "--seed-storage") {
+      options.seedStorage = "always";
+      continue;
+    }
+    if (arg.startsWith("--seed-storage=")) {
+      options.seedStorage = parseSeedStorageArg(arg.slice("--seed-storage=".length));
+      continue;
+    }
+    throw new Error(`Unknown option: ${arg}`);
   }
 
-  runCommand(npxBin, ["supabase", "stop"], env, true);
-  runCommand(npxBin, ["supabase", "start"], env);
-  await writeRecordedMode(rootDir, mode);
+  return options;
 }

@@ -1,10 +1,29 @@
 <script lang="ts">
-  let { text, type = 'system' } = $props<{ text: string, type?: 'system' | 'player' | 'character' }>();
+  import type { Speaker } from '$lib/types/game';
+  import {
+    getSpeakerThemeClasses,
+    readTerminalTheme,
+    type TerminalThemeName,
+  } from './terminal-message-theme';
+
+  let {
+    text,
+    speaker,
+    theme = 'matrix',
+  } = $props<{ text: string; speaker: Speaker; theme?: TerminalThemeName }>();
+
+  const activeTheme = $derived(readTerminalTheme(theme));
+  const speakerTheme = $derived(getSpeakerThemeClasses(activeTheme, speaker.kind));
 </script>
 
-<div class="mb-2 leading-relaxed {type === 'player' ? 'text-green-300' : type === 'character' ? 'text-yellow-400' : 'text-green-500'}">
-  {#if type === 'player'}
-    <span class="opacity-50">&gt; </span>
-  {/if}
+<div
+  class={`mb-2 leading-relaxed ${speakerTheme.body}`}
+  class:speaker-character-generic={speaker.kind === 'character'}
+  data-speaker-kind={speaker.kind}
+  data-speaker-key={speaker.key}
+>
+  <span class={`mr-2 text-xs font-bold uppercase tracking-wide ${speakerTheme.label}`}
+    >{speaker.label}:</span
+  >
   <span>{text}</span>
 </div>

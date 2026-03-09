@@ -16,6 +16,10 @@ import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  createCharacterSpeaker,
+  NARRATOR_SPEAKER,
+} from "../_shared/speaker.ts";
 
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
@@ -97,8 +101,10 @@ Deno.serve(async (req) => {
     const isForcedEndgame = newTime <= 0;
     const nextMode = isForcedEndgame ? "accuse" : "talk";
     const eventType = isForcedEndgame ? "forced_endgame" : "ask";
+    const characterSpeaker = createCharacterSpeaker(activeCharacter.first_name);
     let narration: string;
     let eventPayload: Record<string, unknown>;
+    let responseSpeaker = characterSpeaker;
 
     if (isForcedEndgame) {
       try {
@@ -121,7 +127,9 @@ Deno.serve(async (req) => {
           player_input: playerInput,
           trigger: "timeout",
           follow_up_prompt: forcedOutput.follow_up_prompt,
+          speaker: NARRATOR_SPEAKER,
         };
+        responseSpeaker = NARRATOR_SPEAKER;
       } catch (error) {
         if (error instanceof RetriableAIError) {
           log("request.ai_retriable", {
@@ -201,6 +209,7 @@ Deno.serve(async (req) => {
         character_name: activeCharacter.first_name,
         location_name: session.current_location_id,
         player_input: playerInput,
+        speaker: characterSpeaker,
       };
     }
 
@@ -237,6 +246,7 @@ Deno.serve(async (req) => {
         current_talk_character: isForcedEndgame
           ? null
           : activeCharacter.first_name,
+        speaker: responseSpeaker,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -24,6 +24,7 @@ import {
   buildAccusationStartContext,
 } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 type BlueprintCharacter = ReturnType<
   typeof BlueprintSchema.parse
@@ -277,6 +278,7 @@ Deno.serve(async (req) => {
             inferred_accused_character: inferredAccusedCharacter,
             player_reasoning: playerReasoning,
             judge_result: "continue",
+            speaker: NARRATOR_SPEAKER,
           },
           narration: judgeOutput.narration,
         });
@@ -287,6 +289,7 @@ Deno.serve(async (req) => {
             mode: "accuse",
             result: null,
             follow_up_prompt: judgeOutput.follow_up_prompt,
+            speaker: NARRATOR_SPEAKER,
           }),
           { headers: { "Content-Type": "application/json" } },
         );
@@ -334,6 +337,7 @@ Deno.serve(async (req) => {
           inferred_accused_character: inferredCharacter.first_name,
           player_reasoning: playerReasoning,
           judge_result: outcome,
+          speaker: NARRATOR_SPEAKER,
         },
         narration: judgeOutput.narration,
       });
@@ -344,6 +348,7 @@ Deno.serve(async (req) => {
           mode: "ended",
           result: outcome,
           follow_up_prompt: null,
+          speaker: NARRATOR_SPEAKER,
         }),
         { headers: { "Content-Type": "application/json" } },
       );
@@ -434,6 +439,7 @@ Deno.serve(async (req) => {
           payload: {
             role: "accusation_start",
             trigger: "player",
+            speaker: NARRATOR_SPEAKER,
           },
           narration: startOutput.narration,
         });
@@ -444,6 +450,7 @@ Deno.serve(async (req) => {
             mode: "accuse",
             result: null,
             follow_up_prompt: startOutput.follow_up_prompt,
+            speaker: NARRATOR_SPEAKER,
           }),
           { headers: { "Content-Type": "application/json" } },
         );

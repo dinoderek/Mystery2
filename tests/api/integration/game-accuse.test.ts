@@ -50,6 +50,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseRoundOneData.mode).toBe("accuse");
     expect(accuseRoundOneData.follow_up_prompt).toBeTruthy();
     expect(accuseRoundOneData.result ?? null).toBeNull();
+    expect(accuseRoundOneData.speaker.kind).toBe("narrator");
 
     const accuseRoundTwoRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
@@ -64,6 +65,7 @@ describe("game-accuse endpoint", () => {
     const accuseRoundTwoData = await accuseRoundTwoRes.json();
     expect(accuseRoundTwoData.mode).toBe("ended");
     expect(accuseRoundTwoData.result).toBe("win");
+    expect(accuseRoundTwoData.speaker.kind).toBe("narrator");
 
     const sessionAfterResolution = await fetchSessionSnapshot(game_id, anonKey);
     expect(sessionAfterResolution.mode).toBe("ended");
@@ -106,6 +108,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseStartData.mode).toBe("accuse");
     expect(accuseStartData.result ?? null).toBeNull();
     expect(accuseStartData.follow_up_prompt).toBeTruthy();
+    expect(accuseStartData.speaker.kind).toBe("narrator");
 
     const roundOneRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
@@ -128,6 +131,7 @@ describe("game-accuse endpoint", () => {
     expect(roundTwoRes.status).toBe(200);
     const roundTwoData = await roundTwoRes.json();
     expect(roundTwoData.mode).toBe("ended");
+    expect(roundTwoData.speaker.kind).toBe("narrator");
   });
 
   it("keeps accusation rounds working after timeout-forced accuse mode", async () => {
@@ -180,6 +184,7 @@ describe("game-accuse endpoint", () => {
     const accuseData = await accuseRes.json();
     expect(accuseData.mode).toBe("accuse");
     expect(accuseData.follow_up_prompt).toBeTruthy();
+    expect(accuseData.speaker.kind).toBe("narrator");
   });
 
   it("resolves to lose for an incorrect suspect", async () => {
@@ -220,6 +225,7 @@ describe("game-accuse endpoint", () => {
     const resolveData = await resolveRes.json();
     expect(resolveData.mode).toBe("ended");
     expect(resolveData.result).toBe("lose");
+    expect(resolveData.speaker.kind).toBe("narrator");
 
     const sessionAfterResolution = await fetchSessionSnapshot(game_id, anonKey);
     expect(sessionAfterResolution.mode).toBe("ended");

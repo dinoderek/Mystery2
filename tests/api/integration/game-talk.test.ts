@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 
 describe("game-talk endpoint", () => {
-  it("starts a conversation with a character", async () => {
+  it("starts a conversation with narrator speaker", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: {
@@ -33,5 +33,10 @@ describe("game-talk endpoint", () => {
     expect(data.time_remaining).toBe(9);
     expect(data.narration).toContain("[Mock]");
     expect(data.narration).not.toContain("because she was hungry");
+    expect(data.speaker).toMatchObject({
+      kind: "narrator",
+      key: "narrator",
+      label: "Narrator",
+    });
   });
 });

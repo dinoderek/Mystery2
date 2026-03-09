@@ -15,6 +15,7 @@ import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
@@ -172,6 +173,7 @@ Deno.serve(async (req) => {
     const eventPayload: Record<string, unknown> = {
       destination,
       location_name: destLoc.name,
+      speaker: NARRATOR_SPEAKER,
     };
     if (eventType === "forced_endgame") {
       eventPayload.trigger = "timeout";
@@ -197,6 +199,7 @@ Deno.serve(async (req) => {
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,
+        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

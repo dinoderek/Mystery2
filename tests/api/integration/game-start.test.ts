@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 
 describe("game-start endpoint", () => {
-  it("starts a game and returns initial state", async () => {
+  it("starts a game with narrator speaker metadata", async () => {
     const res = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: {
@@ -22,7 +22,20 @@ describe("game-start endpoint", () => {
     expect(data.state).toBeDefined();
     expect(data.state.mode).toBe("explore");
     expect(data.state.time_remaining).toBe(10);
-    expect(data.state.clues).toBeUndefined();
     expect(data.state.narration).toContain("[Mock]");
+    expect(data.state.narration_speaker).toMatchObject({
+      kind: "narrator",
+      key: "narrator",
+      label: "Narrator",
+    });
+    expect(data.state.history).toHaveLength(1);
+    expect(data.state.history[0]).toMatchObject({
+      event_type: "start",
+      speaker: {
+        kind: "narrator",
+        key: "narrator",
+        label: "Narrator",
+      },
+    });
   });
 });

@@ -10,7 +10,6 @@ describe("Full E2E API Investigation Flow", () => {
       Authorization: `Bearer ${process.env.ANON_KEY}`,
     };
 
-    // 1. GET blueprints-list
     const listRes = await fetch(`${API_URL}/blueprints-list`, { headers });
     expect(listRes.status).toBe(200);
     const listData = await listRes.json();
@@ -22,7 +21,6 @@ describe("Full E2E API Investigation Flow", () => {
     }
     const blueprintId = mockBlueprint.id;
 
-    // 2. POST game-start
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers,
@@ -31,33 +29,35 @@ describe("Full E2E API Investigation Flow", () => {
     expect(startRes.status).toBe(200);
     const { game_id, state } = await startRes.json();
     expect(state.mode).toBe("explore");
+    expect(state.narration_speaker.kind).toBe("narrator");
 
-    // 3. POST game-move
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id, destination: "Kitchen" }), // Already in kitchen but moving there is fine or "Living Room"
+      body: JSON.stringify({ game_id, destination: "Kitchen" }),
     });
     expect(moveRes.status).toBe(200);
+    const moveData = await moveRes.json();
+    expect(moveData.speaker.kind).toBe("narrator");
 
-    // 4. POST game-search
     const searchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
       headers,
       body: JSON.stringify({ game_id }),
     });
     expect(searchRes.status).toBe(200);
-    await searchRes.json();
+    const searchData = await searchRes.json();
+    expect(searchData.speaker.kind).toBe("narrator");
 
-    // 5. POST game-talk to Alice
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers,
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
     expect(talkRes.status).toBe(200);
+    const talkData = await talkRes.json();
+    expect(talkData.speaker.kind).toBe("narrator");
 
-    // 6. POST game-ask
     const askRes = await fetch(`${API_URL}/game-ask`, {
       method: "POST",
       headers,
@@ -67,24 +67,34 @@ describe("Full E2E API Investigation Flow", () => {
       }),
     });
     expect(askRes.status).toBe(200);
+    const askData = await askRes.json();
+    expect(askData.speaker).toMatchObject({
+      kind: "character",
+      key: "character:alice",
+      label: "Alice",
+    });
 
-    // 7. POST game-end-talk
     const endRes = await fetch(`${API_URL}/game-end-talk`, {
       method: "POST",
       headers,
       body: JSON.stringify({ game_id }),
     });
     expect(endRes.status).toBe(200);
+    const endData = await endRes.json();
+    expect(endData.speaker.kind).toBe("narrator");
 
-    // 8. GET game-get
     const getRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
     });
     expect(getRes.status).toBe(200);
     const getData = await getRes.json();
     expect(getData.state.history.length).toBeGreaterThan(0);
+    expect(
+      getData.state.history.some(
+        (entry: { speaker: { kind: string } }) => entry.speaker.kind === "character",
+      ),
+    ).toBe(true);
 
-    // 9. POST game-accuse (reasoning round 1 from explore)
     const accuseStartRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers,
@@ -97,8 +107,8 @@ describe("Full E2E API Investigation Flow", () => {
     expect(accuseStartRes.status).toBe(200);
     const accuseStartData = await accuseStartRes.json();
     expect(accuseStartData.mode).toBe("accuse");
+    expect(accuseStartData.speaker.kind).toBe("narrator");
 
-    // 10. POST game-accuse (judge resolve round)
     const accuseRoundOneRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers,
@@ -111,12 +121,13 @@ describe("Full E2E API Investigation Flow", () => {
     const accuseRoundOneData = await accuseRoundOneRes.json();
     expect(accuseRoundOneData.mode).toBe("ended");
     expect(accuseRoundOneData.result).toBe("win");
+    expect(accuseRoundOneData.speaker.kind).toBe("narrator");
 
-    // 11. Final state check
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
     });
     const finalData = await finalGetRes.json();
     expect(finalData.state.mode).toBe("ended");
+    expect(finalData.state.narration_speaker.kind).toBe("narrator");
   });
 });

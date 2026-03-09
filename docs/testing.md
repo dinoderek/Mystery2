@@ -42,6 +42,9 @@ Web-specific command parser coverage:
 - `web/src/lib/domain/store.retry.test.ts` validates:
   - transient vs permanent error classification
   - exponential backoff sequencing used by the store retry loop
+- `web/src/lib/domain/store.speaker.test.ts` validates:
+  - investigator/system/backend speaker mapping in the UI stream
+  - local help/validation feedback remains client-only (no backend write path)
 
 ### 2) Integration tests (real Supabase local, no browser)
 
@@ -65,6 +68,7 @@ What we test:
 - Conversation/search API contract behavior:
   - `game-ask` requires non-empty `player_input`
   - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
+  - speaker attribution per endpoint (`narrator` vs `character`) and `game-get` speaker persistence (`narration_speaker`, `history[].speaker`)
   - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
 
 AI calls:
@@ -119,6 +123,8 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
 - accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
 - accusation end-state UX: success/failure message, input lock, and `press any key` return-to-list prompt
+- actor label rendering in the terminal stream (`You`, `Narrator`, character name, `System`)
+- theme-aware speaker style behavior across at least two themes, with one shared generic style for all character speakers
 - terminal loading indicators:
   - narration-area wait spinner during backend calls
   - centered start-screen spinner while a selected mystery is initializing

@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 const API_URL = "http://127.0.0.1:54331/functions/v1";
 
 describe("game-end-talk endpoint", () => {
-  it("ends the conversation and returns to explore mode without decrementing time", async () => {
+  it("ends the conversation and returns narrator speaker", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: {
@@ -16,7 +16,6 @@ describe("game-end-talk endpoint", () => {
     });
     const { game_id } = await startRes.json();
 
-    // Start talk
     await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: {
@@ -26,7 +25,6 @@ describe("game-end-talk endpoint", () => {
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
 
-    // End talk
     const endRes = await fetch(`${API_URL}/game-end-talk`, {
       method: "POST",
       headers: {
@@ -41,7 +39,12 @@ describe("game-end-talk endpoint", () => {
 
     expect(data.mode).toBe("explore");
     expect(data.current_talk_character).toBeNull();
-    expect(data.time_remaining).toBe(9); // Same as after start-talk
+    expect(data.time_remaining).toBe(9);
     expect(data.narration).toContain("[Mock]");
+    expect(data.speaker).toMatchObject({
+      kind: "narrator",
+      key: "narrator",
+      label: "Narrator",
+    });
   });
 });

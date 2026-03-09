@@ -1,7 +1,17 @@
 import { z } from "zod";
 
 export const ModeSchema = z.enum(["explore", "talk", "accuse", "ended"]);
-export const HistoryActorSchema = z.enum(["player", "system"]);
+export const SpeakerKindSchema = z.enum([
+  "investigator",
+  "narrator",
+  "character",
+  "system",
+]);
+export const SpeakerSchema = z.object({
+  kind: SpeakerKindSchema,
+  key: z.string().min(1),
+  label: z.string().min(1),
+});
 export const OutcomeSchema = z.enum(["win", "lose"]);
 
 export const ErrorResponseSchema = z.object({
@@ -25,35 +35,36 @@ export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({
   player_reasoning: z.string().min(1).optional(),
 });
 
-export const TalkStartResponseSchema = z.object({
+export const NarrationWithSpeakerSchema = z.object({
   narration: z.string(),
+  speaker: SpeakerSchema,
+  mode: z.enum(["explore", "talk", "accuse", "ended"]),
+});
+
+export const TalkStartResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
 });
 
-export const TalkAskResponseSchema = z.object({
-  narration: z.string(),
+export const TalkAskResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
 });
 
-export const TalkEndResponseSchema = z.object({
-  narration: z.string(),
+export const TalkEndResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.literal("explore"),
   current_talk_character: z.null(),
 });
 
-export const SearchResponseSchema = z.object({
-  narration: z.string(),
+export const SearchResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["explore", "accuse"]),
 });
 
-export const AccuseResponseSchema = z.object({
-  narration: z.string(),
+export const AccuseResponseSchema = NarrationWithSpeakerSchema.extend({
   mode: z.enum(["accuse", "ended"]),
   result: OutcomeSchema.nullable().optional(),
   follow_up_prompt: z.string().nullable().optional(),
@@ -72,8 +83,8 @@ export const CharacterSummarySchema = z.object({
 export const HistoryEntrySchema = z.object({
   sequence: z.number().int(),
   event_type: z.string(),
-  actor: HistoryActorSchema,
   narration: z.string(),
+  speaker: SpeakerSchema,
 });
 
 export const GameStateSchema = z.object({
@@ -84,7 +95,13 @@ export const GameStateSchema = z.object({
   mode: ModeSchema,
   current_talk_character: z.string().nullable(),
   narration: z.string(),
+  narration_speaker: SpeakerSchema,
   history: z.array(HistoryEntrySchema),
+});
+
+export const GameStartResponseSchema = z.object({
+  game_id: z.string().uuid(),
+  state: GameStateSchema,
 });
 
 export const GameGetResponseSchema = z.object({
@@ -98,6 +115,8 @@ export const BlueprintSummarySchema = z.object({
   target_age: z.number().int().positive(),
 });
 
+export type SpeakerKind = z.infer<typeof SpeakerKindSchema>;
+export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
@@ -110,5 +129,6 @@ export type SearchResponse = z.infer<typeof SearchResponseSchema>;
 export type AccuseResponse = z.infer<typeof AccuseResponseSchema>;
 export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
+export type GameStartResponse = z.infer<typeof GameStartResponseSchema>;
 export type GameGetResponse = z.infer<typeof GameGetResponseSchema>;
 export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;

@@ -247,6 +247,11 @@ Modes:
   - Narrator
   - Characters
   - Investigator
+- Every rendered block must include an explicit actor label derived from speaker metadata:
+  - `You` for player input lines
+  - `Narrator` for start/move/search/talk-start/talk-end/accuse narration
+  - Active character name for `game-ask` responses
+  - `System` for local-only help/validation/retry feedback
 - Each block includes a label/title (e.g., “NARRATOR”, “MAYA”, “YOU”).
 
 ### Status Bar

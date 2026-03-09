@@ -232,6 +232,7 @@ Failure-handling expectations:
 ### AI Runtime Contract (Current)
 
 - Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
+- Gameplay responses now carry explicit `speaker` metadata (`kind`, `key`, `label`) and `game-get` state includes `narration_speaker` plus `history[].speaker` for deterministic UI labeling.
 - Prompt role files live under `supabase/functions/_shared/ai-prompts/`.
 - Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
 - Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.

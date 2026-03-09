@@ -15,6 +15,7 @@ import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkEndContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 
 async function getNextSequence(
   db: ReturnType<typeof createClient>,
@@ -158,6 +159,7 @@ Deno.serve(async (req) => {
         character: session.current_talk_character_id,
         character_name: session.current_talk_character_id,
         location_name: session.current_location_id,
+        speaker: NARRATOR_SPEAKER,
       },
       narration: talkEndOutput.narration,
     });
@@ -168,6 +170,7 @@ Deno.serve(async (req) => {
         time_remaining: session.time_remaining,
         mode: "explore",
         current_talk_character: null,
+        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

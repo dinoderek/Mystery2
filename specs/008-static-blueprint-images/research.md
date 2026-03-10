@@ -41,11 +41,12 @@
 
 ## Decision 6: Deployment utility publishes blueprint JSON and image assets as one validated bundle
 
-- **Decision**: Add a deployment utility that uploads blueprint + referenced images together and fails only when referenced images are invalid/missing; blueprints with no image references still pass.
-- **Rationale**: Ensures referential integrity for image-enabled blueprints while preserving image-free compatibility.
+- **Decision**: Add a deployment utility that uploads blueprint + referenced images together, supports an explicit out-of-repo image source directory flag, and fails only when explicitly referenced images are invalid/missing; blueprints with no image references still pass.
+- **Rationale**: Keeps large/generated assets out of git while preserving referential integrity for image-enabled blueprints and preserving image-free compatibility.
 - **Alternatives considered**:
   - Manual two-step deploy (blueprint then images): rejected due to drift and mismatch risk.
   - Hard-fail when any image fields are absent: rejected because optional image scope is required.
+  - Require all images to live under repository paths: rejected because image assets may be generated/stored outside repo and should remain deployable.
 
 ## Decision 7: Frontend caches resolved URLs in-session by `ImageID`
 

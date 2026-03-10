@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "Add static story images to blueprints, generation, deployment, and authenticated display flows"
 
+## Clarifications
+
+### Session 2026-03-10
+
+- Q: How should authenticated image fetching be exposed to the frontend? → A: Use short-lived signed URLs issued only after authenticated checks.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View Story Images In Gameplay (Priority: P1)
@@ -22,6 +28,7 @@ As an authenticated player, I can see optional blueprint, location, and characte
 3. **Given** an authenticated player runs `talk to <character>` and that character has a portrait reference, **When** narration for the talk start is shown, **Then** the character portrait is shown beside the narration.
 4. **Given** an image reference exists but the image cannot be fetched, **When** the narration is rendered, **Then** the system applies the configured fallback behavior (hide image region or show placeholder) without blocking gameplay text.
 5. **Given** a user is not authenticated, **When** they attempt to fetch any blueprint image, **Then** image access is denied.
+6. **Given** an authenticated player receives an access link for an image, **When** the link expires, **Then** image access is denied until the application requests a fresh authenticated access link.
 
 ---
 
@@ -62,6 +69,7 @@ As an operator, I can deploy blueprint data and associated static images in one 
 
 - A blueprint references an image identifier that exists in data but the backing image file was never uploaded.
 - A player session expires between loading narration text and loading the associated image.
+- An image access link expires before the browser fetches the image.
 - The operator generates only a subset of images, leaving older image references for other entities.
 - Two generated images accidentally receive the same identifier.
 - Deployment includes a blueprint update but image upload partially fails.
@@ -84,13 +92,14 @@ As an operator, I can deploy blueprint data and associated static images in one 
 - **FR-011**: The deployment workflow MUST support publishing blueprint data and related images in one operator action.
 - **FR-012**: The deployment workflow MUST remain successful for blueprints with no image references.
 - **FR-013**: The deployment workflow MUST report missing or failed image uploads without invalidating successfully deployed blueprint data.
-- **FR-014**: The system MUST require authentication for all image fetch operations.
-- **FR-015**: The application MUST display blueprint images in blueprint selection when a blueprint image reference is available.
-- **FR-016**: The application MUST display location images during `move to` narration when a location image reference is available.
-- **FR-017**: The application MUST display character portraits during `talk to` narration when a character portrait reference is available.
-- **FR-018**: The application MUST support a defined fallback mode for missing images (hide image region or show placeholder) and apply it consistently.
-- **FR-019**: The system MUST keep gameplay functional when image references are absent, broken, or omitted.
-- **FR-020**: The system MUST provide clear operator-facing error output for generation and deployment failures.
+- **FR-014**: The system MUST require authentication before issuing time-limited image access links.
+- **FR-015**: The system MUST deny image fetches made with missing, invalid, or expired access links.
+- **FR-016**: The application MUST display blueprint images in blueprint selection when a blueprint image reference is available.
+- **FR-017**: The application MUST display location images during `move to` narration when a location image reference is available.
+- **FR-018**: The application MUST display character portraits during `talk to` narration when a character portrait reference is available.
+- **FR-019**: The application MUST support a defined fallback mode for missing images (hide image region or show placeholder) and apply it consistently.
+- **FR-020**: The system MUST keep gameplay functional when image references are absent, broken, or omitted.
+- **FR-021**: The system MUST provide clear operator-facing error output for generation and deployment failures.
 
 ### Key Entities *(include if feature involves data)*
 

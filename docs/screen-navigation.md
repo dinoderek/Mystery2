@@ -43,7 +43,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
-  - On accusation resolution (`win`/`lose`), input is replaced by a terminal end-state prompt and any key returns to `/`.
+  - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt and any key returns to `/`.
   - Includes a logout action that clears browser auth session.
 
 ## Navigation Patterns

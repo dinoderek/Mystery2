@@ -160,6 +160,18 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 
 ---
 
+## Quit
+
+**Command:** `quit` or `exit`
+
+### Quit Behavior
+
+- Ends the current play session immediately.
+- Replaces the command input with a terminal prompt: `press any key to go back to the mystery list`.
+- Pressing any key returns the player to the blueprint list (`/`).
+
+---
+
 ## Accuse (Endgame)
 
 **Command:** `accuse [statement]`

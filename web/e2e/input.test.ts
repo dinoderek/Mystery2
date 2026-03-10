@@ -385,6 +385,22 @@ test.describe('Command Input', () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
+  test('ends the session on quit and returns to list on any key', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('quit');
+    await input.press('Enter');
+
+    await expect(page).toHaveURL(/.*\/session/);
+    await expect(page.getByTestId('return-to-list-prompt')).toBeVisible();
+    await expect(page.getByText('[ CASE SOLVED ]')).toHaveCount(0);
+    await expect(page.getByText('[ CASE UNSOLVED ]')).toHaveCount(0);
+
+    await page.keyboard.press('k');
+    await expect(page).toHaveURL(/\/$/);
+  });
+
   test('keeps parsing narrator reasoning across multiple accuse rounds', async ({ page }) => {
     let accuseCalls = 0;
     let askCalls = 0;

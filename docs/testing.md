@@ -141,6 +141,7 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
 - accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
 - accusation end-state UX: success/failure message, input lock, and `press any key` return-to-list prompt
+- quit end-state UX: local `quit`/`exit` shows the same `press any key` return-to-list prompt and returns to `/` on keypress
 - actor label rendering in the terminal stream (`You`, `Narrator`, character name, `System`)
 - theme-aware speaker style behavior across at least two themes, with one shared generic style for all character speakers
 - terminal loading indicators:

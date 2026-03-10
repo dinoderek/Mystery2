@@ -369,8 +369,8 @@ export class GameSessionStore {
     this.retryCount = 0;
     this.lastFailedInput = null;
     this.accusationOutcome = null;
-    this.awaitingReturnToList = false;
-    this.appendSystemFeedback("Session ended. Type 'help' for options or start a new game.");
+    this.awaitingReturnToList = true;
+    this.appendSystemFeedback('Session ended. Press any key to go back to the mystery list.');
   }
 
   clearSessionForMysteryList() {

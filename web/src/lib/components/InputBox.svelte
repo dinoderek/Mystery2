@@ -17,6 +17,7 @@
 
   async function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Enter" && inputValue.trim()) {
+      e.stopPropagation();
       const text = inputValue;
       inputValue = "";
       await gameSessionStore.submitInput(text);

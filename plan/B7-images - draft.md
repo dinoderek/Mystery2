@@ -1,18 +1,15 @@
-# Add AI based image generation to the mystery. 
-
-There are two image generation paths that we can tale
-* Offline: generated off the blueprint, pre-upload to supabase
-* Online: generated off the blueprint plus player actions, on-the-fly generation, within session caching to avoid re-generation and optimise latency
-
-Eventually we probably want a combination of both capabilities. Dynamic is good when stories become more dynamic and/or when we want the user to be able to tweak appearance / introudce his own character.
-
-Static is cheaper, faster, better experience for the user, but requires us to pre-determine the set of available images and their style. 
-
-We can also explore hybrid approaches, where static images are used when available, otherwise they are generated on the fly.
+# Static story images
 
 ## In this change
 
 We want to introuduce *static* blueprint images. 
+
+* Blueprints store references to images.
+* Images are generated on the local machine by the operator.
+* Images + Blueprint are deployed from the local machine by the operator - same as how currently blueprint are pusheed.
+* Application displays the blueprint images. Only authenticated users can fetch images. 
+
+## Data changes
 
 ### Blueprint change 
     * Add `art style`: See stylistic direction below
@@ -40,14 +37,41 @@ We want to introuduce *static* blueprint images.
     * Primary colors
     * Earthy and Natural    
 
+## Application changes
+
 ### Serving images
 We must have a mechanism to serve images to the browser. 
 Given an `ImageID` we want to be able to serve the image to the frontend.
 The simplest approach would be to provide a link to the frontend to render but open to other options
 Image fetch must require authentication to prevent abuse.
 
-### Generation utilities
-A utility to generate images for a blueprint. This should be able to either generate one of the images necessary for the blueprint and patch the ID or all the images necessary for the bluepint. 
+### Visual changes
+IF the blueprint provides an image, the image should be displayed to the side of the narration. 
 
-### Deployment utilities
-A utility to deploy images together with blueprints to the backend.
+The location image should be displayed on `move to`
+The character image should be displaeyd on `talk to`
+The blueprint image should be displayed in the `select blueprint` screen
+
+If no image is available either do not display anything or use a placeholder. We nee to test both options.
+
+### Generation
+Create a tool to genrate images and patch them in the blueprint.
+
+On the local machine the operator has access to a tool that allows him to generate image for a blueprint:
+- It takes the stylistic directorion from the blueprint
+- It takes one or more images to generate (all images in the blueprint, one or more locations, one or more characters, the blueprint icon)
+- Generates the images using OpenRouter
+    - Need mechanism to specify the model to use
+    - Generate prompt using the location / character / blueprint description
+- Patches the ImageIDs so that they reference the newly generated images.
+
+ImageID can be as simple as a `blueprintname-uuid` and the image filename can be used for linking.
+
+Generated images SHOULD NOT be committed to github. Assume the operator needs to specify an image directory to fetch/generate images to.
+
+## Deployment utilities
+A utility to deploy images and blueprint together to the backend. Extend the current deployment utility to deploy the images as well.
+
+## Backwards compatibility
+* Images should NOT be mandatory
+* Both deployment and serving should work when the blueprint has no images or images are missing.

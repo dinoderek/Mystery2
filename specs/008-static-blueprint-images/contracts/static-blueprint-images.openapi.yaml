@@ -1,0 +1,307 @@
+openapi: 3.1.0
+info:
+  title: Static Blueprint Images API
+  version: 0.1.0
+  description: |
+    Contract additions for static blueprint image metadata, authenticated image serving,
+    and operator generation/deployment workflows.
+servers:
+  - url: https://{supabaseOrigin}
+    variables:
+      supabaseOrigin:
+        default: project-ref.supabase.co
+security:
+  - bearerAuth: []
+paths:
+  /functions/v1/blueprints-list:
+    get:
+      summary: List playable blueprints with optional cover image references
+      operationId: listBlueprints
+      responses:
+        '200':
+          description: Blueprint summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [blueprints]
+                properties:
+                  blueprints:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BlueprintSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /functions/v1/image-resolve:
+    get:
+      summary: Resolve an ImageID to a short-lived renderable URL
+      operationId: resolveImage
+      parameters:
+        - in: query
+          name: image_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image URL resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageResolveResponse'
+        '400':
+          description: Invalid image_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Image not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /functions/v1/blueprint-images-generate:
+    post:
+      summary: Generate static blueprint images (single target or all targets)
+      operationId: generateBlueprintImages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateImagesRequest'
+      responses:
+        '200':
+          description: Generation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateImagesResponse'
+        '400':
+          description: Invalid generation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /functions/v1/blueprint-images-deploy:
+    post:
+      summary: Publish blueprint and referenced image assets together
+      operationId: deployBlueprintImages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployBlueprintRequest'
+      responses:
+        '200':
+          description: Deployment succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeployBlueprintResponse'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    BlueprintSummary:
+      type: object
+      required: [id, title, one_liner, target_age]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        one_liner:
+          type: string
+        target_age:
+          type: integer
+          minimum: 1
+        image_id:
+          type: string
+          nullable: true
+          description: Optional cover image reference for list rendering.
+
+    ImageResolveResponse:
+      type: object
+      required: [image_id, signed_url, expires_at, cache_ttl_seconds]
+      properties:
+        image_id:
+          type: string
+        signed_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+        cache_ttl_seconds:
+          type: integer
+          minimum: 1
+
+    GenerationTarget:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [blueprint, character, location]
+        key:
+          type: string
+          nullable: true
+          description: Character or location key/name. Null for blueprint cover target.
+
+    GenerateImagesRequest:
+      type: object
+      required: [blueprint_id, mode, overwrite]
+      properties:
+        blueprint_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [single, all]
+        target:
+          $ref: '#/components/schemas/GenerationTarget'
+        overwrite:
+          type: boolean
+          description: Allows duplicate regeneration when target already has an image mapping.
+      allOf:
+        - if:
+            properties:
+              mode:
+                const: single
+          then:
+            required: [target]
+
+    GeneratedImageResult:
+      type: object
+      required: [target, status]
+      properties:
+        target:
+          $ref: '#/components/schemas/GenerationTarget'
+        status:
+          type: string
+          enum: [generated, skipped, failed]
+        image_id:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        warning:
+          type: string
+          nullable: true
+
+    GenerateImagesResponse:
+      type: object
+      required: [blueprint_id, mode, results, patched_count]
+      properties:
+        blueprint_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [single, all]
+        patched_count:
+          type: integer
+          minimum: 0
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedImageResult'
+        recovery_hints:
+          type: array
+          description: Filename-based mapping hints for manual recovery when patching fails.
+          items:
+            type: string
+
+    DeployBlueprintRequest:
+      type: object
+      required: [blueprint_path, upsert]
+      properties:
+        blueprint_path:
+          type: string
+          description: Absolute or repo-relative path to blueprint JSON.
+        image_paths:
+          type: array
+          items:
+            type: string
+        validate_references:
+          type: boolean
+          default: true
+        upsert:
+          type: boolean
+          default: true
+
+    DeployBlueprintResponse:
+      type: object
+      required: [blueprint_id, blueprint_uploaded, image_uploads, missing_references]
+      properties:
+        blueprint_id:
+          type: string
+          format: uuid
+        blueprint_uploaded:
+          type: boolean
+        image_uploads:
+          type: integer
+          minimum: 0
+        missing_references:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string

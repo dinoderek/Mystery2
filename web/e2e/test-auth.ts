@@ -6,6 +6,15 @@ import path from 'node:path';
 const TEST_EMAIL = process.env.AUTH_TEST_EMAIL ?? null;
 const TEST_PASSWORD = process.env.AUTH_TEST_PASSWORD ?? 'password123';
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableConnectionError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /ECONNREFUSED|fetch failed|network/i.test(error.message);
+}
+
 function readRootEnvValue(key: string): string | null {
   const envPath = path.resolve(process.cwd(), '../.env.local');
   if (!fs.existsSync(envPath)) return null;
@@ -45,11 +54,24 @@ async function ensureTestUser(email: string, password: string) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
+  let error: { message: string } | null = null;
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const result = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      error = result.error;
+      break;
+    } catch (thrown) {
+      if (attempt === 5 || !isRetryableConnectionError(thrown)) {
+        throw thrown;
+      }
+      await sleep(500 * attempt);
+    }
+  }
 
   if (
     error &&

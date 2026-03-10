@@ -168,7 +168,7 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 
 - Ends the current play session immediately.
 - Replaces the command input with a terminal prompt: `press any key to go back to the mystery list`.
-- Pressing any key returns the player to the blueprint list (`/`).
+- Pressing any key returns the player to the landing menu (`/`).
 
 ---
 
@@ -234,15 +234,34 @@ See `supabase/functions/_shared/blueprints/blueprint-schema.ts` for the exact te
 
 Modes:
 
-1. **Current Games**
-2. **New Game**
-3. **Historical Games**
-4. (Future) **Settings**
+1. **Start a new game**
+2. **View in-progress games**
+3. **View completed games**
 
 ### New Game
 
 - List blueprints.
 - Start by typing a number (e.g., `1`, `2`, `3`).
+- `b` returns to the three-option landing menu.
+
+### In-Progress Games
+
+- Lists resumable sessions with:
+  - mystery title
+  - turns left
+  - last played timestamp
+- Selecting a number resumes the chosen session in interactive mode.
+- `b` returns to the landing menu.
+
+### Completed Games
+
+- Lists ended sessions with:
+  - mystery title
+  - outcome (`win`/`lose`)
+  - last played timestamp
+- Selecting a number opens the ended session in read-only viewer mode.
+- Completed viewer blocks command input and shows only the any-key return prompt.
+- `b` returns to the landing menu.
 
 ---
 

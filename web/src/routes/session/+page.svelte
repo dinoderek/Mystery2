@@ -16,13 +16,17 @@
   });
 
   async function handleKeydown(event: KeyboardEvent) {
-    if (!gameSessionStore.awaitingReturnToList) {
+    if (!gameSessionStore.awaitingReturnToList && gameSessionStore.viewerMode !== 'read_only_completed') {
       return;
     }
 
     event.preventDefault();
-    gameSessionStore.clearSessionForMysteryList();
-    await goto('/');
+    try {
+      await gameSessionStore.loadSessionCatalog(true);
+    } finally {
+      gameSessionStore.clearSessionForMysteryList();
+      await goto('/');
+    }
   }
 </script>
 

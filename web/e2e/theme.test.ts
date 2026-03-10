@@ -16,6 +16,16 @@ const baseState = {
 async function bootstrapSession(page: Page) {
   await enableAuthBypass(page);
 
+  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await route.fulfill({
+      json: {
+        in_progress: [],
+        completed: [],
+        counts: { in_progress: 0, completed: 0 },
+      },
+    });
+  });
+
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {
@@ -34,6 +44,8 @@ async function bootstrapSession(page: Page) {
   });
 
   await page.goto('/');
+  await expect(page.getByText('1. Start a new game')).toBeVisible();
+  await page.keyboard.press('1');
   await expect(page.getByText('B1')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page).toHaveURL(/.*\/session/);
@@ -87,7 +99,7 @@ test.describe('Theme commands', () => {
 
     // Navigate back to mystery list
     await page.goto('/');
-    await expect(page.getByText('B1')).toBeVisible();
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
 
     // Theme should persist (loaded from localStorage)
     const primaryColor = await page.evaluate(() =>
@@ -114,6 +126,16 @@ test.describe('Theme commands', () => {
   test('theme commands work in talk mode', async ({ page }) => {
     await enableAuthBypass(page);
 
+    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          in_progress: [],
+          completed: [],
+          counts: { in_progress: 0, completed: 0 },
+        },
+      });
+    });
+
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
@@ -132,6 +154,8 @@ test.describe('Theme commands', () => {
     });
 
     await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);

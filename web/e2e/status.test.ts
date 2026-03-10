@@ -4,6 +4,15 @@ import { enableAuthBypass } from './test-auth';
 test.describe('US2 - Status Bar', () => {
     test('displays correct status information (location, hints, time)', async ({ page }) => {
         await enableAuthBypass(page);
+        await page.route('**/functions/v1/game-sessions-list*', async route => {
+            await route.fulfill({
+                json: {
+                    in_progress: [],
+                    completed: [],
+                    counts: { in_progress: 0, completed: 0 }
+                }
+            });
+        });
         await page.route('**/functions/v1/blueprints-list', async route => {
             await route.fulfill({ json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] } });
         });
@@ -31,6 +40,8 @@ test.describe('US2 - Status Bar', () => {
         });
 
         await page.goto('/');
+        await expect(page.getByText('1. Start a new game')).toBeVisible();
+        await page.keyboard.press('1');
         await expect(page.getByText('B1')).toBeVisible();
         await page.keyboard.press('1');
         await expect(page).toHaveURL(/.*\/session/);

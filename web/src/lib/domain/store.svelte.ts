@@ -1,5 +1,13 @@
 import { supabase } from '../api/supabase';
-import type { Blueprint, GameState, HistoryEntry, Speaker } from '../types/game';
+import type {
+  Blueprint,
+  GameState,
+  HistoryEntry,
+  SessionCatalog,
+  SessionOutcome,
+  SessionSummary,
+  Speaker,
+} from '../types/game';
 import {
   createCharacterSpeaker,
   INVESTIGATOR_SPEAKER,
@@ -28,9 +36,19 @@ interface BackendInvocation {
 }
 
 export type ThemeName = 'matrix' | 'amber';
+export type SessionViewerMode = 'interactive' | 'read_only_completed';
 
 const THEME_STORAGE_KEY = 'mystery-theme';
 const THEME_NAMES: ThemeName[] = ['matrix', 'amber'];
+const FUNCTIONS_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54331'}/functions/v1`;
+const EMPTY_CATALOG: SessionCatalog = {
+  in_progress: [],
+  completed: [],
+  counts: {
+    in_progress: 0,
+    completed: 0,
+  },
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -58,6 +76,112 @@ function readMode(value: unknown, fallback: GameState['mode']): GameState['mode'
   return fallback;
 }
 
+function readSessionMode(value: unknown): SessionSummary['mode'] {
+  if (value === 'explore' || value === 'talk' || value === 'accuse' || value === 'ended') {
+    return value;
+  }
+
+  return 'explore';
+}
+
+function readSessionOutcome(value: unknown): SessionOutcome {
+  if (value === 'win' || value === 'lose') {
+    return value;
+  }
+
+  return null;
+}
+
+function readTimestamp(value: unknown): string {
+  if (typeof value !== 'string') {
+    return new Date(0).toISOString();
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date(0).toISOString();
+  }
+
+  return parsed.toISOString();
+}
+
+function compareSessionSummaries(a: SessionSummary, b: SessionSummary): number {
+  const byLastPlayed = b.last_played_at.localeCompare(a.last_played_at);
+  if (byLastPlayed !== 0) {
+    return byLastPlayed;
+  }
+
+  const byCreated = b.created_at.localeCompare(a.created_at);
+  if (byCreated !== 0) {
+    return byCreated;
+  }
+
+  return b.game_id.localeCompare(a.game_id);
+}
+
+export function sortSessionSummaries(summaries: SessionSummary[]): SessionSummary[] {
+  return [...summaries].sort(compareSessionSummaries);
+}
+
+export function normalizeSessionSummary(raw: unknown): SessionSummary | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const gameId = readString(raw.game_id);
+  const blueprintId = readString(raw.blueprint_id);
+  if (gameId.length === 0 || blueprintId.length === 0) {
+    return null;
+  }
+
+  const title = readString(raw.mystery_title, 'Unknown Mystery');
+  const mysteryAvailable = typeof raw.mystery_available === 'boolean' ? raw.mystery_available : false;
+  const canOpen = typeof raw.can_open === 'boolean' ? raw.can_open : mysteryAvailable;
+
+  return {
+    game_id: gameId,
+    blueprint_id: blueprintId,
+    mystery_title: title.length > 0 ? title : 'Unknown Mystery',
+    mystery_available: mysteryAvailable,
+    can_open: canOpen && mysteryAvailable,
+    mode: readSessionMode(raw.mode),
+    time_remaining: Math.max(0, readInt(raw.time_remaining)),
+    outcome: readSessionOutcome(raw.outcome),
+    last_played_at: readTimestamp(raw.last_played_at),
+    created_at: readTimestamp(raw.created_at),
+  };
+}
+
+function normalizeSessionSummaryList(raw: unknown): SessionSummary[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return sortSessionSummaries(
+    raw
+      .map((entry) => normalizeSessionSummary(entry))
+      .filter((entry): entry is SessionSummary => entry !== null),
+  );
+}
+
+export function normalizeSessionCatalog(raw: unknown): SessionCatalog {
+  if (!isRecord(raw)) {
+    return EMPTY_CATALOG;
+  }
+
+  const inProgress = normalizeSessionSummaryList(raw.in_progress);
+  const completed = normalizeSessionSummaryList(raw.completed);
+
+  return {
+    in_progress: inProgress.filter((summary) => summary.mode !== 'ended'),
+    completed: completed.filter((summary) => summary.mode === 'ended'),
+    counts: {
+      in_progress: inProgress.filter((summary) => summary.mode !== 'ended').length,
+      completed: completed.filter((summary) => summary.mode === 'ended').length,
+    },
+  };
+}
+
 export class GameSessionStore {
   game_id = $state<string | null>(null);
   status = $state<'idle' | 'loading' | 'active' | 'error'>('idle');
@@ -71,6 +195,10 @@ export class GameSessionStore {
   accusationOutcome = $state<'win' | 'lose' | null>(null);
   awaitingReturnToList = $state(false);
   theme = $state<ThemeName>('matrix');
+  sessionCatalog = $state<SessionCatalog>(EMPTY_CATALOG);
+  sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  sessionCatalogError = $state<string | null>(null);
+  viewerMode = $state<SessionViewerMode>('interactive');
 
   initializeTheme() {
     if (typeof window === 'undefined') {
@@ -116,6 +244,29 @@ export class GameSessionStore {
     }
   }
 
+  async loadSessionCatalog(force = false) {
+    if (this.sessionCatalogStatus === 'loading') {
+      return;
+    }
+    if (!force && this.sessionCatalogStatus === 'ready') {
+      return;
+    }
+
+    this.sessionCatalogStatus = 'loading';
+    this.sessionCatalogError = null;
+
+    const { data, error } = await supabase.functions.invoke('game-sessions-list');
+    if (error) {
+      this.sessionCatalog = EMPTY_CATALOG;
+      this.sessionCatalogError = error.message;
+      this.sessionCatalogStatus = 'error';
+      return;
+    }
+
+    this.sessionCatalog = normalizeSessionCatalog(data);
+    this.sessionCatalogStatus = 'ready';
+  }
+
   async startGame(blueprintId: string) {
     this.status = 'loading';
     const { data, error } = await supabase.functions.invoke('game-start', {
@@ -131,7 +282,71 @@ export class GameSessionStore {
       this.lastFailedInput = null;
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
+      this.viewerMode = 'interactive';
       this.status = 'active';
+    }
+  }
+
+  private async loadPersistedState(gameId: string): Promise<unknown> {
+    const headers = new Headers();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      headers.set('Authorization', `Bearer ${session.access_token}`);
+    }
+
+    const response = await fetch(
+      `${FUNCTIONS_BASE_URL}/game-get?game_id=${encodeURIComponent(gameId)}`,
+      {
+        method: 'GET',
+        headers,
+      },
+    );
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      if (isRecord(payload) && typeof payload.error === 'string') {
+        throw new Error(payload.error);
+      }
+
+      throw new Error(`Failed to load session (${response.status})`);
+    }
+
+    return response.json();
+  }
+
+  async resumeSession(gameId: string) {
+    this.status = 'loading';
+    this.error = null;
+
+    try {
+      const data = await this.loadPersistedState(gameId);
+      const response = isRecord(data) ? data : {};
+      this.game_id = gameId;
+      this.state = this.normalizeState(response.state);
+      this.lastFailedInput = null;
+      this.isRetrying = false;
+      this.retryCount = 0;
+      this.showHelp = false;
+
+      if (this.state.mode === 'ended') {
+        this.viewerMode = 'read_only_completed';
+        this.awaitingReturnToList = true;
+        const allRows = [...this.sessionCatalog.in_progress, ...this.sessionCatalog.completed];
+        const row = allRows.find((entry) => entry.game_id === gameId);
+        this.accusationOutcome = row?.outcome ?? null;
+      } else {
+        this.viewerMode = 'interactive';
+        this.awaitingReturnToList = false;
+        this.accusationOutcome = null;
+      }
+
+      this.status = 'active';
+    } catch (error) {
+      this.error = error instanceof Error ? error.message : String(error);
+      this.status = 'error';
     }
   }
 
@@ -384,6 +599,7 @@ export class GameSessionStore {
     this.lastFailedInput = null;
     this.accusationOutcome = null;
     this.awaitingReturnToList = false;
+    this.viewerMode = 'interactive';
   }
 
   private getBackendInvocation(command: ActionCommand): BackendInvocation {
@@ -519,9 +735,11 @@ export class GameSessionStore {
     if (isAccuseEnded && (outcome === 'win' || outcome === 'lose')) {
       this.accusationOutcome = outcome;
       this.awaitingReturnToList = true;
+      this.viewerMode = 'read_only_completed';
     } else {
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
+      this.viewerMode = 'interactive';
     }
 
     if (typeof payload.narration === 'string') {

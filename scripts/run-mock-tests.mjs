@@ -22,8 +22,6 @@ try {
   const env = {
     ...baseVars,
     ...process.env,
-    AI_PROVIDER: "mock",
-    AI_MODEL: "mock/runtime-default",
   };
 
   const vitestTarget =

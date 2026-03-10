@@ -25,7 +25,6 @@ try {
     ...baseVars,
     ...modeVars,
     ...process.env,
-    VITE_AI_PROFILE: mode,
   };
 
   if (!env.AI_PROVIDER) {
@@ -40,7 +39,7 @@ try {
     );
   }
 
-  console.log(`Starting local stack with AI profile "${mode}"...`);
+  console.log(`Starting local stack with AI profile "default" (${mode} config)...`);
   await ensureSupabaseRunning(env, { restart: options.restart });
   if (options.seedStorage === "always") {
     runCommand(npmBin, ["run", "seed:storage"], env);

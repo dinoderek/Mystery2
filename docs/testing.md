@@ -88,7 +88,7 @@ What we test:
 AI calls:
 
 - Never call OpenRouter in integration tests.
-- Instead, use the seeded `mock` profile in `ai_profiles` (either as the default profile or by passing `ai_profile: "mock"` to `game-start`).
+- Instead, use the seeded `mock` profile in `ai_profiles` (canonical default row is `id='default'`, and tests can still pass `ai_profile: "mock"` explicitly).
 - Assert the persisted DB side effects match expectations.
   - accusation resolution persists `game_sessions.mode='ended'` and `game_sessions.outcome='win'|'lose'`
 - Live provider checks are isolated in dedicated opt-in suites (see below).
@@ -189,7 +189,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 1. Ensures Supabase is running (no restart by default)
 2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
-3. Seeds/refreshes the `mock` AI profile in Postgres (`ai_profiles`)
+3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
 4. Uses Vitest to run the integration test suite (handling its own data isolation)
 
 ### E2E test script
@@ -198,7 +198,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 1. Ensures Supabase is running (no restart by default)
 2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
-3. Seeds/refreshes the `mock` AI profile in Postgres (`ai_profiles`)
+3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
 4. Runs Vitest against the running Edge Functions to validate full player journeys
 
 ### Deploy dry-run checks
@@ -221,7 +221,7 @@ These suites are intentionally excluded from `npm run test:all` and only run whe
 Live suites require:
 
 - `AI_LIVE=1`
-- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER` and `AI_MODEL`
+- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER`, `AI_MODEL`, and `OPENROUTER_API_KEY` for OpenRouter modes
 - `npm run seed:ai -- --only <free|paid>` to sync profile model/key into Postgres for the selected live mode
 - resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
 - higher timeout budget for real model latency (default 600s per live test)
@@ -260,6 +260,10 @@ At least the following should be tested:
 ## Quality Gates
 
 Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion. A single-shot quality gate script (e.g., `npm run test:all` or `scripts/quality-gate.sh`) should be provided to run all these checks in one go:
+
+Exception (documentation-only changes):
+- If a change only touches documentation files (`*.md`) and does not affect code, tests, build/deploy scripts, migrations, or environment contracts, running code quality gates is optional.
+- For doc-only changes, validate command accuracy, cross-document consistency, and link/path correctness instead.
 
 1. **Linting & Formatting:** Ensure code conforms to stylistic guidelines (`npm run lint` / `npm run format`).
 2. **Type Checking:** Ensure the TypeScript compiler passes with no errors (`npm run typecheck`).

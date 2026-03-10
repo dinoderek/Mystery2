@@ -392,11 +392,6 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-[edge_runtime.secrets]
-AI_PROVIDER = "env(AI_PROVIDER)"
-AI_MODEL = "env(AI_MODEL)"
-OPENROUTER_API_KEY = "env(OPENROUTER_API_KEY)"
-
 [analytics]
 enabled = true
 port = 54337

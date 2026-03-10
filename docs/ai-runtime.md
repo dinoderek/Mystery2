@@ -5,6 +5,7 @@
 This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping deterministic game-state rules and spoiler boundaries intact.
 
 For accusation lifecycle specifics, see `docs/accusation-flow.md`.
+For profile/deploy configuration, see `docs/ai-configuration.md`.
 
 ## Runtime Components
 
@@ -141,13 +142,12 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 - Runtime model selection:
   - `game-start` accepts optional `ai_profile` and persists it on `game_sessions.ai_profile_id`
   - all subsequent AI endpoints resolve provider/model/key from that stored profile id
-  - default profile is the row with `ai_profiles.is_default=true` (seeded as `mock` in local dev)
+  - canonical default profile id is `ai_profiles.id='default'`
 - Provider secrets:
-  - OpenRouter API key resolves from `ai_profiles.openrouter_api_key` first
-  - falls back to `OPENROUTER_API_KEY` env when profile key is null
+  - OpenRouter API key is read from `ai_profiles.openrouter_api_key` only
 - Local profile seeding:
-  - `npm run seed:ai` seeds `mock`, `free`, and `paid` profile rows
-  - `npm run seed:ai -- --only free` (or `paid`) updates model/key without restarting Supabase
+  - `npm run seed:ai` seeds `mock`, optional `free`/`paid`, and canonical `default`
+  - `npm run seed:ai -- --only free` (or `paid` / `mock`) updates that profile and updates `default` without restarting Supabase
 - Live suite commands:
   - `npm run test:integration:live:free`
   - `npm run test:integration:live:paid`

@@ -16,10 +16,9 @@ try {
   const env = {
     ...baseVars,
     ...process.env,
-    VITE_AI_PROFILE: "mock",
   };
 
-  console.log('Starting local stack with AI profile "mock"...');
+  console.log('Starting local stack with AI profile "default" (mock config)...');
   await ensureSupabaseRunning(env, { restart: options.restart });
   if (options.seedStorage === "always") {
     runCommand(npmBin, ["run", "seed:storage"], env);

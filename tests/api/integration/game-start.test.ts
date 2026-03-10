@@ -64,7 +64,7 @@ describe("game-start endpoint", () => {
         label: "Narrator",
       },
     });
-    expect(await fetchSessionAIProfile(data.game_id)).toBe("mock");
+    expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
   });
 
   it("accepts ai_profile and persists it on the session", async () => {

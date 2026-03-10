@@ -1,6 +1,8 @@
 import type { AIRuntimeProfile } from "./ai-provider.ts";
 import { createClient } from "./db.ts";
 
+export const DEFAULT_AI_PROFILE_ID = "default";
+
 export interface StoredAIProfile extends AIRuntimeProfile {
   id: string;
   openrouter_api_key: string | null;
@@ -54,17 +56,5 @@ export async function getAIProfileById(
 }
 
 export async function getDefaultAIProfile(): Promise<StoredAIProfile | null> {
-  const adminClient = createClient();
-  const { data, error } = await adminClient
-    .from("ai_profiles")
-    .select("id,provider,model,openrouter_api_key")
-    .eq("is_default", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load default ai profile: ${error.message}`);
-  }
-
-  return parseStoredAIProfile(data);
+  return getAIProfileById(DEFAULT_AI_PROFILE_ID);
 }

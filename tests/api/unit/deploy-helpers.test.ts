@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertRequiredDeployEnvVars,
+  buildDefaultAIProfileConfig,
   buildCommandPlan,
   DEPLOY_ENVIRONMENTS,
   discoverEdgeFunctions,
@@ -38,9 +39,9 @@ function makeRequiredEnv() {
     CLOUDFLARE_ACCOUNT_ID: "account",
     SUPABASE_ACCESS_TOKEN: "supabase-access-token",
     SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
-    OPENROUTER_API_KEY: "openrouter-key",
-    AI_PROVIDER: "openrouter",
-    AI_MODEL: "model",
+    AI_DEFAULT_PROFILE_ID: "default",
+    AI_DEFAULT_PROFILE_PROVIDER: "mock",
+    AI_DEFAULT_PROFILE_MODEL: "mock/runtime-default",
     VITE_SUPABASE_URL: "https://dev-ref.supabase.co",
     VITE_SUPABASE_ANON_KEY: "anon-key",
   };
@@ -111,10 +112,33 @@ describe("target and env validation", () => {
   });
 
   it("fails when required deploy vars are missing", () => {
-    const env = { ...makeRequiredEnv(), OPENROUTER_API_KEY: "" };
+    const env = { ...makeRequiredEnv(), AI_DEFAULT_PROFILE_MODEL: "" };
 
     expect(() => assertRequiredDeployEnvVars(env as Record<string, string>)).toThrow(
       "Missing required deploy environment variables",
+    );
+  });
+});
+
+describe("default ai profile config", () => {
+  it("builds mock profile config", () => {
+    const profile = buildDefaultAIProfileConfig(makeRequiredEnv());
+    expect(profile).toEqual({
+      id: "default",
+      provider: "mock",
+      model: "mock/runtime-default",
+      openrouter_api_key: null,
+    });
+  });
+
+  it("requires openrouter key for openrouter provider", () => {
+    const env = {
+      ...makeRequiredEnv(),
+      AI_DEFAULT_PROFILE_PROVIDER: "openrouter",
+      AI_DEFAULT_PROFILE_MODEL: "google/gemini-3-flash-preview",
+    };
+    expect(() => buildDefaultAIProfileConfig(env)).toThrow(
+      "AI_DEFAULT_PROFILE_OPENROUTER_API_KEY",
     );
   });
 });
@@ -196,7 +220,7 @@ describe("buildCommandPlan", () => {
         "frontend:pages-deploy",
         "backend:link",
         "backend:db-push",
-        "backend:set-secrets",
+        "backend:configure-default-ai-profile",
         "backend:function:blueprints-list",
         "backend:function:game-start",
         "backend:seed-storage",

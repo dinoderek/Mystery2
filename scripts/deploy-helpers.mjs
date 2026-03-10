@@ -17,17 +17,11 @@ export const REQUIRED_DEPLOY_ENV_VARS = [
   "CLOUDFLARE_ACCOUNT_ID",
   "SUPABASE_ACCESS_TOKEN",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "OPENROUTER_API_KEY",
-  "AI_PROVIDER",
-  "AI_MODEL",
+  "AI_DEFAULT_PROFILE_ID",
+  "AI_DEFAULT_PROFILE_PROVIDER",
+  "AI_DEFAULT_PROFILE_MODEL",
   "VITE_SUPABASE_URL",
   "VITE_SUPABASE_ANON_KEY",
-];
-
-export const FUNCTION_SECRET_KEYS = [
-  "AI_PROVIDER",
-  "AI_MODEL",
-  "OPENROUTER_API_KEY",
 ];
 
 export function parseDeployArgs(argv) {
@@ -158,11 +152,54 @@ export function assertRequiredDeployEnvVars(env) {
     (key) => typeof env[key] !== "string" || env[key].trim().length === 0,
   );
 
+  const provider = env.AI_DEFAULT_PROFILE_PROVIDER?.trim();
+  if (provider === "openrouter") {
+    const key = env.AI_DEFAULT_PROFILE_OPENROUTER_API_KEY?.trim();
+    if (!key) {
+      missing.push("AI_DEFAULT_PROFILE_OPENROUTER_API_KEY");
+    }
+  }
+
   if (missing.length > 0) {
     throw new Error(
       `Missing required deploy environment variables: ${missing.join(", ")}`,
     );
   }
+}
+
+export function buildDefaultAIProfileConfig(env) {
+  const id = env.AI_DEFAULT_PROFILE_ID?.trim();
+  if (id !== "default") {
+    throw new Error(
+      `AI_DEFAULT_PROFILE_ID must be exactly \"default\" (received: \"${id || ""}\")`,
+    );
+  }
+
+  const provider = env.AI_DEFAULT_PROFILE_PROVIDER?.trim();
+  if (provider !== "mock" && provider !== "openrouter") {
+    throw new Error(
+      `AI_DEFAULT_PROFILE_PROVIDER must be \"mock\" or \"openrouter\" (received: \"${provider || ""}\")`,
+    );
+  }
+
+  const model = env.AI_DEFAULT_PROFILE_MODEL?.trim();
+  if (!model) {
+    throw new Error("AI_DEFAULT_PROFILE_MODEL must be non-empty");
+  }
+
+  const openrouterApiKey = env.AI_DEFAULT_PROFILE_OPENROUTER_API_KEY?.trim();
+  if (provider === "openrouter" && !openrouterApiKey) {
+    throw new Error(
+      "AI_DEFAULT_PROFILE_OPENROUTER_API_KEY is required when AI_DEFAULT_PROFILE_PROVIDER=openrouter",
+    );
+  }
+
+  return {
+    id,
+    provider,
+    model,
+    openrouter_api_key: provider === "openrouter" ? openrouterApiKey : null,
+  };
 }
 
 export async function discoverEdgeFunctions(functionsDir) {
@@ -247,10 +284,6 @@ export async function loadBootstrapUsers(usersPath) {
   }
 
   return users;
-}
-
-export function buildFunctionSecretPairs(env) {
-  return FUNCTION_SECRET_KEYS.map((key) => [key, env[key]]);
 }
 
 export function buildCommandPlan(options) {
@@ -343,20 +376,9 @@ export function buildCommandPlan(options) {
       command: [npxBin, "supabase", "db", "push", "--linked"],
     },
     {
-      id: "backend:set-secrets",
-      title: "Set Supabase function secrets",
-      command: [
-        npxBin,
-        "supabase",
-        "secrets",
-        "set",
-        "AI_PROVIDER=<redacted>",
-        "AI_MODEL=<redacted>",
-        "OPENROUTER_API_KEY=<redacted>",
-        "--project-ref",
-        target.supabaseProjectRef,
-      ],
-      secretKeys: [...FUNCTION_SECRET_KEYS],
+      id: "backend:configure-default-ai-profile",
+      title: "Configure default AI profile row",
+      command: ["node", "scripts/deploy.mjs", "<internal:default-ai-profile>"],
     },
   );
 

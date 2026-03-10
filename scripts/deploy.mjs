@@ -4,8 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   assertRequiredDeployEnvVars,
   buildCommandPlan,
-  buildFunctionSecretPairs,
-  DEPLOY_ENVIRONMENTS,
+  buildDefaultAIProfileConfig,
   discoverEdgeFunctions,
   formatPlanLine,
   getBootstrapUsersPath,
@@ -253,6 +252,31 @@ async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
   );
 }
 
+async function configureDefaultAIProfile({
+  supabaseUrl,
+  serviceRoleKey,
+  profile,
+}) {
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const payload = {
+    id: profile.id,
+    provider: profile.provider,
+    model: profile.model,
+    openrouter_api_key: profile.openrouter_api_key,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await admin.from("ai_profiles").upsert(payload, {
+    onConflict: "id",
+  });
+  if (error) {
+    throw new Error(`Failed to configure default ai profile: ${error.message}`);
+  }
+}
+
 async function listAllUserEmails(adminClient) {
   const emails = new Set();
   const perPage = 200;
@@ -475,6 +499,7 @@ async function main() {
   };
 
   assertRequiredDeployEnvVars(deployEnv);
+  const defaultAIProfile = buildDefaultAIProfileConfig(deployEnv);
   ensureTargetMatchesEnvContract(target, deployEnv);
 
   const functionNames = await discoverEdgeFunctions(
@@ -507,6 +532,7 @@ async function main() {
   console.log(`- expected frontend URL: ${target.expectedFrontendUrl}`);
   console.log(`- expected supabase URL: ${target.expectedSupabaseUrl}`);
   console.log(`- edge functions (${functionNames.length}): ${functionNames.join(", ")}`);
+  console.log(`- default ai profile: ${defaultAIProfile.id} (${defaultAIProfile.provider}, ${defaultAIProfile.model})`);
 
   if (options.dryRun) {
     console.log("\nDry run command plan:");
@@ -525,24 +551,14 @@ async function main() {
     await validateSupabaseProject(target, deployEnv, rootDir);
   });
 
-  const functionSecretPairs = buildFunctionSecretPairs(deployEnv);
-
   for (const step of commandPlan) {
     await runStep(step.title, async () => {
-      if (step.id === "backend:set-secrets") {
-        const secretArgs = functionSecretPairs.map(([key, value]) => `${key}=${value}`);
-        runCommand(
-          [
-            npxBin,
-            "supabase",
-            "secrets",
-            "set",
-            ...secretArgs,
-            "--project-ref",
-            target.supabaseProjectRef,
-          ],
-          { cwd: rootDir, env: deployEnv },
-        );
+      if (step.id === "backend:configure-default-ai-profile") {
+        await configureDefaultAIProfile({
+          supabaseUrl: target.expectedSupabaseUrl,
+          serviceRoleKey: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
+          profile: defaultAIProfile,
+        });
         return;
       }
 

@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createAIProviderFromProfile,
   createAIRequestMetadata,
-  getAIProvider,
   isLiveAIEnabled,
-  resolveAIProfile,
 } from "../../../supabase/functions/_shared/ai-provider.ts";
 import {
   parseSearchOutput,
@@ -19,24 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("ai-provider runtime resolution", () => {
-  it("fails when required env is missing", () => {
-    expect(() => resolveAIProfile({})).toThrow("AI_PROVIDER");
-    expect(() => resolveAIProfile({ AI_PROVIDER: "mock" })).toThrow("AI_MODEL");
-  });
-
-  it("resolves provider/model from env", () => {
-    const profile = resolveAIProfile({
-      AI_PROVIDER: "openrouter",
-      AI_MODEL: "test/cost-model",
-    });
-
-    expect(profile).toEqual({
-      provider: "openrouter",
-      model: "test/cost-model",
-    });
-  });
-
+describe("ai-provider runtime configuration", () => {
   it("parses live toggle", () => {
     expect(isLiveAIEnabled({ AI_LIVE: "1" })).toBe(true);
     expect(isLiveAIEnabled({ AI_LIVE: "false" })).toBe(false);
@@ -54,6 +35,15 @@ describe("ai-provider runtime resolution", () => {
       parse: parseSearchOutput,
     });
     expect(output.narration).toContain("Kitchen");
+  });
+
+  it("requires openrouter key from profile options", () => {
+    expect(() =>
+      createAIProviderFromProfile({
+        provider: "openrouter",
+        model: "test/openrouter-model",
+      })
+    ).toThrow("openrouter_api_key");
   });
 });
 
@@ -80,14 +70,17 @@ describe("ai-provider openrouter retry behavior", () => {
 
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const provider = getAIProvider({
-      AI_PROVIDER: "openrouter",
-      AI_MODEL: "test/openrouter-model",
-      OPENROUTER_API_KEY: "test-key",
-      AI_OPENROUTER_MAX_ATTEMPTS: "3",
-      AI_OPENROUTER_BASE_BACKOFF_MS: "1",
-      AI_OPENROUTER_TIMEOUT_MS: "1000",
-    });
+    const provider = createAIProviderFromProfile(
+      { provider: "openrouter", model: "test/openrouter-model" },
+      {
+        openrouterApiKey: "test-key",
+        env: {
+          AI_OPENROUTER_MAX_ATTEMPTS: "3",
+          AI_OPENROUTER_BASE_BACKOFF_MS: "1",
+          AI_OPENROUTER_TIMEOUT_MS: "1000",
+        },
+      },
+    );
 
     const output = await provider.generateRoleOutput({
       role: "search",
@@ -106,13 +99,16 @@ describe("ai-provider openrouter retry behavior", () => {
     );
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const provider = getAIProvider({
-      AI_PROVIDER: "openrouter",
-      AI_MODEL: "test/openrouter-model",
-      OPENROUTER_API_KEY: "test-key",
-      AI_OPENROUTER_MAX_ATTEMPTS: "1",
-      AI_OPENROUTER_TIMEOUT_MS: "1000",
-    });
+    const provider = createAIProviderFromProfile(
+      { provider: "openrouter", model: "test/openrouter-model" },
+      {
+        openrouterApiKey: "test-key",
+        env: {
+          AI_OPENROUTER_MAX_ATTEMPTS: "1",
+          AI_OPENROUTER_TIMEOUT_MS: "1000",
+        },
+      },
+    );
 
     await expect(
       provider.generateNarration("Hello narrator"),
@@ -161,9 +157,9 @@ describe("ai-provider request metadata", () => {
 
 describe("ai-provider mock role output", () => {
   it("returns parseable role payloads", async () => {
-    const provider = getAIProvider({
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/default",
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
     });
     const output = await provider.generateRoleOutput({
       role: "talk_start",
@@ -176,9 +172,9 @@ describe("ai-provider mock role output", () => {
   });
 
   it("supports accusation continue and resolved rounds", async () => {
-    const provider = getAIProvider({
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/default",
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
     });
 
     const firstRound = await provider.generateRoleOutput({
@@ -217,9 +213,9 @@ describe("ai-provider mock role output", () => {
   });
 
   it("generates search narration from location context only", async () => {
-    const provider = getAIProvider({
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/default",
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
     });
 
     const output = await provider.generateRoleOutput({
@@ -233,9 +229,9 @@ describe("ai-provider mock role output", () => {
   });
 
   it("fails parsing when output shape is invalid", async () => {
-    const provider = getAIProvider({
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/default",
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
     });
 
     await expect(
@@ -251,9 +247,9 @@ describe("ai-provider mock role output", () => {
   });
 
   it("fails mock generation when required context is missing", async () => {
-    const provider = getAIProvider({
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/default",
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
     });
 
     await expect(

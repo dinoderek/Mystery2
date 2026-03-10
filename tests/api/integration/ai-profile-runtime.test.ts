@@ -42,7 +42,6 @@ describe("ai profile runtime resolution", () => {
         provider: "mock",
         model: "mock/runtime-test",
         openrouter_api_key: null,
-        is_default: false,
       },
       { onConflict: "id" },
     );

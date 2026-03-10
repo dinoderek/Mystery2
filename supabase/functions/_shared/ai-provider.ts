@@ -82,27 +82,6 @@ function getRuntimeEnv(): Record<string, string | undefined> {
   return process.env as Record<string, string | undefined>;
 }
 
-function requireEnv(
-  env: Record<string, string | undefined>,
-  key: string,
-): string {
-  const value = env[key]?.trim();
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
-
-function parseProviderName(rawProviderName: string): AIProviderName {
-  if (rawProviderName === "mock" || rawProviderName === "openrouter") {
-    return rawProviderName;
-  }
-
-  throw new Error(
-    `Invalid AI_PROVIDER "${rawProviderName}". Expected "mock" or "openrouter".`,
-  );
-}
-
 function requireContextString(
   role: AIRoleName,
   context: Record<string, unknown>,
@@ -215,16 +194,6 @@ function resolveMockCharacterTruth(
   return null;
 }
 
-export function resolveAIProfile(env = getRuntimeEnv()): AIRuntimeProfile {
-  const provider = parseProviderName(requireEnv(env, "AI_PROVIDER"));
-  const model = requireEnv(env, "AI_MODEL");
-
-  return {
-    provider,
-    model,
-  };
-}
-
 export function isLiveAIEnabled(env = getRuntimeEnv()): boolean {
   const raw = env.AI_LIVE ?? "";
   return raw === "1" || raw.toLowerCase() === "true";
@@ -264,18 +233,6 @@ function resolveOpenRouterRuntimeConfig(
       750,
     ),
   };
-}
-
-function resolveOpenRouterApiKey(
-  env: Record<string, string | undefined>,
-  explicitApiKey?: string | null,
-): string {
-  const keyFromProfile = explicitApiKey?.trim();
-  if (keyFromProfile) {
-    return keyFromProfile;
-  }
-
-  return requireEnv(env, "OPENROUTER_API_KEY");
 }
 
 class MockAIProvider implements AIProvider {
@@ -456,7 +413,7 @@ class OpenRouterProvider implements AIProvider {
     baseUrl?: string,
   ) {
     if (!apiKey) {
-      throw new Error("Missing OPENROUTER_API_KEY for provider=openrouter");
+      throw new Error("Missing openrouter_api_key for provider=openrouter profile");
     }
 
     this.profile = profile;
@@ -698,22 +655,20 @@ export function createAIProviderFromProfile(
 ): AIProvider {
   const env = options.env ?? getRuntimeEnv();
   if (profile.provider === "openrouter") {
+    const openrouterApiKey = options.openrouterApiKey?.trim();
+    if (!openrouterApiKey) {
+      throw new Error(
+        "Missing openrouter_api_key for provider=openrouter profile",
+      );
+    }
     const runtimeConfig = resolveOpenRouterRuntimeConfig(env);
     return new OpenRouterProvider(
       profile,
-      resolveOpenRouterApiKey(env, options.openrouterApiKey),
+      openrouterApiKey,
       runtimeConfig,
       env.OPENROUTER_URL,
     );
   }
 
   return new MockAIProvider(profile);
-}
-
-export function getAIProvider(env = getRuntimeEnv()): AIProvider {
-  const profile = resolveAIProfile(env);
-  return createAIProviderFromProfile(profile, {
-    env,
-    openrouterApiKey: env.OPENROUTER_API_KEY,
-  });
 }

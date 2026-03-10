@@ -8,20 +8,18 @@ Install:
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
 - [Deno](https://deno.land/) (for Edge Functions language tooling)
 
-## First-Time Local Setup (Human)
-Run one command from repo root:
+## First-Time Local Setup
+Run from repo root:
 
 ```bash
 npm run setup:local
 ```
 
-This does the initial bootstrap:
+This:
 1. Ensures local Supabase is running.
-2. Seeds blueprint storage (only if bucket is empty).
+2. Seeds blueprint storage (if missing).
 3. Seeds auth test users.
-4. Seeds AI profiles in Postgres:
-   - always seeds `mock`,
-   - seeds `free` / `paid` only when `.env.ai.free.local` / `.env.ai.paid.local` exist.
+4. Seeds AI profiles in Postgres (`mock`, optional `free`/`paid`, and canonical `default`).
 
 Then start the app:
 
@@ -29,18 +27,24 @@ Then start the app:
 npm run dev
 ```
 
-## Daily Development Workflows
+## AI Mode Model (DB-First)
 
-### Deterministic local development (mock AI)
+- Canonical default profile id is always `default`.
+- `game-start` uses `ai_profiles.id='default'` when `ai_profile` is not provided.
+- Existing sessions keep their stored `ai_profile_id`.
+- New sessions use the current `default` row.
+
+## Daily Local Workflows
+
+### Deterministic local (mock)
 ```bash
 npm run dev
 ```
-- Uses `VITE_AI_PROFILE=mock` in the web app.
-- Does not restart Supabase if already running.
-- Seeds storage if missing and refreshes the `mock` AI profile.
 
-### Local development against real AI profiles
-Configure mode files (gitignored):
+This keeps Supabase running and refreshes `default` to mock config.
+
+### Local live AI (free/paid)
+Create mode files (gitignored):
 
 `.env.ai.free.local`
 ```bash
@@ -57,104 +61,69 @@ OPENROUTER_API_KEY="<server-only-secret>"
 ```
 
 Run:
-- Free: `npm run dev:ai:free`
-- Paid: `npm run dev:ai:paid`
+- `npm run dev:ai:free`
+- `npm run dev:ai:paid`
 
-These commands:
-- keep Supabase running by default (no restart),
-- sync the selected profile row in `ai_profiles`,
-- start the web app with `VITE_AI_PROFILE` set to that mode.
+These commands upsert the selected mode profile and update `default` to that configuration.
 
-### Switching AI profile without restart
-You do not need to restart Supabase to switch modes.
-- Start with `npm run dev` (`mock`) or `npm run dev:ai:free|paid`.
-- `game-start` stores the selected profile on the new session.
-- Existing sessions keep their stored `ai_profile_id`; new sessions use current selection.
+## Switch AI Config Without Restart
 
-## Updating Keys/Models (No Restart Required)
-When a model id or key changes:
-1. Edit `.env.ai.<mode>.local` (`free` or `paid`).
-2. Sync that profile to Postgres:
-   ```bash
-   npm run seed:ai -- --only <mode>
-   ```
-   Example:
-   ```bash
-   npm run seed:ai -- --only free
-   ```
-3. Continue testing. Supabase restart is not required.
+No Supabase restart is needed.
 
-Notes:
-- OpenRouter key resolves from `ai_profiles.openrouter_api_key` first.
-- If profile key is null, runtime falls back to `OPENROUTER_API_KEY` env.
+- Update model/key in `.env.ai.<mode>.local`
+- Apply it:
 
-## Optional Reseed / Restart Controls
+```bash
+npm run seed:ai -- --only <mock|free|paid>
+```
 
-Manual storage reseed:
+This updates both the named profile and canonical `default` row.
+
+## Optional Controls
+
 ```bash
 npm run seed:storage
-```
-
-Seed storage only when empty:
-```bash
 npm run seed:storage -- --if-missing
-```
-
-Force Supabase restart (manual only):
-```bash
 npm run supabase:restart
 ```
 
 ## Testing
+
 Run all quality gates:
+
 ```bash
 npm run test:all
 ```
 
-Run suites individually:
-- Unit: `npm run test:unit`
-- Integration: `npm run test:integration`
-- API E2E: `npm run test:e2e`
+Or run tiers separately:
+- `npm run test:unit`
+- `npm run test:integration`
+- `npm run test:e2e`
 
-By default, integration/E2E scripts:
-- ensure Supabase is running (no restart),
-- seed storage if missing,
-- seed required AI profiles.
+## Deploy AI Default Profile
 
-You can opt into restart/reseed flags when needed:
+Deploy now configures AI mode by writing `ai_profiles.id='default'`.
+
+In `.env.deploy.<env>.local`, set:
+- `AI_DEFAULT_PROFILE_ID=default`
+- `AI_DEFAULT_PROFILE_PROVIDER=<mock|openrouter>`
+- `AI_DEFAULT_PROFILE_MODEL=<model-id>`
+- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY=<secret>` (required only for openrouter)
+
+Then run:
+
 ```bash
-npm run test:integration -- --restart --seed-storage=always
+npm run deploy -- --env <dev|staging|prod>
 ```
 
-## Optional Live-AI Suites
-Live suites are opt-in:
-- `npm run test:integration:live:free`
-- `npm run test:integration:live:paid`
-- `npm run test:e2e:live:free`
-- `npm run test:e2e:live:paid`
+## Logs
 
-They use profile-based selection (`free`/`paid`) and larger timeout budgets.
-
-## Accessing Edge Function Logs
 ```bash
 npm run logs:edge
 ```
 
-Optional tail length:
-```bash
-npm run logs:edge -- --tail 500
-```
+## Local Service Status
 
-## Cloud Supabase Secrets
-For hosted Supabase environments, set runtime env secrets per project:
-
-```bash
-supabase secrets set OPENROUTER_API_KEY=<secret> --project-ref <project-ref>
-```
-
-Model/provider selection can still be driven by DB `ai_profiles` rows in that environment.
-
-## Viewing Local Database/Services
 ```bash
 npx supabase status
 ```

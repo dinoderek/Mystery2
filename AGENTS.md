@@ -17,9 +17,16 @@ Explicitly read these files located in the `docs/` directory:
 
 Always ensure you have a concrete plan to test what you are building. The tests you write must be included in the project's quality gates (e.g., unit tests, integration tests, or E2E tests as appropriate for the feature).
 
+Exception (documentation-only changes):
+- If a change only modifies documentation files (`*.md`) and does not alter runtime code, build tooling, migrations, tests, or environment contracts, code test execution is not required.
+- In that case, validate accuracy/consistency of the docs and keep links/commands up to date.
+
 ## 3. Run Quality Gates
 
 Always run all the quality gates described in `docs/testing.md` before finalizing your work. Never bypass these checks.
+
+Exception (documentation-only changes):
+- For doc-only updates as defined above, quality gate test runs may be skipped.
 
 ## 4. Summarize Your Changes
 

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const ROOT_DIR = process.cwd();
+const CANONICAL_DEFAULT_PROFILE_ID = "default";
 const VALID_PROFILES = new Set(["mock", "free", "paid"]);
 
 function parseOnlyArg(args) {
@@ -22,14 +23,23 @@ function parseOnlyArg(args) {
 function resolveTargets(args) {
   const only = parseOnlyArg(args);
   if (!only) {
-    return ["mock", "free", "paid"];
+    return { only: null, targets: ["mock", "free", "paid"] };
   }
 
   if (!VALID_PROFILES.has(only)) {
     throw new Error(`Invalid --only value "${only}". Use one of: mock, free, paid.`);
   }
 
-  return [only];
+  return { only, targets: [only] };
+}
+
+function parseProvider(rawProvider, modeEnvPath) {
+  if (rawProvider === "mock" || rawProvider === "openrouter") {
+    return rawProvider;
+  }
+  throw new Error(
+    `Invalid AI_PROVIDER in ${path.basename(modeEnvPath)}. Expected "mock" or "openrouter".`,
+  );
 }
 
 async function loadModeProfile(rootEnv, mode) {
@@ -39,7 +49,6 @@ async function loadModeProfile(rootEnv, mode) {
       provider: "mock",
       model: "mock/runtime-default",
       openrouter_api_key: null,
-      is_default: true,
     };
   }
 
@@ -49,28 +58,39 @@ async function loadModeProfile(rootEnv, mode) {
     return null;
   }
 
-  const provider = modeEnv.AI_PROVIDER?.trim();
+  const provider = parseProvider(modeEnv.AI_PROVIDER?.trim(), modeEnvPath);
   const model = modeEnv.AI_MODEL?.trim();
-  if (!provider || !model) {
-    throw new Error(
-      `Missing AI_PROVIDER/AI_MODEL in ${path.basename(modeEnvPath)}.`,
-    );
+  if (!model) {
+    throw new Error(`Missing AI_MODEL in ${path.basename(modeEnvPath)}.`);
   }
 
   const openrouterKey = modeEnv.OPENROUTER_API_KEY?.trim() ||
     rootEnv.OPENROUTER_API_KEY?.trim() ||
     null;
 
+  if (provider === "openrouter" && !openrouterKey) {
+    throw new Error(
+      `Missing OPENROUTER_API_KEY for profile "${mode}" in ${path.basename(modeEnvPath)} or .env.local.`,
+    );
+  }
+
   return {
     id: mode,
     provider,
     model,
-    openrouter_api_key: openrouterKey,
-    is_default: false,
+    openrouter_api_key: provider === "openrouter" ? openrouterKey : null,
   };
 }
 
-const targets = resolveTargets(process.argv.slice(2));
+function chooseDefaultSource(targets, profileMap) {
+  if (targets.length === 1) {
+    return profileMap.get(targets[0]) ?? null;
+  }
+
+  return profileMap.get("mock") ?? profileMap.get(targets[0]) ?? null;
+}
+
+const { only, targets } = resolveTargets(process.argv.slice(2));
 const baseEnv = await loadEnvFile(path.join(ROOT_DIR, ".env.local"), false);
 const env = { ...baseEnv, ...process.env };
 
@@ -85,47 +105,45 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-const rows = [];
+const profileMap = new Map();
 for (const target of targets) {
   const profile = await loadModeProfile(env, target);
   if (!profile) {
-    console.warn(
-      `Skipping profile "${target}": missing .env.ai.${target}.local`,
-    );
+    if (only) {
+      throw new Error(`Missing .env.ai.${target}.local for --only ${target}`);
+    }
+    console.warn(`Skipping profile "${target}": missing .env.ai.${target}.local`);
     continue;
   }
-  rows.push(profile);
+  profileMap.set(target, profile);
 }
 
-if (rows.length === 0) {
+const defaultSource = chooseDefaultSource(targets, profileMap);
+if (!defaultSource) {
   console.warn("No AI profiles were seeded.");
   process.exit(0);
 }
 
-if (rows.some((row) => row.id === "mock")) {
-  const { error: clearDefaultError } = await supabase
-    .from("ai_profiles")
-    .update({ is_default: false, updated_at: new Date().toISOString() })
-    .eq("is_default", true);
-  if (clearDefaultError) {
-    console.error(`Failed to reset default profile: ${clearDefaultError.message}`);
-    process.exit(1);
-  }
-}
-
-const payload = rows.map((row) => ({
-  ...row,
-  updated_at: new Date().toISOString(),
-}));
+const now = new Date().toISOString();
+const payload = [
+  ...profileMap.values(),
+  {
+    id: CANONICAL_DEFAULT_PROFILE_ID,
+    provider: defaultSource.provider,
+    model: defaultSource.model,
+    openrouter_api_key: defaultSource.openrouter_api_key,
+  },
+].map((row) => ({ ...row, updated_at: now }));
 
 const { error } = await supabase
   .from("ai_profiles")
   .upsert(payload, { onConflict: "id" });
+
 if (error) {
   console.error(`Failed to seed AI profiles: ${error.message}`);
   process.exit(1);
 }
 
 console.log(
-  `Seeded AI profiles: ${rows.map((row) => row.id).join(", ")}`,
+  `Seeded AI profiles: ${payload.map((row) => row.id).join(", ")}`,
 );

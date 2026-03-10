@@ -239,6 +239,7 @@ Failure-handling expectations:
 - Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
 - OpenRouter provider calls use bounded retry/backoff and emit structured JSON logs (`request_id`, endpoint/action, role, attempt, latency, outcome).
 - Full implementation details are documented in `docs/ai-runtime.md`.
+- Configuration runbook details are documented in `docs/ai-configuration.md`.
 - Accusation-specific flow details (reasoning-first rounds, suspect inference, and timeout-forced endgame entry) are documented in `docs/accusation-flow.md`.
 
 ---
@@ -246,7 +247,7 @@ Failure-handling expectations:
 ## Security model
 
 - **No secrets in UI**.
-- **OpenRouter key is server-side only** (stored in `ai_profiles.openrouter_api_key` or supplied via Edge Function env fallback).
+- **OpenRouter key is server-side only** (stored in `ai_profiles.openrouter_api_key`).
 - **All data access** is controlled by Postgres **RLS** (and explicit checks where appropriate).
 - UI calls Edge Functions with a bearer token; functions validate it on every request.
 - RLS ownership design:
@@ -268,6 +269,7 @@ Failure-handling expectations:
   - `prod`: isolated Pages project + isolated Supabase project
 - Deployment operator flow:
   - one local orchestrator (`scripts/deploy.mjs`) drives web deploy, backend deploy/provisioning, and smoke checks
+  - deploy config writes canonical AI runtime profile row `ai_profiles.id='default'` per environment
   - env mapping is committed in `deploy/targets.json`
   - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files
 
@@ -282,7 +284,7 @@ Runbook and failure handling details live in `docs/deployment.md`.
   1. Ensures Supabase local stack is running (no restart by default)
   2. Seeds storage/auth/AI profile data
 - Dev/test scripts avoid restarts by default and use logical isolation instead of DB resets.
-- AI runtime profile selection is session-scoped (`game-start.ai_profile`) and does not require Supabase restarts.
+- AI runtime profile selection is session-scoped (`game-start.ai_profile`) with canonical default `ai_profiles.id='default'`, and does not require Supabase restarts.
 
 For local development commands, use the scripts documented in the repository root `package.json`.
 

@@ -34,7 +34,7 @@ export const CharacterSchema = z.object({
   location_id: z.string().describe("The character's location"),
   mystery_action_real: z
     .string()
-    .describe("What the character was doing around the time of the mystery."),
+    .describe("The character actions relevant to the mystery."),
   stated_alibi: z
     .string()
     .nullable()
@@ -44,11 +44,11 @@ export const CharacterSchema = z.object({
   motive: z
     .string()
     .nullable()
-    .describe("Why they might have done it. Null if no clear motive."),
+    .describe("Why they might have done it. Null if they have no clear motive."),
   is_culprit: z.boolean().describe("Whether this character is the culprit."),
   knowledge: z
     .array(z.string())
-    .describe("Specific facts or clues this character holds and can reveal."),
+    .describe("Specific facts or clues this character holds about the mystery and can reveal."),
 });
 
 export const LocationSchema = z.object({

@@ -36,6 +36,13 @@ To prove the culprit did it, ensure the generated clues establish:
 
 You must output a JSON object conforming to this Zod schema structure from `blueprint-schema.ts`.
 
+## The generation process
+
+[ ] Create the outline of a age-appropriate, engaging mystery. At this stage this should be quite vague: setting, what happened, the reason for the time pressure. 
+[ ] Create the outline of the mystery from the culprit's point of view. Start from his motive, then create a timeline of his actions. For each step of the timeline record what the culprit was doing and where he was. Be detailed and document each step.
+[ ] Create the clues left by the culprit. Culprit can be physical evidence left at a location or can be some
+
+
 ## Critical Checks
 
 Before concluding your JSON generation, double check:

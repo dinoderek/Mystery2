@@ -21,8 +21,12 @@
     }
 
     event.preventDefault();
-    gameSessionStore.clearSessionForMysteryList();
-    await goto('/');
+    try {
+      await gameSessionStore.loadSessionCatalog(true);
+    } finally {
+      gameSessionStore.clearSessionForMysteryList();
+      await goto('/');
+    }
   }
 </script>
 

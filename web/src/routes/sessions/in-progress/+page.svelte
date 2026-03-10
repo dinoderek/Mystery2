@@ -9,7 +9,7 @@
   const sessions = $derived(gameSessionStore.sessionCatalog.in_progress);
 
   onMount(() => {
-    void gameSessionStore.loadSessionCatalog();
+    void gameSessionStore.loadSessionCatalog(true);
   });
 
   async function handleKeydown(event: KeyboardEvent) {

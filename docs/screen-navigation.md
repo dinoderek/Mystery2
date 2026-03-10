@@ -26,6 +26,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
   - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
   - Includes a logout action that clears browser auth session.
+  - Forces a fresh session catalog load on route mount to avoid stale in-progress/completed counts after returning from `/session`.
   - Option 2 (`/sessions/in-progress`) and option 3 (`/sessions/completed`) are disabled when counts are zero.
   - In the new-game sub-flow, `b` returns to the root three-option menu.
 
@@ -39,6 +40,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - Numeric row selection resumes the chosen session and navigates to `/session`.
   - Rows display mystery title, turns left, and last played timestamp.
+  - Forces a fresh catalog read on route mount to avoid stale list data.
   - If a row is not openable (`can_open=false`), selection is blocked with a warning.
   - Pressing `b` returns to `/`.
 
@@ -52,6 +54,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - Numeric row selection opens a completed session in `/session`.
   - Rows display mystery title, outcome, and last played timestamp.
+  - Forces a fresh catalog read on route mount to avoid stale list data.
   - If a row is not openable (`can_open=false`), selection is blocked with a warning.
   - Pressing `b` returns to `/`.
 

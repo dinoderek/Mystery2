@@ -16,7 +16,7 @@
   const isStartingGame = $derived(view === 'new-game' && gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length > 0);
 
   onMount(() => {
-    void gameSessionStore.loadSessionCatalog();
+    void gameSessionStore.loadSessionCatalog(true);
   });
 
   async function enterNewGameFlow() {

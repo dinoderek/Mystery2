@@ -16,7 +16,7 @@
   });
 
   async function handleKeydown(event: KeyboardEvent) {
-    if (!gameSessionStore.awaitingReturnToList) {
+    if (!gameSessionStore.awaitingReturnToList && gameSessionStore.viewerMode !== 'read_only_completed') {
       return;
     }
 

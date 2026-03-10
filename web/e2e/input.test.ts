@@ -27,6 +27,16 @@ const baseState = {
 async function bootstrapSession(page: Page) {
   await enableAuthBypass(page);
 
+  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await route.fulfill({
+      json: {
+        in_progress: [],
+        completed: [],
+        counts: { in_progress: 0, completed: 0 },
+      },
+    });
+  });
+
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {
@@ -45,6 +55,8 @@ async function bootstrapSession(page: Page) {
   });
 
   await page.goto('/');
+  await expect(page.getByText('1. Start a new game')).toBeVisible();
+  await page.keyboard.press('1');
   await expect(page.getByText('B1')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page).toHaveURL(/.*\/session/);

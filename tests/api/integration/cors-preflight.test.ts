@@ -4,6 +4,7 @@ import { API_URL } from "./auth-helpers";
 const ENDPOINTS = [
   { path: "blueprints-list", requestedMethod: "GET" },
   { path: "game-start", requestedMethod: "POST" },
+  { path: "game-sessions-list", requestedMethod: "GET" },
   { path: "game-get", requestedMethod: "GET" },
   { path: "game-move", requestedMethod: "POST" },
   { path: "game-talk", requestedMethod: "POST" },

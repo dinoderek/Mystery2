@@ -13,10 +13,18 @@
           : "> Explore mode...",
   );
 
-  let disabled = $derived(gameSessionStore.status === "loading");
+  let showReadOnlyPrompt = $derived(
+    gameSessionStore.awaitingReturnToList || gameSessionStore.viewerMode === "read_only_completed",
+  );
+
+  let disabled = $derived(
+    gameSessionStore.status === "loading" ||
+      gameSessionStore.state?.mode === "ended" ||
+      showReadOnlyPrompt,
+  );
 
   async function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter" && inputValue.trim()) {
+    if (e.key === "Enter" && inputValue.trim() && !disabled) {
       e.stopPropagation();
       const text = inputValue;
       inputValue = "";
@@ -30,7 +38,7 @@
 </script>
 
 <div class="mt-4 border-t border-t-muted/30 pt-4">
-  {#if gameSessionStore.awaitingReturnToList}
+  {#if showReadOnlyPrompt}
     <div class="space-y-2 text-sm" data-testid="accusation-end-state">
       {#if gameSessionStore.accusationOutcome === "win"}
         <p class="text-t-bright font-bold">[ CASE SOLVED ]</p>

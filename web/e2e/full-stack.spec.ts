@@ -5,6 +5,9 @@ test.describe('Full stack browser flow', () => {
   test('covers parser + store + backend state machine for talk/ask', async ({ page }) => {
     await loginWithSeedUser(page);
 
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+
     try {
       await expect(page.locator('h2.text-xl').first()).toBeVisible({ timeout: 8000 });
     } catch {

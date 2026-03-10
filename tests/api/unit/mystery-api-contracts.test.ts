@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   GameAccuseRequestSchema,
   GameAskRequestSchema,
+  SessionCatalogResponseSchema,
+  SessionSummarySchema,
   GameStartRequestSchema,
   GameStateSchema,
   SearchResponseSchema,
@@ -154,6 +156,58 @@ describe("shared mystery API contracts", () => {
       mode: "explore",
       location: "Kitchen",
       narration_speaker: narratorSpeaker,
+    });
+  });
+
+  it("accepts session summary rows with nullable outcome", () => {
+    expect(
+      SessionSummarySchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174001",
+        mystery_title: "The Missing Honey Cakes",
+        mystery_available: true,
+        can_open: true,
+        mode: "explore",
+        time_remaining: 7,
+        outcome: null,
+        last_played_at: "2026-03-10T12:00:00.000Z",
+        created_at: "2026-03-09T12:00:00.000Z",
+      }),
+    ).toMatchObject({
+      mystery_title: "The Missing Honey Cakes",
+      can_open: true,
+      mode: "explore",
+    });
+  });
+
+  it("requires grouped catalog arrays and counts", () => {
+    expect(
+      SessionCatalogResponseSchema.parse({
+        in_progress: [],
+        completed: [
+          {
+            game_id: "123e4567-e89b-12d3-a456-426614174010",
+            blueprint_id: "123e4567-e89b-12d3-a456-426614174020",
+            mystery_title: "Unknown Mystery",
+            mystery_available: false,
+            can_open: false,
+            mode: "ended",
+            time_remaining: 0,
+            outcome: "lose",
+            last_played_at: "2026-03-10T12:00:00.000Z",
+            created_at: "2026-03-08T12:00:00.000Z",
+          },
+        ],
+        counts: {
+          in_progress: 0,
+          completed: 1,
+        },
+      }),
+    ).toMatchObject({
+      counts: {
+        in_progress: 0,
+        completed: 1,
+      },
     });
   });
 });

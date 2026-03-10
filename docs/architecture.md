@@ -36,6 +36,7 @@ Responsibilities:
 - Render gameplay UI, manage client state, and call backend APIs.
 - Handle authentication UX using Supabase client SDK.
 - Call Edge Functions for AI-backed turns (never call OpenRouter directly).
+- Render session-aware navigation (`/`, `/sessions/in-progress`, `/sessions/completed`) using catalog data from Edge Functions.
 
 Constraints:
 
@@ -77,6 +78,7 @@ Responsibilities:
   - OpenRouter calls (API key)
   - privileged DB mutations
 - Persist results into Postgres and return response payloads to UI.
+- Provide authenticated session-catalog reads (`game-sessions-list`) for in-progress/completed navigation.
 
 ---
 
@@ -172,6 +174,21 @@ sequenceDiagram
     ST-->>B: Upload result / Bytes / Signed URL
   end
 ```
+
+### 3b) Authenticated session catalog read (`game-sessions-list`)
+
+**Goal**
+
+- Populate landing/list navigation with resumable and completed sessions for the signed-in player.
+
+**Hops**
+
+- UI -> Edge Function `game-sessions-list` with bearer token
+- Edge Function -> Postgres (`game_sessions`) for session rows
+- Edge Function -> Storage (`blueprints` bucket) for title resolution
+- Edge Function -> UI with grouped summaries (`in_progress`, `completed`, `counts`)
+
+Missing blueprint metadata is handled as a non-fatal case: rows remain visible but return `can_open=false` with fallback title `Unknown Mystery`.
 
 ### 4) Authenticated AI turn (Edge Function + OpenRouter)
 

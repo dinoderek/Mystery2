@@ -15,12 +15,45 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 ### `/` (Start Page)
 
 - **Directory**: `src/routes/+page.svelte`
-- **Purpose**: The landing page where the player selects a mystery blueprint to begin.
-- **State Dependencies**: Fetches available `Blueprints` from the backend API.
+- **Purpose**: Session-aware landing page with a three-option numeric menu:
+  - `1. Start a new game`
+  - `2. View in-progress games`
+  - `3. View completed games`
+- **State Dependencies**:
+  - Fetches `sessionCatalog` (`game-sessions-list`) to enable/disable options 2/3.
+  - Loads `Blueprints` only after entering the new-game sub-flow.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
   - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
   - Includes a logout action that clears browser auth session.
+  - Option 2 (`/sessions/in-progress`) and option 3 (`/sessions/completed`) are disabled when counts are zero.
+  - In the new-game sub-flow, `b` returns to the root three-option menu.
+
+### `/sessions/in-progress` (In-Progress List)
+
+- **Directory**: `src/routes/sessions/in-progress/+page.svelte`
+- **Purpose**: Shows resumable, non-ended sessions for the authenticated user.
+- **State Dependencies**:
+  - Reads `sessionCatalog.in_progress` from `gameSessionStore`.
+  - Uses `resumeSession(game_id)` to hydrate session state from `game-get`.
+- **Special behavior**:
+  - Numeric row selection resumes the chosen session and navigates to `/session`.
+  - Rows display mystery title, turns left, and last played timestamp.
+  - If a row is not openable (`can_open=false`), selection is blocked with a warning.
+  - Pressing `b` returns to `/`.
+
+### `/sessions/completed` (Completed List)
+
+- **Directory**: `src/routes/sessions/completed/+page.svelte`
+- **Purpose**: Shows ended sessions for read-only review.
+- **State Dependencies**:
+  - Reads `sessionCatalog.completed` from `gameSessionStore`.
+  - Uses `resumeSession(game_id)` to load session history in completed-view mode.
+- **Special behavior**:
+  - Numeric row selection opens a completed session in `/session`.
+  - Rows display mystery title, outcome, and last played timestamp.
+  - If a row is not openable (`can_open=false`), selection is blocked with a warning.
+  - Pressing `b` returns to `/`.
 
 ### `/login` (Login Page)
 
@@ -44,6 +77,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt and any key returns to `/`.
+  - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
   - Includes a logout action that clears browser auth session.
 
 ## Navigation Patterns

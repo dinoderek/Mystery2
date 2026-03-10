@@ -36,6 +36,16 @@ test.describe('US2/US3 - Narration Rendering', () => {
   test.beforeEach(async ({ page }) => {
     await enableAuthBypass(page);
 
+    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          in_progress: [],
+          completed: [],
+          counts: { in_progress: 0, completed: 0 },
+        },
+      });
+    });
+
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
@@ -69,6 +79,8 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
   test('renders narration history and auto-scrolls down', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
@@ -97,6 +109,8 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
   test('applies speaker-kind styles across theme switches', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
 
     await page.getByTestId('theme-amber').click();
@@ -106,6 +120,8 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/amber-body/);
 
     await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
     await page.getByTestId('theme-matrix').click();
     await page.keyboard.press('1');

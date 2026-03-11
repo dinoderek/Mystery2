@@ -120,6 +120,30 @@ export const BlueprintSummarySchema = z.object({
   target_age: z.number().int().positive(),
 });
 
+export const SessionSummarySchema = z.object({
+  game_id: z.string().uuid(),
+  blueprint_id: z.string().uuid(),
+  mystery_title: z.string().min(1),
+  mystery_available: z.boolean(),
+  can_open: z.boolean(),
+  mode: ModeSchema,
+  time_remaining: z.number().int().nonnegative(),
+  outcome: OutcomeSchema.nullable().optional(),
+  last_played_at: z.string().datetime(),
+  created_at: z.string().datetime(),
+});
+
+export const SessionCountsSchema = z.object({
+  in_progress: z.number().int().nonnegative(),
+  completed: z.number().int().nonnegative(),
+});
+
+export const SessionCatalogResponseSchema = z.object({
+  in_progress: z.array(SessionSummarySchema),
+  completed: z.array(SessionSummarySchema),
+  counts: SessionCountsSchema,
+});
+
 export type SpeakerKind = z.infer<typeof SpeakerKindSchema>;
 export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
@@ -138,3 +162,6 @@ export type GameState = z.infer<typeof GameStateSchema>;
 export type GameStartResponse = z.infer<typeof GameStartResponseSchema>;
 export type GameGetResponse = z.infer<typeof GameGetResponseSchema>;
 export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
+export type SessionSummary = z.infer<typeof SessionSummarySchema>;
+export type SessionCounts = z.infer<typeof SessionCountsSchema>;
+export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;

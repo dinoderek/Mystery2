@@ -1,0 +1,272 @@
+openapi: 3.1.0
+info:
+  title: Mystery Game Sessions API
+  version: 0.1.0
+  description: |
+    Contract additions for feature 007-sessions.
+    Introduces session catalog retrieval for landing/list navigation and
+    formalizes resume/view behavior through existing game-get state loading.
+servers:
+  - url: http://127.0.0.1:54331/functions/v1
+    description: Local Supabase
+  - url: https://<project-ref>.supabase.co/functions/v1
+    description: Hosted Supabase
+
+tags:
+  - name: Sessions
+
+paths:
+  /game-sessions-list:
+    get:
+      tags: [Sessions]
+      summary: Retrieve in-progress and completed session summaries for current user
+      operationId: gameSessionsList
+      responses:
+        "200":
+          description: Session catalog grouped by category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCatalogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /game-get:
+    get:
+      tags: [Sessions]
+      summary: Retrieve persisted game state and history for a specific session
+      description: |
+        Existing endpoint used by this feature to open selected sessions.
+        If `state.mode` is `ended`, clients must render read-only completed view behavior.
+      operationId: gameGetForResumeOrView
+      parameters:
+        - in: query
+          name: game_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session state loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameGetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid auth token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated but not permitted
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Session not found or inaccessible
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal processing failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    Mode:
+      type: string
+      enum: [explore, talk, accuse, ended]
+
+    Outcome:
+      type: string
+      enum: [win, lose]
+
+    Speaker:
+      type: object
+      required: [kind, key, label]
+      properties:
+        kind:
+          type: string
+          enum: [investigator, narrator, character, system]
+        key:
+          type: string
+        label:
+          type: string
+
+    HistoryEntry:
+      type: object
+      required: [sequence, event_type, narration, speaker]
+      properties:
+        sequence:
+          type: integer
+        event_type:
+          type: string
+        narration:
+          type: string
+        speaker:
+          $ref: "#/components/schemas/Speaker"
+
+    GameState:
+      type: object
+      required:
+        - locations
+        - characters
+        - time_remaining
+        - location
+        - mode
+        - current_talk_character
+        - narration
+        - narration_speaker
+        - history
+      properties:
+        locations:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+        characters:
+          type: array
+          items:
+            type: object
+            required: [first_name, last_name, location_name]
+            properties:
+              first_name:
+                type: string
+              last_name:
+                type: string
+              location_name:
+                type: string
+        time_remaining:
+          type: integer
+          minimum: 0
+        location:
+          type: string
+        mode:
+          $ref: "#/components/schemas/Mode"
+        current_talk_character:
+          type: string
+          nullable: true
+        narration:
+          type: string
+        narration_speaker:
+          $ref: "#/components/schemas/Speaker"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+
+    GameGetResponse:
+      type: object
+      required: [state]
+      properties:
+        state:
+          $ref: "#/components/schemas/GameState"
+
+    SessionSummary:
+      type: object
+      required:
+        - game_id
+        - blueprint_id
+        - mystery_title
+        - mystery_available
+        - can_open
+        - mode
+        - time_remaining
+        - last_played_at
+        - created_at
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        blueprint_id:
+          type: string
+          format: uuid
+        mystery_title:
+          type: string
+        mystery_available:
+          type: boolean
+        can_open:
+          type: boolean
+        mode:
+          $ref: "#/components/schemas/Mode"
+        time_remaining:
+          type: integer
+          minimum: 0
+        outcome:
+          allOf:
+            - $ref: "#/components/schemas/Outcome"
+          nullable: true
+        last_played_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SessionCounts:
+      type: object
+      required: [in_progress, completed]
+      properties:
+        in_progress:
+          type: integer
+          minimum: 0
+        completed:
+          type: integer
+          minimum: 0
+
+    SessionCatalogResponse:
+      type: object
+      required: [in_progress, completed, counts]
+      properties:
+        in_progress:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionSummary"
+        completed:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionSummary"
+        counts:
+          $ref: "#/components/schemas/SessionCounts"

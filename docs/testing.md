@@ -78,6 +78,11 @@ What we test:
   - provision users through `tests/testkit/src/auth.ts` (`setupTestAuth`, `createTestUser`, `signIn`)
   - include bearer auth headers from testkit helpers for all protected function calls
 - DB writes/reads for session lifecycle and event log
+- Session catalog endpoint behavior (`game-sessions-list`):
+  - returns `in_progress`, `completed`, and `counts`
+  - enforces recency ordering (`last_played_at`, then `created_at`, then `game_id`)
+  - maps ended sessions to completed rows with `outcome`
+  - marks missing-blueprint sessions as `can_open=false` with fallback title
 - Storage policies if used for user assets
 - Conversation/search API contract behavior:
   - `game-ask` requires non-empty `player_input`
@@ -121,6 +126,10 @@ What we test:
 - session persistence and token refresh behavior
 - logout clears session and re-protects game routes
 - user can create/continue a game session
+- session-aware landing menu exposes exactly 3 numeric options (`new`, `in-progress`, `completed`)
+- in-progress and completed options disable correctly when counts are zero
+- `/sessions/in-progress` and `/sessions/completed` list flows support numeric row selection
+- completed-session viewer opens in read-only mode and returns to `/` on any key
 - user can perform an action that triggers an Edge Function
 - UI renders returned payload and state remains consistent after refresh
 
@@ -167,6 +176,13 @@ Auth browser coverage (`web/e2e/auth.spec.ts`) must include:
 - refresh-failure path redirecting to `/login` with a friendly message
 - logout flow and route protection (`/` and `/session`)
 
+Sessions navigation E2E coverage (`web/e2e/sessions-navigation.test.ts`) must include:
+
+- in-progress rows render title, turns-left, and last-played values
+- completed rows render title, outcome, and last-played values
+- numeric row selection opens `/session` for resume/review paths
+- non-openable rows (`can_open=false`) show guard messaging and do not navigate
+
 ## Test Isolation Strategy (Logical Isolation)
 
 Because starting and stopping Supabase is resource-intensive and slow, we rely on **Logical Isolation** rather than database resets. A single Supabase instance runs continuously. Every test is responsible for:
@@ -201,6 +217,11 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
 3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
 4. Runs Vitest against the running Edge Functions to validate full player journeys
+
+`npm -w web run test:e2e`:
+
+1. Runs Playwright browser E2E for the web app
+2. Current project matrix is Chromium-only (`web/playwright.config.ts`) for local stability
 
 ### Deploy dry-run checks
 

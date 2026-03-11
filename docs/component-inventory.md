@@ -40,6 +40,10 @@ _(Add components here as they are built. Example format below)_
 
 - **Purpose**: Text input for the player to enter commands, submitting to the store.
 - **Props**: None (reads from store)
+- **Session-view behavior**:
+  - Automatically disables command entry while loading.
+  - Disables command entry for ended sessions.
+  - Renders the read-only return prompt (`[ PRESS ANY KEY TO GO BACK TO THE MYSTERY LIST ]`) for completed-session viewer mode.
 
 ### `HelpModal.svelte`
 
@@ -63,3 +67,12 @@ _(Add components here as they are built. Example format below)_
 ## Layout Components
 
 _(Add layout wrappers here)_
+
+## Route-Level Session Screens (Feature-Specific)
+
+These are route components, not shared reusable UI components:
+
+- `src/routes/sessions/in-progress/+page.svelte`
+  - renders numbered in-progress session rows and handles numeric resume selection
+- `src/routes/sessions/completed/+page.svelte`
+  - renders numbered completed session rows and handles numeric read-only open flow

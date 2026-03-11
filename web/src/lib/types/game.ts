@@ -35,3 +35,28 @@ export interface Blueprint {
   one_liner: string;
   target_age: number;
 }
+
+export type SessionMode = 'explore' | 'talk' | 'accuse' | 'ended';
+export type SessionOutcome = 'win' | 'lose' | null;
+
+export interface SessionSummary {
+  game_id: string;
+  blueprint_id: string;
+  mystery_title: string;
+  mystery_available: boolean;
+  can_open: boolean;
+  mode: SessionMode;
+  time_remaining: number;
+  outcome: SessionOutcome;
+  last_played_at: string;
+  created_at: string;
+}
+
+export interface SessionCatalog {
+  in_progress: SessionSummary[];
+  completed: SessionSummary[];
+  counts: {
+    in_progress: number;
+    completed: number;
+  };
+}

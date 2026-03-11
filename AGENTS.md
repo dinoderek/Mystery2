@@ -52,7 +52,7 @@ Depending on the task at hand, you must dynamically load the following conventio
 
 ## Active Technologies
 - Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage blueprints (004-ai-backend-integration, 006-actor-aware-messaging)
-- TypeScript 5.x (SvelteKit web + shared package), TypeScript on Deno runtime for Supabase Edge Functions + SvelteKit, Tailwind CSS, Supabase Edge Functions, Supabase JS client v2, Zod, Vitest, Playwrigh (006-actor-aware-messaging)
+- TypeScript 5.x (SvelteKit web + shared package), TypeScript on Deno runtime for Supabase Edge Functions + SvelteKit, Tailwind CSS, Supabase Edge Functions, Supabase JS client v2, Zod, Vitest, Playwright (006-actor-aware-messaging, 007-sessions)
 - TypeScript 5.x (Node scripts + SvelteKit + shared package), TypeScript on Deno runtime for Supabase Edge Functions + SvelteKit, Tailwind CSS (`t-*` tokens), Supabase JS client v2, Supabase Storage, Zod, Vitest, Playwright, OpenRouter HTTP API (009-static-blueprint-images)
 - Supabase Storage bucket `blueprints` (JSON), planned image bucket for static blueprint assets, local operator image output directory (009-static-blueprint-images)
 

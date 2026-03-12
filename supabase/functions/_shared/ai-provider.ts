@@ -121,14 +121,9 @@ function readOptionalContextString(
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function inferMockAccusedCharacter(
+function inferMentionedCharacter(
   context: Record<string, unknown>,
 ): string | null {
-  const explicitAccused = readOptionalContextString(context, "accused_character");
-  if (explicitAccused) {
-    return explicitAccused;
-  }
-
   const playerInput = readOptionalContextString(context, "player_input");
   if (!playerInput) {
     return null;
@@ -166,29 +161,6 @@ function inferMockAccusedCharacter(
     if (normalizedInput.includes(firstName.toLowerCase())) {
       return firstName;
     }
-  }
-
-  return null;
-}
-
-function resolveMockCharacterTruth(
-  context: Record<string, unknown>,
-  inferredAccusedCharacter: string,
-): boolean | null {
-  const truthMapRaw = context.character_truth;
-  if (
-    typeof truthMapRaw !== "object" ||
-    truthMapRaw === null ||
-    Array.isArray(truthMapRaw)
-  ) {
-    return null;
-  }
-
-  const firstNameMatch = (truthMapRaw as Record<string, unknown>)[
-    inferredAccusedCharacter
-  ];
-  if (typeof firstNameMatch === "boolean") {
-    return firstNameMatch;
   }
 
   return null;
@@ -333,48 +305,30 @@ class MockAIProvider implements AIProvider {
         };
       }
       case "accusation_start": {
-        const accusedCharacter = readOptionalContextString(
-          context,
-          "accused_character",
-        );
         const forcedByTimeout = context.forced_by_timeout === true;
         const stagePrompt = forcedByTimeout
           ? "Time is up. You must make your accusation now."
           : "The final accusation begins.";
-        const suspectPrompt = accusedCharacter
-          ? ` You are focusing on ${accusedCharacter}.`
-          : "";
         return {
-          narration: `[Mock] ${stagePrompt}${suspectPrompt} Present your reasoning before judgment.`,
+          narration: `[Mock] ${stagePrompt} Present your reasoning before judgment.`,
           follow_up_prompt:
             "Who do you accuse, and what evidence, timeline, and motive support your case?",
         };
       }
       case "accusation_judge": {
         const round = requireContextNumber(role, context, "round");
-        const inferredAccusedCharacter = inferMockAccusedCharacter(context);
-        if (!inferredAccusedCharacter) {
+        const mentionedCharacter = inferMentionedCharacter(context);
+        if (!mentionedCharacter) {
           return {
-            narration:
-              "[Mock] I still cannot identify who you are accusing from your explanation.",
+            narration: "[Mock] I need a clearer suspect and stronger evidence.",
             accusation_resolution: "continue",
             follow_up_prompt:
               "State the suspect's name clearly, then explain why the evidence supports that accusation.",
-            inferred_accused_character: null,
           };
         }
 
-        const truthFromMap = resolveMockCharacterTruth(
-          context,
-          inferredAccusedCharacter,
-        );
-        const isCulprit =
-          truthFromMap ??
-          (context.is_culprit === true
-            ? true
-            : context.is_culprit === false
-              ? false
-              : false);
+        const normalizedCharacter = mentionedCharacter.toLowerCase();
+        const isCulprit = normalizedCharacter !== "bob";
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
           : isCulprit
@@ -384,16 +338,15 @@ class MockAIProvider implements AIProvider {
         return {
           narration:
             accusationResolution === "continue"
-              ? `[Mock] I need a stronger chain of evidence before deciding on ${inferredAccusedCharacter}.`
+              ? "[Mock] I need a stronger chain of evidence before deciding."
               : accusationResolution === "win"
-                ? `[Mock] The evidence is decisive. ${inferredAccusedCharacter} is guilty.`
-                : `[Mock] The evidence does not support accusing ${inferredAccusedCharacter}.`,
+                ? "[Mock] The evidence is decisive. Your accusation is correct."
+                : "[Mock] The evidence does not support your accusation.",
           accusation_resolution: accusationResolution,
           follow_up_prompt:
             accusationResolution === "continue"
               ? "Which evidence directly connects this suspect to the event?"
               : null,
-          inferred_accused_character: inferredAccusedCharacter,
         };
       }
     }

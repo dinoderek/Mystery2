@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping deterministic game-state rules and spoiler boundaries intact.
+This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping state transitions predictable and spoiler boundaries intact.
 
 For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
@@ -42,7 +42,7 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
 - `accusation_start`
   - Frames accusation scene and requests accusation + reasoning
 - `accusation_judge`
-  - Infers accused suspect from reasoning, then evaluates iterative rounds and returns `continue|win|lose`
+  - Evaluates iterative reasoning rounds and returns `continue|win|lose`
 
 ## Context Boundaries
 
@@ -70,7 +70,6 @@ All AI role outputs are validated before any session/event writes:
   - `narration`
   - `accusation_resolution` in `win|lose|continue`
   - `follow_up_prompt` required when resolution is `continue`
-  - `inferred_accused_character` nullable for `continue`, required for `win|lose`
 
 Invalid output returns a retriable error and does not finalize turn state.
 
@@ -133,7 +132,6 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
    - with no `player_reasoning`: enters `accuse` mode and emits `accuse_start`
    - with `player_reasoning`: runs immediate judge round and can emit `accuse_round` or `accuse_resolved`
 2. `game-accuse` from `accuse` with reasoning:
-   - infers suspect from reasoning + history
    - emits `accuse_round` when resolution is `continue`
    - emits `accuse_resolved` and transitions to `ended` on `win|lose`
 

@@ -183,7 +183,6 @@ describe("ai-provider mock role output", () => {
       context: {
         player_input: "I accuse Alice because she had crumbs on her sleeves.",
         round: 0,
-        character_truth: { Alice: true, Bob: false },
         shared_mystery_context: {
           character_names: ["Alice Smith", "Bob Jones"],
         },
@@ -192,7 +191,6 @@ describe("ai-provider mock role output", () => {
     });
     expect(firstRound.accusation_resolution).toBe("continue");
     expect(firstRound.follow_up_prompt).toBeTruthy();
-    expect(firstRound.inferred_accused_character).toBe("Alice");
 
     const secondRound = await provider.generateRoleOutput({
       role: "accusation_judge",
@@ -200,7 +198,6 @@ describe("ai-provider mock role output", () => {
       context: {
         player_input: "Alice had motive and opportunity.",
         round: 1,
-        character_truth: { Alice: true, Bob: false },
         shared_mystery_context: {
           character_names: ["Alice Smith", "Bob Jones"],
         },
@@ -209,7 +206,6 @@ describe("ai-provider mock role output", () => {
     });
     expect(secondRound.accusation_resolution).toBe("win");
     expect(secondRound.follow_up_prompt).toBeNull();
-    expect(secondRound.inferred_accused_character).toBe("Alice");
   });
 
   it("generates search narration from location context only", async () => {

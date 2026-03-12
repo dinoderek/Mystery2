@@ -187,7 +187,6 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "accuse" },
       blueprint,
-      accused_character: "Alice",
       player_input: "Alice was seen in the kitchen.",
       round: 1,
       conversation_history: history,
@@ -198,7 +197,6 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "accuse" },
       blueprint,
-      accused_character: "Alice",
       player_input: "Alice was seen in the kitchen.",
       round: 1,
       conversation_history: history,
@@ -214,7 +212,6 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "accuse" },
       blueprint,
-      accused_character: "Alice",
       player_input: "Alice was seen in the kitchen.",
       round: 1,
     });
@@ -232,7 +229,6 @@ describe("ai-context guardrails", () => {
         forced_by_timeout: false,
         location_name: "Kitchen",
         character_name: null,
-        accused_character: null,
         player_input: null,
         conversation_history: [],
         shared_mystery_context: {

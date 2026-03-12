@@ -44,7 +44,6 @@ export interface AIContext {
   forced_by_timeout: boolean;
   location_name: string | null;
   character_name: string | null;
-  accused_character: string | null;
   player_input: string | null;
   conversation_history: ConversationFragment[];
   shared_mystery_context: {
@@ -67,7 +66,6 @@ interface BuildContextInput {
   blueprint: BlueprintContext;
   location_name?: string | null;
   character_name?: string | null;
-  accused_character?: string | null;
   player_input?: string | null;
   conversation_history?: ConversationFragment[];
   include_ground_truth?: boolean;
@@ -221,7 +219,6 @@ function buildContext(input: BuildContextInput): AIContext {
       input.location_name ?? input.session.current_location_id ?? null,
     character_name:
       input.character_name ?? input.session.current_talk_character_id,
-    accused_character: input.accused_character ?? null,
     player_input: input.player_input ?? null,
     conversation_history: selectConversationHistoryForRole(input),
     shared_mystery_context: buildSharedMysteryContext(
@@ -319,7 +316,6 @@ export function buildAccusationStartContext(input: {
   session: SessionSnapshot;
   blueprint: BlueprintContext;
   forced_by_timeout?: boolean;
-  accused_character?: string | null;
   player_input?: string | null;
   conversation_history?: ConversationFragment[];
   history_mode?: "all" | "none";
@@ -330,7 +326,6 @@ export function buildAccusationStartContext(input: {
     session: input.session,
     forced_by_timeout: input.forced_by_timeout ?? false,
     blueprint: input.blueprint,
-    accused_character: input.accused_character ?? null,
     player_input: input.player_input ?? null,
     conversation_history: input.conversation_history,
     accusation_history_mode: input.history_mode ?? "all",
@@ -341,7 +336,6 @@ export function buildAccusationJudgeContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  accused_character?: string | null;
   player_input: string;
   round: number;
   conversation_history?: ConversationFragment[];
@@ -352,7 +346,6 @@ export function buildAccusationJudgeContext(input: {
     role_name: "accusation_judge",
     session: input.session,
     blueprint: input.blueprint,
-    accused_character: input.accused_character ?? null,
     player_input: input.player_input,
     conversation_history: input.conversation_history,
     accusation_history_mode: input.history_mode ?? "all",

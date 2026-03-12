@@ -33,7 +33,6 @@ export interface AccusationJudgeOutput {
   narration: string;
   accusation_resolution: AccusationResolution;
   follow_up_prompt: string | null;
-  inferred_accused_character: string | null;
 }
 
 export type AIRoleOutput =
@@ -150,20 +149,10 @@ export function parseAccusationJudgeOutput(
     "follow_up_prompt",
     "accusation_judge",
   );
-  const inferredAccusedCharacter = requireOptionalNullableString(
-    parsed,
-    "inferred_accused_character",
-    "accusation_judge",
-  );
 
   if (resolution === "continue" && followUpPrompt === null) {
     throw new Error(
       `Invalid AI accusation_judge output: "follow_up_prompt" is required when resolution is continue`,
-    );
-  }
-  if (resolution !== "continue" && inferredAccusedCharacter === null) {
-    throw new Error(
-      `Invalid AI accusation_judge output: "inferred_accused_character" is required when resolution is win or lose`,
     );
   }
 
@@ -171,7 +160,6 @@ export function parseAccusationJudgeOutput(
     narration,
     accusation_resolution: resolution,
     follow_up_prompt: followUpPrompt,
-    inferred_accused_character: inferredAccusedCharacter,
   };
 }
 

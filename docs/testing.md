@@ -89,6 +89,7 @@ What we test:
   - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
   - speaker attribution per endpoint (`narrator` vs `character`) and `game-get` speaker persistence (`narration_speaker`, `history[].speaker`)
   - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
+  - accusation judge internal contract no longer includes inferred suspect fields; terminal `win|lose` resolution is authoritative
 
 AI calls:
 

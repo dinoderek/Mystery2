@@ -185,7 +185,7 @@ Optionally later: `search <sub-location>` once sub-locations exist.
   - key supporting clues
 - Accusation now runs as a reasoning-first backend flow:
   - `accuse_start`: optional framing narration when the player enters accuse mode without initial reasoning
-  - `accuse_judge` rounds: iterative reasoning with `continue|win|lose` adjudication and suspect inference from the reasoning itself
+  - `accuse_judge` rounds: iterative reasoning with `continue|win|lose` adjudication from the judge output
 - If time runs out during explore/talk/search/move/ask, the game forces accuse mode with urgent accusation-start narration and then continues with normal accuse rounds.
 - Narrator may ask follow-up questions if reasoning is incomplete.
 - Narrator reveals outcome:

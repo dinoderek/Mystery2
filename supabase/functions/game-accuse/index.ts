@@ -28,10 +28,6 @@ import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-type BlueprintCharacter = ReturnType<
-  typeof BlueprintSchema.parse
->["world"]["characters"][number];
-
 async function getNextSequence(
   db: AuthResult["client"],
   gameId: string,
@@ -44,67 +40,6 @@ async function getNextSequence(
     .limit(1);
 
   return events && events.length > 0 ? events[0].sequence + 1 : 1;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readPayloadString(
-  payload: unknown,
-  key: string,
-): string | null {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const value = payload[key];
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function findCharacter(
-  characters: BlueprintCharacter[],
-  identifier: string,
-): BlueprintCharacter | undefined {
-  return characters.find(
-    (character) =>
-      character.first_name === identifier ||
-      `${character.first_name} ${character.last_name}` === identifier,
-  );
-}
-
-function getLatestInferredAccusedCharacter(
-  history: Array<{ payload: unknown }>,
-): string | null {
-  const reversed = [...history].reverse();
-
-  for (const entry of reversed) {
-    const inferred =
-      readPayloadString(entry.payload, "inferred_accused_character") ??
-      readPayloadString(entry.payload, "accused_character") ??
-      readPayloadString(entry.payload, "accused_character_id");
-
-    if (inferred) {
-      return inferred;
-    }
-  }
-
-  return null;
-}
-
-function buildCharacterTruthMap(
-  characters: BlueprintCharacter[],
-): Record<string, boolean> {
-  const result: Record<string, boolean> = {};
-  for (const character of characters) {
-    result[character.first_name] = character.is_culprit;
-  }
-  return result;
 }
 
 serveWithCors(async (req) => {
@@ -182,7 +117,6 @@ serveWithCors(async (req) => {
         (entry) => entry.event_type === "accuse_round",
       ).length;
 
-      const inferredFromHistory = getLatestInferredAccusedCharacter(history);
       const aiContext = buildAccusationJudgeContext({
         game_id: gameId,
         session: {
@@ -191,7 +125,6 @@ serveWithCors(async (req) => {
           current_talk_character_id: null,
         },
         blueprint,
-        accused_character: inferredFromHistory,
         player_input: playerReasoning,
         round: accusationRounds,
         conversation_history: history,
@@ -209,8 +142,6 @@ serveWithCors(async (req) => {
         game_id: gameId,
       });
 
-      const characterTruthMap = buildCharacterTruthMap(blueprint.world.characters);
-
       let judgeOutput: ReturnType<typeof parseAccusationJudgeOutput>;
       try {
         judgeOutput = await aiProvider.generateRoleOutput({
@@ -219,7 +150,6 @@ serveWithCors(async (req) => {
           context: {
             ...aiContext,
             round: accusationRounds,
-            character_truth: characterTruthMap,
           },
           parse: parseAccusationJudgeOutput,
           metadata: aiMetadata,
@@ -240,24 +170,6 @@ serveWithCors(async (req) => {
           action: "accuse_reasoning",
           code: "AI_INVALID_OUTPUT",
           error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-
-      const inferredAccusedCharacter =
-        judgeOutput.inferred_accused_character ?? inferredFromHistory;
-      const inferredCharacter = inferredAccusedCharacter
-        ? findCharacter(blueprint.world.characters, inferredAccusedCharacter)
-        : null;
-
-      if (inferredAccusedCharacter && !inferredCharacter) {
-        log("request.ai_retriable", {
-          game_id: gameId,
-          action: "accuse_reasoning",
-          code: "AI_INVALID_OUTPUT",
-          error: `Inferred character not found: ${inferredAccusedCharacter}`,
         });
         return aiRetriableError("AI output validation failed", {
           code: "AI_INVALID_OUTPUT",
@@ -291,7 +203,6 @@ serveWithCors(async (req) => {
           actor: "system",
           payload: {
             role: "accusation_judge",
-            inferred_accused_character: inferredAccusedCharacter,
             player_reasoning: playerReasoning,
             judge_result: "continue",
             speaker: NARRATOR_SPEAKER,
@@ -311,19 +222,22 @@ serveWithCors(async (req) => {
         );
       }
 
-      if (!inferredCharacter) {
+      if (
+        judgeOutput.accusation_resolution !== "win" &&
+        judgeOutput.accusation_resolution !== "lose"
+      ) {
         log("request.ai_retriable", {
           game_id: gameId,
           action: "accuse_reasoning",
           code: "AI_INVALID_OUTPUT",
-          error: "Terminal accusation response without inferred character",
+          error: "Terminal accusation response with invalid resolution",
         });
         return aiRetriableError("AI output validation failed", {
           code: "AI_INVALID_OUTPUT",
         });
       }
 
-      const outcome = inferredCharacter.is_culprit ? "win" : "lose";
+      const outcome = judgeOutput.accusation_resolution;
       const { error: updateError } = await userClient
         .from("game_sessions")
         .update({
@@ -350,7 +264,6 @@ serveWithCors(async (req) => {
         actor: "system",
         payload: {
           role: "accusation_judge",
-          inferred_accused_character: inferredCharacter.first_name,
           player_reasoning: playerReasoning,
           judge_result: outcome,
           speaker: NARRATOR_SPEAKER,

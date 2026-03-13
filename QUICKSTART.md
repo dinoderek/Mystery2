@@ -1,52 +1,51 @@
 # Quickstart Guide
 
 ## Prerequisites
-Install:
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [npm](https://www.npmjs.com/)
-- [Docker](https://www.docker.com/) (required for local Supabase)
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-- [Deno](https://deno.land/) (for Edge Functions language tooling)
 
-## First-Time Local Setup
-Run from repo root:
+Install:
+
+- [Node.js](https://nodejs.org/) 18+
+- [npm](https://www.npmjs.com/)
+- [Docker](https://www.docker.com/) for local Supabase
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+- [Deno](https://deno.land/) for Edge Function tooling
+
+## First-Time Setup
+
+Run from the repo root:
 
 ```bash
 npm run setup:local
 ```
 
-This:
-1. Ensures local Supabase is running.
-2. Seeds blueprint storage (if missing).
-3. Seeds auth test users.
-4. Seeds AI profiles in Postgres (`mock`, optional `free`/`paid`, and canonical `default`).
+This command:
 
-Then start the app:
+1. Ensures the local Supabase stack is running.
+2. Seeds blueprint storage if the bucket is empty.
+3. Seeds the local auth users.
+4. Seeds AI profiles in Postgres (`mock`, optional `free` / `paid`, and canonical `default`).
+
+## Run Locally With a Profile
+
+### Deterministic local development
 
 ```bash
 npm run dev
 ```
 
-## AI Mode Model (DB-First)
+Use this for normal development and tests. It:
 
-- Canonical default profile id is always `default`.
-- `game-start` uses `ai_profiles.id='default'` when `ai_profile` is not provided.
-- Existing sessions keep their stored `ai_profile_id`.
-- New sessions use the current `default` row.
+- ensures Supabase is running
+- seeds blueprint storage if missing
+- reseeds AI so `ai_profiles.id='default'` points to `mock`
+- starts the SvelteKit dev server at `http://localhost:5173`
 
-## Daily Local Workflows
+### Live AI using a named profile
 
-### Deterministic local (mock)
-```bash
-npm run dev
-```
-
-This keeps Supabase running and refreshes `default` to mock config.
-
-### Local live AI (free/paid)
-Create mode files (gitignored):
+Create one or both gitignored env files if you want live provider calls.
 
 `.env.ai.free.local`
+
 ```bash
 AI_PROVIDER="openrouter"
 AI_MODEL="z-ai/glm-4.5-air:free"
@@ -54,76 +53,140 @@ OPENROUTER_API_KEY="<server-only-secret>"
 ```
 
 `.env.ai.paid.local`
+
 ```bash
 AI_PROVIDER="openrouter"
 AI_MODEL="google/gemini-3-flash-preview"
 OPENROUTER_API_KEY="<server-only-secret>"
 ```
 
-Run:
-- `npm run dev:ai:free`
-- `npm run dev:ai:paid`
+Then run one of:
 
-These commands upsert the selected mode profile and update `default` to that configuration.
+```bash
+npm run dev:ai:free
+npm run dev:ai:paid
+```
 
-## Switch AI Config Without Restart
+Those commands use the selected profile to reseed `ai_profiles.id='default'` before starting the web app.
 
-No Supabase restart is needed.
+### Switching profiles without restarting Supabase
 
-- Update model/key in `.env.ai.<mode>.local`
-- Apply it:
+Changing AI profile data is a database operation, not a container restart operation.
+
+After editing `.env.ai.<mode>.local`, apply it with:
 
 ```bash
 npm run seed:ai -- --only <mock|free|paid>
 ```
 
-This updates both the named profile and canonical `default` row.
+New sessions use the current `default` profile. Existing sessions stay pinned to their stored `ai_profile_id`.
 
-## Optional Controls
+For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w2/docs/ai-configuration.md).
+
+## Seeded Local Users
+
+`npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth:
+
+| Email                | Password      | Purpose                          |
+| -------------------- | ------------- | -------------------------------- |
+| `player1@test.local` | `password123` | Primary local player             |
+| `player2@test.local` | `password123` | Second local player / RLS checks |
+
+Log in at `http://localhost:5173/login` or the redirected login screen.
+
+## Supabase Operations
+
+### Check status
+
+```bash
+npx supabase status
+```
+
+### Restart the local stack
+
+```bash
+npm run supabase:restart
+```
+
+Use a restart when:
+
+- the local Supabase containers are unhealthy or stuck
+- you changed Supabase config that is only picked up on container restart
+- you changed Edge Function or other Deno-backed code and need to guarantee the shared local runtime picks it up
+
+This repo is configured with `edge_runtime.policy = "per_worker"`, but because multiple agents can share the same local Supabase project on one machine, do not rely on hot reload. In practice, treat `npm run supabase:restart` as the safe path for Deno and Edge Function changes.
+
+### Reset the local database
+
+```bash
+npx supabase db reset --local --yes
+```
+
+Use this when you need a clean local database with all migrations reapplied.
+
+After a reset, restore local app data with:
+
+```bash
+npm run seed:storage -- --if-missing
+npm run seed:auth
+npm run seed:ai
+```
+
+If you want the full bootstrap again instead of running those individually:
+
+```bash
+npm run setup:local
+```
+
+### Reseed specific parts
+
+Blueprint storage:
 
 ```bash
 npm run seed:storage
 npm run seed:storage -- --if-missing
-npm run supabase:restart
 ```
 
-## Testing
-
-Run all quality gates:
+Auth users:
 
 ```bash
-npm run test:all
+npm run seed:auth
 ```
 
-Or run tiers separately:
-- `npm run test:unit`
-- `npm run test:integration`
-- `npm run test:e2e`
-
-## Deploy AI Default Profile
-
-Deploy now configures AI mode by writing `ai_profiles.id='default'`.
-
-In `.env.deploy.<env>.local`, set:
-- `AI_DEFAULT_PROFILE_ID=default`
-- `AI_DEFAULT_PROFILE_PROVIDER=<mock|openrouter>`
-- `AI_DEFAULT_PROFILE_MODEL=<model-id>`
-- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY=<secret>` (required only for openrouter)
-
-Then run:
+AI profiles:
 
 ```bash
-npm run deploy -- --env <dev|staging|prod>
+npm run seed:ai
+npm run seed:ai -- --only <mock|free|paid>
+```
+
+### Stop the local stack
+
+```bash
+npx supabase stop
 ```
 
 ## Logs
+
+Tail local Edge Function logs with:
 
 ```bash
 npm run logs:edge
 ```
 
-## Local Service Status
+## Testing
+
+Run the full quality gate before finishing code changes:
 
 ```bash
-npx supabase status
+npm run test:all
+```
+
+Or run tiers individually:
+
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm -w web run test:e2e
 ```

@@ -2,6 +2,8 @@
 
 This project uses a DB-first AI configuration model.
 
+For day-to-day local setup and profile selection commands, see `../QUICKSTART.md`.
+
 ## Canonical Rules
 
 - Canonical default profile id is `default`.
@@ -9,11 +11,11 @@ This project uses a DB-first AI configuration model.
 - Existing sessions stay pinned to their stored `ai_profile_id`.
 - OpenRouter keys are stored in `ai_profiles.openrouter_api_key` (no function-secret fallback).
 
-## Local Configuration
+## Local Configuration Summary
 
-- `npm run dev` sets `default` to mock via `seed:ai -- --only mock`.
-- `npm run dev:ai:free` / `npm run dev:ai:paid` set `default` to that mode.
-- `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restart.
+- `npm run dev` points `default` to `mock`.
+- `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
+- `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
 
 ## Deploy Configuration
 

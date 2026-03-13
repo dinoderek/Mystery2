@@ -36,6 +36,8 @@ Always generate a detailed, clear, and comprehensive summary of the changes you 
 
 Always update the documentation loaded in Step 1 to reflect your changes. **However**, ensure the documentation stays lean and highly relevant. Do not add bloat or overly verbose descriptions of minor details.
 
+If you make changes that either (a) require additional manual project setup 
+
 ## 6. Create Dedicated Documentation When Necessary
 
 When making significant or complex changes, suggest the creation of additional, dedicated documentation files in the `docs/` directory (e.g., `docs/auth.md` or `docs/state-management.md`). Add conditional loading or pointers from the core root documents (from Step 1) to these specific files.

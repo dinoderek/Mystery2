@@ -31,11 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] Documentation reviewed and lean?
-- [ ] Testing strategy includes E2E (mandatory) and Unit/Integration?
-- [ ] Quality gates runnable?
-- [ ] Static UI + Supabase backend constraints respected?
-- [ ] Context-specific conventions applied?
+- [ ] Core docs reviewed and any required doc updates identified?
+- [ ] Testing strategy covers the required Unit, Integration, and E2E/browser tiers for this change?
+- [ ] Quality gates are runnable for this change, or doc-only validation is explicitly justified?
+- [ ] Static UI + Supabase backend constraints, auth, and no-client-secrets rules respected?
+- [ ] Context-specific conventions and schema references were loaded for touched areas?
+- [ ] Observability/logging and failure-debugging expectations are defined?
 
 ## Project Structure
 

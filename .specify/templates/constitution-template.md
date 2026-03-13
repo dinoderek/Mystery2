@@ -1,6 +1,11 @@
 # [PROJECT_NAME] Constitution
 <!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
+## What we are building
+
+[PROJECT_MISSION]
+<!-- Example: We are building a text-first mystery game for children; Every change preserves typed investigation, coherent narration, and blueprint fidelity -->
+
 ## Core Principles
 
 ### [PRINCIPLE_1_NAME]
@@ -27,6 +32,11 @@
 <!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
 [PRINCIPLE_5_DESCRIPTION]
 <!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+
+### [PRINCIPLE_6_NAME]
+<!-- Example: VI. Observability and Logging -->
+[PRINCIPLE_6_DESCRIPTION]
+<!-- Example: Errors must be captured at least once with enough context to debug the failing request or workflow -->
 
 ## [SECTION_2_NAME]
 <!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->

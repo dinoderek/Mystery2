@@ -26,7 +26,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]". End-to-End (E2E) testing is MANDATORY for all generated features.]
+**Independent Test**: [Describe the highest-value independent validation for this story and name the required test tiers (Unit, Integration, E2E/browser) per docs/testing.md.]
 
 **Acceptance Scenarios**:
 
@@ -41,7 +41,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently. End-to-End (E2E) testing is MANDATORY for all generated features.]
+**Independent Test**: [Describe the highest-value independent validation for this story and name the required test tiers (Unit, Integration, E2E/browser) per docs/testing.md.]
 
 **Acceptance Scenarios**:
 
@@ -55,7 +55,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently. End-to-End (E2E) testing is MANDATORY for all generated features.]
+**Independent Test**: [Describe the highest-value independent validation for this story and name the required test tiers (Unit, Integration, E2E/browser) per docs/testing.md.]
 
 **Acceptance Scenarios**:
 
@@ -74,6 +74,12 @@
 
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
+
+## Observability & Diagnostics *(mandatory)*
+
+- What MUST be logged, traced, or otherwise captured for this feature?
+- Which failures MUST surface to the user, and what contextual data is required for debugging?
+- What operator or developer documentation MUST be updated when this feature ships?
 
 ## Requirements *(mandatory)*
 

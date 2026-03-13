@@ -36,7 +36,9 @@ Always generate a detailed, clear, and comprehensive summary of the changes you 
 
 Always update the documentation loaded in Step 1 to reflect your changes. **However**, ensure the documentation stays lean and highly relevant. Do not add bloat or overly verbose descriptions of minor details.
 
-If you make changes that either (a) require additional manual project setup 
+If you make changes that either (a) require additional manual project setup,
+(b) change developer or operator workflows, or (c) alter debugging steps, you
+must update the relevant docs in `docs/` or `QUICKSTART.md` in the same change.
 
 ## 6. Create Dedicated Documentation When Necessary
 
@@ -51,6 +53,13 @@ Depending on the task at hand, you must dynamically load the following conventio
 - If working on SvelteKit routing or page architecture in `web/`, load `docs/screen-navigation.md`.
 - If working on Edge Functions, API contracts, or the database, load `docs/backend-conventions.md`.
 - If modifying the structural data model of a mystery, read `supabase/functions/_shared/blueprints/blueprint-schema.ts`.
+
+## 8. Observability and Logging
+
+Every materially changed feature must define how failures are surfaced and
+debugged. Errors must be logged or otherwise captured at least once with enough
+context to diagnose the failing request, session, or blueprint state, and
+user-facing flows must not silently swallow failures.
 
 ## Active Technologies
 - Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage (`blueprints`) (004-ai-backend-integration, 006-actor-aware-messaging, 007-sessions)

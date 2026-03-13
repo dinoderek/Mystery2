@@ -24,6 +24,8 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Loads `Blueprints` only after entering the new-game sub-flow.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
+  - Blueprint cards optionally render cover images fetched via authenticated `blueprint-image-link` signed URLs.
+  - Cover-image fetch failures render a placeholder panel without blocking case selection.
   - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
   - Includes a logout action that clears browser auth session.
   - Forces a fresh session catalog load on route mount to avoid stale in-progress/completed counts after returning from `/session`.
@@ -79,6 +81,8 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
+  - Optional side image panel renders location/character imagery from move/talk payload image IDs.
+  - Side panel falls back to placeholder text if image link issuance fails or asset is missing.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt and any key returns to `/`.
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
   - Includes a logout action that clears browser auth session.

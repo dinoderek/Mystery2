@@ -31,6 +31,8 @@ export function parseDeployArgs(argv) {
     dryRun: false,
     skipUsers: false,
     skipSeed: false,
+    imageDir: null,
+    allowMissingImages: true,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -53,6 +55,35 @@ export function parseDeployArgs(argv) {
 
     if (token === "--skip-seed") {
       options.skipSeed = true;
+      continue;
+    }
+
+    if (token === "--strict-images") {
+      options.allowMissingImages = false;
+      continue;
+    }
+
+    if (token === "--allow-missing-images") {
+      options.allowMissingImages = true;
+      continue;
+    }
+
+    if (token === "--image-dir") {
+      const value = argv[index + 1];
+      if (!value) {
+        throw new Error("Missing value for --image-dir");
+      }
+      options.imageDir = value;
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith("--image-dir=")) {
+      const value = token.slice("--image-dir=".length);
+      if (!value) {
+        throw new Error("Missing value for --image-dir");
+      }
+      options.imageDir = value;
       continue;
     }
 
@@ -295,6 +326,8 @@ export function buildCommandPlan(options) {
     includeSeed,
     includeUsers,
     hasDbPassword,
+    imageDir,
+    allowMissingImages,
   } = options;
 
   const steps = [];
@@ -399,10 +432,18 @@ export function buildCommandPlan(options) {
   }
 
   if (includeSeed) {
+    const seedCommand = ["node", "scripts/seed-storage.mjs"];
+    if (imageDir) {
+      seedCommand.push("--seed-images=always", "--image-dir", imageDir);
+      if (!allowMissingImages) {
+        seedCommand.push("--strict-images");
+      }
+    }
+
     steps.push({
       id: "backend:seed-storage",
       title: "Seed blueprint storage",
-      command: ["node", "scripts/seed-storage.mjs"],
+      command: seedCommand,
     });
   }
 

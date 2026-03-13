@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  BlueprintSummarySchema,
   GameAccuseRequestSchema,
   GameAskRequestSchema,
   SessionCatalogResponseSchema,
   SessionSummarySchema,
   GameStartRequestSchema,
   GameStateSchema,
+  ImageLinkRequestSchema,
+  ImageLinkResponseSchema,
+  MoveResponseSchema,
   SearchResponseSchema,
   SpeakerSchema,
   TalkAskResponseSchema,
@@ -208,6 +212,75 @@ describe("shared mystery API contracts", () => {
         in_progress: 0,
         completed: 1,
       },
+    });
+  });
+
+  it("accepts optional image identifiers on player-visible payloads", () => {
+    expect(
+      BlueprintSummarySchema.parse({
+        id: "123e4567-e89b-12d3-a456-426614174000",
+        title: "Mock Blueprint",
+        one_liner: "A mystery",
+        target_age: 8,
+        blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+      }),
+    ).toMatchObject({
+      blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+    });
+
+    expect(
+      MoveResponseSchema.parse({
+        narration: "You arrive.",
+        speaker: narratorSpeaker,
+        mode: "explore",
+        current_location: "Kitchen",
+        visible_characters: [],
+        time_remaining: 8,
+        location_image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+      }),
+    ).toMatchObject({
+      location_image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+    });
+
+    expect(
+      TalkAskResponseSchema.parse({
+        narration: "Alice answers.",
+        speaker: {
+          kind: "character",
+          key: "character:alice",
+          label: "Alice",
+        },
+        time_remaining: 8,
+        mode: "talk",
+        current_talk_character: "Alice",
+        character_portrait_image_id:
+          "mock-character-123e4567-e89b-12d3-a456-426614174333",
+      }),
+    ).toMatchObject({
+      character_portrait_image_id:
+        "mock-character-123e4567-e89b-12d3-a456-426614174333",
+    });
+  });
+
+  it("validates image-link request and response schemas", () => {
+    expect(
+      ImageLinkRequestSchema.parse({
+        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        purpose: "blueprint_cover",
+      }),
+    ).toMatchObject({
+      purpose: "blueprint_cover",
+    });
+
+    expect(
+      ImageLinkResponseSchema.parse({
+        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        signed_url: "https://example.com/signed-image",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
     });
   });
 });

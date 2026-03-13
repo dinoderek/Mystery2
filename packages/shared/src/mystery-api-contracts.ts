@@ -50,12 +50,14 @@ export const TalkStartResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
+  character_portrait_image_id: z.string().nullable().optional(),
 });
 
 export const TalkAskResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
+  character_portrait_image_id: z.string().nullable().optional(),
 });
 
 export const TalkEndResponseSchema = NarrationWithSpeakerSchema.extend({
@@ -67,6 +69,19 @@ export const TalkEndResponseSchema = NarrationWithSpeakerSchema.extend({
 export const SearchResponseSchema = NarrationWithSpeakerSchema.extend({
   time_remaining: z.number().int(),
   mode: z.enum(["explore", "accuse"]),
+});
+
+export const MoveResponseSchema = NarrationWithSpeakerSchema.extend({
+  time_remaining: z.number().int(),
+  mode: z.enum(["explore", "accuse"]),
+  current_location: z.string(),
+  visible_characters: z.array(
+    z.object({
+      first_name: z.string(),
+      last_name: z.string(),
+    }),
+  ),
+  location_image_id: z.string().nullable().optional(),
 });
 
 export const AccuseResponseSchema = NarrationWithSpeakerSchema.extend({
@@ -118,6 +133,25 @@ export const BlueprintSummarySchema = z.object({
   title: z.string(),
   one_liner: z.string(),
   target_age: z.number().int().positive(),
+  blueprint_image_id: z.string().nullable().optional(),
+});
+
+export const ImagePurposeSchema = z.enum([
+  "blueprint_cover",
+  "location_scene",
+  "character_portrait",
+]);
+
+export const ImageLinkRequestSchema = z.object({
+  blueprint_id: z.string().uuid(),
+  image_id: z.string().min(1),
+  purpose: ImagePurposeSchema,
+});
+
+export const ImageLinkResponseSchema = z.object({
+  image_id: z.string().min(1),
+  signed_url: z.string().url(),
+  expires_at: z.string().datetime(),
 });
 
 export const SessionSummarySchema = z.object({
@@ -156,6 +190,7 @@ export type TalkStartResponse = z.infer<typeof TalkStartResponseSchema>;
 export type TalkAskResponse = z.infer<typeof TalkAskResponseSchema>;
 export type TalkEndResponse = z.infer<typeof TalkEndResponseSchema>;
 export type SearchResponse = z.infer<typeof SearchResponseSchema>;
+export type MoveResponse = z.infer<typeof MoveResponseSchema>;
 export type AccuseResponse = z.infer<typeof AccuseResponseSchema>;
 export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
@@ -165,3 +200,6 @@ export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;
 export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;
+export type ImagePurpose = z.infer<typeof ImagePurposeSchema>;
+export type ImageLinkRequest = z.infer<typeof ImageLinkRequestSchema>;
+export type ImageLinkResponse = z.infer<typeof ImageLinkResponseSchema>;

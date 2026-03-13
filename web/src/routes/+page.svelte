@@ -4,6 +4,7 @@
   import { gameSessionStore, type ThemeName } from '$lib/domain/store.svelte';
   import { authStore } from '$lib/domain/auth-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
+  import StoryImagePanel from '$lib/components/StoryImagePanel.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -154,13 +155,24 @@
         {:else}
           <div class="space-y-4">
             {#each gameSessionStore.blueprints as blueprint, i}
-              <div class="group relative p-4 border border-t-muted/20 hover:border-t-primary transition-colors">
+              <div class="group relative grid gap-3 border border-t-muted/20 p-4 transition-colors hover:border-t-primary md:grid-cols-[minmax(0,1fr)_11rem]">
                 <div class="absolute -left-3 -top-3 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
                   {i + 1}
                 </div>
-                <h2 class="text-xl font-bold text-t-bright">{blueprint.title}</h2>
-                <p class="text-t-muted/80 mb-2">{blueprint.one_liner}</p>
-                <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>
+                <div>
+                  <h2 class="text-xl font-bold text-t-bright">{blueprint.title}</h2>
+                  <p class="text-t-muted/80 mb-2">{blueprint.one_liner}</p>
+                  <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>
+                </div>
+                {#if blueprint.blueprint_image_id}
+                  <StoryImagePanel
+                    title="Case art"
+                    imageUrl={blueprint.blueprint_image_url}
+                    placeholder={Boolean(blueprint.blueprint_image_placeholder)}
+                    placeholderText="Case image unavailable"
+                    compact={true}
+                  />
+                {/if}
               </div>
             {/each}
           </div>

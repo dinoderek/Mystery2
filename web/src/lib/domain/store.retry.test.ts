@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { classifyFailure, getBackoffDelayMs, isTransientFailure } from './store.retry';
+import {
+  classifyFailure,
+  getBackoffDelayMs,
+  isImageLinkExpired,
+  isTransientFailure,
+} from './store.retry';
 
 describe('store.retry', () => {
   it('classifies 5xx and 429/408 as transient', () => {
@@ -28,5 +33,12 @@ describe('store.retry', () => {
     expect(getBackoffDelayMs(2)).toBe(600);
     expect(getBackoffDelayMs(3)).toBe(1200);
     expect(getBackoffDelayMs(10)).toBe(2000);
+  });
+
+  it('marks image links expired near or past expiry time', () => {
+    const now = Date.UTC(2030, 0, 1, 0, 0, 0);
+    expect(isImageLinkExpired(new Date(now + 60_000).toISOString(), now)).toBe(false);
+    expect(isImageLinkExpired(new Date(now + 2_000).toISOString(), now, 5_000)).toBe(true);
+    expect(isImageLinkExpired(new Date(now - 1_000).toISOString(), now)).toBe(true);
   });
 });

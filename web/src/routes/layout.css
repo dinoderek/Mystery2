@@ -101,6 +101,31 @@
   letter-spacing: 0.01em;
 }
 
+.terminal-message {
+  border-left: 2px solid color-mix(in srgb, var(--t-muted) 35%, transparent);
+  padding-left: 0.5rem;
+}
+
+.story-image-panel {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t-muted) 12%, transparent);
+}
+
+.story-image-asset {
+  aspect-ratio: 4 / 3;
+  background-color: color-mix(in srgb, var(--t-bg) 88%, var(--t-muted) 12%);
+}
+
+.story-image-placeholder {
+  min-height: 9.5rem;
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--t-bg) 86%, var(--t-muted) 14%),
+    color-mix(in srgb, var(--t-bg) 86%, var(--t-muted) 14%) 8px,
+    color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 8px,
+    color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 16px
+  );
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

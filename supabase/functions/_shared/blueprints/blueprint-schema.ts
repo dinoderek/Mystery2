@@ -46,6 +46,12 @@ export const CharacterSchema = z.object({
     .nullable()
     .describe("Why they might have done it. Null if they have no clear motive."),
   is_culprit: z.boolean().describe("Whether this character is the culprit."),
+  portrait_image_id: z
+    .string()
+    .optional()
+    .describe(
+      "Optional static portrait image identifier used in talk-mode narration panels.",
+    ),
   knowledge: z
     .array(z.string())
     .describe("Specific facts or clues this character holds about the mystery and can reveal."),
@@ -56,6 +62,12 @@ export const LocationSchema = z.object({
   description: z
     .string()
     .describe("The base description of the room when entered"),
+  location_image_id: z
+    .string()
+    .optional()
+    .describe(
+      "Optional static scene image identifier shown when the investigator moves here.",
+    ),
   clues: z
     .array(z.string())
     .describe("Facts that can be discovered by searching here"),
@@ -82,6 +94,18 @@ export const BlueprintSchema = z.object({
       .int()
       .positive()
       .describe("The number of turns the player has to solve the mystery"),
+    art_style: z
+      .string()
+      .optional()
+      .describe(
+        "Optional visual direction used when generating static artwork for this mystery.",
+      ),
+    image_id: z
+      .string()
+      .optional()
+      .describe(
+        "Optional static blueprint cover image identifier for the mystery selection screen.",
+      ),
   }),
   narrative: z.object({
     premise: z

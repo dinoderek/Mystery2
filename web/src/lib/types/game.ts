@@ -27,6 +27,8 @@ export interface GameState {
   narration: string;
   narration_speaker: Speaker;
   history: HistoryEntry[];
+  location_image_id?: string | null;
+  character_portrait_image_id?: string | null;
 }
 
 export interface Blueprint {
@@ -34,6 +36,20 @@ export interface Blueprint {
   title: string;
   one_liner: string;
   target_age: number;
+  blueprint_image_id?: string | null;
+  blueprint_image_url?: string | null;
+  blueprint_image_expires_at?: string | null;
+  blueprint_image_placeholder?: boolean;
+}
+
+export interface StoryImageState {
+  kind: 'location' | 'character';
+  title: string;
+  image_id: string;
+  image_url: string | null;
+  expires_at: string | null;
+  placeholder: boolean;
+  loading: boolean;
 }
 
 export type SessionMode = 'explore' | 'talk' | 'accuse' | 'ended';

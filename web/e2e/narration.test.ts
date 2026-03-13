@@ -8,7 +8,7 @@ const narratorSpeaker = {
 };
 
 const startState = {
-  locations: [],
+  locations: [{ name: 'kitchen' }, { name: 'garden' }],
   characters: [],
   time_remaining: 10,
   location: 'kitchen',
@@ -128,5 +128,40 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await expect(page).toHaveURL(/.*\/session/);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix');
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
+  });
+
+  test('keeps narration flow active when side image falls back to placeholder', async ({ page }) => {
+    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Image unavailable' }),
+      });
+    });
+
+    await page.route('**/functions/v1/game-move*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration: 'You move to the garden.',
+          current_location: 'garden',
+          visible_characters: [],
+          location_image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+          time_remaining: 9,
+          mode: 'explore',
+          speaker: narratorSpeaker,
+        },
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('B1')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page).toHaveURL(/.*\/session/);
+
+    await page.locator('input').fill('move to garden');
+    await page.locator('input').press('Enter');
+
+    await expect(page.getByText('You move to the garden.')).toBeVisible();
+    await expect(page.getByText('Scene image unavailable')).toBeVisible();
   });
 });

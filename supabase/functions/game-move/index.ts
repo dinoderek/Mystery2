@@ -192,6 +192,7 @@ serveWithCors(async (req) => {
     const eventPayload: Record<string, unknown> = {
       destination,
       location_name: destLoc.name,
+      location_image_id: destLoc.location_image_id ?? null,
       speaker: NARRATOR_SPEAKER,
     };
     if (eventType === "forced_endgame") {
@@ -218,6 +219,7 @@ serveWithCors(async (req) => {
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,
+        location_image_id: destLoc.location_image_id ?? null,
         speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },

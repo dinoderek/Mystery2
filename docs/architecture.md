@@ -68,6 +68,8 @@ Responsibilities:
 
 - Store user uploads, generated images, and other blobs.
 - Access is controlled via Storage policies and/or DB checks.
+- Blueprint JSON remains in `blueprints` bucket; static mystery artwork lives in private `blueprint-images`.
+- Player-facing image bytes are fetched via short-lived signed URLs issued by `blueprint-image-link` (auth required).
 
 ### Supabase Edge Functions
 
@@ -189,6 +191,28 @@ sequenceDiagram
 - Edge Function -> UI with grouped summaries (`in_progress`, `completed`, `counts`)
 
 Missing blueprint metadata is handled as a non-fatal case: rows remain visible but return `can_open=false` with fallback title `Unknown Mystery`.
+
+### 3.1) Authenticated static image delivery (signed URL)
+
+**Goal**
+
+- Keep blueprint image objects private while still rendering in the browser.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant B as Browser (UI)
+  participant F as Edge Function (blueprint-image-link)
+  participant ST as Supabase Storage (blueprint-images)
+
+  B->>F: POST /functions/v1/blueprint-image-link (Bearer token, image_id)
+  F->>F: Validate auth + blueprint image reference
+  F->>ST: createSignedUrl(private object key, short TTL)
+  ST-->>F: signed URL
+  F-->>B: { signed_url, expires_at }
+  B->>ST: GET signed URL
+  ST-->>B: image bytes
+```
 
 ### 4) Authenticated AI turn (Edge Function + OpenRouter)
 

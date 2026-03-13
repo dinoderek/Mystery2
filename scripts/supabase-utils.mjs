@@ -95,10 +95,21 @@ function parseSeedStorageArg(value) {
   );
 }
 
+function parseSeedImagesArg(value) {
+  if (!value || value === "skip") return "skip";
+  if (value === "if-missing") return "if-missing";
+  if (value === "always") return "always";
+  throw new Error(
+    `Invalid --seed-images value "${value}". Use one of: skip, if-missing, always.`,
+  );
+}
+
 export function parseScriptOptions(args) {
   const options = {
     restart: false,
     seedStorage: "if-missing",
+    seedImages: "skip",
+    imageDir: null,
     seedAI: true,
   };
 
@@ -125,6 +136,22 @@ export function parseScriptOptions(args) {
     }
     if (arg.startsWith("--seed-storage=")) {
       options.seedStorage = parseSeedStorageArg(arg.slice("--seed-storage=".length));
+      continue;
+    }
+    if (arg === "--seed-images") {
+      options.seedImages = "always";
+      continue;
+    }
+    if (arg === "--skip-seed-images") {
+      options.seedImages = "skip";
+      continue;
+    }
+    if (arg.startsWith("--seed-images=")) {
+      options.seedImages = parseSeedImagesArg(arg.slice("--seed-images=".length));
+      continue;
+    }
+    if (arg.startsWith("--image-dir=")) {
+      options.imageDir = arg.slice("--image-dir=".length);
       continue;
     }
     throw new Error(`Unknown option: ${arg}`);

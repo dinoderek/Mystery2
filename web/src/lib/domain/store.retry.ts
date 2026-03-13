@@ -54,6 +54,23 @@ export function getBackoffDelayMs(attempt: number): number {
   return Math.min(base * 2 ** (safeAttempt - 1), maxDelay);
 }
 
+export function isImageLinkExpired(
+  expiresAt: string | null | undefined,
+  nowMs = Date.now(),
+  skewMs = 5000,
+): boolean {
+  if (!expiresAt) {
+    return true;
+  }
+
+  const expiresMs = Date.parse(expiresAt);
+  if (!Number.isFinite(expiresMs)) {
+    return true;
+  }
+
+  return expiresMs <= nowMs + Math.max(0, skewMs);
+}
+
 export async function sleep(ms: number): Promise<void> {
   await new Promise<void>((resolve) => {
     setTimeout(resolve, ms);

@@ -32,7 +32,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="min-h-screen bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-4xl mx-auto">
+<main class="min-h-screen bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   <div class="mb-2 flex justify-end">
     <button
       type="button"

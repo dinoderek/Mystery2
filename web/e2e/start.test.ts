@@ -2,9 +2,7 @@ import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
 
 test.describe('US1 - Start Screen', () => {
-  test('shows the 3-option landing menu and keeps disabled options non-navigable', async ({ page }) => {
-    await enableAuthBypass(page);
-
+  async function mockEmptyCatalog(page: import('@playwright/test').Page) {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: {
@@ -17,6 +15,11 @@ test.describe('US1 - Start Screen', () => {
         },
       });
     });
+  }
+
+  test('shows the 3-option landing menu and keeps disabled options non-navigable', async ({ page }) => {
+    await enableAuthBypass(page);
+    await mockEmptyCatalog(page);
 
     await page.goto('/');
 
@@ -89,19 +92,7 @@ test.describe('US1 - Start Screen', () => {
 
   test('enters new-game blueprint flow on option 1 and starts game by blueprint number', async ({ page }) => {
     await enableAuthBypass(page);
-
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [],
-          completed: [],
-          counts: {
-            in_progress: 0,
-            completed: 0,
-          },
-        },
-      });
-    });
+    await mockEmptyCatalog(page);
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
@@ -146,24 +137,14 @@ test.describe('US1 - Start Screen', () => {
 
   test('shows centered loading indicator while starting from blueprint selection', async ({ page }) => {
     await enableAuthBypass(page);
-
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [],
-          completed: [],
-          counts: {
-            in_progress: 0,
-            completed: 0,
-          },
-        },
-      });
-    });
+    await mockEmptyCatalog(page);
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
-          blueprints: [{ id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }],
+          blueprints: [
+            { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
+          ],
         },
       });
     });
@@ -202,5 +183,76 @@ test.describe('US1 - Start Screen', () => {
     await expect(page.getByText('The Stolen Cake')).toHaveCount(0);
 
     await navPromise;
+  });
+
+  test('renders blueprint cover image when an authenticated link is issued', async ({ page }) => {
+    await enableAuthBypass(page);
+    await mockEmptyCatalog(page);
+
+    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          blueprints: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174000',
+              title: 'The Stolen Cake',
+              one_liner: 'Find the cake',
+              target_age: 6,
+              blueprint_image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111',
+            },
+          ],
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+      await route.fulfill({
+        json: {
+          image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111',
+          signed_url:
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
+          expires_at: '2099-01-01T00:00:00.000Z',
+        },
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+    await expect(page.locator('[data-testid="story-image-panel"] img')).toBeVisible();
+  });
+
+  test('shows placeholder when blueprint image link request fails', async ({ page }) => {
+    await enableAuthBypass(page);
+    await mockEmptyCatalog(page);
+
+    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          blueprints: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174000',
+              title: 'The Stolen Cake',
+              one_liner: 'Find the cake',
+              target_age: 6,
+              blueprint_image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111',
+            },
+          ],
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+      await route.fulfill({ status: 404, json: { error: 'Not found' } });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+    await expect(page.getByText('Case image unavailable')).toBeVisible();
   });
 });

@@ -26,7 +26,8 @@ export function parseGenerateImageArgs(argv) {
     model: process.env.OPENROUTER_IMAGE_MODEL || "openai/gpt-image-1",
     overwrite: false,
     dryRun: false,
-    scope: "all",
+    dryMode: false,
+    scope: null,
     characterKeys: [],
     locationKeys: [],
   };
@@ -40,6 +41,10 @@ export function parseGenerateImageArgs(argv) {
     }
     if (token === "--dry-run") {
       options.dryRun = true;
+      continue;
+    }
+    if (token === "--dry-mode") {
+      options.dryMode = true;
       continue;
     }
     if (token === "--all") {
@@ -62,18 +67,12 @@ export function parseGenerateImageArgs(argv) {
       index += 1;
       continue;
     }
-    if (token === "--mixed") {
-      options.scope = "mixed";
-      continue;
-    }
     if (token === "--character") {
-      options.scope = "mixed";
       options.characterKeys.push(String(argv[index + 1] ?? "").trim());
       index += 1;
       continue;
     }
     if (token === "--location") {
-      options.scope = "mixed";
       options.locationKeys.push(String(argv[index + 1] ?? "").trim());
       index += 1;
       continue;
@@ -105,6 +104,13 @@ export function parseGenerateImageArgs(argv) {
   }
   if (!options.model) {
     throw new Error("Missing required --model");
+  }
+
+  if (options.scope === null) {
+    options.scope =
+      options.characterKeys.length > 0 || options.locationKeys.length > 0
+        ? "selected"
+        : "all";
   }
 
   return options;
@@ -184,6 +190,23 @@ function decodeDataUrl(dataUrl) {
   return Buffer.from(match[2], "base64");
 }
 
+function buildImageGenerationRequest({ model, prompt }) {
+  return {
+    model,
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    modalities: ["image", "text"],
+    image_config: {
+      aspect_ratio: "4:3",
+    },
+    stream: false,
+  };
+}
+
 function parseImagePayload(payload) {
   const message = payload?.choices?.[0]?.message;
   const first = Array.isArray(message?.images) ? message.images[0] : null;
@@ -226,26 +249,14 @@ async function generateImageAsset({
   fetchImpl,
 }) {
   const requestUrl = "https://openrouter.ai/api/v1/chat/completions";
+  const requestBody = buildImageGenerationRequest({ model, prompt });
   const response = await fetchImpl(requestUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      modalities: ["image", "text"],
-      image_config: {
-        aspect_ratio: "4:3",
-      },
-      stream: false,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -351,6 +362,34 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     try {
       console.log(`Starting generation for ${formatTargetLabel(target)}...`);
       const prompt = buildImagePrompt(blueprint, target);
+
+      if (options.dryMode) {
+        const requestBody = buildImageGenerationRequest({
+          model: options.model,
+          prompt,
+        });
+        console.log(
+          `Dry mode request for ${formatTargetLabel(target)}:\n${JSON.stringify(
+            {
+              url: "https://openrouter.ai/api/v1/chat/completions",
+              method: "POST",
+              body: requestBody,
+            },
+            null,
+            2,
+          )}`,
+        );
+        results.push({
+          target_type: target.targetType,
+          target_key: target.targetKey,
+          status: "skipped",
+          image_id: null,
+          file_path: null,
+          error_message: "dry-mode",
+        });
+        continue;
+      }
+
       const bytes = await generateImageAsset({
         prompt,
         model: options.model,

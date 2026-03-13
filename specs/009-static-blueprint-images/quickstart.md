@@ -81,7 +81,6 @@ npm run generate:images -- \
   --blueprint-path supabase/seed/blueprints/mock-blueprint.json \
   --output-dir generated/blueprint-images \
   --model openai/gpt-image-1 \
-  --mixed \
   --character "Alice" \
   --location "Kitchen"
 ```

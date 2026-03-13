@@ -78,7 +78,7 @@ Operator-provided generation run input.
 | Field | Type | Description | Validation |
 |------|------|-------------|------------|
 | `blueprint_path` | string | Source blueprint JSON path | Required; readable file |
-| `target_scope` | enum | `all`, `blueprint`, `characters`, `locations`, `mixed` | Required |
+| `target_scope` | enum | `all`, `blueprint`, `characters`, `locations`, `selected` | Required |
 | `target_keys` | array<string> | Selected character/location keys when scoped | Optional for `all`/`blueprint`; required for selective scopes |
 | `model` | string | Selected OpenRouter model identifier | Required |
 | `output_dir` | string | Local destination directory for generated images | Required; writable |

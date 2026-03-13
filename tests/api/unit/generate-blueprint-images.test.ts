@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   parseGenerateImageArgs,
@@ -58,7 +58,6 @@ describe("generate-blueprint-images args parser", () => {
       "/tmp/out",
       "--model",
       "openai/gpt-image-1",
-      "--mixed",
       "--character",
       "Alice",
       "--location",
@@ -70,7 +69,7 @@ describe("generate-blueprint-images args parser", () => {
       blueprintPath: "/tmp/mock.json",
       outputDir: "/tmp/out",
       model: "openai/gpt-image-1",
-      scope: "mixed",
+      scope: "selected",
       overwrite: true,
       characterKeys: ["Alice"],
       locationKeys: ["Kitchen"],
@@ -80,9 +79,27 @@ describe("generate-blueprint-images args parser", () => {
   it("fails without required blueprint path", () => {
     expect(() => parseGenerateImageArgs([])).toThrow("Missing required --blueprint-path");
   });
+
+  it("parses dry mode flag", () => {
+    const parsed = parseGenerateImageArgs([
+      "--blueprint-path",
+      "/tmp/mock.json",
+      "--output-dir",
+      "/tmp/out",
+      "--model",
+      "openai/gpt-image-1",
+      "--dry-mode",
+    ]);
+
+    expect(parsed.dryMode).toBe(true);
+  });
 });
 
 describe("runImageGeneration", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("runs dry-run flow without mutating references", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-"));
     const blueprintPath = path.join(tmpDir, "blueprint.json");
@@ -221,5 +238,50 @@ describe("runImageGeneration", () => {
     expect(calls[0].body.modalities).toEqual(["image", "text"]);
     expect(calls[0].body.image_config).toEqual({ aspect_ratio: "4:3" });
     expect(result.results[0].status).toBe("generated");
+  });
+
+  it("prints prompts and request parameters in dry mode without calling fetch", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-dry-mode-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const fetchImpl = vi.fn();
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        overwrite: true,
+        dryRun: false,
+        dryMode: true,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        apiKey: "test-key",
+        fetchImpl,
+      },
+    );
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].status).toBe("skipped");
+    expect(result.results[0].error_message).toBe("dry-mode");
+
+    const renderedLogs = logSpy.mock.calls.map((call) => call.join(" ")).join("\n");
+    expect(renderedLogs).toContain("Starting generation for Blueprint...");
+    expect(renderedLogs).toContain("Dry mode request for Blueprint:");
+    expect(renderedLogs).toContain("\"url\": \"https://openrouter.ai/api/v1/chat/completions\"");
+    expect(renderedLogs).toContain("\"model\": \"openai/gpt-image-1\"");
+    expect(renderedLogs).toContain("\"modalities\": [");
+    expect(renderedLogs).toContain("Target: Mystery cover image.");
+
+    const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
+    expect(patched.metadata.image_id).toBeUndefined();
   });
 });

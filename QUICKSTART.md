@@ -160,6 +160,76 @@ npm run seed:ai
 npm run seed:ai -- --only <mock|free|paid>
 ```
 
+## Deploy To Dev
+
+Create `.env.deploy.dev.local` with:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `AI_DEFAULT_PROFILE_ID=default`
+- `AI_DEFAULT_PROFILE_PROVIDER`
+- `AI_DEFAULT_PROFILE_MODEL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY` when `AI_DEFAULT_PROFILE_PROVIDER=openrouter`
+
+Then run:
+
+```bash
+npm run deploy -- --env dev --preflight
+```
+
+If you also want to upload generated blueprint images during deploy, add `--image-dir generated/blueprint-images`.
+
+## Image Generation
+
+Required env:
+
+- `OPENROUTER_API_KEY`
+- optional: `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`)
+
+`OPENROUTER_API_KEY` is not required when using `--dry-mode`.
+
+Critical flags:
+
+- `--blueprint-path <path>`: source blueprint JSON
+- target selection: `--all`, `--blueprint`, `--characters "Alice,Bob"`, `--locations "Kitchen,Garden"`, or repeated `--character` / `--location` flags for a custom subset
+- `--output-dir <dir>`: where generated images are written
+- optional: `--model <id>` to override the default image model
+
+Generate all blueprint images:
+
+```bash
+npm run generate:images -- \
+  --blueprint-path blueprints/spring-treats-6yo.json \
+  --output-dir generated/blueprint-images \
+  --model openai/gpt-image-1 \
+  --all
+```
+
+Generate selected targets only:
+
+```bash
+npm run generate:images -- \
+  --blueprint-path blueprints/spring-treats-6yo.json \
+  --output-dir generated/blueprint-images \
+  --model openai/gpt-image-1 \
+  --character "Alice" \
+  --location "Kitchen"
+```
+
+Dry mode prints prompts and request payloads without calling OpenRouter or writing files:
+
+```bash
+npm run generate:images -- \
+  --blueprint-path blueprints/spring-treats-6yo.json \
+  --output-dir generated/blueprint-images \
+  --all \
+  --dry-mode
+```
+
 ### Stop the local stack
 
 ```bash

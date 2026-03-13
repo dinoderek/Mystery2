@@ -4,7 +4,9 @@
     "title": "The Missing Honey Cakes",
     "one_liner": "Someone took all the yummy honey cakes before the Spring Party!",
     "target_age": 6,
-    "time_budget": 15
+    "time_budget": 15,
+    "art_style": "Layered papercraft, origami, pop-up book illustration; Magical and Wondrous feeling.",
+    "image_id": "blueprint-e2f75319-b232-4e65-8407-3e35dba627d0"
   },
   "narrative": {
     "premise": "Welcome to Brunilia! Everyone is excited for the big Spring Party. Mrs. Rabbit baked delicious honey cakes for everyone, but they are gone from the Bakery! Can you help us find them before the party begins?",
@@ -19,7 +21,9 @@
       {
         "name": "Town Square",
         "description": "A sunny square filled with colorful spring flowers and party decorations.",
-        "clues": ["A piece of pink party ribbon is on the ground."]
+        "clues": [
+          "A piece of pink party ribbon is on the ground."
+        ]
       },
       {
         "name": "The Bakery",

@@ -1,4 +1,5 @@
 import { supabase } from '../api/supabase';
+import { resolveImageLink } from '../api/images';
 import type {
   Blueprint,
   GameState,
@@ -7,6 +8,7 @@ import type {
   SessionOutcome,
   SessionSummary,
   Speaker,
+  StoryImageState,
 } from '../types/game';
 import {
   createCharacterSpeaker,
@@ -60,6 +62,10 @@ function isThemeName(value: unknown): value is ThemeName {
 
 function readString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
+}
+
+function readNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
 }
 
 function readInt(value: unknown, fallback = 0): number {
@@ -184,10 +190,12 @@ export function normalizeSessionCatalog(raw: unknown): SessionCatalog {
 
 export class GameSessionStore {
   game_id = $state<string | null>(null);
+  blueprint_id = $state<string | null>(null);
   status = $state<'idle' | 'loading' | 'active' | 'error'>('idle');
   state = $state<GameState | null>(null);
   error = $state<string | null>(null);
   blueprints = $state<Blueprint[]>([]);
+  activeStoryImage = $state<StoryImageState | null>(null);
   showHelp = $state(false);
   isRetrying = $state(false);
   retryCount = $state(0);
@@ -239,7 +247,23 @@ export class GameSessionStore {
       this.error = error.message;
       this.status = 'error';
     } else {
-      this.blueprints = data.blueprints;
+      const payload = isRecord(data) ? data : {};
+      const rawBlueprints = Array.isArray(payload.blueprints) ? payload.blueprints : [];
+      this.blueprints = rawBlueprints
+        .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+        .map((entry) => ({
+          id: readString(entry.id),
+          title: readString(entry.title),
+          one_liner: readString(entry.one_liner),
+          target_age: readInt(entry.target_age),
+          blueprint_image_id: readNullableString(entry.blueprint_image_id),
+          blueprint_image_url: null,
+          blueprint_image_expires_at: null,
+          blueprint_image_placeholder: false,
+        }))
+        .filter((entry) => entry.id.length > 0);
+
+      await this.hydrateBlueprintImageLinks();
       this.status = 'idle';
     }
   }
@@ -267,6 +291,27 @@ export class GameSessionStore {
     this.sessionCatalogStatus = 'ready';
   }
 
+  private async hydrateBlueprintImageLinks() {
+    for (const [index, blueprint] of this.blueprints.entries()) {
+      if (!blueprint.blueprint_image_id) {
+        continue;
+      }
+
+      const resolved = await resolveImageLink({
+        blueprintId: blueprint.id,
+        imageId: blueprint.blueprint_image_id,
+        purpose: 'blueprint_cover',
+      });
+
+      this.blueprints[index] = {
+        ...blueprint,
+        blueprint_image_url: resolved.url,
+        blueprint_image_expires_at: resolved.expiresAt,
+        blueprint_image_placeholder: resolved.placeholder,
+      };
+    }
+  }
+
   async startGame(blueprintId: string) {
     this.status = 'loading';
     const { data, error } = await supabase.functions.invoke('game-start', {
@@ -278,11 +323,13 @@ export class GameSessionStore {
     } else {
       const response = isRecord(data) ? data : {};
       this.game_id = typeof response.game_id === 'string' ? response.game_id : null;
+      this.blueprint_id = blueprintId;
       this.state = this.normalizeState(response.state);
       this.lastFailedInput = null;
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
+      this.activeStoryImage = null;
       this.status = 'active';
     }
   }
@@ -475,6 +522,8 @@ export class GameSessionStore {
       narration,
       narration_speaker: narrationSpeaker,
       history,
+      location_image_id: readNullableString(source.location_image_id),
+      character_portrait_image_id: readNullableString(source.character_portrait_image_id),
     };
   }
 
@@ -590,6 +639,7 @@ export class GameSessionStore {
 
   clearSessionForMysteryList() {
     this.game_id = null;
+    this.blueprint_id = null;
     this.state = null;
     this.status = 'idle';
     this.error = null;
@@ -600,6 +650,7 @@ export class GameSessionStore {
     this.accusationOutcome = null;
     this.awaitingReturnToList = false;
     this.viewerMode = 'interactive';
+    this.activeStoryImage = null;
   }
 
   private getBackendInvocation(command: ActionCommand): BackendInvocation {
@@ -730,6 +781,17 @@ export class GameSessionStore {
       this.state.current_talk_character = payload.current_talk_character;
     }
 
+    if (typeof payload.location_image_id === 'string' || payload.location_image_id === null) {
+      this.state.location_image_id = payload.location_image_id;
+    }
+
+    if (
+      typeof payload.character_portrait_image_id === 'string' ||
+      payload.character_portrait_image_id === null
+    ) {
+      this.state.character_portrait_image_id = payload.character_portrait_image_id;
+    }
+
     const outcome = payload.result;
     const isAccuseEnded = endpoint === 'game-accuse' && payload.mode === 'ended';
     if (isAccuseEnded && (outcome === 'win' || outcome === 'lose')) {
@@ -746,6 +808,86 @@ export class GameSessionStore {
       this.state.narration = payload.narration;
       this.state.narration_speaker = speaker;
     }
+  }
+
+  private async refreshStoryImageFromPayload(payload: Record<string, unknown>) {
+    if (!this.blueprint_id || !this.state) {
+      this.activeStoryImage = null;
+      return;
+    }
+
+    const portraitId =
+      readNullableString(payload.character_portrait_image_id) ??
+      this.state.character_portrait_image_id ??
+      null;
+    const locationId =
+      readNullableString(payload.location_image_id) ??
+      this.state.location_image_id ??
+      null;
+
+    if (portraitId) {
+      const title = this.state.current_talk_character
+        ? `${this.state.current_talk_character} portrait`
+        : 'Character portrait';
+      this.activeStoryImage = {
+        kind: 'character',
+        title,
+        image_id: portraitId,
+        image_url: null,
+        expires_at: null,
+        placeholder: false,
+        loading: true,
+      };
+
+      const resolved = await resolveImageLink({
+        blueprintId: this.blueprint_id,
+        imageId: portraitId,
+        purpose: 'character_portrait',
+      });
+
+      this.activeStoryImage = {
+        kind: 'character',
+        title,
+        image_id: portraitId,
+        image_url: resolved.url,
+        expires_at: resolved.expiresAt,
+        placeholder: resolved.placeholder,
+        loading: false,
+      };
+      return;
+    }
+
+    if (locationId) {
+      const title = this.state.location ? `${this.state.location} scene` : 'Location scene';
+      this.activeStoryImage = {
+        kind: 'location',
+        title,
+        image_id: locationId,
+        image_url: null,
+        expires_at: null,
+        placeholder: false,
+        loading: true,
+      };
+
+      const resolved = await resolveImageLink({
+        blueprintId: this.blueprint_id,
+        imageId: locationId,
+        purpose: 'location_scene',
+      });
+
+      this.activeStoryImage = {
+        kind: 'location',
+        title,
+        image_id: locationId,
+        image_url: resolved.url,
+        expires_at: resolved.expiresAt,
+        placeholder: resolved.placeholder,
+        loading: false,
+      };
+      return;
+    }
+
+    this.activeStoryImage = null;
   }
 
   private async submitValidCommand(command: ActionCommand, rawInput: string) {
@@ -780,6 +922,7 @@ export class GameSessionStore {
 
             this.appendHistory(invocation.endpoint, speaker, narration);
             this.applyBackendState(payload, invocation.endpoint, speaker);
+            await this.refreshStoryImageFromPayload(payload);
           }
 
           this.status = 'active';

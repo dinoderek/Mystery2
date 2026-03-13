@@ -64,6 +64,7 @@ serveWithCors(async (req) => {
           title: parsed.metadata.title,
           one_liner: parsed.metadata.one_liner,
           target_age: parsed.metadata.target_age,
+          blueprint_image_id: parsed.metadata.image_id ?? null,
         });
       } catch (e) {
         console.error("Blueprint schema validation failed:", file.name, e);

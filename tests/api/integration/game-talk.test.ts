@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "./auth-helpers";
 
 describe("game-talk endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-talk");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -36,6 +42,9 @@ describe("game-talk endpoint", () => {
     expect(data.time_remaining).toBe(9);
     expect(data.narration).toContain("[Mock]");
     expect(data.narration).not.toContain("because she was hungry");
+    expect(data.character_portrait_image_id).toBe(
+      "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
+    );
     expect(data.speaker).toMatchObject({
       kind: "narrator",
       key: "narrator",

@@ -29,6 +29,8 @@ Covers:
 - request/response schema validation
 - UI component logic (where practical)
 - prompt construction and parsing utilities
+- image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
+- image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
   - deploy CLI arg parsing and validation
   - strict deploy env/manifest contract enforcement
@@ -88,7 +90,12 @@ What we test:
   - `game-ask` requires non-empty `player_input`
   - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
   - speaker attribution per endpoint (`narrator` vs `character`) and `game-get` speaker persistence (`narration_speaker`, `history[].speaker`)
-  - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
+- timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
+- Static image boundary behavior:
+  - `blueprints-list` includes optional `blueprint_image_id`
+  - `game-move` includes optional `location_image_id`
+  - `game-talk` includes optional `character_portrait_image_id`
+  - `blueprint-image-link` enforces auth and returns signed URL/expiry on valid references
 
 AI calls:
 
@@ -155,7 +162,11 @@ Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`
 - theme-aware speaker style behavior across at least two themes, with one shared generic style for all character speakers
 - terminal loading indicators:
   - narration-area wait spinner during backend calls
-  - centered start-screen spinner while a selected mystery is initializing
+- centered start-screen spinner while a selected mystery is initializing
+- image rendering checks:
+  - start screen blueprint cover image via signed link
+  - session side panel updates on move/talk image IDs
+  - placeholder fallback when signed-link requests fail
 
 Theme command E2E coverage (`web/e2e/theme.test.ts`) must include:
 

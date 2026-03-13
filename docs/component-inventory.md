@@ -56,6 +56,17 @@ _(Add components here as they are built. Example format below)_
 - **Props**:
   - `text`: `string` (optional status text shown next to the spinner)
 
+### `StoryImagePanel.svelte`
+
+- **Purpose**: Reusable image/placeholder panel for blueprint covers and session-side story imagery.
+- **Props**:
+  - `title`: `string` (panel label)
+  - `imageUrl`: `string | null` (signed image URL when available)
+  - `loading`: `boolean` (shows loading state while fetching signed link)
+  - `placeholder`: `boolean` (forces placeholder rendering after failed fetch)
+  - `placeholderText`: `string` (fallback message)
+  - `compact`: `boolean` (smaller card variant for start-screen blueprint cards)
+
 ### `LoginForm.svelte`
 
 - **Purpose**: Reusable email/password sign-in form for the `/login` route.

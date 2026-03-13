@@ -95,6 +95,70 @@ test.describe('Command Input', () => {
     expect(moveCalls).toBe(1);
   });
 
+  test('renders move/talk side imagery and falls back to placeholder when image link fails', async ({ page }) => {
+    await page.route('**/functions/v1/game-move*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration: 'You travel to the garden.',
+          current_location: 'Garden',
+          visible_characters: ['Bob'],
+          time_remaining: 9,
+          mode: 'explore',
+          location_image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+          speaker: narratorSpeaker,
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration: 'Bob greets you by the flower beds.',
+          mode: 'talk',
+          time_remaining: 8,
+          current_talk_character: 'Bob',
+          character_portrait_image_id: 'mock-character-bob-123e4567-e89b-12d3-a456-426614174334',
+          speaker: narratorSpeaker,
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+      const payload = route.request().postDataJSON() as { purpose?: string };
+
+      if (payload.purpose === 'location_scene') {
+        await route.fulfill({
+          json: {
+            image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+            signed_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
+            expires_at: '2099-01-01T00:00:00.000Z',
+          },
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Image not found' }),
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('go to garden');
+    await input.press('Enter');
+
+    await expect(page.getByText('You travel to the garden.')).toBeVisible();
+    await expect(page.getByTestId('story-image-panel').locator('img')).toBeVisible();
+
+    await input.fill('talk to bob');
+    await input.press('Enter');
+    await expect(page.getByText('Bob greets you by the flower beds.')).toBeVisible();
+    await expect(page.getByText('Scene image unavailable')).toBeVisible();
+  });
+
   test('blocks backend call for missing movement target', async ({ page }) => {
     let moveCalls = 0;
 

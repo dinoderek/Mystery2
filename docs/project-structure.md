@@ -14,6 +14,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
 - `scripts/`: Assorted scripts needed for development and operations (e.g., `setup-local` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
+  - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
 - `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
   - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions and server-side speaker attribution.
@@ -27,3 +28,11 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `package.json`: Main workspace root defining all top-level scripts like test coordination.
 - `eslint.config.mjs`: Centralized ESLint configuration using flat config layout.
 - `tsconfig.json`: Base configuration inherited by all local packages.
+
+## Feature Additions (Static Blueprint Images)
+
+- `supabase/functions/blueprint-image-link/`: Auth-gated signed URL issuance for private blueprint images.
+- `supabase/functions/_shared/images.ts`: Canonical image ID validation + storage key + TTL helpers.
+- `supabase/migrations/0007_blueprint_images_storage.sql`: Private `blueprint-images` bucket and authenticated read policy.
+- `web/src/lib/api/images.ts`: Frontend signed-link client with expiry-aware cache/refresh behavior.
+- `scripts/generate-blueprint-images.mjs`: Local operator image generation + selective blueprint patching CLI.

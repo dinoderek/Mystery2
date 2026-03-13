@@ -42,6 +42,7 @@ eval "$(npx supabase status -o env | awk -F= '/^[A-Z0-9_]+=/{print "export "$0}'
 7. Extend deployment tooling in `/Users/dinohughes/Projects/my2/w1/scripts/deploy.mjs` and helper modules:
    - Deploy blueprint JSON and referenced image assets together.
    - Emit warning manifest for missing/failed image uploads.
+   - Support `--image-dir <dir>` and `--strict-images` for deploy-time image sync policy.
 8. Update docs with concise behavior and workflow changes:
    - `/Users/dinohughes/Projects/my2/w1/docs/architecture.md`
    - `/Users/dinohughes/Projects/my2/w1/docs/game.md`
@@ -57,6 +58,52 @@ npm run test:unit
 npm run test:integration
 npm run test:e2e
 npm -w web run test:e2e
+```
+
+## Generate Blueprint Images (Operator)
+
+Generate a full image set (cover + characters + locations):
+
+```bash
+cd /Users/dinohughes/Projects/my2/w1
+npm run generate:images -- \
+  --blueprint-path supabase/seed/blueprints/mock-blueprint.json \
+  --output-dir generated/blueprint-images \
+  --model openai/gpt-image-1 \
+  --all
+```
+
+Generate selected targets only:
+
+```bash
+cd /Users/dinohughes/Projects/my2/w1
+npm run generate:images -- \
+  --blueprint-path supabase/seed/blueprints/mock-blueprint.json \
+  --output-dir generated/blueprint-images \
+  --model openai/gpt-image-1 \
+  --mixed \
+  --character "Alice" \
+  --location "Kitchen"
+```
+
+Notes:
+- Requires `OPENROUTER_API_KEY` for live generation.
+- The script patches blueprint image IDs only for successfully generated targets.
+
+## Deploy Blueprints + Images (Operator)
+
+Deploy with image sync (missing images allowed, warnings emitted):
+
+```bash
+cd /Users/dinohughes/Projects/my2/w1
+npm run deploy -- --env dev --image-dir generated/blueprint-images
+```
+
+Deploy with strict image policy (fail if any referenced image is missing/failed):
+
+```bash
+cd /Users/dinohughes/Projects/my2/w1
+npm run deploy -- --env dev --image-dir generated/blueprint-images --strict-images
 ```
 
 ## End-to-End Manual Checks

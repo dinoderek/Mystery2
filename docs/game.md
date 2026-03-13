@@ -241,6 +241,8 @@ Modes:
 ### New Game
 
 - List blueprints.
+- If a blueprint has `blueprint_image_id`, render the cover image via authenticated signed URL.
+- If image fetch fails or expires without refresh, show a placeholder panel (gameplay still continues).
 - Start by typing a number (e.g., `1`, `2`, `3`).
 - `b` returns to the three-option landing menu.
 
@@ -274,6 +276,10 @@ Modes:
 ### Narration Window
 
 - Block-based messages, left-aligned.
+- Session view may include a side image panel:
+  - `location_image_id` from `move` responses
+  - `character_portrait_image_id` from `talk` responses
+  - Placeholder panel on missing/failed image link
 - Visually distinguish:
   - Narrator
   - Characters

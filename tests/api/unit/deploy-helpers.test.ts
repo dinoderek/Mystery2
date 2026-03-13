@@ -64,12 +64,31 @@ describe("parseDeployArgs", () => {
       dryRun: true,
       skipUsers: true,
       skipSeed: true,
+      imageDir: null,
+      allowMissingImages: true,
     });
   });
 
   it("supports equals env syntax", () => {
     const parsed = parseDeployArgs(["--env=prod"]);
     expect(parsed.env).toBe("prod");
+    expect(parsed.imageDir).toBeNull();
+  });
+
+  it("parses image deploy flags", () => {
+    const parsed = parseDeployArgs([
+      "--env",
+      "dev",
+      "--image-dir",
+      "generated/blueprint-images",
+      "--strict-images",
+    ]);
+
+    expect(parsed).toMatchObject({
+      env: "dev",
+      imageDir: "generated/blueprint-images",
+      allowMissingImages: false,
+    });
   });
 
   it("rejects missing env", () => {
@@ -209,6 +228,8 @@ describe("buildCommandPlan", () => {
         includePreflight: true,
         includeSeed: true,
         includeUsers,
+        imageDir: null,
+        allowMissingImages: true,
         hasDbPassword: false,
       }) as CommandStep[];
 
@@ -255,6 +276,8 @@ describe("buildCommandPlan", () => {
       includePreflight: false,
       includeSeed: false,
       includeUsers: false,
+      imageDir: null,
+      allowMissingImages: true,
       hasDbPassword: false,
     }) as CommandStep[];
 
@@ -263,5 +286,30 @@ describe("buildCommandPlan", () => {
     expect(steps.some((step) => step.id.startsWith("backend:bootstrap-users"))).toBe(
       false,
     );
+  });
+
+  it("adds image sync flags to seed step when image dir is provided", () => {
+    const steps = buildCommandPlan({
+      envName: "dev",
+      target: makeTarget("dev"),
+      functionNames: ["blueprints-list"],
+      includePreflight: false,
+      includeSeed: true,
+      includeUsers: false,
+      imageDir: "generated/blueprint-images",
+      allowMissingImages: false,
+      hasDbPassword: false,
+    }) as CommandStep[];
+
+    const seedStep = steps.find((step) => step.id === "backend:seed-storage");
+    expect(seedStep).toBeDefined();
+    expect(seedStep?.command).toEqual([
+      "node",
+      "scripts/seed-storage.mjs",
+      "--seed-images=always",
+      "--image-dir",
+      "generated/blueprint-images",
+      "--strict-images",
+    ]);
   });
 });

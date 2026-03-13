@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "./auth-helpers";
 
 describe("blueprints-list endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("blueprints");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -29,5 +35,8 @@ describe("blueprints-list endpoint", () => {
     expect(mockDb).toBeDefined();
     expect(mockDb.title).toBe("Mock Blueprint");
     expect(mockDb.world).toBeUndefined();
+    expect(mockDb.blueprint_image_id).toBe(
+      "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+    );
   });
 });

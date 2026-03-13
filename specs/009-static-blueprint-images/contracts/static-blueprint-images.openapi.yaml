@@ -198,6 +198,22 @@ components:
       type: string
       enum: [explore, talk, accuse, ended]
 
+    SpeakerKind:
+      type: string
+      enum: [investigator, narrator, character, system]
+
+    Speaker:
+      type: object
+      additionalProperties: false
+      required: [kind, key, label]
+      properties:
+        kind:
+          $ref: '#/components/schemas/SpeakerKind'
+        key:
+          type: string
+        label:
+          type: string
+
     VisibleCharacter:
       type: object
       additionalProperties: false
@@ -270,7 +286,7 @@ components:
     GameMoveResponse:
       type: object
       additionalProperties: false
-      required: [narration, mode, current_location, visible_characters, time_remaining]
+      required: [narration, mode, current_location, visible_characters, time_remaining, speaker]
       properties:
         narration:
           type: string
@@ -286,11 +302,13 @@ components:
           type: integer
         location_image_id:
           type: [string, 'null']
+        speaker:
+          $ref: '#/components/schemas/Speaker'
 
     GameTalkResponse:
       type: object
       additionalProperties: false
-      required: [narration, mode, current_talk_character, time_remaining]
+      required: [narration, mode, current_talk_character, time_remaining, speaker]
       properties:
         narration:
           type: string
@@ -303,6 +321,8 @@ components:
           type: integer
         character_portrait_image_id:
           type: [string, 'null']
+        speaker:
+          $ref: '#/components/schemas/Speaker'
 
     ImagePurpose:
       type: string

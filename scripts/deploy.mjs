@@ -474,7 +474,9 @@ function ensureTargetMatchesEnvContract(target, deployEnv) {
 }
 
 function printUsage() {
-  console.log("Usage: npm run deploy -- --env <dev|staging|prod> [--preflight] [--dry-run] [--skip-users] [--skip-seed]");
+  console.log(
+    "Usage: npm run deploy -- --env <dev|staging|prod> [--preflight] [--dry-run] [--skip-users] [--skip-seed] [--image-dir <dir>] [--strict-images]",
+  );
 }
 
 async function main() {
@@ -520,6 +522,8 @@ async function main() {
     includePreflight: options.preflight,
     includeSeed: shouldSeed,
     includeUsers: shouldUsers,
+    imageDir: options.imageDir,
+    allowMissingImages: options.allowMissingImages,
     hasDbPassword:
       typeof deployEnv.SUPABASE_DB_PASSWORD === "string" &&
       deployEnv.SUPABASE_DB_PASSWORD.length > 0,
@@ -533,6 +537,8 @@ async function main() {
   console.log(`- expected supabase URL: ${target.expectedSupabaseUrl}`);
   console.log(`- edge functions (${functionNames.length}): ${functionNames.join(", ")}`);
   console.log(`- default ai profile: ${defaultAIProfile.id} (${defaultAIProfile.provider}, ${defaultAIProfile.model})`);
+  console.log(`- image dir: ${options.imageDir ?? "(not set)"}`);
+  console.log(`- allow missing images: ${options.allowMissingImages ? "yes" : "no"}`);
 
   if (options.dryRun) {
     console.log("\nDry run command plan:");
@@ -569,7 +575,7 @@ async function main() {
           SERVICE_ROLE_KEY: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
         };
 
-        runCommand(["node", "scripts/seed-storage.mjs"], {
+        runCommand(step.command, {
           cwd: rootDir,
           env: storageSeedEnv,
         });

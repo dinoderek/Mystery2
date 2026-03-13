@@ -17,7 +17,7 @@
 </script>
 
 <div
-  class={`mb-2 leading-relaxed ${speakerTheme.body}`}
+  class={`terminal-message mb-2 leading-relaxed ${speakerTheme.body}`}
   class:speaker-character-generic={speaker.kind === 'character'}
   data-speaker-kind={speaker.kind}
   data-speaker-key={speaker.key}

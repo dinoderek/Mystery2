@@ -10,6 +10,7 @@
 - Research missing-image UX fallback policy for blueprint list and narration contexts.
 - Research image identity/uniqueness and storage key strategy.
 - Research operator generation workflow shape and failure semantics.
+- Research prompt generation strategy for blueprint/character/location targets.
 - Research deployment extension behavior for blueprint + image publishing.
 - Research API boundary updates needed for list/move/talk/image-access actions.
 - Research test strategy updates across unit/integration/E2E tiers.
@@ -66,7 +67,27 @@
 - Always regenerate all images: rejected because it is slower and overwrites approved assets unnecessarily.
 - Manual prompt-only mode without blueprint-derived context: rejected because output consistency degrades.
 
-## 6. Generation Failure Semantics
+## 6. AI Prompt Construction Strategy
+
+**Decision**: Build prompts using a deterministic layered template with target-specific context blocks.
+
+**Rationale**: A structured template gives consistent style alignment, reduces hallucinated scene details, and keeps generated assets predictable across re-runs.
+
+**Template shape**:
+- `Style block`: art style + mood/atmosphere + lighting + palette from blueprint visual metadata.
+- `Target block`:
+  - Blueprint cover: title, one-liner, narrative premise, and high-level setting tone.
+  - Character portrait: appearance, personality cues, and role context from character profile.
+  - Location scene: location name, description, and atmosphere from location narrative text.
+- `Guardrail block`: child-friendly framing, no spoilers that reveal culprit/ground-truth, and no text overlays/watermarks.
+- `Output block`: single static image request with consistent framing guidance and a stable seed phrase derived from blueprint ID + target key.
+
+**Alternatives considered**:
+- Free-form prompt concatenation of full blueprint JSON: rejected because prompt quality becomes noisy and less controllable.
+- One generic prompt for all target types: rejected because portraits and scene art require different context emphasis.
+- Fully manual operator prompts only: rejected because consistency and repeatability degrade.
+
+## 7. Generation Failure Semantics
 
 **Decision**: Patch blueprint references only for successfully generated images; report per-target failures and keep prior references untouched for failed targets.
 
@@ -76,7 +97,7 @@
 - Fail-fast and rollback everything: rejected because one failed target should not discard successful outputs.
 - Blindly patch all targets regardless of generation success: rejected because it creates broken references.
 
-## 7. Deployment Extension Behavior
+## 8. Deployment Extension Behavior
 
 **Decision**: Extend existing deployment utility to upload blueprint JSON and referenced images in one flow, with warning-level reporting for missing files while keeping blueprint deploy successful.
 
@@ -86,7 +107,7 @@
 - Hard fail when any image missing: rejected because images are optional by requirement.
 - Ignore image deployment entirely when partial failures occur: rejected because it hides operational problems.
 
-## 8. API Boundary Contract Changes
+## 9. API Boundary Contract Changes
 
 **Decision**: Extend list/move/talk responses with optional image IDs and add an authenticated image-link issuance endpoint returning signed URL + expiry metadata.
 
@@ -96,7 +117,7 @@
 - Return permanent image URLs in gameplay responses: rejected due security constraints.
 - Encode binary image payloads directly in gameplay responses: rejected due payload bloat and latency.
 
-## 9. Test Strategy
+## 10. Test Strategy
 
 **Decision**: Add unit tests for schema/parser/tooling behavior, integration tests for auth/link issuance and failure modes, and E2E tests for blueprint/move/talk image rendering including placeholder behavior.
 
@@ -106,7 +127,7 @@
 - E2E-only verification: rejected due poor fault localization.
 - Integration-only verification: rejected because UI fallback/placement behavior would be unproven.
 
-## 10. Source-Control Hygiene
+## 11. Source-Control Hygiene
 
 **Decision**: Keep generated image output directories ignored by default and document operator override only when intentionally versioning fixture assets.
 

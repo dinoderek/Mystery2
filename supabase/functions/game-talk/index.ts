@@ -138,14 +138,15 @@ serveWithCors(async (req) => {
             `The investigator started talking to ${activeCharacter.first_name}, but time expired before the interview could continue.`,
         });
         narration = forcedOutput.narration;
-        eventPayload = {
-          role: "accusation_start",
-          character_name: activeCharacter.first_name,
-          location_name: session.current_location_id,
-          trigger: "timeout",
-          follow_up_prompt: forcedOutput.follow_up_prompt,
-          speaker: NARRATOR_SPEAKER,
-        };
+      eventPayload = {
+        role: "accusation_start",
+        character_name: activeCharacter.first_name,
+        location_name: session.current_location_id,
+        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
+        trigger: "timeout",
+        follow_up_prompt: forcedOutput.follow_up_prompt,
+        speaker: NARRATOR_SPEAKER,
+      };
       } catch (error) {
         if (error instanceof RetriableAIError) {
           log("request.ai_retriable", {
@@ -224,6 +225,7 @@ serveWithCors(async (req) => {
         character: activeCharacter.first_name,
         character_name: activeCharacter.first_name,
         location_name: session.current_location_id,
+        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         context_version: "v1",
         speaker: NARRATOR_SPEAKER,
       };
@@ -266,6 +268,7 @@ serveWithCors(async (req) => {
         current_talk_character: isForcedEndgame
           ? null
           : activeCharacter.first_name,
+        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },

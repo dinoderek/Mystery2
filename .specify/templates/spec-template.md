@@ -65,6 +65,12 @@
 
 [Add more user stories as needed, each with an assigned priority]
 
+## Relevant Documentation & Constraints *(mandatory)*
+
+- Which core docs and task-specific guides materially constrain this feature?
+- Which project facts from those docs must be preserved in the resulting spec,
+  plan, and tasks?
+
 ### Edge Cases
 
 <!--

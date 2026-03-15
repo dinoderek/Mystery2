@@ -32,6 +32,7 @@
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 - [ ] Core docs reviewed and any required doc updates identified?
+- [ ] Critical doc constraints and project knowledge are carried into this plan?
 - [ ] Testing strategy covers the required Unit, Integration, and E2E/browser tiers for this change?
 - [ ] Quality gates are runnable for this change, or doc-only validation is explicitly justified?
 - [ ] Static UI + Supabase backend constraints, auth, and no-client-secrets rules respected?

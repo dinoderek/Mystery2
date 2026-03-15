@@ -1,22 +1,22 @@
 <!-- Sync Impact Report:
-Version change: 1.0.0 -> 1.1.0
+Version change: 1.2.0 -> 1.3.0
 Modified principles:
 - I. Documentation First -> I. Documentation First
 - II. Test Everything You Build (NON-NEGOTIABLE) -> II. Test Everything You Build (NON-NEGOTIABLE)
 - III. Run Quality Gates -> III. Run Quality Gates
 - IV. Architecture & Security Constraints -> IV. Architecture & Security Constraints
 - V. Context-Specific Conventions -> V. Context-Specific Conventions
-- Added: VI. Observability and Logging
-Added sections:
-- What we are building
+- VI. Observability and Logging -> VI. Observability and Logging
+Added sections: None
 Removed sections: None
 Templates requiring updates:
-- ✅ /Users/dinohughes/Projects/my2/w2/.specify/templates/agent-file-template.md
-- ✅ /Users/dinohughes/Projects/my2/w2/.specify/templates/constitution-template.md
-- ✅ /Users/dinohughes/Projects/my2/w2/.specify/templates/plan-template.md
-- ✅ /Users/dinohughes/Projects/my2/w2/.specify/templates/spec-template.md
-- ✅ /Users/dinohughes/Projects/my2/w2/.specify/templates/tasks-template.md
-- ⚠ Pending: /Users/dinohughes/Projects/my2/w2/.specify/templates/commands/*.md (directory not present in this repo)
+- ✅ .specify/templates/agent-file-template.md
+- ✅ .specify/templates/constitution-template.md
+- ✅ .specify/templates/plan-template.md
+- ✅ .specify/templates/spec-template.md
+- ✅ .specify/templates/tasks-template.md
+Operational guidance updated:
+- ✅ AGENTS.md
 Follow-up TODOs: None
 -->
 # Mystery Game Constitution
@@ -36,10 +36,14 @@ an AI-heavy stack, so the user-facing game contract must stay explicit.
 Before starting any significant task, contributors MUST read
 `docs/architecture.md`, `docs/game.md`, `docs/project-structure.md`, and
 `docs/testing.md`. When work touches a specialized area, contributors MUST also
-load the relevant conventions and schema references listed in `AGENTS.md`.
-Documentation updates MUST ship with behavior or workflow changes and MUST keep
-commands, links, and setup steps current. Rationale: shared context prevents
-incorrect implementations and stale operator guidance.
+load the relevant repo conventions and schema references for that surface area.
+These critical documents are not reference-only: contributors MUST carry the
+relevant rules, constraints, and project knowledge forward into specifications,
+plans, task lists, and implementation summaries. Documentation updates MUST
+ship with behavior or workflow changes and MUST keep commands, links, and setup
+steps current. Rationale: shared context prevents incorrect implementations and
+stale operator guidance, and low-cost project knowledge is only useful if it is
+propagated through the delivery workflow.
 
 ### II. Test Everything You Build (NON-NEGOTIABLE)
 
@@ -74,12 +78,16 @@ drift and client-side secret leaks create failures that are expensive to undo.
 
 ### V. Context-Specific Conventions
 
-Contributors MUST load the task-specific guidance referenced in `AGENTS.md`
-before editing the relevant surface area, including styling, component
-inventory, routing, backend conventions, and blueprint schema rules. Plans,
-specs, and tasks MUST reflect those conventions instead of inventing parallel
-patterns. Rationale: shared conventions keep generated work compatible with the
-existing repo structure and review expectations.
+Contributors MUST load the repo guidance that governs the surface area they are
+editing before implementation. This includes `docs/styling-conventions.md` for
+SvelteKit styling/theme work, `docs/component-inventory.md` for UI reuse,
+`docs/screen-navigation.md` for routing/page architecture,
+`docs/backend-conventions.md` for Edge Functions, API contracts, and database
+changes, and `supabase/functions/_shared/blueprints/blueprint-schema.ts` for
+structural mystery data-model changes. Plans, specs, and tasks MUST reflect
+those conventions instead of inventing parallel patterns. Rationale: shared
+conventions keep generated work compatible with the existing repo structure and
+review expectations.
 
 ### VI. Observability and Logging
 
@@ -93,9 +101,13 @@ are difficult to operate without deliberate diagnostics.
 
 ## Development Workflow
 
-- All work should follow the AI Agent Guidelines detailed in `AGENTS.md`.
+- All work MUST comply with this Constitution. `AGENTS.md` MAY add operational
+  workflow details for agents, but it MUST not redefine or weaken these rules.
 - Plans, specs, and task lists MUST record how documentation, testing,
   architecture, conventions, and observability are satisfied.
+- Critical document knowledge MUST be reflected through the Constitution ->
+  Spec -> Plan -> Task flow, with `AGENTS.md` reinforcing the same reading and
+  update expectations during agent execution.
 - Changes MUST be summarized clearly for user review, including any skipped
   gates or deferred follow-up.
 - Complexity MUST be justified and documented explicitly before deviating from
@@ -112,7 +124,9 @@ or materially expanded guidance, and PATCH for clarifications or wording-only
 refinements. Compliance reviews for plans, specs, task lists, pull requests,
 and final delivery summaries MUST verify documentation, testing, quality gates,
 architecture/security constraints, context-specific conventions, and
-observability against this Constitution. Use `AGENTS.md` and `docs/` for
-runtime development guidance.
+observability against this Constitution. If `AGENTS.md` or any other local
+guidance conflicts with this Constitution, this Constitution wins. Use
+`AGENTS.md` for agent workflow details and `docs/` for project/runtime
+guidance.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-13
+**Version**: 1.3.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-15

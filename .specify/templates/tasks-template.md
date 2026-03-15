@@ -14,6 +14,10 @@ explicitly note doc-only work when code quality gates are intentionally skipped.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
+**Documentation carry-through**: Include tasks or acceptance checks when core
+project docs, conventions, or schema references impose constraints that must be
+preserved during implementation.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)

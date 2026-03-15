@@ -11,7 +11,7 @@
 ### [PRINCIPLE_1_NAME]
 <!-- Example: I. Library-First -->
 [PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Critical docs must be read and their constraints carried into spec/plan/tasks -->
 
 ### [PRINCIPLE_2_NAME]
 <!-- Example: II. CLI Interface -->
@@ -51,10 +51,10 @@
 <!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan; Operational guides may elaborate but must not redefine these rules -->
 
 [GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; If an agent guide conflicts, the Constitution wins; Use [GUIDANCE_FILE] only for operational details -->
 
 **Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
 <!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->

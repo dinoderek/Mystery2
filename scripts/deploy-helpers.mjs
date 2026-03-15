@@ -24,6 +24,8 @@ export const REQUIRED_DEPLOY_ENV_VARS = [
   "VITE_SUPABASE_ANON_KEY",
 ];
 
+const PLACEHOLDER_PASSWORD_PATTERN = /replace[-_ ]?me|change[-_ ]?me|example[-_ ]?password|sample[-_ ]?password/i;
+
 export function parseDeployArgs(argv) {
   const options = {
     env: null,
@@ -266,7 +268,15 @@ export function shouldSeedBlueprints(skipSeed) {
 }
 
 export function getBootstrapUsersPath(rootDir, envName) {
-  return path.join(rootDir, `deploy/bootstrap-users.${envName}.json`);
+  return path.join(rootDir, `deploy/bootstrap-users.${envName}.local.json`);
+}
+
+export function getBootstrapUsersExamplePath(rootDir, envName) {
+  return path.join(rootDir, `deploy/bootstrap-users.${envName}.example.json`);
+}
+
+export function isPlaceholderPassword(password) {
+  return typeof password === "string" && PLACEHOLDER_PASSWORD_PATTERN.test(password);
 }
 
 export async function loadBootstrapUsers(usersPath) {
@@ -274,7 +284,13 @@ export async function loadBootstrapUsers(usersPath) {
   try {
     raw = await fs.readFile(usersPath, "utf-8");
   } catch {
-    throw new Error(`Missing bootstrap user config: ${usersPath}`);
+    const examplePath = usersPath.endsWith(".local.json")
+      ? usersPath.replace(/\.local\.json$/u, ".example.json")
+      : null;
+    const guidance = examplePath
+      ? ` Copy ${path.basename(examplePath)} to ${path.basename(usersPath)} and replace the sample passwords.`
+      : "";
+    throw new Error(`Missing bootstrap user config: ${usersPath}.${guidance}`);
   }
 
   let parsed;
@@ -301,6 +317,12 @@ export async function loadBootstrapUsers(usersPath) {
     if (typeof user.password !== "string" || user.password.length < 6) {
       throw new Error(
         `Invalid bootstrap user at index ${index}: password must be at least 6 chars`,
+      );
+    }
+
+    if (isPlaceholderPassword(user.password)) {
+      throw new Error(
+        `Invalid bootstrap user at index ${index}: password must be replaced from the example template`,
       );
     }
 

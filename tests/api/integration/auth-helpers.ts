@@ -10,7 +10,7 @@ export type ApiAuthContext = Awaited<ReturnType<typeof setupTestAuth>>;
 
 export async function setupApiTestAuth(tag: string): Promise<ApiAuthContext> {
 	const email = `${tag}-${crypto.randomUUID().slice(0, 8)}@test.local`;
-	return setupTestAuth(email, 'password123');
+	return setupTestAuth(email, 'test-password-123');
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54331';

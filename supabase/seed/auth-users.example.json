@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "email": "player1@test.local",
+      "email_confirm": true
+    },
+    {
+      "email": "player2@test.local",
+      "email_confirm": true
+    }
+  ]
+}

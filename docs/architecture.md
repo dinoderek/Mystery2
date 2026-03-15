@@ -313,6 +313,7 @@ Failure-handling expectations:
   - deploy config writes canonical AI runtime profile row `ai_profiles.id='default'` per environment
   - env mapping is committed in `deploy/targets.json`
   - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files
+  - optional bootstrap-user examples are committed, but real deploy user manifests stay local-only in `deploy/bootstrap-users.<env>.local.json`
 
 This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI calls”.
 Runbook and failure handling details live in `docs/deployment.md`.
@@ -323,7 +324,7 @@ Runbook and failure handling details live in `docs/deployment.md`.
 
 - A single setup script initializes local development:
   1. Ensures Supabase local stack is running (no restart by default)
-  2. Seeds storage/auth/AI profile data
+  2. Generates `supabase/seed/auth-users.local.json` from the committed example if needed, then seeds storage/auth/AI profile data
 - Dev/test scripts avoid restarts by default and use logical isolation instead of DB resets.
 - AI runtime profile selection is session-scoped (`game-start.ai_profile`) with canonical default `ai_profiles.id='default'`, and does not require Supabase restarts.
 

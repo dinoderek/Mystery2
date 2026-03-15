@@ -10,6 +10,9 @@ import {
   DEPLOY_ENVIRONMENTS,
   discoverEdgeFunctions,
   formatPlanLine,
+  getBootstrapUsersExamplePath,
+  getBootstrapUsersPath,
+  isPlaceholderPassword,
   loadBootstrapUsers,
   parseDeployArgs,
   shouldBootstrapUsers,
@@ -190,9 +193,19 @@ describe("bootstrap and seed skip logic", () => {
 });
 
 describe("loadBootstrapUsers", () => {
+  it("resolves local bootstrap-user paths and matching examples", () => {
+    const rootDir = "/tmp/repo";
+    expect(getBootstrapUsersPath(rootDir, "dev")).toBe(
+      path.join(rootDir, "deploy/bootstrap-users.dev.local.json"),
+    );
+    expect(getBootstrapUsersExamplePath(rootDir, "staging")).toBe(
+      path.join(rootDir, "deploy/bootstrap-users.staging.example.json"),
+    );
+  });
+
   it("loads object-based users file", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "deploy-users-"));
-    const usersPath = path.join(tmpDir, "bootstrap-users.dev.json");
+    const usersPath = path.join(tmpDir, "bootstrap-users.dev.local.json");
 
     await writeFile(
       usersPath,
@@ -206,11 +219,44 @@ describe("loadBootstrapUsers", () => {
 
   it("fails for invalid user shape", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "deploy-users-invalid-"));
-    const usersPath = path.join(tmpDir, "bootstrap-users.dev.json");
+    const usersPath = path.join(tmpDir, "bootstrap-users.dev.local.json");
 
     await writeFile(usersPath, JSON.stringify({ users: [{ email: "", password: "123" }] }), "utf-8");
 
     await expect(loadBootstrapUsers(usersPath)).rejects.toThrow("Invalid bootstrap user");
+  });
+
+  it("fails cleanly when only the example file exists", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "deploy-users-missing-"));
+    const usersPath = path.join(tmpDir, "bootstrap-users.dev.local.json");
+    const examplePath = path.join(tmpDir, "bootstrap-users.dev.example.json");
+
+    await writeFile(
+      examplePath,
+      JSON.stringify({ users: [{ email: "a@test.local", password: "replace-me-dev-password" }] }),
+      "utf-8",
+    );
+
+    await expect(loadBootstrapUsers(usersPath)).rejects.toThrow(
+      "Copy bootstrap-users.dev.example.json to bootstrap-users.dev.local.json and replace the sample passwords.",
+    );
+  });
+
+  it("rejects placeholder passwords copied from the example", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "deploy-users-placeholder-"));
+    const usersPath = path.join(tmpDir, "bootstrap-users.dev.local.json");
+
+    await writeFile(
+      usersPath,
+      JSON.stringify({ users: [{ email: "a@test.local", password: "replace-me-dev-password" }] }),
+      "utf-8",
+    );
+
+    await expect(loadBootstrapUsers(usersPath)).rejects.toThrow(
+      "password must be replaced from the example template",
+    );
+    expect(isPlaceholderPassword("replace-me-dev-password")).toBe(true);
+    expect(isPlaceholderPassword("Actual-Password-123!")).toBe(false);
   });
 });
 

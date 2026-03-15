@@ -154,6 +154,8 @@ test.describe('US2/US3 - Narration Rendering', () => {
     });
 
     await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);

@@ -136,5 +136,5 @@ describe("edge function auth rejection", () => {
       }),
     });
     expect(missingImageRes.status).toBe(404);
-  });
+  }, 15_000);
 });

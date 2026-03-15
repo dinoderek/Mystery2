@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loginWithSeedUser } from './test-auth';
-
-const TEST_EMAIL = process.env.AUTH_TEST_EMAIL ?? 'player1@test.local';
+import { loginWithSeedUser, resolvePreferredLogin } from './test-auth';
 
 test.describe('Auth flow', () => {
 	test('redirects unauthenticated users to /login and validates required fields', async ({ page }) => {
@@ -21,8 +19,10 @@ test.describe('Auth flow', () => {
 	});
 
 	test('shows an error on invalid credentials', async ({ page }) => {
+		const { email } = resolvePreferredLogin();
+
 		await page.goto('/login');
-		await page.locator('#email').fill(TEST_EMAIL);
+		await page.locator('#email').fill(email);
 		await page.locator('#password').fill('definitely-wrong');
 		await page.getByRole('button', { name: '[ LOGIN ]' }).click();
 

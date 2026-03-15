@@ -55,12 +55,16 @@ Optional (avoids interactive DB password prompt during `supabase link`):
 
 - `SUPABASE_DB_PASSWORD`
 
-### 3) Optional non-prod user bootstrap config (committed)
+### 3) Optional non-prod user bootstrap config (example committed, real file local-only)
 
-- `deploy/bootstrap-users.dev.json`
-- `deploy/bootstrap-users.staging.json`
+- `deploy/bootstrap-users.dev.example.json`
+- `deploy/bootstrap-users.staging.example.json`
+- `deploy/bootstrap-users.dev.local.json`
+- `deploy/bootstrap-users.staging.local.json`
 
-Each file contains `users[]` entries with `email`, `password`, and optional `email_confirm`.
+The `.example.json` files are committed templates only. The real `.local.json` files are gitignored and must contain `users[]` entries with `email`, `password`, and optional `email_confirm`.
+
+Create each local file by copying the matching example file and replacing all sample passwords before deploy.
 
 ## Deploy Flow
 
@@ -91,3 +95,4 @@ The orchestrator (`scripts/deploy.mjs`) executes in this order:
 - `AI_DEFAULT_PROFILE_ID must be exactly "default"`: set `AI_DEFAULT_PROFILE_ID=default`.
 - `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY is required`: provide a key when provider is `openrouter`.
 - `Target mismatch ... VITE_SUPABASE_URL`: ensure deploy env and `deploy/targets.json` point to the same project URL.
+- `Missing bootstrap user config`: copy `deploy/bootstrap-users.<env>.example.json` to `deploy/bootstrap-users.<env>.local.json` and replace the sample passwords.

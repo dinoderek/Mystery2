@@ -22,7 +22,7 @@ This command:
 
 1. Ensures the local Supabase stack is running.
 2. Seeds blueprint storage if the bucket is empty.
-3. Seeds the local auth users.
+3. Creates `supabase/seed/auth-users.local.json` if missing, then seeds the local auth users.
 4. Seeds AI profiles in Postgres (`mock`, optional `free` / `paid`, and canonical `default`).
 
 ## Run Locally With a Profile
@@ -81,18 +81,24 @@ npm run seed:ai -- --only <mock|free|paid>
 
 New sessions use the current `default` profile. Existing sessions stay pinned to their stored `ai_profile_id`.
 
-For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w2/docs/ai-configuration.md).
+For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w1/docs/ai-configuration.md).
 
 ## Seeded Local Users
 
-`npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth:
+`npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth.
 
-| Email                | Password      | Purpose                          |
-| -------------------- | ------------- | -------------------------------- |
-| `player1@test.local` | `password123` | Primary local player             |
-| `player2@test.local` | `password123` | Second local player / RLS checks |
+- Seed emails come from the committed template: `supabase/seed/auth-users.example.json`
+- Real passwords are generated into the gitignored local file: `supabase/seed/auth-users.local.json`
+- The first `seed:auth` run prints the generated credentials once and later runs continue using the same local file
 
-Log in at `http://localhost:5173/login` or the redirected login screen.
+Default local users:
+
+| Email                | Purpose                          |
+| -------------------- | -------------------------------- |
+| `player1@test.local` | Primary local player             |
+| `player2@test.local` | Second local player / RLS checks |
+
+Find the current passwords in `supabase/seed/auth-users.local.json`, then log in at `http://localhost:5173/login` or the redirected login screen.
 
 ## Supabase Operations
 
@@ -175,6 +181,12 @@ Create `.env.deploy.dev.local` with:
 - `VITE_SUPABASE_ANON_KEY`
 - `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY` when `AI_DEFAULT_PROFILE_PROVIDER=openrouter`
 
+If you want non-prod bootstrap users during deploy, also copy:
+
+- `deploy/bootstrap-users.dev.example.json` -> `deploy/bootstrap-users.dev.local.json`
+
+Replace the sample passwords in the local file before running deploy.
+
 Then run:
 
 ```bash
@@ -191,6 +203,8 @@ Required env:
 - optional: `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`)
 
 `OPENROUTER_API_KEY` is not required when using `--dry-mode`.
+
+Keep live AI opt-in. `npm run dev` and `npm run setup:local` stay on the mock profile unless you explicitly create `.env.ai.<mode>.local` and switch to it.
 
 Critical flags:
 

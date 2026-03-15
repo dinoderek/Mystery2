@@ -2,12 +2,12 @@
   "users": [
     {
       "email": "player1@test.local",
-      "password": "password123",
+      "password": "replace-me-dev-password",
       "email_confirm": true
     },
     {
       "email": "player2@test.local",
-      "password": "password123",
+      "password": "replace-me-dev-password-2",
       "email_confirm": true
     }
   ]

@@ -105,12 +105,12 @@ describe('AuthStore', () => {
 		mockSignInWithPassword.mockResolvedValue({ error: null });
 		const store = new AuthStore();
 
-		const success = await store.signIn('player@test.local', 'password123');
+		const success = await store.signIn('player@test.local', 'test-password-123');
 
 		expect(success).toBe(true);
 		expect(mockSignInWithPassword).toHaveBeenCalledWith({
 			email: 'player@test.local',
-			password: 'password123',
+			password: 'test-password-123',
 		});
 		expect(store.error).toBeNull();
 	});

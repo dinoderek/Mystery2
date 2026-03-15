@@ -37,6 +37,11 @@ Covers:
   - edge-function discovery (`supabase/functions/*`, excluding `_shared`)
   - command plan assembly for `dev|staging|prod`
   - skip behavior (`--skip-seed`, `--skip-users`) and bootstrap-user config validation
+  - `.example.json` to `.local.json` bootstrap-user guidance and placeholder-password rejection
+- local auth seed helper logic (`tests/api/unit/seed-auth-users.test.ts`) including:
+  - first-run generation of `supabase/seed/auth-users.local.json`
+  - rerun preservation of existing local passwords
+  - generated-credentials output formatting
 
 Web-specific command parser coverage:
 
@@ -183,6 +188,7 @@ Auth browser coverage (`web/e2e/auth.spec.ts`) must include:
 
 - required-field validation for login form
 - invalid credential feedback
+- credential resolution from explicit env vars, the local auth seed manifest, or ephemeral fallback via `web/e2e/test-auth.ts`
 - successful login redirect behavior
 - session persistence across reload
 - refresh-failure path redirecting to `/login` with a friendly message

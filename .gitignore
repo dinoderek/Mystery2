@@ -16,3 +16,5 @@ Thumbs.db
 .claude/
 generated/blueprint-images/
 .generated/blueprint-images/
+deploy/bootstrap-users.*.local.json
+supabase/seed/auth-users.local.json

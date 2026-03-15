@@ -13,6 +13,9 @@ declare module "../../../scripts/deploy-helpers.mjs" {
   export function assertRequiredDeployEnvVars(env: Record<string, string>): void;
   export function shouldBootstrapUsers(envName: string, skipUsers: boolean): boolean;
   export function shouldSeedBlueprints(skipSeed: boolean): boolean;
+  export function getBootstrapUsersPath(rootDir: string, envName: string): string;
+  export function getBootstrapUsersExamplePath(rootDir: string, envName: string): string;
+  export function isPlaceholderPassword(password: string): boolean;
   export function formatPlanLine(step: {
     id: string;
     command: string[];

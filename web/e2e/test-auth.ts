@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const TEST_EMAIL = process.env.AUTH_TEST_EMAIL ?? null;
-const TEST_PASSWORD = process.env.AUTH_TEST_PASSWORD ?? 'password123';
+const TEST_PASSWORD = process.env.AUTH_TEST_PASSWORD ?? null;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -38,6 +38,49 @@ function readRootEnvValue(key: string): string | null {
   }
 
   return null;
+}
+
+type AuthLogin = {
+  email: string;
+  password: string;
+};
+
+function readLocalSeedLogin(): AuthLogin | null {
+  const usersPath = path.resolve(process.cwd(), '../supabase/seed/auth-users.local.json');
+  if (!fs.existsSync(usersPath)) return null;
+
+  const raw = fs.readFileSync(usersPath, 'utf8');
+  const parsed = JSON.parse(raw) as {
+    users?: Array<{ email?: string; password?: string }>;
+  };
+  const firstUser = Array.isArray(parsed.users) ? parsed.users[0] : null;
+  if (!firstUser?.email || !firstUser.password) {
+    throw new Error(`Invalid auth seed config: ${usersPath}`);
+  }
+
+  return {
+    email: firstUser.email,
+    password: firstUser.password,
+  };
+}
+
+export function resolvePreferredLogin(): AuthLogin {
+  if ((TEST_EMAIL && !TEST_PASSWORD) || (!TEST_EMAIL && TEST_PASSWORD)) {
+    throw new Error('AUTH_TEST_EMAIL and AUTH_TEST_PASSWORD must be set together');
+  }
+
+  if (TEST_EMAIL && TEST_PASSWORD) {
+    return { email: TEST_EMAIL, password: TEST_PASSWORD };
+  }
+
+  const localSeedLogin = readLocalSeedLogin();
+  if (localSeedLogin) return localSeedLogin;
+
+  const suffix = crypto.randomUUID().slice(0, 8);
+  return {
+    email: `player-${suffix}@test.local`,
+    password: `E2E-${suffix}-Aa1!`,
+  };
 }
 
 async function ensureTestUser(email: string, password: string) {
@@ -87,16 +130,18 @@ export async function enableAuthBypass(page: Page) {
   });
 }
 
-export async function loginWithSeedUser(page: Page, password = TEST_PASSWORD) {
-  const email = TEST_EMAIL ?? `player-${crypto.randomUUID().slice(0, 8)}@test.local`;
+export async function loginWithSeedUser(page: Page, password?: string) {
+  const resolved = resolvePreferredLogin();
+  const email = resolved.email;
+  const loginPassword = password ?? resolved.password;
 
-  await ensureTestUser(email, password);
+  await ensureTestUser(email, loginPassword);
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/login$/);
 
   await page.locator('#email').fill(email);
-  await page.locator('#password').fill(password);
+  await page.locator('#password').fill(loginPassword);
   await page.getByRole('button', { name: '[ LOGIN ]' }).click();
 
   await expect(page).toHaveURL(/\/$/, { timeout: 15000 });

@@ -8,7 +8,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 - `web/`: Front-end SvelteKit application for the player UI.
 - `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
-- `deploy/`: Deployment contracts (environment target mapping and optional non-prod bootstrap user manifests).
+- `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests stay in local-only `*.local.json` files).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts.
@@ -19,7 +19,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
   - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions and server-side speaker attribution.
   - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
-  - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json`).
+  - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json` and the committed `auth-users.example.json` template that generates a local-only auth manifest on first bootstrap).
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).

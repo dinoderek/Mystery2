@@ -28,10 +28,12 @@ npm run seed:auth
 
 This ensures the following test accounts exist:
 
-| Email | Password | Notes |
-|-------|----------|-------|
-| `player1@test.local` | `password123` | Primary test player |
-| `player2@test.local` | `password123` | For RLS isolation tests |
+| Email | Notes |
+|-------|-------|
+| `player1@test.local` | Primary test player |
+| `player2@test.local` | For RLS isolation tests |
+
+Passwords are generated into the gitignored `supabase/seed/auth-users.local.json` file on first run and should be read from there.
 
 ### 3. Login
 

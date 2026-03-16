@@ -289,6 +289,7 @@ Failure-handling expectations:
 
 - **No secrets in UI**.
 - **OpenRouter key is server-side only** (stored in `ai_profiles.openrouter_api_key`).
+- **Gameplay runtime keys stay DB-first**; operator image generation uses a dedicated local env file instead of runtime profile storage.
 - **All data access** is controlled by Postgres **RLS** (and explicit checks where appropriate).
 - UI calls Edge Functions with a bearer token; functions validate it on every request.
 - RLS ownership design:
@@ -313,7 +314,7 @@ Failure-handling expectations:
   - deploy config writes canonical AI runtime profile row `ai_profiles.id='default'` per environment
   - env mapping is committed in `deploy/targets.json`
   - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files
-  - optional bootstrap-user examples are committed, but real deploy user manifests stay local-only in `deploy/bootstrap-users.<env>.local.json`
+  - optional bootstrap-user examples are committed, and real deploy user manifests are copied into `deploy/bootstrap-users.<env>.json`
 
 This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI calls”.
 Runbook and failure handling details live in `docs/deployment.md`.

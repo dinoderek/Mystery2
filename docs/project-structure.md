@@ -8,7 +8,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 - `web/`: Front-end SvelteKit application for the player UI.
 - `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
-- `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests stay in local-only `*.local.json` files).
+- `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests use `bootstrap-users.<env>.json`).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts.
@@ -28,6 +28,12 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `package.json`: Main workspace root defining all top-level scripts like test coordination.
 - `eslint.config.mjs`: Centralized ESLint configuration using flat config layout.
 - `tsconfig.json`: Base configuration inherited by all local packages.
+
+## Local-only Naming Convention
+
+- Use the `.local` suffix for machine-specific files that must stay gitignored.
+- Examples in this repo include env files such as `.env.deploy.<env>.local`, operator config such as `.env.images.local`, and copied deployment manifests such as `deploy/bootstrap-users.<env>.local.json`.
+- When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
 
 ## Feature Additions (Static Blueprint Images)
 

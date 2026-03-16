@@ -30,6 +30,7 @@ Covers:
 - UI component logic (where practical)
 - prompt construction and parsing utilities
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
+- image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
   - deploy CLI arg parsing and validation
@@ -37,7 +38,7 @@ Covers:
   - edge-function discovery (`supabase/functions/*`, excluding `_shared`)
   - command plan assembly for `dev|staging|prod`
   - skip behavior (`--skip-seed`, `--skip-users`) and bootstrap-user config validation
-  - `.example.json` to `.local.json` bootstrap-user guidance and placeholder-password rejection
+  - `.example.json` to `.json` bootstrap-user guidance and placeholder-password rejection
 - local auth seed helper logic (`tests/api/unit/seed-auth-users.test.ts`) including:
   - first-run generation of `supabase/seed/auth-users.local.json`
   - rerun preservation of existing local passwords

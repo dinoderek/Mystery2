@@ -5,6 +5,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.images.example
 coverage/
 .DS_Store
 Thumbs.db
@@ -16,5 +17,6 @@ Thumbs.db
 .claude/
 generated/blueprint-images/
 .generated/blueprint-images/
-deploy/bootstrap-users.*.json
+# Local-only configuration and secrets use the `.local` suffix.
+deploy/bootstrap-users.*.local.json
 supabase/seed/auth-users.local.json

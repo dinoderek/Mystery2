@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  loadImageGenerationEnv,
   parseGenerateImageArgs,
   runImageGeneration,
 } from "../../../scripts/generate-blueprint-images.mjs";
@@ -92,6 +93,76 @@ describe("generate-blueprint-images args parser", () => {
     ]);
 
     expect(parsed.dryMode).toBe(true);
+  });
+
+  it("uses env-backed model defaults when --model is omitted", () => {
+    const parsed = parseGenerateImageArgs(
+      [
+        "--blueprint-path",
+        "/tmp/mock.json",
+        "--output-dir",
+        "/tmp/out",
+      ],
+      { OPENROUTER_IMAGE_MODEL: "openai/custom-image-model" },
+    );
+
+    expect(parsed.model).toBe("openai/custom-image-model");
+  });
+
+  it("keeps explicit --model higher priority than env", () => {
+    const parsed = parseGenerateImageArgs(
+      [
+        "--blueprint-path",
+        "/tmp/mock.json",
+        "--output-dir",
+        "/tmp/out",
+        "--model",
+        "openai/cli-model",
+      ],
+      { OPENROUTER_IMAGE_MODEL: "openai/env-model" },
+    );
+
+    expect(parsed.model).toBe("openai/cli-model");
+  });
+});
+
+describe("loadImageGenerationEnv", () => {
+  it("loads image env first, then falls back to .env.local, with shell env overrides", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-env-"));
+
+    await writeFile(
+      path.join(tmpDir, ".env.local"),
+      'OPENROUTER_API_KEY="root-key"\nOPENROUTER_IMAGE_MODEL="root-model"\n',
+      "utf-8",
+    );
+    await writeFile(
+      path.join(tmpDir, ".env.images.local"),
+      'OPENROUTER_API_KEY="image-key"\nOPENROUTER_IMAGE_MODEL="image-model"\n',
+      "utf-8",
+    );
+
+    const env = await loadImageGenerationEnv(tmpDir, {
+      OPENROUTER_API_KEY: "shell-key",
+      OPENROUTER_IMAGE_MODEL: "shell-model",
+    });
+
+    expect(env.OPENROUTER_API_KEY).toBe("shell-key");
+    expect(env.OPENROUTER_IMAGE_MODEL).toBe("shell-model");
+  });
+
+  it("falls back to .env.local when image env file is absent", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-env-root-"));
+
+    await writeFile(
+      path.join(tmpDir, ".env.local"),
+      'OPENROUTER_API_KEY="root-key"\nOPENROUTER_IMAGE_MODEL="root-model"\n',
+      "utf-8",
+    );
+
+    const env = await loadImageGenerationEnv(tmpDir, {});
+
+    expect(env.OPENROUTER_API_KEY).toBe("root-key");
+    expect(env.OPENROUTER_IMAGE_MODEL).toBe("root-model");
   });
 });
 
@@ -283,5 +354,56 @@ describe("runImageGeneration", () => {
 
     const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
     expect(patched.metadata.image_id).toBeUndefined();
+  });
+
+  it("uses env-provided key when dependency injection is absent", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-env-key-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const fetchImpl = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  images: [
+                    {
+                      image_url: {
+                        url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+    );
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        overwrite: true,
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        env: { OPENROUTER_API_KEY: "env-key" },
+        fetchImpl,
+      },
+    );
+
+    expect(fetchImpl).toHaveBeenCalled();
+    expect(result.results[0].status).toBe("generated");
   });
 });

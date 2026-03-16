@@ -9,8 +9,10 @@ import {
 } from "./lib/image-prompt-builder.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
+import { loadEnvFile } from "./supabase-utils.mjs";
 
 const MAX_ERROR_BODY_LENGTH = 16_000;
+const DEFAULT_IMAGE_MODEL = "openai/gpt-image-1";
 
 function parseCsv(value) {
   return String(value ?? "")
@@ -19,11 +21,11 @@ function parseCsv(value) {
     .filter(Boolean);
 }
 
-export function parseGenerateImageArgs(argv) {
+export function parseGenerateImageArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
     outputDir: "generated/blueprint-images",
-    model: process.env.OPENROUTER_IMAGE_MODEL || "openai/gpt-image-1",
+    model: env.OPENROUTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
     overwrite: false,
     dryRun: false,
     dryMode: false,
@@ -114,6 +116,17 @@ export function parseGenerateImageArgs(argv) {
   }
 
   return options;
+}
+
+export async function loadImageGenerationEnv(rootDir = process.cwd(), baseEnv = process.env) {
+  const rootEnv = await loadEnvFile(path.join(rootDir, ".env.local"), false);
+  const imageEnv = await loadEnvFile(path.join(rootDir, ".env.images.local"), false);
+
+  return {
+    ...rootEnv,
+    ...imageEnv,
+    ...baseEnv,
+  };
 }
 
 class ImageGenerationError extends Error {
@@ -300,7 +313,8 @@ async function generateImageAsset({
 export async function runImageGeneration(rawOptions, dependencies = {}) {
   const options = { ...rawOptions };
   const fetchImpl = dependencies.fetchImpl ?? fetch;
-  const apiKey = dependencies.apiKey ?? process.env.OPENROUTER_API_KEY ?? "";
+  const env = dependencies.env ?? process.env;
+  const apiKey = dependencies.apiKey ?? env.OPENROUTER_API_KEY ?? "";
 
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
@@ -432,8 +446,9 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
 }
 
 async function main() {
-  const options = parseGenerateImageArgs(process.argv.slice(2));
-  const output = await runImageGeneration(options);
+  const env = await loadImageGenerationEnv();
+  const options = parseGenerateImageArgs(process.argv.slice(2), env);
+  const output = await runImageGeneration(options, { env });
   console.log(JSON.stringify(output, null, 2));
 }
 

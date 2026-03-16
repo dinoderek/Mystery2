@@ -197,12 +197,25 @@ If you also want to upload generated blueprint images during deploy, add `--imag
 
 ## Image Generation
 
-Required env:
+Preferred env file:
+
+- copy `.env.images.example` to `.env.images.local`
+
+Supported keys:
 
 - `OPENROUTER_API_KEY`
 - optional: `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`)
 
 `OPENROUTER_API_KEY` is not required when using `--dry-mode`.
+
+Resolution order for `npm run generate:images`:
+
+1. shell env at invocation time
+2. `.env.images.local`
+3. `.env.local`
+4. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
+
+Gameplay/runtime OpenRouter config stays DB-first and profile-driven. The image-generation CLI is separate operator tooling and does not read from `ai_profiles`.
 
 Keep live AI opt-in. `npm run dev` and `npm run setup:local` stay on the mock profile unless you explicitly create `.env.ai.<mode>.local` and switch to it.
 

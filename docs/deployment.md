@@ -66,6 +66,26 @@ The `.example.json` files are committed templates only. The real `.local.json` f
 
 Create each local file by copying the matching example file and replacing all sample passwords before deploy.
 
+The deploy bootstrap step only creates missing users. If a bootstrap user already exists, deploy leaves the existing account unchanged and does not reset its password.
+
+## Updating Bootstrap User Passwords
+
+To rotate passwords for the existing non-prod bootstrap users:
+
+1. Edit `deploy/bootstrap-users.<env>.local.json` with the new passwords.
+2. Run `npm run users:update-passwords -- --env <dev|staging>`.
+
+Optional flag:
+
+- `--dry-run`: validates config, confirms the target users exist, and prints which emails would be updated without changing passwords
+
+Behavior:
+
+- The script reads `.env.deploy.<env>.local` for `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- It matches users by email from `deploy/bootstrap-users.<env>.local.json`.
+- It updates passwords in place and preserves user ids.
+- It fails before making changes if any configured email does not already exist in Supabase Auth.
+
 ## Deploy Flow
 
 The orchestrator (`scripts/deploy.mjs`) executes in this order:

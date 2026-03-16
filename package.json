@@ -16,6 +16,7 @@
         "seed:auth": "node scripts/seed-auth-users.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",
         "seed:ai": "node scripts/seed-ai.mjs",
+        "users:update-passwords": "node scripts/update-bootstrap-passwords.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
         "deploy": "node scripts/deploy.mjs",
         "deploy:dev": "npm run deploy -- --env dev",

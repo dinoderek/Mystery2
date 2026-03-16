@@ -244,7 +244,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 ### Deploy dry-run checks
 
-`npm run test:unit` includes deploy helper dry-run coverage by asserting the command plan generated for each target environment and negative-path validation for missing variables/targets. Full remote deploy verification remains manual via `npm run deploy -- --env <env> --dry-run` and live deploy smoke checks.
+`npm run test:unit` includes deploy helper dry-run coverage for the staged plan shape, function-job resolution, and serial override behavior, plus runner coverage for parallel lane ordering and sibling-lane cancellation. Full remote deploy verification remains manual via `npm run deploy -- --env <env> --dry-run --skip-users` and live deploy smoke checks.
 
 ### Live-AI suites (opt-in)
 

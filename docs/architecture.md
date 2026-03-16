@@ -311,6 +311,8 @@ Failure-handling expectations:
   - `prod`: isolated Pages project + isolated Supabase project
 - Deployment operator flow:
   - one local orchestrator (`scripts/deploy.mjs`) drives web deploy, backend deploy/provisioning, and smoke checks
+  - after validation/preflight/build, Pages and Supabase deploy lanes run in parallel by default
+  - the Supabase lane keeps DB/profile/seed/user work ordered, but deploys all Edge Functions in one CLI invocation with configurable parallel jobs
   - deploy config writes canonical AI runtime profile row `ai_profiles.id='default'` per environment
   - env mapping is committed in `deploy/targets.json`
   - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files

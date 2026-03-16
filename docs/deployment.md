@@ -12,6 +12,8 @@ Optional flags:
 
 - `--preflight`: runs `lint`, `typecheck`, `test:unit` before deploy
 - `--dry-run`: validates config and prints command plan without executing
+- `--serial`: disables deploy parallelism and forces Supabase function deploy jobs to `1`
+- `--function-jobs <n>`: overrides Supabase Edge Function deploy concurrency (default `4`, clamped to the number of discovered functions)
 - `--skip-users`: skips non-prod auth user bootstrap and bootstrap-user smoke assertion
 - `--skip-seed`: skips storage blueprint seeding step
 
@@ -88,19 +90,24 @@ Behavior:
 
 ## Deploy Flow
 
-The orchestrator (`scripts/deploy.mjs`) executes in this order:
+The orchestrator (`scripts/deploy.mjs`) executes in staged order:
 
 1. Validate args, target manifest, secret env file, and required variables.
 2. Validate Cloudflare Pages project and Supabase project ref exist.
 3. Optional preflight checks (`--preflight`).
 4. Build static frontend (`npm -w web run build`).
-5. Deploy web artifact to Pages (`wrangler pages deploy web/build ...`).
-6. Link Supabase project and push migrations.
-7. Upsert canonical `ai_profiles.id='default'` from deploy env (`provider`, `model`, `openrouter_api_key`).
-8. Deploy all edge functions under `supabase/functions/*` excluding `_shared`.
-9. Seed Storage blueprints (unless `--skip-seed`).
-10. Bootstrap non-prod auth users from config (unless `--skip-users`).
-11. Run smoke checks.
+5. Run two deploy lanes in parallel by default:
+   - Pages lane: deploy web artifact to Pages (`wrangler pages deploy web/build ...`)
+   - Supabase lane:
+     - link project
+     - push migrations
+     - upsert canonical `ai_profiles.id='default'`
+     - deploy all edge functions in one CLI call with `--jobs <resolved-count>`
+     - seed Storage blueprints (unless `--skip-seed`)
+     - bootstrap non-prod auth users (unless `--skip-users`)
+6. Run smoke checks only after both lanes succeed.
+
+`--dry-run` now prints grouped serial/parallel phases. Child-process output in live deploys is prefixed with `[pages]` or `[supabase]` while the lanes are running concurrently.
 
 ## Rollback
 

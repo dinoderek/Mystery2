@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -15,12 +15,13 @@ import {
   shouldBootstrapUsers,
   shouldSeedBlueprints,
 } from "./deploy-helpers.mjs";
+import { runDeployPlan, runLoggedStep } from "./deploy-runner.mjs";
 import { npxBin } from "./supabase-utils.mjs";
 
 const DUPLICATE_USER_ERROR =
   /already (?:registered|exists)|has already been registered|duplicate key|user already exists/i;
 
-function runCommand(command, options = {}) {
+function runCommandSync(command, options = {}) {
   const {
     cwd = process.cwd(),
     env = process.env,
@@ -51,16 +52,119 @@ function runCommand(command, options = {}) {
   return capture ? (result.stdout || "") : "";
 }
 
-async function runStep(title, action) {
-  console.log(`\n[STEP] ${title}`);
+function createPrefixedLogger(prefix = "") {
+  const prefixText = prefix ? `${prefix} ` : "";
+  const write = (method, args) => {
+    if (!prefixText) {
+      method(...args);
+      return;
+    }
+
+    if (args.length === 0) {
+      method(prefixText.trimEnd());
+      return;
+    }
+
+    const [first, ...rest] = args;
+    method(`${prefixText}${String(first)}`, ...rest);
+  };
+
+  return {
+    log: (...args) => write(console.log, args),
+    warn: (...args) => write(console.warn, args),
+    error: (...args) => write(console.error, args),
+  };
+}
+
+function createOutputPrefixer(prefix, output) {
+  let buffer = "";
+
+  const write = (chunk) => {
+    buffer += chunk.toString("utf-8");
+
+    while (true) {
+      const newlineIndex = buffer.indexOf("\n");
+      if (newlineIndex === -1) break;
+
+      const line = buffer.slice(0, newlineIndex).replace(/\r$/u, "");
+      buffer = buffer.slice(newlineIndex + 1);
+      output.write(`${prefix}${line}\n`);
+    }
+  };
+
+  write.flush = () => {
+    if (buffer.length > 0) {
+      output.write(`${prefix}${buffer.replace(/\r$/u, "")}\n`);
+      buffer = "";
+    }
+  };
+
+  return write;
+}
+
+async function runCommandStreaming(command, options = {}) {
+  const {
+    cwd = process.cwd(),
+    env = process.env,
+    signal,
+    outputPrefix = "",
+  } = options;
+
+  const [binary, ...args] = command;
+  const child = spawn(binary, args, {
+    cwd,
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  const writeStdout = createOutputPrefixer(outputPrefix, process.stdout);
+  const writeStderr = createOutputPrefixer(outputPrefix, process.stderr);
+
+  child.stdout.on("data", writeStdout);
+  child.stderr.on("data", writeStderr);
+
+  const abortHandler = () => {
+    child.kill("SIGTERM");
+    setTimeout(() => {
+      if (!child.killed) {
+        child.kill("SIGKILL");
+      }
+    }, 5000).unref();
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortHandler();
+    } else {
+      signal.addEventListener("abort", abortHandler, { once: true });
+    }
+  }
+
   try {
-    await action();
-    console.log(`[OK] ${title}`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`[FAIL] ${title}`);
-    console.error(message);
-    throw error;
+    await new Promise((resolve, reject) => {
+      child.on("error", reject);
+      child.on("close", (code, termSignal) => {
+        writeStdout.flush();
+        writeStderr.flush();
+
+        if (signal?.aborted) {
+          reject(new Error(`Command aborted: ${command.join(" ")}`));
+          return;
+        }
+
+        if (code !== 0) {
+          const suffix = termSignal ? ` (signal ${termSignal})` : "";
+          reject(new Error(`Command failed (${code ?? "unknown"}${suffix}): ${command.join(" ")}`));
+          return;
+        }
+
+        resolve();
+      });
+    });
+  } finally {
+    if (signal) {
+      signal.removeEventListener("abort", abortHandler);
+    }
   }
 }
 
@@ -77,7 +181,7 @@ function outputSnippet(text, max = 500) {
 async function validatePagesProject(target, deployEnv, rootDir) {
   let output;
   try {
-    output = runCommand(
+    output = runCommandSync(
       [npxBin, "wrangler", "pages", "project", "list", "--json"],
       { cwd: rootDir, env: deployEnv, capture: true },
     );
@@ -144,7 +248,7 @@ async function validatePagesProject(target, deployEnv, rootDir) {
 async function validateSupabaseProject(target, deployEnv, rootDir) {
   let output;
   try {
-    output = runCommand(
+    output = runCommandSync(
       [npxBin, "supabase", "projects", "list", "--output", "json"],
       { cwd: rootDir, env: deployEnv, capture: true },
     );
@@ -219,7 +323,7 @@ function createSupabaseClients(supabaseUrl, serviceRoleKey, anonKey) {
   return { admin, anon };
 }
 
-async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
+async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users, logger = console }) {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -247,7 +351,7 @@ async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
     throw new Error(`Failed to bootstrap user ${user.email}: ${error.message}`);
   }
 
-  console.log(
+  logger.log(
     `Ensured ${users.length} user(s): created=${createdCount}, existing=${existingCount}`,
   );
 }
@@ -325,7 +429,7 @@ async function assertFrontendReachable(url) {
   }
 }
 
-async function assertBlueprintStorageSeeded(adminClient) {
+async function assertBlueprintStorageSeeded(adminClient, logger = console) {
   const { data, error } = await adminClient.storage
     .from("blueprints")
     .list("", { limit: 100 });
@@ -339,7 +443,7 @@ async function assertBlueprintStorageSeeded(adminClient) {
     throw new Error("Blueprint storage bucket is empty (expected seeded blueprint JSON files)");
   }
 
-  console.log(`Blueprint storage contains ${jsonCount} JSON file(s)`);
+  logger.log(`Blueprint storage contains ${jsonCount} JSON file(s)`);
 }
 
 async function assertBlueprintsListFunctionWorks({
@@ -348,6 +452,7 @@ async function assertBlueprintsListFunctionWorks({
   anonClient,
   adminClient,
   anonKey,
+  logger = console,
 }) {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).slice(2, 8);
@@ -404,18 +509,18 @@ async function assertBlueprintsListFunctionWorks({
       throw new Error("blueprints-list returned zero blueprints (expected seeded data)");
     }
 
-    console.log(`blueprints-list returned ${payload.blueprints.length} blueprint(s)`);
+    logger.log(`blueprints-list returned ${payload.blueprints.length} blueprint(s)`);
   } finally {
     if (smokeUserId) {
       const { error } = await adminClient.auth.admin.deleteUser(smokeUserId);
       if (error) {
-        console.warn(`Warning: could not remove smoke-check user ${email}: ${error.message}`);
+        logger.warn(`Warning: could not remove smoke-check user ${email}: ${error.message}`);
       }
     }
   }
 }
 
-async function assertBootstrapUsersExist(adminClient, users) {
+async function assertBootstrapUsersExist(adminClient, users, logger = console) {
   const expected = new Set(users.map((user) => user.email.toLowerCase()));
   const actualEmails = await listAllUserEmails(adminClient);
   const missing = [...expected].filter((email) => !actualEmails.has(email));
@@ -424,7 +529,7 @@ async function assertBootstrapUsersExist(adminClient, users) {
     throw new Error(`Missing expected bootstrap users: ${missing.join(", ")}`);
   }
 
-  console.log(`Verified ${expected.size} bootstrap user(s)`);
+  logger.log(`Verified ${expected.size} bootstrap user(s)`);
 }
 
 async function runSmokeChecks({
@@ -433,6 +538,7 @@ async function runSmokeChecks({
   deployEnv,
   bootstrapUsers,
   verifyBootstrapUsers,
+  logger = console,
 }) {
   const { admin, anon } = createSupabaseClients(
     target.expectedSupabaseUrl,
@@ -440,28 +546,29 @@ async function runSmokeChecks({
     deployEnv.VITE_SUPABASE_ANON_KEY,
   );
 
-  await runStep("Smoke: frontend URL reachable", async () => {
+  await runLoggedStep("Smoke: frontend URL reachable", async () => {
     await assertFrontendReachable(target.expectedFrontendUrl);
-  });
+  }, { logger });
 
-  await runStep("Smoke: blueprints bucket seeded", async () => {
-    await assertBlueprintStorageSeeded(admin);
-  });
+  await runLoggedStep("Smoke: blueprints bucket seeded", async () => {
+    await assertBlueprintStorageSeeded(admin, logger);
+  }, { logger });
 
-  await runStep("Smoke: blueprints-list returns data", async () => {
+  await runLoggedStep("Smoke: blueprints-list returns data", async () => {
     await assertBlueprintsListFunctionWorks({
       envName,
       supabaseUrl: target.expectedSupabaseUrl,
       anonClient: anon,
       adminClient: admin,
       anonKey: deployEnv.VITE_SUPABASE_ANON_KEY,
+      logger,
     });
-  });
+  }, { logger });
 
   if (verifyBootstrapUsers && bootstrapUsers.length > 0) {
-    await runStep("Smoke: bootstrap users exist", async () => {
-      await assertBootstrapUsersExist(admin, bootstrapUsers);
-    });
+    await runLoggedStep("Smoke: bootstrap users exist", async () => {
+      await assertBootstrapUsersExist(admin, bootstrapUsers, logger);
+    }, { logger });
   }
 }
 
@@ -473,9 +580,141 @@ function ensureTargetMatchesEnvContract(target, deployEnv) {
   }
 }
 
+function printPlanSection(title, steps) {
+  console.log(`\n${title}`);
+  if (steps.length === 0) {
+    console.log("- (none)");
+    return;
+  }
+
+  for (const step of steps) {
+    console.log(`- ${formatPlanLine(step)}`);
+  }
+}
+
+function printCommandPlan(commandPlan) {
+  console.log("\nDry run command plan:");
+  printPlanSection("Serial pre-deploy", commandPlan.serialPreDeploy);
+
+  console.log(
+    `\nParallel deploy lanes (${commandPlan.metadata.parallelEnabled ? "enabled" : "disabled via --serial"})`,
+  );
+  printPlanSection("Pages lane", commandPlan.parallelDeployLanes.pages);
+  printPlanSection(
+    `Supabase lane (functions=${commandPlan.metadata.functionCount}, jobs=${commandPlan.metadata.functionJobs})`,
+    commandPlan.parallelDeployLanes.supabase,
+  );
+
+  printPlanSection("Serial post-deploy", commandPlan.serialPostDeploy);
+}
+
+function createStepExecutionContext(context) {
+  const lanePrefix = context.laneName ? `[${context.laneName}]` : "";
+  return {
+    logger: createPrefixedLogger(lanePrefix),
+    outputPrefix: lanePrefix ? `${lanePrefix} ` : "",
+  };
+}
+
+async function executeDeployStep(step, context, runtime) {
+  const { laneName, signal } = context;
+  const { logger, outputPrefix } = createStepExecutionContext(context);
+  const {
+    rootDir,
+    deployEnv,
+    target,
+    defaultAIProfile,
+    bootstrapUsers,
+    shouldUsers,
+  } = runtime;
+
+  await runLoggedStep(step.title, async () => {
+    if (step.id === "backend:configure-default-ai-profile") {
+      await configureDefaultAIProfile({
+        supabaseUrl: target.expectedSupabaseUrl,
+        serviceRoleKey: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
+        profile: defaultAIProfile,
+      });
+      return;
+    }
+
+    if (step.id === "backend:seed-storage") {
+      const storageSeedEnv = {
+        ...deployEnv,
+        API_URL: target.expectedSupabaseUrl,
+        SERVICE_ROLE_KEY: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
+      };
+
+      await runCommandStreaming(step.command, {
+        cwd: rootDir,
+        env: storageSeedEnv,
+        signal,
+        outputPrefix,
+      });
+      return;
+    }
+
+    if (step.id.startsWith("backend:bootstrap-users:")) {
+      await seedAuthUsers({
+        supabaseUrl: target.expectedSupabaseUrl,
+        serviceRoleKey: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
+        users: bootstrapUsers,
+        logger,
+      });
+      return;
+    }
+
+    if (step.id === "verify:smoke") {
+      await runSmokeChecks({
+        envName: runtime.envName,
+        target,
+        deployEnv,
+        bootstrapUsers,
+        verifyBootstrapUsers: shouldUsers,
+        logger,
+      });
+      return;
+    }
+
+    if (step.id === "backend:link") {
+      const command = [
+        npxBin,
+        "supabase",
+        "link",
+        "--project-ref",
+        target.supabaseProjectRef,
+      ];
+      if (
+        typeof deployEnv.SUPABASE_DB_PASSWORD === "string" &&
+        deployEnv.SUPABASE_DB_PASSWORD.length > 0
+      ) {
+        command.push("--password", deployEnv.SUPABASE_DB_PASSWORD);
+      }
+
+      await runCommandStreaming(command, {
+        cwd: rootDir,
+        env: deployEnv,
+        signal,
+        outputPrefix,
+      });
+      return;
+    }
+
+    await runCommandStreaming(step.command, {
+      cwd: rootDir,
+      env: deployEnv,
+      signal,
+      outputPrefix,
+    });
+  }, {
+    logger,
+    prefix: laneName ? "" : "\n",
+  });
+}
+
 function printUsage() {
   console.log(
-    "Usage: npm run deploy -- --env <dev|staging|prod> [--preflight] [--dry-run] [--skip-users] [--skip-seed] [--image-dir <dir>] [--strict-images]",
+    "Usage: npm run deploy -- --env <dev|staging|prod> [--preflight] [--dry-run] [--serial] [--function-jobs <n>] [--skip-users] [--skip-seed] [--image-dir <dir>] [--strict-images]",
   );
 }
 
@@ -524,6 +763,8 @@ async function main() {
     includeUsers: shouldUsers,
     imageDir: options.imageDir,
     allowMissingImages: options.allowMissingImages,
+    serial: options.serial,
+    functionJobs: options.functionJobs,
     hasDbPassword:
       typeof deployEnv.SUPABASE_DB_PASSWORD === "string" &&
       deployEnv.SUPABASE_DB_PASSWORD.length > 0,
@@ -536,94 +777,38 @@ async function main() {
   console.log(`- expected frontend URL: ${target.expectedFrontendUrl}`);
   console.log(`- expected supabase URL: ${target.expectedSupabaseUrl}`);
   console.log(`- edge functions (${functionNames.length}): ${functionNames.join(", ")}`);
+  console.log(`- deploy mode: ${commandPlan.metadata.parallelEnabled ? "parallel" : "serial"}`);
+  console.log(`- function deploy jobs: ${commandPlan.metadata.functionJobs}`);
   console.log(`- default ai profile: ${defaultAIProfile.id} (${defaultAIProfile.provider}, ${defaultAIProfile.model})`);
   console.log(`- image dir: ${options.imageDir ?? "(not set)"}`);
   console.log(`- allow missing images: ${options.allowMissingImages ? "yes" : "no"}`);
 
   if (options.dryRun) {
-    console.log("\nDry run command plan:");
-    for (const step of commandPlan) {
-      console.log(`- ${formatPlanLine(step)}`);
-    }
+    printCommandPlan(commandPlan);
     console.log("\nDry run complete. No commands were executed.");
     return;
   }
 
-  await runStep("Validate Cloudflare Pages target", async () => {
+  await runLoggedStep("Validate Cloudflare Pages target", async () => {
     await validatePagesProject(target, deployEnv, rootDir);
   });
 
-  await runStep("Validate Supabase project target", async () => {
+  await runLoggedStep("Validate Supabase project target", async () => {
     await validateSupabaseProject(target, deployEnv, rootDir);
   });
 
-  for (const step of commandPlan) {
-    await runStep(step.title, async () => {
-      if (step.id === "backend:configure-default-ai-profile") {
-        await configureDefaultAIProfile({
-          supabaseUrl: target.expectedSupabaseUrl,
-          serviceRoleKey: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
-          profile: defaultAIProfile,
-        });
-        return;
-      }
-
-      if (step.id === "backend:seed-storage") {
-        const storageSeedEnv = {
-          ...deployEnv,
-          API_URL: target.expectedSupabaseUrl,
-          SERVICE_ROLE_KEY: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
-        };
-
-        runCommand(step.command, {
-          cwd: rootDir,
-          env: storageSeedEnv,
-        });
-        return;
-      }
-
-      if (step.id.startsWith("backend:bootstrap-users:")) {
-        await seedAuthUsers({
-          supabaseUrl: target.expectedSupabaseUrl,
-          serviceRoleKey: deployEnv.SUPABASE_SERVICE_ROLE_KEY,
-          users: bootstrapUsers,
-        });
-        return;
-      }
-
-      if (step.id === "verify:smoke") {
-        await runSmokeChecks({
-          envName: options.env,
-          target,
-          deployEnv,
-          bootstrapUsers,
-          verifyBootstrapUsers: shouldUsers,
-        });
-        return;
-      }
-
-      if (step.id === "backend:link") {
-        const command = [
-          npxBin,
-          "supabase",
-          "link",
-          "--project-ref",
-          target.supabaseProjectRef,
-        ];
-        if (
-          typeof deployEnv.SUPABASE_DB_PASSWORD === "string" &&
-          deployEnv.SUPABASE_DB_PASSWORD.length > 0
-        ) {
-          command.push("--password", deployEnv.SUPABASE_DB_PASSWORD);
-        }
-
-        runCommand(command, { cwd: rootDir, env: deployEnv });
-        return;
-      }
-
-      runCommand(step.command, { cwd: rootDir, env: deployEnv });
-    });
-  }
+  await runDeployPlan(commandPlan, {
+    executeStep: (step, context) =>
+      executeDeployStep(step, context, {
+        envName: options.env,
+        rootDir,
+        deployEnv,
+        target,
+        defaultAIProfile,
+        bootstrapUsers,
+        shouldUsers,
+      }),
+  });
 
   console.log("\nDeployment complete.");
   console.log(`Frontend URL: ${target.expectedFrontendUrl}`);

@@ -3,6 +3,7 @@ import path from "node:path";
 import { npmBin, npxBin, parseEnvLine } from "./supabase-utils.mjs";
 
 export const DEPLOY_ENVIRONMENTS = ["dev", "staging", "prod"];
+export const DEFAULT_FUNCTION_DEPLOY_JOBS = 4;
 
 export const REQUIRED_TARGET_KEYS = [
   "pagesProjectName",
@@ -35,6 +36,8 @@ export function parseDeployArgs(argv) {
     skipSeed: false,
     imageDir: null,
     allowMissingImages: true,
+    serial: false,
+    functionJobs: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -57,6 +60,11 @@ export function parseDeployArgs(argv) {
 
     if (token === "--skip-seed") {
       options.skipSeed = true;
+      continue;
+    }
+
+    if (token === "--serial") {
+      options.serial = true;
       continue;
     }
 
@@ -89,6 +97,25 @@ export function parseDeployArgs(argv) {
       continue;
     }
 
+    if (token === "--function-jobs") {
+      const value = argv[index + 1];
+      if (!value) {
+        throw new Error("Missing value for --function-jobs");
+      }
+      options.functionJobs = parseFunctionJobs(value);
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith("--function-jobs=")) {
+      const value = token.slice("--function-jobs=".length);
+      if (!value) {
+        throw new Error("Missing value for --function-jobs");
+      }
+      options.functionJobs = parseFunctionJobs(value);
+      continue;
+    }
+
     if (token === "--env") {
       const value = argv[index + 1];
       if (!value) {
@@ -118,6 +145,15 @@ export function parseDeployArgs(argv) {
   }
 
   return options;
+}
+
+export function parseFunctionJobs(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || String(parsed) !== String(value).trim() || parsed < 1) {
+    throw new Error("Invalid value for --function-jobs (expected integer >= 1)");
+  }
+
+  return parsed;
 }
 
 export async function loadEnvFileVars(filePath, required = false) {
@@ -258,6 +294,21 @@ export async function discoverEdgeFunctions(functionsDir) {
   return names;
 }
 
+export function resolveFunctionDeployJobs(options) {
+  const { functionCount, requestedJobs = null, serial = false } = options;
+
+  if (!Number.isInteger(functionCount) || functionCount < 1) {
+    throw new Error("functionCount must be an integer >= 1");
+  }
+
+  if (serial) {
+    return 1;
+  }
+
+  const requested = requestedJobs ?? DEFAULT_FUNCTION_DEPLOY_JOBS;
+  return Math.min(Math.max(requested, 1), functionCount);
+}
+
 export function shouldBootstrapUsers(envName, skipUsers) {
   if (skipUsers) return false;
   return envName !== "prod";
@@ -350,12 +401,24 @@ export function buildCommandPlan(options) {
     hasDbPassword,
     imageDir,
     allowMissingImages,
+    serial = false,
+    functionJobs = null,
   } = options;
 
-  const steps = [];
+  const serialPreDeploy = [];
+  const serialPostDeploy = [];
+  const parallelDeployLanes = {
+    pages: [],
+    supabase: [],
+  };
+  const resolvedFunctionJobs = resolveFunctionDeployJobs({
+    functionCount: functionNames.length,
+    requestedJobs: functionJobs,
+    serial,
+  });
 
   if (includePreflight) {
-    steps.push(
+    serialPreDeploy.push(
       {
         id: "preflight:lint",
         title: "Preflight: lint",
@@ -374,28 +437,29 @@ export function buildCommandPlan(options) {
     );
   }
 
-  steps.push(
+  serialPreDeploy.push(
     {
       id: "frontend:build",
       title: "Build frontend static artifact",
       command: [npmBin, "-w", "web", "run", "build"],
     },
-    {
-      id: "frontend:pages-deploy",
-      title: "Deploy frontend to Cloudflare Pages",
-      command: [
-        npxBin,
-        "wrangler",
-        "pages",
-        "deploy",
-        "web/build",
-        "--project-name",
-        target.pagesProjectName,
-        "--branch",
-        target.pagesBranch,
-      ],
-    },
   );
+
+  parallelDeployLanes.pages.push({
+    id: "frontend:pages-deploy",
+    title: "Deploy frontend to Cloudflare Pages",
+    command: [
+      npxBin,
+      "wrangler",
+      "pages",
+      "deploy",
+      "web/build",
+      "--project-name",
+      target.pagesProjectName,
+      "--branch",
+      target.pagesBranch,
+    ],
+  });
 
   const linkCommand = [
     npxBin,
@@ -408,7 +472,7 @@ export function buildCommandPlan(options) {
     linkCommand.push("--password", "$SUPABASE_DB_PASSWORD");
   }
 
-  steps.push(
+  parallelDeployLanes.supabase.push(
     {
       id: "backend:link",
       title: "Link Supabase project",
@@ -437,21 +501,20 @@ export function buildCommandPlan(options) {
     },
   );
 
-  for (const functionName of functionNames) {
-    steps.push({
-      id: `backend:function:${functionName}`,
-      title: `Deploy function: ${functionName}`,
-      command: [
-        npxBin,
-        "supabase",
-        "functions",
-        "deploy",
-        functionName,
-        "--project-ref",
-        target.supabaseProjectRef,
-      ],
-    });
-  }
+  parallelDeployLanes.supabase.push({
+    id: "backend:functions-deploy",
+    title: `Deploy ${functionNames.length} Supabase Edge Function(s)`,
+    command: [
+      npxBin,
+      "supabase",
+      "functions",
+      "deploy",
+      "--project-ref",
+      target.supabaseProjectRef,
+      "--jobs",
+      String(resolvedFunctionJobs),
+    ],
+  });
 
   if (includeSeed) {
     const seedCommand = ["node", "scripts/seed-storage.mjs"];
@@ -462,7 +525,7 @@ export function buildCommandPlan(options) {
       }
     }
 
-    steps.push({
+    parallelDeployLanes.supabase.push({
       id: "backend:seed-storage",
       title: "Seed blueprint storage",
       command: seedCommand,
@@ -470,22 +533,32 @@ export function buildCommandPlan(options) {
   }
 
   if (includeUsers) {
-    steps.push({
+    parallelDeployLanes.supabase.push({
       id: `backend:bootstrap-users:${envName}`,
       title: `Bootstrap auth users (${envName})`,
       command: ["node", "scripts/deploy.mjs", "<internal:bootstrap-users>"],
     });
   }
 
-  steps.push({
+  serialPostDeploy.push({
     id: "verify:smoke",
     title: "Run post-deploy smoke checks",
     command: ["node", "scripts/deploy.mjs", "<internal:smoke-checks>"],
   });
 
-  return steps;
+  return {
+    metadata: {
+      parallelEnabled: !serial,
+      functionCount: functionNames.length,
+      functionJobs: resolvedFunctionJobs,
+    },
+    serialPreDeploy,
+    parallelDeployLanes,
+    serialPostDeploy,
+  };
 }
 
 export function formatPlanLine(step) {
-  return `${step.id.padEnd(30)} ${step.command.join(" ")}`;
+  const command = step.runtimeCommand ?? step.command;
+  return `${step.id.padEnd(30)} ${command.join(" ")}`;
 }

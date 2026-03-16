@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_FUNCTION_DEPLOY_JOBS,
   assertRequiredDeployEnvVars,
   buildDefaultAIProfileConfig,
   buildCommandPlan,
@@ -15,6 +16,8 @@ import {
   isPlaceholderPassword,
   loadBootstrapUsers,
   parseDeployArgs,
+  parseFunctionJobs,
+  resolveFunctionDeployJobs,
   shouldBootstrapUsers,
   shouldSeedBlueprints,
   validateTargetsShape,
@@ -24,6 +27,21 @@ interface CommandStep {
   id: string;
   title: string;
   command: string[];
+  runtimeCommand?: string[];
+}
+
+interface CommandPlan {
+  metadata: {
+    parallelEnabled: boolean;
+    functionCount: number;
+    functionJobs: number;
+  };
+  serialPreDeploy: CommandStep[];
+  parallelDeployLanes: {
+    pages: CommandStep[];
+    supabase: CommandStep[];
+  };
+  serialPostDeploy: CommandStep[];
 }
 
 function makeTarget(envName: string) {
@@ -69,6 +87,8 @@ describe("parseDeployArgs", () => {
       skipSeed: true,
       imageDir: null,
       allowMissingImages: true,
+      serial: false,
+      functionJobs: null,
     });
   });
 
@@ -94,6 +114,21 @@ describe("parseDeployArgs", () => {
     });
   });
 
+  it("parses serial and function job flags", () => {
+    const parsed = parseDeployArgs([
+      "--env=dev",
+      "--serial",
+      "--function-jobs",
+      "6",
+    ]);
+
+    expect(parsed).toMatchObject({
+      env: "dev",
+      serial: true,
+      functionJobs: 6,
+    });
+  });
+
   it("rejects missing env", () => {
     expect(() => parseDeployArgs(["--dry-run"])).toThrow(
       "Missing required --env",
@@ -108,6 +143,50 @@ describe("parseDeployArgs", () => {
     expect(() => parseDeployArgs(["--env", "dev", "--nope"])).toThrow(
       "Unknown argument",
     );
+  });
+
+  it("rejects invalid function job values", () => {
+    expect(() => parseDeployArgs(["--env", "dev", "--function-jobs", "0"])).toThrow(
+      "Invalid value for --function-jobs",
+    );
+  });
+});
+
+describe("function deploy job resolution", () => {
+  it("parses integer function job values", () => {
+    expect(parseFunctionJobs("4")).toBe(4);
+  });
+
+  it("rejects non-integer function job values", () => {
+    expect(() => parseFunctionJobs("4.5")).toThrow(
+      "Invalid value for --function-jobs",
+    );
+  });
+
+  it("defaults and clamps parallel job counts", () => {
+    expect(
+      resolveFunctionDeployJobs({
+        functionCount: 2,
+        requestedJobs: null,
+      }),
+    ).toBe(Math.min(DEFAULT_FUNCTION_DEPLOY_JOBS, 2));
+
+    expect(
+      resolveFunctionDeployJobs({
+        functionCount: 3,
+        requestedJobs: 9,
+      }),
+    ).toBe(3);
+  });
+
+  it("forces serial job count to one", () => {
+    expect(
+      resolveFunctionDeployJobs({
+        functionCount: 8,
+        requestedJobs: 4,
+        serial: true,
+      }),
+    ).toBe(1);
   });
 });
 
@@ -261,13 +340,13 @@ describe("loadBootstrapUsers", () => {
 });
 
 describe("buildCommandPlan", () => {
-  it("builds exact dry-run command plan per environment", () => {
+  it("builds staged dry-run command plans per environment", () => {
     const functionNames = ["blueprints-list", "game-start"];
 
     for (const envName of DEPLOY_ENVIRONMENTS) {
       const includeUsers = envName !== "prod";
 
-      const steps = buildCommandPlan({
+      const plan = buildCommandPlan({
         envName,
         target: makeTarget(envName),
         functionNames,
@@ -276,26 +355,44 @@ describe("buildCommandPlan", () => {
         includeUsers,
         imageDir: null,
         allowMissingImages: true,
+        serial: false,
+        functionJobs: null,
         hasDbPassword: false,
-      }) as CommandStep[];
+      }) as CommandPlan;
 
-      expect(steps.map((step) => step.id)).toEqual([
+      expect(plan.metadata).toEqual({
+        parallelEnabled: true,
+        functionCount: 2,
+        functionJobs: 2,
+      });
+
+      expect(plan.serialPreDeploy.map((step) => step.id)).toEqual([
         "preflight:lint",
         "preflight:typecheck",
         "preflight:test-unit",
         "frontend:build",
+      ]);
+
+      expect(plan.parallelDeployLanes.pages.map((step) => step.id)).toEqual([
         "frontend:pages-deploy",
+      ]);
+
+      expect(plan.parallelDeployLanes.supabase.map((step) => step.id)).toEqual([
         "backend:link",
         "backend:db-push",
         "backend:configure-default-ai-profile",
-        "backend:function:blueprints-list",
-        "backend:function:game-start",
+        "backend:functions-deploy",
         "backend:seed-storage",
         ...(includeUsers ? [`backend:bootstrap-users:${envName}`] : []),
+      ]);
+
+      expect(plan.serialPostDeploy.map((step) => step.id)).toEqual([
         "verify:smoke",
       ]);
 
-      const pagesStep = steps.find((step) => step.id === "frontend:pages-deploy");
+      const pagesStep = plan.parallelDeployLanes.pages.find(
+        (step) => step.id === "frontend:pages-deploy",
+      );
       expect(pagesStep?.command).toEqual([
         pagesStep?.command[0],
         "wrangler",
@@ -308,14 +405,33 @@ describe("buildCommandPlan", () => {
         envName,
       ]);
 
-      const lines = steps.map((step) => formatPlanLine(step));
+      const functionsStep = plan.parallelDeployLanes.supabase.find(
+        (step) => step.id === "backend:functions-deploy",
+      );
+      expect(functionsStep?.command).toEqual([
+        functionsStep?.command[0],
+        "supabase",
+        "functions",
+        "deploy",
+        "--project-ref",
+        `${envName}-ref`,
+        "--jobs",
+        "2",
+      ]);
+
+      const lines = [
+        ...plan.serialPreDeploy,
+        ...plan.parallelDeployLanes.pages,
+        ...plan.parallelDeployLanes.supabase,
+        ...plan.serialPostDeploy,
+      ].map((step) => formatPlanLine(step));
       expect(lines[0]).toContain("preflight:lint");
       expect(lines.at(-1)).toContain("verify:smoke");
     }
   });
 
   it("omits optional steps when skip flags are enabled", () => {
-    const steps = buildCommandPlan({
+    const plan = buildCommandPlan({
       envName: "dev",
       target: makeTarget("dev"),
       functionNames: ["blueprints-list"],
@@ -324,18 +440,24 @@ describe("buildCommandPlan", () => {
       includeUsers: false,
       imageDir: null,
       allowMissingImages: true,
+      serial: false,
+      functionJobs: null,
       hasDbPassword: false,
-    }) as CommandStep[];
+    }) as CommandPlan;
 
-    expect(steps.map((step) => step.id)).not.toContain("preflight:lint");
-    expect(steps.map((step) => step.id)).not.toContain("backend:seed-storage");
-    expect(steps.some((step) => step.id.startsWith("backend:bootstrap-users"))).toBe(
-      false,
+    expect(plan.serialPreDeploy.map((step) => step.id)).not.toContain("preflight:lint");
+    expect(plan.parallelDeployLanes.supabase.map((step) => step.id)).not.toContain(
+      "backend:seed-storage",
     );
+    expect(
+      plan.parallelDeployLanes.supabase.some((step) =>
+        step.id.startsWith("backend:bootstrap-users"),
+      ),
+    ).toBe(false);
   });
 
   it("adds image sync flags to seed step when image dir is provided", () => {
-    const steps = buildCommandPlan({
+    const plan = buildCommandPlan({
       envName: "dev",
       target: makeTarget("dev"),
       functionNames: ["blueprints-list"],
@@ -344,10 +466,14 @@ describe("buildCommandPlan", () => {
       includeUsers: false,
       imageDir: "generated/blueprint-images",
       allowMissingImages: false,
+      serial: false,
+      functionJobs: null,
       hasDbPassword: false,
-    }) as CommandStep[];
+    }) as CommandPlan;
 
-    const seedStep = steps.find((step) => step.id === "backend:seed-storage");
+    const seedStep = plan.parallelDeployLanes.supabase.find(
+      (step) => step.id === "backend:seed-storage",
+    );
     expect(seedStep).toBeDefined();
     expect(seedStep?.command).toEqual([
       "node",
@@ -357,5 +483,28 @@ describe("buildCommandPlan", () => {
       "generated/blueprint-images",
       "--strict-images",
     ]);
+  });
+
+  it("forces serial mode and single function job", () => {
+    const plan = buildCommandPlan({
+      envName: "dev",
+      target: makeTarget("dev"),
+      functionNames: ["blueprints-list", "game-start", "game-move"],
+      includePreflight: false,
+      includeSeed: false,
+      includeUsers: false,
+      imageDir: null,
+      allowMissingImages: true,
+      serial: true,
+      functionJobs: 5,
+      hasDbPassword: false,
+    }) as CommandPlan;
+
+    expect(plan.metadata.parallelEnabled).toBe(false);
+    expect(plan.metadata.functionJobs).toBe(1);
+    expect(
+      plan.parallelDeployLanes.supabase.find((step) => step.id === "backend:functions-deploy")
+        ?.command,
+    ).toContain("1");
   });
 });

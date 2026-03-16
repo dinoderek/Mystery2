@@ -8,6 +8,10 @@ function abortError(message) {
   return error;
 }
 
+function isAbortError(error) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 function decorateLaneError(laneName, error) {
   const message = formatErrorMessage(error);
   const decorated = new Error(`${laneName} lane failed: ${message}`);
@@ -22,6 +26,11 @@ export async function runLoggedStep(title, action, options = {}) {
     await action();
     logger.log(`${prefix}[OK] ${title}`);
   } catch (error) {
+    if (isAbortError(error)) {
+      logger.log(`${prefix}[ABORTED] ${title}`);
+      logger.log(formatErrorMessage(error));
+      throw error;
+    }
     logger.error(`${prefix}[FAIL] ${title}`);
     logger.error(formatErrorMessage(error));
     throw error;

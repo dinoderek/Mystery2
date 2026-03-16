@@ -415,6 +415,7 @@ describe("buildCommandPlan", () => {
         "deploy",
         "--project-ref",
         `${envName}-ref`,
+        "--use-api",
         "--jobs",
         "2",
       ]);

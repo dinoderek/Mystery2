@@ -511,6 +511,7 @@ export function buildCommandPlan(options) {
       "deploy",
       "--project-ref",
       target.supabaseProjectRef,
+      "--use-api",
       "--jobs",
       String(resolvedFunctionJobs),
     ],

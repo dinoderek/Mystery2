@@ -102,6 +102,12 @@ function createOutputPrefixer(prefix, output) {
   return write;
 }
 
+function createCommandAbortError(command) {
+  const error = new Error(`Command aborted: ${command.join(" ")}`);
+  error.name = "AbortError";
+  return error;
+}
+
 async function runCommandStreaming(command, options = {}) {
   const {
     cwd = process.cwd(),
@@ -124,6 +130,9 @@ async function runCommandStreaming(command, options = {}) {
   child.stderr.on("data", writeStderr);
 
   const abortHandler = () => {
+    if (child.exitCode !== null) {
+      return;
+    }
     child.kill("SIGTERM");
     setTimeout(() => {
       if (!child.killed) {
@@ -147,18 +156,18 @@ async function runCommandStreaming(command, options = {}) {
         writeStdout.flush();
         writeStderr.flush();
 
+        if (code === 0) {
+          resolve();
+          return;
+        }
+
         if (signal?.aborted) {
-          reject(new Error(`Command aborted: ${command.join(" ")}`));
+          reject(createCommandAbortError(command));
           return;
         }
 
-        if (code !== 0) {
-          const suffix = termSignal ? ` (signal ${termSignal})` : "";
-          reject(new Error(`Command failed (${code ?? "unknown"}${suffix}): ${command.join(" ")}`));
-          return;
-        }
-
-        resolve();
+        const suffix = termSignal ? ` (signal ${termSignal})` : "";
+        reject(new Error(`Command failed (${code ?? "unknown"}${suffix}): ${command.join(" ")}`));
       });
     });
   } finally {

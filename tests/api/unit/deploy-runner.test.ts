@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { runDeployPlan } from "../../../scripts/deploy-runner.mjs";
+import { runDeployPlan, runLoggedStep } from "../../../scripts/deploy-runner.mjs";
 
 interface RunnerStep {
   id: string;
   title: string;
   command: string[];
+}
+
+interface RunnerContext {
+  phase: string;
+  laneName: string | null;
+  signal: AbortSignal | null;
 }
 
 function makeStep(id: string): RunnerStep {
@@ -35,7 +41,7 @@ describe("runDeployPlan", () => {
     const events: string[] = [];
 
     await runDeployPlan(makePlan(true), {
-      executeStep: async (step, context) => {
+      executeStep: async (step: RunnerStep, context: RunnerContext) => {
         events.push(`${context.phase}:${context.laneName ?? "none"}:${step.id}:start`);
         if (step.id === "pages") {
           await new Promise((resolve) => setTimeout(resolve, 20));
@@ -61,7 +67,7 @@ describe("runDeployPlan", () => {
     let postObservedBeforeCompletion = false;
 
     await runDeployPlan(makePlan(true), {
-      executeStep: async (step) => {
+      executeStep: async (step: RunnerStep) => {
         if (step.id === "pages") {
           await new Promise((resolve) => setTimeout(resolve, 25));
           pagesFinished = true;
@@ -88,7 +94,7 @@ describe("runDeployPlan", () => {
 
     await expect(
       runDeployPlan(makePlan(true), {
-        executeStep: async (step, context) => {
+        executeStep: async (step: RunnerStep, context: RunnerContext) => {
           events.push(`${context.laneName ?? "none"}:${step.id}:start`);
 
           if (step.id === "pages") {
@@ -119,7 +125,7 @@ describe("runDeployPlan", () => {
     const events: string[] = [];
 
     await runDeployPlan(makePlan(false), {
-      executeStep: async (step, context) => {
+      executeStep: async (step: RunnerStep, context: RunnerContext) => {
         events.push(`${context.phase}:${context.laneName ?? "none"}:${step.id}`);
       },
     });
@@ -129,6 +135,31 @@ describe("runDeployPlan", () => {
       "serial-parallel-lane:pages:pages",
       "serial-parallel-lane:supabase:supabase",
       "serial-post:none:post",
+    ]);
+  });
+});
+
+describe("runLoggedStep", () => {
+  it("logs aborted steps without marking them as failed", async () => {
+    const messages: string[] = [];
+    const logger = {
+      log: (message: string) => messages.push(`log:${message}`),
+      error: (message: string) => messages.push(`error:${message}`),
+    };
+
+    const error = new Error("Command aborted: npx wrangler pages deploy");
+    error.name = "AbortError";
+
+    await expect(
+      runLoggedStep("Deploy frontend to Cloudflare Pages", async () => {
+        throw error;
+      }, { logger, prefix: "[pages] " }),
+    ).rejects.toBe(error);
+
+    expect(messages).toEqual([
+      "log:[pages] [STEP] Deploy frontend to Cloudflare Pages",
+      "log:[pages] [ABORTED] Deploy frontend to Cloudflare Pages",
+      "log:Command aborted: npx wrangler pages deploy",
     ]);
   });
 });

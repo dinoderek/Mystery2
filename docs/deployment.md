@@ -102,7 +102,7 @@ The orchestrator (`scripts/deploy.mjs`) executes in staged order:
      - link project
      - push migrations
      - upsert canonical `ai_profiles.id='default'`
-     - deploy all edge functions in one CLI call with `--jobs <resolved-count>`
+     - deploy all edge functions in one CLI call with `--use-api --jobs <resolved-count>`
      - seed Storage blueprints (unless `--skip-seed`)
      - bootstrap non-prod auth users (unless `--skip-users`)
 6. Run smoke checks only after both lanes succeed.
@@ -123,3 +123,4 @@ The orchestrator (`scripts/deploy.mjs`) executes in staged order:
 - `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY is required`: provide a key when provider is `openrouter`.
 - `Target mismatch ... VITE_SUPABASE_URL`: ensure deploy env and `deploy/targets.json` point to the same project URL.
 - `Missing bootstrap user config`: copy `deploy/bootstrap-users.<env>.example.json` to `deploy/bootstrap-users.<env>.local.json` and replace the sample passwords.
+- `--jobs must be used together with --use-api`: the deploy script now emits both flags automatically; if you run the Supabase CLI manually, include `--use-api` whenever you pass `--jobs`.

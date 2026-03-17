@@ -100,6 +100,78 @@ Default local users:
 
 Find the current passwords in `supabase/seed/auth-users.local.json`, then log in at `http://localhost:5173/login` or the redirected login screen.
 
+## Blueprint Authoring Tools
+
+Blueprint V2 authoring is a local operator workflow. The generation, verification, and judge commands write draft artifacts under `blueprints/drafts/` and never promote files into top-level `blueprints/` automatically.
+
+### Generate draft candidates
+
+Generation requires `OPENROUTER_API_KEY` in your shell environment.
+
+1. Write a brief in Markdown, for example `blueprints/briefs/school-mystery/brief.md`.
+2. Run the generator:
+
+```bash
+npm run generate:blueprints -- \
+  --brief blueprints/briefs/school-mystery/brief.md \
+  --count 3
+```
+
+Optional flags:
+
+- `--count <n>`: number of candidates to request
+- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_MODEL` is set)
+
+Output layout:
+
+- copied brief: `blueprints/drafts/<slug>/<run-id>/brief.md`
+- valid candidates: `blueprints/drafts/<slug>/<run-id>/candidate-01.blueprint.json`
+- invalid JSON/raw-only outputs: `blueprints/drafts/<slug>/<run-id>/candidate-01.raw-model-output.txt`
+
+If no valid Blueprint V2 candidates are produced, the command exits non-zero.
+
+### Verify a candidate deterministically
+
+Run the verifier against a generated candidate or any local blueprint path:
+
+```bash
+npm run verify:blueprint -- \
+  --blueprint-path blueprints/drafts/school-mystery/<run-id>/candidate-01.blueprint.json
+```
+
+This writes a deterministic report next to the blueprint:
+
+- candidate drafts: `candidate-01.deterministic-report.json`
+- canonical blueprints: `<name>.deterministic-report.json`
+
+The verifier exits non-zero when blocking findings are present.
+
+### Judge a candidate with AI
+
+The AI judge also requires `OPENROUTER_API_KEY`.
+
+```bash
+npm run judge:blueprint -- \
+  --blueprint-path blueprints/drafts/school-mystery/<run-id>/candidate-01.blueprint.json
+```
+
+Optional flags:
+
+- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_MODEL` is set)
+
+This writes an AI review artifact next to the blueprint:
+
+- candidate drafts: `candidate-01.ai-judge-report.json`
+- canonical blueprints: `<name>.ai-judge-report.json`
+
+### Recommended review loop
+
+1. Generate one or more candidates from a `brief.md`.
+2. Open the generated `.blueprint.json` files in `blueprints/drafts/<slug>/<run-id>/`.
+3. Run deterministic verification on the best candidate.
+4. Run AI judging on the same candidate.
+5. Manually decide whether to copy the candidate into top-level `blueprints/`.
+
 ## Supabase Operations
 
 ### Check status

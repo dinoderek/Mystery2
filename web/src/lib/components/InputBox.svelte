@@ -2,6 +2,8 @@
   import { gameSessionStore } from "$lib/domain/store.svelte";
 
   let inputValue = $state("");
+  let inputElement = $state<HTMLInputElement | null>(null);
+  let hasFocusedInput = $state(false);
 
   let placeholder = $derived(
     gameSessionStore.state?.mode === "talk"
@@ -22,6 +24,20 @@
       gameSessionStore.state?.mode === "ended" ||
       showReadOnlyPrompt,
   );
+
+  $effect(() => {
+    if (!inputElement || disabled) {
+      hasFocusedInput = false;
+      return;
+    }
+
+    if (hasFocusedInput) {
+      return;
+    }
+
+    inputElement.focus();
+    hasFocusedInput = true;
+  });
 
   async function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Enter" && inputValue.trim() && !disabled) {
@@ -60,6 +76,7 @@
 
     <input
       type="text"
+      bind:this={inputElement}
       bind:value={inputValue}
       onkeydown={handleKeydown}
       {placeholder}
@@ -67,7 +84,6 @@
       class="w-full bg-transparent border-none outline-none text-t-bright placeholder-t-muted/50 font-mono disabled:opacity-50"
       autocomplete="off"
       spellcheck="false"
-      autofocus
     />
 
     {#if gameSessionStore.lastFailedInput && gameSessionStore.status !== "loading"}

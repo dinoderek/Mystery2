@@ -10,14 +10,28 @@ const blueprint = {
   metadata: {
     title: "Mock Blueprint",
     one_liner: "A simple test mystery.",
-    art_style: "storybook watercolor",
-  },
-  narrative: {
-    premise: "Someone stole the cookies.",
+    visual: {
+      style: "storybook watercolor",
+      mood: "cozy mystery",
+      palette: "warm red and cream",
+      lighting_or_atmosphere: "soft kitchen light",
+      cover: {
+        summary: "A playful cookie mystery cover.",
+        visual_anchors: ["cookie jar", "detective notebook"],
+      },
+    },
   },
   world: {
-    locations: [{ name: "Kitchen", description: "A messy kitchen." }],
-    characters: [{ first_name: "Alice", appearance: "Red hair", personality: "Nervous" }],
+    locations: [{
+      location_key: "kitchen",
+      name: "Kitchen",
+      visual: { summary: "A warm kitchen.", visual_anchors: ["cookie jar", "mixing bowl"] },
+    }],
+    characters: [{
+      character_key: "alice",
+      first_name: "Alice",
+      visual: { summary: "A worried baker.", visual_anchors: ["red hair", "apron"] },
+    }],
   },
 };
 
@@ -29,11 +43,11 @@ describe("image prompt builder", () => {
     });
     const characterPrompt = buildImagePrompt(blueprint, {
       targetType: "character",
-      targetKey: "Alice",
+      targetKey: "alice",
     });
     const locationPrompt = buildImagePrompt(blueprint, {
       targetType: "location",
-      targetKey: "Kitchen",
+      targetKey: "kitchen",
     });
 
     expect(coverPrompt).toContain("Target: Mystery cover image");
@@ -45,7 +59,7 @@ describe("image prompt builder", () => {
   });
 
   it("creates unique slugged image ids", () => {
-    const imageId = createImageId(blueprint.id, "character", "Alice");
+    const imageId = createImageId(blueprint.id, "character", "alice");
     expect(imageId).toMatch(
       /^character-alice-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );

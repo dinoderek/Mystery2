@@ -14,7 +14,13 @@ import {
   getAIProfileById,
   getDefaultAIProfile,
 } from "../_shared/ai-profile.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  buildPublicWorld,
+  createBlueprintRuntime,
+  getEvidenceSummary,
+  loadBlueprintFromStorage,
+  requireLocation,
+} from "../_shared/blueprints/runtime.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
@@ -27,9 +33,10 @@ serveWithCors(async (req) => {
   const { requestId, log, logError } = logger;
 
   try {
-    // Authenticate user
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: supabase, user: authUser } = authResult;
 
     const body = await req.json();
@@ -45,7 +52,7 @@ serveWithCors(async (req) => {
       return badRequest("Invalid ai_profile");
     }
 
-    const { blueprint_id } = body;
+    const blueprintId = body.blueprint_id;
     const requestedAIProfile = typeof body.ai_profile === "string"
       ? body.ai_profile.trim()
       : null;
@@ -66,50 +73,21 @@ serveWithCors(async (req) => {
       return internalError("No default AI profile configured");
     }
 
-    // Find blueprint in Storage
-    const { data: files, error: listError } = await supabase.storage
-      .from("blueprints")
-      .list();
-    if (listError) {
-      logError("request.error", { reason: "storage_list_failed" });
-      return internalError("Failed to access blueprints");
-    }
-
-    let blueprintText: string | null = null;
-
-    for (const file of files || []) {
-      if (!file.name.endsWith(".json")) continue;
-
-      const { data: fileData, error: downloadError } = await supabase.storage
-        .from("blueprints")
-        .download(file.name);
-      if (downloadError) continue;
-
-      const text = await fileData.text();
-      try {
-        const rawJson = JSON.parse(text);
-        if (rawJson.id === blueprint_id) {
-          blueprintText = text;
-          break;
-        }
-      } catch (e) {
-        // ignore invalid JSON
-      }
-    }
-
-    if (!blueprintText) {
+    const blueprint = await loadBlueprintFromStorage(supabase, blueprintId);
+    if (!blueprint) {
       log("request.invalid", {
         reason: "blueprint_not_found",
-        blueprint_id,
+        blueprint_id: blueprintId,
       });
       return notFound("Blueprint not found");
     }
 
-    const rawBlueprint = JSON.parse(blueprintText);
-    const blueprint = BlueprintSchema.parse(rawBlueprint);
-    const startLoc = blueprint.world.starting_location_id;
+    const runtime = createBlueprintRuntime(blueprint);
+    const startingLocation = requireLocation(
+      runtime,
+      blueprint.world.starting_location_key,
+    );
 
-    // Insert game_session (user_id from authenticated user)
     const { data: sessionData, error: sessionError } = await supabase
       .from("game_sessions")
       .insert({
@@ -117,7 +95,7 @@ serveWithCors(async (req) => {
         blueprint_id: blueprint.id,
         ai_profile_id: aiProfile.id,
         mode: "explore",
-        current_location_id: startLoc,
+        current_location_id: blueprint.world.starting_location_key,
         time_remaining: blueprint.metadata.time_budget,
       })
       .select("id")
@@ -133,8 +111,6 @@ serveWithCors(async (req) => {
     }
 
     const sessionId = sessionData.id;
-
-    // Generate opening narration
     const aiProvider = createAIProviderFromProfile(aiProfile, {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
@@ -149,16 +125,21 @@ serveWithCors(async (req) => {
       aiMetadata,
     );
 
-    // Insert start event
     const { error: eventError } = await supabase.from("game_events").insert({
       session_id: sessionId,
       sequence: 1,
       event_type: "start",
       actor: "system",
       payload: {
+        location_key: startingLocation.location_key,
+        location_name: startingLocation.name,
+        evidence: getEvidenceSummary(blueprint, "start", {
+          location_key: startingLocation.location_key,
+        }),
         speaker: NARRATOR_SPEAKER,
       },
-      narration: narration,
+      narration,
+      narration_parts: [narration],
     });
 
     if (eventError) {
@@ -170,33 +151,29 @@ serveWithCors(async (req) => {
       return internalError("Failed to record start event");
     }
 
-    const gameState = {
-      locations: blueprint.world.locations.map((l: any) => ({ name: l.name })),
-      characters: blueprint.world.characters.map((c: any) => ({
-        first_name: c.first_name,
-        last_name: c.last_name,
-        location_name: c.location,
-      })),
-      time_remaining: blueprint.metadata.time_budget,
-      location: startLoc,
-      mode: "explore",
-      current_talk_character: null,
-      narration: narration,
-      narration_speaker: NARRATOR_SPEAKER,
-      history: [
-        {
-          sequence: 1,
-          event_type: "start",
-          narration,
-          speaker: NARRATOR_SPEAKER,
-        },
-      ],
-    };
+    const publicWorld = buildPublicWorld(runtime);
 
     return new Response(
       JSON.stringify({
         game_id: sessionId,
-        state: gameState,
+        state: {
+          locations: publicWorld.locations,
+          characters: publicWorld.characters,
+          time_remaining: blueprint.metadata.time_budget,
+          location: startingLocation.name,
+          mode: "explore",
+          current_talk_character: null,
+          narration,
+          narration_speaker: NARRATOR_SPEAKER,
+          history: [
+            {
+              sequence: 1,
+              event_type: "start",
+              narration,
+              speaker: NARRATOR_SPEAKER,
+            },
+          ],
+        },
       }),
       {
         headers: { "Content-Type": "application/json" },
@@ -212,7 +189,9 @@ serveWithCors(async (req) => {
       return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
     }
     const aiResponse = asRetriableAIResponse(err);
-    if (aiResponse) return aiResponse;
+    if (aiResponse) {
+      return aiResponse;
+    }
     logError("request.unhandled_error", {
       error: err instanceof Error ? err.message : String(err),
     });

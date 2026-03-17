@@ -17,9 +17,12 @@ describe("game-start endpoint", () => {
     await auth.cleanup();
   });
 
-  async function fetchSessionAIProfile(gameId: string): Promise<string> {
+  async function fetchSessionRow(gameId: string): Promise<{
+    ai_profile_id: string;
+    current_location_id: string;
+  }> {
     const res = await fetch(
-      `${REST_URL}/game_sessions?id=eq.${gameId}&select=ai_profile_id`,
+      `${REST_URL}/game_sessions?id=eq.${gameId}&select=ai_profile_id,current_location_id`,
       {
         headers: {
           apikey: process.env.ANON_KEY ?? "",
@@ -30,7 +33,7 @@ describe("game-start endpoint", () => {
     expect(res.status).toBe(200);
     const rows = await res.json();
     expect(rows).toHaveLength(1);
-    return rows[0].ai_profile_id as string;
+    return rows[0] as { ai_profile_id: string; current_location_id: string };
   }
 
   it("starts a game with narrator speaker metadata", async () => {
@@ -48,6 +51,7 @@ describe("game-start endpoint", () => {
     expect(data.game_id).toBeDefined();
     expect(data.state).toBeDefined();
     expect(data.state.mode).toBe("explore");
+    expect(data.state.location).toBe("Kitchen");
     expect(data.state.time_remaining).toBe(10);
     expect(data.state.narration).toContain("[Mock]");
     expect(data.state.narration_speaker).toMatchObject({
@@ -64,7 +68,10 @@ describe("game-start endpoint", () => {
         label: "Narrator",
       },
     });
-    expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
+    expect(await fetchSessionRow(data.game_id)).toMatchObject({
+      ai_profile_id: "default",
+      current_location_id: "kitchen",
+    });
   });
 
   it("accepts ai_profile and persists it on the session", async () => {
@@ -80,7 +87,7 @@ describe("game-start endpoint", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.game_id).toBeDefined();
-    expect(await fetchSessionAIProfile(data.game_id)).toBe("mock");
+    expect((await fetchSessionRow(data.game_id)).ai_profile_id).toBe("mock");
   });
 
   it("rejects unknown ai_profile", async () => {

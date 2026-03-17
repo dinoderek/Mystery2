@@ -12,7 +12,11 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  getEvidenceSummary,
+  getLocationByKey,
+  loadBlueprintFromStorage,
+} from "../_shared/blueprints/runtime.ts";
 import { parseSearchOutput } from "../_shared/ai-contracts.ts";
 import { buildSearchContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -48,9 +52,10 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id");
     }
 
-    // Authenticate user
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
@@ -80,26 +85,24 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprintFromStorage(userClient, session.blueprint_id);
+    if (!blueprint) {
       logError("request.error", {
         reason: "blueprint_missing",
         game_id: gameId,
       });
       return internalError("Blueprint missing");
     }
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
 
-    const currentLocation = blueprint.world.locations.find(
-      (location) => location.name === session.current_location_id,
+    const currentLocation = getLocationByKey(
+      blueprint,
+      session.current_location_id,
     );
     if (!currentLocation) {
       logError("request.error", {
         reason: "current_location_missing_in_blueprint",
         game_id: gameId,
-        location_name: session.current_location_id,
+        location_key: session.current_location_id,
       });
       return internalError("Current location not found in blueprint");
     }
@@ -134,6 +137,11 @@ serveWithCors(async (req) => {
         eventPayload = {
           role: "accusation_start",
           location_name: currentLocation.name,
+          location_key: currentLocation.location_key,
+          evidence: getEvidenceSummary(blueprint, "search", {
+            location_key: currentLocation.location_key,
+          }),
+          narration_parts: [narration],
           trigger: "timeout",
           follow_up_prompt: forcedOutput.follow_up_prompt,
           speaker: NARRATOR_SPEAKER,
@@ -208,11 +216,16 @@ serveWithCors(async (req) => {
         });
       }
       narration = searchOutput.narration;
-      eventPayload = {
-        role: "search",
-        location_name: currentLocation.name,
-        speaker: NARRATOR_SPEAKER,
-      };
+        eventPayload = {
+          role: "search",
+          location_name: currentLocation.name,
+          location_key: currentLocation.location_key,
+          evidence: getEvidenceSummary(blueprint, "search", {
+            location_key: currentLocation.location_key,
+          }),
+          narration_parts: [narration],
+          speaker: NARRATOR_SPEAKER,
+        };
     }
 
     const { error: updateError } = await userClient
@@ -239,6 +252,7 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: eventPayload,
       narration,
+      narration_parts: [narration],
     });
 
     return new Response(

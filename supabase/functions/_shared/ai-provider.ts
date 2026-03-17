@@ -123,7 +123,7 @@ function readOptionalContextString(
 
 function inferMentionedCharacter(
   context: Record<string, unknown>,
-): string | null {
+): { first_name: string; character_key: string | null } | null {
   const playerInput = readOptionalContextString(context, "player_input");
   if (!playerInput) {
     return null;
@@ -142,9 +142,19 @@ function inferMentionedCharacter(
   const characterNamesRaw = (
     sharedMysteryContext as Record<string, unknown>
   ).character_names;
+  const characterDirectoryRaw = (
+    sharedMysteryContext as Record<string, unknown>
+  ).character_directory;
+
   if (!Array.isArray(characterNamesRaw)) {
     return null;
   }
+
+  const directory = Array.isArray(characterDirectoryRaw)
+    ? characterDirectoryRaw.filter((entry): entry is Record<string, unknown> =>
+      typeof entry === "object" && entry !== null && !Array.isArray(entry)
+    )
+    : [];
 
   for (const value of characterNamesRaw) {
     if (typeof value !== "string") {
@@ -159,7 +169,16 @@ function inferMentionedCharacter(
       continue;
     }
     if (normalizedInput.includes(firstName.toLowerCase())) {
-      return firstName;
+      const directoryEntry = directory.find((entry) =>
+        typeof entry.first_name === "string" &&
+        entry.first_name.toLowerCase() === firstName.toLowerCase()
+      );
+      return {
+        first_name: firstName,
+        character_key: typeof directoryEntry?.character_key === "string"
+          ? directoryEntry.character_key
+          : null,
+      };
     }
   }
 
@@ -327,8 +346,16 @@ class MockAIProvider implements AIProvider {
           };
         }
 
-        const normalizedCharacter = mentionedCharacter.toLowerCase();
-        const isCulprit = normalizedCharacter !== "bob";
+        const groundTruth = typeof context.ground_truth_context === "object" &&
+            context.ground_truth_context !== null
+          ? context.ground_truth_context as Record<string, unknown>
+          : null;
+        const culpritCharacterKey = typeof groundTruth?.culprit_character_key === "string"
+          ? groundTruth.culprit_character_key
+          : null;
+        const isCulprit = culpritCharacterKey
+          ? mentionedCharacter.character_key === culpritCharacterKey
+          : mentionedCharacter.first_name.toLowerCase() !== "bob";
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
           : isCulprit

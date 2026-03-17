@@ -14,42 +14,51 @@ export function createImageId(blueprintId, targetType, targetKey = null) {
 }
 
 function styleBlock(blueprint) {
+  const visual = blueprint?.metadata?.visual ?? {};
   return [
     "Style:",
-    blueprint?.metadata?.art_style?.trim() ||
-      "storybook illustration, warm lighting, playful detective mood",
+    [
+      visual.style,
+      visual.mood,
+      visual.palette,
+      visual.lighting_or_atmosphere,
+    ].filter(Boolean).join("; ") ||
+      "storybook illustration; warm lighting; playful detective mood",
   ].join(" ");
 }
 
 function targetBlock(blueprint, target) {
   if (target.targetType === "blueprint") {
+    const cover = blueprint?.metadata?.visual?.cover ?? {};
     return [
       "Target: Mystery cover image.",
       `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
-      `Premise: ${blueprint.narrative?.premise ?? ""}.`,
       `One-liner: ${blueprint.metadata?.one_liner ?? ""}.`,
+      `Summary: ${cover.summary ?? ""}.`,
+      `Visual anchors: ${(cover.visual_anchors ?? []).join(", ")}.`,
     ].join(" ");
   }
 
   if (target.targetType === "character") {
     const character = (blueprint.world?.characters ?? []).find(
-      (entry) => entry.first_name === target.targetKey,
+      (entry) => entry.character_key === target.targetKey,
     );
     return [
       "Target: Character portrait.",
       `Name: ${character?.first_name ?? target.targetKey ?? "Unknown character"}.`,
-      `Appearance: ${character?.appearance ?? ""}.`,
-      `Personality cue: ${character?.personality ?? ""}.`,
+      `Summary: ${character?.visual?.summary ?? ""}.`,
+      `Visual anchors: ${(character?.visual?.visual_anchors ?? []).join(", ")}.`,
     ].join(" ");
   }
 
   const location = (blueprint.world?.locations ?? []).find(
-    (entry) => entry.name === target.targetKey,
+    (entry) => entry.location_key === target.targetKey,
   );
   return [
     "Target: Location scene image.",
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
-    `Description: ${location?.description ?? ""}.`,
+    `Summary: ${location?.visual?.summary ?? ""}.`,
+    `Visual anchors: ${(location?.visual?.visual_anchors ?? []).join(", ")}.`,
   ].join(" ");
 }
 

@@ -17,6 +17,8 @@ Thumbs.db
 .claude/
 generated/blueprint-images/
 .generated/blueprint-images/
+blueprints/drafts/*
+!blueprints/drafts/.gitkeep
 # Local-only configuration and secrets use the `.local` suffix.
 deploy/bootstrap-users.*.local.json
 supabase/seed/auth-users.local.json

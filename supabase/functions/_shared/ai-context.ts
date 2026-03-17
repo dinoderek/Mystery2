@@ -11,12 +11,15 @@ export interface BlueprintContext {
   };
   world: {
     locations: Array<{
+      location_key: string;
       name: string;
       description: string;
     }>;
     characters: Array<{
+      character_key: string;
       first_name: string;
       last_name: string;
+      location_key: string;
     }>;
   };
   ground_truth: Record<string, unknown>;
@@ -52,6 +55,11 @@ export interface AIContext {
     target_age: number;
     location_names: string[];
     character_names: string[];
+    character_directory: Array<{
+      character_key: string;
+      display_name: string;
+      first_name: string;
+    }>;
     current_location_description: string | null;
     premise: string;
   };
@@ -72,14 +80,43 @@ interface BuildContextInput {
   accusation_history_mode?: "all" | "none";
 }
 
+function findLocation(
+  blueprint: BlueprintContext,
+  locationIdentifier?: string | null,
+): BlueprintContext["world"]["locations"][number] | undefined {
+  if (!locationIdentifier) {
+    return undefined;
+  }
+
+  return blueprint.world.locations.find((location) =>
+    location.location_key === locationIdentifier ||
+    location.name === locationIdentifier
+  );
+}
+
+function findCharacter(
+  blueprint: BlueprintContext,
+  characterIdentifier?: string | null,
+): BlueprintContext["world"]["characters"][number] | undefined {
+  if (!characterIdentifier) {
+    return undefined;
+  }
+
+  return blueprint.world.characters.find((character) =>
+    character.character_key === characterIdentifier ||
+    character.first_name === characterIdentifier ||
+    `${character.first_name} ${character.last_name}` === characterIdentifier
+  );
+}
+
 function buildSharedMysteryContext(
   session: SessionSnapshot,
   blueprint: BlueprintContext,
   location_name?: string | null,
 ): AIContext["shared_mystery_context"] {
-  const locationName = location_name ?? session.current_location_id ?? null;
-  const currentLocation = blueprint.world.locations.find(
-    (location) => location.name === locationName,
+  const currentLocation = findLocation(
+    blueprint,
+    location_name ?? session.current_location_id ?? null,
   );
 
   return {
@@ -90,6 +127,11 @@ function buildSharedMysteryContext(
     character_names: blueprint.world.characters.map(
       (character) => `${character.first_name} ${character.last_name}`,
     ),
+    character_directory: blueprint.world.characters.map((character) => ({
+      character_key: character.character_key,
+      display_name: `${character.first_name} ${character.last_name}`,
+      first_name: character.first_name,
+    })),
     current_location_description: currentLocation?.description ?? null,
     premise: blueprint.narrative.premise,
   };
@@ -121,42 +163,52 @@ function readPayloadField(
 function filterCharacterHistory(
   conversationHistory: ConversationFragment[],
   characterName: string,
+  characterKey?: string | null,
 ): ConversationFragment[] {
   return conversationHistory.filter((entry) => {
+    const payloadCharacterKey = readPayloadField(entry.payload, "character_key");
     const payloadCharacter =
       readPayloadField(entry.payload, "character_name") ??
       readPayloadField(entry.payload, "character");
-    return payloadCharacter === characterName || entry.actor === characterName;
+    return payloadCharacterKey === characterKey ||
+      payloadCharacter === characterName ||
+      entry.actor === characterName;
   });
 }
 
 function filterLocationHistory(
   conversationHistory: ConversationFragment[],
   locationName: string,
+  locationKey?: string | null,
 ): ConversationFragment[] {
   return conversationHistory.filter((entry) => {
+    const payloadLocationKey =
+      readPayloadField(entry.payload, "location_key") ??
+      readPayloadField(entry.payload, "destination_key");
     const payloadLocation =
       readPayloadField(entry.payload, "location_name") ??
       readPayloadField(entry.payload, "destination");
-    return payloadLocation === locationName;
+    return payloadLocationKey === locationKey || payloadLocation === locationName;
   });
 }
 
 export function selectCharacterConversationHistory(
   conversationHistory: ConversationFragment[],
   characterName: string,
+  characterKey?: string | null,
 ): ConversationFragment[] {
   return sanitizeConversationHistory(
-    filterCharacterHistory(conversationHistory, characterName),
+    filterCharacterHistory(conversationHistory, characterName, characterKey),
   );
 }
 
 export function selectLocationConversationHistory(
   conversationHistory: ConversationFragment[],
   locationName: string,
+  locationKey?: string | null,
 ): ConversationFragment[] {
   return sanitizeConversationHistory(
-    filterLocationHistory(conversationHistory, locationName),
+    filterLocationHistory(conversationHistory, locationName, locationKey),
   );
 }
 
@@ -173,26 +225,35 @@ function selectConversationHistoryForRole(
     input.role_name === "talk_conversation" ||
     input.role_name === "talk_end"
   ) {
-    const characterName =
-      input.character_name ?? input.session.current_talk_character_id;
-    if (!characterName) {
+    const character = findCharacter(
+      input.blueprint,
+      input.character_name ?? input.session.current_talk_character_id,
+    );
+    if (!character) {
       return [];
     }
 
     return selectCharacterConversationHistory(
       conversationHistory,
-      characterName,
+      character.first_name,
+      character.character_key,
     );
   }
 
   if (input.role_name === "search") {
-    const locationName =
-      input.location_name ?? input.session.current_location_id;
-    if (!locationName) {
+    const location = findLocation(
+      input.blueprint,
+      input.location_name ?? input.session.current_location_id,
+    );
+    if (!location) {
       return [];
     }
 
-    return selectLocationConversationHistory(conversationHistory, locationName);
+    return selectLocationConversationHistory(
+      conversationHistory,
+      location.name,
+      location.location_key,
+    );
   }
 
   if (
@@ -210,15 +271,22 @@ function selectConversationHistoryForRole(
 }
 
 function buildContext(input: BuildContextInput): AIContext {
+  const currentLocation = findLocation(
+    input.blueprint,
+    input.location_name ?? input.session.current_location_id,
+  );
+  const currentCharacter = findCharacter(
+    input.blueprint,
+    input.character_name ?? input.session.current_talk_character_id,
+  );
+
   const context: AIContext = {
     game_id: input.game_id,
     role_name: input.role_name,
     mode: input.session.mode,
     forced_by_timeout: input.forced_by_timeout ?? false,
-    location_name:
-      input.location_name ?? input.session.current_location_id ?? null,
-    character_name:
-      input.character_name ?? input.session.current_talk_character_id,
+    location_name: input.location_name ?? currentLocation?.name ?? null,
+    character_name: input.character_name ?? currentCharacter?.first_name ?? null,
     player_input: input.player_input ?? null,
     conversation_history: selectConversationHistoryForRole(input),
     shared_mystery_context: buildSharedMysteryContext(

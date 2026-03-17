@@ -4,140 +4,307 @@
     "title": "The Missing Winner's Trophy",
     "one_liner": "The First Place trophy has vanished right after the big school race - and the winner didn't take it!",
     "target_age": 8,
-    "time_budget": 18
+    "time_budget": 18,
+    "visual": {
+      "style": "storybook watercolor",
+      "mood": "competitive, tense, and triumphant",
+      "palette": "school blue, polished gold, and gym-floor brown",
+      "lighting_or_atmosphere": "bright indoor sports-hall light",
+      "cover": {
+        "summary": "A school sports mystery with a missing trophy and a hidden closet.",
+        "visual_anchors": [
+          "gold trophy",
+          "sports hall",
+          "janitor closet"
+        ]
+      }
+    }
   },
   "narrative": {
-    "premise": "Sports Day is almost over, and Priya has just won the 100-metre race! But when everyone goes to collect the First Place trophy from the display table, it's gone. Nobody knows where it is. The head teacher has asked YOU to figure out who took it before the prize ceremony. Good luck, detective!",
+    "premise": "The Sports Day trophy vanished before the prize ceremony. Can you uncover who hid it before everyone gathers?",
     "starting_knowledge": [
-      "The First Place trophy has gone missing from the display table in the Sports Hall.",
-      "The trophy disappeared sometime between 3:00 PM and 3:20 PM.",
-      "Coach Rivera was called away from the Sports Hall at 3:05 PM."
+      "The trophy disappeared from the Sports Hall table.",
+      "Coach Rivera was called away just before it went missing."
     ]
   },
   "world": {
-    "starting_location_id": "Sports Hall",
+    "starting_location_key": "sports-hall",
     "locations": [
       {
+        "location_key": "sports-hall",
         "name": "Sports Hall",
-        "description": "A large hall with a polished wooden floor chalked with race lanes. A long table near the far wall has a velvet stand where the trophy used to sit. Some students are still milling about.",
-        "clues": [
-          "A trail of chalk dust scuffs leads from the trophy table toward the side exit.",
-          "A blue team scarf is missing from the bench where Ethan left it earlier today."
-        ]
+        "description": "A big hall with polished lanes and an empty velvet trophy stand.",
+        "search_context": [
+          "Chalk scuffs trail toward the side exit.",
+          "A blue team scarf is missing from the bench."
+        ],
+        "visual": {
+          "summary": "A school sports hall with race lanes, benches, and an empty trophy stand.",
+          "visual_anchors": [
+            "race lanes",
+            "velvet stand",
+            "team bench"
+          ]
+        }
       },
       {
+        "location_key": "janitor-closet",
         "name": "Janitor's Closet",
-        "description": "A small, dark room filled with mops, buckets, and the smell of cleaning liquid. The door was left slightly ajar.",
-        "clues": [
-          "The First Place trophy is hidden behind two large cleaning buckets!",
-          "Ethan's blue team scarf is wrapped tightly around the trophy."
-        ]
+        "description": "A dark little room packed with buckets and mops.",
+        "search_context": [
+          "The trophy is hidden behind two buckets.",
+          "A blue scarf is wrapped around it."
+        ],
+        "visual": {
+          "summary": "A cramped closet with buckets, mops, and a hidden shiny trophy.",
+          "visual_anchors": [
+            "buckets",
+            "mops",
+            "hidden trophy"
+          ]
+        }
       },
       {
+        "location_key": "cafeteria",
         "name": "Cafeteria",
-        "description": "A busy room filled with the sounds of students celebrating. Juice cartons and crisp packets are everywhere.",
-        "clues": [
-          "Priya and five of her friends are here. An empty juice carton with her name on it sits on the table - it's already warm, meaning she has been here a while."
-        ]
+        "description": "A noisy room full of celebration snacks and excited students.",
+        "search_context": [
+          "Priya's warm juice carton sits on the table.",
+          "Her friends are celebrating with her."
+        ],
+        "visual": {
+          "summary": "A bustling cafeteria with juice cartons, trays, and cheering classmates.",
+          "visual_anchors": [
+            "juice cartons",
+            "cafeteria tables",
+            "celebration crowd"
+          ]
+        }
       },
       {
+        "location_key": "coach-office",
         "name": "Coach's Office",
-        "description": "A tidy office with a desk covered in race result sheets. A phone sits on the corner.",
-        "clues": [
-          "The office phone shows a call was received at exactly 3:05 PM. Coach Rivera had to leave the Sports Hall to answer it.",
-          "A result sheet on the desk reads: 1st - Priya Sharma, 2nd - Ethan Clarke. The number 2 has been circled very hard with a pencil, almost tearing through the paper."
-        ]
+        "description": "A tidy office with a desk full of race sheets and a ringing phone.",
+        "search_context": [
+          "The office phone shows a 3:05 PM call.",
+          "A results sheet has Ethan's second place circled hard."
+        ],
+        "visual": {
+          "summary": "A neat office with race results, a desk phone, and coach paperwork.",
+          "visual_anchors": [
+            "desk phone",
+            "results sheet",
+            "sports whistle"
+          ]
+        }
       }
     ],
     "characters": [
       {
+        "character_key": "ethan",
         "first_name": "Ethan",
         "last_name": "Clarke",
-        "location": "Sports Hall",
-        "sex": "male",
-        "appearance": "A lean, sporty boy with short dark hair and a blue team vest. Noticeably, he is not wearing his team scarf even though everyone saw him in it earlier.",
-        "background": "Ethan has trained for the 100-metre race for months. He came in second place today, just behind Priya, and has been very quiet ever since.",
-        "personality": "Normally competitive and proud. Today he seems tense and avoids eye contact.",
-        "initial_attitude_towards_investigator": "Defensive and tries to change the subject quickly.",
-        "location_id": "Sports Hall",
-        "mystery_action_real": "He grabbed the trophy from the display table the moment Coach Rivera was called away, wrapped it in his scarf, and hid it in the Janitor's Closet.",
-        "stated_alibi": "I was doing cool-down stretches at the back of the Sports Hall the whole time.",
-        "motive": "He trained extremely hard and was devastated to come second. He could not bear to watch Priya receive the trophy in front of everyone.",
-        "is_culprit": true,
-        "knowledge": [
-          "I worked really hard for that race. It just isn't fair.",
-          "I haven't seen the trophy. I was just stretching at the back."
-        ]
+        "location_key": "sports-hall",
+        "roleplay": {
+          "persona": "A proud runner who tries to sound calm even when upset.",
+          "background": "He trained for months and came second.",
+          "attitude": "Defensive and tense."
+        },
+        "private_alibi": "I was stretching at the back of the hall.",
+        "private_motive": "He could not bear to watch Priya receive the trophy.",
+        "visual": {
+          "summary": "A sporty boy in a blue vest missing his team scarf.",
+          "visual_anchors": [
+            "blue vest",
+            "missing scarf",
+            "tense posture"
+          ]
+        }
       },
       {
+        "character_key": "priya",
         "first_name": "Priya",
         "last_name": "Sharma",
-        "location": "Cafeteria",
-        "sex": "female",
-        "appearance": "A girl with long dark plaits tied with gold ribbons, wearing a bright yellow running vest. She looks confused and upset that her trophy is missing.",
-        "background": "Priya is the fastest runner in the year and worked hard to win the race. She wants to bring the trophy home to show her parents.",
-        "personality": "Cheerful and confident, but honest and fair-minded.",
-        "initial_attitude_towards_investigator": "Very eager to help find the trophy and visibly upset that it is gone.",
-        "location_id": "Cafeteria",
-        "mystery_action_real": "She went straight to the cafeteria with her friends after crossing the finish line.",
-        "stated_alibi": "I went to the cafeteria straight after the race. My friends were all with me!",
-        "motive": "She would most want to keep the trophy, not hide it - she already won it fair and square.",
-        "is_culprit": false,
-        "knowledge": [
-          "I went to the cafeteria right after the race. My friends can all confirm it.",
-          "I saw Ethan standing very close to the trophy table just before I went to celebrate."
-        ]
+        "location_key": "cafeteria",
+        "roleplay": {
+          "persona": "A cheerful winner who is upset her trophy vanished.",
+          "background": "She won the race fairly and wants to show the trophy to her family.",
+          "attitude": "Open and eager to help."
+        },
+        "private_alibi": "I went straight to the cafeteria with my friends.",
+        "private_motive": "She wanted the trophy, but not hidden away.",
+        "visual": {
+          "summary": "A runner with gold ribbons and a bright yellow vest.",
+          "visual_anchors": [
+            "yellow vest",
+            "gold ribbons",
+            "running shoes"
+          ]
+        }
       },
       {
+        "character_key": "jake",
         "first_name": "Jake",
         "last_name": "Morrison",
-        "location": "Sports Hall",
-        "sex": "male",
-        "appearance": "A stocky boy with curly red hair and a blue team vest. He has a plaster on his knee from an earlier event.",
-        "background": "Jake is Ethan's best friend and was cheering loudly for him during the race. He feels bad for Ethan but is not sure what to do about it.",
-        "personality": "Loyal and good-natured, but not very good at hiding when he knows something is wrong.",
-        "initial_attitude_towards_investigator": "Tries to act casual but looks a bit worried.",
-        "location_id": "Sports Hall",
-        "mystery_action_real": "He was at the water fountain near the Sports Hall exit while the trophy went missing.",
-        "stated_alibi": "I was at the water fountain down the corridor. I needed a drink after cheering so much.",
-        "motive": "He might have helped his best friend Ethan, who he knew was very upset about losing.",
-        "is_culprit": false,
-        "knowledge": [
-          "Ethan was really upset after the race. More upset than I have ever seen him.",
-          "I saw Ethan heading toward the side exit just after Coach Rivera was called away."
-        ]
+        "location_key": "sports-hall",
+        "roleplay": {
+          "persona": "A loyal friend who struggles to hide when he knows too much.",
+          "background": "He cheered loudly for Ethan all day.",
+          "attitude": "Worried and evasive."
+        },
+        "private_alibi": "I was at the water fountain down the corridor.",
+        "private_motive": "He might protect Ethan if needed.",
+        "visual": {
+          "summary": "A curly-haired boy in a blue vest with a plaster on one knee.",
+          "visual_anchors": [
+            "curly hair",
+            "blue vest",
+            "knee plaster"
+          ]
+        }
       },
       {
+        "character_key": "coach-rivera",
         "first_name": "Coach",
         "last_name": "Rivera",
-        "location": "Coach's Office",
-        "sex": "female",
-        "appearance": "A fit woman with short greying hair, wearing a blue tracksuit and a whistle around her neck.",
-        "background": "Coach Rivera has been organising Sports Day all day. She was guarding the trophy table before being called away unexpectedly.",
-        "personality": "Responsible and fair. Very annoyed that she was pulled away at the worst possible moment.",
-        "initial_attitude_towards_investigator": "Brisk and professional. Keen to get to the bottom of this.",
-        "location_id": "Coach's Office",
-        "mystery_action_real": "She received a phone call at 3:05 PM and had to go to her office to deal with it, leaving the trophy table unguarded.",
-        "stated_alibi": "I got a call at three o'clock sharp and had to go to my office. I was only gone fifteen minutes!",
-        "motive": null,
-        "is_culprit": false,
-        "knowledge": [
-          "The trophy was safe on the table when I left at three-oh-five.",
-          "I noticed Ethan standing close to the trophy table just before I was called away."
-        ]
+        "location_key": "coach-office",
+        "roleplay": {
+          "persona": "A brisk coach who wants quick, fair answers.",
+          "background": "She organized Sports Day and guarded the trophy table.",
+          "attitude": "Professional and impatient."
+        },
+        "private_alibi": "I answered an unexpected office call.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A coach in a blue tracksuit with a whistle and clipboard.",
+          "visual_anchors": [
+            "tracksuit",
+            "whistle",
+            "clipboard"
+          ]
+        }
       }
     ]
   },
+  "evidence": [
+    {
+      "evidence_key": "empty-stand",
+      "player_text": "The velvet trophy stand in the Sports Hall is empty.",
+      "fact_summary": "The theft began at the hall display table.",
+      "essential": true,
+      "related_location_keys": ["sports-hall"],
+      "related_character_keys": ["ethan"],
+      "acquisition_paths": [
+        {
+          "surface": "start",
+          "location_key": "sports-hall"
+        }
+      ]
+    },
+    {
+      "evidence_key": "hidden-trophy",
+      "player_text": "The trophy is hidden in the Janitor's Closet with a blue scarf wrapped around it.",
+      "fact_summary": "The trophy was hidden using Ethan's scarf.",
+      "essential": true,
+      "related_location_keys": ["janitor-closet"],
+      "related_character_keys": ["ethan"],
+      "acquisition_paths": [
+        {
+          "surface": "search",
+          "location_key": "janitor-closet"
+        }
+      ]
+    },
+    {
+      "evidence_key": "coach-phone-call",
+      "player_text": "Coach Rivera's office phone shows the call that pulled her away at 3:05.",
+      "fact_summary": "Coach Rivera really left the hall at the key moment.",
+      "essential": false,
+      "related_location_keys": ["coach-office"],
+      "related_character_keys": ["coach-rivera"],
+      "acquisition_paths": [
+        {
+          "surface": "move",
+          "location_key": "coach-office"
+        }
+      ]
+    },
+    {
+      "evidence_key": "ethan-resentment",
+      "player_text": "Ethan admits he could not stand seeing the trophy go to someone else.",
+      "fact_summary": "Ethan reveals the jealousy behind the theft.",
+      "essential": true,
+      "related_location_keys": ["sports-hall"],
+      "related_character_keys": ["ethan"],
+      "acquisition_paths": [
+        {
+          "surface": "talk",
+          "location_key": "sports-hall",
+          "character_key": "ethan"
+        }
+      ]
+    }
+  ],
   "ground_truth": {
-    "what_happened": "Ethan Clarke took the First Place trophy from the display table the moment Coach Rivera was called to her office. He wrapped it in his blue team scarf and hid it in the Janitor's Closet.",
-    "why_it_happened": "Ethan had trained for months and was crushed to finish in second place. He could not bear to watch Priya receive the trophy in front of the whole school.",
+    "culprit_character_key": "ethan",
+    "what_happened": "Ethan grabbed the trophy when Coach Rivera left and hid it in the Janitor's Closet with his scarf.",
+    "why_it_happened": "He was crushed to come second and could not bear Priya's ceremony.",
+    "explanation": "Ethan used Coach Rivera's brief absence, wrapped the trophy in his scarf, and hid it away before the ceremony while Priya celebrated in the cafeteria.",
+    "suspect_truths": [
+      {
+        "character_key": "ethan",
+        "actual_activity": "He took the trophy from the display table and hid it in the closet.",
+        "stated_alibi": "I was stretching at the back of the hall.",
+        "motive": "He was devastated to come second.",
+        "contradiction_evidence_keys": [
+          "hidden-trophy",
+          "ethan-resentment"
+        ]
+      },
+      {
+        "character_key": "priya",
+        "actual_activity": "She celebrated in the cafeteria with friends.",
+        "stated_alibi": "I went straight to the cafeteria with my friends.",
+        "motive": "She wanted the trophy but did not hide it.",
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "jake",
+        "actual_activity": "He headed to the water fountain.",
+        "stated_alibi": "I was at the water fountain down the corridor.",
+        "motive": "He might protect Ethan, but he did not take the trophy.",
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "coach-rivera",
+        "actual_activity": "She answered the office phone call.",
+        "stated_alibi": "I answered an unexpected office call.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      }
+    ],
     "timeline": [
-      "3:00 PM - The 100-metre race finishes. Priya wins first place. Ethan comes second.",
-      "3:02 PM - Priya goes to the cafeteria with her friends to celebrate. Ethan lingers near the trophy table.",
-      "3:05 PM - Coach Rivera is called away to her office to take an unexpected phone call.",
-      "3:07 PM - With no adult watching, Ethan takes the trophy, wraps it in his blue scarf, and carries it to the Janitor's Closet.",
-      "3:09 PM - Jake sees Ethan heading toward the side exit on his way back from the water fountain.",
-      "3:20 PM - The prize ceremony is announced. Everyone looks for the trophy and finds it missing."
+      {
+        "timeline_entry_key": "coach-called-away",
+        "order": 0,
+        "summary": "Coach Rivera leaves the Sports Hall for the office call.",
+        "location_key": "coach-office",
+        "character_key": "coach-rivera"
+      },
+      {
+        "timeline_entry_key": "ethan-takes-trophy",
+        "order": 1,
+        "summary": "Ethan grabs the trophy from the display table.",
+        "location_key": "sports-hall",
+        "character_key": "ethan"
+      },
+      {
+        "timeline_entry_key": "ethan-hides-trophy",
+        "order": 2,
+        "summary": "Ethan hides the trophy in the Janitor's Closet.",
+        "location_key": "janitor-closet",
+        "character_key": "ethan"
+      }
     ]
   }
 }

@@ -12,7 +12,12 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  getCharacterByKey,
+  getEvidenceSummary,
+  getLocationByKey,
+  loadBlueprintFromStorage,
+} from "../_shared/blueprints/runtime.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -61,9 +66,10 @@ serveWithCors(async (req) => {
       return badRequest("Missing player_input");
     }
 
-    // Authenticate user
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: userClient } = authResult;
 
     const { data: session, error: sessionError } = await userClient
@@ -95,19 +101,22 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprintFromStorage(userClient, session.blueprint_id);
+    if (!blueprint) {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
-    const activeCharacter = blueprint.world.characters.find(
-      (character) => character.first_name === session.current_talk_character_id,
+    const activeCharacter = getCharacterByKey(
+      blueprint,
+      session.current_talk_character_id,
     );
     if (!activeCharacter) {
       return internalError("Character missing in blueprint");
+    }
+
+    const activeLocation = getLocationByKey(blueprint, session.current_location_id);
+    if (!activeLocation) {
+      return internalError("Current location not found in blueprint");
     }
 
     const { data: historyRows } = await userClient
@@ -133,7 +142,10 @@ serveWithCors(async (req) => {
           endpoint: "game-ask",
           game_id: gameId,
           aiProvider,
-          session,
+          session: {
+            ...session,
+            current_talk_character_id: null,
+          },
           blueprint,
           conversation_history: historyRows ?? [],
           scene_summary:
@@ -143,8 +155,15 @@ serveWithCors(async (req) => {
         eventPayload = {
           role: "accusation_start",
           character_name: activeCharacter.first_name,
-          location_name: session.current_location_id,
+          character_key: activeCharacter.character_key,
+          location_name: activeLocation.name,
+          location_key: activeLocation.location_key,
           player_input: playerInput,
+          evidence: getEvidenceSummary(blueprint, "talk", {
+            location_key: activeLocation.location_key,
+            character_key: activeCharacter.character_key,
+          }),
+          narration_parts: [narration],
           trigger: "timeout",
           follow_up_prompt: forcedOutput.follow_up_prompt,
           speaker: NARRATOR_SPEAKER,
@@ -178,7 +197,7 @@ serveWithCors(async (req) => {
         blueprint,
         character_name: activeCharacter.first_name,
         player_input: playerInput,
-        location_name: session.current_location_id,
+        location_name: activeLocation.name,
         conversation_history: historyRows ?? [],
       });
 
@@ -226,8 +245,15 @@ serveWithCors(async (req) => {
       eventPayload = {
         role: "talk_conversation",
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        character_key: activeCharacter.character_key,
+        location_name: activeLocation.name,
+        location_key: activeLocation.location_key,
         player_input: playerInput,
+        evidence: getEvidenceSummary(blueprint, "talk", {
+          location_key: activeLocation.location_key,
+          character_key: activeCharacter.character_key,
+        }),
+        narration_parts: [narration],
         speaker: characterSpeaker,
       };
     }
@@ -239,7 +265,7 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character_id: isForcedEndgame
           ? null
-          : activeCharacter.first_name,
+          : activeCharacter.character_key,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -255,23 +281,26 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: eventPayload,
       narration,
+      narration_parts: [narration],
     });
 
     return new Response(
       JSON.stringify({
         narration,
+        current_talk_character: isForcedEndgame ? null : activeCharacter.first_name,
         time_remaining: newTime,
         mode: nextMode,
-        current_talk_character: isForcedEndgame
-          ? null
-          : activeCharacter.first_name,
+        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: responseSpeaker,
       }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
     if (error instanceof Error && error.name === "BadRequestError") {
-      log("request.invalid", { reason: "bad_request_error", message: error.message });
+      log("request.invalid", {
+        reason: "bad_request_error",
+        message: error.message,
+      });
       return badRequest(error.message);
     }
     logError("request.unhandled_error", {

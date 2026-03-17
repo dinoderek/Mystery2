@@ -11,6 +11,9 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
+      "npm:zod": [
+        "node_modules/zod/index.d.ts"
+      ],
       "@shared/*": [
         "packages/shared/src/*"
       ],

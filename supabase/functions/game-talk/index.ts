@@ -12,7 +12,12 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  findCharacterByName,
+  getEvidenceSummary,
+  getLocationByKey,
+  loadBlueprintFromStorage,
+} from "../_shared/blueprints/runtime.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkStartContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -48,9 +53,10 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id or character_name");
     }
 
-    // Authenticate user
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
@@ -81,10 +87,8 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprintFromStorage(userClient, session.blueprint_id);
+    if (!blueprint) {
       logError("request.error", {
         reason: "blueprint_missing",
         game_id: gameId,
@@ -92,21 +96,28 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
-    const activeCharacter = blueprint.world.characters.find(
-      (character) =>
-        character.first_name === characterName &&
-        character.location === session.current_location_id,
-    );
+    const activeLocation = getLocationByKey(blueprint, session.current_location_id);
+    if (!activeLocation) {
+      logError("request.error", {
+        reason: "current_location_missing_in_blueprint",
+        game_id: gameId,
+        location_key: session.current_location_id,
+      });
+      return internalError("Current location not found in blueprint");
+    }
+
+    const activeCharacter = findCharacterByName(blueprint, characterName, {
+      locationKey: activeLocation.location_key,
+    });
     if (!activeCharacter) {
       log("request.invalid", {
         reason: "character_not_found_in_location",
         game_id: gameId,
         character_name: characterName,
-        location_name: session.current_location_id,
+        location_key: activeLocation.location_key,
       });
       return badRequest(
-        `Character ${characterName} not found in ${session.current_location_id}`,
+        `Character ${characterName} not found in ${activeLocation.name}`,
       );
     }
 
@@ -131,22 +142,32 @@ serveWithCors(async (req) => {
           endpoint: "game-talk",
           game_id: gameId,
           aiProvider,
-          session,
+          session: {
+            ...session,
+            current_talk_character_id: null,
+          },
           blueprint,
           conversation_history: historyRows ?? [],
           scene_summary:
             `The investigator started talking to ${activeCharacter.first_name}, but time expired before the interview could continue.`,
         });
         narration = forcedOutput.narration;
-      eventPayload = {
-        role: "accusation_start",
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        trigger: "timeout",
-        follow_up_prompt: forcedOutput.follow_up_prompt,
-        speaker: NARRATOR_SPEAKER,
-      };
+        eventPayload = {
+          role: "accusation_start",
+          character_name: activeCharacter.first_name,
+          character_key: activeCharacter.character_key,
+          location_name: activeLocation.name,
+          location_key: activeLocation.location_key,
+          character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
+          evidence: getEvidenceSummary(blueprint, "talk", {
+            location_key: activeLocation.location_key,
+            character_key: activeCharacter.character_key,
+          }),
+          narration_parts: [narration],
+          trigger: "timeout",
+          follow_up_prompt: forcedOutput.follow_up_prompt,
+          speaker: NARRATOR_SPEAKER,
+        };
       } catch (error) {
         if (error instanceof RetriableAIError) {
           log("request.ai_retriable", {
@@ -174,14 +195,14 @@ serveWithCors(async (req) => {
         session,
         blueprint,
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        location_name: activeLocation.name,
         conversation_history: historyRows ?? [],
       });
 
       const promptTemplate = await loadPromptTemplate("talk_start");
       const prompt = renderPrompt(promptTemplate, {
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        location_name: activeLocation.name,
         target_age: blueprint.metadata.target_age,
       });
       const aiMetadata = createAIRequestMetadata(req, {
@@ -224,9 +245,15 @@ serveWithCors(async (req) => {
         role: "talk_start",
         character: activeCharacter.first_name,
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        character_key: activeCharacter.character_key,
+        location_name: activeLocation.name,
+        location_key: activeLocation.location_key,
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        context_version: "v1",
+        evidence: getEvidenceSummary(blueprint, "talk", {
+          location_key: activeLocation.location_key,
+          character_key: activeCharacter.character_key,
+        }),
+        narration_parts: [narration],
         speaker: NARRATOR_SPEAKER,
       };
     }
@@ -238,7 +265,7 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character_id: isForcedEndgame
           ? null
-          : activeCharacter.first_name,
+          : activeCharacter.character_key,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -258,16 +285,15 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: eventPayload,
       narration,
+      narration_parts: [narration],
     });
 
     return new Response(
       JSON.stringify({
         narration,
-        time_remaining: newTime,
+        current_talk_character: isForcedEndgame ? null : activeCharacter.first_name,
         mode: nextMode,
-        current_talk_character: isForcedEndgame
-          ? null
-          : activeCharacter.first_name,
+        time_remaining: newTime,
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: NARRATOR_SPEAKER,
       }),

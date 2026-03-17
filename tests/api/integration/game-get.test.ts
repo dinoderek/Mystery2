@@ -53,6 +53,8 @@ describe("game-get endpoint", () => {
     const getData = await getRes.json();
     expect(getData.state).toBeDefined();
     expect(getData.state.mode).toBe("talk");
+    expect(getData.state.location).toBe("Kitchen");
+    expect(getData.state.current_talk_character).toBe("Alice");
     expect(getData.state.history.length).toBeGreaterThanOrEqual(3);
     expect(getData.state.history[0].event_type).toBe("start");
     expect(getData.state.history[0].speaker).toMatchObject({

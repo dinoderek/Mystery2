@@ -6,13 +6,17 @@ import {
   RetriableAIError,
 } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
+import {
+  getCharacterByKey,
+  getLocationByKey,
+  loadBlueprintFromStorage,
+} from "../_shared/blueprints/runtime.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkEndContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
@@ -47,9 +51,10 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id");
     }
 
-    // Authenticate user
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
@@ -83,10 +88,8 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprintFromStorage(userClient, session.blueprint_id);
+    if (!blueprint) {
       logError("request.error", {
         reason: "blueprint_missing",
         game_id: gameId,
@@ -94,7 +97,29 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+    const activeCharacter = getCharacterByKey(
+      blueprint,
+      session.current_talk_character_id,
+    );
+    if (!activeCharacter) {
+      logError("request.error", {
+        reason: "active_character_missing",
+        game_id: gameId,
+        character_key: session.current_talk_character_id,
+      });
+      return internalError("Character missing in blueprint");
+    }
+
+    const activeLocation = getLocationByKey(blueprint, session.current_location_id);
+    if (!activeLocation) {
+      logError("request.error", {
+        reason: "current_location_missing_in_blueprint",
+        game_id: gameId,
+        location_key: session.current_location_id,
+      });
+      return internalError("Current location not found in blueprint");
+    }
+
     const { data: historyRows } = await userClient
       .from("game_events")
       .select("sequence,event_type,actor,narration,payload")
@@ -105,14 +130,14 @@ serveWithCors(async (req) => {
       game_id: gameId,
       session,
       blueprint,
-      character_name: session.current_talk_character_id,
-      location_name: session.current_location_id,
+      character_name: activeCharacter.first_name,
+      location_name: activeLocation.name,
       conversation_history: historyRows ?? [],
     });
 
     const promptTemplate = await loadPromptTemplate("talk_end");
     const prompt = renderPrompt(promptTemplate, {
-      character_name: session.current_talk_character_id,
+      character_name: activeCharacter.first_name,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
@@ -174,12 +199,15 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: {
         role: "talk_end",
-        character: session.current_talk_character_id,
-        character_name: session.current_talk_character_id,
-        location_name: session.current_location_id,
+        character: activeCharacter.first_name,
+        character_name: activeCharacter.first_name,
+        character_key: activeCharacter.character_key,
+        location_name: activeLocation.name,
+        location_key: activeLocation.location_key,
         speaker: NARRATOR_SPEAKER,
       },
       narration: talkEndOutput.narration,
+      narration_parts: [talkEndOutput.narration],
     });
 
     return new Response(

@@ -27,8 +27,10 @@ Covers:
 
 - domain logic (reducers/state transitions)
 - request/response schema validation
+- Blueprint V2 schema/report validation (`tests/api/unit/blueprint-v2-schema.test.ts`)
 - UI component logic (where practical)
 - prompt construction and parsing utilities
+- Blueprint draft-run/generation/verification/judge helpers (`scripts/lib/blueprints/*`)
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
@@ -218,6 +220,19 @@ Integration/E2E tests should rely on:
 ## Test execution
 
 Before running tests, developers or CI can rely on the npm scripts to start Supabase when required and reseed storage blueprints before API-level suites.
+
+## Blueprint V2 Authoring Commands
+
+- `npm run generate:blueprints -- --brief <path> [--count <n>]`
+- `npm run verify:blueprint -- --blueprint-path <path>`
+- `npm run judge:blueprint -- --blueprint-path <path>`
+
+Expected operator flow:
+
+1. Generate one or more candidates into `blueprints/drafts/<slug>/<run-id>/`.
+2. Run deterministic verification to produce `.deterministic-report.json`.
+3. Run AI judging to produce `.ai-judge-report.json`.
+4. Review artifacts manually before copying any approved candidate into top-level `blueprints/`.
 
 ### Integration test script
 

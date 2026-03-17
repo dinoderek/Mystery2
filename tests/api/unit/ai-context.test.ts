@@ -19,25 +19,26 @@ const blueprint = {
     starting_knowledge: ["The kitchen window was open."],
   },
   world: {
-    starting_location_id: "Kitchen",
+    starting_location_key: "kitchen",
     locations: [
-      { name: "Kitchen", description: "A messy kitchen", clues: ["crumbs"] },
-      { name: "Garden", description: "A quiet garden", clues: [] },
+      { location_key: "kitchen", name: "Kitchen", description: "A messy kitchen" },
+      { location_key: "garden", name: "Garden", description: "A quiet garden" },
     ],
     characters: [
-      { first_name: "Alice", last_name: "Smith", location: "Kitchen" },
-      { first_name: "Bob", last_name: "Jones", location: "Garden" },
+      { character_key: "alice", first_name: "Alice", last_name: "Smith", location_key: "kitchen" },
+      { character_key: "bob", first_name: "Bob", last_name: "Jones", location_key: "garden" },
     ],
   },
   ground_truth: {
+    culprit_character_key: "alice",
     what_happened: "Alice stole the pie",
   },
 };
 
 const session = {
   mode: "talk" as const,
-  current_location_id: "Kitchen",
-  current_talk_character_id: "Alice",
+  current_location_id: "kitchen",
+  current_talk_character_id: "alice",
   time_remaining: 8,
 };
 
@@ -49,14 +50,14 @@ describe("ai-context guardrails", () => {
         event_type: "move",
         actor: "system",
         narration: "Moved to Kitchen.",
-        payload: { destination: "Kitchen", location_name: "Kitchen" },
+        payload: { destination: "Kitchen", location_name: "Kitchen", destination_key: "kitchen" },
       },
       {
         sequence: 2,
         event_type: "search",
         actor: "system",
         narration: "Searched Kitchen.",
-        payload: { location_name: "Kitchen" },
+        payload: { location_name: "Kitchen", location_key: "kitchen" },
       },
       {
         sequence: 3,
@@ -84,21 +85,21 @@ describe("ai-context guardrails", () => {
         event_type: "talk",
         actor: "system",
         narration: "Alice greets you.",
-        payload: { character_name: "Alice", location_name: "Kitchen" },
+        payload: { character_name: "Alice", character_key: "alice", location_name: "Kitchen", location_key: "kitchen" },
       },
       {
         sequence: 2,
         event_type: "ask",
         actor: "system",
         narration: "Alice answers.",
-        payload: { character_name: "Alice", location_name: "Kitchen" },
+        payload: { character_name: "Alice", character_key: "alice", location_name: "Kitchen", location_key: "kitchen" },
       },
       {
         sequence: 3,
         event_type: "talk",
         actor: "system",
         narration: "Bob greets you.",
-        payload: { character_name: "Bob", location_name: "Garden" },
+        payload: { character_name: "Bob", character_key: "bob", location_name: "Garden", location_key: "garden" },
       },
       {
         sequence: 4,
@@ -134,14 +135,14 @@ describe("ai-context guardrails", () => {
         event_type: "move",
         actor: "system",
         narration: "You move to Kitchen.",
-        payload: { destination: "Kitchen", location_name: "Kitchen" },
+        payload: { destination: "Kitchen", destination_key: "kitchen", location_name: "Kitchen", location_key: "kitchen" },
       },
       {
         sequence: 2,
         event_type: "search",
         actor: "system",
         narration: "You search Kitchen.",
-        payload: { location_name: "Kitchen" },
+        payload: { location_name: "Kitchen", location_key: "kitchen" },
       },
       {
         sequence: 3,
@@ -237,6 +238,9 @@ describe("ai-context guardrails", () => {
           target_age: 9,
           location_names: ["Kitchen"],
           character_names: ["Alice Smith"],
+          character_directory: [
+            { character_key: "alice", display_name: "Alice Smith", first_name: "Alice" },
+          ],
           current_location_description: "A messy kitchen",
           premise: "Someone stole the pie.",
         },

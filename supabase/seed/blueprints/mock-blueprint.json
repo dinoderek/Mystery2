@@ -5,69 +5,281 @@
     "one_liner": "A simple test mystery.",
     "target_age": 10,
     "time_budget": 10,
-    "art_style": "storybook watercolor, cozy warm lighting, kid-safe mystery mood",
+    "visual": {
+      "style": "storybook watercolor",
+      "mood": "cozy and curious",
+      "palette": "warm browns, cream, and berry red",
+      "lighting_or_atmosphere": "soft afternoon kitchen light",
+      "cover": {
+        "summary": "A cozy cookie mystery with a detective notebook and suspicious crumbs.",
+        "visual_anchors": [
+          "cookie jar",
+          "crumb trail",
+          "detective notebook"
+        ]
+      }
+    },
     "image_id": "mock-blueprint-123e4567-e89b-12d3-a456-426614174111"
   },
   "narrative": {
     "premise": "Someone stole the cookies.",
-    "starting_knowledge": ["The cookie jar was open."]
+    "starting_knowledge": [
+      "The cookie jar was open."
+    ]
   },
   "world": {
-    "starting_location_id": "Kitchen",
+    "starting_location_key": "kitchen",
     "locations": [
       {
+        "location_key": "kitchen",
         "name": "Kitchen",
         "description": "A messy kitchen.",
-        "location_image_id": "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222",
-        "clues": ["A crumb on the floor."]
+        "search_context": [
+          "Fresh crumbs sit near the cookie jar.",
+          "A chair is pulled out from the table."
+        ],
+        "visual": {
+          "summary": "A flour-dusted kitchen with a cookie jar and mixing bowls.",
+          "visual_anchors": [
+            "cookie jar",
+            "mixing bowl",
+            "sunlit counter"
+          ]
+        },
+        "location_image_id": "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222"
       },
       {
+        "location_key": "living-room",
         "name": "Living Room",
         "description": "A cozy living room.",
-        "location_image_id": "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223",
-        "clues": ["A wrapper on the sofa.", "A half-eaten cookie."]
+        "search_context": [
+          "A television hums beside the sofa.",
+          "A folded blanket sits on the armchair."
+        ],
+        "visual": {
+          "summary": "A soft living room with a sofa, blanket, and humming television.",
+          "visual_anchors": [
+            "sofa",
+            "television",
+            "plaid blanket"
+          ]
+        },
+        "location_image_id": "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223"
+      },
+      {
+        "location_key": "hallway",
+        "name": "Hallway",
+        "description": "A bright hallway lined with family photos.",
+        "search_context": [
+          "A shoe rack stands by the door.",
+          "A library book rests on a small table."
+        ],
+        "visual": {
+          "summary": "A tidy hallway with framed photos, a shoe rack, and a side table.",
+          "visual_anchors": [
+            "family photos",
+            "shoe rack",
+            "small table"
+          ]
+        }
       }
     ],
     "characters": [
       {
+        "character_key": "alice",
         "first_name": "Alice",
         "last_name": "Smith",
-        "location": "Kitchen",
-        "sex": "female",
-        "appearance": "Tall with red hair.",
-        "background": "The resident baker.",
-        "personality": "Nervous and fidgety.",
-        "initial_attitude_towards_investigator": "suspicious",
-        "location_id": "Kitchen",
-        "mystery_action_real": "Ate the cookies.",
-        "stated_alibi": "I was reading.",
-        "motive": "Was hungry.",
-        "is_culprit": true,
-        "portrait_image_id": "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
-        "knowledge": ["Bob was in the living room."]
+        "location_key": "kitchen",
+        "roleplay": {
+          "persona": "A nervous baker who talks quickly when worried.",
+          "background": "She usually bakes snacks for the whole house.",
+          "attitude": "Guarded but still polite."
+        },
+        "private_alibi": "I was reading.",
+        "private_motive": "She skipped lunch and felt hungry.",
+        "visual": {
+          "summary": "A red-haired baker with a flour-dusted apron and worried eyes.",
+          "visual_anchors": [
+            "red hair",
+            "apron",
+            "worried smile"
+          ]
+        },
+        "portrait_image_id": "mock-character-alice-123e4567-e89b-12d3-a456-426614174333"
       },
       {
+        "character_key": "bob",
         "first_name": "Bob",
         "last_name": "Jones",
-        "location": "Living Room",
-        "sex": "male",
-        "appearance": "Short with glasses.",
-        "background": "A guest in the house.",
-        "personality": "Calm and collected.",
-        "initial_attitude_towards_investigator": "helpful",
-        "location_id": "Living Room",
-        "mystery_action_real": "Watching TV.",
-        "stated_alibi": "I was watching TV.",
-        "motive": null,
-        "is_culprit": false,
-        "portrait_image_id": "mock-character-bob-123e4567-e89b-12d3-a456-426614174334",
-        "knowledge": ["Alice loves cookies."]
+        "location_key": "living-room",
+        "roleplay": {
+          "persona": "A calm guest who answers carefully.",
+          "background": "He is visiting for the afternoon.",
+          "attitude": "Helpful and patient."
+        },
+        "private_alibi": "I was watching TV.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A guest with glasses and a tidy cardigan holding a remote.",
+          "visual_anchors": [
+            "glasses",
+            "cardigan",
+            "remote control"
+          ]
+        },
+        "portrait_image_id": "mock-character-bob-123e4567-e89b-12d3-a456-426614174334"
+      },
+      {
+        "character_key": "carol",
+        "first_name": "Carol",
+        "last_name": "Brown",
+        "location_key": "hallway",
+        "roleplay": {
+          "persona": "An organized neighbor with sharp eyes.",
+          "background": "She dropped by to return a library book.",
+          "attitude": "Curious and observant."
+        },
+        "private_alibi": "I was by the front door with the library book.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A neat neighbor in a blue coat holding a library book.",
+          "visual_anchors": [
+            "blue coat",
+            "library book",
+            "watchful eyes"
+          ]
+        }
       }
     ]
   },
+  "evidence": [
+    {
+      "evidence_key": "open-cookie-jar",
+      "player_text": "The cookie jar lid is still tipped sideways.",
+      "fact_summary": "The thief left the jar open in a hurry.",
+      "essential": true,
+      "related_location_keys": [
+        "kitchen"
+      ],
+      "related_character_keys": [
+        "alice"
+      ],
+      "acquisition_paths": [
+        {
+          "surface": "start",
+          "location_key": "kitchen"
+        }
+      ]
+    },
+    {
+      "evidence_key": "crumbs-on-floor",
+      "player_text": "Fresh crumbs sparkle on the kitchen floor.",
+      "fact_summary": "Someone ate cookies in the kitchen recently.",
+      "essential": true,
+      "related_location_keys": [
+        "kitchen"
+      ],
+      "related_character_keys": [
+        "alice"
+      ],
+      "acquisition_paths": [
+        {
+          "surface": "search",
+          "location_key": "kitchen"
+        }
+      ]
+    },
+    {
+      "evidence_key": "sofa-wrapper",
+      "player_text": "A clean candy wrapper on the sofa proves Bob was relaxing here instead.",
+      "fact_summary": "Bob stayed in the living room and did not raid the kitchen.",
+      "essential": false,
+      "related_location_keys": [
+        "living-room"
+      ],
+      "related_character_keys": [
+        "bob"
+      ],
+      "acquisition_paths": [
+        {
+          "surface": "move",
+          "location_key": "living-room"
+        }
+      ]
+    },
+    {
+      "evidence_key": "alice-hungry",
+      "player_text": "Alice admits she skipped lunch and felt very hungry.",
+      "fact_summary": "Alice had a clear motive tied to hunger.",
+      "essential": true,
+      "related_location_keys": [
+        "kitchen"
+      ],
+      "related_character_keys": [
+        "alice"
+      ],
+      "acquisition_paths": [
+        {
+          "surface": "talk",
+          "location_key": "kitchen",
+          "character_key": "alice"
+        }
+      ]
+    }
+  ],
   "ground_truth": {
-    "what_happened": "Alice ate the cookies because she was hungry.",
-    "why_it_happened": "She was hungry.",
-    "timeline": ["12:00 Alice bakes cookies", "12:15 Alice eats them"]
+    "culprit_character_key": "alice",
+    "what_happened": "Alice ate the cookies in the kitchen while nobody was looking.",
+    "why_it_happened": "She was hungry after skipping lunch.",
+    "explanation": "Alice stayed near the cookie jar, ate the cookies, and failed to hide the open lid and fresh crumbs.",
+    "suspect_truths": [
+      {
+        "character_key": "alice",
+        "actual_activity": "She opened the jar and ate the cookies in the kitchen.",
+        "stated_alibi": "I was reading.",
+        "motive": "She was hungry after skipping lunch.",
+        "contradiction_evidence_keys": [
+          "open-cookie-jar",
+          "crumbs-on-floor"
+        ]
+      },
+      {
+        "character_key": "bob",
+        "actual_activity": "He watched television in the living room.",
+        "stated_alibi": "I was watching TV.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "carol",
+        "actual_activity": "She waited in the hallway to return a book.",
+        "stated_alibi": "I was by the front door with the library book.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      }
+    ],
+    "timeline": [
+      {
+        "timeline_entry_key": "alice-waits",
+        "order": 0,
+        "summary": "Alice stayed behind in the kitchen after lunch.",
+        "location_key": "kitchen",
+        "character_key": "alice"
+      },
+      {
+        "timeline_entry_key": "alice-eats-cookies",
+        "order": 1,
+        "summary": "Alice opened the jar and ate several cookies.",
+        "location_key": "kitchen",
+        "character_key": "alice"
+      },
+      {
+        "timeline_entry_key": "bob-relaxes",
+        "order": 2,
+        "summary": "Bob relaxed in the living room with the television on.",
+        "location_key": "living-room",
+        "character_key": "bob"
+      }
+    ]
   }
 }

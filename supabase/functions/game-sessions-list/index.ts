@@ -1,6 +1,6 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { internalError } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { loadBlueprintSummaries } from "../_shared/blueprints/runtime.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 type SessionMode = "explore" | "talk" | "accuse" | "ended";
@@ -27,21 +27,6 @@ interface SessionSummary {
   outcome: SessionOutcome;
   last_played_at: string;
   created_at: string;
-}
-
-interface StorageFile {
-  name: string;
-}
-
-interface BlueprintStorageClient {
-  storage: {
-    from: (bucket: string) => {
-      list: () => Promise<{ data: StorageFile[] | null; error: unknown }>;
-      download: (
-        path: string,
-      ) => Promise<{ data: Blob; error: unknown }>;
-    };
-  };
 }
 
 function readMode(value: string): SessionMode {
@@ -83,44 +68,12 @@ function compareByRecency(a: SessionSummary, b: SessionSummary): number {
   return b.game_id.localeCompare(a.game_id);
 }
 
-async function loadBlueprintTitles(userClient: BlueprintStorageClient): Promise<Map<string, string>> {
-  const titleByBlueprintId = new Map<string, string>();
-
-  const { data: files, error: listError } = await userClient.storage
-    .from("blueprints")
-    .list();
-
-  if (listError) {
-    throw new Error("Failed to access blueprints");
-  }
-
-  for (const file of files ?? []) {
-    if (!file.name.endsWith(".json")) {
-      continue;
-    }
-
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(file.name);
-
-    if (downloadError) {
-      continue;
-    }
-
-    try {
-      const text = await fileData.text();
-      const parsed = BlueprintSchema.parse(JSON.parse(text));
-      titleByBlueprintId.set(parsed.id, parsed.metadata.title);
-    } catch {
-      // Skip malformed blueprint files.
-    }
-  }
-
-  return titleByBlueprintId;
-}
-
-function toSummary(session: SessionRow, titleByBlueprintId: Map<string, string>): SessionSummary {
-  const title = titleByBlueprintId.get(session.blueprint_id);
+function toSummary(
+  session: SessionRow,
+  titleByBlueprintId: Map<string, { title: string; image_id: string | null }>,
+): SessionSummary {
+  const summary = titleByBlueprintId.get(session.blueprint_id);
+  const title = summary?.title;
   const mystery_available = Boolean(title);
 
   return {
@@ -160,7 +113,7 @@ serveWithCors(async (req) => {
       return internalError("Failed to fetch sessions");
     }
 
-    const titleByBlueprintId = await loadBlueprintTitles(userClient);
+    const titleByBlueprintId = await loadBlueprintSummaries(userClient);
 
     const summaries = (sessions ?? []).map((session) =>
       toSummary(session as SessionRow, titleByBlueprintId)

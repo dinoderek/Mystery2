@@ -4,6 +4,8 @@
 
 This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping state transitions predictable and spoiler boundaries intact.
 
+Blueprint V2 also adds operator-side generation, deterministic verification, and AI-judge review commands. Those workflows stay local/operator-only and are never exposed to the browser.
+
 For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
 
@@ -22,6 +24,12 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
 - `supabase/functions/_shared/ai-context.ts`
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
+- `scripts/lib/blueprints/draft-runs.mjs`
+  - Shared `blueprints/drafts/<slug>/<run-id>/` filesystem contract
+- `scripts/lib/blueprints/verify-blueprint.mjs`
+  - Deterministic verifier and `.deterministic-report.json` artifacts
+- `scripts/lib/blueprints/judge-blueprint.mjs`
+  - Strict-JSON AI judge and `.ai-judge-report.json` artifacts
 - `supabase/functions/_shared/ai-prompts/`
   - Prompt templates for each role
 - `supabase/functions/_shared/ai-prompts.ts`
@@ -51,6 +59,10 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
   - visible world lists
   - current location metadata
   - role-selected interaction history
+- Runtime storage is key-based:
+  - `game_sessions.current_location_id` stores `location_key`
+  - `game_sessions.current_talk_character_id` stores `character_key`
+  - event payload diagnostics should include both key and display-name fields where useful
 - Role inputs are passed as direct top-level context fields (no separate `role_input` envelope).
 - History selection rules:
   - talk roles: include all and only events tied to the active character
@@ -87,6 +99,7 @@ Invalid output returns a retriable error and does not finalize turn state.
 - Output-contract failures are also returned as retriable AI failures.
 - Web UI retry logic remains the owner of retry policy.
 - `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
+- Operator workflow failures should also surface `stage`, `blueprint_path` and/or `blueprint_id`, plus `run_id` when operating inside `blueprints/drafts/`.
 
 ## Structured AI and Request Logs
 
@@ -101,6 +114,19 @@ Invalid output returns a retriable error and does not finalize turn state.
   - `request.unhandled_error` for unexpected failures
 - For local development, tail these logs via:
   - `npm run logs:edge`
+
+## Blueprint V2 Authoring Workflow
+
+1. Write a `brief.md`.
+2. Run `npm run generate:blueprints -- --brief <path>`.
+3. Review candidates under `blueprints/drafts/<slug>/<run-id>/`.
+4. Run `npm run verify:blueprint -- --blueprint-path <candidate-path>`.
+5. Run `npm run judge:blueprint -- --blueprint-path <candidate-path>`.
+6. Manually decide whether to copy a candidate into top-level `blueprints/`.
+
+Image generation remains separate, but Blueprint V2 image prompts must use only spoiler-safe visual metadata plus non-spoiler public metadata such as title and one-liner.
+
+Rollout note: stale V1-backed sessions/events are unsupported. Clear old local/dev/test `game_sessions` and `game_events` rows manually before validating Blueprint V2 runtime behavior.
 
 ## Serving Request Flow
 

@@ -26,6 +26,7 @@ A text-based mystery adventure for kids that makes reading and writing feel like
 
 - Defines the structure and ground truth of the mystery (what happened, who did what, why).
 - **Note:** The comprehensive schema for Blueprints is defined entirely in the Zod definitions at `supabase/functions/_shared/blueprints/blueprint-schema.ts`. The schema's `.describe()` fields serve as the core narrative intent instructions for AI generators and the Narrator.
+- Blueprint V2 separates public player-facing content, backend-private truth/roleplay content, and spoiler-safe visual metadata for cover art, locations, and portraits.
 
 ### Time / Turns
 
@@ -209,6 +210,8 @@ Implementation detail reference: `docs/accusation-flow.md`.
 ## Blueprint Schema Reference
 
 See `supabase/functions/_shared/blueprints/blueprint-schema.ts` for the exact technical schema and narrative instructions encoded in the `.describe()` fields. Blueprint metadata controls the title, difficulty, and time budget. The world model defines characters and locations. The ground truth determines what actually happened and provides the absolute facts the Narrator must adhere to.
+
+Runtime note: sessions store stable `location_key` / `character_key` values internally while the UI still receives readable location and character names.
 
 ---
 

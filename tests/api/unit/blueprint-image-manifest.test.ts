@@ -17,13 +17,13 @@ const blueprint = {
   world: {
     locations: [
       {
-        name: "Kitchen",
+        location_key: "kitchen",
         location_image_id: "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222",
       },
     ],
     characters: [
       {
-        first_name: "Alice",
+        character_key: "alice",
         portrait_image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
       },
     ],

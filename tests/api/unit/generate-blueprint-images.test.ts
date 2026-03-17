@@ -16,37 +16,105 @@ const blueprintFixture = {
     one_liner: "A simple mystery",
     target_age: 8,
     time_budget: 10,
+    visual: {
+      style: "storybook watercolor",
+      mood: "cozy mystery",
+      palette: "warm red and cream",
+      lighting_or_atmosphere: "soft kitchen light",
+      cover: {
+        summary: "A playful cookie mystery cover.",
+        visual_anchors: ["cookie jar", "detective notebook"],
+      },
+    },
   },
   narrative: {
     premise: "Someone stole the cookies.",
     starting_knowledge: [],
   },
   world: {
-    starting_location_id: "Kitchen",
-    locations: [{ name: "Kitchen", description: "A kitchen", clues: [] }],
+    starting_location_key: "kitchen",
+    locations: [{
+      location_key: "kitchen",
+      name: "Kitchen",
+      description: "A kitchen",
+      search_context: ["A cookie jar sits open."],
+      visual: {
+        summary: "A warm kitchen with a cookie jar.",
+        visual_anchors: ["cookie jar", "mixing bowl"],
+      },
+    }],
     characters: [
       {
+        character_key: "alice",
         first_name: "Alice",
         last_name: "Smith",
-        location: "Kitchen",
-        sex: "female",
-        appearance: "Red hair",
-        background: "Baker",
-        personality: "Nervous",
-        initial_attitude_towards_investigator: "guarded",
-        location_id: "Kitchen",
-        mystery_action_real: "Ate cookies",
-        stated_alibi: "Reading",
-        motive: "Hungry",
-        is_culprit: true,
-        knowledge: [],
+        location_key: "kitchen",
+        roleplay: {
+          persona: "Nervous baker",
+          background: "Baker",
+          attitude: "guarded",
+        },
+        private_alibi: "Reading",
+        private_motive: "Hungry",
+        visual: {
+          summary: "A red-haired baker with a worried look.",
+          visual_anchors: ["red hair", "apron"],
+        },
       },
     ],
   },
+  evidence: [
+    {
+      evidence_key: "cookie-jar",
+      player_text: "The cookie jar is open.",
+      fact_summary: "Someone opened the jar recently.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [{ surface: "start", location_key: "kitchen" }],
+    },
+    {
+      evidence_key: "crumbs",
+      player_text: "There are crumbs on the floor.",
+      fact_summary: "Fresh crumbs were left behind.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [{ surface: "search", location_key: "kitchen" }],
+    },
+    {
+      evidence_key: "alice-hungry",
+      player_text: "Alice admits she was hungry.",
+      fact_summary: "Alice had motive.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [{ surface: "talk", location_key: "kitchen", character_key: "alice" }],
+    },
+  ],
   ground_truth: {
+    culprit_character_key: "alice",
     what_happened: "Alice ate the cookies.",
     why_it_happened: "Hungry.",
-    timeline: [],
+    explanation: "Alice ate the cookies because she was hungry.",
+    suspect_truths: [
+      {
+        character_key: "alice",
+        actual_activity: "Ate cookies",
+        stated_alibi: "Reading",
+        motive: "Hungry",
+        contradiction_evidence_keys: ["cookie-jar", "crumbs"],
+      },
+    ],
+    timeline: [
+      {
+        timeline_entry_key: "alice-eats-cookies",
+        order: 0,
+        summary: "Alice eats the cookies.",
+        location_key: "kitchen",
+        character_key: "alice",
+      },
+    ],
   },
 };
 
@@ -60,9 +128,9 @@ describe("generate-blueprint-images args parser", () => {
       "--model",
       "openai/gpt-image-1",
       "--character",
-      "Alice",
+      "alice",
       "--location",
-      "Kitchen",
+      "kitchen",
       "--overwrite",
     ]);
 
@@ -72,8 +140,8 @@ describe("generate-blueprint-images args parser", () => {
       model: "openai/gpt-image-1",
       scope: "selected",
       overwrite: true,
-      characterKeys: ["Alice"],
-      locationKeys: ["Kitchen"],
+      characterKeys: ["alice"],
+      locationKeys: ["kitchen"],
     });
   });
 

@@ -20,7 +20,7 @@ export function applyImageGenerationResults(blueprint, results) {
 
     if (result.target_type === "character" && result.target_key) {
       const character = next.world?.characters?.find(
-        (entry) => entry.first_name === result.target_key,
+        (entry) => entry.character_key === result.target_key,
       );
       if (character) {
         character.portrait_image_id = result.image_id;
@@ -30,7 +30,7 @@ export function applyImageGenerationResults(blueprint, results) {
 
     if (result.target_type === "location" && result.target_key) {
       const location = next.world?.locations?.find(
-        (entry) => entry.name === result.target_key,
+        (entry) => entry.location_key === result.target_key,
       );
       if (location) {
         location.location_image_id = result.image_id;

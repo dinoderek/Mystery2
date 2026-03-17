@@ -12,6 +12,7 @@ When we refer to the "Shared Boundary," we mean **specifically the data exchange
 - The single source of truth for these API contracts lives in `packages/shared/src/mystery-api-contracts.ts`.
 - TypeScript types are inferred from these Zod schemas (e.g., `export type TurnResponse = z.infer<typeof TurnResponseSchema>;`).
 - AI Agents must always update these contract schemas first whenever the API boundary changes.
+- Blueprint V2 runtime rule: persist stable authored keys in backend session/event storage, but resolve them back to readable names before responding to the UI.
 
 ## 2. Supabase Edge Functions (Deno)
 
@@ -33,3 +34,4 @@ All secure backend logic runs in **Supabase Edge Functions** (Deno runtime).
 - Edge functions must return standard HTTP status codes (e.g., 400 for bad input, 401 for unauthorized, 500 for internal errors).
 - Responses must include a consistent JSON error shape (e.g., `{ error: string, details?: any }`) so the UI can predictably render error messages to the user.
 - **Testing:** All error conditions and failure branches within Edge Functions MUST be covered by integration tests (e.g., testing what happens when an invalid token is provided, when a blueprint cannot be found, or when OpenRouter rate-limits the request).
+- Blueprint V1-backed `game_sessions` / `game_events` rows are unsupported after Blueprint V2 rollout and must be cleared manually rather than translated in code.

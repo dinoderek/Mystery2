@@ -4,119 +4,279 @@
     "title": "Biscuit Is Gone!",
     "one_liner": "The classroom hamster has escaped, and someone let him out on purpose!",
     "target_age": 7,
-    "time_budget": 15
+    "time_budget": 15,
+    "visual": {
+      "style": "storybook watercolor",
+      "mood": "busy school-day mystery",
+      "palette": "chalkboard green, sunflower yellow, and bright classroom colors",
+      "lighting_or_atmosphere": "clear lunchtime light",
+      "cover": {
+        "summary": "A school mystery with an open hamster cage and muddy paw prints.",
+        "visual_anchors": [
+          "hamster cage",
+          "paw prints",
+          "school hallway"
+        ]
+      }
+    }
   },
   "narrative": {
-    "premise": "Biscuit the hamster has disappeared from his cage in Room 4! The latch was found open, so someone must have let him out. Can you talk to the suspects and search the school to find out who opened Biscuit's cage?",
+    "premise": "Biscuit the hamster escaped from Room 4 during lunch. Someone opened the cage on purpose. Can you find out who?",
     "starting_knowledge": [
-      "Biscuit the hamster is missing from his cage in the classroom.",
-      "The cage latch was found open - it did not break by itself.",
-      "Biscuit went missing during the lunch break."
+      "Biscuit is missing from his cage.",
+      "The latch was opened by someone."
     ]
   },
   "world": {
-    "starting_location_id": "Classroom",
+    "starting_location_key": "classroom",
     "locations": [
       {
+        "location_key": "classroom",
         "name": "Classroom",
-        "description": "Your bright classroom with colourful posters on the walls. Biscuit's cage sits on a shelf near the window. The little door is wide open!",
-        "clues": [
-          "A small hamster food pellet is on the floor beside the cage.",
-          "The cage latch is open. It has a tricky sideways mechanism that most people don't know about."
-        ]
+        "description": "A bright classroom with posters, desks, and Biscuit's cage by the window.",
+        "search_context": [
+          "The tricky sideways latch is open.",
+          "A hamster food pellet sits beside the cage."
+        ],
+        "visual": {
+          "summary": "A colorful classroom with a hamster cage, desks, and paper stars.",
+          "visual_anchors": [
+            "hamster cage",
+            "desks",
+            "classroom posters"
+          ]
+        }
       },
       {
+        "location_key": "hallway",
         "name": "Hallway",
-        "description": "A long corridor with rows of colourful coat pegs. It smells like school dinners.",
-        "clues": [
-          "Miss Lee is standing here with most of the class. She says everyone was in the hallway after lunch except for a few children who had permission to be elsewhere."
-        ]
+        "description": "A long corridor lined with coat pegs and lunch boxes.",
+        "search_context": [
+          "Most of the class stayed here with Miss Lee.",
+          "The coat pegs rattle when children rush by."
+        ],
+        "visual": {
+          "summary": "A school corridor with coat pegs, lunch boxes, and shiny floor tiles.",
+          "visual_anchors": [
+            "coat pegs",
+            "lunch boxes",
+            "floor tiles"
+          ]
+        }
       },
       {
+        "location_key": "garden",
         "name": "Garden",
-        "description": "A small school garden with raised flower beds. The soil is soft and dark.",
-        "clues": [
-          "Tiny little paw prints in the muddy soil near the sunflower bed!",
-          "Biscuit himself is sniffing around happily near the sunflowers."
-        ]
+        "description": "A small school garden with raised flower beds and soft muddy soil.",
+        "search_context": [
+          "Tiny paw prints lead to the sunflowers.",
+          "Biscuit is sniffing happily near the plants."
+        ],
+        "visual": {
+          "summary": "A small school garden with sunflowers, muddy paths, and a happy hamster.",
+          "visual_anchors": [
+            "sunflowers",
+            "muddy path",
+            "tiny hamster"
+          ]
+        }
       },
       {
+        "location_key": "art-room",
         "name": "Art Room",
-        "description": "A messy, wonderful room full of paint pots and coloured paper. There is wet paint drying on several boards.",
-        "clues": [
-          "Lucas's large painting is propped up and still visibly wet. He has clearly been here for a while."
-        ]
+        "description": "A cheerful room full of paint pots and drying paper.",
+        "search_context": [
+          "Lucas's painting is still wet on the stand.",
+          "There is no sign that Ruby worked here at lunch."
+        ],
+        "visual": {
+          "summary": "An art room with easels, paint pots, and wet paper paintings.",
+          "visual_anchors": [
+            "easel",
+            "paint pots",
+            "drying painting"
+          ]
+        }
       }
     ],
     "characters": [
       {
+        "character_key": "ruby",
         "first_name": "Ruby",
         "last_name": "Moss",
-        "location": "Classroom",
-        "sex": "female",
-        "appearance": "A girl with straight dark hair and bright blue eyes. There is a small hamster food pellet stuck to the pocket of her green cardigan.",
-        "background": "Ruby is the class pet helper this week. She knows exactly how the cage latch works and adores Biscuit more than any other student.",
-        "personality": "Kind and animal-loving, but gets very defensive when she thinks she is in trouble.",
-        "initial_attitude_towards_investigator": "Overly friendly and very keen to talk about Oscar instead.",
-        "location_id": "Classroom",
-        "mystery_action_real": "She opened the cage during lunch break to play with Biscuit. He wriggled free and ran into the garden before she could stop him.",
-        "stated_alibi": "I was in the Art Room painting for the whole of lunch break!",
-        "motive": "She loves Biscuit very much and just wanted to cuddle him outside of official cage time.",
-        "is_culprit": true,
-        "knowledge": [
-          "I know how to open the cage latch - you push it sideways first.",
-          "Biscuit loves running around outside his cage."
-        ]
+        "location_key": "classroom",
+        "roleplay": {
+          "persona": "A caring pet helper who gets flustered when blamed.",
+          "background": "She adores Biscuit and knows how the latch works.",
+          "attitude": "Too friendly and slightly defensive."
+        },
+        "private_alibi": "I was painting in the Art Room.",
+        "private_motive": "She wanted to cuddle Biscuit during lunch.",
+        "visual": {
+          "summary": "A schoolgirl in a green cardigan with bright worried eyes.",
+          "visual_anchors": [
+            "green cardigan",
+            "hamster pellet",
+            "worried face"
+          ]
+        }
       },
       {
+        "character_key": "oscar",
         "first_name": "Oscar",
         "last_name": "Flynn",
-        "location": "Hallway",
-        "sex": "male",
-        "appearance": "A stocky boy with freckles and messy brown hair. He is always fidgeting with something.",
-        "background": "Oscar complained last week that Biscuit was too loud and kept him awake on the class sleepover.",
-        "personality": "Grumpy on the outside but fair on the inside. Gets cross when people blame him for things he didn't do.",
-        "initial_attitude_towards_investigator": "A little bit annoyed, but willing to talk.",
-        "location_id": "Hallway",
-        "mystery_action_real": "He was in the hallway the whole lunch break with the rest of the class and Miss Lee.",
-        "stated_alibi": "I was in the hallway with everyone else the whole time. Ask Miss Lee!",
-        "motive": "He complained that Biscuit was annoying. Some children think he might have let the hamster out on purpose.",
-        "is_culprit": false,
-        "knowledge": [
-          "I was in the hallway with Miss Lee and the others the whole lunch break.",
-          "I didn't touch that cage. I don't even like hamsters."
-        ]
+        "location_key": "hallway",
+        "roleplay": {
+          "persona": "A grumpy student who hates unfair blame.",
+          "background": "He complained that Biscuit was noisy once.",
+          "attitude": "Annoyed but willing to answer."
+        },
+        "private_alibi": "I was in the hallway with Miss Lee.",
+        "private_motive": "Other children think he disliked Biscuit.",
+        "visual": {
+          "summary": "A freckled boy with messy hair and a crossed-arm stance.",
+          "visual_anchors": [
+            "freckles",
+            "messy hair",
+            "school jumper"
+          ]
+        }
       },
       {
+        "character_key": "lucas",
         "first_name": "Lucas",
         "last_name": "Shaw",
-        "location": "Art Room",
-        "sex": "male",
-        "appearance": "A tall, thin boy with paint-stained hands and a cheerful smile. He always has a paintbrush tucked behind one ear.",
-        "background": "Lucas loves art more than anything and spends every lunch break in the Art Room with permission from the teacher.",
-        "personality": "Easy-going and honest. Very proud of his paintings.",
-        "initial_attitude_towards_investigator": "Happy to chat and very helpful.",
-        "location_id": "Art Room",
-        "mystery_action_real": "He was in the Art Room painting for the whole of lunch break.",
-        "stated_alibi": "I was in the Art Room the whole time. My painting proves it - it's still wet!",
-        "motive": null,
-        "is_culprit": false,
-        "knowledge": [
-          "I was in the Art Room the whole lunch break. Ruby never came in.",
-          "My painting was still drying so I could not leave anyway."
-        ]
+        "location_key": "art-room",
+        "roleplay": {
+          "persona": "An easy-going painter who happily explains what he saw.",
+          "background": "He spends lunch in the Art Room with permission.",
+          "attitude": "Open and helpful."
+        },
+        "private_alibi": "I was in the Art Room painting all lunch.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A cheerful boy with paint-stained hands and a brush behind one ear.",
+          "visual_anchors": [
+            "paint-stained hands",
+            "paintbrush",
+            "smiling face"
+          ]
+        }
       }
     ]
   },
+  "evidence": [
+    {
+      "evidence_key": "open-latch",
+      "player_text": "The cage latch is open the special sideways way.",
+      "fact_summary": "Only someone who knew the latch could open it quickly.",
+      "essential": true,
+      "related_location_keys": ["classroom"],
+      "related_character_keys": ["ruby"],
+      "acquisition_paths": [
+        {
+          "surface": "start",
+          "location_key": "classroom"
+        }
+      ]
+    },
+    {
+      "evidence_key": "garden-paw-prints",
+      "player_text": "Tiny paw prints lead through the garden to Biscuit.",
+      "fact_summary": "Biscuit escaped from the classroom into the garden.",
+      "essential": true,
+      "related_location_keys": ["garden"],
+      "related_character_keys": ["ruby"],
+      "acquisition_paths": [
+        {
+          "surface": "search",
+          "location_key": "garden"
+        }
+      ]
+    },
+    {
+      "evidence_key": "lucas-painting",
+      "player_text": "Lucas's painting is still wet, proving he stayed in the Art Room.",
+      "fact_summary": "Lucas has a strong innocent alibi.",
+      "essential": false,
+      "related_location_keys": ["art-room"],
+      "related_character_keys": ["lucas"],
+      "acquisition_paths": [
+        {
+          "surface": "move",
+          "location_key": "art-room"
+        }
+      ]
+    },
+    {
+      "evidence_key": "ruby-cuddle-confession",
+      "player_text": "Ruby admits she opened the cage because she wanted to cuddle Biscuit.",
+      "fact_summary": "Ruby opened the cage and caused the escape.",
+      "essential": true,
+      "related_location_keys": ["classroom"],
+      "related_character_keys": ["ruby"],
+      "acquisition_paths": [
+        {
+          "surface": "talk",
+          "location_key": "classroom",
+          "character_key": "ruby"
+        }
+      ]
+    }
+  ],
   "ground_truth": {
-    "what_happened": "Ruby, who was the class pet helper, opened Biscuit's cage during lunch break to play with him. Biscuit escaped into the school garden before she could catch him.",
-    "why_it_happened": "Ruby adored Biscuit and could not resist opening the cage for a cuddle, even though it was not allowed.",
+    "culprit_character_key": "ruby",
+    "what_happened": "Ruby opened Biscuit's cage during lunch and he escaped into the garden.",
+    "why_it_happened": "She loved Biscuit and wanted to cuddle him.",
+    "explanation": "Ruby knew the latch, let Biscuit out, and lost control of him before lunch ended, while Oscar stayed in the hallway and Lucas stayed painting.",
+    "suspect_truths": [
+      {
+        "character_key": "ruby",
+        "actual_activity": "She slipped back to the classroom and opened Biscuit's cage.",
+        "stated_alibi": "I was painting in the Art Room.",
+        "motive": "She wanted to cuddle Biscuit.",
+        "contradiction_evidence_keys": [
+          "open-latch",
+          "ruby-cuddle-confession"
+        ]
+      },
+      {
+        "character_key": "oscar",
+        "actual_activity": "He stayed in the hallway with Miss Lee.",
+        "stated_alibi": "I was in the hallway with Miss Lee.",
+        "motive": "He once complained about the hamster.",
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "lucas",
+        "actual_activity": "He painted in the Art Room.",
+        "stated_alibi": "I was in the Art Room painting all lunch.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      }
+    ],
     "timeline": [
-      "12:00 PM - Lunch break begins. Miss Lee takes the class to the hallway.",
-      "12:05 PM - Ruby slips back into the classroom while the others are in the hallway.",
-      "12:10 PM - Ruby opens Biscuit's cage. A food pellet falls from her pocket. Biscuit hops out and runs toward the garden.",
-      "12:15 PM - Lucas settles into the Art Room to paint. Ruby is not with him.",
-      "12:45 PM - Lunch break ends. The class returns and discovers Biscuit is gone."
+      {
+        "timeline_entry_key": "class-goes-hallway",
+        "order": 0,
+        "summary": "Most of the class heads into the hallway with Miss Lee.",
+        "location_key": "hallway",
+        "character_key": "oscar"
+      },
+      {
+        "timeline_entry_key": "ruby-opens-cage",
+        "order": 1,
+        "summary": "Ruby returns to the classroom and opens the cage.",
+        "location_key": "classroom",
+        "character_key": "ruby"
+      },
+      {
+        "timeline_entry_key": "biscuit-runs-garden",
+        "order": 2,
+        "summary": "Biscuit runs from the classroom into the garden.",
+        "location_key": "garden",
+        "character_key": "ruby"
+      }
     ]
   }
 }

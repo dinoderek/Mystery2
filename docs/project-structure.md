@@ -8,6 +8,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 - `web/`: Front-end SvelteKit application for the player UI.
 - `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
+  - `drafts/`: Operator-only draft run directories for generated candidates plus deterministic and AI-judge artifacts.
 - `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests use `bootstrap-users.<env>.json`).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
@@ -15,6 +16,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
 - `scripts/`: Assorted scripts needed for development and operations (e.g., `setup-local` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
   - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
+  - `lib/blueprints/`: Blueprint V2 draft-run, generation, verification, solve-path, and AI-judge helpers.
 - `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
   - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions and server-side speaker attribution.

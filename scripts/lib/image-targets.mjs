@@ -20,18 +20,18 @@ export function resolveImageTargets(blueprint, options = {}) {
 
   if (includeCharacters) {
     for (const character of blueprint?.world?.characters ?? []) {
-      const key = normalizeKey(character.first_name);
+      const key = normalizeKey(character.character_key);
       if (scope === "all" || characterKeys.size === 0 || characterKeys.has(key)) {
-        targets.push({ targetType: "character", targetKey: character.first_name });
+        targets.push({ targetType: "character", targetKey: character.character_key });
       }
     }
   }
 
   if (includeLocations) {
     for (const location of blueprint?.world?.locations ?? []) {
-      const key = normalizeKey(location.name);
+      const key = normalizeKey(location.location_key);
       if (scope === "all" || locationKeys.size === 0 || locationKeys.has(key)) {
-        targets.push({ targetType: "location", targetKey: location.name });
+        targets.push({ targetType: "location", targetKey: location.location_key });
       }
     }
   }

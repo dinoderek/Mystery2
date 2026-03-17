@@ -1,6 +1,9 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, internalError, notFound } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  isImageReferenced,
+  loadBlueprintRuntime,
+} from "../_shared/blueprints/runtime.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 import {
   BLUEPRINT_IMAGES_BUCKET,
@@ -19,26 +22,6 @@ const PURPOSES = new Set([
 ] as const);
 
 type ImagePurpose = "blueprint_cover" | "location_scene" | "character_portrait";
-
-function isImageReferenced(
-  blueprint: ReturnType<typeof BlueprintSchema.parse>,
-  purpose: ImagePurpose,
-  imageId: string,
-): boolean {
-  if (purpose === "blueprint_cover") {
-    return blueprint.metadata.image_id === imageId;
-  }
-
-  if (purpose === "location_scene") {
-    return blueprint.world.locations.some((location) =>
-      location.location_image_id === imageId
-    );
-  }
-
-  return blueprint.world.characters.some((character) =>
-    character.portrait_image_id === imageId
-  );
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -69,16 +52,12 @@ serveWithCors(async (req) => {
       return badRequest("Invalid purpose");
     }
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${blueprintId}.json`);
-    if (downloadError || !fileData) {
+    const runtime = await loadBlueprintRuntime(userClient, blueprintId);
+    if (!runtime) {
       return notFound("Blueprint not found");
     }
 
-    const rawBlueprint = await fileData.text();
-    const blueprint = BlueprintSchema.parse(JSON.parse(rawBlueprint));
-    if (!isImageReferenced(blueprint, purpose, imageId)) {
+    if (!isImageReferenced(runtime, purpose, imageId)) {
       return notFound("Image not referenced by blueprint");
     }
 

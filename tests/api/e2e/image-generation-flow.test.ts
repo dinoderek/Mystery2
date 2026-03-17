@@ -12,38 +12,112 @@ const blueprintFixture = {
     one_liner: "A simple mystery",
     target_age: 8,
     time_budget: 10,
-    art_style: "storybook watercolor",
+    visual: {
+      style: "storybook watercolor",
+      mood: "cozy mystery",
+      palette: "warm browns and red gingham",
+      lighting_or_atmosphere: "soft kitchen afternoon light",
+      cover: {
+        summary: "A tray of cookies sits on a kitchen counter beside a magnifying glass.",
+        visual_anchors: ["cookie tray", "kitchen counter", "magnifying glass"],
+      },
+    },
   },
   narrative: {
     premise: "Someone stole the cookies.",
     starting_knowledge: [],
   },
   world: {
-    starting_location_id: "Kitchen",
-    locations: [{ name: "Kitchen", description: "A kitchen", clues: [] }],
+    starting_location_key: "kitchen",
+    locations: [{
+      location_key: "kitchen",
+      name: "Kitchen",
+      description: "A kitchen",
+      search_context: ["Fresh crumbs sit near the tray."],
+      visual: {
+        summary: "A warm kitchen with tiled walls and a cookie tray.",
+        visual_anchors: ["cookie tray", "tiled walls", "red oven mitt"],
+      },
+    }],
     characters: [
       {
+        character_key: "alice",
         first_name: "Alice",
         last_name: "Smith",
-        location: "Kitchen",
-        sex: "female",
-        appearance: "Red hair",
-        background: "Baker",
-        personality: "Nervous",
-        initial_attitude_towards_investigator: "guarded",
-        location_id: "Kitchen",
-        mystery_action_real: "Ate cookies",
-        stated_alibi: "Reading",
-        motive: "Hungry",
-        is_culprit: true,
-        knowledge: [],
+        location_key: "kitchen",
+        roleplay: {
+          persona: "Nervous baker",
+          background: "Baker",
+          attitude: "guarded",
+        },
+        private_alibi: "Reading",
+        private_motive: "Hungry",
+        visual: {
+          summary: "A girl with bright red hair and a flour-dusted apron.",
+          visual_anchors: ["red hair", "flour-dusted apron", "smudged sleeve"],
+        },
       },
     ],
   },
+  evidence: [
+    {
+      evidence_key: "crumbs-on-sleeve",
+      player_text: "Cookie crumbs cling to Alice's sleeve.",
+      fact_summary: "Alice has fresh cookie crumbs on her sleeve.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [
+        {
+          surface: "talk",
+          location_key: "kitchen",
+          character_key: "alice",
+        },
+      ],
+    },
+    {
+      evidence_key: "open-cookie-jar",
+      player_text: "The cookie jar is still open on the counter.",
+      fact_summary: "Someone took cookies from the jar in a hurry.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [{ surface: "start", location_key: "kitchen" }],
+    },
+    {
+      evidence_key: "kitchen-crumbs",
+      player_text: "Fresh crumbs sit near the tray.",
+      fact_summary: "Fresh crumbs remain where the cookies were taken.",
+      essential: true,
+      related_location_keys: ["kitchen"],
+      related_character_keys: ["alice"],
+      acquisition_paths: [{ surface: "search", location_key: "kitchen" }],
+    },
+  ],
   ground_truth: {
+    culprit_character_key: "alice",
     what_happened: "Alice ate the cookies.",
     why_it_happened: "Hungry.",
-    timeline: [],
+    explanation:
+      "Alice said she was reading, but the crumbs on her sleeve show she took the cookies in the kitchen.",
+    suspect_truths: [
+      {
+        character_key: "alice",
+        actual_activity: "Alice took the cookies in the kitchen.",
+        stated_alibi: "I was reading.",
+        motive: "Hungry",
+        contradiction_evidence_keys: ["crumbs-on-sleeve", "open-cookie-jar"],
+      },
+    ],
+    timeline: [
+      {
+        timeline_entry_key: "alice-takes-cookie",
+        order: 1,
+        character_key: "alice",
+        location_key: "kitchen",
+        summary: "Alice sneaks a cookie from the tray.",
+      },
+    ],
   },
 };
 

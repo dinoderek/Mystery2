@@ -4,109 +4,262 @@
     "title": "Who Ate the Birthday Cake?",
     "one_liner": "A slice of birthday cake went missing before the party even started!",
     "target_age": 6,
-    "time_budget": 12
+    "time_budget": 12,
+    "visual": {
+      "style": "storybook watercolor",
+      "mood": "bright, playful, and gently urgent",
+      "palette": "pastel pink, butter yellow, and garden green",
+      "lighting_or_atmosphere": "sunny party-morning glow",
+      "cover": {
+        "summary": "A birthday cake mystery with a missing slice, party ribbons, and a child detective.",
+        "visual_anchors": [
+          "birthday cake",
+          "party streamers",
+          "detective notebook"
+        ]
+      }
+    }
   },
   "narrative": {
-    "premise": "Oh no! Mom made a yummy birthday cake for Lily's party. But when she came back, a piece was gone! Someone ate it. Can you find out who did it before the party starts?",
+    "premise": "A slice of Lily's birthday cake vanished from the kitchen just before the party. Can you discover who sneaked a bite?",
     "starting_knowledge": [
-      "A slice of the birthday cake is missing from the kitchen.",
-      "The party starts very soon and everyone is upset."
+      "A slice is missing from the birthday cake.",
+      "The party starts very soon."
     ]
   },
   "world": {
-    "starting_location_id": "Kitchen",
+    "starting_location_key": "kitchen",
     "locations": [
       {
+        "location_key": "kitchen",
         "name": "Kitchen",
-        "description": "A bright, warm room that smells like sugar and vanilla. A big round birthday cake sits on the table. One slice is missing!",
-        "clues": [
-          "There are small, sticky fingerprints on the cake plate.",
-          "A little pink hair bow is lying on the floor near the table."
-        ]
+        "description": "A warm kitchen that smells like sugar and vanilla.",
+        "search_context": [
+          "Sticky fingerprints shine on the cake plate.",
+          "A ribbon-like pink hair bow lies near the table."
+        ],
+        "visual": {
+          "summary": "A cheerful kitchen with a cake stand, mixing bowls, and party plates.",
+          "visual_anchors": [
+            "cake stand",
+            "mixing bowls",
+            "party plates"
+          ]
+        }
       },
       {
+        "location_key": "garden",
         "name": "Garden",
-        "description": "A sunny garden full of bright flowers. A pair of muddy boots sit by the back door.",
-        "clues": [
-          "Mom's green gardening gloves are here with fresh soil on them."
-        ]
+        "description": "A sunny garden filled with flowers for the party table.",
+        "search_context": [
+          "Fresh soil clings to a pair of gardening gloves.",
+          "Flower baskets sit ready by the door."
+        ],
+        "visual": {
+          "summary": "A bright garden with flowers, gloves, and a path back to the house.",
+          "visual_anchors": [
+            "flowers",
+            "gardening gloves",
+            "stone path"
+          ]
+        }
       },
       {
+        "location_key": "living-room",
         "name": "Living Room",
-        "description": "A cosy room with a big fluffy sofa. The television is showing Grandpa's favourite quiz show.",
-        "clues": [
-          "Grandpa's open crossword book is sitting on the sofa cushion."
-        ]
+        "description": "A cosy room with a big sofa and Grandpa's quiz show on the television.",
+        "search_context": [
+          "A crossword book rests on the sofa cushion.",
+          "A tea mug is still warm on the table."
+        ],
+        "visual": {
+          "summary": "A comfy living room with a sofa, crossword, and softly glowing television.",
+          "visual_anchors": [
+            "sofa",
+            "crossword book",
+            "television"
+          ]
+        }
       }
     ],
     "characters": [
       {
+        "character_key": "poppy",
         "first_name": "Poppy",
         "last_name": "Banks",
-        "location": "Kitchen",
-        "sex": "female",
-        "appearance": "A small girl with curly red hair tied with a pink bow. She has a tiny smear of white icing near her mouth.",
-        "background": "Poppy is Lily's little sister. She loves sweets more than anything in the whole world.",
-        "personality": "Bubbly and giggly, but tries to look very innocent when she is in trouble.",
-        "initial_attitude_towards_investigator": "Very shy. Looks at the floor and fidgets a lot.",
-        "location_id": "Kitchen",
-        "mystery_action_real": "She sneaked into the kitchen and ate a slice of the birthday cake while Mom was in the garden.",
-        "stated_alibi": "I was playing with my dolls in my bedroom the whole time!",
-        "motive": "She could not wait for the party and loves cake too much to resist.",
-        "is_culprit": true,
-        "knowledge": [
-          "The cake is really, really yummy.",
-          "I think I dropped my hair bow somewhere..."
-        ]
+        "location_key": "kitchen",
+        "roleplay": {
+          "persona": "A bubbly little sister who fidgets when she is hiding something.",
+          "background": "She adores sweets and can never wait for dessert.",
+          "attitude": "Shy and wiggly around the investigator."
+        },
+        "private_alibi": "I was playing with my dolls in my bedroom.",
+        "private_motive": "She could not resist the cake.",
+        "visual": {
+          "summary": "A small girl with curly red hair, a pink bow, and a little icing smear.",
+          "visual_anchors": [
+            "curly red hair",
+            "pink bow",
+            "icing smear"
+          ]
+        }
       },
       {
+        "character_key": "grandpa",
         "first_name": "Grandpa",
         "last_name": "Banks",
-        "location": "Living Room",
-        "sex": "male",
-        "appearance": "A tall man with fluffy white hair and a warm smile. He wears a cosy blue cardigan and round glasses.",
-        "background": "Grandpa came early to help set up the party. He has a well-known love of cake.",
-        "personality": "Jolly and chatty. Loves quiz shows, crossword puzzles, and sneaking extra dessert.",
-        "initial_attitude_towards_investigator": "Happy to help and very talkative.",
-        "location_id": "Living Room",
-        "mystery_action_real": "He was sitting on the sofa watching his quiz show and doing his crossword puzzle.",
-        "stated_alibi": "I have been right here on the sofa the whole time, doing my crossword!",
-        "motive": "He loves cake and always tries to sneak a piece before everyone else.",
-        "is_culprit": false,
-        "knowledge": [
-          "I heard little footsteps running down the hallway a little while ago.",
-          "I have been in the living room ever since I arrived."
-        ]
+        "location_key": "living-room",
+        "roleplay": {
+          "persona": "A jolly grandpa who talks warmly and loves snacks.",
+          "background": "He arrived early to help with the party.",
+          "attitude": "Happy to help and very chatty."
+        },
+        "private_alibi": "I was on the sofa doing my crossword.",
+        "private_motive": "He loves cake and looks suspicious at first.",
+        "visual": {
+          "summary": "A smiling grandpa in a blue cardigan with round glasses.",
+          "visual_anchors": [
+            "blue cardigan",
+            "round glasses",
+            "crossword book"
+          ]
+        }
       },
       {
+        "character_key": "mom",
         "first_name": "Mom",
         "last_name": "Banks",
-        "location": "Garden",
-        "sex": "female",
-        "appearance": "A woman with brown hair in a ponytail, wearing a yellow apron and carrying muddy green gardening gloves.",
-        "background": "Mom baked the birthday cake this morning and went to the garden to pick flowers for the party table.",
-        "personality": "Kind and organised. Very worried about the missing cake slice right now.",
-        "initial_attitude_towards_investigator": "Grateful and glad for your help.",
-        "location_id": "Garden",
-        "mystery_action_real": "She was in the garden picking flowers for the party table.",
-        "stated_alibi": "I was in the garden the whole time. My gloves got quite muddy!",
-        "motive": null,
-        "is_culprit": false,
-        "knowledge": [
-          "I left the cake cooling on the table when I went outside.",
-          "I did not go back inside until just now when I found the slice missing."
-        ]
+        "location_key": "garden",
+        "roleplay": {
+          "persona": "A kind, organised baker who is worried about the missing slice.",
+          "background": "She baked the birthday cake this morning.",
+          "attitude": "Grateful for help."
+        },
+        "private_alibi": "I was in the garden picking flowers.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A parent in a yellow apron carrying muddy garden gloves.",
+          "visual_anchors": [
+            "yellow apron",
+            "garden gloves",
+            "flower basket"
+          ]
+        }
       }
     ]
   },
+  "evidence": [
+    {
+      "evidence_key": "missing-slice",
+      "player_text": "One neat slice is missing from the birthday cake.",
+      "fact_summary": "The theft happened at the cake table in the kitchen.",
+      "essential": true,
+      "related_location_keys": ["kitchen"],
+      "related_character_keys": ["poppy"],
+      "acquisition_paths": [
+        {
+          "surface": "start",
+          "location_key": "kitchen"
+        }
+      ]
+    },
+    {
+      "evidence_key": "pink-bow",
+      "player_text": "A pink hair bow is on the kitchen floor by the cake table.",
+      "fact_summary": "Poppy dropped her bow beside the cake.",
+      "essential": true,
+      "related_location_keys": ["kitchen"],
+      "related_character_keys": ["poppy"],
+      "acquisition_paths": [
+        {
+          "surface": "search",
+          "location_key": "kitchen"
+        }
+      ]
+    },
+    {
+      "evidence_key": "grandpa-crossword",
+      "player_text": "Grandpa's open crossword shows he stayed in the living room.",
+      "fact_summary": "Grandpa has a steady innocent alibi.",
+      "essential": false,
+      "related_location_keys": ["living-room"],
+      "related_character_keys": ["grandpa"],
+      "acquisition_paths": [
+        {
+          "surface": "move",
+          "location_key": "living-room"
+        }
+      ]
+    },
+    {
+      "evidence_key": "poppy-cake-confession",
+      "player_text": "Poppy whispers that the cake looked too yummy to wait for.",
+      "fact_summary": "Poppy reveals motive and opportunity.",
+      "essential": true,
+      "related_location_keys": ["kitchen"],
+      "related_character_keys": ["poppy"],
+      "acquisition_paths": [
+        {
+          "surface": "talk",
+          "location_key": "kitchen",
+          "character_key": "poppy"
+        }
+      ]
+    }
+  ],
   "ground_truth": {
-    "what_happened": "Poppy sneaked into the kitchen and ate a slice of the birthday cake while Mom was busy in the garden, dropping her pink hair bow on the floor.",
-    "why_it_happened": "Poppy could not wait for the party and could not resist the delicious cake.",
+    "culprit_character_key": "poppy",
+    "what_happened": "Poppy sneaked into the kitchen and ate a slice of birthday cake.",
+    "why_it_happened": "She loved the cake and could not wait for the party.",
+    "explanation": "Poppy stayed near the cake, dropped her pink bow, and ate a slice while Mom was in the garden and Grandpa stayed on the sofa.",
+    "suspect_truths": [
+      {
+        "character_key": "poppy",
+        "actual_activity": "She sneaked to the cake table and ate a slice.",
+        "stated_alibi": "I was playing with my dolls in my bedroom.",
+        "motive": "She could not resist the cake.",
+        "contradiction_evidence_keys": [
+          "pink-bow",
+          "missing-slice"
+        ]
+      },
+      {
+        "character_key": "grandpa",
+        "actual_activity": "He stayed on the sofa with his crossword.",
+        "stated_alibi": "I was on the sofa doing my crossword.",
+        "motive": "He likes cake but did not take it.",
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "mom",
+        "actual_activity": "She picked flowers in the garden.",
+        "stated_alibi": "I was in the garden picking flowers.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      }
+    ],
     "timeline": [
-      "10:00 AM - Mom finishes baking the cake and places it on the kitchen table to cool.",
-      "10:05 AM - Mom goes to the garden to pick flowers. Grandpa arrives and settles on the sofa.",
-      "10:15 AM - Poppy sneaks into the kitchen and eats a slice of cake. Her pink bow falls off.",
-      "10:30 AM - Mom comes back inside and discovers the missing slice."
+      {
+        "timeline_entry_key": "mom-goes-garden",
+        "order": 0,
+        "summary": "Mom goes to the garden for flowers.",
+        "location_key": "garden",
+        "character_key": "mom"
+      },
+      {
+        "timeline_entry_key": "poppy-eats-cake",
+        "order": 1,
+        "summary": "Poppy sneaks to the cake table and eats a slice.",
+        "location_key": "kitchen",
+        "character_key": "poppy"
+      },
+      {
+        "timeline_entry_key": "grandpa-stays-sofa",
+        "order": 2,
+        "summary": "Grandpa stays in the living room with his crossword.",
+        "location_key": "living-room",
+        "character_key": "grandpa"
+      }
     ]
   }
 }

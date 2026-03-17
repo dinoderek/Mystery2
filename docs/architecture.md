@@ -61,6 +61,7 @@ Recommended pattern:
 
 - Maintain an **append-only event log** for turns and actions.
 - Maintain a current “session snapshot” for fast reads.
+- Blueprint V2 sessions keep storing into `current_location_id` and `current_talk_character_id`, but those values are now stable authored keys rather than display names.
 
 ### Supabase Storage
 
@@ -70,6 +71,7 @@ Responsibilities:
 - Access is controlled via Storage policies and/or DB checks.
 - Blueprint JSON remains in `blueprints` bucket; static mystery artwork lives in private `blueprint-images`.
 - Player-facing image bytes are fetched via short-lived signed URLs issued by `blueprint-image-link` (auth required).
+- Blueprint V2 draft artifacts remain local under `blueprints/drafts/` and are never auto-promoted into canonical `blueprints/`.
 
 ### Supabase Edge Functions
 

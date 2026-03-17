@@ -15,7 +15,11 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  getCharacterByKey,
+  getLocationByKey,
+  loadBlueprintFromStorage,
+} from "../_shared/blueprints/runtime.ts";
 import {
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
@@ -65,7 +69,9 @@ serveWithCors(async (req) => {
       body.accusation_history_mode === "none" ? "none" : "all";
 
     const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
+    if (isAuthError(authResult)) {
+      return authResult;
+    }
     const { client: userClient } = authResult;
 
     const { data: session, error: sessionError } = await userClient
@@ -78,17 +84,27 @@ serveWithCors(async (req) => {
       return badRequest("Game session not found");
     }
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprintFromStorage(userClient, session.blueprint_id);
+    if (!blueprint) {
       logError("request.error", {
         reason: "blueprint_missing",
         game_id: gameId,
       });
       return internalError("Blueprint missing");
     }
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+
+    const activeLocation = getLocationByKey(blueprint, session.current_location_id);
+    if (!activeLocation) {
+      return badRequest("Session state is incompatible with Blueprint V2");
+    }
+
+    const culprit = getCharacterByKey(
+      blueprint,
+      blueprint.ground_truth.culprit_character_key,
+    );
+    if (!culprit) {
+      return internalError("Blueprint culprit is invalid");
+    }
 
     const { data: historyRows } = await userClient
       .from("game_events")
@@ -205,9 +221,12 @@ serveWithCors(async (req) => {
             role: "accusation_judge",
             player_reasoning: playerReasoning,
             judge_result: "continue",
+            location_name: activeLocation.name,
+            location_key: activeLocation.location_key,
             speaker: NARRATOR_SPEAKER,
           },
           narration: judgeOutput.narration,
+          narration_parts: [judgeOutput.narration],
         });
 
         return new Response(
@@ -266,9 +285,14 @@ serveWithCors(async (req) => {
           role: "accusation_judge",
           player_reasoning: playerReasoning,
           judge_result: outcome,
+          culprit_character_key: culprit.character_key,
+          culprit_character_name: culprit.first_name,
+          location_name: activeLocation.name,
+          location_key: activeLocation.location_key,
           speaker: NARRATOR_SPEAKER,
         },
         narration: judgeOutput.narration,
+        narration_parts: [judgeOutput.narration],
       });
 
       return new Response(
@@ -368,9 +392,12 @@ serveWithCors(async (req) => {
           payload: {
             role: "accusation_start",
             trigger: "player",
+            location_name: activeLocation.name,
+            location_key: activeLocation.location_key,
             speaker: NARRATOR_SPEAKER,
           },
           narration: startOutput.narration,
+          narration_parts: [startOutput.narration],
         });
 
         return new Response(

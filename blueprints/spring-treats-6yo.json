@@ -5,111 +5,263 @@
     "one_liner": "Someone took all the yummy honey cakes before the Spring Party!",
     "target_age": 6,
     "time_budget": 15,
-    "art_style": "Layered papercraft, origami, pop-up book illustration; Magical and Wondrous feeling.",
+    "visual": {
+      "style": "layered papercraft storybook",
+      "mood": "magical, sweet, and playful",
+      "palette": "spring pink, leaf green, and honey gold",
+      "lighting_or_atmosphere": "gentle morning festival light",
+      "cover": {
+        "summary": "A woodland spring-party mystery with missing honey cakes and fluttering ribbons.",
+        "visual_anchors": [
+          "honey cakes",
+          "spring ribbons",
+          "woodland village"
+        ]
+      }
+    },
     "image_id": "blueprint-e2f75319-b232-4e65-8407-3e35dba627d0"
   },
   "narrative": {
-    "premise": "Welcome to Brunilia! Everyone is excited for the big Spring Party. Mrs. Rabbit baked delicious honey cakes for everyone, but they are gone from the Bakery! Can you help us find them before the party begins?",
+    "premise": "The honey cakes for Brunilia's Spring Party vanished from the Bakery. Can you discover who took them before the party starts?",
     "starting_knowledge": [
-      "The honey cakes were taken from the Bakery.",
-      "The Spring Party starts very soon."
+      "The honey cakes disappeared from the Bakery.",
+      "The party starts very soon."
     ]
   },
   "world": {
-    "starting_location_id": "Town Square",
+    "starting_location_key": "town-square",
     "locations": [
       {
+        "location_key": "town-square",
         "name": "Town Square",
-        "description": "A sunny square filled with colorful spring flowers and party decorations.",
-        "clues": [
-          "A piece of pink party ribbon is on the ground."
-        ]
+        "description": "A bright square decorated with flowers and party ribbons.",
+        "search_context": [
+          "A pink party ribbon rests on the ground.",
+          "The Spring Party banners flap in the breeze."
+        ],
+        "visual": {
+          "summary": "A sunny village square with ribbons, flowers, and a fountain.",
+          "visual_anchors": [
+            "ribbons",
+            "fountain",
+            "spring flowers"
+          ]
+        }
       },
       {
+        "location_key": "bakery",
         "name": "The Bakery",
-        "description": "It smells like sweet bread and sugar. The display window is empty!",
-        "clues": [
-          "There are sticky, muddy paw prints on the window sill.",
-          "An empty jar of strawberry jam is left on the counter."
-        ]
+        "description": "A cozy bakery that smells like sugar and warm bread.",
+        "search_context": [
+          "Sticky muddy paw prints mark the window sill.",
+          "An empty strawberry jam jar sits on the counter."
+        ],
+        "visual": {
+          "summary": "A snug bakery with trays, a cooling window sill, and empty cake stands.",
+          "visual_anchors": [
+            "cooling rack",
+            "jam jar",
+            "window sill"
+          ]
+        },
+        "location_image_id": "spring-treats-6yo-bakery"
       },
       {
+        "location_key": "woods",
         "name": "The Woods",
-        "description": "A quiet place with tall green trees and soft moss.",
-        "clues": [
-          "You can hear a happy humming sound coming from behind a big oak tree."
-        ]
+        "description": "A quiet woodland path under tall green trees.",
+        "search_context": [
+          "Happy humming comes from behind a big oak tree.",
+          "Sweet crumbs dot the moss."
+        ],
+        "visual": {
+          "summary": "A mossy woodland clearing with an oak tree and hidden picnic spot.",
+          "visual_anchors": [
+            "oak tree",
+            "moss",
+            "crumb trail"
+          ]
+        }
       }
     ],
     "characters": [
       {
+        "character_key": "barnaby",
         "first_name": "Barnaby",
         "last_name": "Bear",
-        "location": "The Woods",
-        "sex": "male",
-        "appearance": "A small, fluffy brown bear cub wearing a little red scarf. His paws look very sticky.",
-        "background": "Barnaby is a young bear who loves sweet foods more than anything.",
-        "personality": "Playful, friendly, but a little bit sneaky when he is hungry.",
-        "initial_attitude_towards_investigator": "Nervous but tries to smile.",
-        "location_id": "The Woods",
-        "mystery_action_real": "He climbed through the Bakery window to eat the honey cakes.",
-        "stated_alibi": "I was in the Woods playing and eating strawberry jam!",
-        "motive": "He was too hungry to wait for the party.",
-        "is_culprit": true,
-        "knowledge": [
-          "I dropped my jam jar somewhere...",
-          "I like to climb things."
-        ]
+        "location_key": "woods",
+        "roleplay": {
+          "persona": "A playful cub who tries to look innocent.",
+          "background": "He loves sweet treats more than anything.",
+          "attitude": "Nervous but friendly."
+        },
+        "private_alibi": "I was in the Woods playing and eating strawberry jam.",
+        "private_motive": "He was too hungry to wait for the party.",
+        "visual": {
+          "summary": "A fluffy young bear in a red scarf with sticky paws.",
+          "visual_anchors": [
+            "red scarf",
+            "sticky paws",
+            "brown fur"
+          ]
+        }
       },
       {
+        "character_key": "mrs-rabbit",
         "first_name": "Mrs.",
         "last_name": "Rabbit",
-        "location": "The Bakery",
-        "sex": "female",
-        "appearance": "A white rabbit wearing a white baker's apron full of flour.",
-        "background": "She is the best baker in Brunilia and made the honey cakes.",
-        "personality": "Kind, warm, and very worried about her cakes.",
-        "initial_attitude_towards_investigator": "Very happy to see you and asking for help.",
-        "location_id": "The Bakery",
-        "mystery_action_real": "She was putting up pink ribbons in the Town Square.",
-        "stated_alibi": "I was in the Town Square hanging pink ribbons for the party.",
-        "motive": null,
-        "is_culprit": false,
-        "knowledge": [
-          "I left the cakes on the window sill to cool.",
-          "I left my pink ribbons in the Town Square."
-        ]
+        "location_key": "bakery",
+        "roleplay": {
+          "persona": "A warm baker who is worried about the missing cakes.",
+          "background": "She baked the honey cakes for the whole town.",
+          "attitude": "Hopeful and thankful."
+        },
+        "private_alibi": "I was in the Town Square hanging ribbons.",
+        "private_motive": null,
+        "visual": {
+          "summary": "A white rabbit baker in a floury apron with pink ribbons nearby.",
+          "visual_anchors": [
+            "white apron",
+            "pink ribbons",
+            "flour dust"
+          ]
+        }
       },
       {
+        "character_key": "mayor-owl",
         "first_name": "Mayor",
         "last_name": "Owl",
-        "location": "Town Square",
-        "sex": "male",
-        "appearance": "A wise gray owl wearing a tiny top hat and spectacles.",
-        "background": "He is in charge of the Spring Party.",
-        "personality": "Serious but very polite and loves rules.",
-        "initial_attitude_towards_investigator": "Helpful and official.",
-        "location_id": "Town Square",
-        "mystery_action_real": "He was writing speeches in the Town Square.",
-        "stated_alibi": "I have been sitting right here in the Town Square writing my speech all morning.",
-        "motive": "He really loves honey cakes and always wants the first bite.",
-        "is_culprit": false,
-        "knowledge": [
-          "I saw Mrs. Rabbit hanging ribbons here earlier.",
-          "I have not left the Town Square all morning."
-        ]
+        "location_key": "town-square",
+        "roleplay": {
+          "persona": "A formal mayor who loves orderly celebrations.",
+          "background": "He is in charge of the Spring Party.",
+          "attitude": "Helpful and official."
+        },
+        "private_alibi": "I was in the Town Square writing my speech.",
+        "private_motive": "He loves honey cakes and looks suspicious at first.",
+        "visual": {
+          "summary": "A gray owl in a tiny top hat and spectacles.",
+          "visual_anchors": [
+            "top hat",
+            "spectacles",
+            "speech notes"
+          ]
+        }
       }
     ]
   },
+  "evidence": [
+    {
+      "evidence_key": "bakery-empty-window",
+      "player_text": "The Bakery window sill is empty where the cakes cooled.",
+      "fact_summary": "The cakes were taken from the Bakery window.",
+      "essential": true,
+      "related_location_keys": ["bakery"],
+      "related_character_keys": ["barnaby"],
+      "acquisition_paths": [
+        {
+          "surface": "move",
+          "location_key": "bakery"
+        }
+      ]
+    },
+    {
+      "evidence_key": "jam-jar",
+      "player_text": "An empty strawberry jam jar sits in the Bakery.",
+      "fact_summary": "Barnaby dropped his jam jar while taking the cakes.",
+      "essential": true,
+      "related_location_keys": ["bakery"],
+      "related_character_keys": ["barnaby"],
+      "acquisition_paths": [
+        {
+          "surface": "search",
+          "location_key": "bakery"
+        }
+      ]
+    },
+    {
+      "evidence_key": "ribbon-square",
+      "player_text": "A pink ribbon in the square shows Mrs. Rabbit was busy decorating there.",
+      "fact_summary": "Mrs. Rabbit has an innocent public alibi.",
+      "essential": false,
+      "related_location_keys": ["town-square"],
+      "related_character_keys": ["mrs-rabbit"],
+      "acquisition_paths": [
+        {
+          "surface": "start",
+          "location_key": "town-square"
+        }
+      ]
+    },
+    {
+      "evidence_key": "barnaby-confession",
+      "player_text": "Barnaby admits he could not wait for the honey cakes.",
+      "fact_summary": "Barnaby reveals motive and appetite.",
+      "essential": true,
+      "related_location_keys": ["woods"],
+      "related_character_keys": ["barnaby"],
+      "acquisition_paths": [
+        {
+          "surface": "talk",
+          "location_key": "woods",
+          "character_key": "barnaby"
+        }
+      ]
+    }
+  ],
   "ground_truth": {
-    "what_happened": "Barnaby Bear climbed through the Bakery window, took the honey cakes, and hid in the Woods to eat them.",
-    "why_it_happened": "He loves sweets and couldn't wait for the party to begin.",
+    "culprit_character_key": "barnaby",
+    "what_happened": "Barnaby Bear climbed through the Bakery window and stole the honey cakes.",
+    "why_it_happened": "He was too hungry to wait for the Spring Party.",
+    "explanation": "Barnaby left his jam jar behind in the Bakery and carried the cakes into the Woods while Mrs. Rabbit decorated the square.",
+    "suspect_truths": [
+      {
+        "character_key": "barnaby",
+        "actual_activity": "He climbed into the Bakery and took the cakes.",
+        "stated_alibi": "I was in the Woods playing and eating strawberry jam.",
+        "motive": "He was too hungry to wait for the party.",
+        "contradiction_evidence_keys": [
+          "bakery-empty-window",
+          "jam-jar"
+        ]
+      },
+      {
+        "character_key": "mrs-rabbit",
+        "actual_activity": "She decorated the Town Square.",
+        "stated_alibi": "I was in the Town Square hanging ribbons.",
+        "motive": null,
+        "contradiction_evidence_keys": []
+      },
+      {
+        "character_key": "mayor-owl",
+        "actual_activity": "He stayed in the Town Square writing his speech.",
+        "stated_alibi": "I was in the Town Square writing my speech.",
+        "motive": "He likes honey cakes but did not steal them.",
+        "contradiction_evidence_keys": []
+      }
+    ],
     "timeline": [
-      "10:00 AM - Mrs. Rabbit finishes baking the honey cakes and leaves them to cool.",
-      "10:15 AM - Mrs. Rabbit goes to the Town Square to hang pink ribbons.",
-      "10:30 AM - Barnaby Bear sneaks into the Bakery, leaving his empty jam jar behind.",
-      "10:45 AM - Barnaby takes the cakes to the Woods.",
-      "11:00 AM - Mrs. Rabbit returns to find the cakes missing."
+      {
+        "timeline_entry_key": "rabbit-decorates-square",
+        "order": 0,
+        "summary": "Mrs. Rabbit decorates the square with ribbons.",
+        "location_key": "town-square",
+        "character_key": "mrs-rabbit"
+      },
+      {
+        "timeline_entry_key": "barnaby-steals-cakes",
+        "order": 1,
+        "summary": "Barnaby climbs into the Bakery and takes the cakes.",
+        "location_key": "bakery",
+        "character_key": "barnaby"
+      },
+      {
+        "timeline_entry_key": "barnaby-hides-woods",
+        "order": 2,
+        "summary": "Barnaby carries the cakes into the Woods to eat them.",
+        "location_key": "woods",
+        "character_key": "barnaby"
+      }
     ]
   }
 }

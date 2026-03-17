@@ -1,11 +1,18 @@
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 import { judgeBlueprintPath } from "./lib/blueprints/judge-blueprint.mjs";
+import { loadRootEnv } from "./supabase-utils.mjs";
 
-function parseArgs(argv, env = process.env) {
+const DEFAULT_BLUEPRINT_VERIFIER_MODEL = "openai/gpt-4.1-mini";
+
+export function parseJudgeBlueprintArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
-    model: env.OPENROUTER_MODEL || "openai/gpt-4.1-mini",
+    model:
+      env.OPENROUTER_BLUEPRINT_VERIFIER_MODEL ||
+      env.OPENROUTER_MODEL ||
+      DEFAULT_BLUEPRINT_VERIFIER_MODEL,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -29,11 +36,19 @@ function parseArgs(argv, env = process.env) {
   return options;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const options = parseArgs(process.argv.slice(2));
+export async function loadBlueprintVerifierEnv(
+  rootDir = process.cwd(),
+  baseEnv = process.env,
+) {
+  return loadRootEnv(rootDir, baseEnv);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const env = await loadBlueprintVerifierEnv();
+  const options = parseJudgeBlueprintArgs(process.argv.slice(2), env);
   judgeBlueprintPath({
     ...options,
-    apiKey: process.env.OPENROUTER_API_KEY,
+    apiKey: env.OPENROUTER_API_KEY,
   }).catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);

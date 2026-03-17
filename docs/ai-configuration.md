@@ -25,6 +25,10 @@ For day-to-day local setup and profile selection commands, see `../QUICKSTART.md
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
+- Blueprint authoring:
+  - `scripts/generate-blueprints.mjs` and `scripts/judge-blueprint.mjs` are operator tooling, not gameplay runtime
+  - they load `OPENROUTER_API_KEY` from shell env, then `.env.local`
+  - they prefer command-specific model env vars before falling back to `OPENROUTER_MODEL`
 
 ## Local Configuration Summary
 
@@ -44,10 +48,17 @@ Deploy writes `ai_profiles.id='default'` from `.env.deploy.<env>.local`:
 
 ## Image Generation Configuration
 
-Use `.env.images.local` for operator image-generation settings:
+Use `.env.local` as the shared operator config for blueprint authoring and image generation:
 
 - `OPENROUTER_API_KEY=<secret>`
 - `OPENROUTER_IMAGE_MODEL=<model-id>` optional
+- `OPENROUTER_BLUEPRINT_GENERATION_MODEL=<model-id>` optional
+- `OPENROUTER_BLUEPRINT_VERIFIER_MODEL=<model-id>` optional
+
+Use `.env.images.local` only when you want image-generation-specific overrides:
+
+- `OPENROUTER_API_KEY=<secret>` optional override
+- `OPENROUTER_IMAGE_MODEL=<model-id>` optional override
 
 The image-generation CLI resolves config in this order:
 
@@ -55,3 +66,11 @@ The image-generation CLI resolves config in this order:
 2. `.env.images.local`
 3. `.env.local`
 4. built-in default model
+
+Blueprint generation and AI judging resolve config in this order:
+
+1. shell env at invocation time
+2. `.env.local`
+3. `OPENROUTER_BLUEPRINT_GENERATION_MODEL` / `OPENROUTER_BLUEPRINT_VERIFIER_MODEL`
+4. `OPENROUTER_MODEL`
+5. built-in default model

@@ -3,7 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { parseGenerateBlueprintArgs } from "../../../scripts/generate-blueprints.mjs";
+import {
+  loadBlueprintGenerationEnv,
+  parseGenerateBlueprintArgs,
+} from "../../../scripts/generate-blueprints.mjs";
 import { runBlueprintGeneration } from "../../../scripts/lib/blueprints/generate-blueprints.mjs";
 
 const VALID_BLUEPRINT = JSON.stringify(JSON.parse(
@@ -19,6 +22,38 @@ describe("generate blueprints", () => {
       briefPath: "/tmp/brief.md",
       count: 2,
     });
+  });
+
+  it("uses blueprint-generation model env by default", () => {
+    expect(
+      parseGenerateBlueprintArgs(
+        ["--brief", "/tmp/brief.md"],
+        { OPENROUTER_BLUEPRINT_GENERATION_MODEL: "openai/custom-blueprint-model" },
+      ),
+    ).toMatchObject({
+      briefPath: "/tmp/brief.md",
+      model: "openai/custom-blueprint-model",
+    });
+  });
+
+  it("loads OpenRouter settings from .env.local with shell overrides", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "generate-blueprints-env-"));
+
+    await writeFile(
+      path.join(tmpDir, ".env.local"),
+      [
+        'OPENROUTER_API_KEY="root-key"',
+        'OPENROUTER_BLUEPRINT_GENERATION_MODEL="root-model"',
+      ].join("\n"),
+      "utf-8",
+    );
+
+    const env = await loadBlueprintGenerationEnv(tmpDir, {
+      OPENROUTER_BLUEPRINT_GENERATION_MODEL: "shell-model",
+    });
+
+    expect(env.OPENROUTER_API_KEY).toBe("root-key");
+    expect(env.OPENROUTER_BLUEPRINT_GENERATION_MODEL).toBe("shell-model");
   });
 
   it("writes candidate blueprints and raw model output to a draft run", async () => {

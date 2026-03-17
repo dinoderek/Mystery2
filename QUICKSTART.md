@@ -83,6 +83,23 @@ New sessions use the current `default` profile. Existing sessions stay pinned to
 
 For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w1/docs/ai-configuration.md).
 
+### Shared local env template
+
+Copy `.env.local.example` to `.env.local` for local script/test defaults.
+
+The root `.env.local` template now also carries the shared OpenRouter operator settings for:
+
+- `npm run generate:images`
+- `npm run generate:blueprints`
+- `npm run judge:blueprint`
+
+Relevant keys:
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_IMAGE_MODEL`
+- `OPENROUTER_BLUEPRINT_GENERATION_MODEL`
+- `OPENROUTER_BLUEPRINT_VERIFIER_MODEL`
+
 ## Seeded Local Users
 
 `npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth.
@@ -106,7 +123,7 @@ Blueprint V2 authoring is a local operator workflow. The generation, verificatio
 
 ### Generate draft candidates
 
-Generation requires `OPENROUTER_API_KEY` in your shell environment.
+Generation requires `OPENROUTER_API_KEY`, which can come from shell env or `.env.local`.
 
 1. Write a brief in Markdown, for example `blueprints/briefs/school-mystery/brief.md`.
 2. Run the generator:
@@ -120,7 +137,7 @@ npm run generate:blueprints -- \
 Optional flags:
 
 - `--count <n>`: number of candidates to request
-- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_MODEL` is set)
+- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_BLUEPRINT_GENERATION_MODEL` or fallback `OPENROUTER_MODEL` is set)
 
 Output layout:
 
@@ -148,7 +165,7 @@ The verifier exits non-zero when blocking findings are present.
 
 ### Judge a candidate with AI
 
-The AI judge also requires `OPENROUTER_API_KEY`.
+The AI judge also requires `OPENROUTER_API_KEY`, which can come from shell env or `.env.local`.
 
 ```bash
 npm run judge:blueprint -- \
@@ -157,7 +174,7 @@ npm run judge:blueprint -- \
 
 Optional flags:
 
-- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_MODEL` is set)
+- `--model <id>`: override the default model (`openai/gpt-4.1-mini` unless `OPENROUTER_BLUEPRINT_VERIFIER_MODEL` or fallback `OPENROUTER_MODEL` is set)
 
 This writes an AI review artifact next to the blueprint:
 
@@ -269,14 +286,17 @@ If you also want to upload generated blueprint images during deploy, add `--imag
 
 ## Image Generation
 
-Preferred env file:
+Shared env file:
 
-- copy `.env.images.example` to `.env.images.local`
+- copy `.env.local.example` to `.env.local`
+- optional: copy `.env.images.example` to `.env.images.local` only if you want image-specific overrides
 
 Supported keys:
 
 - `OPENROUTER_API_KEY`
 - optional: `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`)
+- optional: `OPENROUTER_BLUEPRINT_GENERATION_MODEL` (defaults to `openai/gpt-4.1-mini`)
+- optional: `OPENROUTER_BLUEPRINT_VERIFIER_MODEL` (defaults to `openai/gpt-4.1-mini`)
 
 `OPENROUTER_API_KEY` is not required when using `--dry-mode`.
 
@@ -286,6 +306,14 @@ Resolution order for `npm run generate:images`:
 2. `.env.images.local`
 3. `.env.local`
 4. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
+
+Resolution order for blueprint authoring commands (`generate:blueprints`, `judge:blueprint`):
+
+1. shell env at invocation time
+2. `.env.local`
+3. command-specific model env (`OPENROUTER_BLUEPRINT_GENERATION_MODEL` or `OPENROUTER_BLUEPRINT_VERIFIER_MODEL`)
+4. fallback model env (`OPENROUTER_MODEL`)
+5. built-in default (`openai/gpt-4.1-mini`)
 
 Gameplay/runtime OpenRouter config stays DB-first and profile-driven. The image-generation CLI is separate operator tooling and does not read from `ai_profiles`.
 

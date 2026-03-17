@@ -33,6 +33,7 @@ Covers:
 - Blueprint draft-run/generation/verification/judge helpers (`scripts/lib/blueprints/*`)
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
+- blueprint authoring env loading precedence (`.env.local`, shell env, CLI overrides) and per-command model defaults
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
   - deploy CLI arg parsing and validation

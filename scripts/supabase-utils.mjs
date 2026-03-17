@@ -46,6 +46,14 @@ export async function loadEnvFile(filePath, required = false) {
   return vars;
 }
 
+export async function loadRootEnv(rootDir = process.cwd(), baseEnv = process.env) {
+  const rootEnv = await loadEnvFile(path.join(rootDir, ".env.local"), false);
+  return {
+    ...rootEnv,
+    ...baseEnv,
+  };
+}
+
 export function runCommand(command, args, env, allowFailure = false) {
   const result = spawnSync(command, args, {
     stdio: "inherit",

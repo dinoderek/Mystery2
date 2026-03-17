@@ -30,6 +30,8 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `package.json`: Main workspace root defining all top-level scripts like test coordination.
 - `eslint.config.mjs`: Centralized ESLint configuration using flat config layout.
 - `tsconfig.json`: Base configuration inherited by all local packages.
+- `.env.local.example`: Committed template for local script/test/runtime env defaults, including shared OpenRouter operator settings.
+- `.env.images.example`: Optional committed template for image-generation-specific local overrides.
 
 ## Local-only Naming Convention
 

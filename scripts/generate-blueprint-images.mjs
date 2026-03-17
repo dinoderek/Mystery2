@@ -9,7 +9,7 @@ import {
 } from "./lib/image-prompt-builder.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
+import { loadEnvFile, loadRootEnv } from "./supabase-utils.mjs";
 
 const MAX_ERROR_BODY_LENGTH = 16_000;
 const DEFAULT_IMAGE_MODEL = "openai/gpt-image-1";
@@ -119,7 +119,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
 }
 
 export async function loadImageGenerationEnv(rootDir = process.cwd(), baseEnv = process.env) {
-  const rootEnv = await loadEnvFile(path.join(rootDir, ".env.local"), false);
+  const rootEnv = await loadRootEnv(rootDir, {});
   const imageEnv = await loadEnvFile(path.join(rootDir, ".env.images.local"), false);
 
   return {

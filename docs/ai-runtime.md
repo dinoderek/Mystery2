@@ -25,7 +25,7 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
 - `scripts/lib/blueprints/draft-runs.mjs`
-  - Shared `blueprints/drafts/<slug>/<run-id>/` filesystem contract
+  - Shared `blueprints/drafts/` filesystem contract
 - `scripts/lib/blueprints/verify-blueprint.mjs`
   - Deterministic verifier and generated `.verification.json` artifacts
 - `scripts/lib/blueprints/judge-blueprint.mjs`
@@ -119,7 +119,7 @@ Invalid output returns a retriable error and does not finalize turn state.
 
 1. Write a `brief.md`.
 2. Run `npm run generate:blueprints -- --brief <path> --output-name <name>`.
-3. Review candidates under `blueprints/drafts/<slug>/<run-id>/`.
+3. Review candidates under `blueprints/drafts/`.
 4. Run `npm run verify:blueprint -- --blueprint-path <candidate-path>`.
 5. Run `npm run judge:blueprint -- --blueprint-path <candidate-path>`.
 6. Manually decide whether to copy a candidate into top-level `blueprints/`.

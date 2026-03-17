@@ -11,7 +11,7 @@ import {
 } from "../../../scripts/lib/blueprints/draft-runs.mjs";
 
 describe("blueprint draft runs", () => {
-  it("creates a timestamped run directory derived from output name only", async () => {
+  it("uses the drafts root directly without creating subdirectories", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "draft-runs-"));
     const briefPath = path.join(tmpDir, "brief.md");
     await writeFile(briefPath, "# Brief", "utf-8");
@@ -20,11 +20,9 @@ describe("blueprint draft runs", () => {
       briefPath,
       outputName: "Cookie Caper",
       draftsRoot: path.join(tmpDir, "blueprints", "drafts"),
-      now: new Date("2026-03-17T12:00:00.000Z"),
     });
 
-    expect(run.draftSlug).toBe("cookie-caper");
-    expect(run.runDir).toContain(path.join("blueprints", "drafts", "cookie-caper"));
+    expect(run.runDir).toBe(path.join(tmpDir, "blueprints", "drafts"));
     expect(await readdir(run.runDir)).toEqual([]);
   });
 

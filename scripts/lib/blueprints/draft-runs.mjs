@@ -9,10 +9,6 @@ export function slugifyDraftName(value) {
     .slice(0, 48) || "draft";
 }
 
-export function createRunId(now = new Date()) {
-  return now.toISOString().replace(/[-:]/gu, "").replace(/\.\d{3}Z$/u, "Z");
-}
-
 export function draftOutputName(value) {
   return slugifyDraftName(value);
 }
@@ -55,17 +51,10 @@ export async function createDraftRun({
   briefPath,
   outputName,
   draftsRoot = path.join("blueprints", "drafts"),
-  now = new Date(),
 }) {
   const brief = await fs.readFile(briefPath, "utf-8");
-  const runId = createRunId(now);
   const normalizedOutputName = draftOutputName(outputName);
-  const draftSlug = normalizedOutputName;
-  const slugDir = path.join(draftsRoot, draftSlug);
-  const runDir = path.join(slugDir, runId);
+  await fs.mkdir(draftsRoot, { recursive: true });
 
-  await fs.mkdir(slugDir, { recursive: true });
-  await fs.mkdir(runDir, { recursive: false });
-
-  return { brief, draftSlug, runId, runDir, outputName: normalizedOutputName };
+  return { brief, runDir: draftsRoot, outputName: normalizedOutputName };
 }

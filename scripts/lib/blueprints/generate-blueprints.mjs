@@ -6,6 +6,7 @@ import {
   generatedBlueprintFilename,
   generatedVerificationFilename,
 } from "./draft-runs.mjs";
+import { loadBlueprintGeneratorPrompt } from "./generator-prompt.mjs";
 import { assertRequiredConfig } from "../../supabase-utils.mjs";
 import { verifyBlueprintPath } from "./verify-blueprint.mjs";
 
@@ -134,10 +135,7 @@ export async function runBlueprintGeneration({
 
   const run = await createDraftRun({ briefPath, outputName, draftsRoot, now });
   await assertOutputTargetsAvailable(run.runDir, run.outputName, count);
-  const prompt = await fs.readFile(
-    path.join("supabase", "functions", "_shared", "blueprints", "generator-prompt.md"),
-    "utf-8",
-  );
+  const prompt = await loadBlueprintGeneratorPrompt();
 
   const results = [];
   for (let index = 1; index <= count; index += 1) {

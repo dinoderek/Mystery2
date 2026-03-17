@@ -7,6 +7,7 @@ import {
   loadBlueprintGenerationEnv,
   parseGenerateBlueprintArgs,
 } from "../../../scripts/generate-blueprints.mjs";
+import { loadBlueprintGeneratorPrompt } from "../../../scripts/lib/blueprints/generator-prompt.mjs";
 import { runBlueprintGeneration } from "../../../scripts/lib/blueprints/generate-blueprints.mjs";
 
 const VALID_BLUEPRINT = JSON.stringify(JSON.parse(
@@ -154,6 +155,17 @@ describe("generate blueprints", () => {
     expect(logMessages).toContain(
       "[blueprint-generation] Generating blueprint 2 of 2 with model test-model...",
     );
+  });
+
+  it("injects the Blueprint V2 schema source into the generation prompt", async () => {
+    const prompt = await loadBlueprintGeneratorPrompt();
+
+    expect(prompt).toContain("Blueprint Schema Source of Truth");
+    expect(prompt).toContain("export const BlueprintSchema = z.object({");
+    expect(prompt).toContain("starting_location_key");
+    expect(prompt).toContain("culprit_character_key");
+    expect(prompt).toContain("Do not invent legacy Blueprint V1 fields");
+    expect(prompt).not.toContain("EXACTLY ONE `is_culprit: true` character");
   });
 });
 

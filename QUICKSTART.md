@@ -147,8 +147,8 @@ Optional flags:
 
 Output layout:
 
-- generated candidate 1: `blueprints/drafts/<slug>/<run-id>/school-mystery.1.blueprint.json`
-- verification report 1: `blueprints/drafts/<slug>/<run-id>/school-mystery.1.verification.json`
+- generated candidate 1: `blueprints/drafts/school-mystery.1.blueprint.json`
+- verification report 1: `blueprints/drafts/school-mystery.1.verification.json`
 
 The generator always writes both the generated blueprint file and a verification report for each requested candidate. If every generated candidate fails verification, the command exits non-zero after writing the artifacts.
 
@@ -158,7 +158,7 @@ Run the verifier against a generated candidate or any local blueprint path:
 
 ```bash
 npm run verify:blueprint -- \
-  --blueprint-path blueprints/drafts/school-mystery/<run-id>/school-mystery.1.blueprint.json
+  --blueprint-path blueprints/drafts/school-mystery.1.blueprint.json
 ```
 
 This writes a verification report next to the blueprint:
@@ -175,7 +175,7 @@ The command now fails fast if the key is missing or still set to a placeholder s
 
 ```bash
 npm run judge:blueprint -- \
-  --blueprint-path blueprints/drafts/school-mystery/<run-id>/school-mystery.1.blueprint.json
+  --blueprint-path blueprints/drafts/school-mystery.1.blueprint.json
 ```
 
 Optional flags:
@@ -190,7 +190,7 @@ This writes an AI review artifact next to the blueprint:
 ### Recommended review loop
 
 1. Generate one or more candidates from a `brief.md`.
-2. Open the generated `.blueprint.json` files in `blueprints/drafts/<slug>/<run-id>/`.
+2. Open the generated `.blueprint.json` files in `blueprints/drafts/`.
 3. Run deterministic verification on the best candidate.
 4. Run AI judging on the same candidate.
 5. Manually decide whether to copy the candidate into top-level `blueprints/`.

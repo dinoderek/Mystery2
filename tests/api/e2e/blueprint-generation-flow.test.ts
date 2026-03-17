@@ -23,6 +23,7 @@ describe("blueprint generation flow", () => {
 
     const result = await runBlueprintGeneration({
       briefPath,
+      outputName: "Cookie Caper",
       count: 1,
       model: "test-model",
       apiKey: "test-key",
@@ -31,7 +32,7 @@ describe("blueprint generation flow", () => {
     });
 
     const files = await readdir(result.runDir);
-    expect(files).toContain("brief.md");
-    expect(files).toContain("candidate-01.blueprint.json");
+    expect(files).toContain("cookie-caper.1.blueprint.json");
+    expect(files).toContain("cookie-caper.1.verification.json");
   });
 });

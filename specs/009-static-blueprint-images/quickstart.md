@@ -87,8 +87,7 @@ npm run generate:images -- \
 
 Notes:
 - Prefer `.env.local` for shared live-generation settings, with `OPENROUTER_API_KEY` and optional `OPENROUTER_IMAGE_MODEL`.
-- Use `.env.images.local` only when image generation needs different overrides than the shared root env file.
-- Shell env overrides both files when needed.
+- Shell env overrides `.env.local` when needed.
 - The script patches blueprint image IDs only for successfully generated targets.
 
 ## Deploy Blueprints + Images (Operator)

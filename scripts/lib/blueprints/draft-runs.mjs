@@ -13,34 +13,37 @@ export function createRunId(now = new Date()) {
   return now.toISOString().replace(/[-:]/gu, "").replace(/\.\d{3}Z$/u, "Z");
 }
 
-export function candidateBlueprintFilename(index) {
-  return `candidate-${String(index).padStart(2, "0")}.blueprint.json`;
+export function draftOutputName(value) {
+  return slugifyDraftName(value);
 }
 
-export function candidateRawOutputFilename(index) {
-  return `candidate-${String(index).padStart(2, "0")}.raw-model-output.txt`;
+export function generatedBlueprintFilename(outputName, index) {
+  return `${draftOutputName(outputName)}.${index}.blueprint.json`;
 }
 
-export function candidateDeterministicReportFilename(index) {
-  return `candidate-${String(index).padStart(2, "0")}.deterministic-report.json`;
+export function generatedVerificationFilename(outputName, index) {
+  return `${draftOutputName(outputName)}.${index}.verification.json`;
 }
 
-export function candidateAIJudgeReportFilename(index) {
-  return `candidate-${String(index).padStart(2, "0")}.ai-judge-report.json`;
+export function generatedAIJudgeReportFilename(outputName, index) {
+  return `${draftOutputName(outputName)}.${index}.ai-judge-report.json`;
 }
 
 export function deriveArtifactPaths(blueprintPath) {
   const dir = path.dirname(blueprintPath);
-  const base = path.basename(blueprintPath).replace(/\.blueprint\.json$/u, "").replace(/\.json$/u, "");
-  const candidateMatch = /^candidate-(\d{2})$/u.exec(base);
+  const basename = path.basename(blueprintPath);
+  const generatedMatch = /^(.*)\.(\d+)\.blueprint\.json$/u.exec(basename);
 
-  if (candidateMatch) {
-    const index = Number(candidateMatch[1]);
+  if (generatedMatch) {
+    const outputName = generatedMatch[1];
+    const index = Number(generatedMatch[2]);
     return {
-      deterministicReportPath: path.join(dir, candidateDeterministicReportFilename(index)),
-      aiJudgeReportPath: path.join(dir, candidateAIJudgeReportFilename(index)),
+      deterministicReportPath: path.join(dir, generatedVerificationFilename(outputName, index)),
+      aiJudgeReportPath: path.join(dir, generatedAIJudgeReportFilename(outputName, index)),
     };
   }
+
+  const base = basename.replace(/\.blueprint\.json$/u, "").replace(/\.json$/u, "");
 
   return {
     deterministicReportPath: path.join(dir, `${base}.deterministic-report.json`),
@@ -50,19 +53,19 @@ export function deriveArtifactPaths(blueprintPath) {
 
 export async function createDraftRun({
   briefPath,
+  outputName,
   draftsRoot = path.join("blueprints", "drafts"),
-  slug,
   now = new Date(),
 }) {
   const brief = await fs.readFile(briefPath, "utf-8");
   const runId = createRunId(now);
-  const draftSlug = slugifyDraftName(slug ?? path.basename(path.dirname(briefPath) || briefPath, path.extname(briefPath)));
+  const normalizedOutputName = draftOutputName(outputName);
+  const draftSlug = normalizedOutputName;
   const slugDir = path.join(draftsRoot, draftSlug);
   const runDir = path.join(slugDir, runId);
 
   await fs.mkdir(slugDir, { recursive: true });
   await fs.mkdir(runDir, { recursive: false });
-  await fs.writeFile(path.join(runDir, "brief.md"), brief, "utf-8");
 
-  return { brief, draftSlug, runId, runDir };
+  return { brief, draftSlug, runId, runDir, outputName: normalizedOutputName };
 }

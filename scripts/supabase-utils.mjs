@@ -54,6 +54,36 @@ export async function loadRootEnv(rootDir = process.cwd(), baseEnv = process.env
   };
 }
 
+export function isUnsetOrPlaceholder(value) {
+  const trimmed = String(value ?? "").trim();
+  return trimmed.length === 0 || /^<[^>]+>$/u.test(trimmed);
+}
+
+function describeConfigProblem(value, label, fix) {
+  const trimmed = String(value ?? "").trim();
+  if (trimmed.length === 0) {
+    return `Missing ${label}; ${fix}.`;
+  }
+  if (/^<[^>]+>$/u.test(trimmed)) {
+    return `${label} is still using placeholder value ${trimmed}; ${fix}.`;
+  }
+  return null;
+}
+
+export function assertRequiredConfig(commandName, checks) {
+  const problems = checks
+    .map((check) => describeConfigProblem(check.value, check.label, check.fix))
+    .filter(Boolean);
+
+  if (problems.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    `${commandName} configuration error:\n${problems.map((problem) => `- ${problem}`).join("\n")}`,
+  );
+}
+
 export function runCommand(command, args, env, allowFailure = false) {
   const result = spawnSync(command, args, {
     stdio: "inherit",

@@ -3,6 +3,38 @@ import fs from "node:fs/promises";
 import { AIJudgeReportSchema, BlueprintV2Schema } from "./contracts.mjs";
 import { deriveArtifactPaths } from "./draft-runs.mjs";
 import { buildJudgePrompt } from "./judge-prompt.mjs";
+import { assertRequiredConfig } from "../../supabase-utils.mjs";
+
+const MAX_ERROR_BODY_LENGTH = 8_000;
+
+async function readResponseBody(response) {
+  try {
+    const text = await response.text();
+    if (text.length <= MAX_ERROR_BODY_LENGTH) {
+      return text;
+    }
+    return `${text.slice(0, MAX_ERROR_BODY_LENGTH)}\n... [truncated ${text.length - MAX_ERROR_BODY_LENGTH} chars]`;
+  } catch (error) {
+    return `[unavailable: ${error instanceof Error ? error.message : String(error)}]`;
+  }
+}
+
+function validateBlueprintJudgeConfig({ model, apiKey }) {
+  assertRequiredConfig("Blueprint judging", [
+    {
+      value: apiKey,
+      label: "OPENROUTER_API_KEY",
+      fix:
+        "set it in `.env.local` or shell env before running `npm run judge:blueprint`",
+    },
+    {
+      value: model,
+      label: "judge model",
+      fix:
+        "pass `--model <id>` or set `OPENROUTER_BLUEPRINT_VERIFIER_MODEL` in `.env.local`",
+    },
+  ]);
+}
 
 async function requestJson({ model, prompt, apiKey, fetchImpl = fetch }) {
   const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
@@ -22,7 +54,13 @@ async function requestJson({ model, prompt, apiKey, fetchImpl = fetch }) {
   });
 
   if (!response.ok) {
-    throw new Error(`Judge provider failed (${response.status})`);
+    const responseBody = await readResponseBody(response);
+    const keyHint = response.status === 401
+      ? " OpenRouter rejected the API key; check OPENROUTER_API_KEY in `.env.local` or shell env."
+      : "";
+    throw new Error(
+      `Judge provider failed (${response.status}${response.statusText ? ` ${response.statusText}` : ""}).${keyHint}\nResponse body:\n${responseBody}`,
+    );
   }
 
   const payload = await response.json();
@@ -40,6 +78,8 @@ export async function judgeBlueprintPath({
   fetchImpl,
   requestJsonImpl = requestJson,
 }) {
+  validateBlueprintJudgeConfig({ model, apiKey });
+
   const blueprint = BlueprintV2Schema.parse(
     JSON.parse(await fs.readFile(blueprintPath, "utf-8")),
   );

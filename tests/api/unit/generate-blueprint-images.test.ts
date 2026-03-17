@@ -195,17 +195,12 @@ describe("generate-blueprint-images args parser", () => {
 });
 
 describe("loadImageGenerationEnv", () => {
-  it("loads image env first, then falls back to .env.local, with shell env overrides", async () => {
+  it("loads .env.local with shell env overrides", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-env-"));
 
     await writeFile(
       path.join(tmpDir, ".env.local"),
       'OPENROUTER_API_KEY="root-key"\nOPENROUTER_IMAGE_MODEL="root-model"\n',
-      "utf-8",
-    );
-    await writeFile(
-      path.join(tmpDir, ".env.images.local"),
-      'OPENROUTER_API_KEY="image-key"\nOPENROUTER_IMAGE_MODEL="image-model"\n',
       "utf-8",
     );
 
@@ -218,7 +213,7 @@ describe("loadImageGenerationEnv", () => {
     expect(env.OPENROUTER_IMAGE_MODEL).toBe("shell-model");
   });
 
-  it("falls back to .env.local when image env file is absent", async () => {
+  it("loads values from .env.local when shell env is absent", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-env-root-"));
 
     await writeFile(
@@ -267,6 +262,30 @@ describe("runImageGeneration", () => {
     expect(patched.metadata.image_id).toBeUndefined();
     expect(patched.world.locations[0].location_image_id).toBeUndefined();
     expect(patched.world.characters[0].portrait_image_id).toBeUndefined();
+  });
+
+  it("fails fast when live image generation is missing OpenRouter config", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-missing-key-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    await expect(() =>
+      runImageGeneration({
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "all",
+        overwrite: false,
+        dryRun: false,
+        dryMode: false,
+        characterKeys: [],
+        locationKeys: [],
+      }, { env: {} })
+    ).rejects.toThrow(
+      "Image generation configuration error:\n- Missing OPENROUTER_API_KEY; set it in `.env.local` or shell env before running `npm run generate:images`.",
+    );
   });
 
   it("captures provider response details and stack traces for failed targets", async () => {

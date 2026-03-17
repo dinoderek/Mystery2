@@ -42,9 +42,31 @@ describe("judge blueprint", () => {
     expect(env.OPENROUTER_BLUEPRINT_VERIFIER_MODEL).toBe("shell-model");
   });
 
+  it("fails fast when judge OpenRouter config is missing", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "judge-blueprint-missing-key-"));
+    const blueprintPath = path.join(tmpDir, "cookie-caper.1.blueprint.json");
+    await writeFile(
+      blueprintPath,
+      await readFile(
+        path.join(process.cwd(), "supabase", "seed", "blueprints", "mock-blueprint.json"),
+        "utf-8",
+      ),
+      "utf-8",
+    );
+
+    await expect(() =>
+      judgeBlueprintPath({
+        blueprintPath,
+        model: "test-model",
+      })
+    ).rejects.toThrow(
+      "Blueprint judging configuration error:\n- Missing OPENROUTER_API_KEY; set it in `.env.local` or shell env before running `npm run judge:blueprint`.",
+    );
+  });
+
   it("writes an AI judge report on valid provider output", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "judge-blueprint-"));
-    const blueprintPath = path.join(tmpDir, "candidate-01.blueprint.json");
+    const blueprintPath = path.join(tmpDir, "cookie-caper.1.blueprint.json");
     await writeFile(
       blueprintPath,
       await readFile(
@@ -74,7 +96,7 @@ describe("judge blueprint", () => {
       }),
     });
 
-    expect(result.reportPath).toContain("candidate-01.ai-judge-report.json");
+    expect(result.reportPath).toContain("cookie-caper.1.ai-judge-report.json");
     expect(result.report.dimension_scores.spoiler_safety).toBe(5);
   });
 });

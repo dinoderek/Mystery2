@@ -27,7 +27,7 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
 - `scripts/lib/blueprints/draft-runs.mjs`
   - Shared `blueprints/drafts/<slug>/<run-id>/` filesystem contract
 - `scripts/lib/blueprints/verify-blueprint.mjs`
-  - Deterministic verifier and `.deterministic-report.json` artifacts
+  - Deterministic verifier and generated `.verification.json` artifacts
 - `scripts/lib/blueprints/judge-blueprint.mjs`
   - Strict-JSON AI judge and `.ai-judge-report.json` artifacts
 - `supabase/functions/_shared/ai-prompts/`
@@ -118,7 +118,7 @@ Invalid output returns a retriable error and does not finalize turn state.
 ## Blueprint V2 Authoring Workflow
 
 1. Write a `brief.md`.
-2. Run `npm run generate:blueprints -- --brief <path>`.
+2. Run `npm run generate:blueprints -- --brief <path> --output-name <name>`.
 3. Review candidates under `blueprints/drafts/<slug>/<run-id>/`.
 4. Run `npm run verify:blueprint -- --blueprint-path <candidate-path>`.
 5. Run `npm run judge:blueprint -- --blueprint-path <candidate-path>`.

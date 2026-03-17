@@ -8,7 +8,7 @@ import { judgeBlueprintPath } from "../../../scripts/lib/blueprints/judge-bluepr
 describe("blueprint judge flow", () => {
   it("fails closed when provider output is invalid", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "judge-flow-"));
-    const blueprintPath = path.join(tmpDir, "candidate-01.blueprint.json");
+    const blueprintPath = path.join(tmpDir, "cookie-caper.1.blueprint.json");
     await writeFile(
       blueprintPath,
       await readFile(

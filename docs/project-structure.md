@@ -31,13 +31,12 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `eslint.config.mjs`: Centralized ESLint configuration using flat config layout.
 - `tsconfig.json`: Base configuration inherited by all local packages.
 - `.env.local.example`: Committed template for local script/test/runtime env defaults, including shared OpenRouter operator settings.
-- `.env.images.example`: Optional committed template for image-generation-specific local overrides.
 
 ## Local-only Naming Convention
 
 - Use the `.local` suffix for machine-specific files that must stay gitignored.
-- Examples in this repo include env files such as `.env.deploy.<env>.local`, operator config such as `.env.images.local`, and copied deployment manifests such as `deploy/bootstrap-users.<env>.local.json`.
-- When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
+- Examples in this repo include env files such as `.env.deploy.<env>.local` and copied deployment manifests such as `deploy/bootstrap-users.<env>.local.json`.
+- When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.local.example`) and keep the real local file out of version control.
 
 ## Feature Additions (Static Blueprint Images)
 

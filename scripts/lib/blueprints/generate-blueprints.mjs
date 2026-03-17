@@ -1,12 +1,82 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { BlueprintV2Schema } from "./contracts.mjs";
 import {
-  candidateBlueprintFilename,
-  candidateRawOutputFilename,
   createDraftRun,
+  generatedBlueprintFilename,
+  generatedVerificationFilename,
 } from "./draft-runs.mjs";
+import { assertRequiredConfig } from "../../supabase-utils.mjs";
+import { verifyBlueprintPath } from "./verify-blueprint.mjs";
+
+const MAX_ERROR_BODY_LENGTH = 8_000;
+
+async function readResponseBody(response) {
+  try {
+    const text = await response.text();
+    if (text.length <= MAX_ERROR_BODY_LENGTH) {
+      return text;
+    }
+    return `${text.slice(0, MAX_ERROR_BODY_LENGTH)}\n... [truncated ${text.length - MAX_ERROR_BODY_LENGTH} chars]`;
+  } catch (error) {
+    return `[unavailable: ${error instanceof Error ? error.message : String(error)}]`;
+  }
+}
+
+function validateBlueprintGenerationConfig({ outputName, model, apiKey }) {
+  assertRequiredConfig("Blueprint generation", [
+    {
+      value: outputName,
+      label: "output name",
+      fix:
+        "pass `--output-name <name>` so generated artifacts use a stable, readable filename prefix",
+    },
+    {
+      value: apiKey,
+      label: "OPENROUTER_API_KEY",
+      fix:
+        "set it in `.env.local` or shell env before running `npm run generate:blueprints`",
+    },
+    {
+      value: model,
+      label: "generation model",
+      fix:
+        "pass `--model <id>` or set `OPENROUTER_BLUEPRINT_GENERATION_MODEL` in `.env.local`",
+    },
+  ]);
+}
+
+async function assertOutputTargetsAvailable(runDir, outputName, count) {
+  const conflicts = [];
+
+  for (let index = 1; index <= count; index += 1) {
+    for (const filePath of [
+      path.join(runDir, generatedBlueprintFilename(outputName, index)),
+      path.join(runDir, generatedVerificationFilename(outputName, index)),
+    ]) {
+      try {
+        await fs.access(filePath);
+        conflicts.push(filePath);
+      } catch {
+        // File does not exist.
+      }
+    }
+  }
+
+  if (conflicts.length > 0) {
+    throw new Error(
+      `Blueprint generation would overwrite existing artifacts:\n${conflicts.map((filePath) => `- ${filePath}`).join("\n")}`,
+    );
+  }
+}
+
+function formatBlueprintOutput(raw) {
+  try {
+    return `${JSON.stringify(JSON.parse(raw), null, 2)}\n`;
+  } catch {
+    return raw.endsWith("\n") ? raw : `${raw}\n`;
+  }
+}
 
 async function requestCandidate({
   model,
@@ -31,7 +101,13 @@ async function requestCandidate({
   });
 
   if (!response.ok) {
-    throw new Error(`Generation provider failed (${response.status})`);
+    const responseBody = await readResponseBody(response);
+    const keyHint = response.status === 401
+      ? " OpenRouter rejected the API key; check OPENROUTER_API_KEY in `.env.local` or shell env."
+      : "";
+    throw new Error(
+      `Generation provider failed (${response.status}${response.statusText ? ` ${response.statusText}` : ""}).${keyHint}\nResponse body:\n${responseBody}`,
+    );
   }
 
   const payload = await response.json();
@@ -44,15 +120,20 @@ async function requestCandidate({
 
 export async function runBlueprintGeneration({
   briefPath,
+  outputName,
   count = 1,
   model,
   apiKey,
   draftsRoot,
   now,
   fetchImpl,
+  logImpl = console.log,
   requestCandidateImpl = requestCandidate,
 }) {
-  const run = await createDraftRun({ briefPath, draftsRoot, now });
+  validateBlueprintGenerationConfig({ outputName, model, apiKey });
+
+  const run = await createDraftRun({ briefPath, outputName, draftsRoot, now });
+  await assertOutputTargetsAvailable(run.runDir, run.outputName, count);
   const prompt = await fs.readFile(
     path.join("supabase", "functions", "_shared", "blueprints", "generator-prompt.md"),
     "utf-8",
@@ -60,6 +141,9 @@ export async function runBlueprintGeneration({
 
   const results = [];
   for (let index = 1; index <= count; index += 1) {
+    logImpl(
+      `[blueprint-generation] Generating blueprint ${index} of ${count} with model ${model}...`,
+    );
     const raw = await requestCandidateImpl({
       model,
       apiKey,
@@ -67,21 +151,25 @@ export async function runBlueprintGeneration({
       prompt: `${prompt}\n\nBrief:\n${run.brief}`,
     });
 
-    try {
-      const parsed = BlueprintV2Schema.parse(JSON.parse(raw));
-      const outputPath = path.join(run.runDir, candidateBlueprintFilename(index));
-      await fs.writeFile(outputPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf-8");
-      results.push({ index, status: "generated", outputPath });
-    } catch {
-      const outputPath = path.join(run.runDir, candidateRawOutputFilename(index));
-      await fs.writeFile(outputPath, raw, "utf-8");
-      results.push({ index, status: "raw_only", outputPath });
-    }
+    const blueprintPath = path.join(run.runDir, generatedBlueprintFilename(run.outputName, index));
+    await fs.writeFile(blueprintPath, formatBlueprintOutput(raw), "utf-8");
+    const verification = await verifyBlueprintPath(blueprintPath);
+
+    logImpl(
+      `[blueprint-generation] Wrote ${path.basename(blueprintPath)} and ${path.basename(verification.reportPath)} (${verification.report.status}).`,
+    );
+
+    results.push({
+      index,
+      blueprintPath,
+      verificationPath: verification.reportPath,
+      verificationStatus: verification.report.status,
+    });
   }
 
-  const generatedCount = results.filter((result) => result.status === "generated").length;
-  if (generatedCount === 0) {
-    const error = new Error("No valid Blueprint V2 candidates were generated.");
+  const passingCount = results.filter((result) => result.verificationStatus !== "fail").length;
+  if (passingCount === 0) {
+    const error = new Error("No generated blueprints passed verification.");
     error.results = results;
     error.runDir = run.runDir;
     throw error;

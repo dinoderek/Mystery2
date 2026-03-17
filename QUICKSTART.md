@@ -124,6 +124,7 @@ Blueprint V2 authoring is a local operator workflow. The generation, verificatio
 ### Generate draft candidates
 
 Generation requires `OPENROUTER_API_KEY`, which can come from shell env or `.env.local`.
+The command now fails fast if the key is missing or still set to a placeholder sample value.
 
 1. Write a brief in Markdown, for example `blueprints/briefs/school-mystery/brief.md`.
 2. Run the generator:
@@ -131,8 +132,13 @@ Generation requires `OPENROUTER_API_KEY`, which can come from shell env or `.env
 ```bash
 npm run generate:blueprints -- \
   --brief blueprints/briefs/school-mystery/brief.md \
+  --output-name school-mystery \
   --count 3
 ```
+
+Required flags:
+
+- `--output-name <name>`: readable output prefix used in generated artifact filenames
 
 Optional flags:
 
@@ -141,11 +147,10 @@ Optional flags:
 
 Output layout:
 
-- copied brief: `blueprints/drafts/<slug>/<run-id>/brief.md`
-- valid candidates: `blueprints/drafts/<slug>/<run-id>/candidate-01.blueprint.json`
-- invalid JSON/raw-only outputs: `blueprints/drafts/<slug>/<run-id>/candidate-01.raw-model-output.txt`
+- generated candidate 1: `blueprints/drafts/<slug>/<run-id>/school-mystery.1.blueprint.json`
+- verification report 1: `blueprints/drafts/<slug>/<run-id>/school-mystery.1.verification.json`
 
-If no valid Blueprint V2 candidates are produced, the command exits non-zero.
+The generator always writes both the generated blueprint file and a verification report for each requested candidate. If every generated candidate fails verification, the command exits non-zero after writing the artifacts.
 
 ### Verify a candidate deterministically
 
@@ -153,12 +158,12 @@ Run the verifier against a generated candidate or any local blueprint path:
 
 ```bash
 npm run verify:blueprint -- \
-  --blueprint-path blueprints/drafts/school-mystery/<run-id>/candidate-01.blueprint.json
+  --blueprint-path blueprints/drafts/school-mystery/<run-id>/school-mystery.1.blueprint.json
 ```
 
-This writes a deterministic report next to the blueprint:
+This writes a verification report next to the blueprint:
 
-- candidate drafts: `candidate-01.deterministic-report.json`
+- generated candidates: `school-mystery.1.verification.json`
 - canonical blueprints: `<name>.deterministic-report.json`
 
 The verifier exits non-zero when blocking findings are present.
@@ -166,10 +171,11 @@ The verifier exits non-zero when blocking findings are present.
 ### Judge a candidate with AI
 
 The AI judge also requires `OPENROUTER_API_KEY`, which can come from shell env or `.env.local`.
+The command now fails fast if the key is missing or still set to a placeholder sample value.
 
 ```bash
 npm run judge:blueprint -- \
-  --blueprint-path blueprints/drafts/school-mystery/<run-id>/candidate-01.blueprint.json
+  --blueprint-path blueprints/drafts/school-mystery/<run-id>/school-mystery.1.blueprint.json
 ```
 
 Optional flags:
@@ -178,7 +184,7 @@ Optional flags:
 
 This writes an AI review artifact next to the blueprint:
 
-- candidate drafts: `candidate-01.ai-judge-report.json`
+- generated candidates: `school-mystery.1.ai-judge-report.json`
 - canonical blueprints: `<name>.ai-judge-report.json`
 
 ### Recommended review loop
@@ -289,7 +295,6 @@ If you also want to upload generated blueprint images during deploy, add `--imag
 Shared env file:
 
 - copy `.env.local.example` to `.env.local`
-- optional: copy `.env.images.example` to `.env.images.local` only if you want image-specific overrides
 
 Supported keys:
 
@@ -299,13 +304,13 @@ Supported keys:
 - optional: `OPENROUTER_BLUEPRINT_VERIFIER_MODEL` (defaults to `openai/gpt-4.1-mini`)
 
 `OPENROUTER_API_KEY` is not required when using `--dry-mode`.
+Live image generation fails fast if the key is missing or still set to a placeholder sample value.
 
 Resolution order for `npm run generate:images`:
 
 1. shell env at invocation time
-2. `.env.images.local`
-3. `.env.local`
-4. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
+2. `.env.local`
+3. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
 
 Resolution order for blueprint authoring commands (`generate:blueprints`, `judge:blueprint`):
 

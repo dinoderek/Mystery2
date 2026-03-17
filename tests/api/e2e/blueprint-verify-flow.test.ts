@@ -15,7 +15,7 @@ describe("blueprint verify flow", () => {
       ),
     );
     raw.metadata.time_budget = 1;
-    const blueprintPath = path.join(tmpDir, "candidate-01.blueprint.json");
+    const blueprintPath = path.join(tmpDir, "cookie-caper.1.blueprint.json");
     await writeFile(blueprintPath, `${JSON.stringify(raw, null, 2)}\n`, "utf-8");
 
     const result = await verifyBlueprintPath(blueprintPath);

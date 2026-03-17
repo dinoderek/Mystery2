@@ -6,7 +6,6 @@ build/
 .env.*
 !.env.example
 !.env.local.example
-!.env.images.example
 coverage/
 .DS_Store
 Thumbs.db

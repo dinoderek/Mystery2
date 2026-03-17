@@ -9,6 +9,7 @@ const DEFAULT_BLUEPRINT_GENERATION_MODEL = "openai/gpt-4.1-mini";
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefPath: "",
+    outputName: "",
     count: 1,
     model:
       env.OPENROUTER_BLUEPRINT_GENERATION_MODEL ||
@@ -28,6 +29,11 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
       index += 1;
       continue;
     }
+    if (token === "--output-name") {
+      options.outputName = String(argv[index + 1] ?? "");
+      index += 1;
+      continue;
+    }
     if (token === "--model") {
       options.model = String(argv[index + 1] ?? "");
       index += 1;
@@ -38,6 +44,9 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
 
   if (!options.briefPath) {
     throw new Error("Missing required --brief");
+  }
+  if (!options.outputName) {
+    throw new Error("Missing required --output-name");
   }
   if (!Number.isInteger(options.count) || options.count <= 0) {
     throw new Error("Invalid --count");

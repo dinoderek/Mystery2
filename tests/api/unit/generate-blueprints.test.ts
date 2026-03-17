@@ -18,8 +18,16 @@ const VALID_BLUEPRINT = JSON.stringify(JSON.parse(
 
 describe("generate blueprints", () => {
   it("parses CLI args", () => {
-    expect(parseGenerateBlueprintArgs(["--brief", "/tmp/brief.md", "--count", "2"])).toMatchObject({
+    expect(parseGenerateBlueprintArgs([
+      "--brief",
+      "/tmp/brief.md",
+      "--output-name",
+      "cookie-caper",
+      "--count",
+      "2",
+    ])).toMatchObject({
       briefPath: "/tmp/brief.md",
+      outputName: "cookie-caper",
       count: 2,
     });
   });
@@ -27,11 +35,12 @@ describe("generate blueprints", () => {
   it("uses blueprint-generation model env by default", () => {
     expect(
       parseGenerateBlueprintArgs(
-        ["--brief", "/tmp/brief.md"],
+        ["--brief", "/tmp/brief.md", "--output-name", "cookie-caper"],
         { OPENROUTER_BLUEPRINT_GENERATION_MODEL: "openai/custom-blueprint-model" },
       ),
     ).toMatchObject({
       briefPath: "/tmp/brief.md",
+      outputName: "cookie-caper",
       model: "openai/custom-blueprint-model",
     });
   });
@@ -56,18 +65,68 @@ describe("generate blueprints", () => {
     expect(env.OPENROUTER_BLUEPRINT_GENERATION_MODEL).toBe("shell-model");
   });
 
+  it("fails fast when OpenRouter config is missing", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "generate-blueprints-missing-key-"));
+    const briefPath = path.join(tmpDir, "brief.md");
+    await writeFile(briefPath, "# Mystery brief", "utf-8");
+
+    await expect(() =>
+      runBlueprintGeneration({
+        briefPath,
+        outputName: "cookie-caper",
+        count: 1,
+        model: "test-model",
+      })
+    ).rejects.toThrow(
+      "Blueprint generation configuration error:\n- Missing OPENROUTER_API_KEY; set it in `.env.local` or shell env before running `npm run generate:blueprints`.",
+    );
+  });
+
+  it("includes response details when the provider rejects the request", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "generate-blueprints-401-"));
+    const briefPath = path.join(tmpDir, "brief.md");
+    await writeFile(briefPath, "# Mystery brief", "utf-8");
+
+    await expect(() =>
+      runBlueprintGeneration({
+        briefPath,
+        outputName: "cookie-caper",
+        count: 1,
+        model: "test-model",
+        apiKey: "bad-key",
+        draftsRoot: path.join(tmpDir, "drafts"),
+        fetchImpl: () =>
+          Promise.resolve(
+            new Response(
+              JSON.stringify({ error: { message: "Invalid credentials" } }),
+              {
+                status: 401,
+                statusText: "Unauthorized",
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          ),
+      })
+    ).rejects.toThrow("OpenRouter rejected the API key");
+  });
+
   it("writes candidate blueprints and raw model output to a draft run", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "generate-blueprints-"));
     const briefPath = path.join(tmpDir, "brief.md");
     await writeFile(briefPath, "# Mystery brief", "utf-8");
+    const logMessages: string[] = [];
 
     const result = await runBlueprintGeneration({
       briefPath,
+      outputName: "Cookie Caper",
       count: 2,
       model: "test-model",
       apiKey: "test-key",
       draftsRoot: path.join(tmpDir, "drafts"),
       now: new Date("2026-03-17T12:00:00.000Z"),
+      logImpl: (message: string) => {
+        logMessages.push(message);
+      },
       requestCandidateImpl: async ({ prompt }: { prompt: string }) =>
         prompt.includes("# Mystery brief") && resultCounter++ === 0
           ? VALID_BLUEPRINT
@@ -75,9 +134,26 @@ describe("generate blueprints", () => {
     });
 
     const files = await readdir(result.runDir);
-    expect(files).toContain("brief.md");
-    expect(files).toContain("candidate-01.blueprint.json");
-    expect(files).toContain("candidate-02.raw-model-output.txt");
+    expect(files).toContain("cookie-caper.1.blueprint.json");
+    expect(files).toContain("cookie-caper.1.verification.json");
+    expect(files).toContain("cookie-caper.2.blueprint.json");
+    expect(files).toContain("cookie-caper.2.verification.json");
+    expect(result.results).toEqual([
+      expect.objectContaining({
+        index: 1,
+        verificationStatus: "pass",
+      }),
+      expect.objectContaining({
+        index: 2,
+        verificationStatus: "fail",
+      }),
+    ]);
+    expect(logMessages).toContain(
+      "[blueprint-generation] Generating blueprint 1 of 2 with model test-model...",
+    );
+    expect(logMessages).toContain(
+      "[blueprint-generation] Generating blueprint 2 of 2 with model test-model...",
+    );
   });
 });
 

@@ -24,7 +24,7 @@ For day-to-day local setup and profile selection commands, see `../QUICKSTART.md
   - runtime provider construction uses that DB value only
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
-  - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
+  - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
 - Blueprint authoring:
   - `scripts/generate-blueprints.mjs` and `scripts/judge-blueprint.mjs` are operator tooling, not gameplay runtime
   - they load `OPENROUTER_API_KEY` from shell env, then `.env.local`
@@ -35,7 +35,7 @@ For day-to-day local setup and profile selection commands, see `../QUICKSTART.md
 - `npm run dev` points `default` to `mock`.
 - `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
 - `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
-- gameplay/runtime OpenRouter config stays DB-first; image generation uses its own local env file instead of AI profile rows
+- gameplay/runtime OpenRouter config stays DB-first; operator tooling reads from shell env and `.env.local` instead of AI profile rows
 
 ## Deploy Configuration
 
@@ -55,17 +55,11 @@ Use `.env.local` as the shared operator config for blueprint authoring and image
 - `OPENROUTER_BLUEPRINT_GENERATION_MODEL=<model-id>` optional
 - `OPENROUTER_BLUEPRINT_VERIFIER_MODEL=<model-id>` optional
 
-Use `.env.images.local` only when you want image-generation-specific overrides:
-
-- `OPENROUTER_API_KEY=<secret>` optional override
-- `OPENROUTER_IMAGE_MODEL=<model-id>` optional override
-
 The image-generation CLI resolves config in this order:
 
 1. shell env at invocation time
-2. `.env.images.local`
-3. `.env.local`
-4. built-in default model
+2. `.env.local`
+3. built-in default model
 
 Blueprint generation and AI judging resolve config in this order:
 

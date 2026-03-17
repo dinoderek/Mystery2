@@ -1,8 +1,5 @@
 import fs from "node:fs/promises";
-import path from "node:path";
-
 import { BlueprintV2Schema, VerificationReportSchema } from "./contracts.mjs";
-import { createStageDiagnostics, formatStageError } from "./diagnostics.mjs";
 import { deriveArtifactPaths } from "./draft-runs.mjs";
 import { calculateSolvePath } from "./solve-path.mjs";
 
@@ -21,22 +18,67 @@ function publicTextBlocks(blueprint) {
   ].join("\n").toLowerCase();
 }
 
+function buildVerificationReport({
+  blueprintPath,
+  blueprintId = null,
+  blocking = [],
+  warning = [],
+  info = [],
+  computedMetrics = {
+    location_count: 0,
+    character_count: 0,
+    evidence_count: 0,
+    essential_evidence_count: 0,
+    required_actions: 0,
+    action_budget_limit: 0,
+  },
+}) {
+  return VerificationReportSchema.parse({
+    stage: "verify",
+    blueprint_id: blueprintId,
+    blueprint_path: blueprintPath,
+    status: blocking.length > 0 ? "fail" : warning.length > 0 ? "warn" : "pass",
+    blocking_findings: blocking,
+    warning_findings: warning,
+    info_findings: info,
+    computed_metrics: computedMetrics,
+  });
+}
+
 export async function verifyBlueprintPath(blueprintPath) {
   const raw = await fs.readFile(blueprintPath, "utf-8");
+  const { deterministicReportPath } = deriveArtifactPaths(blueprintPath);
   const blocking = [];
   const warning = [];
   const info = [];
+  let parsed = null;
   let blueprint;
 
   try {
-    blueprint = BlueprintV2Schema.parse(JSON.parse(raw));
+    parsed = JSON.parse(raw);
+    blueprint = BlueprintV2Schema.parse(parsed);
   } catch (error) {
-    const diagnostics = createStageDiagnostics({
-      stage: "verify",
+    const report = buildVerificationReport({
       blueprintPath,
-      ruleId: "schema.parse",
+      blueprintId:
+        typeof parsed?.id === "string" && /^[0-9a-f-]{36}$/iu.test(parsed.id)
+          ? parsed.id
+          : null,
+      blocking: [{
+        rule_id: "schema.parse",
+        message: error instanceof Error ? error.message : String(error),
+      }],
+      info: [{
+        rule_id: "verify.summary",
+        message: "Blueprint could not be fully parsed or validated.",
+      }],
     });
-    throw new Error(formatStageError(error instanceof Error ? error.message : String(error), diagnostics));
+    await fs.writeFile(deterministicReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
+    return {
+      report,
+      reportPath: deterministicReportPath,
+      exitCode: 1,
+    };
   }
 
   if (blueprint.world.locations.length < 3) {
@@ -99,15 +141,13 @@ export async function verifyBlueprintPath(blueprintPath) {
     message: `Checked ${blueprint.world.locations.length} locations, ${blueprint.world.characters.length} characters, and ${blueprint.evidence.length} evidence items.`,
   });
 
-  const report = VerificationReportSchema.parse({
-    stage: "verify",
-    blueprint_id: blueprint.id,
-    blueprint_path: blueprintPath,
-    status: blocking.length > 0 ? "fail" : warning.length > 0 ? "warn" : "pass",
-    blocking_findings: blocking,
-    warning_findings: warning,
-    info_findings: info,
-    computed_metrics: {
+  const report = buildVerificationReport({
+    blueprintPath,
+    blueprintId: blueprint.id,
+    blocking,
+    warning,
+    info,
+    computedMetrics: {
       location_count: blueprint.world.locations.length,
       character_count: blueprint.world.characters.length,
       evidence_count: blueprint.evidence.length,
@@ -116,8 +156,6 @@ export async function verifyBlueprintPath(blueprintPath) {
       action_budget_limit: actionBudgetLimit,
     },
   });
-
-  const { deterministicReportPath } = deriveArtifactPaths(blueprintPath);
   await fs.writeFile(deterministicReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
 
   return {

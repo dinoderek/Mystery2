@@ -9,7 +9,7 @@ import {
 } from "./lib/image-prompt-builder.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
-import { loadEnvFile, loadRootEnv } from "./supabase-utils.mjs";
+import { assertRequiredConfig, loadRootEnv } from "./supabase-utils.mjs";
 
 const MAX_ERROR_BODY_LENGTH = 16_000;
 const DEFAULT_IMAGE_MODEL = "openai/gpt-image-1";
@@ -119,14 +119,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
 }
 
 export async function loadImageGenerationEnv(rootDir = process.cwd(), baseEnv = process.env) {
-  const rootEnv = await loadRootEnv(rootDir, {});
-  const imageEnv = await loadEnvFile(path.join(rootDir, ".env.images.local"), false);
-
-  return {
-    ...rootEnv,
-    ...imageEnv,
-    ...baseEnv,
-  };
+  return loadRootEnv(rootDir, baseEnv);
 }
 
 class ImageGenerationError extends Error {
@@ -218,6 +211,28 @@ function buildImageGenerationRequest({ model, prompt }) {
     },
     stream: false,
   };
+}
+
+function validateImageGenerationConfig({ options, apiKey }) {
+  const checks = [
+    {
+      value: options.model,
+      label: "image model",
+      fix:
+        "pass `--model <id>` or set `OPENROUTER_IMAGE_MODEL` in `.env.local`",
+    },
+  ];
+
+  if (!options.dryRun && !options.dryMode) {
+    checks.unshift({
+      value: apiKey,
+      label: "OPENROUTER_API_KEY",
+      fix:
+        "set it in `.env.local` or shell env before running `npm run generate:images`",
+    });
+  }
+
+  assertRequiredConfig("Image generation", checks);
 }
 
 function parseImagePayload(payload) {
@@ -316,6 +331,8 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   const env = dependencies.env ?? process.env;
   const apiKey = dependencies.apiKey ?? env.OPENROUTER_API_KEY ?? "";
 
+  validateImageGenerationConfig({ options, apiKey });
+
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
 
@@ -357,18 +374,6 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
         image_id: null,
         file_path: null,
         error_message: "dry-run",
-      });
-      continue;
-    }
-
-    if (!apiKey) {
-      results.push({
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "failed",
-        image_id: null,
-        file_path: null,
-        error_message: "Missing OPENROUTER_API_KEY",
       });
       continue;
     }

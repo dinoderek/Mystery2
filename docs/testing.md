@@ -32,7 +32,7 @@ Covers:
 - prompt construction and parsing utilities
 - Blueprint draft-run/generation/verification/judge helpers (`scripts/lib/blueprints/*`)
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
-- image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
+- image-generation env loading precedence (`.env.local`, shell env, CLI overrides)
 - blueprint authoring env loading precedence (`.env.local`, shell env, CLI overrides) and per-command model defaults
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
@@ -224,14 +224,14 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 ## Blueprint V2 Authoring Commands
 
-- `npm run generate:blueprints -- --brief <path> [--count <n>]`
+- `npm run generate:blueprints -- --brief <path> --output-name <name> [--count <n>]`
 - `npm run verify:blueprint -- --blueprint-path <path>`
 - `npm run judge:blueprint -- --blueprint-path <path>`
 
 Expected operator flow:
 
 1. Generate one or more candidates into `blueprints/drafts/<slug>/<run-id>/`.
-2. Run deterministic verification to produce `.deterministic-report.json`.
+2. The generator writes a `.verification.json` report next to every generated `.blueprint.json` file.
 3. Run AI judging to produce `.ai-judge-report.json`.
 4. Review artifacts manually before copying any approved candidate into top-level `blueprints/`.
 

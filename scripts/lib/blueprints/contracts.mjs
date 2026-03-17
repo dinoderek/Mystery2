@@ -95,7 +95,7 @@ const ReportFindingSchema = z.object({
 
 export const VerificationReportSchema = z.object({
   stage: z.literal("verify"),
-  blueprint_id: z.string().uuid(),
+  blueprint_id: z.string().uuid().nullable(),
   blueprint_path: z.string().min(1),
   run_id: z.string().nullable().optional(),
   status: z.enum(["pass", "warn", "fail"]),

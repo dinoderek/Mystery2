@@ -15,7 +15,12 @@ import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
+import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
@@ -38,6 +43,7 @@ serveWithCors(async (req) => {
     const { client: userClient } = authResult;
 
     const { game_id, destination } = body;
+    const narrationLogger = withLogContext(logger, { game_id });
 
     // Fetch session
     const { data: session, error: sessionError } = await userClient
@@ -92,9 +98,9 @@ serveWithCors(async (req) => {
       return badRequest("Invalid destination");
     }
 
-    let newTime = session.time_remaining - 1;
-    let nextMode = session.mode;
-    let eventType = "move";
+    const newTime = Math.max(session.time_remaining - 1, 0);
+    const isForcedEndgame = newTime === 0;
+    const nextMode = isForcedEndgame ? "accuse" : "explore";
 
     const { data: historyRows } = await userClient
       .from("game_events")
@@ -107,11 +113,28 @@ serveWithCors(async (req) => {
     );
     const locationHistoryJson = JSON.stringify(locationHistory);
 
-    let narration: string;
+    const aiPrompt =
+      `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-move",
+      action: "move",
+      game_id: game_id,
+    });
+    const narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
+    const moveParts = [
+      createNarrationPart(
+        narration,
+        NARRATOR_SPEAKER,
+        destLoc.location_image_id ?? null,
+      ),
+    ];
 
-    if (newTime <= 0) {
-      nextMode = "accuse";
-      eventType = "forced_endgame";
+    let combinedParts = [...moveParts];
+    let followUpPrompt: string | null = null;
+    let forcedParts: ReturnType<typeof moveParts.slice> = [];
+
+    if (isForcedEndgame) {
       try {
         const forcedOutput = await generateForcedAccusationStartNarration({
           req,
@@ -122,13 +145,16 @@ serveWithCors(async (req) => {
           session: {
             ...session,
             current_location_id: destLoc.name,
+            time_remaining: newTime,
           },
           blueprint,
           conversation_history: historyRows ?? [],
           scene_summary:
             `The investigator moved to ${destLoc.name}, and that final movement exhausted all remaining time.`,
         });
-        narration = forcedOutput.narration;
+        followUpPrompt = forcedOutput.follow_up_prompt;
+        forcedParts = forcedOutput.narration_parts;
+        combinedParts = [...moveParts, ...forcedParts];
       } catch (error) {
         if (error instanceof RetriableAIError) {
           log("request.ai_retriable", {
@@ -150,16 +176,6 @@ serveWithCors(async (req) => {
           code: "AI_INVALID_OUTPUT",
         });
       }
-    } else {
-      const aiPrompt =
-        `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
-      const aiMetadata = createAIRequestMetadata(req, {
-        request_id: requestId,
-        endpoint: "game-move",
-        action: "move",
-        game_id: game_id,
-      });
-      narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
     }
 
     // Update Session
@@ -169,6 +185,7 @@ serveWithCors(async (req) => {
         current_location_id: destLoc.name,
         time_remaining: newTime,
         mode: nextMode,
+        current_talk_character_id: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", game_id);
@@ -181,32 +198,70 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    // Record Event
-    const { data: events } = await userClient
-      .from("game_events")
-      .select("sequence")
-      .eq("session_id", game_id)
-      .order("sequence", { ascending: false })
-      .limit(1);
-    const nextSeq = events && events.length > 0 ? events[0].sequence + 1 : 1;
-    const eventPayload: Record<string, unknown> = {
-      destination,
-      location_name: destLoc.name,
-      location_image_id: destLoc.location_image_id ?? null,
-      speaker: NARRATOR_SPEAKER,
-    };
-    if (eventType === "forced_endgame") {
-      eventPayload.trigger = "timeout";
-    }
-
-    await userClient.from("game_events").insert({
+    const moveSequence = await insertNarrationEvent(userClient, {
       session_id: game_id,
-      sequence: nextSeq,
-      event_type: eventType,
+      event_type: "move",
       actor: "system",
-      payload: eventPayload,
-      narration: narration,
+      payload: {
+        destination,
+        location_name: destLoc.name,
+        location_image_id: destLoc.location_image_id ?? null,
+        speaker: NARRATOR_SPEAKER,
+      },
+      narration_parts: moveParts,
+      diagnostics: createNarrationDiagnostics({
+        action: "move",
+        event_category: "move",
+        mode: "explore",
+        resulting_mode: nextMode,
+        time_before: session.time_remaining,
+        time_after: newTime,
+        time_consumed: true,
+        forced_endgame: isForcedEndgame,
+        trigger: "player",
+      }),
+      logger: narrationLogger,
     });
+
+    let forcedSequence: number | null = null;
+    if (isForcedEndgame) {
+      forcedSequence = await insertNarrationEvent(userClient, {
+        session_id: game_id,
+        event_type: "forced_endgame",
+        actor: "system",
+        payload: {
+          trigger: "timeout",
+          location_name: destLoc.name,
+          location_image_id: destLoc.location_image_id ?? null,
+          follow_up_prompt: followUpPrompt,
+          speaker: NARRATOR_SPEAKER,
+        },
+        narration_parts: forcedParts,
+        diagnostics: createNarrationDiagnostics({
+          action: "move",
+          event_category: "forced_endgame",
+          mode: "accuse",
+          resulting_mode: "accuse",
+          time_before: newTime,
+          time_after: newTime,
+          time_consumed: false,
+          forced_endgame: true,
+          trigger: "timeout",
+          related_sequence: moveSequence,
+        }),
+        logger: narrationLogger,
+      });
+
+      log("timeout.transition", {
+        game_id,
+        action: "move",
+        time_before: session.time_remaining,
+        time_after: newTime,
+        resulting_mode: nextMode,
+        action_sequence: moveSequence,
+        forced_endgame_sequence: forcedSequence,
+      });
+    }
 
     const visible_characters = blueprint.world.characters
       .filter((c) => c.location === destLoc.name)
@@ -214,13 +269,13 @@ serveWithCors(async (req) => {
 
     return new Response(
       JSON.stringify({
-        narration: narration,
+        narration_parts: combinedParts,
         current_location: destLoc.name,
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,
-        location_image_id: destLoc.location_image_id ?? null,
-        speaker: NARRATOR_SPEAKER,
+        current_talk_character: null,
+        follow_up_prompt: followUpPrompt,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

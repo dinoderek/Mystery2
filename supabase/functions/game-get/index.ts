@@ -1,54 +1,16 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
-import {
-  createCharacterSpeaker,
-  INVESTIGATOR_SPEAKER,
-  NARRATOR_SPEAKER,
-  readSpeaker,
-  type Speaker,
-} from "../_shared/speaker.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
+import { readNarrationEvent } from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getFallbackSpeaker(event: {
-  actor: string;
-  event_type: string;
-  payload: unknown;
-}): Speaker {
-  if (event.event_type === "ask" && isRecord(event.payload)) {
-    const characterName = event.payload.character_name;
-    if (typeof characterName === "string" && characterName.length > 0) {
-      return createCharacterSpeaker(characterName);
-    }
-  }
-
-  if (event.actor === "player") {
-    return INVESTIGATOR_SPEAKER;
-  }
-
-  return NARRATOR_SPEAKER;
-}
-
-function getEventSpeaker(event: {
-  actor: string;
-  event_type: string;
-  payload: unknown;
-}): Speaker {
-  if (isRecord(event.payload)) {
-    return readSpeaker(event.payload.speaker, getFallbackSpeaker(event));
-  }
-
-  return getFallbackSpeaker(event);
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
   }
+  const logger = createRequestLogger(req, "game-get");
+  const { log, logError } = logger;
 
   try {
     // Authenticate user
@@ -60,6 +22,7 @@ serveWithCors(async (req) => {
     const gameId = url.searchParams.get("game_id");
 
     if (!gameId) {
+      log("request.invalid", { reason: "missing_game_id" });
       return badRequest("Missing game_id parameter");
     }
 
@@ -70,14 +33,23 @@ serveWithCors(async (req) => {
       .eq("id", gameId)
       .maybeSingle();
 
-    if (sessionError) return internalError("Database error");
-    if (!session) return notFound("Game session not found");
+    if (sessionError) {
+      logError("request.error", { reason: "session_fetch_failed", game_id: gameId });
+      return internalError("Database error");
+    }
+    if (!session) {
+      log("request.invalid", { reason: "session_not_found", game_id: gameId });
+      return notFound("Game session not found");
+    }
 
     // Fetch blueprint to hydrate static world details
     const { data: files, error: listError } = await userClient.storage
       .from("blueprints")
       .list();
-    if (listError) return internalError("Failed to access blueprints");
+    if (listError) {
+      logError("request.error", { reason: "storage_list_failed", game_id: gameId });
+      return internalError("Failed to access blueprints");
+    }
 
     let blueprintText: string | null = null;
 
@@ -100,6 +72,11 @@ serveWithCors(async (req) => {
     }
 
     if (!blueprintText) {
+      logError("request.error", {
+        reason: "blueprint_missing",
+        game_id: gameId,
+        blueprint_id: session.blueprint_id,
+      });
       return internalError("Original blueprint no longer available");
     }
     const blueprint = BlueprintSchema.parse(JSON.parse(blueprintText));
@@ -107,26 +84,26 @@ serveWithCors(async (req) => {
     // Fetch events for history
     const { data: events, error: eventsError } = await userClient
       .from("game_events")
-      .select("*")
+      .select("sequence,event_type,actor,narration,payload,narration_parts,created_at")
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
     if (eventsError) {
+      logError("request.error", { reason: "events_fetch_failed", game_id: gameId });
       return internalError("Failed to fetch game events");
     }
 
-    const history = (events ?? []).map((e) => ({
-      sequence: e.sequence,
-      event_type: e.event_type,
-      narration: e.narration,
-      speaker: getEventSpeaker(e),
-    }));
-
-    // Most recent event narration
-    const currentNarration =
-      history.length > 0 ? history[history.length - 1].narration : "";
-    const currentNarrationSpeaker =
-      history.length > 0 ? history[history.length - 1].speaker : NARRATOR_SPEAKER;
+    const narrationEvents = (events ?? []).map((event) => readNarrationEvent(event));
+    if (narrationEvents.some((event) => event.narration_parts.length === 0)) {
+      logError("request.error", {
+        reason: "transcript_load_failed",
+        game_id: gameId,
+        events_loaded: narrationEvents.length,
+      });
+      return internalError("Failed to load transcript", {
+        recovery: "Return to the mystery list and reopen the case.",
+      });
+    }
 
     const gameState = {
       locations: blueprint.world.locations.map((l) => ({ name: l.name })),
@@ -139,16 +116,18 @@ serveWithCors(async (req) => {
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
-      narration: currentNarration,
-      narration_speaker: currentNarrationSpeaker,
-      history: history,
     };
 
-    return new Response(JSON.stringify({ state: gameState }), {
+    return new Response(JSON.stringify({
+      state: gameState,
+      narration_events: narrationEvents,
+    }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error(err);
+    logError("request.unhandled_error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return internalError("Internal Server Error");
   }
 });

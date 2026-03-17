@@ -14,22 +14,6 @@ const startState = {
   location: 'kitchen',
   mode: 'explore',
   current_talk_character: null,
-  narration: 'You enter the kitchen.',
-  narration_speaker: narratorSpeaker,
-  history: [
-    {
-      sequence: 1,
-      event_type: 'start',
-      narration: 'Game started. The cake is gone.',
-      speaker: narratorSpeaker,
-    },
-    {
-      sequence: 2,
-      event_type: 'move',
-      narration: 'You enter the kitchen.',
-      speaker: narratorSpeaker,
-    },
-  ],
 };
 
 test.describe('US2/US3 - Narration Rendering', () => {
@@ -59,6 +43,18 @@ test.describe('US2/US3 - Narration Rendering', () => {
         json: {
           game_id: 'g1',
           state: startState,
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'Game started. The cake is gone.', speaker: narratorSpeaker }],
+            },
+            {
+              sequence: 2,
+              event_type: 'move',
+              narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });
@@ -66,12 +62,11 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'You move to the garden.',
+          narration_parts: [{ text: 'You move to the garden.', speaker: narratorSpeaker }],
           current_location: 'garden',
           visible_characters: [],
           time_remaining: 9,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -142,13 +137,17 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'You move to the garden.',
+          narration_parts: [
+            {
+              text: 'You move to the garden.',
+              speaker: narratorSpeaker,
+              image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+            },
+          ],
           current_location: 'garden',
           visible_characters: [],
-          location_image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
           time_remaining: 9,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -165,5 +164,52 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await expect(page.getByText('You move to the garden.')).toBeVisible();
     await expect(page.getByText('Scene image unavailable')).toBeVisible();
+  });
+
+  test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {
+    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          in_progress: [
+            {
+              game_id: 'g1',
+              blueprint_id: 'b1',
+              mystery_title: 'B1',
+              mystery_available: true,
+              can_open: true,
+              mode: 'explore',
+              time_remaining: 4,
+              outcome: null,
+              last_played_at: '2026-03-16T10:00:00.000Z',
+              created_at: '2026-03-16T09:00:00.000Z',
+            },
+          ],
+          completed: [],
+          counts: { in_progress: 1, completed: 0 },
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-get*', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Failed to load transcript',
+          details: {
+            recovery: 'Return to the mystery list and reopen the case.',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/sessions/in-progress');
+    await page.locator('body').click();
+    await page.keyboard.press('1');
+
+    await expect(page).toHaveURL(/.*\/sessions\/in-progress/);
+    await expect(
+      page.getByText('Failed to load transcript. Return to the mystery list and reopen the case.'),
+    ).toBeVisible();
   });
 });

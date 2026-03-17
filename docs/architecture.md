@@ -61,6 +61,8 @@ Recommended pattern:
 
 - Maintain an **append-only event log** for turns and actions.
 - Maintain a current “session snapshot” for fast reads.
+- Persist ordered `narration_parts` directly on each `game_events` row, with payload diagnostics describing order, timing, and mode transitions.
+- Return session loads as `state + narration_events`; the browser transcript is rebuilt from persisted narration events rather than inferred summary fields.
 
 ### Supabase Storage
 
@@ -272,7 +274,7 @@ Failure-handling expectations:
 ### AI Runtime Contract (Current)
 
 - Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
-- Gameplay responses now carry explicit `speaker` metadata (`kind`, `key`, `label`) and `game-get` state includes `narration_speaker` plus `history[].speaker` for deterministic UI labeling.
+  - Gameplay responses now carry explicit `speaker` metadata via `narration_parts[].speaker`, and `game-get` state returns `narration_events[]` so the UI can rebuild the transcript without inferred `narration_speaker` fields.
 - Prompt role files live under `supabase/functions/_shared/ai-prompts/`.
 - Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
 - Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.

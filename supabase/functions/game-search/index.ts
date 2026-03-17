@@ -1,4 +1,4 @@
-import { requireAuth, isAuthError, type AuthResult } from "../_shared/auth.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -11,28 +11,19 @@ import {
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
+import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseSearchOutput } from "../_shared/ai-contracts.ts";
 import { buildSearchContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
-
-async function getNextSequence(
-  db: AuthResult["client"],
-  gameId: string,
-): Promise<number> {
-  const { data: events } = await db
-    .from("game_events")
-    .select("sequence")
-    .eq("session_id", gameId)
-    .order("sequence", { ascending: false })
-    .limit(1);
-
-  return events && events.length > 0 ? events[0].sequence + 1 : 1;
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -54,6 +45,7 @@ serveWithCors(async (req) => {
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
+    const narrationLogger = withLogContext(logger, { game_id: gameId });
 
     const { data: session, error: sessionError } = await userClient
       .from("game_sessions")
@@ -110,12 +102,62 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const newTime = session.time_remaining - 1;
-    const isForcedEndgame = newTime <= 0;
+    const newTime = Math.max(session.time_remaining - 1, 0);
+    const isForcedEndgame = newTime === 0;
     const nextMode = isForcedEndgame ? "accuse" : session.mode;
-    const eventType = isForcedEndgame ? "forced_endgame" : "search";
-    let narration: string;
-    let eventPayload: Record<string, unknown>;
+
+    const aiContext = buildSearchContext({
+      game_id: gameId,
+      session,
+      blueprint,
+      location_name: currentLocation.name,
+      conversation_history: historyRows ?? [],
+    });
+
+    const promptTemplate = await loadPromptTemplate("search");
+    const prompt = renderPrompt(promptTemplate, {
+      location_name: currentLocation.name,
+    });
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-search",
+      action: "search",
+      game_id: gameId,
+    });
+
+    let searchOutput: ReturnType<typeof parseSearchOutput>;
+    try {
+      searchOutput = await aiProvider.generateRoleOutput({
+        role: "search",
+        prompt,
+        context: aiContext,
+        parse: parseSearchOutput,
+        metadata: aiMetadata,
+      });
+    } catch (error) {
+      if (error instanceof RetriableAIError) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          code: error.details.code ?? null,
+          status: error.details.status ?? null,
+          error: error.message,
+        });
+        return aiRetriableError(error.message, error.details);
+      }
+      log("request.ai_retriable", {
+        game_id: gameId,
+        code: "AI_INVALID_OUTPUT",
+        error: "AI output validation failed",
+      });
+      return aiRetriableError("AI output validation failed", {
+        code: "AI_INVALID_OUTPUT",
+      });
+    }
+
+    const searchParts = [createNarrationPart(searchOutput.narration, NARRATOR_SPEAKER)];
+    let combinedParts = [...searchParts];
+    let followUpPrompt: string | null = null;
+    let forcedParts: typeof searchParts = [];
 
     if (isForcedEndgame) {
       try {
@@ -125,19 +167,17 @@ serveWithCors(async (req) => {
           endpoint: "game-search",
           game_id: gameId,
           aiProvider,
-          session,
+          session: {
+            ...session,
+            time_remaining: newTime,
+          },
           blueprint,
           conversation_history: historyRows ?? [],
           scene_summary: `The investigator just searched ${currentLocation.name}, and this action exhausted the remaining time.`,
         });
-        narration = forcedOutput.narration;
-        eventPayload = {
-          role: "accusation_start",
-          location_name: currentLocation.name,
-          trigger: "timeout",
-          follow_up_prompt: forcedOutput.follow_up_prompt,
-          speaker: NARRATOR_SPEAKER,
-        };
+        followUpPrompt = forcedOutput.follow_up_prompt;
+        forcedParts = forcedOutput.narration_parts;
+        combinedParts = [...searchParts, ...forcedParts];
       } catch (error) {
         if (error instanceof RetriableAIError) {
           log("request.ai_retriable", {
@@ -159,60 +199,6 @@ serveWithCors(async (req) => {
           code: "AI_INVALID_OUTPUT",
         });
       }
-    } else {
-      const aiContext = buildSearchContext({
-        game_id: gameId,
-        session,
-        blueprint,
-        location_name: currentLocation.name,
-        conversation_history: historyRows ?? [],
-      });
-
-      const promptTemplate = await loadPromptTemplate("search");
-      const prompt = renderPrompt(promptTemplate, {
-        location_name: currentLocation.name,
-      });
-      const aiMetadata = createAIRequestMetadata(req, {
-        request_id: requestId,
-        endpoint: "game-search",
-        action: "search",
-        game_id: gameId,
-      });
-
-      let searchOutput: ReturnType<typeof parseSearchOutput>;
-      try {
-        searchOutput = await aiProvider.generateRoleOutput({
-          role: "search",
-          prompt,
-          context: aiContext,
-          parse: parseSearchOutput,
-          metadata: aiMetadata,
-        });
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-      narration = searchOutput.narration;
-      eventPayload = {
-        role: "search",
-        location_name: currentLocation.name,
-        speaker: NARRATOR_SPEAKER,
-      };
     }
 
     const { error: updateError } = await userClient
@@ -220,6 +206,7 @@ serveWithCors(async (req) => {
       .update({
         time_remaining: newTime,
         mode: nextMode,
+        current_talk_character_id: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -231,22 +218,77 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const nextSequence = await getNextSequence(userClient, gameId);
-    await userClient.from("game_events").insert({
+    const searchSequence = await insertNarrationEvent(userClient, {
       session_id: gameId,
-      sequence: nextSequence,
-      event_type: eventType,
+      event_type: "search",
       actor: "system",
-      payload: eventPayload,
-      narration,
+      payload: {
+        role: "search",
+        location_name: currentLocation.name,
+        speaker: NARRATOR_SPEAKER,
+      },
+      narration_parts: searchParts,
+      diagnostics: createNarrationDiagnostics({
+        action: "search",
+        event_category: "search",
+        mode: session.mode,
+        resulting_mode: nextMode,
+        time_before: session.time_remaining,
+        time_after: newTime,
+        time_consumed: true,
+        forced_endgame: isForcedEndgame,
+        trigger: "player",
+      }),
+      logger: narrationLogger,
     });
+
+    let forcedSequence: number | null = null;
+    if (isForcedEndgame) {
+      forcedSequence = await insertNarrationEvent(userClient, {
+        session_id: gameId,
+        event_type: "forced_endgame",
+        actor: "system",
+        payload: {
+          role: "accusation_start",
+          location_name: currentLocation.name,
+          trigger: "timeout",
+          follow_up_prompt: followUpPrompt,
+          speaker: NARRATOR_SPEAKER,
+        },
+        narration_parts: forcedParts,
+        diagnostics: createNarrationDiagnostics({
+          action: "search",
+          event_category: "forced_endgame",
+          mode: "accuse",
+          resulting_mode: "accuse",
+          time_before: newTime,
+          time_after: newTime,
+          time_consumed: false,
+          forced_endgame: true,
+          trigger: "timeout",
+          related_sequence: searchSequence,
+        }),
+        logger: narrationLogger,
+      });
+
+      log("timeout.transition", {
+        game_id: gameId,
+        action: "search",
+        time_before: session.time_remaining,
+        time_after: newTime,
+        resulting_mode: nextMode,
+        action_sequence: searchSequence,
+        forced_endgame_sequence: forcedSequence,
+      });
+    }
 
     return new Response(
       JSON.stringify({
-        narration,
+        narration_parts: combinedParts,
         time_remaining: newTime,
         mode: nextMode,
-        speaker: NARRATOR_SPEAKER,
+        current_talk_character: null,
+        follow_up_prompt: followUpPrompt,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

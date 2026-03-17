@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "./auth-helpers";
 
 describe("game-end-talk endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-end-talk");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -17,16 +24,18 @@ describe("game-end-talk endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
+    expect(startRes.status).toBe(200);
     const { game_id } = await startRes.json();
 
-    await fetch(`${API_URL}/game-talk`, {
+    const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ game_id, character_name: "Alice" }),
     });
+    expect(talkRes.status).toBe(200);
 
     const endRes = await fetch(`${API_URL}/game-end-talk`, {
       method: "POST",
@@ -39,12 +48,14 @@ describe("game-end-talk endpoint", () => {
 
     expect(data.mode).toBe("explore");
     expect(data.current_talk_character).toBeNull();
-    expect(data.time_remaining).toBe(9);
-    expect(data.narration).toContain("[Mock]");
-    expect(data.speaker).toMatchObject({
-      kind: "narrator",
-      key: "narrator",
-      label: "Narrator",
+    expect(data.time_remaining).toBe(10);
+    expect(data.narration_parts[0]).toMatchObject({
+      speaker: {
+        kind: "narrator",
+        key: "narrator",
+        label: "Narrator",
+      },
     });
+    expect(data.narration_parts[0].text).toContain("[Mock]");
   });
 });

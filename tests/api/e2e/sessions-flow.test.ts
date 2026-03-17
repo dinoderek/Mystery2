@@ -1,17 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from '../integration/auth-helpers';
-
-const BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from '../integration/auth-helpers';
 
 async function startSession(auth: ApiAuthContext): Promise<string> {
   const startRes = await fetch(`${API_URL}/game-start`, {
     method: 'POST',
     headers: auth.headers,
-    body: JSON.stringify({ blueprint_id: BLUEPRINT_ID }),
+    body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
   });
   expect(startRes.status).toBe(200);
   const startData = await startRes.json();
   return startData.game_id as string;
+}
+
+async function loadSessionTranscript(auth: ApiAuthContext, gameId: string) {
+  const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
+    method: 'GET',
+    headers: auth.headers,
+  });
+  expect(getRes.status).toBe(200);
+  return await getRes.json();
 }
 
 describe('session list resume/view API flows', () => {
@@ -19,14 +32,37 @@ describe('session list resume/view API flows', () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth('sessions-flow');
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
     await auth.cleanup();
   });
 
-  it('resumes an in-progress session and remains interactive', async () => {
+  it('replays an in-progress session without changing the persisted transcript', async () => {
     const gameId = await startSession(auth);
+
+    const talkRes = await fetch(`${API_URL}/game-talk`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({ game_id: gameId, character_name: 'Alice' }),
+    });
+    expect(talkRes.status).toBe(200);
+
+    const askRes = await fetch(`${API_URL}/game-ask`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({
+        game_id: gameId,
+        player_input: 'Where were you when the cookies disappeared?',
+      }),
+    });
+    expect(askRes.status).toBe(200);
+
+    const preResumeData = await loadSessionTranscript(auth, gameId);
+    expect(
+      preResumeData.narration_events.map((entry: { event_type: string }) => entry.event_type),
+    ).toEqual(['start', 'talk', 'ask']);
 
     const listRes = await fetch(`${API_URL}/game-sessions-list`, {
       method: 'GET',
@@ -35,24 +71,16 @@ describe('session list resume/view API flows', () => {
     expect(listRes.status).toBe(200);
     const listData = await listRes.json();
     const row = listData.in_progress.find((entry: { game_id: string }) => entry.game_id === gameId);
-    expect(row).toMatchObject({ can_open: true, mode: 'explore' });
+    expect(row).toMatchObject({ can_open: true, mode: 'talk' });
 
-    const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
+    const resumedGetRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
       method: 'GET',
       headers: auth.headers,
     });
-    expect(getRes.status).toBe(200);
-    const getData = await getRes.json();
-    expect(getData.state.mode).not.toBe('ended');
-
-    const searchRes = await fetch(`${API_URL}/game-search`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId }),
-    });
-    expect(searchRes.status).toBe(200);
-    const searchData = await searchRes.json();
-    expect(searchData.mode).toBeTypeOf('string');
+    expect(resumedGetRes.status).toBe(200);
+    const resumedGetData = await resumedGetRes.json();
+    expect(resumedGetData.state.mode).toBe('talk');
+    expect(resumedGetData.narration_events).toEqual(preResumeData.narration_events);
   });
 
   it('opens a completed session in ended mode with persisted history', async () => {
@@ -80,6 +108,9 @@ describe('session list resume/view API flows', () => {
     const accuseJudgeData = await accuseJudgeRes.json();
     expect(accuseJudgeData.mode).toBe('ended');
 
+    const preResumeData = await loadSessionTranscript(auth, gameId);
+    expect(preResumeData.state.mode).toBe('ended');
+
     const listRes = await fetch(`${API_URL}/game-sessions-list`, {
       method: 'GET',
       headers: auth.headers,
@@ -92,15 +123,14 @@ describe('session list resume/view API flows', () => {
     expect(completedRow.can_open).toBe(true);
     expect(completedRow.mode).toBe('ended');
 
-    const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
-      method: 'GET',
-      headers: auth.headers,
-    });
-    expect(getRes.status).toBe(200);
-    const getData = await getRes.json();
+    const getData = await loadSessionTranscript(auth, gameId);
 
     expect(getData.state.mode).toBe('ended');
-    expect(getData.state.history.length).toBeGreaterThan(1);
-    expect(getData.state.narration_speaker.kind).toBe('narrator');
+    expect(getData.narration_events.length).toBeGreaterThan(1);
+    expect(getData.narration_events.at(-1)?.narration_parts[0].speaker.kind).toBe('narrator');
+    expect(
+      getData.narration_events.map((entry: { event_type: string }) => entry.event_type),
+    ).toEqual(['start', 'accuse_round', 'accuse_resolved']);
+    expect(getData.narration_events).toEqual(preResumeData.narration_events);
   });
 });

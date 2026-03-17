@@ -4,6 +4,11 @@ export interface RequestLogger {
   logError: (event: string, details?: Record<string, unknown>) => void;
 }
 
+export interface LogWriter {
+  log: (event: string, details?: Record<string, unknown>) => void;
+  logError: (event: string, details?: Record<string, unknown>) => void;
+}
+
 function resolveRequestId(req: Request): string {
   const headerRequestId = req.headers.get("x-request-id")?.trim();
   return headerRequestId && headerRequestId.length > 0
@@ -36,6 +41,26 @@ export function createRequestLogger(req: Request, endpoint: string): RequestLogg
     },
     logError(event, details) {
       console.error(JSON.stringify(basePayload(endpoint, requestId, event, details)));
+    },
+  };
+}
+
+export function withLogContext(
+  logger: LogWriter,
+  context: Record<string, unknown>,
+): LogWriter {
+  return {
+    log(event, details) {
+      logger.log(event, {
+        ...context,
+        ...(details ?? {}),
+      });
+    },
+    logError(event, details) {
+      logger.logError(event, {
+        ...context,
+        ...(details ?? {}),
+      });
     },
   };
 }

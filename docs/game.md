@@ -74,12 +74,13 @@ The investigator repeatedly chooses actions until:
 
 ### Time Costs
 
-- Each action consumes time/turns.
-- Talk mode may consume time per question, or per “talk session” (implementation choice—see below).
+- `move`, `search`, and in-conversation `ask` each consume 1 turn.
+- `talk`, `end_talk`, and entering accusation mode consume 0 turns.
 
 When time is exhausted:
 
-- Automatically trigger the endgame: narrator prompts for accusation.
+- The final time-consuming action still resolves first.
+- After that action is persisted and shown, the game appends forced accusation framing and switches to accuse mode.
 
 ---
 
@@ -111,11 +112,11 @@ When time is exhausted:
 
 - Example: `end` or `exit` (exact keyword TBD, but should be consistent and discoverable).
 
-**Time model (choose one later)**
+**Time model**
 
-- A) each question consumes 1 turn
-- B) entering talk mode consumes 1 turn, questions are “free” but capped (less likely)
-- C) hybrid: first question costs 1, follow-ups cost 0.5 (probably too complex)
+- Entering talk mode is free.
+- Each follow-up question in talk mode consumes 1 turn.
+- Ending talk mode is free.
 
 ---
 
@@ -253,6 +254,7 @@ Modes:
   - turns left
   - last played timestamp
 - Selecting a number resumes the chosen session in interactive mode.
+- Resume rendering rebuilds the narration area from persisted `narration_events` only, preserving exact text and speaker order.
 - `b` returns to the landing menu.
 
 ### Completed Games

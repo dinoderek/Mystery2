@@ -22,6 +22,12 @@ describe("State Machine validateTransition", () => {
         expect(() => validateTransition("talk", "end_talk")).not.toThrow();
     });
 
+    it("keeps talk entry and exit as legal non-time actions around timed questions", () => {
+        expect(() => validateTransition("explore", "talk")).not.toThrow();
+        expect(() => validateTransition("talk", "ask")).not.toThrow();
+        expect(() => validateTransition("talk", "end_talk")).not.toThrow();
+    });
+
     it("prevents invalid talk actions", () => {
         expect(() => validateTransition("talk", "move")).toThrow("Invalid action");
         expect(() => validateTransition("talk", "talk")).toThrow("Invalid action");

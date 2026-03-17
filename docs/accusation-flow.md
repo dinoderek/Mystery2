@@ -33,10 +33,12 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
 
 ## Timeout Forced Endgame
 
-- When time reaches zero during `move`, `search`, `talk`, or `ask`:
-  - Session transitions to `mode='accuse'`.
-  - Backend generates urgency narration through `accusation_start` with `forced_by_timeout=true`.
+- When time reaches zero during `move`, `search`, or `ask`:
+  - The triggering action result is stored and returned first.
+  - The backend then appends a second `forced_endgame` narration event with urgency framing.
+  - Session transitions to `mode='accuse'` with `time_remaining=0` and no active talk target.
   - Subsequent inputs use normal `game-accuse` reasoning rounds.
+- `talk` and `end_talk` are narration-bearing but non-time-consuming, so they cannot trigger timeout by themselves.
 
 ## Event Log Conventions
 
@@ -44,3 +46,4 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
 - `accuse_round`: non-terminal judge round (`continue`).
 - `accuse_resolved`: terminal judge outcome (`win|lose`).
 - `forced_endgame`: timeout transition into accuse mode from non-accuse endpoints.
+- Narration-bearing `game_events` payloads also include `payload.diagnostics` with session/order/time metadata so timeout ordering and resume defects can be traced without reconstructing hidden state.

@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createAuthenticatedClient } from '../../testkit/src/auth';
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from './auth-helpers';
-
-const BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from './auth-helpers';
 
 async function startSession(auth: ApiAuthContext): Promise<string> {
   const res = await fetch(`${API_URL}/game-start`, {
     method: 'POST',
     headers: auth.headers,
-    body: JSON.stringify({ blueprint_id: BLUEPRINT_ID }),
+    body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
   });
 
   expect(res.status).toBe(200);
@@ -35,6 +39,7 @@ describe('game-sessions-list endpoint', () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth('game-sessions-list');
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {

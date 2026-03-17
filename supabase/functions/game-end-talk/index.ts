@@ -1,4 +1,4 @@
-import { requireAuth, isAuthError, type AuthResult } from "../_shared/auth.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -16,22 +16,13 @@ import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkEndContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
-
-async function getNextSequence(
-  db: AuthResult["client"],
-  gameId: string,
-): Promise<number> {
-  const { data: events } = await db
-    .from("game_events")
-    .select("sequence")
-    .eq("session_id", gameId)
-    .order("sequence", { ascending: false })
-    .limit(1);
-
-  return events && events.length > 0 ? events[0].sequence + 1 : 1;
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -166,10 +157,11 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const nextSequence = await getNextSequence(userClient, gameId);
-    await userClient.from("game_events").insert({
+    const narrationParts = [
+      createNarrationPart(talkEndOutput.narration, NARRATOR_SPEAKER),
+    ];
+    await insertNarrationEvent(userClient, {
       session_id: gameId,
-      sequence: nextSequence,
       event_type: "end_talk",
       actor: "system",
       payload: {
@@ -179,16 +171,27 @@ serveWithCors(async (req) => {
         location_name: session.current_location_id,
         speaker: NARRATOR_SPEAKER,
       },
-      narration: talkEndOutput.narration,
+      narration_parts: narrationParts,
+      diagnostics: createNarrationDiagnostics({
+        action: "end_talk",
+        event_category: "end_talk",
+        mode: "talk",
+        resulting_mode: "explore",
+        time_before: session.time_remaining,
+        time_after: session.time_remaining,
+        time_consumed: false,
+        forced_endgame: false,
+        trigger: "player",
+      }),
+      logger,
     });
 
     return new Response(
       JSON.stringify({
-        narration: talkEndOutput.narration,
+        narration_parts: narrationParts,
         time_remaining: session.time_remaining,
         mode: "explore",
         current_talk_character: null,
-        speaker: NARRATOR_SPEAKER,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

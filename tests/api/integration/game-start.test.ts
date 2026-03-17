@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
+  MOCK_BLUEPRINT_ID,
   REST_URL,
+  ensureMockBlueprintSeeded,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "./auth-helpers";
@@ -11,6 +13,7 @@ describe("game-start endpoint", () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-start");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -38,7 +41,7 @@ describe("game-start endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
 
@@ -49,21 +52,22 @@ describe("game-start endpoint", () => {
     expect(data.state).toBeDefined();
     expect(data.state.mode).toBe("explore");
     expect(data.state.time_remaining).toBe(10);
-    expect(data.state.narration).toContain("[Mock]");
-    expect(data.state.narration_speaker).toMatchObject({
-      kind: "narrator",
-      key: "narrator",
-      label: "Narrator",
-    });
-    expect(data.state.history).toHaveLength(1);
-    expect(data.state.history[0]).toMatchObject({
+    expect(data.state.current_talk_character).toBeNull();
+    expect(data.narration_events).toHaveLength(1);
+    expect(data.narration_events[0]).toMatchObject({
       event_type: "start",
-      speaker: {
-        kind: "narrator",
-        key: "narrator",
-        label: "Narrator",
-      },
+      narration_parts: [
+        {
+          speaker: {
+            kind: "narrator",
+            key: "narrator",
+            label: "Narrator",
+          },
+          image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        },
+      ],
     });
+    expect(data.narration_events[0].narration_parts[0].text).toContain("[Mock]");
     expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
   });
 
@@ -72,7 +76,7 @@ describe("game-start endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
         ai_profile: "mock",
       }),
     });
@@ -88,7 +92,7 @@ describe("game-start endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
         ai_profile: "does-not-exist",
       }),
     });

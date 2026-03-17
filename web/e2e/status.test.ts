@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
 
+const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
+
 test.describe('US2 - Status Bar', () => {
     test('displays correct status information (location, hints, time)', async ({ page }) => {
         await enableAuthBypass(page);
@@ -31,10 +33,14 @@ test.describe('US2 - Status Bar', () => {
                         location: 'kitchen',
                         mode: 'explore',
                         current_talk_character: null,
-                        clues: ['clue1', 'clue2'],
-                        narration: 'You enter the kitchen.',
-                        history: []
-                    }
+                    },
+                    narration_events: [
+                        {
+                            sequence: 1,
+                            event_type: 'start',
+                            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }]
+                        }
+                    ]
                 }
             });
         });

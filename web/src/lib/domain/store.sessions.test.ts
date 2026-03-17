@@ -1,7 +1,41 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { invokeMock, getSessionMock } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+  getSessionMock: vi.fn(),
+}));
+
+vi.mock('../api/supabase', () => ({
+  supabase: {
+    functions: {
+      invoke: invokeMock,
+    },
+    auth: {
+      getSession: getSessionMock,
+    },
+  },
+}));
+
 import { normalizeSessionCatalog, normalizeSessionSummary, sortSessionSummaries } from './store.svelte';
+import { GameSessionStore } from './store.svelte';
 
 describe('session catalog helpers', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    getSessionMock.mockReset();
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-token',
+        },
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('normalizes session summaries and clamps defaults', () => {
     const normalized = normalizeSessionSummary({
       game_id: 'g-1',
@@ -111,5 +145,143 @@ describe('session catalog helpers', () => {
     expect(catalog.in_progress).toHaveLength(1);
     expect(catalog.completed).toHaveLength(1);
     expect(catalog.counts).toEqual({ in_progress: 1, completed: 1 });
+  });
+
+  it('hydrates resumed history only from persisted narration events', async () => {
+    const store = new GameSessionStore();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        state: {
+          locations: [{ name: 'Kitchen' }],
+          characters: [],
+          time_remaining: 3,
+          location: 'Kitchen',
+          mode: 'explore',
+          current_talk_character: null,
+        },
+        narration_events: [
+          {
+            sequence: 1,
+            event_type: 'move',
+            narration_parts: [
+              {
+                text: 'You enter the kitchen.',
+                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await store.resumeSession('game-1');
+
+    expect(store.status).toBe('active');
+    expect(store.state?.history).toEqual([
+      {
+        sequence: 1,
+        event_type: 'move',
+        text: 'You enter the kitchen.',
+        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        image_id: null,
+      },
+    ]);
+  });
+
+  it('flattens multi-part resumed transcripts without changing order', async () => {
+    const store = new GameSessionStore();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        state: {
+          locations: [{ name: 'Kitchen' }],
+          characters: [{ first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
+          time_remaining: 0,
+          location: 'Kitchen',
+          mode: 'ended',
+          current_talk_character: null,
+        },
+        narration_events: [
+          {
+            sequence: 1,
+            event_type: 'ask',
+            narration_parts: [
+              {
+                text: 'Alice says she heard the clock strike nine.',
+                speaker: { kind: 'character', key: 'character:alice', label: 'Alice' },
+                image_id: 'portrait-alice',
+              },
+              {
+                text: 'The room falls silent as time runs out.',
+                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+              },
+            ],
+          },
+          {
+            sequence: 2,
+            event_type: 'forced_endgame',
+            narration_parts: [
+              {
+                text: 'You must make your accusation now.',
+                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await store.resumeSession('game-2');
+
+    expect(store.status).toBe('active');
+    expect(store.state?.mode).toBe('ended');
+    expect(store.viewerMode).toBe('read_only_completed');
+    expect(store.state?.history).toEqual([
+      {
+        sequence: 1,
+        event_type: 'ask',
+        text: 'Alice says she heard the clock strike nine.',
+        speaker: { kind: 'character', key: 'character:alice', label: 'Alice' },
+        image_id: 'portrait-alice',
+      },
+      {
+        sequence: 1,
+        event_type: 'ask',
+        text: 'The room falls silent as time runs out.',
+        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        image_id: null,
+      },
+      {
+        sequence: 2,
+        event_type: 'forced_endgame',
+        text: 'You must make your accusation now.',
+        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        image_id: null,
+      },
+    ]);
+  });
+
+  it('surfaces transcript recovery guidance when resume fails', async () => {
+    const store = new GameSessionStore();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        error: 'Failed to load transcript',
+        details: {
+          recovery: 'Return to the mystery list and reopen the case.',
+        },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await store.resumeSession('game-1');
+
+    expect(store.status).toBe('idle');
+    expect(store.error).toBe(
+      'Failed to load transcript. Return to the mystery list and reopen the case.',
+    );
   });
 });

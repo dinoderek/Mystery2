@@ -1,6 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import {
+  API_URL,
+  ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
+  setupApiTestAuth,
+  type ApiAuthContext,
+} from "./auth-helpers";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54331";
 const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ??
@@ -18,6 +24,7 @@ describe("ai profile runtime resolution", () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("ai-profile-runtime");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -51,7 +58,7 @@ describe("ai profile runtime resolution", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
         ai_profile: profileId,
       }),
     });

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { gameSessionStore } from '$lib/domain/store.svelte';
-  import { NARRATOR_SPEAKER } from '$lib/domain/speaker';
   import TerminalMessage from './TerminalMessage.svelte';
   import TerminalSpinner from './TerminalSpinner.svelte';
   import StoryImagePanel from './StoryImagePanel.svelte';
@@ -13,23 +12,7 @@
     if (!state) {
       return [];
     }
-
-    if (state.history.length > 0) {
-      return state.history;
-    }
-
-    if (!state.narration) {
-      return [];
-    }
-
-    return [
-      {
-        sequence: 1,
-        event_type: 'narration',
-        narration: state.narration,
-        speaker: state.narration_speaker ?? NARRATOR_SPEAKER,
-      },
-    ];
+    return state.history;
   });
 
   $effect(() => {
@@ -47,7 +30,7 @@
   <div class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
     <div class="space-y-4">
       {#each renderedHistory as event}
-        <TerminalMessage text={event.narration} speaker={event.speaker} theme={gameSessionStore.theme} />
+        <TerminalMessage text={event.text} speaker={event.speaker} theme={gameSessionStore.theme} />
       {/each}
 
       {#if gameSessionStore.status === 'loading' && gameSessionStore.state}

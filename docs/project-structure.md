@@ -11,18 +11,19 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests use `bootstrap-users.<env>.json`).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
-  - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts.
+  - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts and the canonical `narration_parts`/`narration_events` schemas.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
 - `scripts/`: Assorted scripts needed for development and operations (e.g., `setup-local` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
   - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
 - `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
-  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions and server-side speaker attribution.
+  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions, canonical narration-event persistence, and server-side speaker attribution.
   - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
   - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json` and the committed `auth-users.example.json` template that generates a local-only auth manifest on first bootstrap).
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).
+- `web/src/lib/`: Browser-domain state, transcript hydration, and authenticated image-link handling for session start/resume flows.
 
 ## Configuration Files
 - `package.json`: Main workspace root defining all top-level scripts like test coordination.

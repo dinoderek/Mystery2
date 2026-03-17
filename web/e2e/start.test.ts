@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
 
+const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
+
 test.describe('US1 - Start Screen', () => {
   async function mockEmptyCatalog(page: import('@playwright/test').Page) {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
@@ -116,10 +118,14 @@ test.describe('US1 - Start Screen', () => {
             location: 'living room',
             mode: 'explore',
             current_talk_character: null,
-            narration: 'Game started.',
-            narration_speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
-            history: [],
           },
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });
@@ -161,10 +167,14 @@ test.describe('US1 - Start Screen', () => {
             location: 'living room',
             mode: 'explore',
             current_talk_character: null,
-            narration: 'Game started.',
-            narration_speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
-            history: [],
           },
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });

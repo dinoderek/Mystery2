@@ -1,4 +1,4 @@
-import { requireAuth, isAuthError, type AuthResult } from "../_shared/auth.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -25,22 +25,13 @@ import {
   buildAccusationStartContext,
 } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
-
-async function getNextSequence(
-  db: AuthResult["client"],
-  gameId: string,
-): Promise<number> {
-  const { data: events } = await db
-    .from("game_events")
-    .select("sequence")
-    .eq("session_id", gameId)
-    .order("sequence", { ascending: false })
-    .limit(1);
-
-  return events && events.length > 0 ? events[0].sequence + 1 : 1;
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -195,28 +186,43 @@ serveWithCors(async (req) => {
           return internalError("Failed to update session");
         }
 
-        const nextSequence = await getNextSequence(userClient, gameId);
-        await userClient.from("game_events").insert({
+        const narrationParts = [
+          createNarrationPart(judgeOutput.narration, NARRATOR_SPEAKER),
+        ];
+        await insertNarrationEvent(userClient, {
           session_id: gameId,
-          sequence: nextSequence,
           event_type: "accuse_round",
           actor: "system",
           payload: {
             role: "accusation_judge",
             player_reasoning: playerReasoning,
             judge_result: "continue",
+            follow_up_prompt: judgeOutput.follow_up_prompt,
             speaker: NARRATOR_SPEAKER,
           },
-          narration: judgeOutput.narration,
+          narration_parts: narrationParts,
+          diagnostics: createNarrationDiagnostics({
+            action: "accuse_reasoning",
+            event_category: "accuse_round",
+            mode: "accuse",
+            resulting_mode: "accuse",
+            time_before: contextSession.time_remaining,
+            time_after: contextSession.time_remaining,
+            time_consumed: false,
+            forced_endgame: false,
+            trigger: "player",
+          }),
+          logger,
         });
 
         return new Response(
           JSON.stringify({
-            narration: judgeOutput.narration,
+            narration_parts: narrationParts,
+            time_remaining: contextSession.time_remaining,
             mode: "accuse",
+            current_talk_character: null,
             result: null,
             follow_up_prompt: judgeOutput.follow_up_prompt,
-            speaker: NARRATOR_SPEAKER,
           }),
           { headers: { "Content-Type": "application/json" } },
         );
@@ -256,10 +262,11 @@ serveWithCors(async (req) => {
         return internalError("Failed to update session");
       }
 
-      const nextSequence = await getNextSequence(userClient, gameId);
-      await userClient.from("game_events").insert({
+      const narrationParts = [
+        createNarrationPart(judgeOutput.narration, NARRATOR_SPEAKER),
+      ];
+      await insertNarrationEvent(userClient, {
         session_id: gameId,
-        sequence: nextSequence,
         event_type: "accuse_resolved",
         actor: "system",
         payload: {
@@ -268,16 +275,29 @@ serveWithCors(async (req) => {
           judge_result: outcome,
           speaker: NARRATOR_SPEAKER,
         },
-        narration: judgeOutput.narration,
+        narration_parts: narrationParts,
+        diagnostics: createNarrationDiagnostics({
+          action: "accuse_reasoning",
+          event_category: "accuse_resolved",
+          mode: "accuse",
+          resulting_mode: "ended",
+          time_before: contextSession.time_remaining,
+          time_after: contextSession.time_remaining,
+          time_consumed: false,
+          forced_endgame: false,
+          trigger: "player",
+        }),
+        logger,
       });
 
       return new Response(
         JSON.stringify({
-          narration: judgeOutput.narration,
+          narration_parts: narrationParts,
+          time_remaining: contextSession.time_remaining,
           mode: "ended",
+          current_talk_character: null,
           result: outcome,
           follow_up_prompt: null,
-          speaker: NARRATOR_SPEAKER,
         }),
         { headers: { "Content-Type": "application/json" } },
       );
@@ -359,27 +379,42 @@ serveWithCors(async (req) => {
           return internalError("Failed to update session");
         }
 
-        const nextSequence = await getNextSequence(userClient, gameId);
-        await userClient.from("game_events").insert({
+        const narrationParts = [
+          createNarrationPart(startOutput.narration, NARRATOR_SPEAKER),
+        ];
+        await insertNarrationEvent(userClient, {
           session_id: gameId,
-          sequence: nextSequence,
           event_type: "accuse_start",
           actor: "player",
           payload: {
             role: "accusation_start",
             trigger: "player",
+            follow_up_prompt: startOutput.follow_up_prompt,
             speaker: NARRATOR_SPEAKER,
           },
-          narration: startOutput.narration,
+          narration_parts: narrationParts,
+          diagnostics: createNarrationDiagnostics({
+            action: "accuse_start",
+            event_category: "accuse_start",
+            mode: "explore",
+            resulting_mode: "accuse",
+            time_before: session.time_remaining,
+            time_after: session.time_remaining,
+            time_consumed: false,
+            forced_endgame: false,
+            trigger: "player",
+          }),
+          logger,
         });
 
         return new Response(
           JSON.stringify({
-            narration: startOutput.narration,
+            narration_parts: narrationParts,
+            time_remaining: session.time_remaining,
             mode: "accuse",
+            current_talk_character: null,
             result: null,
             follow_up_prompt: startOutput.follow_up_prompt,
-            speaker: NARRATOR_SPEAKER,
           }),
           { headers: { "Content-Type": "application/json" } },
         );

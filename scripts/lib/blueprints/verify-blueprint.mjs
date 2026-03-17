@@ -32,6 +32,7 @@ function buildVerificationReport({
     required_actions: 0,
     action_budget_limit: 0,
   },
+  solvePath = null,
 }) {
   return VerificationReportSchema.parse({
     stage: "verify",
@@ -42,6 +43,7 @@ function buildVerificationReport({
     warning_findings: warning,
     info_findings: info,
     computed_metrics: computedMetrics,
+    solve_path: solvePath,
   });
 }
 
@@ -155,6 +157,14 @@ export async function verifyBlueprintPath(blueprintPath) {
       required_actions: solvePath?.required_actions ?? Number.MAX_SAFE_INTEGER,
       action_budget_limit: actionBudgetLimit,
     },
+    solvePath: solvePath
+      ? {
+        starting_location_key: solvePath.starting_location_key,
+        starting_evidence_keys: solvePath.starting_evidence_keys,
+        collected_evidence_keys: solvePath.collected_evidence_keys,
+        actions: solvePath.actions,
+      }
+      : null,
   });
   await fs.writeFile(deterministicReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
 

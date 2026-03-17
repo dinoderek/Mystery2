@@ -27,7 +27,7 @@ For profile/deploy configuration, see `docs/ai-configuration.md`.
 - `scripts/lib/blueprints/draft-runs.mjs`
   - Shared `blueprints/drafts/` filesystem contract
 - `scripts/lib/blueprints/verify-blueprint.mjs`
-  - Deterministic verifier and generated `.verification.json` artifacts
+  - Deterministic verifier and generated `.verification.json` artifacts, including solve-path action diagnostics
 - `scripts/lib/blueprints/judge-blueprint.mjs`
   - Strict-JSON AI judge and `.ai-judge-report.json` artifacts
 - `supabase/functions/_shared/ai-prompts/`

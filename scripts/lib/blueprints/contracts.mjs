@@ -93,6 +93,13 @@ const ReportFindingSchema = z.object({
   path: z.string().optional(),
 });
 
+const SolvePathActionSchema = z.object({
+  action_type: z.enum(["move", "search", "talk"]),
+  location_key: z.string().min(1),
+  character_key: z.string().min(1).optional(),
+  gained_evidence_keys: z.array(z.string().min(1)),
+});
+
 export const VerificationReportSchema = z.object({
   stage: z.literal("verify"),
   blueprint_id: z.string().uuid().nullable(),
@@ -110,6 +117,12 @@ export const VerificationReportSchema = z.object({
     required_actions: z.number().int().nonnegative(),
     action_budget_limit: z.number().int().nonnegative(),
   }),
+  solve_path: z.object({
+    starting_location_key: z.string().min(1),
+    starting_evidence_keys: z.array(z.string().min(1)),
+    collected_evidence_keys: z.array(z.string().min(1)),
+    actions: z.array(SolvePathActionSchema),
+  }).nullable().optional(),
 });
 
 export const AIJudgeReportSchema = z.object({

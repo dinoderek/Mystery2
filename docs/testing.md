@@ -228,10 +228,12 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 - `npm run verify:blueprint -- --blueprint-path <path>`
 - `npm run judge:blueprint -- --blueprint-path <path>`
 
+`verify:blueprint` prints a single stdout summary line on completion: `PASS <report-path>` or `FAIL <report-path>`.
+
 Expected operator flow:
 
 1. Generate one or more candidates directly into `blueprints/drafts/`.
-2. The generator writes a `.verification.json` report next to every generated `.blueprint.json` file.
+2. The generator writes a `.verification.json` report next to every generated `.blueprint.json` file, including solve-path metrics and the shortest action sequence found by deterministic verification.
 3. Run AI judging to produce `.ai-judge-report.json`.
 4. Review artifacts manually before copying any approved candidate into top-level `blueprints/`.
 

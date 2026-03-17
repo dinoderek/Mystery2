@@ -29,6 +29,7 @@ export function calculateSolvePath(blueprint) {
     talked: new Set(),
     acquired: initialAcquired,
     cost: 0,
+    actions: [],
   }];
   const seen = new Set([
     stateKey(startLocationKey, new Set(), new Set(), initialAcquired),
@@ -42,6 +43,9 @@ export function calculateSolvePath(blueprint) {
     if (hasAllEssential) {
       return {
         required_actions: current.cost,
+        starting_location_key: startLocationKey,
+        starting_evidence_keys: [...initialAcquired].sort(),
+        actions: current.actions,
         collected_evidence_keys: [...current.acquired].sort(),
       };
     }
@@ -49,7 +53,9 @@ export function calculateSolvePath(blueprint) {
     for (const location of blueprint.world.locations) {
       if (location.location_key === current.locationKey) continue;
       const acquired = new Set(current.acquired);
-      for (const evidenceKey of collectEvidence(blueprint, "move", location.location_key)) {
+      const gainedEvidenceKeys = collectEvidence(blueprint, "move", location.location_key)
+        .sort();
+      for (const evidenceKey of gainedEvidenceKeys) {
         acquired.add(evidenceKey);
       }
       const next = {
@@ -58,6 +64,14 @@ export function calculateSolvePath(blueprint) {
         talked: new Set(current.talked),
         acquired,
         cost: current.cost + 1,
+        actions: [
+          ...current.actions,
+          {
+            action_type: "move",
+            location_key: location.location_key,
+            gained_evidence_keys: gainedEvidenceKeys,
+          },
+        ],
       };
       const key = stateKey(next.locationKey, next.searched, next.talked, next.acquired);
       if (!seen.has(key)) {
@@ -68,7 +82,9 @@ export function calculateSolvePath(blueprint) {
 
     if (!current.searched.has(current.locationKey)) {
       const acquired = new Set(current.acquired);
-      for (const evidenceKey of collectEvidence(blueprint, "search", current.locationKey)) {
+      const gainedEvidenceKeys = collectEvidence(blueprint, "search", current.locationKey)
+        .sort();
+      for (const evidenceKey of gainedEvidenceKeys) {
         acquired.add(evidenceKey);
       }
       const searched = new Set(current.searched);
@@ -82,6 +98,14 @@ export function calculateSolvePath(blueprint) {
           talked: new Set(current.talked),
           acquired,
           cost: current.cost + 1,
+          actions: [
+            ...current.actions,
+            {
+              action_type: "search",
+              location_key: current.locationKey,
+              gained_evidence_keys: gainedEvidenceKeys,
+            },
+          ],
         });
       }
     }
@@ -90,12 +114,13 @@ export function calculateSolvePath(blueprint) {
       if (character.location_key !== current.locationKey) continue;
       if (current.talked.has(character.character_key)) continue;
       const acquired = new Set(current.acquired);
-      for (const evidenceKey of collectEvidence(
+      const gainedEvidenceKeys = collectEvidence(
         blueprint,
         "talk",
         current.locationKey,
         character.character_key,
-      )) {
+      ).sort();
+      for (const evidenceKey of gainedEvidenceKeys) {
         acquired.add(evidenceKey);
       }
       const talked = new Set(current.talked);
@@ -109,6 +134,15 @@ export function calculateSolvePath(blueprint) {
           talked,
           acquired,
           cost: current.cost + 1,
+          actions: [
+            ...current.actions,
+            {
+              action_type: "talk",
+              location_key: current.locationKey,
+              character_key: character.character_key,
+              gained_evidence_keys: gainedEvidenceKeys,
+            },
+          ],
         });
       }
     }

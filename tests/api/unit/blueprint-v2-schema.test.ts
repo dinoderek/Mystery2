@@ -234,6 +234,24 @@ describe("verification report schema", () => {
           required_actions: 2,
           action_budget_limit: 7,
         },
+        solve_path: {
+          starting_location_key: "kitchen",
+          starting_evidence_keys: ["open-cookie-jar"],
+          collected_evidence_keys: ["alice-hungry", "crumbs-on-floor", "open-cookie-jar"],
+          actions: [
+            {
+              action_type: "search",
+              location_key: "kitchen",
+              gained_evidence_keys: ["crumbs-on-floor"],
+            },
+            {
+              action_type: "talk",
+              location_key: "kitchen",
+              character_key: "alice",
+              gained_evidence_keys: ["alice-hungry"],
+            },
+          ],
+        },
       })
     ).not.toThrow();
   });

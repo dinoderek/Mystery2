@@ -3,6 +3,7 @@ import {
   BlueprintSummarySchema,
   GameAccuseRequestSchema,
   GameAskRequestSchema,
+  NarrationEventSchema,
   SessionCatalogResponseSchema,
   SessionSummarySchema,
   GameStartRequestSchema,
@@ -19,6 +20,11 @@ const narratorSpeaker = {
   kind: "narrator",
   key: "narrator",
   label: "Narrator",
+} as const;
+
+const narratorPart = {
+  text: "Case begins.",
+  speaker: narratorSpeaker,
 } as const;
 
 describe("shared mystery API contracts", () => {
@@ -83,12 +89,14 @@ describe("shared mystery API contracts", () => {
   it("requires speaker metadata on narration responses", () => {
     expect(
       TalkAskResponseSchema.parse({
-        narration: "Alice answers.",
-        speaker: {
-          kind: "character",
-          key: "character:alice",
-          label: "Alice",
-        },
+        narration_parts: [{
+          text: "Alice answers.",
+          speaker: {
+            kind: "character",
+            key: "character:alice",
+            label: "Alice",
+          },
+        }],
         time_remaining: 8,
         mode: "talk",
         current_talk_character: "Alice",
@@ -96,21 +104,21 @@ describe("shared mystery API contracts", () => {
     ).toMatchObject({
       mode: "talk",
       current_talk_character: "Alice",
-      speaker: {
-        kind: "character",
-      },
+      narration_parts: [{ speaker: { kind: "character" } }],
     });
 
     expect(
       SearchResponseSchema.parse({
-        narration: "You inspect the room.",
-        speaker: narratorSpeaker,
+        narration_parts: [{
+          text: "You inspect the room.",
+          speaker: narratorSpeaker,
+        }],
         time_remaining: 8,
         mode: "explore",
       }),
     ).toMatchObject({
       mode: "explore",
-      speaker: narratorSpeaker,
+      narration_parts: [{ speaker: narratorSpeaker }],
     });
   });
 
@@ -134,7 +142,7 @@ describe("shared mystery API contracts", () => {
     });
   });
 
-  it("accepts game state with narration_speaker and history speakers", () => {
+  it("accepts game state plus persisted narration events", () => {
     expect(
       GameStateSchema.parse({
         locations: [{ name: "Kitchen" }],
@@ -145,21 +153,20 @@ describe("shared mystery API contracts", () => {
         location: "Kitchen",
         mode: "explore",
         current_talk_character: null,
-        narration: "Case begins.",
-        narration_speaker: narratorSpeaker,
-        history: [
-          {
-            sequence: 1,
-            event_type: "start",
-            narration: "Case begins.",
-            speaker: narratorSpeaker,
-          },
-        ],
       }),
     ).toMatchObject({
       mode: "explore",
       location: "Kitchen",
-      narration_speaker: narratorSpeaker,
+    });
+
+    expect(
+      NarrationEventSchema.parse({
+        sequence: 1,
+        event_type: "start",
+        narration_parts: [narratorPart],
+      }),
+    ).toMatchObject({
+      narration_parts: [narratorPart],
     });
   });
 
@@ -230,35 +237,47 @@ describe("shared mystery API contracts", () => {
 
     expect(
       MoveResponseSchema.parse({
-        narration: "You arrive.",
-        speaker: narratorSpeaker,
+        narration_parts: [{
+          text: "You arrive.",
+          speaker: narratorSpeaker,
+          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+        }],
         mode: "explore",
         current_location: "Kitchen",
         visible_characters: [],
         time_remaining: 8,
-        location_image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
       }),
     ).toMatchObject({
-      location_image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+      narration_parts: [
+        {
+          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+        },
+      ],
     });
 
     expect(
       TalkAskResponseSchema.parse({
-        narration: "Alice answers.",
-        speaker: {
-          kind: "character",
-          key: "character:alice",
-          label: "Alice",
-        },
+        narration_parts: [{
+          text: "Alice answers.",
+          speaker: {
+            kind: "character",
+            key: "character:alice",
+            label: "Alice",
+          },
+          image_id:
+            "mock-character-123e4567-e89b-12d3-a456-426614174333",
+        }],
         time_remaining: 8,
         mode: "talk",
         current_talk_character: "Alice",
-        character_portrait_image_id:
-          "mock-character-123e4567-e89b-12d3-a456-426614174333",
       }),
     ).toMatchObject({
-      character_portrait_image_id:
-        "mock-character-123e4567-e89b-12d3-a456-426614174333",
+      narration_parts: [
+        {
+          image_id:
+            "mock-character-123e4567-e89b-12d3-a456-426614174333",
+        },
+      ],
     });
   });
 

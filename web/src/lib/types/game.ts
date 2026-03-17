@@ -6,11 +6,26 @@ export interface Speaker {
   label: string;
 }
 
+export interface NarrationPart {
+  text: string;
+  speaker: Speaker;
+  image_id?: string | null;
+}
+
+export interface NarrationEvent {
+  sequence: number;
+  event_type: string;
+  narration_parts: NarrationPart[];
+  payload?: Record<string, unknown> | null;
+  created_at?: string;
+}
+
 export interface HistoryEntry {
   sequence: number;
   event_type: string;
-  narration: string;
+  text: string;
   speaker: Speaker;
+  image_id?: string | null;
 }
 
 export interface GameState {
@@ -24,11 +39,7 @@ export interface GameState {
   location: string;
   mode: 'explore' | 'talk' | 'accuse' | 'ended';
   current_talk_character: string | null;
-  narration: string;
-  narration_speaker: Speaker;
   history: HistoryEntry[];
-  location_image_id?: string | null;
-  character_portrait_image_id?: string | null;
 }
 
 export interface Blueprint {
@@ -43,7 +54,7 @@ export interface Blueprint {
 }
 
 export interface StoryImageState {
-  kind: 'location' | 'character';
+  kind: 'blueprint' | 'location' | 'character';
   title: string;
   image_id: string;
   image_url: string | null;

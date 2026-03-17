@@ -95,13 +95,16 @@ What we test:
 - Conversation/search API contract behavior:
   - `game-ask` requires non-empty `player_input`
   - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
-  - speaker attribution per endpoint (`narrator` vs `character`) and `game-get` speaker persistence (`narration_speaker`, `history[].speaker`)
+  - speaker attribution per endpoint lives on `narration_parts[].speaker` and replay uses the persisted `narration_events[].narration_parts[]`
+  - narration-bearing `game_events.payload.diagnostics` records sequence, category, timing, and timeout-order metadata
   - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
+  - timeout-forced `move`, `search`, and `ask` persist the action event before the appended `forced_endgame` event
+  - `talk` and `end_talk` leave `time_remaining` unchanged
   - accusation judge internal contract no longer includes inferred suspect fields; terminal `win|lose` resolution is authoritative
 - Static image boundary behavior:
   - `blueprints-list` includes optional `blueprint_image_id`
-  - `game-move` includes optional `location_image_id`
-  - `game-talk` includes optional `character_portrait_image_id`
+  - `game-move` includes optional `narration_parts[].image_id`
+  - `game-talk` includes optional `narration_parts[].image_id`
   - `blueprint-image-link` enforces auth and returns signed URL/expiry on valid references
 
 AI calls:
@@ -146,6 +149,7 @@ What we test:
 - completed-session viewer opens in read-only mode and returns to `/` on any key
 - user can perform an action that triggers an Edge Function
 - UI renders returned payload and state remains consistent after refresh
+- transcript resume failures surface player-facing recovery guidance instead of silently dropping story lines
 
 Guidance:
 
@@ -241,6 +245,13 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 1. Runs Playwright browser E2E for the web app
 2. Current project matrix is Chromium-only (`web/playwright.config.ts`) for local stability
+
+### Shared-suite execution
+
+- Treat integration, API E2E, and Playwright suites as serialized across the repo.
+- `npm run test:integration`, `npm run test:e2e`, and `npm -w web run test:e2e` all rely on shared local resources (Supabase at `127.0.0.1:54331`, shared storage/auth state, and for Playwright a fixed dev-server port `5173`).
+- Do not run more than one of those shared-state suites at the same time from different terminals or subagents.
+- Parallel verification is still fine for unit-only suites such as `npx vitest run tests/api/unit/...` and `npm -w web run test:unit`.
 
 ### Deploy dry-run checks
 

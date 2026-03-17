@@ -149,15 +149,19 @@ async function listHasAnyObject(client, bucketName) {
   return (data ?? []).length > 0;
 }
 
-async function seedBlueprintJson(client, seedMode) {
-  if (seedMode === "if-missing") {
-    const hasBlueprints = await listHasAnyObject(client, "blueprints");
-    if (hasBlueprints) {
-      console.log("Storage seed skipped: blueprint objects already present.");
-      return { uploadedCount: 0, blueprints: [] };
-    }
+async function listObjectNames(client, bucketName) {
+  const { data, error } = await client.storage.from(bucketName).list("", {
+    limit: 1000,
+    sortBy: { column: "name", order: "asc" },
+  });
+  if (error) {
+    throw new Error(`Unable to list bucket "${bucketName}": ${error.message}`);
   }
 
+  return new Set((data ?? []).map((entry) => entry.name));
+}
+
+async function seedBlueprintJson(client, seedMode) {
   const blueprintFiles = await collectBlueprintFiles();
 
   if (blueprintFiles.length === 0) {
@@ -168,6 +172,13 @@ async function seedBlueprintJson(client, seedMode) {
 
   const blueprints = [];
   let uploadedCount = 0;
+  const existingObjectNames = seedMode === "if-missing"
+    ? await listObjectNames(client, "blueprints")
+    : null;
+
+  if (seedMode === "if-missing" && existingObjectNames?.size) {
+    console.log("Storage seed running in verify mode: existing blueprint objects will be left in place.");
+  }
 
   for (const filePath of blueprintFiles) {
     const text = await fs.readFile(filePath, "utf-8");
@@ -187,6 +198,11 @@ async function seedBlueprintJson(client, seedMode) {
     }
 
     const objectPath = `${raw.id}.json`;
+    if (existingObjectNames?.has(objectPath)) {
+      blueprints.push(raw);
+      continue;
+    }
+
     const { error } = await client.storage.from("blueprints").upload(
       objectPath,
       text,

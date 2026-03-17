@@ -1,4 +1,4 @@
-import { requireAuth, isAuthError, type AuthResult } from "../_shared/auth.ts";
+import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -15,24 +15,14 @@ import { createRequestLogger } from "../_shared/logging.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkStartContext } from "../_shared/ai-context.ts";
-import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
-
-async function getNextSequence(
-  db: AuthResult["client"],
-  gameId: string,
-): Promise<number> {
-  const { data: events } = await db
-    .from("game_events")
-    .select("sequence")
-    .eq("session_id", gameId)
-    .order("sequence", { ascending: false })
-    .limit(1);
-
-  return events && events.length > 0 ? events[0].sequence + 1 : 1;
-}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -116,129 +106,71 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const newTime = session.time_remaining - 1;
-    const isForcedEndgame = newTime <= 0;
-    const nextMode = isForcedEndgame ? "accuse" : "talk";
-    const eventType = isForcedEndgame ? "forced_endgame" : "talk";
-    let narration: string;
-    let eventPayload: Record<string, unknown>;
+    const aiContext = buildTalkStartContext({
+      game_id: gameId,
+      session,
+      blueprint,
+      character_name: activeCharacter.first_name,
+      location_name: session.current_location_id,
+      conversation_history: historyRows ?? [],
+    });
 
-    if (isForcedEndgame) {
-      try {
-        const forcedOutput = await generateForcedAccusationStartNarration({
-          req,
-          request_id: requestId,
-          endpoint: "game-talk",
-          game_id: gameId,
-          aiProvider,
-          session,
-          blueprint,
-          conversation_history: historyRows ?? [],
-          scene_summary:
-            `The investigator started talking to ${activeCharacter.first_name}, but time expired before the interview could continue.`,
-        });
-        narration = forcedOutput.narration;
-      eventPayload = {
-        role: "accusation_start",
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        trigger: "timeout",
-        follow_up_prompt: forcedOutput.follow_up_prompt,
-        speaker: NARRATOR_SPEAKER,
-      };
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            action: "forced_endgame_start",
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          action: "forced_endgame_start",
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-    } else {
-      const aiContext = buildTalkStartContext({
-        game_id: gameId,
-        session,
-        blueprint,
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        conversation_history: historyRows ?? [],
-      });
+    const promptTemplate = await loadPromptTemplate("talk_start");
+    const prompt = renderPrompt(promptTemplate, {
+      character_name: activeCharacter.first_name,
+      location_name: session.current_location_id,
+      target_age: blueprint.metadata.target_age,
+    });
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-talk",
+      action: "talk",
+      game_id: gameId,
+    });
 
-      const promptTemplate = await loadPromptTemplate("talk_start");
-      const prompt = renderPrompt(promptTemplate, {
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        target_age: blueprint.metadata.target_age,
-      });
-      const aiMetadata = createAIRequestMetadata(req, {
-        request_id: requestId,
-        endpoint: "game-talk",
-        action: "talk",
-        game_id: gameId,
-      });
-
-      let talkStartOutput: ReturnType<typeof parseTalkStartOutput>;
-      try {
-        talkStartOutput = await aiProvider.generateRoleOutput({
-          role: "talk_start",
-          prompt,
-          context: aiContext,
-          parse: parseTalkStartOutput,
-          metadata: aiMetadata,
-        });
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-      narration = talkStartOutput.narration;
-      eventPayload = {
+    let talkStartOutput: ReturnType<typeof parseTalkStartOutput>;
+    try {
+      talkStartOutput = await aiProvider.generateRoleOutput({
         role: "talk_start",
-        character: activeCharacter.first_name,
-        character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
-        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        context_version: "v1",
-        speaker: NARRATOR_SPEAKER,
-      };
+        prompt,
+        context: aiContext,
+        parse: parseTalkStartOutput,
+        metadata: aiMetadata,
+      });
+    } catch (error) {
+      if (error instanceof RetriableAIError) {
+        log("request.ai_retriable", {
+          game_id: gameId,
+          code: error.details.code ?? null,
+          status: error.details.status ?? null,
+          error: error.message,
+        });
+        return aiRetriableError(error.message, error.details);
+      }
+      log("request.ai_retriable", {
+        game_id: gameId,
+        code: "AI_INVALID_OUTPUT",
+        error: "AI output validation failed",
+      });
+      return aiRetriableError("AI output validation failed", {
+        code: "AI_INVALID_OUTPUT",
+      });
     }
+
+    const narrationParts = [
+      createNarrationPart(
+        talkStartOutput.narration,
+        NARRATOR_SPEAKER,
+        activeCharacter.portrait_image_id ?? null,
+      ),
+    ];
 
     const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
-        time_remaining: newTime,
-        mode: nextMode,
-        current_talk_character_id: isForcedEndgame
-          ? null
-          : activeCharacter.first_name,
+        time_remaining: session.time_remaining,
+        mode: "talk",
+        current_talk_character_id: activeCharacter.first_name,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -250,26 +182,40 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const nextSequence = await getNextSequence(userClient, gameId);
-    await userClient.from("game_events").insert({
+    await insertNarrationEvent(userClient, {
       session_id: gameId,
-      sequence: nextSequence,
-      event_type: eventType,
+      event_type: "talk",
       actor: "system",
-      payload: eventPayload,
-      narration,
+      payload: {
+        role: "talk_start",
+        character: activeCharacter.first_name,
+        character_name: activeCharacter.first_name,
+        location_name: session.current_location_id,
+        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
+        context_version: "v1",
+        speaker: NARRATOR_SPEAKER,
+      },
+      narration_parts: narrationParts,
+      diagnostics: createNarrationDiagnostics({
+        action: "talk",
+        event_category: "talk",
+        mode: "explore",
+        resulting_mode: "talk",
+        time_before: session.time_remaining,
+        time_after: session.time_remaining,
+        time_consumed: false,
+        forced_endgame: false,
+        trigger: "player",
+      }),
+      logger,
     });
 
     return new Response(
       JSON.stringify({
-        narration,
-        time_remaining: newTime,
-        mode: nextMode,
-        current_talk_character: isForcedEndgame
-          ? null
-          : activeCharacter.first_name,
-        character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        speaker: NARRATOR_SPEAKER,
+        narration_parts: narrationParts,
+        time_remaining: session.time_remaining,
+        mode: "talk",
+        current_talk_character: activeCharacter.first_name,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

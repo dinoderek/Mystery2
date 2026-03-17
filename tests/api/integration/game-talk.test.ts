@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
   ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "./auth-helpers";
@@ -23,7 +24,7 @@ describe("game-talk endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
     const { game_id } = await startRes.json();
@@ -39,16 +40,16 @@ describe("game-talk endpoint", () => {
 
     expect(data.current_talk_character).toBe("Alice");
     expect(data.mode).toBe("talk");
-    expect(data.time_remaining).toBe(9);
-    expect(data.narration).toContain("[Mock]");
-    expect(data.narration).not.toContain("because she was hungry");
-    expect(data.character_portrait_image_id).toBe(
-      "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
-    );
-    expect(data.speaker).toMatchObject({
-      kind: "narrator",
-      key: "narrator",
-      label: "Narrator",
+    expect(data.time_remaining).toBe(10);
+    expect(data.narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_parts[0].text).not.toContain("because she was hungry");
+    expect(data.narration_parts[0]).toMatchObject({
+      image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
+      speaker: {
+        kind: "narrator",
+        key: "narrator",
+        label: "Narrator",
+      },
     });
   });
 });

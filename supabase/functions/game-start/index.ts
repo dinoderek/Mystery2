@@ -17,6 +17,11 @@ import {
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 serveWithCors(async (req) => {
@@ -66,34 +71,42 @@ serveWithCors(async (req) => {
       return internalError("No default AI profile configured");
     }
 
-    // Find blueprint in Storage
-    const { data: files, error: listError } = await supabase.storage
+    // Prefer the canonical storage key, but retain a fallback scan for older buckets.
+    let blueprintText: string | null = null;
+    const { data: directBlueprintFile, error: directDownloadError } = await supabase.storage
       .from("blueprints")
-      .list();
-    if (listError) {
-      logError("request.error", { reason: "storage_list_failed" });
-      return internalError("Failed to access blueprints");
+      .download(`${blueprint_id}.json`);
+    if (!directDownloadError && directBlueprintFile) {
+      blueprintText = await directBlueprintFile.text();
     }
 
-    let blueprintText: string | null = null;
-
-    for (const file of files || []) {
-      if (!file.name.endsWith(".json")) continue;
-
-      const { data: fileData, error: downloadError } = await supabase.storage
+    if (!blueprintText) {
+      const { data: files, error: listError } = await supabase.storage
         .from("blueprints")
-        .download(file.name);
-      if (downloadError) continue;
+        .list();
+      if (listError) {
+        logError("request.error", { reason: "storage_list_failed" });
+        return internalError("Failed to access blueprints");
+      }
 
-      const text = await fileData.text();
-      try {
-        const rawJson = JSON.parse(text);
-        if (rawJson.id === blueprint_id) {
-          blueprintText = text;
-          break;
+      for (const file of files || []) {
+        if (!file.name.endsWith(".json")) continue;
+
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from("blueprints")
+          .download(file.name);
+        if (downloadError) continue;
+
+        const text = await fileData.text();
+        try {
+          const rawJson = JSON.parse(text);
+          if (rawJson.id === blueprint_id) {
+            blueprintText = text;
+            break;
+          }
+        } catch (_error) {
+          // Ignore malformed storage rows while scanning.
         }
-      } catch (e) {
-        // ignore invalid JSON
       }
     }
 
@@ -148,24 +161,43 @@ serveWithCors(async (req) => {
       blueprint.narrative.premise,
       aiMetadata,
     );
+    const narrationParts = [
+      createNarrationPart(
+        narration,
+        NARRATOR_SPEAKER,
+        blueprint.metadata.image_id ?? null,
+      ),
+    ];
 
     // Insert start event
-    const { error: eventError } = await supabase.from("game_events").insert({
-      session_id: sessionId,
-      sequence: 1,
-      event_type: "start",
-      actor: "system",
-      payload: {
-        speaker: NARRATOR_SPEAKER,
-      },
-      narration: narration,
-    });
-
-    if (eventError) {
+    try {
+      await insertNarrationEvent(supabase, {
+        session_id: sessionId,
+        event_type: "start",
+        actor: "system",
+        payload: {
+          speaker: NARRATOR_SPEAKER,
+          blueprint_image_id: blueprint.metadata.image_id ?? null,
+        },
+        narration_parts: narrationParts,
+        diagnostics: createNarrationDiagnostics({
+          action: "start",
+          event_category: "start",
+          mode: "explore",
+          resulting_mode: "explore",
+          time_before: blueprint.metadata.time_budget,
+          time_after: blueprint.metadata.time_budget,
+          time_consumed: false,
+          forced_endgame: false,
+          trigger: "player",
+        }),
+        logger,
+      });
+    } catch (eventError) {
       logError("request.error", {
         reason: "event_insert_failed",
         game_id: sessionId,
-        error: eventError.message,
+        error: eventError instanceof Error ? eventError.message : String(eventError),
       });
       return internalError("Failed to record start event");
     }
@@ -181,22 +213,35 @@ serveWithCors(async (req) => {
       location: startLoc,
       mode: "explore",
       current_talk_character: null,
-      narration: narration,
-      narration_speaker: NARRATOR_SPEAKER,
-      history: [
-        {
-          sequence: 1,
-          event_type: "start",
-          narration,
-          speaker: NARRATOR_SPEAKER,
-        },
-      ],
     };
 
     return new Response(
       JSON.stringify({
         game_id: sessionId,
         state: gameState,
+        narration_events: [
+          {
+            sequence: 1,
+            event_type: "start",
+            narration_parts: narrationParts,
+            payload: {
+              speaker: NARRATOR_SPEAKER,
+              blueprint_image_id: blueprint.metadata.image_id ?? null,
+              diagnostics: createNarrationDiagnostics({
+                action: "start",
+                event_category: "start",
+                mode: "explore",
+                resulting_mode: "explore",
+                time_before: blueprint.metadata.time_budget,
+                time_after: blueprint.metadata.time_budget,
+                time_consumed: false,
+                forced_endgame: false,
+                trigger: "player",
+                related_sequence: 1,
+              }),
+            },
+          },
+        ],
       }),
       {
         headers: { "Content-Type": "application/json" },

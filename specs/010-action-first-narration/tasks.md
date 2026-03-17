@@ -19,9 +19,9 @@
 
 **Purpose**: Create the shared scaffolding for narration-part persistence, typing, and validation before touching story-specific flows.
 
-- [ ] T001 Create shared narration-event helper scaffolding in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts`
-- [ ] T002 [P] Extend shared and web-facing type scaffolding for narration parts in `/Users/dinohughes/Projects/my2/w1/packages/shared/src/mystery-api-contracts.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/types/game.ts`
-- [ ] T003 [P] Add baseline contract fixture coverage for narration-part payloads in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/mystery-api-contracts.test.ts`
+- [X] T001 Create shared narration-event helper scaffolding in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts`
+- [X] T002 [P] Extend shared and web-facing type scaffolding for narration parts in `/Users/dinohughes/Projects/my2/w1/packages/shared/src/mystery-api-contracts.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/types/game.ts`
+- [X] T003 [P] Add baseline contract fixture coverage for narration-part payloads in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/mystery-api-contracts.test.ts`
 
 ---
 
@@ -31,11 +31,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Add the `game_events` narration-parts migration in `/Users/dinohughes/Projects/my2/w1/supabase/migrations/0008_narration_parts.sql`
-- [ ] T005 Update the canonical gameplay contract for `narration_parts`, `narration_events`, part-level `image_id`, and optional accusation reasoning in `/Users/dinohughes/Projects/my2/w1/packages/shared/src/mystery-api-contracts.ts`
-- [ ] T006 Implement canonical narration-event persistence and flattening helpers in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/forced-endgame.ts`
-- [ ] T007 [P] Refactor browser transcript normalization to consume `narration_events` and part-level images in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/types/game.ts`
-- [ ] T008 [P] Update non-time-consuming talk transition coverage in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/state-machine.test.ts`
+- [X] T004 Add the `game_events` narration-parts migration in `/Users/dinohughes/Projects/my2/w1/supabase/migrations/0008_narration_parts.sql`
+- [X] T005 Update the canonical gameplay contract for `narration_parts`, `narration_events`, part-level `image_id`, and optional accusation reasoning in `/Users/dinohughes/Projects/my2/w1/packages/shared/src/mystery-api-contracts.ts`
+- [X] T006 Implement canonical narration-event persistence and flattening helpers in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/forced-endgame.ts`
+- [X] T007 [P] Refactor browser transcript normalization to consume `narration_events` and part-level images in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/types/game.ts`
+- [X] T008 [P] Update non-time-consuming talk transition coverage in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/state-machine.test.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -49,20 +49,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Add action-first timeout integration coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-move.test.ts`
-- [ ] T010 [P] [US1] Add action-first timeout integration coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-search.test.ts`
-- [ ] T011 [P] [US1] Add action-first timeout and character-response ordering coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-ask.test.ts`
-- [ ] T012 [P] [US1] Add non-time-consuming talk transition coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-talk/index.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-end-talk/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-talk.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-end-talk.test.ts`
-- [ ] T013 [P] [US1] Add API E2E coverage for final-turn move/search/ask transcript ordering in `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/game-flow.test.ts`
+- [X] T009 [P] [US1] Add action-first timeout integration coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-move.test.ts` that asserts final-turn narration ordering and forced-endgame transitions.
+- [X] T010 [P] [US1] Add action-first timeout integration coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-search.test.ts` that asserts final-turn narration ordering and forced-endgame transitions.
+- [X] T011 [P] [US1] Add action-first timeout and character-response ordering coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-ask.test.ts` that verifies the question response precedes the forced accusation framing when time reaches zero.
+- [X] T012 [P] [US1] Add non-time-consuming talk transition coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-talk/index.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-end-talk/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-talk.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-end-talk.test.ts`
+- [X] T013 [P] [US1] Add API E2E coverage for final-turn move/search/ask transcript ordering in `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/game-flow.test.ts` that proves the response order and persisted resume history match the forced-endgame transition.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts`
-- [ ] T015 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts`
-- [ ] T016 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts`
-- [ ] T017 [US1] Make `talk` start non-time-consuming while still returning narration parts in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-talk/index.ts`
-- [ ] T018 [US1] Make `end_talk` non-time-consuming while still returning narration parts in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-end-talk/index.ts`
-- [ ] T019 [US1] Update combined action-plus-timeout response handling and time-neutral talk state updates in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
+- [X] T014 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts`
+- [X] T015 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts`
+- [X] T016 [US1] Refactor timeout sequencing and separated event persistence in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts`
+- [X] T017 [US1] Make `talk` start non-time-consuming while still returning narration parts in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-talk/index.ts`
+- [X] T018 [US1] Make `end_talk` non-time-consuming while still returning narration parts in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-end-talk/index.ts`
+- [X] T019 [US1] Update combined action-plus-timeout response handling and time-neutral talk state updates in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
 
 **Checkpoint**: User Story 1 should now be fully functional and independently testable as the MVP
 
@@ -76,20 +76,20 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add transcript/state split coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-start/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-start.test.ts`
-- [ ] T021 [P] [US2] Add `narration_events`-only replay coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-get.test.ts`
-- [ ] T022 [P] [US2] Add accusation transcript persistence coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-accuse/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-accuse.test.ts`
-- [ ] T023 [P] [US2] Add API E2E coverage for `narration_events`-driven resume and completed replay in `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/game-flow.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/sessions-flow.test.ts`
-- [ ] T024 [P] [US2] Add browser coverage for rendered narration-area resume parity and part-attached images in `/Users/dinohughes/Projects/my2/w1/web/e2e/narration.test.ts`
+- [X] T020 [P] [US2] Add transcript/state split coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-start/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-start.test.ts`
+- [X] T021 [P] [US2] Add `narration_events`-only replay coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-get.test.ts`
+- [X] T022 [P] [US2] Add accusation transcript persistence coverage for `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-accuse/index.ts` in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-accuse.test.ts`
+- [X] T023 [P] [US2] Add API E2E coverage for `narration_events`-driven resume and completed replay in `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/game-flow.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/e2e/sessions-flow.test.ts`
+- [X] T024 [P] [US2] Add browser coverage for rendered narration-area resume parity and part-attached images in `/Users/dinohughes/Projects/my2/w1/web/e2e/narration.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-start/index.ts` to return `state` plus persisted `narration_events`
-- [ ] T026 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` to read only persisted narration parts and drop top-level narration fallback inference
-- [ ] T027 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-accuse/index.ts` to emit and persist narration parts for accusation start, rounds, and completed outcomes
-- [ ] T028 [US2] Update transcript hydration and local-only message handling in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
-- [ ] T029 [US2] Update rendering of flattened narration parts and part-level images in `/Users/dinohughes/Projects/my2/w1/web/src/lib/components/NarrationBox.svelte`, `/Users/dinohughes/Projects/my2/w1/web/src/lib/components/StoryImagePanel.svelte`, and `/Users/dinohughes/Projects/my2/w1/web/src/lib/api/images.ts`
-- [ ] T030 [US2] Update browser-store unit coverage for parts-only transcript replay in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.speaker.test.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.sessions.test.ts`
+- [X] T025 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-start/index.ts` to return `state` plus persisted `narration_events`
+- [X] T026 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` to read only persisted narration parts and drop top-level narration fallback inference
+- [X] T027 [US2] Refactor `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-accuse/index.ts` to emit and persist narration parts for accusation start, rounds, and completed outcomes
+- [X] T028 [US2] Update transcript hydration and local-only message handling in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
+- [X] T029 [US2] Update rendering of flattened narration parts and part-level images in `/Users/dinohughes/Projects/my2/w1/web/src/lib/components/NarrationBox.svelte`, `/Users/dinohughes/Projects/my2/w1/web/src/lib/components/StoryImagePanel.svelte`, and `/Users/dinohughes/Projects/my2/w1/web/src/lib/api/images.ts`
+- [X] T030 [US2] Update browser-store unit coverage for parts-only transcript replay in `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.speaker.test.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.sessions.test.ts`
 
 **Checkpoint**: User Stories 1 and 2 should now both work independently, with exact transcript replay on resume
 
@@ -103,15 +103,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T031 [P] [US3] Add unit coverage for narration-event ordering and diagnostics helpers in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/narration-events.test.ts`
-- [ ] T032 [P] [US3] Add integration coverage for timeout diagnostics and transcript-load failures in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-ask.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-get.test.ts`
-- [ ] T033 [P] [US3] Add browser coverage for player-facing transcript recovery messaging in `/Users/dinohughes/Projects/my2/w1/web/e2e/narration.test.ts`
+- [X] T031 [P] [US3] Add unit coverage for narration-event ordering and diagnostics helpers in `/Users/dinohughes/Projects/my2/w1/tests/api/unit/narration-events.test.ts`
+- [X] T032 [P] [US3] Add integration coverage for timeout diagnostics and transcript-load failures in `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-ask.test.ts` and `/Users/dinohughes/Projects/my2/w1/tests/api/integration/game-get.test.ts`
+- [X] T033 [P] [US3] Add browser coverage for player-facing transcript recovery messaging in `/Users/dinohughes/Projects/my2/w1/web/e2e/narration.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Extend request and event diagnostics for narration ordering in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/logging.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts`
-- [ ] T035 [US3] Add explicit transcript-load failure handling in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
-- [ ] T036 [US3] Add forced-endgame ordering diagnostics in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts`, `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts`, and `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts`
+- [X] T034 [US3] Extend request and event diagnostics for narration ordering in `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/logging.ts` and `/Users/dinohughes/Projects/my2/w1/supabase/functions/_shared/narration.ts`
+- [X] T035 [US3] Add explicit transcript-load failure handling in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-get/index.ts` and `/Users/dinohughes/Projects/my2/w1/web/src/lib/domain/store.svelte.ts`
+- [X] T036 [US3] Add forced-endgame ordering diagnostics in `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-move/index.ts`, `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-search/index.ts`, and `/Users/dinohughes/Projects/my2/w1/supabase/functions/game-ask/index.ts`
 
 **Checkpoint**: All three user stories should now be independently functional and diagnosable
 
@@ -121,10 +121,10 @@
 
 **Purpose**: Finish the shared documentation, validation, and release-readiness work that spans multiple user stories.
 
-- [ ] T037 [P] Update gameplay timing and accusation-flow documentation in `/Users/dinohughes/Projects/my2/w1/docs/game.md` and `/Users/dinohughes/Projects/my2/w1/docs/accusation-flow.md`
-- [ ] T038 [P] Update transcript-persistence and coverage docs in `/Users/dinohughes/Projects/my2/w1/docs/architecture.md`, `/Users/dinohughes/Projects/my2/w1/docs/testing.md`, and `/Users/dinohughes/Projects/my2/w1/docs/project-structure.md`
-- [ ] T039 [P] Reconcile feature quickstart and contract notes with the implemented behavior in `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/quickstart.md` and `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/contracts/action-first-narration.openapi.yaml`
-- [ ] T040 Run the full quality gate from `/Users/dinohughes/Projects/my2/w1/package.json` and record validation outcomes in `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/quickstart.md`
+- [X] T037 [P] Update gameplay timing and accusation-flow documentation in `/Users/dinohughes/Projects/my2/w1/docs/game.md` and `/Users/dinohughes/Projects/my2/w1/docs/accusation-flow.md`
+- [X] T038 [P] Update transcript-persistence and coverage docs in `/Users/dinohughes/Projects/my2/w1/docs/architecture.md`, `/Users/dinohughes/Projects/my2/w1/docs/testing.md`, and `/Users/dinohughes/Projects/my2/w1/docs/project-structure.md`
+- [X] T039 [P] Reconcile feature quickstart and contract notes with the implemented behavior in `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/quickstart.md` and `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/contracts/action-first-narration.openapi.yaml`
+- [X] T040 Run the full quality gate from `/Users/dinohughes/Projects/my2/w1/package.json` and record validation outcomes in `/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/quickstart.md`
 
 ---
 

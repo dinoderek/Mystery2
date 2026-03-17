@@ -68,6 +68,11 @@ eval "$(npx supabase status -o env | awk -F= '/^[A-Z0-9_]+=/{print "export "$0}'
 npm run test:all
 ```
 
+## Validation Record
+
+- `2026-03-16`: `npm run test:all` passed.
+- `2026-03-16`: `npm -w web run check` completed with the existing Svelte accessibility warning on `web/src/lib/components/InputBox.svelte` for `autofocus`.
+
 ## Expected Artifacts
 
 - [/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/plan.md](/Users/dinohughes/Projects/my2/w1/specs/010-action-first-narration/plan.md)

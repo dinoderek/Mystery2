@@ -34,7 +34,10 @@
     await gameSessionStore.resumeSession(selected.game_id);
     if (gameSessionStore.status === 'active') {
       await goto('/session');
+      return;
     }
+
+    message = gameSessionStore.error ?? 'Unable to reopen this session.';
   }
 </script>
 

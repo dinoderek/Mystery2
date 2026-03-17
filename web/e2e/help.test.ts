@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
 
+const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
 const baseState = {
   locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
   characters: [{ first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' }],
@@ -8,9 +9,6 @@ const baseState = {
   location: 'Kitchen',
   mode: 'explore',
   current_talk_character: null,
-  clues: [],
-  narration: 'You enter the kitchen.',
-  history: [],
 };
 
 async function bootstrapSession(page: Page) {
@@ -39,6 +37,13 @@ async function bootstrapSession(page: Page) {
       json: {
         game_id: 'g1',
         state: baseState,
+        narration_events: [
+          {
+            sequence: 1,
+            event_type: 'start',
+            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
+          },
+        ],
       },
     });
   });

@@ -8,6 +8,8 @@ import {
   type SessionSnapshot,
 } from "./ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "./ai-prompts.ts";
+import { createNarrationPart, type NarrationPart } from "./narration.ts";
+import { NARRATOR_SPEAKER } from "./speaker.ts";
 
 export async function generateForcedAccusationStartNarration(input: {
   req: Request;
@@ -19,7 +21,11 @@ export async function generateForcedAccusationStartNarration(input: {
   blueprint: BlueprintContext;
   conversation_history: ConversationFragment[];
   scene_summary: string;
-}): Promise<{ narration: string; follow_up_prompt: string }> {
+}): Promise<{
+  narration: string;
+  narration_parts: NarrationPart[];
+  follow_up_prompt: string;
+}> {
   const aiContext = buildAccusationStartContext({
     game_id: input.game_id,
     session: {
@@ -43,11 +49,16 @@ export async function generateForcedAccusationStartNarration(input: {
     game_id: input.game_id,
   });
 
-  return await input.aiProvider.generateRoleOutput({
+  const output = await input.aiProvider.generateRoleOutput({
     role: "accusation_start",
     prompt,
     context: aiContext,
     parse: parseAccusationStartOutput,
     metadata: aiMetadata,
   });
+
+  return {
+    ...output,
+    narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],
+  };
 }

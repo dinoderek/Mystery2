@@ -40,54 +40,63 @@ export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({
   player_reasoning: z.string().min(1).optional(),
 });
 
-export const NarrationWithSpeakerSchema = z.object({
-  narration: z.string(),
+export const NarrationPartSchema = z.object({
+  text: z.string().min(1),
   speaker: SpeakerSchema,
-  mode: z.enum(["explore", "talk", "accuse", "ended"]),
+  image_id: z.string().min(1).nullable().optional(),
 });
 
-export const TalkStartResponseSchema = NarrationWithSpeakerSchema.extend({
-  time_remaining: z.number().int(),
+export const NarrationEventSchema = z.object({
+  sequence: z.number().int().positive(),
+  event_type: z.string().min(1),
+  narration_parts: z.array(NarrationPartSchema).min(1),
+  payload: z.record(z.string(), z.unknown()).nullable().optional(),
+  created_at: z.string().datetime().optional(),
+});
+
+export const TurnResponseBaseSchema = z.object({
+  narration_parts: z.array(NarrationPartSchema).min(1),
+  time_remaining: z.number().int().nonnegative(),
+  mode: ModeSchema,
+  current_talk_character: z.string().nullable().optional(),
+  follow_up_prompt: z.string().nullable().optional(),
+  result: OutcomeSchema.nullable().optional(),
+});
+
+export const TalkStartResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
-  character_portrait_image_id: z.string().nullable().optional(),
 });
 
-export const TalkAskResponseSchema = NarrationWithSpeakerSchema.extend({
-  time_remaining: z.number().int(),
+export const TalkAskResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["talk", "accuse"]),
   current_talk_character: z.string().nullable(),
-  character_portrait_image_id: z.string().nullable().optional(),
 });
 
-export const TalkEndResponseSchema = NarrationWithSpeakerSchema.extend({
-  time_remaining: z.number().int(),
+export const TalkEndResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.literal("explore"),
   current_talk_character: z.null(),
 });
 
-export const SearchResponseSchema = NarrationWithSpeakerSchema.extend({
-  time_remaining: z.number().int(),
+export const SearchResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["explore", "accuse"]),
 });
 
-export const MoveResponseSchema = NarrationWithSpeakerSchema.extend({
-  time_remaining: z.number().int(),
+export const MoveResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["explore", "accuse"]),
-  current_location: z.string(),
+  current_location: z.string().min(1),
   visible_characters: z.array(
     z.object({
-      first_name: z.string(),
-      last_name: z.string(),
+      first_name: z.string().min(1),
+      last_name: z.string().min(1),
     }),
   ),
-  location_image_id: z.string().nullable().optional(),
 });
 
-export const AccuseResponseSchema = NarrationWithSpeakerSchema.extend({
+export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["accuse", "ended"]),
-  result: OutcomeSchema.nullable().optional(),
   follow_up_prompt: z.string().nullable().optional(),
+  result: OutcomeSchema.nullable().optional(),
 });
 
 export const LocationSummarySchema = z.object({
@@ -100,33 +109,25 @@ export const CharacterSummarySchema = z.object({
   location_name: z.string(),
 });
 
-export const HistoryEntrySchema = z.object({
-  sequence: z.number().int(),
-  event_type: z.string(),
-  narration: z.string(),
-  speaker: SpeakerSchema,
-});
-
 export const GameStateSchema = z.object({
   locations: z.array(LocationSummarySchema),
   characters: z.array(CharacterSummarySchema),
-  time_remaining: z.number().int(),
+  time_remaining: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,
   current_talk_character: z.string().nullable(),
-  narration: z.string(),
-  narration_speaker: SpeakerSchema,
-  history: z.array(HistoryEntrySchema),
 });
 
-export const GameStartResponseSchema = z.object({
+export const SessionTranscriptResponseSchema = z.object({
+  state: GameStateSchema,
+  narration_events: z.array(NarrationEventSchema),
+});
+
+export const GameStartResponseSchema = SessionTranscriptResponseSchema.extend({
   game_id: z.string().uuid(),
-  state: GameStateSchema,
 });
 
-export const GameGetResponseSchema = z.object({
-  state: GameStateSchema,
-});
+export const GameGetResponseSchema = SessionTranscriptResponseSchema;
 
 export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
@@ -186,14 +187,16 @@ export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
 export type GameAccuseRequest = z.infer<typeof GameAccuseRequestSchema>;
+export type NarrationPart = z.infer<typeof NarrationPartSchema>;
+export type NarrationEvent = z.infer<typeof NarrationEventSchema>;
 export type TalkStartResponse = z.infer<typeof TalkStartResponseSchema>;
 export type TalkAskResponse = z.infer<typeof TalkAskResponseSchema>;
 export type TalkEndResponse = z.infer<typeof TalkEndResponseSchema>;
 export type SearchResponse = z.infer<typeof SearchResponseSchema>;
 export type MoveResponse = z.infer<typeof MoveResponseSchema>;
 export type AccuseResponse = z.infer<typeof AccuseResponseSchema>;
-export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
+export type SessionTranscriptResponse = z.infer<typeof SessionTranscriptResponseSchema>;
 export type GameStartResponse = z.infer<typeof GameStartResponseSchema>;
 export type GameGetResponse = z.infer<typeof GameGetResponseSchema>;
 export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;

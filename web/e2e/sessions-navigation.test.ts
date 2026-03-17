@@ -14,16 +14,6 @@ const baseGameState = {
   location: 'Kitchen',
   mode: 'explore',
   current_talk_character: null,
-  narration: 'You return to the investigation.',
-  narration_speaker: narratorSpeaker,
-  history: [
-    {
-      sequence: 1,
-      event_type: 'start',
-      narration: 'You return to the investigation.',
-      speaker: narratorSpeaker,
-    },
-  ],
 };
 
 test.describe('Sessions navigation', () => {
@@ -89,6 +79,13 @@ test.describe('Sessions navigation', () => {
         json: {
           game_id: 'fresh-session',
           state: baseGameState,
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });
@@ -174,6 +171,13 @@ test.describe('Sessions navigation', () => {
         json: {
           game_id: 'ended-session',
           state: baseGameState,
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });
@@ -181,11 +185,10 @@ test.describe('Sessions navigation', () => {
     await page.route('**/functions/v1/game-accuse*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'Case closed. Excellent reasoning.',
+          narration_parts: [{ text: 'Case closed. Excellent reasoning.', speaker: narratorSpeaker }],
           mode: 'ended',
           result: 'win',
           time_remaining: 0,
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -294,16 +297,26 @@ test.describe('Sessions navigation', () => {
     });
 
     await page.route('**/functions/v1/game-get?game_id=game-in-progress*', async (route) => {
-      await route.fulfill({ json: { state: baseGameState } });
+      await route.fulfill({
+        json: {
+          state: baseGameState,
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
+            },
+          ],
+        },
+      });
     });
 
     await page.route('**/functions/v1/game-search*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'You inspect the room and spot fresh crumbs.',
+          narration_parts: [{ text: 'You inspect the room and spot fresh crumbs.', speaker: narratorSpeaker }],
           time_remaining: 7,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -365,17 +378,19 @@ test.describe('Sessions navigation', () => {
             ...baseGameState,
             mode: 'ended',
             time_remaining: 0,
-            narration: 'Case closed. Reviewing log.',
-            history: [
-              ...baseGameState.history,
-              {
-                sequence: 2,
-                event_type: 'accuse_judge',
-                narration: 'Case closed. Reviewing log.',
-                speaker: narratorSpeaker,
-              },
-            ],
           },
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
+            },
+            {
+              sequence: 2,
+              event_type: 'accuse_judge',
+              narration_parts: [{ text: 'Case closed. Reviewing log.', speaker: narratorSpeaker }],
+            },
+          ],
         },
       });
     });

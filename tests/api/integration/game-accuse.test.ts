@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
+  ensureMockBlueprintSeeded,
+  MOCK_BLUEPRINT_ID,
   REST_URL,
   setupApiTestAuth,
   type ApiAuthContext,
@@ -28,6 +30,7 @@ describe("game-accuse endpoint", () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-accuse");
+    await ensureMockBlueprintSeeded();
   });
 
   afterEach(async () => {
@@ -39,7 +42,7 @@ describe("game-accuse endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
     const { game_id } = await startRes.json();
@@ -57,7 +60,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseRoundOneData.mode).toBe("accuse");
     expect(accuseRoundOneData.follow_up_prompt).toBeTruthy();
     expect(accuseRoundOneData.result ?? null).toBeNull();
-    expect(accuseRoundOneData.speaker.kind).toBe("narrator");
+    expect(accuseRoundOneData.narration_parts[0].speaker.kind).toBe("narrator");
 
     const accuseRoundTwoRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
@@ -72,7 +75,7 @@ describe("game-accuse endpoint", () => {
     const accuseRoundTwoData = await accuseRoundTwoRes.json();
     expect(accuseRoundTwoData.mode).toBe("ended");
     expect(accuseRoundTwoData.result).toBe("win");
-    expect(accuseRoundTwoData.speaker.kind).toBe("narrator");
+    expect(accuseRoundTwoData.narration_parts[0].speaker.kind).toBe("narrator");
 
     const sessionAfterResolution = await fetchSessionSnapshot(game_id, auth.accessToken);
     expect(sessionAfterResolution.mode).toBe("ended");
@@ -94,7 +97,7 @@ describe("game-accuse endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
     const { game_id } = await startRes.json();
@@ -109,7 +112,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseStartData.mode).toBe("accuse");
     expect(accuseStartData.result ?? null).toBeNull();
     expect(accuseStartData.follow_up_prompt).toBeTruthy();
-    expect(accuseStartData.speaker.kind).toBe("narrator");
+    expect(accuseStartData.narration_parts[0].speaker.kind).toBe("narrator");
 
     const roundOneRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
@@ -132,7 +135,7 @@ describe("game-accuse endpoint", () => {
     expect(roundTwoRes.status).toBe(200);
     const roundTwoData = await roundTwoRes.json();
     expect(roundTwoData.mode).toBe("ended");
-    expect(roundTwoData.speaker.kind).toBe("narrator");
+    expect(roundTwoData.narration_parts[0].speaker.kind).toBe("narrator");
   });
 
   it("keeps accusation rounds working after timeout-forced accuse mode", async () => {
@@ -140,7 +143,7 @@ describe("game-accuse endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
     const { game_id } = await startRes.json();
@@ -179,7 +182,7 @@ describe("game-accuse endpoint", () => {
     const accuseData = await accuseRes.json();
     expect(accuseData.mode).toBe("accuse");
     expect(accuseData.follow_up_prompt).toBeTruthy();
-    expect(accuseData.speaker.kind).toBe("narrator");
+    expect(accuseData.narration_parts[0].speaker.kind).toBe("narrator");
   });
 
   it("resolves to lose for an incorrect suspect", async () => {
@@ -187,7 +190,7 @@ describe("game-accuse endpoint", () => {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+        blueprint_id: MOCK_BLUEPRINT_ID,
       }),
     });
     const { game_id } = await startRes.json();
@@ -214,7 +217,7 @@ describe("game-accuse endpoint", () => {
     const resolveData = await resolveRes.json();
     expect(resolveData.mode).toBe("ended");
     expect(resolveData.result).toBe("lose");
-    expect(resolveData.speaker.kind).toBe("narrator");
+    expect(resolveData.narration_parts[0].speaker.kind).toBe("narrator");
 
     const sessionAfterResolution = await fetchSessionSnapshot(game_id, auth.accessToken);
     expect(sessionAfterResolution.mode).toBe("ended");

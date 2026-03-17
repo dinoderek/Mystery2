@@ -219,6 +219,7 @@ components:
           type: string
         details:
           type: object
+          description: Optional structured context such as transcript recovery guidance for resume/load failures.
           additionalProperties: true
     Speaker:
       type: object
@@ -449,7 +450,7 @@ components:
           properties:
             mode:
               type: string
-              enum: [talk, accuse]
+              enum: [talk]
     GameAskResponse:
       allOf:
         - $ref: '#/components/schemas/TurnResponseBase'

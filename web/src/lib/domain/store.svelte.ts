@@ -1,9 +1,11 @@
 import { supabase } from '../api/supabase';
-import { resolveImageLink } from '../api/images';
+import { resolveImageLink, type ImagePurpose } from '../api/images';
 import type {
   Blueprint,
   GameState,
   HistoryEntry,
+  NarrationEvent,
+  NarrationPart,
   SessionCatalog,
   SessionOutcome,
   SessionSummary,
@@ -11,7 +13,6 @@ import type {
   StoryImageState,
 } from '../types/game';
 import {
-  createCharacterSpeaker,
   INVESTIGATOR_SPEAKER,
   NARRATOR_SPEAKER,
   readSpeaker,
@@ -66,6 +67,14 @@ function readString(value: unknown, fallback = ''): string {
 
 function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+function readRecoveryMessage(value: unknown): string | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return typeof value.recovery === 'string' ? value.recovery : null;
 }
 
 function readInt(value: unknown, fallback = 0): number {
@@ -324,12 +333,12 @@ export class GameSessionStore {
       const response = isRecord(data) ? data : {};
       this.game_id = typeof response.game_id === 'string' ? response.game_id : null;
       this.blueprint_id = blueprintId;
-      this.state = this.normalizeState(response.state);
+      this.state = this.normalizeState(response.state, response.narration_events);
       this.lastFailedInput = null;
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
-      this.activeStoryImage = null;
+      await this.refreshStoryImageFromHistory();
       this.status = 'active';
     }
   }
@@ -355,7 +364,8 @@ export class GameSessionStore {
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
       if (isRecord(payload) && typeof payload.error === 'string') {
-        throw new Error(payload.error);
+        const recovery = readRecoveryMessage(payload.details);
+        throw new Error(recovery ? `${payload.error}. ${recovery}` : payload.error);
       }
 
       throw new Error(`Failed to load session (${response.status})`);
@@ -372,11 +382,12 @@ export class GameSessionStore {
       const data = await this.loadPersistedState(gameId);
       const response = isRecord(data) ? data : {};
       this.game_id = gameId;
-      this.state = this.normalizeState(response.state);
+      this.state = this.normalizeState(response.state, response.narration_events);
       this.lastFailedInput = null;
       this.isRetrying = false;
       this.retryCount = 0;
       this.showHelp = false;
+      await this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
         this.viewerMode = 'read_only_completed';
@@ -392,8 +403,9 @@ export class GameSessionStore {
 
       this.status = 'active';
     } catch (error) {
-      this.error = error instanceof Error ? error.message : String(error);
-      this.status = 'error';
+      const message = error instanceof Error ? error.message : String(error);
+      this.error = message;
+      this.status = 'idle';
     }
   }
 
@@ -466,36 +478,68 @@ export class GameSessionStore {
     }
   }
 
-  private normalizeHistory(history: unknown): HistoryEntry[] {
-    if (!Array.isArray(history)) {
+  private readNarrationPart(raw: unknown): NarrationPart | null {
+    if (!isRecord(raw)) {
+      return null;
+    }
+
+    const text = readString(raw.text);
+    if (!text) {
+      return null;
+    }
+
+    return {
+      text,
+      speaker: readSpeaker(raw.speaker, NARRATOR_SPEAKER),
+      image_id: readNullableString(raw.image_id),
+    };
+  }
+
+  private normalizeNarrationEvents(raw: unknown): NarrationEvent[] {
+    if (!Array.isArray(raw)) {
       return [];
     }
 
-    return history
+    const normalized: Array<NarrationEvent | null> = raw
       .filter((entry): entry is Record<string, unknown> => isRecord(entry))
-      .map((entry, index) => ({
-        sequence: readInt(entry.sequence, index + 1),
-        event_type: readString(entry.event_type, 'event'),
-        narration: readString(entry.narration),
-        speaker: readSpeaker(entry.speaker, NARRATOR_SPEAKER),
-      }))
-      .filter((entry) => entry.narration.length > 0);
+      .map((entry, index) => {
+        const narrationParts = Array.isArray(entry.narration_parts)
+          ? entry.narration_parts
+              .map((part) => this.readNarrationPart(part))
+              .filter((part): part is NarrationPart => part !== null)
+          : [];
+
+        if (narrationParts.length === 0) {
+          return null;
+        }
+
+        return {
+          sequence: readInt(entry.sequence, index + 1),
+          event_type: readString(entry.event_type, 'event'),
+          narration_parts: narrationParts,
+          payload: isRecord(entry.payload) ? entry.payload : undefined,
+          created_at: typeof entry.created_at === 'string' ? entry.created_at : undefined,
+        };
+      });
+
+    return normalized.filter((entry): entry is NarrationEvent => entry !== null);
   }
 
-  private normalizeState(rawState: unknown): GameState {
-    const source = isRecord(rawState) ? rawState : {};
-    const narration = readString(source.narration);
-    const narrationSpeaker = readSpeaker(source.narration_speaker, NARRATOR_SPEAKER);
-    const history = this.normalizeHistory(source.history);
+  private flattenNarrationEvents(events: NarrationEvent[]): HistoryEntry[] {
+    return events.flatMap((event) =>
+      event.narration_parts.map((part) => ({
+        sequence: event.sequence,
+        event_type: event.event_type,
+        text: part.text,
+        speaker: part.speaker,
+        image_id: part.image_id ?? null,
+      })),
+    );
+  }
 
-    if (history.length === 0 && narration.length > 0) {
-      history.push({
-        sequence: 1,
-        event_type: 'start',
-        narration,
-        speaker: narrationSpeaker,
-      });
-    }
+  private normalizeState(rawState: unknown, rawNarrationEvents: unknown = []): GameState {
+    const source = isRecord(rawState) ? rawState : {};
+    const narrationEvents = this.normalizeNarrationEvents(rawNarrationEvents);
 
     return {
       locations: Array.isArray(source.locations)
@@ -519,11 +563,7 @@ export class GameSessionStore {
       mode: readMode(source.mode, 'explore'),
       current_talk_character:
         typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
-      narration,
-      narration_speaker: narrationSpeaker,
-      history,
-      location_image_id: readNullableString(source.location_image_id),
-      character_portrait_image_id: readNullableString(source.character_portrait_image_id),
+      history: this.flattenNarrationEvents(narrationEvents),
     };
   }
 
@@ -543,7 +583,7 @@ export class GameSessionStore {
     };
   }
 
-  private appendHistory(eventType: string, speaker: Speaker, narration: string) {
+  private appendHistory(eventType: string, speaker: Speaker, text: string, imageId: string | null = null) {
     if (!this.state) {
       return;
     }
@@ -559,17 +599,24 @@ export class GameSessionStore {
     this.state.history.push({
       sequence: currentSequence + 1,
       event_type: eventType,
-      narration,
+      text,
       speaker,
+      image_id: imageId,
     });
   }
 
-  private appendSystemFeedback(narration: string) {
-    this.appendHistory('system_response', SYSTEM_SPEAKER, narration);
+  private appendNarrationParts(eventType: string, parts: NarrationPart[]) {
+    for (const part of parts) {
+      this.appendHistory(eventType, part.speaker, part.text, part.image_id ?? null);
+    }
   }
 
-  private appendError(narration: string) {
-    this.appendHistory('error', SYSTEM_SPEAKER, narration);
+  private appendSystemFeedback(text: string) {
+    this.appendHistory('system_response', SYSTEM_SPEAKER, text);
+  }
+
+  private appendError(text: string) {
+    this.appendHistory('error', SYSTEM_SPEAKER, text);
   }
 
   private formatSuggestions(suggestions: string[]): string {
@@ -724,21 +771,17 @@ export class GameSessionStore {
     };
   }
 
-  private resolveBackendSpeaker(payload: Record<string, unknown>, endpoint: string): Speaker {
-    if (endpoint === 'game-ask') {
-      const characterName = typeof payload.current_talk_character === 'string'
-        ? payload.current_talk_character
-        : this.state?.current_talk_character;
-
-      if (characterName) {
-        return readSpeaker(payload.speaker, createCharacterSpeaker(characterName));
-      }
+  private readNarrationPartsFromPayload(payload: Record<string, unknown>): NarrationPart[] {
+    if (!Array.isArray(payload.narration_parts)) {
+      return [];
     }
 
-    return readSpeaker(payload.speaker, NARRATOR_SPEAKER);
+    return payload.narration_parts
+      .map((part) => this.readNarrationPart(part))
+      .filter((part): part is NarrationPart => part !== null);
   }
 
-  private applyBackendState(payload: Record<string, unknown>, endpoint: string, speaker: Speaker) {
+  private applyBackendState(payload: Record<string, unknown>, endpoint: string) {
     if (!this.state) {
       return;
     }
@@ -781,17 +824,6 @@ export class GameSessionStore {
       this.state.current_talk_character = payload.current_talk_character;
     }
 
-    if (typeof payload.location_image_id === 'string' || payload.location_image_id === null) {
-      this.state.location_image_id = payload.location_image_id;
-    }
-
-    if (
-      typeof payload.character_portrait_image_id === 'string' ||
-      payload.character_portrait_image_id === null
-    ) {
-      this.state.character_portrait_image_id = payload.character_portrait_image_id;
-    }
-
     const outcome = payload.result;
     const isAccuseEnded = endpoint === 'game-accuse' && payload.mode === 'ended';
     if (isAccuseEnded && (outcome === 'win' || outcome === 'lose')) {
@@ -803,91 +835,84 @@ export class GameSessionStore {
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
     }
-
-    if (typeof payload.narration === 'string') {
-      this.state.narration = payload.narration;
-      this.state.narration_speaker = speaker;
-    }
   }
 
-  private async refreshStoryImageFromPayload(payload: Record<string, unknown>) {
+  private inferImagePurpose(entry: HistoryEntry): ImagePurpose {
+    if (entry.event_type === 'start') {
+      return 'blueprint_cover';
+    }
+
+    if (entry.event_type === 'talk' || entry.event_type === 'ask') {
+      return 'character_portrait';
+    }
+
+    return 'location_scene';
+  }
+
+  private inferStoryImageTitle(entry: HistoryEntry): string {
+    if (entry.event_type === 'start') {
+      const blueprint = this.blueprints.find((candidate) => candidate.id === this.blueprint_id);
+      return blueprint ? `${blueprint.title} cover` : 'Mystery cover';
+    }
+
+    if (entry.event_type === 'talk' || entry.event_type === 'ask') {
+      const speakerLabel = entry.speaker.label || this.state?.current_talk_character || 'Character';
+      return `${speakerLabel} portrait`;
+    }
+
+    const location = this.state?.location || 'Location';
+    return `${location} scene`;
+  }
+
+  private async refreshStoryImageFromHistory() {
     if (!this.blueprint_id || !this.state) {
       this.activeStoryImage = null;
       return;
     }
 
-    const portraitId =
-      readNullableString(payload.character_portrait_image_id) ??
-      this.state.character_portrait_image_id ??
-      null;
-    const locationId =
-      readNullableString(payload.location_image_id) ??
-      this.state.location_image_id ??
-      null;
-
-    if (portraitId) {
-      const title = this.state.current_talk_character
-        ? `${this.state.current_talk_character} portrait`
-        : 'Character portrait';
-      this.activeStoryImage = {
-        kind: 'character',
-        title,
-        image_id: portraitId,
-        image_url: null,
-        expires_at: null,
-        placeholder: false,
-        loading: true,
-      };
-
-      const resolved = await resolveImageLink({
-        blueprintId: this.blueprint_id,
-        imageId: portraitId,
-        purpose: 'character_portrait',
-      });
-
-      this.activeStoryImage = {
-        kind: 'character',
-        title,
-        image_id: portraitId,
-        image_url: resolved.url,
-        expires_at: resolved.expiresAt,
-        placeholder: resolved.placeholder,
-        loading: false,
-      };
+    const latestWithImage = [...this.state.history].reverse().find((entry) => entry.image_id);
+    if (!latestWithImage?.image_id) {
+      this.activeStoryImage = null;
       return;
     }
 
-    if (locationId) {
-      const title = this.state.location ? `${this.state.location} scene` : 'Location scene';
-      this.activeStoryImage = {
-        kind: 'location',
-        title,
-        image_id: locationId,
-        image_url: null,
-        expires_at: null,
-        placeholder: false,
-        loading: true,
-      };
+    const purpose = this.inferImagePurpose(latestWithImage);
+    const title = this.inferStoryImageTitle(latestWithImage);
+    this.activeStoryImage = {
+      kind:
+        purpose === 'blueprint_cover'
+          ? 'blueprint'
+          : purpose === 'character_portrait'
+            ? 'character'
+            : 'location',
+      title,
+      image_id: latestWithImage.image_id,
+      image_url: null,
+      expires_at: null,
+      placeholder: false,
+      loading: true,
+    };
 
-      const resolved = await resolveImageLink({
-        blueprintId: this.blueprint_id,
-        imageId: locationId,
-        purpose: 'location_scene',
-      });
+    const resolved = await resolveImageLink({
+      blueprintId: this.blueprint_id,
+      imageId: latestWithImage.image_id,
+      purpose,
+    });
 
-      this.activeStoryImage = {
-        kind: 'location',
-        title,
-        image_id: locationId,
-        image_url: resolved.url,
-        expires_at: resolved.expiresAt,
-        placeholder: resolved.placeholder,
-        loading: false,
-      };
-      return;
-    }
-
-    this.activeStoryImage = null;
+    this.activeStoryImage = {
+      kind:
+        purpose === 'blueprint_cover'
+          ? 'blueprint'
+          : purpose === 'character_portrait'
+            ? 'character'
+            : 'location',
+      title,
+      image_id: latestWithImage.image_id,
+      image_url: resolved.url,
+      expires_at: resolved.expiresAt,
+      placeholder: resolved.placeholder,
+      loading: false,
+    };
   }
 
   private async submitValidCommand(command: ActionCommand, rawInput: string) {
@@ -912,17 +937,16 @@ export class GameSessionStore {
 
           if (data && typeof data === 'object') {
             const payload = data as Record<string, unknown>;
-            const narration =
-              typeof payload.narration === 'string'
-                ? payload.narration
-                : typeof payload.response === 'string'
-                  ? payload.response
-                  : 'Action completed.';
-            const speaker = this.resolveBackendSpeaker(payload, invocation.endpoint);
+            const narrationParts = this.readNarrationPartsFromPayload(payload);
 
-            this.appendHistory(invocation.endpoint, speaker, narration);
-            this.applyBackendState(payload, invocation.endpoint, speaker);
-            await this.refreshStoryImageFromPayload(payload);
+            if (narrationParts.length > 0) {
+              this.appendNarrationParts(invocation.endpoint, narrationParts);
+            } else {
+              this.appendHistory(invocation.endpoint, NARRATOR_SPEAKER, 'Action completed.');
+            }
+
+            this.applyBackendState(payload, invocation.endpoint);
+            await this.refreshStoryImageFromHistory();
           }
 
           this.status = 'active';

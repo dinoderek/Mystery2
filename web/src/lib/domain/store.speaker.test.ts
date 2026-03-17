@@ -30,13 +30,11 @@ function createStore() {
     location: 'Kitchen',
     mode: 'explore',
     current_talk_character: null,
-    narration: 'Case begins.',
-    narration_speaker: narratorSpeaker,
     history: [
       {
         sequence: 1,
         event_type: 'start',
-        narration: 'Case begins.',
+        text: 'Case begins.',
         speaker: narratorSpeaker,
       },
     ],
@@ -55,10 +53,12 @@ describe('store speaker behavior', () => {
 
     invokeMock.mockResolvedValue({
       data: {
-        narration: 'You search the kitchen.',
+        narration_parts: [{
+          text: 'You search the kitchen.',
+          speaker: narratorSpeaker,
+        }],
         mode: 'explore',
         time_remaining: 9,
-        speaker: narratorSpeaker,
       },
       error: null,
     });
@@ -98,10 +98,12 @@ describe('store speaker behavior', () => {
 
     invokeMock.mockResolvedValue({
       data: {
-        narration: 'You search the kitchen.',
+        narration_parts: [{
+          text: 'You search the kitchen.',
+          speaker: narratorSpeaker,
+        }],
         mode: 'explore',
         time_remaining: 9,
-        speaker: narratorSpeaker,
       },
       error: null,
     });

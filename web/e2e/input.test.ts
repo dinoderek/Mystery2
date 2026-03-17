@@ -8,6 +8,22 @@ const characterSpeaker = (name: string) => ({
   label: name,
 });
 
+function narrationResponse(
+  text: string,
+  speaker: { kind: string; key: string; label: string },
+  imageId?: string,
+) {
+  return {
+    narration_parts: [
+      {
+        text,
+        speaker,
+        ...(imageId ? { image_id: imageId } : {}),
+      },
+    ],
+  };
+}
+
 const baseState = {
   locations: [{ name: 'Kitchen' }, { name: 'Garden' }, { name: 'Barn' }],
   characters: [
@@ -19,9 +35,6 @@ const baseState = {
   location: 'Kitchen',
   mode: 'explore',
   current_talk_character: null,
-  narration: 'You enter the kitchen.',
-  narration_speaker: narratorSpeaker,
-  history: [],
 };
 
 async function bootstrapSession(page: Page) {
@@ -50,6 +63,13 @@ async function bootstrapSession(page: Page) {
       json: {
         game_id: 'g1',
         state: baseState,
+        narration_events: [
+          {
+            sequence: 1,
+            event_type: 'start',
+            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
+          },
+        ],
       },
     });
   });
@@ -73,12 +93,11 @@ test.describe('Command Input', () => {
 
       await route.fulfill({
         json: {
-          narration: 'You travel to the garden.',
+          ...narrationResponse('You travel to the garden.', narratorSpeaker),
           current_location: 'Garden',
           visible_characters: ['Bob'],
           time_remaining: 9,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -99,13 +118,15 @@ test.describe('Command Input', () => {
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'You travel to the garden.',
+          ...narrationResponse(
+            'You travel to the garden.',
+            narratorSpeaker,
+            'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+          ),
           current_location: 'Garden',
           visible_characters: ['Bob'],
           time_remaining: 9,
           mode: 'explore',
-          location_image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -113,12 +134,14 @@ test.describe('Command Input', () => {
     await page.route('**/functions/v1/game-talk*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'Bob greets you by the flower beds.',
+          ...narrationResponse(
+            'Bob greets you by the flower beds.',
+            narratorSpeaker,
+            'mock-character-bob-123e4567-e89b-12d3-a456-426614174334',
+          ),
           mode: 'talk',
           time_remaining: 8,
           current_talk_character: 'Bob',
-          character_portrait_image_id: 'mock-character-bob-123e4567-e89b-12d3-a456-426614174334',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -239,11 +262,10 @@ test.describe('Command Input', () => {
       talkCalls += 1;
       await route.fulfill({
         json: {
-          narration: 'Mayor Fox nods and listens carefully.',
+          ...narrationResponse('Mayor Fox nods and listens carefully.', narratorSpeaker),
           mode: 'talk',
           time_remaining: 9,
           current_talk_character: 'Mayor',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -253,11 +275,10 @@ test.describe('Command Input', () => {
       askPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
         json: {
-          narration: 'Mayor Fox answers your question.',
+          ...narrationResponse('Mayor Fox answers your question.', characterSpeaker('Mayor')),
           mode: 'talk',
           time_remaining: 8,
           current_talk_character: 'Mayor',
-          speaker: characterSpeaker('Mayor'),
         },
       });
     });
@@ -291,11 +312,10 @@ test.describe('Command Input', () => {
       activeCharacter = payload.character_name ?? 'Mayor';
       await route.fulfill({
         json: {
-          narration: `${activeCharacter} joins the conversation.`,
+          ...narrationResponse(`${activeCharacter} joins the conversation.`, narratorSpeaker),
           mode: 'talk',
           time_remaining: 9,
           current_talk_character: activeCharacter,
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -303,11 +323,10 @@ test.describe('Command Input', () => {
     await page.route('**/functions/v1/game-ask*', async (route) => {
       await route.fulfill({
         json: {
-          narration: `${activeCharacter} responds to your question.`,
+          ...narrationResponse(`${activeCharacter} responds to your question.`, characterSpeaker(activeCharacter)),
           mode: 'talk',
           time_remaining: 8,
           current_talk_character: activeCharacter,
-          speaker: characterSpeaker(activeCharacter),
         },
       });
     });
@@ -315,11 +334,10 @@ test.describe('Command Input', () => {
     await page.route('**/functions/v1/game-end-talk*', async (route) => {
       await route.fulfill({
         json: {
-          narration: 'Conversation ended.',
+          ...narrationResponse('Conversation ended.', narratorSpeaker),
           mode: 'explore',
           time_remaining: 8,
           current_talk_character: null,
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -369,11 +387,11 @@ test.describe('Command Input', () => {
       if (accuseCalls === 1) {
         await route.fulfill({
           json: {
-            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            ...narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker),
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
-            speaker: narratorSpeaker,
+            time_remaining: 8,
           },
         });
         return;
@@ -382,11 +400,11 @@ test.describe('Command Input', () => {
       secondAccusePayload = payload;
       await route.fulfill({
         json: {
-          narration: 'Case closed.',
+          ...narrationResponse('Case closed.', narratorSpeaker),
           mode: 'ended',
           result: 'win',
           follow_up_prompt: null,
-          speaker: narratorSpeaker,
+          time_remaining: 8,
         },
       });
     });
@@ -423,11 +441,11 @@ test.describe('Command Input', () => {
       if (accuseCalls === 1) {
         await route.fulfill({
           json: {
-            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            ...narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker),
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
-            speaker: narratorSpeaker,
+            time_remaining: 8,
           },
         });
         return;
@@ -435,11 +453,11 @@ test.describe('Command Input', () => {
 
       await route.fulfill({
         json: {
-          narration: 'The accusation fails.',
+          ...narrationResponse('The accusation fails.', narratorSpeaker),
           mode: 'ended',
           result: 'lose',
           follow_up_prompt: null,
-          speaker: narratorSpeaker,
+          time_remaining: 8,
         },
       });
     });
@@ -475,6 +493,80 @@ test.describe('Command Input', () => {
 
     await page.keyboard.press('k');
     await expect(page).toHaveURL(/\/$/);
+  });
+
+  test('shows both narration parts for final-turn ask and switches to accuse-mode', async ({ page }) => {
+    let askCalls = 0;
+    let accuseCalls = 0;
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      await route.fulfill({
+        json: {
+          ...narrationResponse('Mayor Fox greets you with a wry smile.', narratorSpeaker),
+          mode: 'talk',
+          time_remaining: 1,
+          current_talk_character: 'Mayor',
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-ask*', async (route) => {
+      askCalls += 1;
+      await route.fulfill({
+        json: {
+          narration_parts: [
+            {
+              text: 'Mayor Fox answers, but a nagging doubt remains.',
+              speaker: characterSpeaker('Mayor'),
+            },
+            {
+              text: 'Time is up; accusation begins now.',
+              speaker: narratorSpeaker,
+            },
+          ],
+          mode: 'accuse',
+          time_remaining: 0,
+          current_talk_character: null,
+          follow_up_prompt: 'Why do you think Mayor Fox did it?',
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-accuse*', async (route) => {
+      accuseCalls += 1;
+      await route.fulfill({
+        json: {
+          ...narrationResponse('Your reasoning is noted.', narratorSpeaker),
+          mode: 'ended',
+          result: 'win',
+          follow_up_prompt: null,
+          time_remaining: 0,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await input.fill('Where were you?');
+    await input.press('Enter');
+
+    await expect(page.getByText('Time is up; accusation begins now.')).toBeVisible();
+
+    const historyLines = await page.locator('.terminal-message').allTextContents();
+    const tail = historyLines.slice(-2);
+    expect(tail).toEqual([
+      'Mayor: Mayor Fox answers, but a nagging doubt remains.',
+      'Narrator: Time is up; accusation begins now.',
+    ]);
+
+    await input.fill('Mayor Fox hid the crumbs.');
+    await input.press('Enter');
+    await expect(page.getByText('Your reasoning is noted.')).toBeVisible();
+    expect(askCalls).toBe(1);
+    expect(accuseCalls).toBe(1);
   });
 
   test('keeps parsing narrator reasoning across multiple accuse rounds', async ({ page }) => {
@@ -517,11 +609,11 @@ test.describe('Command Input', () => {
       if (accuseCalls === 1) {
         await route.fulfill({
           json: {
-            narration: 'You accuse Mayor Fox. Explain your reasoning.',
+            ...narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker),
             mode: 'accuse',
             follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
-            speaker: narratorSpeaker,
+            time_remaining: 8,
           },
         });
         return;
@@ -530,11 +622,11 @@ test.describe('Command Input', () => {
       if (accuseCalls === 2) {
         await route.fulfill({
           json: {
-            narration: 'I need stronger evidence. Keep explaining.',
+            ...narrationResponse('I need stronger evidence. Keep explaining.', narratorSpeaker),
             mode: 'accuse',
             follow_up_prompt: 'What clue ties the suspect to the scene?',
             result: null,
-            speaker: narratorSpeaker,
+            time_remaining: 8,
           },
         });
         return;
@@ -542,11 +634,11 @@ test.describe('Command Input', () => {
 
       await route.fulfill({
         json: {
-          narration: 'Final verdict reached.',
+          ...narrationResponse('Final verdict reached.', narratorSpeaker),
           mode: 'ended',
           result: 'win',
           follow_up_prompt: null,
-          speaker: narratorSpeaker,
+          time_remaining: 8,
         },
       });
     });
@@ -580,10 +672,9 @@ test.describe('Command Input', () => {
       await new Promise((resolve) => setTimeout(resolve, 450));
       await route.fulfill({
         json: {
-          narration: 'Search complete.',
+          ...narrationResponse('Search complete.', narratorSpeaker),
           time_remaining: 9,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });
@@ -619,10 +710,9 @@ test.describe('Command Input', () => {
 
       await route.fulfill({
         json: {
-          narration: 'Recovered after retry.',
+          ...narrationResponse('Recovered after retry.', narratorSpeaker),
           time_remaining: 9,
           mode: 'explore',
-          speaker: narratorSpeaker,
         },
       });
     });

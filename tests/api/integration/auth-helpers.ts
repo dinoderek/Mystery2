@@ -5,6 +5,7 @@ import path from 'node:path';
 
 export const API_URL = 'http://127.0.0.1:54331/functions/v1';
 export const REST_URL = 'http://127.0.0.1:54331/rest/v1';
+export const MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export type ApiAuthContext = Awaited<ReturnType<typeof setupTestAuth>>;
 
@@ -28,6 +29,13 @@ export async function ensureMockBlueprintSeeded(): Promise<void> {
   const raw = await fs.readFile(blueprintPath, 'utf-8');
   const parsed = JSON.parse(raw) as { id: string };
 
+  const existing = await admin.storage
+    .from('blueprints')
+    .download(`${parsed.id}.json`);
+  if (!existing.error && existing.data) {
+    return;
+  }
+
   const { error } = await admin.storage.from('blueprints').upload(
     `${parsed.id}.json`,
     raw,
@@ -39,4 +47,18 @@ export async function ensureMockBlueprintSeeded(): Promise<void> {
   if (error) {
     throw new Error(`Failed to seed mock blueprint fixture: ${error.message}`);
   }
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const { data, error: downloadError } = await admin.storage
+      .from('blueprints')
+      .download(`${parsed.id}.json`);
+
+    if (!downloadError && data) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  throw new Error(`Mock blueprint fixture ${parsed.id} was uploaded but did not become readable in time`);
 }

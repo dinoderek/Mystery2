@@ -3,6 +3,8 @@
 This project uses a DB-first AI configuration model.
 
 For day-to-day local setup and profile selection commands, see `../QUICKSTART.md`.
+For the implementation-level matrix of which blueprint fields feed image and
+runtime narration generation, see `docs/blueprint-generation-flows.md`.
 
 ## Canonical Rules
 

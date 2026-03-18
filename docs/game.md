@@ -211,6 +211,9 @@ Implementation detail reference: `docs/accusation-flow.md`.
 
 See `supabase/functions/_shared/blueprints/blueprint-schema.ts` for the exact technical schema and narrative instructions encoded in the `.describe()` fields. Blueprint metadata controls the title, difficulty, and time budget. The world model defines characters and locations. The ground truth determines what actually happened and provides the absolute facts the Narrator must adhere to.
 
+For the current implementation map of which blueprint fields actually flow into
+generated images and narration, see `docs/blueprint-generation-flows.md`.
+
 ---
 
 ## UX / UI Concept

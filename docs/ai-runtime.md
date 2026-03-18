@@ -6,6 +6,8 @@ This document defines how AI-assisted narration is executed in Supabase Edge Fun
 
 For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
+For a field-by-field map of which blueprint data reaches each generated output,
+see `docs/blueprint-generation-flows.md`.
 
 ## Runtime Components
 

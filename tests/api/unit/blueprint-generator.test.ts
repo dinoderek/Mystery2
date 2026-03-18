@@ -136,6 +136,11 @@ describe("blueprint generator", () => {
         .properties.portrait_image_id,
     ).toBeUndefined();
     expect(body.messages[1].content).toContain("story_brief");
+    expect(body.messages[0].content).toContain("## Internal Workflow");
+    expect(body.messages[0].content).toContain("## Challenge Calibration");
+    expect(body.messages[0].content).toContain("## Field Sizing Guidance");
+    expect(body.messages[0].content).toContain("Every clue must point to something that actually happened");
+    expect(body.messages[0].content).toContain("Do not output `image_id`, `location_image_id`, or `portrait_image_id`.");
   });
 
   it("maps structured-output incompatibility to a dedicated error", async () => {

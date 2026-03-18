@@ -87,8 +87,19 @@ message with this structure:
 The system prompt in `generator-prompt.md` tells the model to:
 
 - write a complete, logically sound children's mystery blueprint
+- follow an explicit internal 8-step workflow: setting -> cast/world ->
+  ground truth -> culprit -> innocents -> challenge additions -> clue
+  distribution -> flavor pass
 - keep all text age-appropriate for the requested target age
+- calibrate challenge around `story_brief.timeBudget` when present, or infer a
+  moderate `metadata.time_budget` when absent
+- keep clue count, suspect count, red herrings, and timeline complexity within
+  explicit sizing bands
 - make the mystery fair and solvable through clues and reasoning
+- enforce coherence between premise, clue placement, character facts, and
+  ground truth
+- size fields based on runtime usage, for example concise location descriptions,
+  short actionable clues, and specific character knowledge
 - ensure exactly one culprit and a logically consistent timeline
 - use the shared `BlueprintSchema`
 - omit `image_id`, `location_image_id`, and `portrait_image_id` from generated

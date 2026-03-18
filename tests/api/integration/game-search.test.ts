@@ -29,7 +29,7 @@ describe("game-search endpoint", () => {
     },
   );
 
-  it("narrates search with narrator speaker and decreases time", async () => {
+  it("reveals canonical clues in order and then falls back to flavor-only narration", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
@@ -39,35 +39,73 @@ describe("game-search endpoint", () => {
     });
     const { game_id } = await startRes.json();
 
-    const searchRes = await fetch(`${API_URL}/game-search`, {
+    const moveRes = await fetch(`${API_URL}/game-move`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, destination: "Living Room" }),
+    });
+    expect(moveRes.status).toBe(200);
+
+    const firstSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ game_id }),
     });
 
-    expect(searchRes.status).toBe(200);
-    const data = await searchRes.json();
-
-    expect(data.discovered_clue_id).toBeUndefined();
-    expect(data.time_remaining).toBe(9);
-    expect(data.narration_parts[0].text).toContain("[Mock]");
-    expect(data.mode).toBe("explore");
-    expect(data.narration_parts[0].speaker).toMatchObject({
+    expect(firstSearchRes.status).toBe(200);
+    const firstData = await firstSearchRes.json();
+    expect(firstData.time_remaining).toBe(8);
+    expect(firstData.narration_parts[0].text).toContain("A wrapper on the sofa.");
+    expect(firstData.mode).toBe("explore");
+    expect(firstData.narration_parts[0].speaker).toMatchObject({
       kind: "narrator",
       key: "narrator",
       label: "Narrator",
     });
 
-    const searchRes2 = await fetch(`${API_URL}/game-search`, {
+    const secondSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ game_id }),
     });
-    const data2 = await searchRes2.json();
-    expect(data2.discovered_clue_id).toBeUndefined();
-    expect(data2.time_remaining).toBe(8);
-    expect(data2.narration_parts[0].text).toContain("[Mock]");
-    expect(data2.narration_parts[0].speaker.kind).toBe("narrator");
+    expect(secondSearchRes.status).toBe(200);
+    const secondData = await secondSearchRes.json();
+    expect(secondData.time_remaining).toBe(7);
+    expect(secondData.narration_parts[0].text).toContain("A half-eaten cookie.");
+    expect(secondData.narration_parts[0].speaker.kind).toBe("narrator");
+
+    const thirdSearchRes = await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id }),
+    });
+    expect(thirdSearchRes.status).toBe(200);
+    const thirdData = await thirdSearchRes.json();
+    expect(thirdData.time_remaining).toBe(6);
+    expect(thirdData.narration_parts[0].text).toContain("discover no new clue");
+
+    const { data: searchEvents, error } = await admin
+      .from("game_events")
+      .select("payload")
+      .eq("session_id", game_id)
+      .eq("event_type", "search")
+      .order("sequence", { ascending: true });
+    expect(error).toBeNull();
+    expect(searchEvents?.[0]?.payload).toMatchObject({
+      revealed_clue_index: 0,
+      revealed_clue_text: "A wrapper on the sofa.",
+      revealed_clues: ["A wrapper on the sofa."],
+    });
+    expect(searchEvents?.[1]?.payload).toMatchObject({
+      revealed_clue_index: 1,
+      revealed_clue_text: "A half-eaten cookie.",
+      revealed_clues: ["A wrapper on the sofa.", "A half-eaten cookie."],
+    });
+    expect(searchEvents?.[2]?.payload).toMatchObject({
+      revealed_clue_index: null,
+      revealed_clue_text: null,
+      revealed_clues: ["A wrapper on the sofa.", "A half-eaten cookie."],
+    });
   });
 
   it("persists forced endgame when search consumes the final turn", async () => {

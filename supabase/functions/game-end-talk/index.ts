@@ -104,6 +104,7 @@ serveWithCors(async (req) => {
     const promptTemplate = await loadPromptTemplate("talk_end");
     const prompt = renderPrompt(promptTemplate, {
       character_name: session.current_talk_character_id,
+      target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

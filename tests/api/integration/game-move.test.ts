@@ -63,6 +63,36 @@ describe("game-move endpoint", () => {
     });
   });
 
+  it("allows revisiting a location without failing", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({
+        blueprint_id: MOCK_BLUEPRINT_ID,
+      }),
+    });
+    expect(startRes.status).toBe(200);
+    const { game_id } = await startRes.json();
+
+    const firstMoveRes = await fetch(`${API_URL}/game-move`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, destination: "Living Room" }),
+    });
+    expect(firstMoveRes.status).toBe(200);
+
+    const secondMoveRes = await fetch(`${API_URL}/game-move`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, destination: "Kitchen" }),
+    });
+    expect(secondMoveRes.status).toBe(200);
+    const secondMoveData = await secondMoveRes.json();
+    expect(secondMoveData.current_location).toBe("Kitchen");
+    expect(secondMoveData.time_remaining).toBe(8);
+    expect(secondMoveData.narration_parts[0].speaker.kind).toBe("narrator");
+  });
+
   it("persists forced endgame metadata when the final move consumes remaining turns", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",

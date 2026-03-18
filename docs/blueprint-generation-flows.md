@@ -18,6 +18,8 @@ are only attached after generation.
 - "Generation input" means blueprint data sent into the AI prompt or context.
 - "Attached after generation" means the generated text is paired with an
   existing `image_id`, but that image ID did not shape the text output.
+- Shared runtime context is intentionally narrow and now contains only
+  `target_age`.
 - Runtime narration uses two different patterns today:
   - `game-start` and `game-move` build ad hoc prompts directly in the function.
   - `game-search`, `game-talk`, `game-ask`, `game-end-talk`, and
@@ -39,52 +41,24 @@ These outputs are generated at runtime in Supabase Edge Functions.
 
 | Generated output | Entry point | Blueprint fields used as generation input | Non-blueprint context also used | Attached after generation | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Opening narration | `game-start` | `narrative.premise` | Session AI profile selection only | `metadata.image_id` attached as the narration part image | This is the narrowest generation path: it does not use `ai-context.ts`. |
-| Move narration | `game-move` | Destination `world.locations[].name`, destination `world.locations[].description` | Prior event history filtered to the destination location | Destination `world.locations[].location_image_id` attached as the narration part image | Time-out on move can append a second forced accusation-start narration. |
-| Search narration | `game-search` with role `search` | Shared context from `ai-context.ts`: `metadata.title`, `metadata.one_liner`, `metadata.target_age`, `narrative.premise`, all location names, all character names, current location description | Prior event history filtered to the current location | Nothing | Current implementation does not pass `world.locations[].clues` directly into the AI context. |
-| Talk-start narration | `game-talk` with role `talk_start` | Shared context from `ai-context.ts`: `metadata.title`, `metadata.one_liner`, `metadata.target_age`, `narrative.premise`, all location names, all character names, current location description | Prior event history filtered to the active character | Active character `world.characters[].portrait_image_id` attached as the narration part image | The active character must be present in the current location, but their deeper blueprint fields are not passed into the role context. |
-| Ask response narration | `game-ask` with role `talk_conversation` | Same shared context as talk-start | Prior event history filtered to the active character, plus latest `player_input` | Active character `world.characters[].portrait_image_id` attached as the narration part image | Speaker is the in-world character, not the narrator. |
-| Talk-end narration | `game-end-talk` with role `talk_end` | Same shared context as talk-start | Prior event history filtered to the active character | Nothing | Closes conversation and returns the session to explore mode. |
-| Accusation-start narration | `game-accuse` with role `accusation_start` | Shared context from `ai-context.ts`: `metadata.title`, `metadata.one_liner`, `metadata.target_age`, `narrative.premise`, all location names, all character names, current location description | Full prior event history by default, unless `accusation_history_mode` is set to `none` | Nothing | This path does not receive `ground_truth`. |
+| Opening narration | `game-start` | `metadata.target_age`, `narrative.premise` | Session AI profile selection only | `metadata.image_id` attached as the first narration part image | `narrative.starting_knowledge` is appended after generation as a second narrator block in the same `start` event. |
+| Move narration | `game-move` | `metadata.target_age`, destination `world.locations[].name`, destination `world.locations[].description` | Prior event history filtered to the destination location, plus a computed `has_visited_before` flag | Destination `world.locations[].location_image_id` attached as the narration part image | Move prompting explicitly tells the model to acknowledge return visits and stay consistent with prior descriptions. |
+| Search narration | `game-search` with role `search` | Shared context: `metadata.target_age` only. Role-specific `search_context`: current `world.locations[].name`, current `world.locations[].description`, full location `clues`, already revealed clues, next unrevealed clue, and exhaustion state | Prior event history filtered to the current location | Nothing | Search now uses canonical clue order and persists clue reveal metadata on each search event. |
+| Talk-start narration | `game-talk` with role `talk_start` | Shared context: `metadata.target_age` only. Role-specific `talk_context`: active location description, grounded location list, grounded public character list, and the active character's private roleplay data | Prior `talk`/`ask`/`end_talk` history for the active character | Active character `world.characters[].portrait_image_id` attached as the narration part image | Prompt explicitly forbids inventing new characters or locations. |
+| Ask response narration | `game-ask` with role `talk_conversation` | Same talk context as talk-start | Same-character conversation history, including prior `player_input` payloads and latest `player_input` | Active character `world.characters[].portrait_image_id` attached as the narration part image | Speaker is the in-world character, not the narrator. |
+| Talk-end narration | `game-end-talk` with role `talk_end` | Same talk context as talk-start | Same-character conversation history, including prior `player_input` payloads | Nothing | Closes conversation and returns the session to explore mode. |
+| Accusation-start narration | `game-accuse` with role `accusation_start` | Shared context: `metadata.target_age` only. Role-specific accusation-start location/timing context | Full prior event history by default, unless `accusation_history_mode` is set to `none` | Nothing | This path stays spoiler-safe and does not receive the full blueprint. |
 | Forced accusation-start narration | `generateForcedAccusationStartNarration(...)` used by `game-move`, `game-search`, and `game-ask` when time reaches zero | Same blueprint-driven context as accusation-start | Full prior event history plus a function-supplied `scene_summary`, with `forced_by_timeout=true` | Nothing | This is appended after the action narration that consumed the last turn. |
-| Accusation judge narration | `game-accuse` with role `accusation_judge` | Same shared context as accusation-start, plus `ground_truth` | Full prior event history by default, current `player_reasoning`, accusation round count | Nothing | This is the only runtime narration role that receives hidden truth via `ground_truth_context`. |
-
-## Blueprint Fields Not Currently Flowing Into Most Runtime Narration
-
-The schema contains more narrative detail than the runtime prompt/context layer
-currently uses.
-
-These blueprint fields are defined today but are not directly injected into the
-non-judge runtime narration contexts:
-
-- `narrative.starting_knowledge`
-- `world.locations[].clues`
-- `world.characters[].background`
-- `world.characters[].personality`
-- `world.characters[].initial_attitude_towards_investigator`
-- `world.characters[].mystery_action_real`
-- `world.characters[].stated_alibi`
-- `world.characters[].motive`
-- `world.characters[].knowledge`
-
-Important exceptions:
-
-- Image generation does use some richer descriptive fields:
-  - `metadata.art_style`
-  - `world.characters[].appearance`
-  - `world.characters[].personality`
-  - `world.locations[].description`
-- `accusation_judge` does receive `ground_truth`.
+| Accusation judge narration | `game-accuse` with role `accusation_judge` | Shared context: `metadata.target_age` only. Role-specific `accusation_judge_context` contains the full blueprint: `metadata`, `narrative`, `world`, `ground_truth` | Full prior event history by default, current `player_reasoning`, accusation round count | Nothing | This is the only runtime narration role that receives the full blueprint. |
 
 ## Current-State Takeaways
 
-- Blueprint image IDs are mostly used as display attachments in gameplay, not as
-  narration-generation inputs.
-- `game-start` and `game-move` currently use narrower, function-local prompts
-  than the template-driven narration endpoints.
-- Search and conversation runtime narration rely on a deliberately sanitized
-  shared mystery context plus filtered event history, rather than the full raw
+- Shared runtime context is now intentionally minimal: only `target_age`.
+- Search narration is now grounded by canonical clue progression instead of a
+  location-only description.
+- Talk-family endpoints are the only runtime narration paths that receive
+  grounded lists of valid characters and locations.
+- `game-start` remains AI-backed, but `starting_knowledge` is appended as a
+  non-generated narrator block.
+- Accusation framing stays spoiler-safe; accusation judging receives the full
   blueprint.
-- If future work expects searches to reason over canonical clue placement or
-  conversations to reason over personality/alibi/motive directly, the main place
-  to change is `supabase/functions/_shared/ai-context.ts`.

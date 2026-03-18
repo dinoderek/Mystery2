@@ -14,6 +14,7 @@ import {
   getAIProfileById,
   getDefaultAIProfile,
 } from "../_shared/ai-profile.ts";
+import { buildGameStartPrompt } from "../_shared/ai-prompts.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
@@ -23,6 +24,18 @@ import {
   insertNarrationEvent,
 } from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
+
+function formatStartingKnowledgeBlock(startingKnowledge: string[]): string | null {
+  const facts = startingKnowledge.map((entry) => entry.trim()).filter(Boolean);
+  if (facts.length === 0) {
+    return null;
+  }
+
+  return [
+    "You already know:",
+    ...facts.map((fact) => `- ${fact}`),
+  ].join("\n");
+}
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -158,7 +171,10 @@ serveWithCors(async (req) => {
       game_id: sessionId,
     });
     const narration = await aiProvider.generateNarration(
-      blueprint.narrative.premise,
+      buildGameStartPrompt({
+        target_age: blueprint.metadata.target_age,
+        premise: blueprint.narrative.premise,
+      }),
       aiMetadata,
     );
     const narrationParts = [
@@ -168,6 +184,14 @@ serveWithCors(async (req) => {
         blueprint.metadata.image_id ?? null,
       ),
     ];
+    const startingKnowledgeBlock = formatStartingKnowledgeBlock(
+      blueprint.narrative.starting_knowledge ?? [],
+    );
+    if (startingKnowledgeBlock) {
+      narrationParts.push(
+        createNarrationPart(startingKnowledgeBlock, NARRATOR_SPEAKER),
+      );
+    }
 
     // Insert start event
     try {
@@ -178,6 +202,7 @@ serveWithCors(async (req) => {
         payload: {
           speaker: NARRATOR_SPEAKER,
           blueprint_image_id: blueprint.metadata.image_id ?? null,
+          starting_knowledge: blueprint.narrative.starting_knowledge ?? [],
         },
         narration_parts: narrationParts,
         diagnostics: createNarrationDiagnostics({
@@ -227,6 +252,7 @@ serveWithCors(async (req) => {
             payload: {
               speaker: NARRATOR_SPEAKER,
               blueprint_image_id: blueprint.metadata.image_id ?? null,
+              starting_knowledge: blueprint.narrative.starting_knowledge ?? [],
               diagnostics: createNarrationDiagnostics({
                 action: "start",
                 event_category: "start",

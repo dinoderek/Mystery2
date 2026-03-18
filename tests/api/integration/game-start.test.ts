@@ -65,9 +65,21 @@ describe("game-start endpoint", () => {
           },
           image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
         },
+        {
+          speaker: {
+            kind: "narrator",
+            key: "narrator",
+            label: "Narrator",
+          },
+        },
       ],
     });
+    expect(data.narration_events[0].narration_parts).toHaveLength(2);
     expect(data.narration_events[0].narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_events[0].narration_parts[1].text).toContain("You already know:");
+    expect(data.narration_events[0].narration_parts[1].text).toContain(
+      "The cookie jar was open.",
+    );
     expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
   });
 

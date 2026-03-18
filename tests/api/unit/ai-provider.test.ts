@@ -169,6 +169,7 @@ describe("ai-provider mock role output", () => {
     });
 
     expect(output.narration).toContain("[Mock]");
+    expect(output.narration).toContain("Alice");
   });
 
   it("supports accusation continue and resolved rounds", async () => {
@@ -182,9 +183,16 @@ describe("ai-provider mock role output", () => {
       prompt: "prompt",
       context: {
         player_input: "I accuse Alice because she had crumbs on her sleeves.",
-        round: 0,
-        shared_mystery_context: {
-          character_names: ["Alice Smith", "Bob Jones"],
+        accusation_judge_context: {
+          round: 0,
+          full_blueprint: {
+            world: {
+              characters: [
+                { first_name: "Alice", is_culprit: true },
+                { first_name: "Bob", is_culprit: false },
+              ],
+            },
+          },
         },
       },
       parse: parseAccusationJudgeOutput,
@@ -197,9 +205,16 @@ describe("ai-provider mock role output", () => {
       prompt: "prompt",
       context: {
         player_input: "Alice had motive and opportunity.",
-        round: 1,
-        shared_mystery_context: {
-          character_names: ["Alice Smith", "Bob Jones"],
+        accusation_judge_context: {
+          round: 1,
+          full_blueprint: {
+            world: {
+              characters: [
+                { first_name: "Alice", is_culprit: true },
+                { first_name: "Bob", is_culprit: false },
+              ],
+            },
+          },
         },
       },
       parse: parseAccusationJudgeOutput,
@@ -217,11 +232,17 @@ describe("ai-provider mock role output", () => {
     const output = await provider.generateRoleOutput({
       role: "search",
       prompt: "prompt",
-      context: { location_name: "Kitchen" },
+      context: {
+        location_name: "Kitchen",
+        search_context: {
+          next_clue: "A crumb on the floor.",
+        },
+      },
       parse: parseSearchOutput,
     });
 
     expect(output.narration).toContain("Kitchen");
+    expect(output.narration).toContain("A crumb on the floor.");
   });
 
   it("fails parsing when output shape is invalid", async () => {

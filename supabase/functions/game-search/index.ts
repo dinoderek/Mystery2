@@ -25,6 +25,78 @@ import {
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
+function readPayloadField(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): string | null {
+  if (!payload) {
+    return null;
+  }
+
+  const value = payload[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function readPayloadStringArray(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): string[] {
+  if (!payload) {
+    return [];
+  }
+
+  const value = payload[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is string =>
+    typeof entry === "string" && entry.trim().length > 0
+  );
+}
+
+function collectRevealedClues(
+  historyRows: Array<{
+    event_type: string;
+    payload?: Record<string, unknown> | null;
+  }>,
+  locationName: string,
+  canonicalClues: string[],
+): string[] {
+  const locationSearchEvents = historyRows.filter((entry) =>
+    entry.event_type === "search" &&
+    readPayloadField(entry.payload, "location_name") === locationName
+  );
+
+  const explicitRevealedClues: string[] = [];
+  for (const event of locationSearchEvents) {
+    const fromList = readPayloadStringArray(event.payload, "revealed_clues");
+    for (const clue of fromList) {
+      if (
+        canonicalClues.includes(clue) &&
+        !explicitRevealedClues.includes(clue)
+      ) {
+        explicitRevealedClues.push(clue);
+      }
+    }
+
+    const singleClue = readPayloadField(event.payload, "revealed_clue_text");
+    if (
+      singleClue &&
+      canonicalClues.includes(singleClue) &&
+      !explicitRevealedClues.includes(singleClue)
+    ) {
+      explicitRevealedClues.push(singleClue);
+    }
+  }
+
+  if (explicitRevealedClues.length > 0) {
+    return explicitRevealedClues;
+  }
+
+  return canonicalClues.slice(0, Math.min(locationSearchEvents.length, canonicalClues.length));
+}
+
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -111,12 +183,28 @@ serveWithCors(async (req) => {
       session,
       blueprint,
       location_name: currentLocation.name,
+      revealed_clues: collectRevealedClues(
+        historyRows ?? [],
+        currentLocation.name,
+        currentLocation.clues,
+      ),
+      next_clue: null,
       conversation_history: historyRows ?? [],
     });
+    const revealedClues = aiContext.search_context?.revealed_clues ?? [];
+    const nextClue = currentLocation.clues[revealedClues.length] ?? null;
+    aiContext.search_context = aiContext.search_context
+      ? {
+          ...aiContext.search_context,
+          next_clue: nextClue,
+          has_more_clues: nextClue !== null,
+        }
+      : null;
 
     const promptTemplate = await loadPromptTemplate("search");
     const prompt = renderPrompt(promptTemplate, {
       location_name: currentLocation.name,
+      target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
@@ -225,6 +313,9 @@ serveWithCors(async (req) => {
       payload: {
         role: "search",
         location_name: currentLocation.name,
+        revealed_clue_index: nextClue === null ? null : revealedClues.length,
+        revealed_clue_text: nextClue,
+        revealed_clues: nextClue === null ? revealedClues : [...revealedClues, nextClue],
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: searchParts,

@@ -130,31 +130,45 @@ function inferMentionedCharacter(
   }
   const normalizedInput = playerInput.toLowerCase();
 
-  const sharedMysteryContext = context.shared_mystery_context;
+  const accusationJudgeContext = context.accusation_judge_context;
   if (
-    typeof sharedMysteryContext !== "object" ||
-    sharedMysteryContext === null ||
-    Array.isArray(sharedMysteryContext)
+    typeof accusationJudgeContext !== "object" ||
+    accusationJudgeContext === null ||
+    Array.isArray(accusationJudgeContext)
   ) {
     return null;
   }
 
-  const characterNamesRaw = (
-    sharedMysteryContext as Record<string, unknown>
-  ).character_names;
-  if (!Array.isArray(characterNamesRaw)) {
+  const fullBlueprint = (
+    accusationJudgeContext as Record<string, unknown>
+  ).full_blueprint;
+  if (
+    typeof fullBlueprint !== "object" ||
+    fullBlueprint === null ||
+    Array.isArray(fullBlueprint)
+  ) {
     return null;
   }
 
-  for (const value of characterNamesRaw) {
-    if (typeof value !== "string") {
+  const world = (fullBlueprint as Record<string, unknown>).world;
+  if (typeof world !== "object" || world === null || Array.isArray(world)) {
+    return null;
+  }
+
+  const charactersRaw = (world as Record<string, unknown>).characters;
+  if (!Array.isArray(charactersRaw)) {
+    return null;
+  }
+
+  for (const value of charactersRaw) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
       continue;
     }
-    const fullName = value.trim();
-    if (!fullName) {
+    const firstNameRaw = (value as Record<string, unknown>).first_name;
+    if (typeof firstNameRaw !== "string") {
       continue;
     }
-    const firstName = fullName.split(/\s+/u)[0] ?? "";
+    const firstName = firstNameRaw.trim();
     if (!firstName) {
       continue;
     }
@@ -269,8 +283,14 @@ class MockAIProvider implements AIProvider {
           context,
           "location_name",
         );
+        const talkContext = context.talk_context as
+          | { active_character?: { appearance?: string | null; background?: string | null } }
+          | undefined;
+        const appearance = talkContext?.active_character?.appearance ?? "a familiar face";
+        const background = talkContext?.active_character?.background ?? "someone tied to the case";
         return {
-          narration: `[Mock] ${characterName} greets you in ${locationName} and waits for your questions.`,
+          narration:
+            `[Mock] You approach ${characterName} in ${locationName}. ${characterName} appears ${appearance} and carries the air of ${background}.`,
         };
       }
       case "talk_conversation": {
@@ -291,7 +311,8 @@ class MockAIProvider implements AIProvider {
           "character_name",
         );
         return {
-          narration: `[Mock] You end the conversation with ${characterName}.`,
+          narration:
+            `[Mock] You step back from ${characterName} and return to looking around.`,
         };
       }
       case "search": {
@@ -300,8 +321,18 @@ class MockAIProvider implements AIProvider {
           context,
           "location_name",
         );
+        const searchContext = context.search_context as
+          | { next_clue?: string | null; revealed_clues?: string[] }
+          | undefined;
+        const nextClue =
+          typeof searchContext?.next_clue === "string" &&
+            searchContext.next_clue.trim().length > 0
+          ? searchContext.next_clue.trim()
+          : null;
         return {
-          narration: `[Mock] You search ${locationName} and inspect the area carefully.`,
+          narration: nextClue
+            ? `[Mock] You search ${locationName} and uncover a clue: ${nextClue}`
+            : `[Mock] You search ${locationName} again, but discover no new clue.`,
         };
       }
       case "accusation_start": {
@@ -316,7 +347,11 @@ class MockAIProvider implements AIProvider {
         };
       }
       case "accusation_judge": {
-        const round = requireContextNumber(role, context, "round");
+        const accusationJudgeContext = context.accusation_judge_context as
+          | { round?: number; full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } } }
+          | undefined;
+        const round = accusationJudgeContext?.round ??
+          requireContextNumber(role, context, "round");
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
           return {
@@ -328,7 +363,16 @@ class MockAIProvider implements AIProvider {
         }
 
         const normalizedCharacter = mentionedCharacter.toLowerCase();
-        const isCulprit = normalizedCharacter !== "bob";
+        const culpritFirstName = Array.isArray(
+            accusationJudgeContext?.full_blueprint?.world?.characters,
+          )
+          ? accusationJudgeContext?.full_blueprint?.world?.characters.find(
+              (entry) => entry.is_culprit === true,
+            )?.first_name
+          : null;
+        const isCulprit = typeof culpritFirstName === "string"
+          ? culpritFirstName.trim().toLowerCase() === normalizedCharacter
+          : normalizedCharacter !== "bob";
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
           : isCulprit

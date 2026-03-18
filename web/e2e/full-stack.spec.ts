@@ -26,7 +26,7 @@ test.describe('Full stack browser flow', () => {
 
     await input.fill('talk to mayor');
     await input.press('Enter');
-    await expect(page.getByText(/\[Mock\] Mayor greets you/i)).toBeVisible();
+    await expect(page.getByText(/\[Mock\] You approach Mayor in/i)).toBeVisible();
 
     await input.fill('Where were you when the cakes disappeared?');
     await input.press('Enter');

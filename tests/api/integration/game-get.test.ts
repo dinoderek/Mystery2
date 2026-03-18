@@ -79,6 +79,14 @@ describe("game-get endpoint", () => {
       key: "narrator",
       label: "Narrator",
     });
+    expect(getData.narration_events[0].narration_parts[1]).toMatchObject({
+      speaker: {
+        kind: "narrator",
+        key: "narrator",
+        label: "Narrator",
+      },
+    });
+    expect(getData.narration_events[0].narration_parts[1].text).toContain("You already know:");
 
     const askEvent = getData.narration_events.find(
       (entry: { event_type: string }) => entry.event_type === "ask",

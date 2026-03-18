@@ -49,17 +49,19 @@ see `docs/blueprint-generation-flows.md`.
 ## Context Boundaries
 
 - All roles receive shared, player-safe context:
-  - title/one-liner/target age
-  - visible world lists
-  - current location metadata
-  - role-selected interaction history
+  - `target_age` only
 - Role inputs are passed as direct top-level context fields (no separate `role_input` envelope).
+- Role-specific grounding lives outside the shared context:
+  - talk roles get grounded location summaries, public character summaries, and active-character roleplay context
+  - search gets location description plus canonical clue progression state
+  - accusation start gets spoiler-safe current-state context
+  - accusation judge gets the full blueprint
 - History selection rules:
-  - talk roles: include all and only events tied to the active character
+  - talk roles: include all and only `talk`/`ask`/`end_talk` events tied to the active character, preserving prior `player_input`
   - search role: include all and only events tied to the active location (including move/search events for that location)
   - accusation roles: history mode is configurable (`all` or `none`)
-- Ground truth is excluded for all non-judge roles.
-- Only `accusation_judge` context includes `ground_truth_context`.
+- Full blueprint context is excluded for all non-judge roles.
+- Only `accusation_judge` context includes the full blueprint.
 - Guardrails are enforced in `assertRoleContextSafety`.
 
 ## Output Contracts
@@ -120,6 +122,18 @@ For endpoints using AI roles (`game-talk`, `game-ask`, `game-end-talk`, `game-se
 7. Parse and validate role output contract.
 8. If validation/provider fails, return retriable error and skip state mutation.
 9. If valid, persist session/event changes and return API payload.
+
+For `game-start`:
+
+1. Load the selected blueprint and resolve the session AI profile.
+2. Generate the opening narration from `premise` plus `target_age`.
+3. Append `starting_knowledge` as an additional narrator part in the persisted `start` event.
+
+For `game-move`:
+
+1. Load destination blueprint data and destination-relative history.
+2. Compute whether the location has been visited before.
+3. Generate move narration with revisit-consistency instructions plus `target_age`.
 
 For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`, `game-ask` when time reaches zero):
 

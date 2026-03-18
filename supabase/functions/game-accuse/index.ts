@@ -125,6 +125,7 @@ serveWithCors(async (req) => {
       const promptTemplate = await loadPromptTemplate("accusation_judge");
       const prompt = renderPrompt(promptTemplate, {
         forced_context: "",
+        target_age: blueprint.metadata.target_age,
       });
       const aiMetadata = createAIRequestMetadata(req, {
         request_id: requestId,
@@ -323,6 +324,7 @@ serveWithCors(async (req) => {
         const promptTemplate = await loadPromptTemplate("accusation_start");
         const prompt = renderPrompt(promptTemplate, {
           forced_context: "",
+          target_age: blueprint.metadata.target_age,
         });
         const aiMetadata = createAIRequestMetadata(req, {
           request_id: requestId,

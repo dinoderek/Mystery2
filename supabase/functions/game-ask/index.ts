@@ -126,6 +126,7 @@ serveWithCors(async (req) => {
     const prompt = renderPrompt(promptTemplate, {
       character_name: activeCharacter.first_name,
       player_input: playerInput,
+      target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

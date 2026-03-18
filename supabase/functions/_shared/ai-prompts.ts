@@ -7,7 +7,10 @@ const PROMPT_TEMPLATE_BY_ROLE: Record<AIRoleName, string> = {
 
 Task:
 - Start a new conversation with {{character_name}} in {{location_name}}.
-- Keep language age-appropriate for target age {{target_age}}.
+- Keep language and readability appropriate for target age {{target_age}}.
+- Briefly describe the character as the investigator approaches them.
+- Use only the provided characters and locations.
+- Do not invent extra people, places, or world facts.
 - Keep response concise (2-4 sentences).
 - Do not reveal hidden solution facts.
 
@@ -19,8 +22,11 @@ Return JSON:
 
 Task:
 - Reply to the investigator's latest question: {{player_input}}.
+- Keep language and readability appropriate for target age {{target_age}}.
 - Maintain continuity with previous conversation turns.
 - Stay consistent with known world facts and the character's perspective.
+- Use only the provided characters and locations.
+- Do not invent extra people, places, or world facts.
 - Never reveal full solution ground truth.
 - Keep response concise (2-5 sentences).
 
@@ -33,6 +39,9 @@ Return JSON:
 Task:
 - Close the active conversation with {{character_name}}.
 - Confirm that the player returns to exploration.
+- Keep language and readability appropriate for target age {{target_age}}.
+- Use only the provided characters and locations.
+- Do not invent extra people, places, or world facts.
 - Keep tone natural and brief (1-3 sentences).
 - Do not reveal hidden solution facts.
 
@@ -45,6 +54,11 @@ Return JSON:
 Task:
 - Describe the player searching {{location_name}}.
 - Narrate what the player observes while searching this location.
+- Keep language and readability appropriate for target age {{target_age}}.
+- Use the provided location description and search context only.
+- If search_context.next_clue is present, you must clearly reveal that clue.
+- Do not repeat clues already listed in search_context.revealed_clues.
+- If search_context.next_clue is null, reveal no new clue and give only flavorful feedback.
 - Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
 
@@ -58,6 +72,7 @@ Task:
 - Frame a dramatic accusation scene and ask for the player's accusation.
 - If the accusation is forced by time pressure, make that urgency explicit.
 - Ask the player to clearly name who they accuse and explain evidence.
+- Keep language and readability appropriate for target age {{target_age}}.
 - Keep text concise and clear.
 - Context to incorporate when relevant: {{forced_context}}
 
@@ -70,6 +85,7 @@ Return JSON:
 
 Task:
 - Evaluate the player's reasoning against the mystery's hidden truth.
+- Keep language and readability appropriate for target age {{target_age}}.
 - If the reasoning is incomplete, return "continue" with one targeted follow-up question.
 - If reasoning is sufficient, decide "win" or "lose".
 
@@ -100,4 +116,41 @@ export function renderPrompt(
       return String(value);
     },
   );
+}
+
+export function buildGameStartPrompt(input: {
+  target_age: number;
+  premise: string;
+}): string {
+  return [
+    "You are the narrator for a children's mystery game.",
+    `Write an opening narration suitable for target age ${input.target_age}.`,
+    "Keep the language clear, vivid, and easy to read for that child age.",
+    "Open the case with the given premise and invite investigation.",
+    "Keep the response concise.",
+    `Premise: ${input.premise}`,
+  ].join("\n");
+}
+
+export function buildGameMovePrompt(input: {
+  target_age: number;
+  destination_name: string;
+  destination_description: string;
+  has_visited_before: boolean;
+  destination_history_json: string;
+}): string {
+  const revisitInstruction = input.has_visited_before
+    ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
+    : "The player is arriving here for the first time in this session.";
+
+  return [
+    "You are the narrator for a children's mystery game.",
+    `Describe the player arriving at ${input.destination_name}.`,
+    `Keep the language and readability appropriate for target age ${input.target_age}.`,
+    revisitInstruction,
+    "Base the description on the provided destination description and destination-specific history only.",
+    "Keep the narration concise and coherent.",
+    `Destination description: ${input.destination_description}`,
+    `Destination history: ${input.destination_history_json}`,
+  ].join("\n");
 }

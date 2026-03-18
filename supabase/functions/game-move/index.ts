@@ -12,6 +12,7 @@ import {
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
+import { buildGameMovePrompt } from "../_shared/ai-prompts.ts";
 import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -111,10 +112,16 @@ serveWithCors(async (req) => {
       historyRows ?? [],
       destLoc.name,
     );
+    const hasVisitedBefore = locationHistory.length > 0;
     const locationHistoryJson = JSON.stringify(locationHistory);
 
-    const aiPrompt =
-      `The player moves to ${destLoc.name}. Describe the new location concisely based on: ${destLoc.description}. Use all and only the interaction history tied to ${destLoc.name}: ${locationHistoryJson}.`;
+    const aiPrompt = buildGameMovePrompt({
+      target_age: blueprint.metadata.target_age,
+      destination_name: destLoc.name,
+      destination_description: destLoc.description,
+      has_visited_before: hasVisitedBefore,
+      destination_history_json: locationHistoryJson,
+    });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
       endpoint: "game-move",

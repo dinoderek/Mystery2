@@ -41,6 +41,7 @@ export async function generateForcedAccusationStartNarration(input: {
   const promptTemplate = await loadPromptTemplate("accusation_start");
   const prompt = renderPrompt(promptTemplate, {
     forced_context: input.scene_summary,
+    target_age: input.blueprint.metadata.target_age,
   });
   const aiMetadata = createAIRequestMetadata(input.req, {
     request_id: input.request_id,

@@ -51,6 +51,7 @@ A text-based mystery adventure for kids that makes reading and writing feel like
 ### Game Start Sequence
 
 - Display premise (short hook).
+- Display starting knowledge as an additional narrator block in the opening transcript.
 - Execute initial “move” to the starting location (arrive + description).
 - Show initial status (time, location, visible characters).
 
@@ -129,9 +130,11 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 
 - Narrator adjudicates what is found.
 - Search can:
-  - reveal a clue from the blueprint for this location
+  - reveal the next canonical clue from the blueprint for this location
   - reveal a “follow-up” searchable sub-location (e.g., “behind the curtains”, “under the bench”)
   - reveal nothing (but should still produce flavorful feedback)
+- Repeated searches at the same location should reveal remaining blueprint clues in order until that location is exhausted.
+- After all canonical clues for that location are revealed, later searches still resolve but reveal no new clue.
 
 **Open questions (intentionally left TBD)**
 
@@ -152,6 +155,7 @@ Optionally later: `search <sub-location>` once sub-locations exist.
 - Shows who is present (characters visible there).
 - Location description should be consistent and re-usable:
   - Recommended: blueprint provides a base description; narrator adds light variation.
+- Revisits should acknowledge that the investigator has returned without contradicting prior location descriptions.
 
 **Interaction with search**
 

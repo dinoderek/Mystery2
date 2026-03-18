@@ -285,6 +285,29 @@ describe("blueprint generator", () => {
       code: "INVALID_STORY_BRIEF",
     });
   });
+
+  it("maps abort failures to a timeout error", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(
+      new DOMException("Aborted", "AbortError"),
+    );
+
+    await expect(
+      generateBlueprint({
+        storyBrief: {
+          brief: "A long-running mystery generation request.",
+          targetAge: 8,
+        },
+        model: "openai/gpt-4.1-mini",
+        openRouterApiKey: "test-key",
+        timeoutMs: 1000,
+        fetchImpl: fetchMock as typeof fetch,
+      }),
+    ).rejects.toMatchObject({
+      name: "BlueprintGenerationError",
+      code: "OPENROUTER_ERROR",
+      message: "OpenRouter blueprint generation request timed out",
+    });
+  });
 });
 
 describe("generate-blueprint CLI", () => {
@@ -294,6 +317,7 @@ describe("generate-blueprint CLI", () => {
       {
         OPENROUTER_BLUEPRINT_MODEL: "openai/gpt-4.1-mini",
         OPENROUTER_API_KEY: "env-key",
+        AI_OPENROUTER_TIMEOUT_MS: "90000",
       },
     );
 
@@ -302,6 +326,7 @@ describe("generate-blueprint CLI", () => {
       output: "",
       model: "openai/gpt-4.1-mini",
       openRouterApiKey: "env-key",
+      timeoutMs: 90000,
     });
   });
 

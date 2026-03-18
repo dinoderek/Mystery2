@@ -6,6 +6,7 @@ import { loadBlueprintGeneratorPrompt } from "./prompt.ts";
 import { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
 
 export { BlueprintGenerationError } from "./errors.ts";
 export { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
@@ -335,7 +336,7 @@ export async function generateBlueprint(
   };
 
   const controller = new AbortController();
-  const timeoutMs = options.timeoutMs ?? 45_000;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_OPENROUTER_TIMEOUT_MS;
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let response: Response;

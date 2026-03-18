@@ -28,9 +28,11 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
   - `scripts/generate-blueprint.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
   - it loads the model from `OPENROUTER_BLUEPRINT_MODEL`, then `AI_MODEL`, then CLI overrides
+  - it uses `AI_OPENROUTER_TIMEOUT_MS` for request timeout control (default `120000`)
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
+  - it uses `AI_OPENROUTER_TIMEOUT_MS` for request/download timeout control (default `120000`)
 
 ## Local Configuration Summary
 
@@ -52,6 +54,11 @@ The blueprint-generation CLI resolves config in this order:
 1. CLI flags at invocation time
 2. shell env at invocation time
 3. `.env.local`
+
+Timeout behavior:
+
+- `AI_OPENROUTER_TIMEOUT_MS=<milliseconds>` optional
+- default is `120000`
 
 ## Deploy Configuration
 
@@ -75,3 +82,8 @@ The image-generation CLI resolves config in this order:
 2. `.env.images.local`
 3. `.env.local`
 4. built-in default model
+
+Timeout behavior:
+
+- `AI_OPENROUTER_TIMEOUT_MS=<milliseconds>` optional
+- default is `120000`

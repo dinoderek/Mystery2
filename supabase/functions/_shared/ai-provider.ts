@@ -215,11 +215,17 @@ interface OpenRouterRuntimeConfig {
   base_backoff_ms: number;
 }
 
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
+
 function resolveOpenRouterRuntimeConfig(
   env: Record<string, string | undefined>,
 ): OpenRouterRuntimeConfig {
   return {
-    timeout_ms: parsePositiveInt(env, "AI_OPENROUTER_TIMEOUT_MS", 45_000),
+    timeout_ms: parsePositiveInt(
+      env,
+      "AI_OPENROUTER_TIMEOUT_MS",
+      DEFAULT_OPENROUTER_TIMEOUT_MS,
+    ),
     max_attempts: parsePositiveInt(env, "AI_OPENROUTER_MAX_ATTEMPTS", 3),
     base_backoff_ms: parsePositiveInt(
       env,

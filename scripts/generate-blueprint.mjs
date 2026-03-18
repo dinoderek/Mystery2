@@ -7,12 +7,32 @@ import {
 } from "../packages/blueprint-generator/src/index.ts";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
+
+function parsePositiveInt(rawValue, fallback) {
+  const raw = String(rawValue ?? "").trim();
+  if (!raw) return fallback;
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(
+      `Invalid AI_OPENROUTER_TIMEOUT_MS "${raw}". Expected a positive integer value.`,
+    );
+  }
+
+  return parsed;
+}
+
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefFile: "",
     output: "",
     model: env.OPENROUTER_BLUEPRINT_MODEL || env.AI_MODEL || "",
     openRouterApiKey: env.OPENROUTER_API_KEY || "",
+    timeoutMs: parsePositiveInt(
+      env.AI_OPENROUTER_TIMEOUT_MS,
+      DEFAULT_OPENROUTER_TIMEOUT_MS,
+    ),
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -107,6 +127,7 @@ export async function runBlueprintGenerationCli(
     storyBrief,
     model: options.model,
     openRouterApiKey: options.openRouterApiKey,
+    timeoutMs: options.timeoutMs,
   });
 
   const outputText = `${JSON.stringify(blueprint, null, 2)}\n`;

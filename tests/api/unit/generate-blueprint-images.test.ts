@@ -253,6 +253,42 @@ describe("runImageGeneration", () => {
     expect(result.results[0].error_message).toContain("Stack:");
   });
 
+  it("captures timeout failures for long-running image generation requests", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-timeout-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        overwrite: true,
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        apiKey: "test-key",
+        env: { AI_OPENROUTER_TIMEOUT_MS: "1000" },
+        fetchImpl: () => Promise.reject(new DOMException("Aborted", "AbortError")),
+      },
+    );
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]).toMatchObject({
+      target_type: "blueprint",
+      status: "failed",
+    });
+    expect(result.results[0].error_message).toContain(
+      "OpenRouter image generation timed out after 1000ms",
+    );
+    expect(result.results[0].error_message).toContain("Phase: generation");
+  });
+
   it("uses OpenRouter chat completions image response format", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-chat-"));
     const blueprintPath = path.join(tmpDir, "blueprint.json");

@@ -13,12 +13,41 @@ import { loadEnvFile } from "./supabase-utils.mjs";
 
 const MAX_ERROR_BODY_LENGTH = 16_000;
 const DEFAULT_IMAGE_MODEL = "openai/gpt-image-1";
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
 
 function parseCsv(value) {
   return String(value ?? "")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function parsePositiveInt(rawValue, fallback) {
+  const raw = String(rawValue ?? "").trim();
+  if (!raw) return fallback;
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(
+      `Invalid AI_OPENROUTER_TIMEOUT_MS "${raw}". Expected a positive integer value.`,
+    );
+  }
+
+  return parsed;
+}
+
+async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetchImpl(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function parseGenerateImageArgs(argv, env = process.env) {
@@ -260,17 +289,38 @@ async function generateImageAsset({
   model,
   apiKey,
   fetchImpl,
+  timeoutMs,
 }) {
   const requestUrl = "https://openrouter.ai/api/v1/chat/completions";
   const requestBody = buildImageGenerationRequest({ model, prompt });
-  const response = await fetchImpl(requestUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
+  let response;
+  try {
+    response = await fetchWithTimeout(
+      fetchImpl,
+      requestUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      timeoutMs,
+    );
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ImageGenerationError(
+        `OpenRouter image generation timed out after ${timeoutMs}ms`,
+        {
+          phase: "generation",
+          url: requestUrl,
+          cause: error,
+        },
+      );
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const responseBody = await readResponseBody(response);
@@ -292,7 +342,22 @@ async function generateImageAsset({
     return decoded;
   }
 
-  const imageResponse = await fetchImpl(decoded);
+  let imageResponse;
+  try {
+    imageResponse = await fetchWithTimeout(fetchImpl, decoded, {}, timeoutMs);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ImageGenerationError(
+        `Generated image download timed out after ${timeoutMs}ms`,
+        {
+          phase: "download",
+          url: decoded,
+          cause: error,
+        },
+      );
+    }
+    throw error;
+  }
   if (!imageResponse.ok) {
     const responseBody = await readResponseBody(imageResponse);
     throw new ImageGenerationError(
@@ -315,6 +380,10 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const env = dependencies.env ?? process.env;
   const apiKey = dependencies.apiKey ?? env.OPENROUTER_API_KEY ?? "";
+  const timeoutMs = parsePositiveInt(
+    env.AI_OPENROUTER_TIMEOUT_MS,
+    DEFAULT_OPENROUTER_TIMEOUT_MS,
+  );
 
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
@@ -409,6 +478,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
         model: options.model,
         apiKey,
         fetchImpl,
+        timeoutMs,
       });
       await fs.writeFile(outputPath, bytes);
       console.log(`Generated image for ${formatTargetLabel(target)}: ${outputPath}`);

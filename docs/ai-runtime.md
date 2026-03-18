@@ -85,7 +85,7 @@ Invalid output returns a retriable error and does not finalize turn state.
 - AI calls are executed before session mutations.
 - OpenRouter calls use bounded server-side retries with exponential backoff for transient failures.
 - Retry/timeout settings are environment-driven:
-  - `AI_OPENROUTER_TIMEOUT_MS` (default `45000`)
+  - `AI_OPENROUTER_TIMEOUT_MS` (default `120000`)
   - `AI_OPENROUTER_MAX_ATTEMPTS` (default `3`)
   - `AI_OPENROUTER_BASE_BACKOFF_MS` (default `750`)
 - Retriable provider failures return:

@@ -3,6 +3,7 @@ import {
   assertRoleContextSafety,
   buildAccusationJudgeContext,
   buildAccusationStartContext,
+  buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
   selectCharacterConversationHistory,
@@ -212,6 +213,54 @@ describe("ai-context guardrails", () => {
     expect(searchContext.conversation_history[0]?.payload).toMatchObject({
       revealed_clue_text: "crumbs",
     });
+  });
+
+  it("builds move context with public summaries for destination characters", () => {
+    const history = [
+      {
+        sequence: 1,
+        event_type: "move",
+        actor: "system",
+        narration: "Moved to Kitchen.",
+        payload: { destination: "Kitchen", location_name: "Kitchen" },
+      },
+      {
+        sequence: 2,
+        event_type: "search",
+        actor: "system",
+        narration: "Searched Kitchen.",
+        payload: { location_name: "Kitchen", revealed_clue_text: "crumbs" },
+      },
+    ];
+
+    const moveContext = buildMoveContext({
+      game_id: "game-1",
+      session: { ...session, mode: "explore", current_talk_character_id: null },
+      blueprint,
+      destination_name: "Kitchen",
+      has_visited_before: true,
+      conversation_history: history,
+    });
+
+    expect(moveContext.shared_mystery_context).toEqual({ target_age: 9 });
+    expect(moveContext.move_context).toMatchObject({
+      destination_name: "Kitchen",
+      destination_description: "A messy kitchen",
+      has_visited_before: true,
+      destination_characters: [
+        {
+          first_name: "Alice",
+          last_name: "Smith",
+          location: "Kitchen",
+          appearance: "red hair",
+          background: "the baker",
+        },
+      ],
+    });
+    expect(moveContext.conversation_history.map((event) => event.sequence)).toEqual([
+      1,
+      2,
+    ]);
   });
 
   it("keeps accusation_start spoiler-safe and gives accusation_judge the full blueprint", () => {

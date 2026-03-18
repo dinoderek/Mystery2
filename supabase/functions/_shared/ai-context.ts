@@ -62,6 +62,7 @@ export interface MoveContext {
   destination_description: string;
   has_visited_before: boolean;
   destination_history: ConversationFragment[];
+  destination_characters: TalkCharacterPublicSummary[];
 }
 
 export interface SearchContext {
@@ -552,6 +553,9 @@ export function buildMoveContext(input: {
     input.conversation_history ?? [],
     input.destination_name,
   );
+  const destinationCharacters = buildTalkCharacterPublicSummaries(
+    input.blueprint,
+  ).filter((character) => character.location === input.destination_name);
 
   return buildContext({
     game_id: input.game_id,
@@ -565,6 +569,7 @@ export function buildMoveContext(input: {
       destination_description: location.description,
       has_visited_before: input.has_visited_before,
       destination_history: destinationHistory,
+      destination_characters: destinationCharacters,
     },
   });
 }

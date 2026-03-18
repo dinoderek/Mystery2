@@ -42,7 +42,7 @@ These outputs are generated at runtime in Supabase Edge Functions.
 | Generated output | Entry point | Blueprint fields used as generation input | Non-blueprint context also used | Attached after generation | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Opening narration | `game-start` | `metadata.target_age`, `narrative.premise` | Session AI profile selection only | `metadata.image_id` attached as the first narration part image | `narrative.starting_knowledge` is appended after generation as a second narrator block in the same `start` event. |
-| Move narration | `game-move` | `metadata.target_age`, destination `world.locations[].name`, destination `world.locations[].description` | Prior event history filtered to the destination location, plus a computed `has_visited_before` flag | Destination `world.locations[].location_image_id` attached as the narration part image | Move prompting explicitly tells the model to acknowledge return visits and stay consistent with prior descriptions. |
+| Move narration | `game-move` | `metadata.target_age`, destination `world.locations[].name`, destination `world.locations[].description`, destination `world.characters[]` filtered to that location with public summaries (`first_name`, `last_name`, `appearance`, `background`) | Prior event history filtered to the destination location, plus a computed `has_visited_before` flag | Destination `world.locations[].location_image_id` attached as the narration part image | Move prompting explicitly tells the model to acknowledge return visits, stay consistent with prior descriptions, and use only the provided destination character summaries when mentioning who is present. |
 | Search narration | `game-search` with role `search` | Shared context: `metadata.target_age` only. Role-specific `search_context`: current `world.locations[].name`, current `world.locations[].description`, full location `clues`, already revealed clues, next unrevealed clue, and exhaustion state | Prior event history filtered to the current location | Nothing | Search now uses canonical clue order and persists clue reveal metadata on each search event. |
 | Talk-start narration | `game-talk` with role `talk_start` | Shared context: `metadata.target_age` only. Role-specific `talk_context`: active location description, grounded location list, grounded public character list, and the active character's private roleplay data | Prior `talk`/`ask`/`end_talk` history for the active character | Active character `world.characters[].portrait_image_id` attached as the narration part image | Prompt explicitly forbids inventing new characters or locations. |
 | Ask response narration | `game-ask` with role `talk_conversation` | Same talk context as talk-start | Same-character conversation history, including prior `player_input` payloads and latest `player_input` | Active character `world.characters[].portrait_image_id` attached as the narration part image | Speaker is the in-world character, not the narrator. |
@@ -56,8 +56,10 @@ These outputs are generated at runtime in Supabase Edge Functions.
 - Shared runtime context is now intentionally minimal: only `target_age`.
 - Search narration is now grounded by canonical clue progression instead of a
   location-only description.
-- Talk-family endpoints are the only runtime narration paths that receive
-  grounded lists of valid characters and locations.
+- Move narration now also receives grounded public character summaries for the
+  destination location, while talk-family endpoints remain the only runtime
+  paths that receive the broader location list plus private active-character
+  context.
 - `game-start` remains AI-backed, but `starting_knowledge` is appended as a
   non-generated narrator block.
 - Accusation framing stays spoiler-safe; accusation judging receives the full

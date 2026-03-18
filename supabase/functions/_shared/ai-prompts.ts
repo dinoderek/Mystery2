@@ -11,7 +11,7 @@ Task:
 - Briefly describe the character as the investigator approaches them.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
-- Keep response concise (2-4 sentences).
+- Keep response concise (1-3 sentences).
 - Do not reveal hidden solution facts.
 
 Return JSON:
@@ -138,6 +138,7 @@ export function buildGameMovePrompt(input: {
   destination_description: string;
   has_visited_before: boolean;
   destination_history_json: string;
+  destination_characters_json: string;
 }): string {
   const revisitInstruction = input.has_visited_before
     ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
@@ -148,9 +149,12 @@ export function buildGameMovePrompt(input: {
     `Describe the player arriving at ${input.destination_name}.`,
     `Keep the language and readability appropriate for target age ${input.target_age}.`,
     revisitInstruction,
-    "Base the description on the provided destination description and destination-specific history only.",
+    "Base the description on the provided destination description, destination-specific history, and the public summaries of characters currently present.",
+    "If characters are present, mention who is visibly here using only the provided names and descriptions.",
+    "Do not invent extra characters or character details.",
     "Keep the narration concise and coherent.",
     `Destination description: ${input.destination_description}`,
+    `Characters at destination: ${input.destination_characters_json}`,
     `Destination history: ${input.destination_history_json}`,
   ].join("\n");
 }

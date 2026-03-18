@@ -114,6 +114,16 @@ serveWithCors(async (req) => {
     );
     const hasVisitedBefore = locationHistory.length > 0;
     const locationHistoryJson = JSON.stringify(locationHistory);
+    const destinationCharactersJson = JSON.stringify(
+      blueprint.world.characters
+        .filter((character) => character.location === destLoc.name)
+        .map((character) => ({
+          first_name: character.first_name,
+          last_name: character.last_name,
+          appearance: character.appearance ?? null,
+          background: character.background ?? null,
+        })),
+    );
 
     const aiPrompt = buildGameMovePrompt({
       target_age: blueprint.metadata.target_age,
@@ -121,6 +131,7 @@ serveWithCors(async (req) => {
       destination_description: destLoc.description,
       has_visited_before: hasVisitedBefore,
       destination_history_json: locationHistoryJson,
+      destination_characters_json: destinationCharactersJson,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

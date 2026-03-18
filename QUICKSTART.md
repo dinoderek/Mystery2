@@ -83,6 +83,33 @@ New sessions use the current `default` profile. Existing sessions stay pinned to
 
 For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w1/docs/ai-configuration.md).
 
+## Generate Blueprints Locally
+
+Create a structured brief JSON file, for example:
+
+```json
+{
+  "brief": "A child-friendly mystery in a school library where a special bookmark goes missing before story time.",
+  "targetAge": 8,
+  "timeBudget": 14,
+  "mustInclude": ["at least three suspects", "one red herring motive"]
+}
+```
+
+Then run:
+
+```bash
+npm run generate:blueprint -- \
+  --brief-file path/to/story-brief.json \
+  --model openai/gpt-4.1-mini
+```
+
+Optional:
+
+- provide `--openrouter-api-key` explicitly, or rely on `OPENROUTER_API_KEY`
+- provide `--output path/to/blueprint.json` to write a file instead of printing JSON to stdout
+- set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid repeating `--model`
+
 ## Seeded Local Users
 
 `npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth.

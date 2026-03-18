@@ -34,7 +34,7 @@ Load additional guidance based on the area you are touching:
 - Edge Functions, API contracts, or database work:
   `docs/backend-conventions.md`
 - Structural mystery data-model changes:
-  `supabase/functions/_shared/blueprints/blueprint-schema.ts`
+  `packages/shared/src/blueprint-schema.ts`
 
 ## Documentation Maintenance
 

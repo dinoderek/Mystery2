@@ -12,6 +12,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts and the canonical `narration_parts`/`narration_events` schemas.
+  - `blueprint-generator/`: Reusable blueprint generation logic shared by local operator scripts and future backend adapters.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
 - `scripts/`: Assorted scripts needed for development and operations (e.g., `setup-local` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
   - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
@@ -43,3 +44,10 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `supabase/migrations/0007_blueprint_images_storage.sql`: Private `blueprint-images` bucket and authenticated read policy.
 - `web/src/lib/api/images.ts`: Frontend signed-link client with expiry-aware cache/refresh behavior.
 - `scripts/generate-blueprint-images.mjs`: Local operator image generation + selective blueprint patching CLI.
+
+## Feature Additions (Blueprint Generation)
+
+- `packages/shared/src/blueprint-schema.ts`: Canonical blueprint Zod schema shared by Node tooling and Supabase Edge Functions.
+- `packages/blueprint-generator/`: Shared prompt-loading, OpenRouter structured-output, and schema-validation flow for blueprint generation.
+- `scripts/generate-blueprint.mjs`: Local operator CLI that turns structured story briefs into canonical blueprint JSON.
+- `scripts/sync-blueprint-schema.mjs`: Sync helper that writes the Deno Edge Function copy of the canonical blueprint schema.

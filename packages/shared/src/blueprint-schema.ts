@@ -1,7 +1,4 @@
-// Generated from packages/shared/src/blueprint-schema.ts for Supabase Edge Functions.
-// Keep this file in sync with the shared schema using scripts/sync-blueprint-schema.mjs.
-
-import { z } from "npm:zod";
+import { z } from "zod";
 
 // This schema is private to backend/operator tooling and must never be exposed
 // directly to the player UI because it contains the mystery ground truth.

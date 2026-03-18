@@ -83,7 +83,7 @@ editing before implementation. This includes `docs/styling-conventions.md` for
 SvelteKit styling/theme work, `docs/component-inventory.md` for UI reuse,
 `docs/screen-navigation.md` for routing/page architecture,
 `docs/backend-conventions.md` for Edge Functions, API contracts, and database
-changes, and `supabase/functions/_shared/blueprints/blueprint-schema.ts` for
+changes, and `packages/shared/src/blueprint-schema.ts` for
 structural mystery data-model changes. Plans, specs, and tasks MUST reflect
 those conventions instead of inventing parallel patterns. Rationale: shared
 conventions keep generated work compatible with the existing repo structure and

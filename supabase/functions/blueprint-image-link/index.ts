@@ -1,6 +1,9 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, internalError, notFound } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import {
+  BlueprintSchema,
+  type Blueprint,
+} from "../_shared/blueprints/blueprint-schema.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 import {
   BLUEPRINT_IMAGES_BUCKET,
@@ -21,7 +24,7 @@ const PURPOSES = new Set([
 type ImagePurpose = "blueprint_cover" | "location_scene" | "character_portrait";
 
 function isImageReferenced(
-  blueprint: ReturnType<typeof BlueprintSchema.parse>,
+  blueprint: Blueprint,
   purpose: ImagePurpose,
   imageId: string,
 ): boolean {

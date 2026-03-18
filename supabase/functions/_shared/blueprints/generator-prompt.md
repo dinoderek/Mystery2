@@ -34,7 +34,8 @@ To prove the culprit did it, ensure the generated clues establish:
 
 ## The Schema Definition
 
-You must output a JSON object conforming to this Zod schema structure from `blueprint-schema.ts`.
+You must output a JSON object conforming to the shared Zod schema structure from `packages/shared/src/blueprint-schema.ts`.
+Do not output `image_id`, `location_image_id`, or `portrait_image_id`. Those identifiers are assigned later by separate image-generation tooling and are intentionally omitted from the generation response schema.
 
 ## The generation process
 

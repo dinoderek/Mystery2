@@ -24,6 +24,10 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - Runtime use:
   - edge functions load the key from `ai_profiles.openrouter_api_key`
   - runtime provider construction uses that DB value only
+- Blueprint generation:
+  - `scripts/generate-blueprint.mjs` is operator tooling, not gameplay runtime
+  - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
+  - it loads the model from `OPENROUTER_BLUEPRINT_MODEL`, then `AI_MODEL`, then CLI overrides
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
@@ -33,7 +37,21 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - `npm run dev` points `default` to `mock`.
 - `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
 - `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
-- gameplay/runtime OpenRouter config stays DB-first; image generation uses its own local env file instead of AI profile rows
+- gameplay/runtime OpenRouter config stays DB-first; local blueprint/image generation use direct operator env values instead of AI profile rows
+
+## Blueprint Generation Configuration
+
+Use CLI flags or `.env.local` for operator blueprint-generation settings:
+
+- `OPENROUTER_API_KEY=<secret>`
+- `OPENROUTER_BLUEPRINT_MODEL=<model-id>` optional
+- `AI_MODEL=<model-id>` fallback only when `OPENROUTER_BLUEPRINT_MODEL` is unset
+
+The blueprint-generation CLI resolves config in this order:
+
+1. CLI flags at invocation time
+2. shell env at invocation time
+3. `.env.local`
 
 ## Deploy Configuration
 

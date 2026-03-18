@@ -29,6 +29,7 @@ Covers:
 - request/response schema validation
 - UI component logic (where practical)
 - prompt construction and parsing utilities
+- blueprint generation utilities (`packages/blueprint-generator/*`, `scripts/generate-blueprint.mjs`)
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
@@ -267,6 +268,9 @@ These suites are intentionally excluded from `npm run test:all` and only run whe
 - API E2E (investigator script):
   - `npm run test:e2e:live:free`
   - `npm run test:e2e:live:paid`
+- Blueprint generation:
+  - `npm run test:blueprint:live:free`
+  - `npm run test:blueprint:live:paid`
 - Browser smoke (optional):
   - `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
 
@@ -278,6 +282,7 @@ Live suites require:
 - resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
 - higher timeout budget for real model latency (default 600s per live test)
 - live suites may short-circuit with a warning when retries are exhausted by upstream transient failures
+- blueprint live suites validate generated payloads against the shared `BlueprintSchema`
 
 Live API E2E investigator coverage must exercise all actions:
 

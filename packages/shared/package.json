@@ -1,6 +1,7 @@
 {
   "name": "@my2/shared",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/mystery-api-contracts.ts",
   "types": "src/mystery-api-contracts.ts",
   "dependencies": {

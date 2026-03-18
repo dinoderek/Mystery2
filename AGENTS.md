@@ -35,6 +35,8 @@ Load additional guidance based on the area you are touching:
   `docs/backend-conventions.md`
 - Structural mystery data-model changes:
   `packages/shared/src/blueprint-schema.ts`
+- Blueprint schema/generation flow changes or narrator/AI runtime changes:
+  `docs/blueprint-generation-flows.md` and `docs/ai-runtime.md`
 
 ## Documentation Maintenance
 
@@ -43,6 +45,10 @@ Keep documentation lean and current.
 - Update the relevant files in `docs/` or `QUICKSTART.md` in the same change
   when setup steps, developer/operator workflows, runtime behavior, or
   debugging guidance changes.
+- When touching blueprint fields, blueprint-fed generation paths, narrator
+  prompts, narrator context, or other AI runtime behavior, always review and
+  update `docs/blueprint-generation-flows.md` and `docs/ai-runtime.md` in the
+  same change.
 - Suggest a dedicated `docs/*.md` file when a change is significant enough that
   the core docs would become cluttered.
 - In final summaries, call out which docs changed and note any skipped quality

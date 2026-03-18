@@ -25,7 +25,12 @@ function createStore() {
   store.game_id = 'game-1';
   store.state = {
     locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
-    characters: [{ first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
+    characters: [{
+      first_name: 'Alice',
+      last_name: 'Smith',
+      location_name: 'Kitchen',
+      sex: 'female',
+    }],
     time_remaining: 10,
     location: 'Kitchen',
     mode: 'explore',

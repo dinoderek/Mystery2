@@ -58,7 +58,7 @@ describe("ai-prompts", () => {
       has_visited_before: true,
       destination_history_json: "[]",
       destination_characters_json:
-        '[{"first_name":"Alice","last_name":"Smith","appearance":"red hair","background":"the baker"}]',
+        '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","background":"the baker"}]',
     });
 
     expect(prompt).toContain("target age 9");
@@ -66,6 +66,8 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("A messy kitchen.");
     expect(prompt).toContain("Characters at destination");
     expect(prompt).toContain('"first_name":"Alice"');
+    expect(prompt).toContain('"sex":"female"');
+    expect(prompt).toContain("Never guess pronouns");
     expect(prompt).toContain("Do not invent extra characters");
   });
 });

@@ -120,6 +120,7 @@ serveWithCors(async (req) => {
         .map((character) => ({
           first_name: character.first_name,
           last_name: character.last_name,
+          sex: character.sex,
           appearance: character.appearance ?? null,
           background: character.background ?? null,
         })),
@@ -283,7 +284,11 @@ serveWithCors(async (req) => {
 
     const visible_characters = blueprint.world.characters
       .filter((c) => c.location === destLoc.name)
-      .map((c) => ({ first_name: c.first_name, last_name: c.last_name }));
+      .map((c) => ({
+        first_name: c.first_name,
+        last_name: c.last_name,
+        sex: c.sex,
+      }));
 
     return new Response(
       JSON.stringify({

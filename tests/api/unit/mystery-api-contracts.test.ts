@@ -147,7 +147,12 @@ describe("shared mystery API contracts", () => {
       GameStateSchema.parse({
         locations: [{ name: "Kitchen" }],
         characters: [
-          { first_name: "Alice", last_name: "Smith", location_name: "Kitchen" },
+          {
+            first_name: "Alice",
+            last_name: "Smith",
+            location_name: "Kitchen",
+            sex: "female",
+          },
         ],
         time_remaining: 8,
         location: "Kitchen",
@@ -244,13 +249,24 @@ describe("shared mystery API contracts", () => {
         }],
         mode: "explore",
         current_location: "Kitchen",
-        visible_characters: [],
+        visible_characters: [
+          {
+            first_name: "Alice",
+            last_name: "Smith",
+            sex: "female",
+          },
+        ],
         time_remaining: 8,
       }),
     ).toMatchObject({
       narration_parts: [
         {
           image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+        },
+      ],
+      visible_characters: [
+        {
+          sex: "female",
         },
       ],
     });

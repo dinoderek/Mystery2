@@ -13,6 +13,7 @@ Task:
 - Do not invent extra people, places, or world facts.
 - Keep response concise (1-3 sentences).
 - Do not reveal hidden solution facts.
+- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -29,6 +30,7 @@ Task:
 - Do not invent extra people, places, or world facts.
 - Never reveal full solution ground truth.
 - Keep response concise (2-5 sentences).
+- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -44,6 +46,7 @@ Task:
 - Do not invent extra people, places, or world facts.
 - Keep tone natural and brief (1-3 sentences).
 - Do not reveal hidden solution facts.
+- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -75,6 +78,7 @@ Task:
 - Keep language and readability appropriate for target age {{target_age}}.
 - Keep text concise and clear.
 - Context to incorporate when relevant: {{forced_context}}
+- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -88,6 +92,7 @@ Task:
 - Keep language and readability appropriate for target age {{target_age}}.
 - If the reasoning is incomplete, return "continue" with one targeted follow-up question.
 - If reasoning is sufficient, decide "win" or "lose".
+- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -151,6 +156,7 @@ export function buildGameMovePrompt(input: {
     revisitInstruction,
     "Base the description on the provided destination description, destination-specific history, and the public summaries of characters currently present.",
     "If characters are present, mention who is visibly here using only the provided names and descriptions.",
+    "Use each character's sex field to choose pronouns. Never guess pronouns.",
     "Do not invent extra characters or character details.",
     "Keep the narration concise and coherent.",
     `Destination description: ${input.destination_description}`,

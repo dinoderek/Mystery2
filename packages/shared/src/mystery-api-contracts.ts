@@ -13,6 +13,7 @@ export const SpeakerSchema = z.object({
   label: z.string().min(1),
 });
 export const OutcomeSchema = z.enum(["win", "lose"]);
+export const CharacterSexSchema = z.enum(["male", "female"]);
 
 export const ErrorResponseSchema = z.object({
   error: z.string(),
@@ -89,6 +90,7 @@ export const MoveResponseSchema = TurnResponseBaseSchema.extend({
     z.object({
       first_name: z.string().min(1),
       last_name: z.string().min(1),
+      sex: CharacterSexSchema,
     }),
   ),
 });
@@ -107,6 +109,7 @@ export const CharacterSummarySchema = z.object({
   first_name: z.string(),
   last_name: z.string(),
   location_name: z.string(),
+  sex: CharacterSexSchema,
 });
 
 export const GameStateSchema = z.object({

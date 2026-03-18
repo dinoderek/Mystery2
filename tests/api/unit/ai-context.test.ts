@@ -6,11 +6,12 @@ import {
   buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
+  type BlueprintContext,
   selectCharacterConversationHistory,
   selectLocationConversationHistory,
 } from "../../../supabase/functions/_shared/ai-context.ts";
 
-const blueprint = {
+const blueprint: BlueprintContext = {
   metadata: {
     title: "Case",
     one_liner: "One line",
@@ -22,7 +23,6 @@ const blueprint = {
     starting_knowledge: ["The kitchen window was open."],
   },
   world: {
-    starting_location_id: "Kitchen",
     locations: [
       { name: "Kitchen", description: "A messy kitchen", clues: ["crumbs"] },
       { name: "Garden", description: "A quiet garden", clues: [] },
@@ -32,6 +32,7 @@ const blueprint = {
         first_name: "Alice",
         last_name: "Smith",
         location: "Kitchen",
+        sex: "female",
         appearance: "red hair",
         background: "the baker",
         personality: "nervous",
@@ -46,6 +47,7 @@ const blueprint = {
         first_name: "Bob",
         last_name: "Jones",
         location: "Garden",
+        sex: "male",
         appearance: "glasses",
         background: "the guest",
         personality: "calm",
@@ -165,11 +167,13 @@ describe("ai-context guardrails", () => {
       first_name: "Alice",
       last_name: "Smith",
       location: "Kitchen",
+      sex: "female",
       appearance: "red hair",
       background: "the baker",
     });
     expect(talkContext.talk_context?.active_character).toMatchObject({
       first_name: "Alice",
+      sex: "female",
       personality: "nervous",
       stated_alibi: "I was reading",
       mystery_action_real: "stole the pie",
@@ -252,6 +256,7 @@ describe("ai-context guardrails", () => {
           first_name: "Alice",
           last_name: "Smith",
           location: "Kitchen",
+          sex: "female",
           appearance: "red hair",
           background: "the baker",
         },

@@ -34,6 +34,7 @@ export interface GameState {
     first_name: string;
     last_name: string;
     location_name: string;
+    sex: 'male' | 'female' | null;
   }[];
   time_remaining: number;
   location: string;

@@ -164,12 +164,21 @@ describe("ai-provider mock role output", () => {
     const output = await provider.generateRoleOutput({
       role: "talk_start",
       prompt: "prompt",
-      context: { character_name: "Alice", location_name: "Kitchen" },
+      context: {
+        character_name: "Alice",
+        location_name: "Kitchen",
+        talk_context: {
+          active_character: {
+            sex: "female",
+          },
+        },
+      },
       parse: parseTalkStartOutput,
     });
 
     expect(output.narration).toContain("[Mock]");
     expect(output.narration).toContain("Alice");
+    expect(output.narration).toContain("she");
   });
 
   it("supports accusation continue and resolved rounds", async () => {

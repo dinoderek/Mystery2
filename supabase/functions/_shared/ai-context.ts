@@ -23,6 +23,7 @@ export interface BlueprintContext {
       first_name: string;
       last_name: string;
       location: string;
+      sex: "male" | "female";
       appearance?: string;
       background?: string;
       personality?: string;
@@ -83,6 +84,7 @@ export interface TalkCharacterPublicSummary {
   first_name: string;
   last_name: string;
   location: string;
+  sex: "male" | "female";
   appearance: string | null;
   background: string | null;
 }
@@ -285,6 +287,7 @@ function buildTalkCharacterPublicSummaries(
     first_name: character.first_name,
     last_name: character.last_name,
     location: character.location,
+    sex: character.sex,
     appearance: character.appearance ?? null,
     background: character.background ?? null,
   }));
@@ -305,6 +308,7 @@ function buildTalkCharacterPrivateContext(
     first_name: character.first_name,
     last_name: character.last_name,
     location: character.location,
+    sex: character.sex,
     appearance: character.appearance ?? null,
     background: character.background ?? null,
     personality: character.personality ?? null,

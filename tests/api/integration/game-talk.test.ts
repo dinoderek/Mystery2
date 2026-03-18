@@ -42,6 +42,7 @@ describe("game-talk endpoint", () => {
     expect(data.mode).toBe("talk");
     expect(data.time_remaining).toBe(10);
     expect(data.narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_parts[0].text).toContain("she");
     expect(data.narration_parts[0].text).not.toContain("because she was hungry");
     expect(data.narration_parts[0]).toMatchObject({
       image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",

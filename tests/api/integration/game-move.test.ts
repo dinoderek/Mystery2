@@ -52,7 +52,11 @@ describe("game-move endpoint", () => {
     expect(data.current_location).toBe("Living Room");
     expect(data.time_remaining).toBe(9);
     expect(data.narration_parts[0].text).toContain("[Mock]");
-    expect(Array.isArray(data.visible_characters)).toBe(true);
+    expect(data.visible_characters).toContainEqual({
+      first_name: "Bob",
+      last_name: "Jones",
+      sex: "male",
+    });
     expect(data.narration_parts[0]).toMatchObject({
       image_id: "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223",
       speaker: {
@@ -91,6 +95,11 @@ describe("game-move endpoint", () => {
     expect(secondMoveData.current_location).toBe("Kitchen");
     expect(secondMoveData.time_remaining).toBe(8);
     expect(secondMoveData.narration_parts[0].speaker.kind).toBe("narrator");
+    expect(secondMoveData.visible_characters).toContainEqual({
+      first_name: "Alice",
+      last_name: "Smith",
+      sex: "female",
+    });
   });
 
   it("persists forced endgame metadata when the final move consumes remaining turns", async () => {

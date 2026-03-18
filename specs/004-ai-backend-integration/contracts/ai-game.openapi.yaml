@@ -369,7 +369,7 @@ components:
 
     CharacterSummary:
       type: object
-      required: [first_name, last_name, location_name]
+      required: [first_name, last_name, location_name, sex]
       properties:
         first_name:
           type: string
@@ -377,6 +377,9 @@ components:
           type: string
         location_name:
           type: string
+        sex:
+          type: string
+          enum: [male, female]
 
     HistoryEntry:
       type: object

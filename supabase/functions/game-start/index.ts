@@ -233,6 +233,7 @@ serveWithCors(async (req) => {
         first_name: c.first_name,
         last_name: c.last_name,
         location_name: c.location,
+        sex: c.sex,
       })),
       time_remaining: blueprint.metadata.time_budget,
       location: startLoc,

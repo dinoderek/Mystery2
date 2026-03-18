@@ -69,6 +69,10 @@ function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function readCharacterSex(value: unknown): 'male' | 'female' | null {
+  return value === 'male' || value === 'female' ? value : null;
+}
+
 function readRecoveryMessage(value: unknown): string | null {
   if (!isRecord(value)) {
     return null;
@@ -555,6 +559,7 @@ export class GameSessionStore {
               first_name: readString(character.first_name),
               last_name: readString(character.last_name),
               location_name: readString(character.location_name),
+              sex: readCharacterSex(character.sex),
             }))
             .filter((character) => character.first_name.length > 0)
         : [],

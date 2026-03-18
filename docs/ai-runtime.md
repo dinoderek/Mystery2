@@ -56,6 +56,9 @@ see `docs/blueprint-generation-flows.md`.
   - search gets location description plus canonical clue progression state
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint
+- Character `sex` is included anywhere runtime AI receives character summaries
+  or full blueprint data, and prompt guidance now explicitly tells the model to
+  use that field for pronoun choice instead of guessing.
 - History selection rules:
   - talk roles: include all and only `talk`/`ask`/`end_talk` events tied to the active character, preserving prior `player_input`
   - search role: include all and only events tied to the active location (including move/search events for that location)
@@ -134,6 +137,8 @@ For `game-move`:
 1. Load destination blueprint data and destination-relative history.
 2. Compute whether the location has been visited before.
 3. Generate move narration with revisit-consistency instructions plus `target_age`.
+4. Pass destination character public summaries including `sex` so the narrator
+   can use grounded pronouns when describing who is present.
 
 For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`, `game-ask` when time reaches zero):
 
@@ -141,6 +146,19 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 2. Build `accusation_start` context with `forced_by_timeout=true`.
 3. Generate urgency narration that time is over and accusation must begin immediately.
 4. Persist `forced_endgame` event and transition session mode to `accuse`.
+
+## Pronoun Grounding
+
+- Runtime prompts for `talk_start`, `talk_conversation`, `talk_end`,
+  `accusation_start`, `accusation_judge`, and ad hoc `game-move` narration now
+  explicitly instruct the model to use provided character `sex` for pronouns.
+- Non-judge talk flows receive `sex` through `talk_context` public/private
+  character summaries.
+- `game-move` receives `sex` in destination character public summaries.
+- `accusation_judge` receives `sex` through the full blueprint context.
+- `game-start` and `game-get` also expose `sex` on player-visible character
+  summaries so the API boundary stays aligned with the narrator-facing data
+  model.
 
 ## Accusation Round Lifecycle
 

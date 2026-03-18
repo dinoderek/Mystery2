@@ -121,6 +121,14 @@ function readOptionalContextString(
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function readCharacterSex(value: unknown): "male" | "female" | null {
+  return value === "male" || value === "female" ? value : null;
+}
+
+function pronounForSex(sex: "male" | "female" | null): string {
+  return sex === "male" ? "he" : sex === "female" ? "she" : "they";
+}
+
 function inferMentionedCharacter(
   context: Record<string, unknown>,
 ): string | null {
@@ -284,13 +292,22 @@ class MockAIProvider implements AIProvider {
           "location_name",
         );
         const talkContext = context.talk_context as
-          | { active_character?: { appearance?: string | null; background?: string | null } }
+          | {
+            active_character?: {
+              appearance?: string | null;
+              background?: string | null;
+              sex?: unknown;
+            };
+          }
           | undefined;
         const appearance = talkContext?.active_character?.appearance ?? "a familiar face";
         const background = talkContext?.active_character?.background ?? "someone tied to the case";
+        const pronoun = pronounForSex(
+          readCharacterSex(talkContext?.active_character?.sex),
+        );
         return {
           narration:
-            `[Mock] You approach ${characterName} in ${locationName}. ${characterName} appears ${appearance} and carries the air of ${background}.`,
+            `[Mock] You approach ${characterName} in ${locationName}. ${pronoun} appears ${appearance} and carries the air of ${background}.`,
         };
       }
       case "talk_conversation": {

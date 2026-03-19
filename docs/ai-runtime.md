@@ -11,6 +11,12 @@ see `docs/blueprint-generation-flows.md`.
 For the standalone blueprint evaluator prompt and output schema, see
 `docs/blueprint-evaluation.md`.
 
+Important version note:
+
+- live gameplay runtime still consumes Blueprint V1 from
+  `packages/shared/src/blueprint-schema.ts`
+- Blueprint V2 currently exists only for authoring, generation, and evaluation
+
 ## Runtime Components
 
 - `supabase/functions/_shared/ai-provider.ts`
@@ -42,14 +48,14 @@ Blueprint evaluation is currently a separate concern from gameplay runtime.
 
 - Prompt source: `packages/shared/src/evaluation/prompt.ts`
 - Output schema: `packages/shared/src/evaluation/schema.ts`
+- Blueprint V2 schema source: `packages/shared/src/blueprint-schema-v2.ts`
 
 The evaluator currently judges blueprint quality, solvability structure,
 dead ends, red herrings, and consistency without participating in live gameplay
 state transitions.
 
-Potential future blueprint/schema improvements discovered during evaluator
-design are tracked in `docs/blueprint-evaluation.md`; they are not implemented
-runtime contracts yet.
+In this phase the evaluator targets Blueprint V2, while gameplay runtime still
+operates on Blueprint V1. Runtime migration to V2 is intentionally deferred.
 
 ## Roles and Prompt Responsibilities
 

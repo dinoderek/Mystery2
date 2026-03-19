@@ -12,56 +12,7 @@ import {
   parseGenerateBlueprintArgs,
   runBlueprintGenerationCli,
 } from "../../../scripts/generate-blueprint.mjs";
-
-const validBlueprint = {
-  id: "123e4567-e89b-12d3-a456-426614174000",
-  metadata: {
-    title: "The Missing Cookies",
-    one_liner: "Someone took the cookies before snack time.",
-    target_age: 8,
-    time_budget: 12,
-  },
-  narrative: {
-    premise: "The cookie plate is empty and snack time is almost here.",
-    starting_knowledge: ["The cookies disappeared from the kitchen."],
-  },
-  world: {
-    starting_location_id: "Kitchen",
-    locations: [
-      {
-        name: "Kitchen",
-        description: "A bright kitchen with crumbs on the counter.",
-        clues: ["Cookie crumbs lead toward the hallway."],
-      },
-    ],
-    characters: [
-      {
-        first_name: "Alice",
-        last_name: "Smith",
-        location: "Kitchen",
-        sex: "female",
-        appearance: "Red hair and a floury apron.",
-        background: "Alice helped bake the snacks.",
-        personality: "Nervous but kind.",
-        initial_attitude_towards_investigator: "Guarded but polite.",
-        location_id: "Kitchen",
-        mystery_action_real: "She hid the cookies in her lunch bag.",
-        stated_alibi: "I was washing bowls by the sink.",
-        motive: "She was hungry after skipping breakfast.",
-        is_culprit: true,
-        knowledge: ["I saw crumbs near the hallway door."],
-      },
-    ],
-  },
-  ground_truth: {
-    what_happened: "Alice took the cookies and hid them in her lunch bag.",
-    why_it_happened: "She was hungry after skipping breakfast.",
-    timeline: [
-      "10:00 AM - The cookies are placed on the counter.",
-      "10:05 AM - Alice pockets the cookies while no one is looking.",
-    ],
-  },
-};
+import { validBlueprintV2 as validBlueprint } from "./fixtures/blueprint-v2.fixture.ts";
 
 function createSuccessResponse(contentObject: unknown = validBlueprint) {
   return new Response(
@@ -107,11 +58,15 @@ describe("blueprint generator", () => {
     expect(body.response_format.json_schema.schema.type).toBe("object");
     expect(body.response_format.json_schema.schema.$ref).toBeUndefined();
     expect(body.response_format.json_schema.schema.required).toEqual([
+      "schema_version",
       "id",
       "metadata",
       "narrative",
       "world",
       "ground_truth",
+      "solution_paths",
+      "red_herrings",
+      "suspect_elimination_paths",
     ]);
     expect(body.response_format.json_schema.schema.metadata).toBeUndefined();
     expect(body.response_format.json_schema.schema.properties.metadata.required).toEqual([
@@ -139,7 +94,10 @@ describe("blueprint generator", () => {
     expect(body.messages[0].content).toContain("## Internal Workflow");
     expect(body.messages[0].content).toContain("## Challenge Calibration");
     expect(body.messages[0].content).toContain("## Field Sizing Guidance");
-    expect(body.messages[0].content).toContain("Every clue must point to something that actually happened");
+    expect(body.messages[0].content).toContain("Every location clue and character clue must be intentionally authored.");
+    expect(body.messages[0].content).toContain("Every location clue and character clue must belong to at least one authored");
+    expect(body.messages[0].content).toContain("world.characters[].actual_actions[]");
+    expect(body.messages[0].content).toContain("solution_paths[]");
     expect(body.messages[0].content).toContain("Do not output `image_id`, `location_image_id`, or `portrait_image_id`.");
   });
 

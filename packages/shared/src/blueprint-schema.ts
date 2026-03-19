@@ -132,6 +132,13 @@ export const BlueprintSchema = z.object({
   }),
 });
 
+export const CharacterV1Schema = CharacterSchema;
+export const LocationV1Schema = LocationSchema;
+export const BlueprintV1Schema = BlueprintSchema;
+
 export type Blueprint = z.infer<typeof BlueprintSchema>;
 export type Character = z.infer<typeof CharacterSchema>;
 export type Location = z.infer<typeof LocationSchema>;
+export type BlueprintV1 = Blueprint;
+export type CharacterV1 = Character;
+export type LocationV1 = Location;

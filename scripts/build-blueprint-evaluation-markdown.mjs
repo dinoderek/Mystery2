@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 
 import { StoryBriefSchema } from "../packages/blueprint-generator/src/story-brief.ts";
-import { BlueprintSchema } from "../packages/shared/src/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../packages/shared/src/blueprint-schema-v2.ts";
 import { BLUEPRINT_EVALUATION_PROMPT } from "../packages/shared/src/evaluation/prompt.ts";
 
 const EVALUATION_SCHEMA_URL = new URL(
@@ -13,7 +13,7 @@ const STORY_BRIEF_SCHEMA_URL = new URL(
   import.meta.url,
 );
 const BLUEPRINT_SCHEMA_URL = new URL(
-  "../packages/shared/src/blueprint-schema.ts",
+  "../packages/shared/src/blueprint-schema-v2.ts",
   import.meta.url,
 );
 
@@ -107,7 +107,7 @@ ${evaluationSchemaSource.trim()}
 ${storyBriefSchemaSource.trim()}
 \`\`\`
 
-## Blueprint Schema Reference
+## Blueprint V2 Schema Reference
 
 \`\`\`ts
 ${blueprintSchemaSource.trim()}
@@ -137,7 +137,7 @@ export async function runBuildBlueprintEvaluationMarkdownCli(
   const storyBrief = StoryBriefSchema.parse(
     JSON.parse(await readFile(options.briefFile, "utf-8")),
   );
-  const blueprint = BlueprintSchema.parse(
+  const blueprint = BlueprintV2Schema.parse(
     JSON.parse(await readFile(options.blueprintFile, "utf-8")),
   );
 

@@ -48,6 +48,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 ## Feature Additions (Blueprint Generation)
 
 - `packages/shared/src/blueprint-schema.ts`: Canonical blueprint Zod schema shared by Node tooling and Supabase Edge Functions.
+- `packages/shared/src/blueprint-schema-v2.ts`: Parallel Blueprint V2 authoring schema used by the generator and evaluator while gameplay runtime remains on V1.
 - `packages/shared/src/evaluation/`: Shared standalone blueprint-evaluation prompt plus Zod output schema.
 - `packages/blueprint-generator/`: Shared prompt-loading, OpenRouter structured-output, and schema-validation flow for blueprint generation.
 - `scripts/generate-blueprint.mjs`: Local operator CLI that turns structured story briefs into canonical blueprint JSON.

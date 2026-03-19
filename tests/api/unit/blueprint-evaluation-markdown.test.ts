@@ -9,6 +9,7 @@ import {
   parseBuildBlueprintEvaluationMarkdownArgs,
   runBuildBlueprintEvaluationMarkdownCli,
 } from "../../../scripts/build-blueprint-evaluation-markdown.mjs";
+import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const validStoryBrief = {
   brief: "A child-friendly mystery about a missing tray of cookies.",
@@ -17,55 +18,7 @@ const validStoryBrief = {
   mustInclude: ["One innocent suspect with a believable motive"],
 };
 
-const validBlueprint = {
-  id: "123e4567-e89b-12d3-a456-426614174000",
-  metadata: {
-    title: "The Missing Cookies",
-    one_liner: "Someone took the cookies before snack time.",
-    target_age: 8,
-    time_budget: 12,
-  },
-  narrative: {
-    premise: "The cookie plate is empty and snack time is almost here.",
-    starting_knowledge: ["The cookies disappeared from the kitchen."],
-  },
-  world: {
-    starting_location_id: "Kitchen",
-    locations: [
-      {
-        name: "Kitchen",
-        description: "A bright kitchen with crumbs on the counter.",
-        clues: ["Cookie crumbs lead toward the hallway."],
-      },
-    ],
-    characters: [
-      {
-        first_name: "Alice",
-        last_name: "Smith",
-        location: "Kitchen",
-        sex: "female",
-        appearance: "Red hair and a floury apron.",
-        background: "Alice helped bake the snacks.",
-        personality: "Nervous but kind.",
-        initial_attitude_towards_investigator: "Guarded but polite.",
-        location_id: "Kitchen",
-        mystery_action_real: "She hid the cookies in her lunch bag.",
-        stated_alibi: "I was washing bowls by the sink.",
-        motive: "She was hungry after skipping breakfast.",
-        is_culprit: true,
-        knowledge: ["I saw crumbs near the hallway door."],
-      },
-    ],
-  },
-  ground_truth: {
-    what_happened: "Alice took the cookies and hid them in her lunch bag.",
-    why_it_happened: "She was hungry after skipping breakfast.",
-    timeline: [
-      "10:00 AM - The cookies are placed on the counter.",
-      "10:05 AM - Alice pockets the cookies while no one is looking.",
-    ],
-  },
-};
+const validBlueprint = validBlueprintV2;
 
 describe("parseBuildBlueprintEvaluationMarkdownArgs", () => {
   it("parses supported options", () => {
@@ -140,9 +93,10 @@ describe("runBuildBlueprintEvaluationMarkdownCli", () => {
     const written = await readFile(outputFile, "utf-8");
 
     expect(result.outputText).toContain("# Cookie Packet");
-    expect(result.outputText).toContain("## Blueprint Schema Reference");
+    expect(result.outputText).toContain("## Blueprint V2 Schema Reference");
     expect(written).toBe(result.outputText);
     expect(written).toContain("\"mustInclude\"");
+    expect(written).toContain("\"schema_version\": \"v2\"");
     expect(written).toContain("\"ground_truth\"");
   });
 });

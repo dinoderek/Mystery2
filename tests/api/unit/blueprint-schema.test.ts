@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { BlueprintSchema } from "../../../packages/shared/src/blueprint-schema.ts";
+import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const ROOT_DIR = process.cwd();
 
@@ -50,5 +51,9 @@ describe("shared blueprint schema", () => {
         },
       })
     ).toThrow();
+  });
+
+  it("does not accept Blueprint V2 authoring payloads", () => {
+    expect(() => BlueprintSchema.parse(validBlueprintV2)).toThrow();
   });
 });

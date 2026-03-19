@@ -1,14 +1,13 @@
 # Blueprint Evaluation
 
-This document describes the current evaluator assets used to judge blueprint
-quality as a mystery artifact.
+This document describes the evaluator assets used to judge blueprint quality as
+a mystery artifact.
 
 Scope note:
 
 - This is not a gameplay runtime flow.
-- This is not yet wired into any specific ingestion path.
-- The goal is to keep the evaluator prompt and output contract explicit and
-  versionable.
+- The evaluator now targets **Blueprint V2** authoring data.
+- Live gameplay runtime still consumes **Blueprint V1** in this phase.
 
 ## Canonical Assets
 
@@ -20,6 +19,8 @@ Scope note:
   `packages/shared/src/evaluation/index.ts`
 - Markdown packet builder:
   `scripts/build-blueprint-evaluation-markdown.mjs`
+- Blueprint V2 schema reference:
+  `packages/shared/src/blueprint-schema-v2.ts`
 
 ## Building A Chat Packet
 
@@ -29,7 +30,7 @@ run:
 ```bash
 npm run build:evaluation-markdown -- \
   --brief-file path/to/story-brief.json \
-  --blueprint-file path/to/blueprint.json \
+  --blueprint-file path/to/blueprint-v2.json \
   --output path/to/evaluation-packet.md
 ```
 
@@ -42,12 +43,12 @@ The generated markdown packet includes:
 - the evaluator prompt
 - the evaluator output schema as Zod source
 - the story-brief schema reference
-- the blueprint schema reference
+- the Blueprint V2 schema reference
 - the concrete story brief JSON
-- the concrete blueprint JSON
+- the concrete Blueprint V2 JSON
 
 This is intended for copy/paste into a chat window when you want the model to
-evaluate a specific blueprint without wiring up a dedicated runtime path yet.
+evaluate a specific Blueprint V2 without wiring up a dedicated runtime path yet.
 
 ## Current Evaluator Scope
 
@@ -57,60 +58,57 @@ The evaluator currently focuses on:
 - ground-truth quality
 - existence of one or more solution paths
 - role of every location clue
-- role of every knowledge item
+- role of every character clue
 - fairness of red herrings
 - presence of dead ends
 - consistency of canonical facts
-- redundant clues / redundant knowledge
+- redundant location clues / character clues
 
 Current simplifying assumptions:
 
 - the investigator can eventually discover all location clues
-- the investigator can eventually obtain all character knowledge
+- the investigator can eventually obtain all character clues
 - time-to-solve and action economy are intentionally ignored for now
 
 The evaluator returns binary `yes|no` judgments per dimension rather than
 scores. Passing dimensions provide concise reasoning. Failing dimensions provide
 concrete issues with blueprint-path evidence.
 
-## Current Limits
+## Blueprint V2 Assumptions
 
-- The evaluator infers clue roles, red-herring structure, and solution paths
-  from free-form blueprint text because the canonical blueprint schema does not
-  yet model them explicitly.
-- `world.characters[].stated_alibi` is treated as a claim, not a canonical fact.
-- Knowledge items may be mystery-relevant or may be optional flavor; the
-  current schema does not explicitly distinguish those cases.
+The evaluator expects Blueprint V2 to provide explicit authoring structure for:
 
-## Possible Next Steps
+- `solution_paths[]`
+- `red_herrings[]`
+- `suspect_elimination_paths[]`
+- structured location clues
+- structured character clues
+- separate `flavor_knowledge[]`
+- ordered `actual_actions[]`
 
-These are design ideas surfaced by the evaluator work. They are not implemented
-in the canonical blueprint schema or generator yet.
+The evaluator uses authored path arrays as the intended reasoning structure, but
+still verifies that the clue texts and hidden truth genuinely support them.
 
-- Add explicit `red_herrings` structures to the blueprint schema instead of
-  forcing the evaluator and accusation judge to infer them from free-form clues
-  and character facts.
-- Add explicit suspect-elimination paths so innocents are rule-out-able through
-  first-class blueprint data, not just indirect clue interpretation.
-- Ask the blueprint generator to emit explicit resolution paths for:
-  - the real mystery solution
-  - each red herring
-  - each suspect-elimination path
-- Replace bare clue / knowledge strings with structured objects that can carry:
-  - intended role
-  - whether they support the real solution, a red herring, or an elimination path
-  - whether they support, contradict, or resolve that path
-  - optional linkage to other clue-chain nodes
-- Require location clues to connect to either:
-  - the real solution
-  - a red-herring path
-  - a suspect-elimination path
-- Allow character knowledge to connect optionally to the same path types, while
-  still permitting explicit flavor-only knowledge.
-- Add an explicit per-character factual field for what the character was really
-  doing during the mystery window. This would separate hidden truth from
-  `stated_alibi` and reduce ambiguity when checking consistency against
-  `ground_truth.timeline`.
-- Consider a lightweight fact-graph or reasoning-graph section in the blueprint
-  so the generator can prove the case structure directly instead of relying on
-  downstream inference.
+`flavor_knowledge[]` is treated as optional worldbuilding rather than mystery
+evidence.
+
+## Runtime Boundary
+
+In this phase:
+
+- generator output is Blueprint V2
+- evaluator input is Blueprint V2
+- gameplay runtime remains on Blueprint V1
+
+That means Blueprint V2 output is for authoring, review, and evaluation only
+until a later runtime-migration phase lands.
+
+## Future Runtime Phase
+
+The later runtime migration phase is expected to handle:
+
+- V2-aware search/talk/judge context builders
+- narrator prompt migration
+- accusation judge migration to explicit path structures
+- V1 runtime data retirement
+- V1 schema removal once gameplay no longer depends on it

@@ -30,7 +30,12 @@ Covers:
 - UI component logic (where practical)
 - prompt construction and parsing utilities
 - blueprint generation utilities (`packages/blueprint-generator/*`, `scripts/generate-blueprint.mjs`)
+- blueprint schema versioning coverage, including:
+  - V1 runtime schema acceptance for canonical playable fixtures
+  - V2 authoring schema validation for generator/evaluator-only blueprints
+  - explicit non-compatibility checks so V2 blueprints are not accepted by V1 runtime validators
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
+- evaluation-packet assembly (`scripts/build-blueprint-evaluation-markdown.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:

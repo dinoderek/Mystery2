@@ -4,7 +4,7 @@ const BlueprintPathSchema = z
   .string()
   .min(1)
   .describe(
-    "JSON-style path into the blueprint, for example world.locations[1].clues[0] or ground_truth.timeline[2].",
+    "JSON-style path into the blueprint, for example world.locations[1].clues[0] or solution_paths[0].location_clue_ids[0].",
   );
 
 const IssueSchema = z.object({
@@ -72,11 +72,8 @@ export const ClueRoleSchema = z
     "corroboration",
     "dead_end",
     "irrelevant",
-    "flavor",
   ])
-  .describe(
-    "How a clue or knowledge item functions inside the mystery. Flavor is primarily intended for optional non-solutional knowledge items.",
-  );
+  .describe("How an authored mystery clue functions inside the mystery.");
 
 const SolutionPathStepSchema = z.object({
   claim: z
@@ -110,7 +107,7 @@ export const SolutionPathSchema = z.object({
 
 const ClueAuditEntrySchema = z.object({
   path: BlueprintPathSchema.describe(
-    "Path to one specific location clue or one specific character knowledge item.",
+    "Path to one specific location clue or one specific character clue.",
   ),
   role: ClueRoleSchema,
   reasoning: z
@@ -167,19 +164,19 @@ export const DeadEndSchema = z.object({
 
 export const RedundantClueSchema = z.object({
   path: BlueprintPathSchema.describe(
-    "Path to the redundant clue or knowledge item.",
+    "Path to the redundant location clue or character clue.",
   ),
   overlaps_with_paths: z
     .array(BlueprintPathSchema)
     .min(1)
     .describe(
-      "Other clue or knowledge paths that already provide the same information or function.",
+      "Other clue paths that already provide the same information or function.",
     ),
   reasoning: z
     .string()
     .min(1)
     .describe(
-      "Why this item is redundant rather than useful corroboration or distinct elimination evidence.",
+      "Why this clue is redundant rather than useful corroboration or distinct elimination evidence.",
     ),
 });
 
@@ -195,7 +192,7 @@ export const BlueprintEvaluationOutputSchema = z
       ground_truth_quality: EvaluationDimensionResultSchema,
       solvable_paths_exist: EvaluationDimensionResultSchema,
       location_clues_have_role: EvaluationDimensionResultSchema,
-      knowledge_items_have_role: EvaluationDimensionResultSchema,
+      character_clues_have_role: EvaluationDimensionResultSchema,
       red_herrings_are_fair: EvaluationDimensionResultSchema,
       no_dead_ends: EvaluationDimensionResultSchema,
       consistent_facts: EvaluationDimensionResultSchema,
@@ -209,9 +206,9 @@ export const BlueprintEvaluationOutputSchema = z
     location_clue_audit: z
       .array(ClueAuditEntrySchema)
       .describe("Audit of every location clue in the blueprint."),
-    knowledge_audit: z
+    character_clue_audit: z
       .array(ClueAuditEntrySchema)
-      .describe("Audit of every character knowledge item in the blueprint."),
+      .describe("Audit of every character clue in the blueprint."),
     red_herrings: z
       .array(RedHerringSchema)
       .describe("All detected red herrings or fair false plots."),
@@ -220,7 +217,7 @@ export const BlueprintEvaluationOutputSchema = z
       .describe("All detected dead ends."),
     redundant_clues: z
       .array(RedundantClueSchema)
-      .describe("All detected redundant clues or redundant knowledge items."),
+      .describe("All detected redundant location clues or character clues."),
   })
   .superRefine((value, context) => {
     const dimensionResults = Object.values(value.dimensions);

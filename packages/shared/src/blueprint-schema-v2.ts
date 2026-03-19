@@ -1,0 +1,482 @@
+import { z } from "zod";
+
+const BlueprintV2IdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .describe("Stable identifier used for authored Blueprint V2 entities.");
+
+export const BlueprintV2CharacterSexSchema = z.enum(["male", "female"]);
+
+export const BlueprintV2ClueRoleSchema = z
+  .enum([
+    "direct_evidence",
+    "supporting_evidence",
+    "suspect_elimination",
+    "red_herring",
+    "red_herring_elimination",
+    "corroboration",
+  ])
+  .describe("Authored purpose of a clue inside the mystery reasoning model.");
+
+export const BlueprintV2LocationClueSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for a location clue. Referenced by reasoning paths.",
+  ),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Concrete clue text discovered by searching a location."),
+  role: BlueprintV2ClueRoleSchema,
+});
+
+export const BlueprintV2CharacterClueSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for a character clue. Referenced by reasoning paths.",
+  ),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Concrete mystery-relevant fact a character can reveal in conversation."),
+  role: BlueprintV2ClueRoleSchema,
+});
+
+export const BlueprintV2ReasoningPathSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for one authored reasoning path.",
+  ),
+  summary: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Short human-readable summary of what this path establishes."),
+  description: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe("Optional extra explanation of the path for human readers."),
+  location_clue_ids: z
+    .array(BlueprintV2IdSchema)
+    .describe("Ids of location clues that belong to this path."),
+  character_clue_ids: z
+    .array(BlueprintV2IdSchema)
+    .describe("Ids of character clues that belong to this path."),
+});
+
+export const BlueprintV2CharacterActualActionSchema = z.object({
+  sequence: z
+    .number()
+    .int()
+    .positive()
+    .describe(
+      "Ordered position of this factual action within the mystery window.",
+    ),
+  summary: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "What the character was actually doing at this point in the mystery window.",
+    ),
+});
+
+export const BlueprintV2LocationSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for this location. Referenced by starting_location_id and character location_id.",
+  ),
+  name: z.string().trim().min(1),
+  description: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("The base description of the room when entered."),
+  location_image_id: z
+    .string()
+    .optional()
+    .describe(
+      "Optional static scene image identifier shown when the investigator moves here.",
+    ),
+  clues: z
+    .array(BlueprintV2LocationClueSchema)
+    .describe("Structured searchable clues for this location."),
+});
+
+export const BlueprintV2CharacterSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for this character. Reserved for future authored references.",
+  ),
+  first_name: z.string().trim().min(1),
+  last_name: z.string().trim().min(1),
+  location_id: BlueprintV2IdSchema.describe(
+    "Location id for this character's current position in the world.",
+  ),
+  sex: BlueprintV2CharacterSexSchema,
+  appearance: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "The character's appearance. Also used to generate character portraits later.",
+    ),
+  background: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("The character's backstory and relation to the mystery."),
+  personality: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("The character's personality. AI should use it to impersonate them."),
+  initial_attitude_towards_investigator: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "The character's initial attitude toward the investigator. This shapes conversation tone.",
+    ),
+  stated_alibi: z
+    .string()
+    .trim()
+    .min(1)
+    .nullable()
+    .describe(
+      "What the character claims they were doing. This is a claim and may be false.",
+    ),
+  motive: z
+    .string()
+    .trim()
+    .min(1)
+    .nullable()
+    .describe("Why they might have done it. Null if they have no clear motive."),
+  is_culprit: z.boolean().describe("Whether this character is the culprit."),
+  portrait_image_id: z
+    .string()
+    .optional()
+    .describe(
+      "Optional static portrait image identifier used in talk-mode narration panels.",
+    ),
+  clues: z
+    .array(BlueprintV2CharacterClueSchema)
+    .describe("Mystery-relevant facts this character can reveal."),
+  flavor_knowledge: z
+    .array(z.string().trim().min(1))
+    .describe(
+      "Optional non-mystery worldbuilding or relationship detail. Never used as canonical mystery evidence.",
+    ),
+  actual_actions: z
+    .array(BlueprintV2CharacterActualActionSchema)
+    .min(1)
+    .describe(
+      "Ordered factual actions this character actually took during the mystery window.",
+    ),
+});
+
+function addDuplicateIssue(
+  context: z.RefinementCtx,
+  path: (string | number)[],
+  value: string,
+): void {
+  context.addIssue({
+    code: z.ZodIssueCode.custom,
+    path,
+    message: `Duplicate id "${value}" is not allowed in Blueprint V2.`,
+  });
+}
+
+export const BlueprintV2Schema = z
+  .object({
+    schema_version: z
+      .literal("v2")
+      .describe("Explicit authoring schema version for Blueprint V2."),
+    id: z.string().uuid(),
+    metadata: z.object({
+      title: z.string().trim().min(1),
+      one_liner: z
+        .string()
+        .trim()
+        .min(1)
+        .describe(
+          "A one-sentence summary of the mystery displayed in the selection screen.",
+        ),
+      target_age: z
+        .number()
+        .int()
+        .positive()
+        .describe(
+          "Target age of the investigator. Used to generate age-appropriate text.",
+        ),
+      time_budget: z
+        .number()
+        .int()
+        .positive()
+        .describe("The number of turns the player has to solve the mystery."),
+      art_style: z
+        .string()
+        .trim()
+        .min(1)
+        .optional()
+        .describe(
+          "Optional visual direction used when generating static artwork for this mystery.",
+        ),
+      image_id: z
+        .string()
+        .optional()
+        .describe(
+          "Optional static blueprint cover image identifier for the mystery selection screen.",
+        ),
+    }),
+    narrative: z.object({
+      premise: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("The hook provided to the player when the game starts."),
+      starting_knowledge: z
+        .array(z.string().trim().min(1))
+        .describe("Facts the player knows immediately."),
+    }),
+    world: z.object({
+      starting_location_id: BlueprintV2IdSchema.describe(
+        "Location id where the investigator starts.",
+      ),
+      locations: z.array(BlueprintV2LocationSchema),
+      characters: z.array(BlueprintV2CharacterSchema),
+    }),
+    ground_truth: z.object({
+      what_happened: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("The objective reality of the crime/event."),
+      why_it_happened: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("The core motive of the culprit."),
+      timeline: z
+        .array(z.string().trim().min(1))
+        .describe("Chronological sequence of events leading up to the mystery."),
+    }),
+    solution_paths: z
+      .array(BlueprintV2ReasoningPathSchema)
+      .min(1)
+      .describe("Authored reasoning paths that establish the real solution."),
+    red_herrings: z
+      .array(BlueprintV2ReasoningPathSchema)
+      .describe("Authored false-suspicion paths and how they are grounded."),
+    suspect_elimination_paths: z
+      .array(BlueprintV2ReasoningPathSchema)
+      .describe("Authored paths used to rule out innocent suspects."),
+  })
+  .superRefine((value, context) => {
+    const locationIds = new Set<string>();
+    const characterIds = new Set<string>();
+    const locationClueIds = new Set<string>();
+    const characterClueIds = new Set<string>();
+    const pathIds = new Set<string>();
+    const referencedClueIds = new Set<string>();
+
+    for (const [locationIndex, location] of value.world.locations.entries()) {
+      if (locationIds.has(location.id)) {
+        addDuplicateIssue(context, ["world", "locations", locationIndex, "id"], location.id);
+      }
+      locationIds.add(location.id);
+
+      for (const [clueIndex, clue] of location.clues.entries()) {
+        if (locationClueIds.has(clue.id) || characterClueIds.has(clue.id)) {
+          addDuplicateIssue(
+            context,
+            ["world", "locations", locationIndex, "clues", clueIndex, "id"],
+            clue.id,
+          );
+        }
+        locationClueIds.add(clue.id);
+      }
+    }
+
+    if (!locationIds.has(value.world.starting_location_id)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["world", "starting_location_id"],
+        message: "starting_location_id must reference an existing location id.",
+      });
+    }
+
+    let culpritCount = 0;
+
+    for (const [characterIndex, character] of value.world.characters.entries()) {
+      if (characterIds.has(character.id)) {
+        addDuplicateIssue(
+          context,
+          ["world", "characters", characterIndex, "id"],
+          character.id,
+        );
+      }
+      characterIds.add(character.id);
+
+      if (!locationIds.has(character.location_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["world", "characters", characterIndex, "location_id"],
+          message: "character location_id must reference an existing location id.",
+        });
+      }
+
+      if (character.is_culprit) {
+        culpritCount += 1;
+      }
+
+      const seenSequences = new Set<number>();
+      let previousSequence = 0;
+      for (const [actionIndex, action] of character.actual_actions.entries()) {
+        if (seenSequences.has(action.sequence)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [
+              "world",
+              "characters",
+              characterIndex,
+              "actual_actions",
+              actionIndex,
+              "sequence",
+            ],
+            message: "actual action sequences must be unique per character.",
+          });
+        }
+        seenSequences.add(action.sequence);
+
+        if (action.sequence <= previousSequence) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [
+              "world",
+              "characters",
+              characterIndex,
+              "actual_actions",
+              actionIndex,
+              "sequence",
+            ],
+            message: "actual action sequences must be in ascending order.",
+          });
+        }
+        previousSequence = action.sequence;
+      }
+
+      for (const [clueIndex, clue] of character.clues.entries()) {
+        if (characterClueIds.has(clue.id) || locationClueIds.has(clue.id)) {
+          addDuplicateIssue(
+            context,
+            ["world", "characters", characterIndex, "clues", clueIndex, "id"],
+            clue.id,
+          );
+        }
+        characterClueIds.add(clue.id);
+      }
+    }
+
+    if (culpritCount !== 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["world", "characters"],
+        message: "Blueprint V2 must contain exactly one culprit.",
+      });
+    }
+
+    const allPaths = [
+      ...value.solution_paths.map((path, index) => ({
+        path,
+        index,
+        group: "solution_paths" as const,
+      })),
+      ...value.red_herrings.map((path, index) => ({
+        path,
+        index,
+        group: "red_herrings" as const,
+      })),
+      ...value.suspect_elimination_paths.map((path, index) => ({
+        path,
+        index,
+        group: "suspect_elimination_paths" as const,
+      })),
+    ];
+
+    for (const entry of allPaths) {
+      if (pathIds.has(entry.path.id)) {
+        addDuplicateIssue(context, [entry.group, entry.index, "id"], entry.path.id);
+      }
+      pathIds.add(entry.path.id);
+
+      if (
+        entry.path.location_clue_ids.length === 0 &&
+        entry.path.character_clue_ids.length === 0
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [entry.group, entry.index],
+          message:
+            "Each reasoning path must reference at least one location clue id or character clue id.",
+        });
+      }
+
+      for (const [locationRefIndex, clueId] of entry.path.location_clue_ids.entries()) {
+        if (!locationClueIds.has(clueId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [entry.group, entry.index, "location_clue_ids", locationRefIndex],
+            message: `Unknown location clue id "${clueId}" referenced by reasoning path.`,
+          });
+        } else {
+          referencedClueIds.add(clueId);
+        }
+      }
+
+      for (const [characterRefIndex, clueId] of entry.path.character_clue_ids.entries()) {
+        if (!characterClueIds.has(clueId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [entry.group, entry.index, "character_clue_ids", characterRefIndex],
+            message: `Unknown character clue id "${clueId}" referenced by reasoning path.`,
+          });
+        } else {
+          referencedClueIds.add(clueId);
+        }
+      }
+    }
+
+    for (const [locationIndex, location] of value.world.locations.entries()) {
+      for (const [clueIndex, clue] of location.clues.entries()) {
+        if (!referencedClueIds.has(clue.id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "locations", locationIndex, "clues", clueIndex, "id"],
+            message:
+              "Every location clue must be referenced by at least one solution, red herring, or suspect elimination path.",
+          });
+        }
+      }
+    }
+
+    for (const [characterIndex, character] of value.world.characters.entries()) {
+      for (const [clueIndex, clue] of character.clues.entries()) {
+        if (!referencedClueIds.has(clue.id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "id"],
+            message:
+              "Every character clue must be referenced by at least one solution, red herring, or suspect elimination path.",
+          });
+        }
+      }
+    }
+  });
+
+export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;
+export type BlueprintV2Character = z.infer<typeof BlueprintV2CharacterSchema>;
+export type BlueprintV2Location = z.infer<typeof BlueprintV2LocationSchema>;
+export type BlueprintV2ReasoningPath = z.infer<
+  typeof BlueprintV2ReasoningPathSchema
+>;

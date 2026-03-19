@@ -1,6 +1,9 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { BlueprintSchema, type Blueprint } from "../../shared/src/blueprint-schema.ts";
+import {
+  BlueprintV2Schema,
+  type BlueprintV2,
+} from "../../shared/src/blueprint-schema-v2.ts";
 import { BlueprintGenerationError } from "./errors.ts";
 import { loadBlueprintGeneratorPrompt } from "./prompt.ts";
 import { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
@@ -139,12 +142,12 @@ function asObjectRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function buildBlueprintJsonSchema(): Record<string, unknown> {
-  const raw = zodToJsonSchema(BlueprintSchema, {
-    name: "Blueprint",
+  const raw = zodToJsonSchema(BlueprintV2Schema, {
+    name: "BlueprintV2",
     $refStrategy: "none",
   }) as Record<string, unknown>;
 
-  const definition = (raw.definitions as Record<string, unknown> | undefined)?.Blueprint;
+  const definition = (raw.definitions as Record<string, unknown> | undefined)?.BlueprintV2;
   const normalizedDefinition =
     definition && typeof definition === "object" && !Array.isArray(definition)
       ? (normalizeStructuredOutputSchema(definition) as Record<string, unknown>)
@@ -284,7 +287,7 @@ function mapOpenRouterError(
 
 export async function generateBlueprint(
   options: GenerateBlueprintOptions,
-): Promise<Blueprint> {
+): Promise<BlueprintV2> {
   const parsedBrief = StoryBriefSchema.safeParse(options.storyBrief);
   if (!parsedBrief.success) {
     throw new BlueprintGenerationError(
@@ -325,7 +328,7 @@ export async function generateBlueprint(
     response_format: {
       type: "json_schema",
       json_schema: {
-        name: "Blueprint",
+        name: "BlueprintV2",
         strict: true,
         schema: buildBlueprintJsonSchema(),
       },
@@ -393,7 +396,7 @@ export async function generateBlueprint(
 
   parsedJson = stripGeneratedImageFields(parsedJson);
 
-  const blueprint = BlueprintSchema.safeParse(parsedJson);
+  const blueprint = BlueprintV2Schema.safeParse(parsedJson);
   if (!blueprint.success) {
     throw new BlueprintGenerationError(
       "SCHEMA_VALIDATION_FAILED",

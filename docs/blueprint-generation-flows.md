@@ -7,6 +7,8 @@ Use it as the implementation-level companion to:
 
 - `docs/ai-runtime.md` for gameplay narration runtime mechanics
 - `docs/ai-configuration.md` for AI provider and image-generation config
+- `docs/blueprint-evaluation.md` for the evaluator prompt, output schema, and
+  blueprint-evaluation follow-up notes
 - `docs/game.md` for player-facing game rules and flow
 
 The goal here is narrow: show which blueprint fields actually reach each
@@ -27,6 +29,8 @@ are only attached after generation.
 - When narrator behavior or blueprint-fed AI inputs change, update this file and
   `docs/ai-runtime.md` together so the field map and runtime behavior stay in
   sync.
+- When evaluator assumptions or blueprint-quality contracts change, also update
+  `docs/blueprint-evaluation.md`.
 
 ## Blueprint Generation Prompt Structure
 
@@ -230,3 +234,25 @@ Scope notes:
   non-generated narrator block.
 - Accusation framing stays spoiler-safe; accusation judging receives the full
   blueprint.
+
+## Evaluation Assets And Follow-Up Design Ideas
+
+Current evaluation assets live in the shared package:
+
+- prompt: `packages/shared/src/evaluation/prompt.ts`
+- output schema: `packages/shared/src/evaluation/schema.ts`
+
+The evaluator work also surfaced several possible blueprint-generation
+improvements that are not implemented yet:
+
+- add explicit red-herring structures
+- add explicit suspect-elimination paths
+- ask the generator to emit resolution paths for the real mystery and each red
+  herring
+- replace bare clue / knowledge strings with structured objects carrying role
+  and path-linkage intent
+- add an explicit factual per-character "what they were really doing" field so
+  hidden actions are easier to reason about than through `stated_alibi` plus
+  timeline alone
+
+See `docs/blueprint-evaluation.md` for the fuller list.

@@ -8,6 +8,8 @@ For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
 For a field-by-field map of which blueprint data reaches each generated output,
 see `docs/blueprint-generation-flows.md`.
+For the standalone blueprint evaluator prompt and output schema, see
+`docs/blueprint-evaluation.md`.
 
 ## Runtime Components
 
@@ -30,6 +32,24 @@ see `docs/blueprint-generation-flows.md`.
   - Embedded prompt templates and variable rendering
 - `packages/shared/src/mystery-api-contracts.ts`
   - Shared request/response boundary contracts for UI/backend payloads
+- `packages/shared/src/evaluation/`
+  - Standalone blueprint-evaluation prompt and output schema for offline or
+    pre-runtime quality checks
+
+## Blueprint Evaluation Reference
+
+Blueprint evaluation is currently a separate concern from gameplay runtime.
+
+- Prompt source: `packages/shared/src/evaluation/prompt.ts`
+- Output schema: `packages/shared/src/evaluation/schema.ts`
+
+The evaluator currently judges blueprint quality, solvability structure,
+dead ends, red herrings, and consistency without participating in live gameplay
+state transitions.
+
+Potential future blueprint/schema improvements discovered during evaluator
+design are tracked in `docs/blueprint-evaluation.md`; they are not implemented
+runtime contracts yet.
 
 ## Roles and Prompt Responsibilities
 

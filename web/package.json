@@ -30,7 +30,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.98.0",
-    "playright": "^0.0.22"
+    "@supabase/supabase-js": "^2.98.0"
   }
 }

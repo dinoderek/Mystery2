@@ -27,8 +27,14 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - Blueprint generation:
   - `scripts/generate-blueprint.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
-  - it loads the model from `OPENROUTER_BLUEPRINT_MODEL`, then `AI_MODEL`, then CLI overrides
-  - it uses `AI_OPENROUTER_TIMEOUT_MS` for request timeout control (default `120000`)
+  - it loads model defaults from `OPENROUTER_BLUEPRINT_MODEL`, then `AI_MODEL`, then CLI `--model` overrides
+- repeated `--brief-file` and `--model` flags generate every brief/model combination
+- multi-job runs write composed files via `--output-file` as `<output-file>.<model>.<brief filename>.json`
+- whenever a blueprint file is written, the CLI also runs post-generation verification and writes `<blueprint-file>.verification.json` beside it
+- verification defaults to `google/gemini-3-flash-preview` unless `--verification-model <model-id>` is provided
+- if the model returns JSON that fails Blueprint V2 schema validation, the CLI still persists that raw JSON to the target blueprint file and records the failure in the sibling verification artifact
+- `--parallel` runs all queued jobs concurrently; `--parallelism <n>` caps concurrent jobs
+- it uses `AI_OPENROUTER_TIMEOUT_MS` for request timeout control (default `120000`)
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
@@ -46,7 +52,7 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 Use CLI flags or `.env.local` for operator blueprint-generation settings:
 
 - `OPENROUTER_API_KEY=<secret>`
-- `OPENROUTER_BLUEPRINT_MODEL=<model-id>` optional
+- `OPENROUTER_BLUEPRINT_MODEL=<model-id>` optional; comma-separated values are supported
 - `AI_MODEL=<model-id>` fallback only when `OPENROUTER_BLUEPRINT_MODEL` is unset
 
 The blueprint-generation CLI resolves config in this order:
@@ -54,6 +60,17 @@ The blueprint-generation CLI resolves config in this order:
 1. CLI flags at invocation time
 2. shell env at invocation time
 3. `.env.local`
+
+Operator flags:
+
+- repeat `--brief-file <path>` to queue multiple story briefs
+- repeat `--model <model-id>` to queue multiple models
+- `--verification-model <model-id>` chooses the verification model; default is `google/gemini-3-flash-preview`
+- `--output <path>` writes a single job to an exact file path
+- `--output-file <path>` writes one file per queued job using the composed filename
+- successful file-writing jobs also emit a sibling verification JSON file
+- file-writing runs print a final stdout summary instead of blueprint JSON
+- `--parallel` or `--parallelism <n>` enable concurrent generation
 
 Timeout behavior:
 

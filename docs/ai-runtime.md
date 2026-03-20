@@ -49,6 +49,9 @@ Blueprint evaluation is currently a separate concern from gameplay runtime.
 - Prompt source: `packages/shared/src/evaluation/prompt.ts`
 - Output schema: `packages/shared/src/evaluation/schema.ts`
 - Blueprint V2 schema source: `packages/shared/src/blueprint-schema-v2.ts`
+- Operator automation: `scripts/generate-blueprint.mjs` now runs a post-generation
+  verification pass and writes a sibling `*.verification.json` artifact for each
+  generated blueprint file
 
 The evaluator currently judges blueprint quality, solvability structure,
 dead ends, red herrings, and consistency without participating in live gameplay

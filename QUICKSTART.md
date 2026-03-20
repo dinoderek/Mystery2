@@ -107,8 +107,16 @@ npm run generate:blueprint -- \
 Optional:
 
 - provide `--openrouter-api-key` explicitly, or rely on `OPENROUTER_API_KEY`
-- provide `--output path/to/blueprint.json` to write a file instead of printing JSON to stdout
-- set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid repeating `--model`
+- provide `--output path/to/blueprint.json` to write a single job to an exact file instead of printing JSON to stdout
+- provide `--output-file path/to/blueprint` to write composed output files as `path/to/blueprint.<model>.<brief filename>.json`
+- repeat `--brief-file` and/or `--model` to generate every brief/model combination in one run; multi-job runs require `--output-file`
+- optionally set `--verification-model <model>` to choose the verifier separately; default is `google/gemini-3-flash-preview`
+- add `--parallel` to run all queued jobs concurrently, or `--parallelism <n>` to cap concurrency
+- when a blueprint file is written, the CLI also writes a sibling verification file as `path/to/blueprint.<...>.verification.json`
+- verification runs after the blueprint JSON is written; if verification fails, both files still remain on disk and the CLI reports the failure in the final summary without failing the process
+- if generator-side schema validation fails after the model returns JSON, the CLI still writes that raw generated JSON to the blueprint file and writes the sibling verification/error file, then reports the failure in the final summary without failing the process
+- when `--output` or `--output-file` is used, stdout prints only a final per-job summary with blueprint path and verification status
+- set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid repeating `--model`; comma-separated values are supported for multi-model runs
 
 ## Seeded Local Users
 

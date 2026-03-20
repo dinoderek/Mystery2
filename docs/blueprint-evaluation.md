@@ -50,6 +50,11 @@ The generated markdown packet includes:
 This is intended for copy/paste into a chat window when you want the model to
 evaluate a specific Blueprint V2 without wiring up a dedicated runtime path yet.
 
+The local generator CLI now also uses the same evaluator assets for
+post-generation verification. When `scripts/generate-blueprint.mjs` writes a
+blueprint file, it writes a sibling `*.verification.json` file with either the
+parsed evaluator result or the verification error details.
+
 ## Current Evaluator Scope
 
 The evaluator currently focuses on:

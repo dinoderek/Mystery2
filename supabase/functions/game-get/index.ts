@@ -1,6 +1,6 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, notFound, internalError } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { readNarrationEvent } from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
@@ -79,7 +79,7 @@ serveWithCors(async (req) => {
       });
       return internalError("Original blueprint no longer available");
     }
-    const blueprint = BlueprintSchema.parse(JSON.parse(blueprintText));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(blueprintText));
 
     // Fetch events for history
     const { data: events, error: eventsError } = await userClient
@@ -106,11 +106,15 @@ serveWithCors(async (req) => {
     }
 
     const gameState = {
-      locations: blueprint.world.locations.map((l) => ({ name: l.name })),
+      locations: blueprint.world.locations.map((l) => ({
+        id: l.id,
+        name: l.name,
+      })),
       characters: blueprint.world.characters.map((c) => ({
+        id: c.id,
         first_name: c.first_name,
         last_name: c.last_name,
-        location_name: c.location,
+        location_id: c.location_id,
         sex: c.sex,
       })),
       time_remaining: session.time_remaining,

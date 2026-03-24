@@ -6,8 +6,8 @@ a mystery artifact.
 Scope note:
 
 - This is not a gameplay runtime flow.
-- The evaluator now targets **Blueprint V2** authoring data.
-- Live gameplay runtime still consumes **Blueprint V1** in this phase.
+- The evaluator targets **Blueprint V2** authoring data.
+- Live gameplay runtime also consumes **Blueprint V2**.
 
 ## Canonical Assets
 
@@ -99,21 +99,9 @@ evidence.
 
 ## Runtime Boundary
 
-In this phase:
+All runtime components now use Blueprint V2:
 
 - generator output is Blueprint V2
 - evaluator input is Blueprint V2
-- gameplay runtime remains on Blueprint V1
+- gameplay runtime consumes Blueprint V2
 
-That means Blueprint V2 output is for authoring, review, and evaluation only
-until a later runtime-migration phase lands.
-
-## Future Runtime Phase
-
-The later runtime migration phase is expected to handle:
-
-- V2-aware search/talk/judge context builders
-- narrator prompt migration
-- accusation judge migration to explicit path structures
-- V1 runtime data retirement
-- V1 schema removal once gameplay no longer depends on it

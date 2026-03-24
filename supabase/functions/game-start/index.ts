@@ -15,7 +15,7 @@ import {
   getDefaultAIProfile,
 } from "../_shared/ai-profile.ts";
 import { buildGameStartPrompt } from "../_shared/ai-prompts.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import {
@@ -132,8 +132,8 @@ serveWithCors(async (req) => {
     }
 
     const rawBlueprint = JSON.parse(blueprintText);
-    const blueprint = BlueprintSchema.parse(rawBlueprint);
-    const startLoc = blueprint.world.starting_location_id;
+    const blueprint = BlueprintV2Schema.parse(rawBlueprint);
+    const startLocId = blueprint.world.starting_location_id;
 
     // Insert game_session (user_id from authenticated user)
     const { data: sessionData, error: sessionError } = await supabase
@@ -143,7 +143,7 @@ serveWithCors(async (req) => {
         blueprint_id: blueprint.id,
         ai_profile_id: aiProfile.id,
         mode: "explore",
-        current_location_id: startLoc,
+        current_location_id: startLocId,
         time_remaining: blueprint.metadata.time_budget,
       })
       .select("id")
@@ -228,15 +228,19 @@ serveWithCors(async (req) => {
     }
 
     const gameState = {
-      locations: blueprint.world.locations.map((l: any) => ({ name: l.name })),
-      characters: blueprint.world.characters.map((c: any) => ({
+      locations: blueprint.world.locations.map((l) => ({
+        id: l.id,
+        name: l.name,
+      })),
+      characters: blueprint.world.characters.map((c) => ({
+        id: c.id,
         first_name: c.first_name,
         last_name: c.last_name,
-        location_name: c.location,
+        location_id: c.location_id,
         sex: c.sex,
       })),
       time_remaining: blueprint.metadata.time_budget,
-      location: startLoc,
+      location: startLocId,
       mode: "explore",
       current_talk_character: null,
     };

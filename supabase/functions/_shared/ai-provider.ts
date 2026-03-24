@@ -287,25 +287,23 @@ class MockAIProvider implements AIProvider {
   ): Record<string, unknown> {
     switch (role) {
       case "talk_start": {
-        const characterName = requireContextString(
-          role,
-          context,
-          "character_name",
-        );
-        const locationName = requireContextString(
-          role,
-          context,
-          "location_name",
-        );
         const talkContext = context.talk_context as
           | {
             active_character?: {
+              first_name?: string | null;
               appearance?: string | null;
               background?: string | null;
               sex?: unknown;
             };
+            active_location_name?: string | null;
           }
           | undefined;
+        const characterName =
+          talkContext?.active_character?.first_name ??
+          requireContextString(role, context, "character_name");
+        const locationName =
+          talkContext?.active_location_name ??
+          requireContextString(role, context, "location_name");
         const appearance = talkContext?.active_character?.appearance ?? "a familiar face";
         const background = talkContext?.active_character?.background ?? "someone tied to the case";
         const pronoun = pronounForSex(
@@ -317,41 +315,48 @@ class MockAIProvider implements AIProvider {
         };
       }
       case "talk_conversation": {
-        const characterName = requireContextString(
-          role,
-          context,
-          "character_name",
-        );
+        const talkCtx = context.talk_context as
+          | { active_character?: { first_name?: string | null } }
+          | undefined;
+        const characterName =
+          talkCtx?.active_character?.first_name ??
+          requireContextString(role, context, "character_name");
         const playerInput = requireContextString(role, context, "player_input");
         return {
           narration: `[Mock] ${characterName} responds thoughtfully to: "${playerInput}".`,
         };
       }
       case "talk_end": {
-        const characterName = requireContextString(
-          role,
-          context,
-          "character_name",
-        );
+        const talkCtx = context.talk_context as
+          | { active_character?: { first_name?: string | null } }
+          | undefined;
+        const characterName =
+          talkCtx?.active_character?.first_name ??
+          requireContextString(role, context, "character_name");
         return {
           narration:
             `[Mock] You step back from ${characterName} and return to looking around.`,
         };
       }
       case "search": {
-        const locationName = requireContextString(
-          role,
-          context,
-          "location_name",
-        );
         const searchContext = context.search_context as
-          | { next_clue?: string | null; revealed_clues?: string[] }
+          | {
+            location_name?: string | null;
+            next_clue?: { text?: string } | string | null;
+          }
           | undefined;
+        const locationName =
+          (typeof searchContext?.location_name === "string"
+            ? searchContext.location_name
+            : null) ??
+          requireContextString(role, context, "location_name");
+        const rawNextClue = searchContext?.next_clue;
         const nextClue =
-          typeof searchContext?.next_clue === "string" &&
-            searchContext.next_clue.trim().length > 0
-          ? searchContext.next_clue.trim()
-          : null;
+          rawNextClue && typeof rawNextClue === "object" && "text" in rawNextClue
+            ? (rawNextClue.text as string)?.trim() || null
+            : typeof rawNextClue === "string" && rawNextClue.trim().length > 0
+              ? rawNextClue.trim()
+              : null;
         return {
           narration: nextClue
             ? `[Mock] You search ${locationName} and uncover a clue: ${nextClue}`

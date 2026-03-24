@@ -31,7 +31,7 @@ describe("ai-provider runtime configuration", () => {
     const output = await provider.generateRoleOutput({
       role: "search",
       prompt: "Search prompt",
-      context: { location_name: "Kitchen" },
+      context: { search_context: { location_name: "Kitchen", next_clue: null } },
       parse: parseSearchOutput,
     });
     expect(output.narration).toContain("Kitchen");
@@ -165,12 +165,12 @@ describe("ai-provider mock role output", () => {
       role: "talk_start",
       prompt: "prompt",
       context: {
-        character_name: "Alice",
-        location_name: "Kitchen",
         talk_context: {
           active_character: {
+            first_name: "Alice",
             sex: "female",
           },
+          active_location_name: "Kitchen",
         },
       },
       parse: parseTalkStartOutput,
@@ -242,9 +242,9 @@ describe("ai-provider mock role output", () => {
       role: "search",
       prompt: "prompt",
       context: {
-        location_name: "Kitchen",
         search_context: {
-          next_clue: "A crumb on the floor.",
+          location_name: "Kitchen",
+          next_clue: { id: "clue-crumb", text: "A crumb on the floor.", role: "direct_evidence" },
         },
       },
       parse: parseSearchOutput,
@@ -264,7 +264,12 @@ describe("ai-provider mock role output", () => {
       provider.generateRoleOutput({
         role: "talk_start",
         prompt: "prompt",
-        context: { character_name: "Alice", location_name: "Kitchen" },
+        context: {
+          talk_context: {
+            active_character: { first_name: "Alice" },
+            active_location_name: "Kitchen",
+          },
+        },
         parse: () => {
           throw new Error("validation failed");
         },
@@ -285,6 +290,6 @@ describe("ai-provider mock role output", () => {
         context: {},
         parse: parseTalkStartOutput,
       }),
-    ).rejects.toThrow("character_name");
+    ).rejects.toThrow("talk_start");
   });
 });

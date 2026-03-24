@@ -23,52 +23,96 @@ const blueprint: BlueprintContext = {
     starting_knowledge: ["The kitchen window was open."],
   },
   world: {
+    starting_location_id: "loc-kitchen",
     locations: [
-      { name: "Kitchen", description: "A messy kitchen", clues: ["crumbs"] },
-      { name: "Garden", description: "A quiet garden", clues: [] },
+      {
+        id: "loc-kitchen",
+        name: "Kitchen",
+        description: "A messy kitchen",
+        clues: [
+          { id: "clue-crumbs", text: "crumbs", role: "direct_evidence" },
+        ],
+      },
+      {
+        id: "loc-garden",
+        name: "Garden",
+        description: "A quiet garden",
+        clues: [],
+      },
     ],
     characters: [
       {
+        id: "char-alice",
         first_name: "Alice",
         last_name: "Smith",
-        location: "Kitchen",
+        location_id: "loc-kitchen",
         sex: "female",
         appearance: "red hair",
         background: "the baker",
         personality: "nervous",
         initial_attitude_towards_investigator: "wary",
-        mystery_action_real: "stole the pie",
         stated_alibi: "I was reading",
         motive: "hungry",
-        knowledge: ["Bob was in the garden."],
         is_culprit: true,
+        clues: [
+          { id: "clue-alice-bob", text: "Bob was in the garden.", role: "suspect_elimination" },
+        ],
+        flavor_knowledge: ["Alice loves baking."],
+        actual_actions: [
+          { sequence: 1, summary: "stole the pie" },
+        ],
       },
       {
+        id: "char-bob",
         first_name: "Bob",
         last_name: "Jones",
-        location: "Garden",
+        location_id: "loc-garden",
         sex: "male",
         appearance: "glasses",
         background: "the guest",
         personality: "calm",
         initial_attitude_towards_investigator: "helpful",
-        mystery_action_real: "watering flowers",
         stated_alibi: "I was outside",
         motive: null,
-        knowledge: ["Alice looked worried."],
         is_culprit: false,
+        clues: [
+          { id: "clue-bob-alice", text: "Alice looked worried.", role: "supporting_evidence" },
+        ],
+        flavor_knowledge: ["Bob is visiting for the weekend."],
+        actual_actions: [
+          { sequence: 1, summary: "watering flowers" },
+        ],
       },
     ],
   },
   ground_truth: {
     what_happened: "Alice stole the pie",
+    why_it_happened: "She was hungry",
+    timeline: ["12:00 Alice enters kitchen", "12:05 Alice takes pie"],
   },
+  solution_paths: [
+    {
+      id: "path-solution",
+      summary: "Crumbs and Alice's motive",
+      location_clue_ids: ["clue-crumbs"],
+      character_clue_ids: ["clue-bob-alice"],
+    },
+  ],
+  red_herrings: [],
+  suspect_elimination_paths: [
+    {
+      id: "path-bob-clear",
+      summary: "Bob was in the garden",
+      location_clue_ids: [],
+      character_clue_ids: ["clue-alice-bob"],
+    },
+  ],
 };
 
 const session = {
   mode: "talk" as const,
-  current_location_id: "Kitchen",
-  current_talk_character_id: "Alice",
+  current_location_id: "loc-kitchen",
+  current_talk_character_id: "char-alice",
   time_remaining: 8,
 };
 
@@ -80,28 +124,28 @@ describe("ai-context guardrails", () => {
         event_type: "move",
         actor: "system",
         narration: "Moved to Kitchen.",
-        payload: { destination: "Kitchen", location_name: "Kitchen" },
+        payload: { destination: "loc-kitchen", location_id: "loc-kitchen", location_name: "Kitchen" },
       },
       {
         sequence: 2,
         event_type: "search",
         actor: "system",
         narration: "Searched Kitchen.",
-        payload: { location_name: "Kitchen", revealed_clue_text: "crumbs" },
+        payload: { location_id: "loc-kitchen", location_name: "Kitchen", revealed_clue_text: "crumbs" },
       },
       {
         sequence: 3,
         event_type: "move",
         actor: "system",
         narration: "Moved to Garden.",
-        payload: { destination: "Garden", location_name: "Garden" },
+        payload: { destination: "loc-garden", location_id: "loc-garden", location_name: "Garden" },
       },
     ];
 
-    const kitchenHistory = selectLocationConversationHistory(history, "Kitchen");
+    const kitchenHistory = selectLocationConversationHistory(history, "loc-kitchen");
     expect(kitchenHistory.map((event) => event.sequence)).toEqual([1, 2]);
     expect(kitchenHistory[1]?.payload).toMatchObject({
-      location_name: "Kitchen",
+      location_id: "loc-kitchen",
       revealed_clue_text: "crumbs",
     });
   });
@@ -113,7 +157,7 @@ describe("ai-context guardrails", () => {
         event_type: "talk",
         actor: "system",
         narration: "Alice greets you.",
-        payload: { character_name: "Alice", location_name: "Kitchen" },
+        payload: { character_id: "char-alice", character_name: "Alice", location_id: "loc-kitchen" },
       },
       {
         sequence: 2,
@@ -121,8 +165,9 @@ describe("ai-context guardrails", () => {
         actor: "system",
         narration: "Alice answers.",
         payload: {
+          character_id: "char-alice",
           character_name: "Alice",
-          location_name: "Kitchen",
+          location_id: "loc-kitchen",
           player_input: "Where were you?",
         },
       },
@@ -131,18 +176,18 @@ describe("ai-context guardrails", () => {
         event_type: "end_talk",
         actor: "system",
         narration: "You leave Alice.",
-        payload: { character_name: "Alice", location_name: "Kitchen" },
+        payload: { character_id: "char-alice", character_name: "Alice", location_id: "loc-kitchen" },
       },
       {
         sequence: 4,
         event_type: "talk",
         actor: "system",
         narration: "Bob greets you.",
-        payload: { character_name: "Bob", location_name: "Garden" },
+        payload: { character_id: "char-bob", character_name: "Bob", location_id: "loc-garden" },
       },
     ];
 
-    const talkHistory = selectCharacterConversationHistory(history, "Alice");
+    const talkHistory = selectCharacterConversationHistory(history, "char-alice");
     expect(talkHistory.map((event) => event.sequence)).toEqual([1, 2, 3]);
     expect(talkHistory[1]?.payload).toMatchObject({
       player_input: "Where were you?",
@@ -152,35 +197,39 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session,
       blueprint,
-      character_name: "Alice",
+      character_id: "char-alice",
       player_input: "Where were you?",
-      location_name: "Kitchen",
+      location_id: "loc-kitchen",
       conversation_history: history,
     });
 
     expect(talkContext.shared_mystery_context).toEqual({ target_age: 9 });
     expect(talkContext.talk_context?.locations).toEqual([
-      { name: "Kitchen", description: "A messy kitchen" },
-      { name: "Garden", description: "A quiet garden" },
+      { id: "loc-kitchen", name: "Kitchen", description: "A messy kitchen" },
+      { id: "loc-garden", name: "Garden", description: "A quiet garden" },
     ]);
     expect(talkContext.talk_context?.characters[0]).toMatchObject({
+      id: "char-alice",
       first_name: "Alice",
       last_name: "Smith",
-      location: "Kitchen",
+      location_id: "loc-kitchen",
       sex: "female",
       appearance: "red hair",
       background: "the baker",
     });
     expect(talkContext.talk_context?.active_character).toMatchObject({
+      id: "char-alice",
       first_name: "Alice",
       sex: "female",
       personality: "nervous",
       stated_alibi: "I was reading",
-      mystery_action_real: "stole the pie",
+      clues: [{ id: "clue-alice-bob", text: "Bob was in the garden.", role: "suspect_elimination" }],
+      flavor_knowledge: ["Alice loves baking."],
+      actual_actions: [{ sequence: 1, summary: "stole the pie" }],
     });
   });
 
-  it("builds search context with canonical clue progression", () => {
+  it("builds search context with structured clue progression", () => {
     const history = [
       {
         sequence: 1,
@@ -188,9 +237,11 @@ describe("ai-context guardrails", () => {
         actor: "system",
         narration: "Kitchen search",
         payload: {
+          location_id: "loc-kitchen",
           location_name: "Kitchen",
+          revealed_clue_id: "clue-crumbs",
           revealed_clue_text: "crumbs",
-          revealed_clues: ["crumbs"],
+          revealed_clue_ids: ["clue-crumbs"],
         },
       },
     ];
@@ -199,18 +250,19 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session,
       blueprint,
-      location_name: "Kitchen",
-      revealed_clues: ["crumbs"],
+      location_id: "loc-kitchen",
+      revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
       conversation_history: history,
     });
 
     expect(searchContext.shared_mystery_context).toEqual({ target_age: 9 });
     expect(searchContext.search_context).toMatchObject({
+      location_id: "loc-kitchen",
       location_name: "Kitchen",
       location_description: "A messy kitchen",
-      clues: ["crumbs"],
-      revealed_clues: ["crumbs"],
+      clues: [{ id: "clue-crumbs", text: "crumbs", role: "direct_evidence" }],
+      revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
       has_more_clues: false,
     });
@@ -226,14 +278,14 @@ describe("ai-context guardrails", () => {
         event_type: "move",
         actor: "system",
         narration: "Moved to Kitchen.",
-        payload: { destination: "Kitchen", location_name: "Kitchen" },
+        payload: { destination: "loc-kitchen", location_id: "loc-kitchen", location_name: "Kitchen" },
       },
       {
         sequence: 2,
         event_type: "search",
         actor: "system",
         narration: "Searched Kitchen.",
-        payload: { location_name: "Kitchen", revealed_clue_text: "crumbs" },
+        payload: { location_id: "loc-kitchen", location_name: "Kitchen", revealed_clue_text: "crumbs" },
       },
     ];
 
@@ -241,21 +293,23 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "explore", current_talk_character_id: null },
       blueprint,
-      destination_name: "Kitchen",
+      destination_id: "loc-kitchen",
       has_visited_before: true,
       conversation_history: history,
     });
 
     expect(moveContext.shared_mystery_context).toEqual({ target_age: 9 });
     expect(moveContext.move_context).toMatchObject({
+      destination_id: "loc-kitchen",
       destination_name: "Kitchen",
       destination_description: "A messy kitchen",
       has_visited_before: true,
       destination_characters: [
         {
+          id: "char-alice",
           first_name: "Alice",
           last_name: "Smith",
-          location: "Kitchen",
+          location_id: "loc-kitchen",
           sex: "female",
           appearance: "red hair",
           background: "the baker",
@@ -276,6 +330,7 @@ describe("ai-context guardrails", () => {
       conversation_history: [],
     });
     expect(startContext.accusation_start_context).toMatchObject({
+      current_location_id: "loc-kitchen",
       current_location_name: "Kitchen",
       current_location_description: "A messy kitchen",
     });
@@ -294,6 +349,8 @@ describe("ai-context guardrails", () => {
       round: 1,
       full_blueprint: blueprint,
     });
+    expect(judgeContext.accusation_judge_context?.full_blueprint.solution_paths).toHaveLength(1);
+    expect(judgeContext.accusation_judge_context?.full_blueprint.suspect_elimination_paths).toHaveLength(1);
   });
 
   it("throws when non-judge role receives accusation_judge_context", () => {
@@ -303,8 +360,8 @@ describe("ai-context guardrails", () => {
         role_name: "search",
         mode: "explore",
         forced_by_timeout: false,
-        location_name: "Kitchen",
-        character_name: null,
+        location_id: "loc-kitchen",
+        character_id: null,
         player_input: null,
         conversation_history: [],
         shared_mystery_context: { target_age: 9 },

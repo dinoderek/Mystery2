@@ -65,7 +65,7 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
         endpoint: "game-talk",
         headers,
         stepLabel: "game-talk",
-        body: { game_id, character_name: "Alice" },
+        body: { game_id, character_id: "char-alice" },
       });
       expect(typeof talkData.narration).toBe("string");
       expect(talkData.mode === "talk" || talkData.mode === "accuse").toBe(true);

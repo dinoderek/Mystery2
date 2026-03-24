@@ -31,9 +31,9 @@ Covers:
 - prompt construction and parsing utilities
 - blueprint generation utilities (`packages/blueprint-generator/*`, `scripts/generate-blueprint.mjs`)
 - blueprint schema versioning coverage, including:
-  - V1 runtime schema acceptance for canonical playable fixtures
-  - V2 authoring schema validation for generator/evaluator-only blueprints
-  - explicit non-compatibility checks so V2 blueprints are not accepted by V1 runtime validators
+  - V2 schema acceptance for all canonical playable fixtures
+  - V2 authoring schema validation for generator/evaluator blueprints
+  - V1 schema still exists for reference but is no longer used by runtime code
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
 - evaluation-packet assembly (`scripts/build-blueprint-evaluation-markdown.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
@@ -290,7 +290,7 @@ Live suites require:
 - resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
 - higher timeout budget for real model latency (default 600s per live test)
 - live suites may short-circuit with a warning when retries are exhausted by upstream transient failures
-- blueprint live suites validate generated payloads against the shared `BlueprintSchema`
+- blueprint live suites validate generated payloads against the shared `BlueprintV2Schema`
 
 Live API E2E investigator coverage must exercise all actions:
 

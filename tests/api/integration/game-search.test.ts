@@ -42,7 +42,7 @@ describe("game-search endpoint", () => {
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "Living Room" }),
+      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
     });
     expect(moveRes.status).toBe(200);
 
@@ -93,18 +93,20 @@ describe("game-search endpoint", () => {
     expect(error).toBeNull();
     expect(searchEvents?.[0]?.payload).toMatchObject({
       revealed_clue_index: 0,
+      revealed_clue_id: "clue-wrapper",
       revealed_clue_text: "A wrapper on the sofa.",
-      revealed_clues: ["A wrapper on the sofa."],
+      revealed_clue_ids: ["clue-wrapper"],
     });
     expect(searchEvents?.[1]?.payload).toMatchObject({
       revealed_clue_index: 1,
+      revealed_clue_id: "clue-half-eaten",
       revealed_clue_text: "A half-eaten cookie.",
-      revealed_clues: ["A wrapper on the sofa.", "A half-eaten cookie."],
+      revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
     });
     expect(searchEvents?.[2]?.payload).toMatchObject({
       revealed_clue_index: null,
       revealed_clue_text: null,
-      revealed_clues: ["A wrapper on the sofa.", "A half-eaten cookie."],
+      revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
     });
   });
 

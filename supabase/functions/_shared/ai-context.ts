@@ -1,5 +1,24 @@
 import type { AIRoleName } from "./ai-contracts.ts";
 
+export interface BlueprintClue {
+  id: string;
+  text: string;
+  role: string;
+}
+
+export interface BlueprintActualAction {
+  sequence: number;
+  summary: string;
+}
+
+export interface BlueprintReasoningPath {
+  id: string;
+  summary: string;
+  description?: string;
+  location_clue_ids: string[];
+  character_clue_ids: string[];
+}
+
 export interface BlueprintContext {
   metadata: {
     title: string;
@@ -13,30 +32,41 @@ export interface BlueprintContext {
     starting_knowledge?: string[];
   };
   world: {
+    starting_location_id: string;
     locations: Array<{
+      id: string;
       name: string;
       description: string;
-      clues: string[];
+      clues: BlueprintClue[];
       location_image_id?: string;
     }>;
     characters: Array<{
+      id: string;
       first_name: string;
       last_name: string;
-      location: string;
+      location_id: string;
       sex: "male" | "female";
-      appearance?: string;
-      background?: string;
-      personality?: string;
-      initial_attitude_towards_investigator?: string;
-      mystery_action_real?: string;
-      stated_alibi?: string | null;
-      motive?: string | null;
-      is_culprit?: boolean;
+      appearance: string;
+      background: string;
+      personality: string;
+      initial_attitude_towards_investigator: string;
+      stated_alibi: string | null;
+      motive: string | null;
+      is_culprit: boolean;
       portrait_image_id?: string;
-      knowledge?: string[];
+      clues: BlueprintClue[];
+      flavor_knowledge: string[];
+      actual_actions: BlueprintActualAction[];
     }>;
   };
-  ground_truth: Record<string, unknown>;
+  ground_truth: {
+    what_happened: string;
+    why_it_happened: string;
+    timeline: string[];
+  };
+  solution_paths: BlueprintReasoningPath[];
+  red_herrings: BlueprintReasoningPath[];
+  suspect_elimination_paths: BlueprintReasoningPath[];
 }
 
 export interface SessionSnapshot {
@@ -59,6 +89,7 @@ export interface SharedMysteryContext {
 }
 
 export interface MoveContext {
+  destination_id: string;
   destination_name: string;
   destination_description: string;
   has_visited_before: boolean;
@@ -67,38 +98,43 @@ export interface MoveContext {
 }
 
 export interface SearchContext {
+  location_id: string;
   location_name: string;
   location_description: string;
-  clues: string[];
-  revealed_clues: string[];
-  next_clue: string | null;
+  clues: BlueprintClue[];
+  revealed_clue_ids: string[];
+  next_clue: BlueprintClue | null;
   has_more_clues: boolean;
 }
 
 export interface TalkLocationSummary {
+  id: string;
   name: string;
   description: string;
 }
 
 export interface TalkCharacterPublicSummary {
+  id: string;
   first_name: string;
   last_name: string;
-  location: string;
+  location_id: string;
   sex: "male" | "female";
-  appearance: string | null;
-  background: string | null;
+  appearance: string;
+  background: string;
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
-  personality: string | null;
-  initial_attitude_towards_investigator: string | null;
+  personality: string;
+  initial_attitude_towards_investigator: string;
   stated_alibi: string | null;
   motive: string | null;
-  knowledge: string[];
-  mystery_action_real: string | null;
+  clues: BlueprintClue[];
+  flavor_knowledge: string[];
+  actual_actions: BlueprintActualAction[];
 }
 
 export interface TalkContext {
+  active_location_id: string;
   active_location_name: string;
   active_location_description: string | null;
   locations: TalkLocationSummary[];
@@ -107,6 +143,7 @@ export interface TalkContext {
 }
 
 export interface AccusationStartContext {
+  current_location_id: string | null;
   current_location_name: string | null;
   current_location_description: string | null;
 }
@@ -121,8 +158,8 @@ export interface AIContext {
   role_name: AIRoleName;
   mode: SessionSnapshot["mode"];
   forced_by_timeout: boolean;
-  location_name: string | null;
-  character_name: string | null;
+  location_id: string | null;
+  character_id: string | null;
   player_input: string | null;
   conversation_history: ConversationFragment[];
   shared_mystery_context: SharedMysteryContext;
@@ -139,8 +176,8 @@ interface BuildContextInput {
   session: SessionSnapshot;
   forced_by_timeout?: boolean;
   blueprint: BlueprintContext;
-  location_name?: string | null;
-  character_name?: string | null;
+  location_id?: string | null;
+  character_id?: string | null;
   player_input?: string | null;
   conversation_history?: ConversationFragment[];
   accusation_history_mode?: "all" | "none";
@@ -149,6 +186,20 @@ interface BuildContextInput {
   talk_context?: TalkContext | null;
   accusation_start_context?: AccusationStartContext | null;
   accusation_judge_context?: AccusationJudgeContext | null;
+}
+
+export function findLocationById(
+  blueprint: BlueprintContext,
+  locationId: string,
+): BlueprintContext["world"]["locations"][number] | undefined {
+  return blueprint.world.locations.find((l) => l.id === locationId);
+}
+
+export function findCharacterById(
+  blueprint: BlueprintContext,
+  characterId: string,
+): BlueprintContext["world"]["characters"][number] | undefined {
+  return blueprint.world.characters.find((c) => c.id === characterId);
 }
 
 function readPayloadField(
@@ -190,12 +241,15 @@ function sanitizePayload(
 
   const sanitized: Record<string, unknown> = {};
   const stringFields = [
+    "character_id",
     "character_name",
     "character",
+    "location_id",
     "location_name",
     "destination",
     "player_input",
     "revealed_clue_text",
+    "revealed_clue_id",
     "follow_up_prompt",
   ];
 
@@ -204,6 +258,11 @@ function sanitizePayload(
     if (value !== null) {
       sanitized[field] = value;
     }
+  }
+
+  const revealedClueIds = readPayloadStringArray(payload, "revealed_clue_ids");
+  if (revealedClueIds.length > 0) {
+    sanitized.revealed_clue_ids = revealedClueIds;
   }
 
   const revealedClues = readPayloadStringArray(payload, "revealed_clues");
@@ -233,7 +292,7 @@ function sanitizeConversationHistory(
 
 function filterCharacterHistory(
   conversationHistory: ConversationFragment[],
-  characterName: string,
+  characterId: string,
 ): ConversationFragment[] {
   return conversationHistory.filter((entry) => {
     if (
@@ -244,22 +303,24 @@ function filterCharacterHistory(
       return false;
     }
 
-    const payloadCharacter =
+    const payloadCharacterId =
+      readPayloadField(entry.payload, "character_id") ??
       readPayloadField(entry.payload, "character_name") ??
       readPayloadField(entry.payload, "character");
-    return payloadCharacter === characterName || entry.actor === characterName;
+    return payloadCharacterId === characterId || entry.actor === characterId;
   });
 }
 
 function filterLocationHistory(
   conversationHistory: ConversationFragment[],
-  locationName: string,
+  locationId: string,
 ): ConversationFragment[] {
   return conversationHistory.filter((entry) => {
-    const payloadLocation =
+    const payloadLocationId =
+      readPayloadField(entry.payload, "location_id") ??
       readPayloadField(entry.payload, "location_name") ??
       readPayloadField(entry.payload, "destination");
-    return payloadLocation === locationName;
+    return payloadLocationId === locationId;
   });
 }
 
@@ -275,6 +336,7 @@ function buildTalkLocationSummaries(
   blueprint: BlueprintContext,
 ): TalkLocationSummary[] {
   return blueprint.world.locations.map((location) => ({
+    id: location.id,
     name: location.name,
     description: location.description,
   }));
@@ -284,76 +346,78 @@ function buildTalkCharacterPublicSummaries(
   blueprint: BlueprintContext,
 ): TalkCharacterPublicSummary[] {
   return blueprint.world.characters.map((character) => ({
+    id: character.id,
     first_name: character.first_name,
     last_name: character.last_name,
-    location: character.location,
+    location_id: character.location_id,
     sex: character.sex,
-    appearance: character.appearance ?? null,
-    background: character.background ?? null,
+    appearance: character.appearance,
+    background: character.background,
   }));
 }
 
 function buildTalkCharacterPrivateContext(
   blueprint: BlueprintContext,
-  characterName: string,
+  characterId: string,
 ): TalkCharacterPrivateContext {
   const character = blueprint.world.characters.find(
-    (entry) => entry.first_name === characterName,
+    (entry) => entry.id === characterId,
   );
   if (!character) {
-    throw new Error(`Character ${characterName} not found in blueprint`);
+    throw new Error(`Character ${characterId} not found in blueprint`);
   }
 
   return {
+    id: character.id,
     first_name: character.first_name,
     last_name: character.last_name,
-    location: character.location,
+    location_id: character.location_id,
     sex: character.sex,
-    appearance: character.appearance ?? null,
-    background: character.background ?? null,
-    personality: character.personality ?? null,
+    appearance: character.appearance,
+    background: character.background,
+    personality: character.personality,
     initial_attitude_towards_investigator:
-      character.initial_attitude_towards_investigator ?? null,
-    stated_alibi: character.stated_alibi ?? null,
-    motive: character.motive ?? null,
-    knowledge: character.knowledge ?? [],
-    mystery_action_real: character.mystery_action_real ?? null,
+      character.initial_attitude_towards_investigator,
+    stated_alibi: character.stated_alibi,
+    motive: character.motive,
+    clues: character.clues,
+    flavor_knowledge: character.flavor_knowledge,
+    actual_actions: character.actual_actions,
   };
 }
 
 function buildTalkContext(
   blueprint: BlueprintContext,
-  locationName: string,
-  characterName: string,
+  locationId: string,
+  characterId: string,
 ): TalkContext {
-  const location = blueprint.world.locations.find(
-    (entry) => entry.name === locationName,
-  );
+  const location = findLocationById(blueprint, locationId);
 
   return {
-    active_location_name: locationName,
+    active_location_id: locationId,
+    active_location_name: location?.name ?? locationId,
     active_location_description: location?.description ?? null,
     locations: buildTalkLocationSummaries(blueprint),
     characters: buildTalkCharacterPublicSummaries(blueprint),
-    active_character: buildTalkCharacterPrivateContext(blueprint, characterName),
+    active_character: buildTalkCharacterPrivateContext(blueprint, characterId),
   };
 }
 
 export function selectCharacterConversationHistory(
   conversationHistory: ConversationFragment[],
-  characterName: string,
+  characterId: string,
 ): ConversationFragment[] {
   return sanitizeConversationHistory(
-    filterCharacterHistory(conversationHistory, characterName),
+    filterCharacterHistory(conversationHistory, characterId),
   );
 }
 
 export function selectLocationConversationHistory(
   conversationHistory: ConversationFragment[],
-  locationName: string,
+  locationId: string,
 ): ConversationFragment[] {
   return sanitizeConversationHistory(
-    filterLocationHistory(conversationHistory, locationName),
+    filterLocationHistory(conversationHistory, locationId),
   );
 }
 
@@ -370,23 +434,23 @@ function selectConversationHistoryForRole(
     input.role_name === "talk_conversation" ||
     input.role_name === "talk_end"
   ) {
-    const characterName =
-      input.character_name ?? input.session.current_talk_character_id;
-    if (!characterName) {
+    const characterId =
+      input.character_id ?? input.session.current_talk_character_id;
+    if (!characterId) {
       return [];
     }
 
-    return selectCharacterConversationHistory(conversationHistory, characterName);
+    return selectCharacterConversationHistory(conversationHistory, characterId);
   }
 
   if (input.role_name === "search") {
-    const locationName =
-      input.location_name ?? input.session.current_location_id;
-    if (!locationName) {
+    const locationId =
+      input.location_id ?? input.session.current_location_id;
+    if (!locationId) {
       return [];
     }
 
-    return selectLocationConversationHistory(conversationHistory, locationName);
+    return selectLocationConversationHistory(conversationHistory, locationId);
   }
 
   if (
@@ -404,18 +468,18 @@ function selectConversationHistoryForRole(
 }
 
 function buildContext(input: BuildContextInput): AIContext {
-  const resolvedLocationName =
-    input.location_name ?? input.session.current_location_id ?? null;
-  const resolvedCharacterName =
-    input.character_name ?? input.session.current_talk_character_id;
+  const resolvedLocationId =
+    input.location_id ?? input.session.current_location_id ?? null;
+  const resolvedCharacterId =
+    input.character_id ?? input.session.current_talk_character_id;
 
   const context: AIContext = {
     game_id: input.game_id,
     role_name: input.role_name,
     mode: input.session.mode,
     forced_by_timeout: input.forced_by_timeout ?? false,
-    location_name: resolvedLocationName,
-    character_name: resolvedCharacterName,
+    location_id: resolvedLocationId,
+    character_id: resolvedCharacterId,
     player_input: input.player_input ?? null,
     conversation_history: selectConversationHistoryForRole(input),
     shared_mystery_context: buildSharedMysteryContext(input.blueprint),
@@ -434,8 +498,8 @@ export function buildTalkStartContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  character_name: string;
-  location_name: string;
+  character_id: string;
+  location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   return buildContext({
@@ -443,13 +507,13 @@ export function buildTalkStartContext(input: {
     role_name: "talk_start",
     session: input.session,
     blueprint: input.blueprint,
-    location_name: input.location_name,
-    character_name: input.character_name,
+    location_id: input.location_id,
+    character_id: input.character_id,
     conversation_history: input.conversation_history,
     talk_context: buildTalkContext(
       input.blueprint,
-      input.location_name,
-      input.character_name,
+      input.location_id,
+      input.character_id,
     ),
   });
 }
@@ -458,9 +522,9 @@ export function buildTalkConversationContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  character_name: string;
+  character_id: string;
   player_input: string;
-  location_name: string;
+  location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   return buildContext({
@@ -468,14 +532,14 @@ export function buildTalkConversationContext(input: {
     role_name: "talk_conversation",
     session: input.session,
     blueprint: input.blueprint,
-    location_name: input.location_name,
-    character_name: input.character_name,
+    location_id: input.location_id,
+    character_id: input.character_id,
     player_input: input.player_input,
     conversation_history: input.conversation_history,
     talk_context: buildTalkContext(
       input.blueprint,
-      input.location_name,
-      input.character_name,
+      input.location_id,
+      input.character_id,
     ),
   });
 }
@@ -484,8 +548,8 @@ export function buildTalkEndContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  character_name: string;
-  location_name: string;
+  character_id: string;
+  location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   return buildContext({
@@ -493,13 +557,13 @@ export function buildTalkEndContext(input: {
     role_name: "talk_end",
     session: input.session,
     blueprint: input.blueprint,
-    location_name: input.location_name,
-    character_name: input.character_name,
+    location_id: input.location_id,
+    character_id: input.character_id,
     conversation_history: input.conversation_history,
     talk_context: buildTalkContext(
       input.blueprint,
-      input.location_name,
-      input.character_name,
+      input.location_id,
+      input.character_id,
     ),
   });
 }
@@ -508,16 +572,14 @@ export function buildSearchContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  location_name: string;
-  revealed_clues: string[];
-  next_clue: string | null;
+  location_id: string;
+  revealed_clue_ids: string[];
+  next_clue: BlueprintClue | null;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const location = input.blueprint.world.locations.find(
-    (entry) => entry.name === input.location_name,
-  );
+  const location = findLocationById(input.blueprint, input.location_id);
   if (!location) {
-    throw new Error(`Location ${input.location_name} not found in blueprint`);
+    throw new Error(`Location ${input.location_id} not found in blueprint`);
   }
 
   return buildContext({
@@ -525,13 +587,14 @@ export function buildSearchContext(input: {
     role_name: "search",
     session: input.session,
     blueprint: input.blueprint,
-    location_name: input.location_name,
+    location_id: input.location_id,
     conversation_history: input.conversation_history,
     search_context: {
+      location_id: location.id,
       location_name: location.name,
       location_description: location.description,
       clues: location.clues,
-      revealed_clues: input.revealed_clues,
+      revealed_clue_ids: input.revealed_clue_ids,
       next_clue: input.next_clue,
       has_more_clues: input.next_clue !== null,
     },
@@ -542,33 +605,32 @@ export function buildMoveContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
-  destination_name: string;
+  destination_id: string;
   has_visited_before: boolean;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const location = input.blueprint.world.locations.find(
-    (entry) => entry.name === input.destination_name,
-  );
+  const location = findLocationById(input.blueprint, input.destination_id);
   if (!location) {
-    throw new Error(`Location ${input.destination_name} not found in blueprint`);
+    throw new Error(`Location ${input.destination_id} not found in blueprint`);
   }
 
   const destinationHistory = selectLocationConversationHistory(
     input.conversation_history ?? [],
-    input.destination_name,
+    input.destination_id,
   );
   const destinationCharacters = buildTalkCharacterPublicSummaries(
     input.blueprint,
-  ).filter((character) => character.location === input.destination_name);
+  ).filter((character) => character.location_id === location.id);
 
   return buildContext({
     game_id: input.game_id,
     role_name: "search",
     session: input.session,
     blueprint: input.blueprint,
-    location_name: input.destination_name,
+    location_id: input.destination_id,
     conversation_history: input.conversation_history,
     move_context: {
+      destination_id: location.id,
       destination_name: location.name,
       destination_description: location.description,
       has_visited_before: input.has_visited_before,
@@ -587,8 +649,9 @@ export function buildAccusationStartContext(input: {
   conversation_history?: ConversationFragment[];
   history_mode?: "all" | "none";
 }): AIContext {
-  const location = input.blueprint.world.locations.find(
-    (entry) => entry.name === input.session.current_location_id,
+  const location = findLocationById(
+    input.blueprint,
+    input.session.current_location_id,
   );
 
   return buildContext({
@@ -601,7 +664,8 @@ export function buildAccusationStartContext(input: {
     conversation_history: input.conversation_history,
     accusation_history_mode: input.history_mode ?? "all",
     accusation_start_context: {
-      current_location_name: input.session.current_location_id ?? null,
+      current_location_id: input.session.current_location_id ?? null,
+      current_location_name: location?.name ?? null,
       current_location_description: location?.description ?? null,
     },
   });

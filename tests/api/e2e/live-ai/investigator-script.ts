@@ -26,7 +26,7 @@ export const investigatorScript: InvestigatorScriptCase = {
   steps: [
     {
       action: "move",
-      payload: { destination: "Kitchen" },
+      payload: { destination: "loc-kitchen" },
       expect_mode: "explore",
     },
     {
@@ -36,7 +36,7 @@ export const investigatorScript: InvestigatorScriptCase = {
     },
     {
       action: "talk",
-      payload: { character_name: "Alice" },
+      payload: { character_id: "char-alice" },
       expect_mode: "talk",
     },
     {

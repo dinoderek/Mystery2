@@ -1,4 +1,5 @@
 {
+  "schema_version": "v2",
   "id": "123e4567-e89b-12d3-a456-426614174000",
   "metadata": {
     "title": "Mock Blueprint",
@@ -13,55 +14,93 @@
     "starting_knowledge": ["The cookie jar was open."]
   },
   "world": {
-    "starting_location_id": "Kitchen",
+    "starting_location_id": "loc-kitchen",
     "locations": [
       {
+        "id": "loc-kitchen",
         "name": "Kitchen",
         "description": "A messy kitchen.",
         "location_image_id": "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222",
-        "clues": ["A crumb on the floor."]
+        "clues": [
+          {
+            "id": "clue-crumb",
+            "text": "A crumb on the floor.",
+            "role": "direct_evidence"
+          }
+        ]
       },
       {
+        "id": "loc-living-room",
         "name": "Living Room",
         "description": "A cozy living room.",
         "location_image_id": "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223",
-        "clues": ["A wrapper on the sofa.", "A half-eaten cookie."]
+        "clues": [
+          {
+            "id": "clue-wrapper",
+            "text": "A wrapper on the sofa.",
+            "role": "red_herring"
+          },
+          {
+            "id": "clue-half-eaten",
+            "text": "A half-eaten cookie.",
+            "role": "supporting_evidence"
+          }
+        ]
       }
     ],
     "characters": [
       {
+        "id": "char-alice",
         "first_name": "Alice",
         "last_name": "Smith",
-        "location": "Kitchen",
+        "location_id": "loc-kitchen",
         "sex": "female",
         "appearance": "Tall with red hair.",
         "background": "The resident baker.",
         "personality": "Nervous and fidgety.",
         "initial_attitude_towards_investigator": "suspicious",
-        "location_id": "Kitchen",
-        "mystery_action_real": "Ate the cookies.",
         "stated_alibi": "I was reading.",
         "motive": "Was hungry.",
         "is_culprit": true,
         "portrait_image_id": "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
-        "knowledge": ["Bob was in the living room."]
+        "clues": [
+          {
+            "id": "clue-alice-saw-bob",
+            "text": "Bob was in the living room.",
+            "role": "suspect_elimination"
+          }
+        ],
+        "flavor_knowledge": ["Alice loves baking on weekends."],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Baked a batch of cookies at noon." },
+          { "sequence": 2, "summary": "Ate the cookies at 12:15." }
+        ]
       },
       {
+        "id": "char-bob",
         "first_name": "Bob",
         "last_name": "Jones",
-        "location": "Living Room",
+        "location_id": "loc-living-room",
         "sex": "male",
         "appearance": "Short with glasses.",
         "background": "A guest in the house.",
         "personality": "Calm and collected.",
         "initial_attitude_towards_investigator": "helpful",
-        "location_id": "Living Room",
-        "mystery_action_real": "Watching TV.",
         "stated_alibi": "I was watching TV.",
         "motive": null,
         "is_culprit": false,
         "portrait_image_id": "mock-character-bob-123e4567-e89b-12d3-a456-426614174334",
-        "knowledge": ["Alice loves cookies."]
+        "clues": [
+          {
+            "id": "clue-bob-alice-loves-cookies",
+            "text": "Alice loves cookies.",
+            "role": "supporting_evidence"
+          }
+        ],
+        "flavor_knowledge": ["Bob is visiting for the weekend."],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Watched TV in the living room all afternoon." }
+        ]
       }
     ]
   },
@@ -69,5 +108,29 @@
     "what_happened": "Alice ate the cookies because she was hungry.",
     "why_it_happened": "She was hungry.",
     "timeline": ["12:00 Alice bakes cookies", "12:15 Alice eats them"]
-  }
+  },
+  "solution_paths": [
+    {
+      "id": "path-alice-did-it",
+      "summary": "Crumbs in the kitchen and Alice's motive point to her as the culprit.",
+      "location_clue_ids": ["clue-crumb"],
+      "character_clue_ids": ["clue-bob-alice-loves-cookies"]
+    }
+  ],
+  "red_herrings": [
+    {
+      "id": "path-wrapper-mislead",
+      "summary": "The wrapper on the sofa might suggest Bob, but it was from an old snack.",
+      "location_clue_ids": ["clue-wrapper"],
+      "character_clue_ids": []
+    }
+  ],
+  "suspect_elimination_paths": [
+    {
+      "id": "path-bob-innocent",
+      "summary": "Bob was watching TV the whole time, confirmed by Alice.",
+      "location_clue_ids": ["clue-half-eaten"],
+      "character_clue_ids": ["clue-alice-saw-bob"]
+    }
+  ]
 }

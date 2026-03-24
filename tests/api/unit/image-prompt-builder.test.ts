@@ -73,17 +73,19 @@ describe("image prompt builder", () => {
     expect(coverPrompt).toContain("Kitchen");
   });
 
-  it("builds character portrait prompt with V2 enrichments", () => {
+  it("builds character portrait prompt with bokeh background and no location", () => {
     const characterPrompt = buildImagePrompt(blueprint, {
       targetType: "character",
       targetKey: "char_alice",
     });
-    expect(characterPrompt).toContain("Target: Character portrait");
+    expect(characterPrompt).toContain("Target: Character portrait, head-and-shoulders framing");
     expect(characterPrompt).toContain("Alice Smith");
     expect(characterPrompt).toContain("Sex: female");
     expect(characterPrompt).toContain("Guarded and evasive");
     expect(characterPrompt).toContain("head baker");
-    expect(characterPrompt).toContain("Kitchen");
+    expect(characterPrompt).toContain("bokeh");
+    expect(characterPrompt).toContain("blurred");
+    expect(characterPrompt).not.toContain("Environment: Kitchen");
   });
 
   it("builds location scene prompt with characters and clue details", () => {
@@ -97,6 +99,17 @@ describe("image prompt builder", () => {
     expect(locationPrompt).toContain("Red hair");
     expect(locationPrompt).toContain("Cookie crumbs");
     expect(locationPrompt).toContain("arriving");
+    expect(locationPrompt).not.toContain("Reference portrait images");
+  });
+
+  it("adds reference image hint to location prompt when referenceImageCount is provided", () => {
+    const locationPrompt = buildImagePrompt(
+      blueprint,
+      { targetType: "location", targetKey: "loc_kitchen" },
+      { referenceImageCount: 2 },
+    );
+    expect(locationPrompt).toContain("Reference portrait images of the 2 character(s)");
+    expect(locationPrompt).toContain("Preserve their appearance");
   });
 
   it("creates unique slugged image ids", () => {

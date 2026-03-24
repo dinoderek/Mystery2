@@ -45,18 +45,37 @@ async function findFirstExistingPath(candidates) {
   return null;
 }
 
+const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
+
+async function findImageFile(imageDir, imageId) {
+  // Try direct <imageId>.<ext> first (legacy naming).
+  const directCandidates = IMAGE_EXTENSIONS.map(
+    (ext) => path.join(imageDir, `${imageId}${ext}`),
+  );
+  const direct = await findFirstExistingPath(directCandidates);
+  if (direct) return direct;
+
+  // Try <prefix>.<imageId>.<ext> naming (new pattern).
+  try {
+    const entries = await fs.readdir(imageDir);
+    for (const ext of IMAGE_EXTENSIONS) {
+      const suffix = `.${imageId}${ext}`;
+      const match = entries.find((entry) => entry.endsWith(suffix));
+      if (match) return path.join(imageDir, match);
+    }
+  } catch {
+    // Directory may not exist.
+  }
+
+  return null;
+}
+
 export async function buildImageUploadPlan(blueprint, imageDir) {
   const refs = collectBlueprintImageReferences(blueprint);
   const uploads = [];
 
   for (const ref of refs) {
-    const base = path.join(imageDir, ref.imageId);
-    const localPath = await findFirstExistingPath([
-      `${base}.png`,
-      `${base}.jpg`,
-      `${base}.jpeg`,
-      `${base}.webp`,
-    ]);
+    const localPath = await findImageFile(imageDir, ref.imageId);
 
     uploads.push({
       ...ref,

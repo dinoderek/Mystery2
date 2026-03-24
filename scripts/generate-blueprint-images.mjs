@@ -5,7 +5,9 @@ import { pathToFileURL } from "node:url";
 
 import {
   buildImagePrompt,
+  charactersAtLocation,
   createImageId,
+  slugify,
 } from "./lib/image-prompt-builder.mjs";
 import { getBaseEnvPath, getBlueprintImagesDir, getBlueprintsDir, getImagesEnvPath } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
@@ -84,6 +86,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     overwrite: false,
     dryRun: false,
     dryMode: false,
+    parallel: false,
     scope: null,
     characterKeys: [],
     locationKeys: [],
@@ -102,6 +105,10 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     }
     if (token === "--dry-mode") {
       options.dryMode = true;
+      continue;
+    }
+    if (token === "--parallel") {
+      options.parallel = true;
       continue;
     }
     if (token === "--all") {
@@ -255,13 +262,21 @@ function decodeDataUrl(dataUrl) {
   return Buffer.from(match[2], "base64");
 }
 
-function buildImageGenerationRequest({ model, prompt }) {
+function buildImageGenerationRequest({ model, prompt, referenceImages = [] }) {
+  const contentParts = referenceImages.map((buf) => ({
+    type: "image_url",
+    image_url: {
+      url: `data:image/png;base64,${buf.toString("base64")}`,
+    },
+  }));
+  contentParts.push({ type: "text", text: prompt });
+
   return {
     model,
     messages: [
       {
         role: "user",
-        content: prompt,
+        content: contentParts.length === 1 ? prompt : contentParts,
       },
     ],
     modalities: ["image", "text"],
@@ -313,9 +328,10 @@ async function generateImageAsset({
   apiKey,
   fetchImpl,
   timeoutMs,
+  referenceImages = [],
 }) {
   const requestUrl = "https://openrouter.ai/api/v1/chat/completions";
-  const requestBody = buildImageGenerationRequest({ model, prompt });
+  const requestBody = buildImageGenerationRequest({ model, prompt, referenceImages });
   let response;
   try {
     response = await fetchWithTimeout(
@@ -398,6 +414,150 @@ async function generateImageAsset({
   return Buffer.from(bytes);
 }
 
+function buildOutputFilename(blueprintName, imageId) {
+  return `${slugify(blueprintName)}.${imageId}.png`;
+}
+
+async function generateSingleTarget({
+  target,
+  blueprint,
+  blueprintName,
+  options,
+  apiKey,
+  fetchImpl,
+  timeoutMs,
+  referenceImages = [],
+}) {
+  const imageId = createImageId(blueprint.id, target.targetType, target.targetKey);
+  const filename = buildOutputFilename(blueprintName, imageId);
+  const outputPath = path.join(options.outputDir, filename);
+  const label = formatTargetLabel(target);
+
+  if (!options.overwrite) {
+    try {
+      await fs.access(outputPath);
+      console.log(`[skip] ${label} — already exists: ${filename}`);
+      return {
+        target_type: target.targetType,
+        target_key: target.targetKey,
+        status: "skipped",
+        image_id: null,
+        file_path: null,
+        error_message: null,
+      };
+    } catch {
+      // Continue with generation.
+    }
+  }
+
+  if (options.dryRun) {
+    console.log(`[dry-run] ${label} — would generate: ${filename}`);
+    return {
+      target_type: target.targetType,
+      target_key: target.targetKey,
+      status: "skipped",
+      image_id: null,
+      file_path: null,
+      error_message: "dry-run",
+    };
+  }
+
+  if (!apiKey) {
+    console.log(`[error] ${label} — missing OPENROUTER_API_KEY`);
+    return {
+      target_type: target.targetType,
+      target_key: target.targetKey,
+      status: "failed",
+      image_id: null,
+      file_path: null,
+      error_message: "Missing OPENROUTER_API_KEY",
+    };
+  }
+
+  try {
+    const refLabel = referenceImages.length > 0
+      ? ` (${referenceImages.length} reference image(s))`
+      : "";
+    console.log(`[generate] ${label}${refLabel} — ${filename}...`);
+    const promptOptions = referenceImages.length > 0
+      ? { referenceImageCount: referenceImages.length }
+      : {};
+    const prompt = buildImagePrompt(blueprint, target, promptOptions);
+
+    if (options.dryMode) {
+      const requestBody = buildImageGenerationRequest({
+        model: options.model,
+        prompt,
+        referenceImages,
+      });
+      console.log(
+        `[dry-mode] ${label}:\n${JSON.stringify(
+          {
+            url: "https://openrouter.ai/api/v1/chat/completions",
+            method: "POST",
+            body: {
+              ...requestBody,
+              messages: requestBody.messages.map((msg) => ({
+                ...msg,
+                content: Array.isArray(msg.content)
+                  ? msg.content.map((part) =>
+                      part.type === "image_url"
+                        ? { type: "image_url", image_url: { url: "[base64 data omitted]" } }
+                        : part,
+                    )
+                  : msg.content,
+              })),
+            },
+          },
+          null,
+          2,
+        )}`,
+      );
+      return {
+        target_type: target.targetType,
+        target_key: target.targetKey,
+        status: "skipped",
+        image_id: null,
+        file_path: null,
+        error_message: "dry-mode",
+      };
+    }
+
+    const bytes = await generateImageAsset({
+      prompt,
+      model: options.model,
+      apiKey,
+      fetchImpl,
+      timeoutMs,
+      referenceImages,
+    });
+    await fs.writeFile(outputPath, bytes);
+    console.log(`[done] ${label} — ${outputPath}`);
+
+    return {
+      target_type: target.targetType,
+      target_key: target.targetKey,
+      status: "generated",
+      image_id: imageId,
+      file_path: outputPath,
+      error_message: null,
+    };
+  } catch (error) {
+    const errorMessage = formatGenerationError(error);
+    console.error(
+      `[error] ${label}\n${errorMessage}`,
+    );
+    return {
+      target_type: target.targetType,
+      target_key: target.targetKey,
+      status: "failed",
+      image_id: null,
+      file_path: null,
+      error_message: errorMessage,
+    };
+  }
+}
+
 export async function runImageGeneration(rawOptions, dependencies = {}) {
   const options = { ...rawOptions };
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -430,118 +590,80 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     locationKeys: options.locationKeys,
   });
 
+  const blueprintName = blueprint.metadata?.title ?? blueprint.id;
+
+  // Split targets into two phases: portraits first, then locations.
+  // This lets us feed generated character portraits as reference images
+  // into the location scene generation for visual consistency.
+  const phase1Targets = targets.filter((t) => t.targetType !== "location");
+  const phase2Targets = targets.filter((t) => t.targetType === "location");
+
+  const totalCount = targets.length;
+  const hasPhase2 = phase2Targets.length > 0;
+  console.log(
+    `Generating images for "${blueprintName}" — ${totalCount} target(s)${options.parallel ? " (parallel)" : ""}` +
+      (hasPhase2 ? ` (phase 1: ${phase1Targets.length} portrait(s), phase 2: ${phase2Targets.length} location(s))` : ""),
+  );
+
   await fs.mkdir(options.outputDir, { recursive: true });
 
-  const results = [];
-  for (const target of targets) {
-    const imageId = createImageId(blueprint.id, target.targetType, target.targetKey);
-    const outputPath = path.join(options.outputDir, `${imageId}.png`);
+  const baseArgs = { blueprint, blueprintName, options, apiKey, fetchImpl, timeoutMs };
 
-    if (!options.overwrite) {
-      try {
-        await fs.access(outputPath);
-        results.push({
-          target_type: target.targetType,
-          target_key: target.targetKey,
-          status: "skipped",
-          image_id: null,
-          file_path: null,
-          error_message: null,
-        });
-        continue;
-      } catch {
-        // Continue with generation.
-      }
-    }
-
-    if (options.dryRun) {
-      results.push({
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "skipped",
-        image_id: null,
-        file_path: null,
-        error_message: "dry-run",
-      });
-      continue;
-    }
-
-    if (!apiKey) {
-      results.push({
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "failed",
-        image_id: null,
-        file_path: null,
-        error_message: "Missing OPENROUTER_API_KEY",
-      });
-      continue;
-    }
-
-    try {
-      console.log(`Starting generation for ${formatTargetLabel(target)}...`);
-      const prompt = buildImagePrompt(blueprint, target);
-
-      if (options.dryMode) {
-        const requestBody = buildImageGenerationRequest({
-          model: options.model,
-          prompt,
-        });
-        console.log(
-          `Dry mode request for ${formatTargetLabel(target)}:\n${JSON.stringify(
-            {
-              url: "https://openrouter.ai/api/v1/chat/completions",
-              method: "POST",
-              body: requestBody,
-            },
-            null,
-            2,
-          )}`,
-        );
-        results.push({
-          target_type: target.targetType,
-          target_key: target.targetKey,
-          status: "skipped",
-          image_id: null,
-          file_path: null,
-          error_message: "dry-mode",
-        });
-        continue;
-      }
-
-      const bytes = await generateImageAsset({
-        prompt,
-        model: options.model,
-        apiKey,
-        fetchImpl,
-        timeoutMs,
-      });
-      await fs.writeFile(outputPath, bytes);
-      console.log(`Generated image for ${formatTargetLabel(target)}: ${outputPath}`);
-
-      results.push({
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "generated",
-        image_id: imageId,
-        file_path: outputPath,
-        error_message: null,
-      });
-    } catch (error) {
-      const errorMessage = formatGenerationError(error);
-      console.error(
-        `[image-generation] target=${target.targetType}:${target.targetKey ?? "blueprint"}\n${errorMessage}`,
-      );
-      results.push({
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "failed",
-        image_id: null,
-        file_path: null,
-        error_message: errorMessage,
-      });
+  // --- Phase 1: blueprint cover + character portraits ---
+  const phase1Args = phase1Targets.map((target) => ({ ...baseArgs, target }));
+  let phase1Results;
+  if (options.parallel) {
+    phase1Results = await Promise.all(phase1Args.map(generateSingleTarget));
+  } else {
+    phase1Results = [];
+    for (const args of phase1Args) {
+      phase1Results.push(await generateSingleTarget(args));
     }
   }
+
+  // Build a map of character target_key → generated file_path for reference images.
+  const portraitPaths = new Map();
+  for (const result of phase1Results) {
+    if (result.target_type === "character" && result.status === "generated" && result.file_path) {
+      portraitPaths.set(result.target_key, result.file_path);
+    }
+  }
+
+  // --- Phase 2: location scenes (with character portrait references) ---
+  let phase2Results = [];
+  if (phase2Targets.length > 0) {
+    if (portraitPaths.size > 0) {
+      console.log(`[info] ${portraitPaths.size} portrait(s) available as reference for location scenes`);
+    }
+
+    const phase2Args = await Promise.all(
+      phase2Targets.map(async (target) => {
+        const present = charactersAtLocation(blueprint, target.targetKey);
+        const refBuffers = [];
+        for (const character of present) {
+          const portraitPath = portraitPaths.get(character.id);
+          if (portraitPath) {
+            try {
+              refBuffers.push(await fs.readFile(portraitPath));
+            } catch {
+              // Portrait file unreadable — skip this reference.
+            }
+          }
+        }
+        return { ...baseArgs, target, referenceImages: refBuffers };
+      }),
+    );
+
+    if (options.parallel) {
+      phase2Results = await Promise.all(phase2Args.map(generateSingleTarget));
+    } else {
+      for (const args of phase2Args) {
+        phase2Results.push(await generateSingleTarget(args));
+      }
+    }
+  }
+
+  const results = [...phase1Results, ...phase2Results];
 
   await patchBlueprintFile(options.blueprintPath, results);
 

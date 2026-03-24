@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-function slugify(value) {
+export function slugify(value) {
   return String(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -38,7 +38,16 @@ function charactersAtLocation(blueprint, locationId) {
   );
 }
 
-function targetBlock(blueprint, target) {
+function portraitBackgroundHint() {
+  return [
+    "Portrait background: Heavily blurred, out-of-focus wash of warm and cool tones",
+    "as if photographed with a very wide aperture. Soft bokeh circles of light in amber",
+    "and pale blue. The background should feel atmospheric but contain no recognizable",
+    "objects, rooms, or scenery — only diffused light and color.",
+  ].join(" ");
+}
+
+function targetBlock(blueprint, target, options = {}) {
   if (target.targetType === "blueprint") {
     const start = startingLocation(blueprint);
     const settingHint = start
@@ -63,15 +72,6 @@ function targetBlock(blueprint, target) {
       ? `${character.first_name} ${character.last_name}`.trim()
       : target.targetKey ?? "Unknown character";
 
-    const location = character?.location_id
-      ? (blueprint.world?.locations ?? []).find(
-          (loc) => loc.id === character.location_id,
-        )
-      : null;
-    const backgroundHint = location
-      ? `Environment: ${location.name}.`
-      : "";
-
     const sexCue = character?.sex ? `Sex: ${character.sex}.` : "";
     const attitudeCue = character?.initial_attitude_towards_investigator
       ? `Expression/body language cue: ${character.initial_attitude_towards_investigator}.`
@@ -81,14 +81,14 @@ function targetBlock(blueprint, target) {
       : "";
 
     return [
-      "Target: Character portrait.",
+      "Target: Character portrait, head-and-shoulders framing.",
       `Name: ${displayName}.`,
       sexCue,
       `Appearance: ${character?.appearance ?? ""}.`,
       attitudeCue,
       backgroundCue,
       `Personality cue: ${character?.personality ?? ""}.`,
-      backgroundHint,
+      portraitBackgroundHint(),
     ]
       .filter(Boolean)
       .join(" ");
@@ -109,6 +109,11 @@ function targetBlock(blueprint, target) {
           .join("; ")}.`
       : "";
 
+  const referenceCount = options.referenceImageCount ?? 0;
+  const referenceHint = referenceCount > 0
+    ? `Reference portrait images of the ${referenceCount} character(s) at this location are attached. Preserve their appearance, clothing, proportions, and art style faithfully when rendering them in the scene.`
+    : "";
+
   const environmentalDetails = (location?.clues ?? [])
     .slice(0, 2)
     .map((clue) => clue.text)
@@ -128,6 +133,7 @@ function targetBlock(blueprint, target) {
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
     `Description: ${location?.description ?? ""}.`,
     characterHints,
+    referenceHint,
     detailHint,
     perspectiveHint,
   ]
@@ -148,11 +154,13 @@ function outputBlock(blueprint, target) {
   return `Output: one static image, 4:3 framing, consistent visual style, seed phrase "${stableSeed}".`;
 }
 
-export function buildImagePrompt(blueprint, target) {
+export function buildImagePrompt(blueprint, target, options = {}) {
   return [
     styleBlock(blueprint),
-    targetBlock(blueprint, target),
+    targetBlock(blueprint, target, options),
     guardrailBlock(),
     outputBlock(blueprint, target),
   ].join("\n\n");
 }
+
+export { charactersAtLocation };

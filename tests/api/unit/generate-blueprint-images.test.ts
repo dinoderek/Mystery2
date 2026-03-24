@@ -98,6 +98,29 @@ describe("generate-blueprint-images args parser", () => {
     expect(parsed.dryMode).toBe(true);
   });
 
+  it("parses --parallel flag", () => {
+    const parsed = parseGenerateImageArgs([
+      "--blueprint-path",
+      "/tmp/mock.json",
+      "--output-dir",
+      "/tmp/out",
+      "--parallel",
+    ]);
+
+    expect(parsed.parallel).toBe(true);
+  });
+
+  it("defaults parallel to false", () => {
+    const parsed = parseGenerateImageArgs([
+      "--blueprint-path",
+      "/tmp/mock.json",
+      "--output-dir",
+      "/tmp/out",
+    ]);
+
+    expect(parsed.parallel).toBe(false);
+  });
+
   it("uses env-backed model defaults when --model is omitted", () => {
     const parsed = parseGenerateImageArgs(
       [
@@ -454,8 +477,8 @@ describe("runImageGeneration", () => {
     expect(result.results[0].error_message).toBe("dry-mode");
 
     const renderedLogs = logSpy.mock.calls.map((call) => call.join(" ")).join("\n");
-    expect(renderedLogs).toContain("Starting generation for Blueprint...");
-    expect(renderedLogs).toContain("Dry mode request for Blueprint:");
+    expect(renderedLogs).toContain("[generate] Blueprint");
+    expect(renderedLogs).toContain("[dry-mode] Blueprint:");
     expect(renderedLogs).toContain("\"url\": \"https://openrouter.ai/api/v1/chat/completions\"");
     expect(renderedLogs).toContain("\"model\": \"openai/gpt-image-1\"");
     expect(renderedLogs).toContain("\"modalities\": [");
@@ -514,5 +537,110 @@ describe("runImageGeneration", () => {
 
     expect(fetchImpl).toHaveBeenCalled();
     expect(result.results[0].status).toBe("generated");
+  });
+
+  it("names output files as <blueprint-name>.<image-id>.png", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-filename-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        overwrite: true,
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        apiKey: "test-key",
+        fetchImpl: () =>
+          Promise.resolve(
+            new Response(
+              JSON.stringify({
+                choices: [
+                  {
+                    message: {
+                      images: [
+                        {
+                          image_url: {
+                            url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          ),
+      },
+    );
+
+    expect(result.results[0].status).toBe("generated");
+    const filePath = result.results[0].file_path;
+    const fileName = path.basename(filePath);
+    // Should start with slugified blueprint title and contain the image_id
+    expect(fileName).toMatch(/^mock-blueprint\..+\.png$/);
+    expect(fileName).toContain(result.results[0].image_id);
+  });
+
+  it("generates all targets in parallel when parallel option is set", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-parallel-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const callOrder: string[] = [];
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "all",
+        overwrite: true,
+        dryRun: false,
+        parallel: true,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        apiKey: "test-key",
+        fetchImpl: (url: string | URL) => {
+          callOrder.push(String(url));
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                choices: [
+                  {
+                    message: {
+                      images: [
+                        {
+                          image_url: {
+                            url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          );
+        },
+      },
+    );
+
+    // All 3 targets (blueprint + 1 character + 1 location) should be generated
+    expect(result.results).toHaveLength(3);
+    expect(result.results.every((r: { status: string }) => r.status === "generated")).toBe(true);
   });
 });

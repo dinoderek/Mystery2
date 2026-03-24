@@ -74,4 +74,18 @@ describe("blueprint image manifest helpers", () => {
     });
     expect(manifest.warnings.length).toBe(2);
   });
+
+  it("resolves files using <prefix>.<imageId>.png naming pattern", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-manifest-newname-"));
+    await mkdir(tmpDir, { recursive: true });
+    // Write file with new naming: <blueprint-name>.<imageId>.png
+    await writeFile(
+      path.join(tmpDir, "my-blueprint.mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png"),
+      Buffer.from([0, 1, 2]),
+    );
+
+    const plan = await buildImageUploadPlan(blueprint, tmpDir);
+    expect(plan).toHaveLength(3);
+    expect(plan[0].localPath).toContain("mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png");
+  });
 });

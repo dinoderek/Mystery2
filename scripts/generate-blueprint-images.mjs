@@ -389,6 +389,13 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
 
+  if (blueprint.schema_version !== "v2") {
+    throw new Error(
+      `Blueprint schema_version must be "v2", got "${blueprint.schema_version ?? "undefined"}". ` +
+        "V1 blueprints are no longer supported by the image generator.",
+    );
+  }
+
   const targets = resolveImageTargets(blueprint, {
     scope: options.scope,
     characterKeys: options.characterKeys,

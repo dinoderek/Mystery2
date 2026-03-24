@@ -1,9 +1,9 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { badRequest, internalError, notFound } from "../_shared/errors.ts";
 import {
-  BlueprintSchema,
-  type Blueprint,
-} from "../_shared/blueprints/blueprint-schema.ts";
+  BlueprintV2Schema,
+  type BlueprintV2,
+} from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 import {
   BLUEPRINT_IMAGES_BUCKET,
@@ -24,7 +24,7 @@ const PURPOSES = new Set([
 type ImagePurpose = "blueprint_cover" | "location_scene" | "character_portrait";
 
 function isImageReferenced(
-  blueprint: Blueprint,
+  blueprint: BlueprintV2,
   purpose: ImagePurpose,
   imageId: string,
 ): boolean {
@@ -80,7 +80,7 @@ serveWithCors(async (req) => {
     }
 
     const rawBlueprint = await fileData.text();
-    const blueprint = BlueprintSchema.parse(JSON.parse(rawBlueprint));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(rawBlueprint));
     if (!isImageReferenced(blueprint, purpose, imageId)) {
       return notFound("Image not referenced by blueprint");
     }

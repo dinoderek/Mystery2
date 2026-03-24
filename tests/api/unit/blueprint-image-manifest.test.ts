@@ -10,6 +10,7 @@ import {
 } from "../../../scripts/lib/blueprint-image-manifest.mjs";
 
 const blueprint = {
+  schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
@@ -17,12 +18,14 @@ const blueprint = {
   world: {
     locations: [
       {
+        id: "loc_kitchen",
         name: "Kitchen",
         location_image_id: "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222",
       },
     ],
     characters: [
       {
+        id: "char_alice",
         first_name: "Alice",
         portrait_image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
       },
@@ -31,7 +34,7 @@ const blueprint = {
 };
 
 describe("blueprint image manifest helpers", () => {
-  it("collects image references from blueprint metadata, locations, and characters", () => {
+  it("collects image references using V2 id-based keys", () => {
     const refs = collectBlueprintImageReferences(blueprint);
     expect(refs).toHaveLength(3);
     expect(refs.map((entry: { purpose: string }) => entry.purpose)).toEqual([
@@ -39,6 +42,8 @@ describe("blueprint image manifest helpers", () => {
       "location_scene",
       "character_portrait",
     ]);
+    expect(refs[1].targetKey).toBe("loc_kitchen");
+    expect(refs[2].targetKey).toBe("char_alice");
   });
 
   it("builds upload plan by resolving local files and summarizes manifest counts", async () => {

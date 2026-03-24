@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { runImageGeneration } from "../../../scripts/generate-blueprint-images.mjs";
 
 const blueprintFixture = {
+  schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     title: "Mock Blueprint",
@@ -16,27 +17,35 @@ const blueprintFixture = {
   },
   narrative: {
     premise: "Someone stole the cookies.",
-    starting_knowledge: [],
+    starting_knowledge: ["The cookies vanished at noon."],
   },
   world: {
-    starting_location_id: "Kitchen",
-    locations: [{ name: "Kitchen", description: "A kitchen", clues: [] }],
+    starting_location_id: "loc_kitchen",
+    locations: [
+      {
+        id: "loc_kitchen",
+        name: "Kitchen",
+        description: "A kitchen",
+        clues: [],
+      },
+    ],
     characters: [
       {
+        id: "char_alice",
         first_name: "Alice",
         last_name: "Smith",
-        location: "Kitchen",
+        location_id: "loc_kitchen",
         sex: "female",
         appearance: "Red hair",
         background: "Baker",
         personality: "Nervous",
         initial_attitude_towards_investigator: "guarded",
-        location_id: "Kitchen",
-        mystery_action_real: "Ate cookies",
         stated_alibi: "Reading",
         motive: "Hungry",
         is_culprit: true,
-        knowledge: [],
+        clues: [],
+        flavor_knowledge: [],
+        actual_actions: [{ sequence: 1, summary: "Ate cookies" }],
       },
     ],
   },
@@ -45,6 +54,9 @@ const blueprintFixture = {
     why_it_happened: "Hungry.",
     timeline: [],
   },
+  solution_paths: [],
+  red_herrings: [],
+  suspect_elimination_paths: [],
 };
 
 const ONE_PIXEL_BASE64 =
@@ -87,6 +99,29 @@ function mockFetch(url: string | URL, init?: RequestInit) {
 }
 
 describe("image generation flow", () => {
+  it("rejects V1 blueprints", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-flow-v1-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const v1Blueprint = { ...blueprintFixture, schema_version: undefined };
+    await writeFile(blueprintPath, JSON.stringify(v1Blueprint, null, 2), "utf-8");
+
+    await expect(
+      runImageGeneration(
+        {
+          blueprintPath,
+          outputDir: path.join(tmpDir, "images"),
+          model: "openai/gpt-image-1",
+          scope: "all",
+          overwrite: true,
+          dryRun: false,
+          characterKeys: [],
+          locationKeys: [],
+        },
+        { fetchImpl: mockFetch, apiKey: "test-key" },
+      ),
+    ).rejects.toThrow("V1 blueprints are no longer supported");
+  });
+
   it("patches successful targets while preserving failed target references", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-flow-"));
     const blueprintPath = path.join(tmpDir, "blueprint.json");

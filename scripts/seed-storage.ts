@@ -28,10 +28,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface BlueprintRef {
   id: string;
+  schema_version?: string;
   metadata?: { image_id?: string };
   world?: {
-    locations?: Array<{ name: string; location_image_id?: string }>;
-    characters?: Array<{ first_name: string; portrait_image_id?: string }>;
+    locations?: Array<{ id: string; location_image_id?: string }>;
+    characters?: Array<{ id: string; portrait_image_id?: string }>;
   };
 }
 

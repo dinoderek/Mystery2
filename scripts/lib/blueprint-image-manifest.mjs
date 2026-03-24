@@ -16,7 +16,7 @@ export function collectBlueprintImageReferences(blueprint) {
     const ref = withReference(
       location.location_image_id,
       "location_scene",
-      location.name,
+      location.id,
     );
     if (ref) refs.push(ref);
   }
@@ -25,7 +25,7 @@ export function collectBlueprintImageReferences(blueprint) {
     const ref = withReference(
       character.portrait_image_id,
       "character_portrait",
-      character.first_name,
+      character.id,
     );
     if (ref) refs.push(ref);
   }

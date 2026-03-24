@@ -14,43 +14,125 @@ export function createImageId(blueprintId, targetType, targetKey = null) {
 }
 
 function styleBlock(blueprint) {
-  return [
-    "Style:",
+  const artStyle =
     blueprint?.metadata?.art_style?.trim() ||
-      "storybook illustration, warm lighting, playful detective mood",
-  ].join(" ");
+    "storybook illustration, warm lighting, playful detective mood";
+  const age = blueprint?.metadata?.target_age;
+  const ageCue = age
+    ? `Audience: children aged ${age}. Visual complexity should be age-appropriate.`
+    : "";
+  return [`Style: ${artStyle}`, ageCue].filter(Boolean).join("\n");
+}
+
+function startingLocation(blueprint) {
+  const startId = blueprint?.world?.starting_location_id;
+  if (!startId) return null;
+  return (blueprint?.world?.locations ?? []).find(
+    (location) => location.id === startId,
+  );
+}
+
+function charactersAtLocation(blueprint, locationId) {
+  return (blueprint?.world?.characters ?? []).filter(
+    (character) => character.location_id === locationId,
+  );
 }
 
 function targetBlock(blueprint, target) {
   if (target.targetType === "blueprint") {
+    const start = startingLocation(blueprint);
+    const settingHint = start
+      ? `Setting: ${start.name} — ${start.description}`
+      : "";
     return [
       "Target: Mystery cover image.",
       `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
       `Premise: ${blueprint.narrative?.premise ?? ""}.`,
       `One-liner: ${blueprint.metadata?.one_liner ?? ""}.`,
-    ].join(" ");
+      settingHint,
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   if (target.targetType === "character") {
     const character = (blueprint.world?.characters ?? []).find(
-      (entry) => entry.first_name === target.targetKey,
+      (entry) => entry.id === target.targetKey,
     );
+    const displayName = character
+      ? `${character.first_name} ${character.last_name}`.trim()
+      : target.targetKey ?? "Unknown character";
+
+    const location = character?.location_id
+      ? (blueprint.world?.locations ?? []).find(
+          (loc) => loc.id === character.location_id,
+        )
+      : null;
+    const backgroundHint = location
+      ? `Environment: ${location.name}.`
+      : "";
+
+    const sexCue = character?.sex ? `Sex: ${character.sex}.` : "";
+    const attitudeCue = character?.initial_attitude_towards_investigator
+      ? `Expression/body language cue: ${character.initial_attitude_towards_investigator}.`
+      : "";
+    const backgroundCue = character?.background
+      ? `Background context: ${character.background}`
+      : "";
+
     return [
       "Target: Character portrait.",
-      `Name: ${character?.first_name ?? target.targetKey ?? "Unknown character"}.`,
+      `Name: ${displayName}.`,
+      sexCue,
       `Appearance: ${character?.appearance ?? ""}.`,
+      attitudeCue,
+      backgroundCue,
       `Personality cue: ${character?.personality ?? ""}.`,
-    ].join(" ");
+      backgroundHint,
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   const location = (blueprint.world?.locations ?? []).find(
-    (entry) => entry.name === target.targetKey,
+    (entry) => entry.id === target.targetKey,
   );
+
+  const present = charactersAtLocation(
+    blueprint,
+    target.targetKey,
+  );
+  const characterHints =
+    present.length > 0
+      ? `Characters present: ${present
+          .map((c) => `${c.first_name} (${c.appearance})`)
+          .join("; ")}.`
+      : "";
+
+  const environmentalDetails = (location?.clues ?? [])
+    .slice(0, 2)
+    .map((clue) => clue.text)
+    .join(" ");
+  const detailHint = environmentalDetails
+    ? `Environmental details to subtly include: ${environmentalDetails}`
+    : "";
+
+  const isStart =
+    location?.id === blueprint?.world?.starting_location_id;
+  const perspectiveHint = isStart
+    ? "Perspective: show this location as if the viewer is arriving for the first time."
+    : "";
+
   return [
     "Target: Location scene image.",
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
     `Description: ${location?.description ?? ""}.`,
-  ].join(" ");
+    characterHints,
+    detailHint,
+    perspectiveHint,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function guardrailBlock() {

@@ -3,6 +3,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { getDeployEnvPath } from "./local-config.mjs";
 import {
   DEPLOY_ENVIRONMENTS,
   getBootstrapUsersPath,
@@ -135,7 +136,7 @@ async function main() {
 
   const rootDir = process.cwd();
   const options = parseUpdateBootstrapPasswordsArgs(argv);
-  const envPath = path.join(rootDir, `.env.deploy.${options.env}.local`);
+  const envPath = getDeployEnvPath(rootDir, options.env, process.env);
   const envVarsFromFile = await loadEnvFileVars(envPath, true);
   const runtimeEnv = {
     ...envVarsFromFile,
@@ -150,7 +151,7 @@ async function main() {
     );
   }
 
-  const usersPath = getBootstrapUsersPath(rootDir, options.env);
+  const usersPath = getBootstrapUsersPath(rootDir, options.env, process.env);
   const configUsers = await loadBootstrapUsers(usersPath);
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },

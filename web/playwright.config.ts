@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getBaseEnvPath } from '../scripts/local-config.mjs';
 
 function parseEnvFile(filePath: string): Record<string, string> {
   if (!fs.existsSync(filePath)) return {};
@@ -29,7 +30,8 @@ function parseEnvFile(filePath: string): Record<string, string> {
 }
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
-const rootEnv = parseEnvFile(path.resolve(configDir, '../.env.local'));
+const repoRoot = path.resolve(configDir, '..');
+const rootEnv = parseEnvFile(getBaseEnvPath(repoRoot, process.env));
 const webServerEnv = {
   ...process.env,
   VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? rootEnv.API_URL ?? 'http://127.0.0.1:54331',

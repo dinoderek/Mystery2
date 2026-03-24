@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { getBaseEnvPath } from "../scripts/local-config.mjs";
 
-const envPath = resolve(process.cwd(), ".env.local");
+const envPath = getBaseEnvPath(process.cwd(), process.env);
 
 if (existsSync(envPath)) {
   process.loadEnvFile(envPath);

@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { getAuthUsersLocalPath, getBaseEnvPath } from '../../scripts/local-config.mjs';
 
 const TEST_EMAIL = process.env.AUTH_TEST_EMAIL ?? null;
 const TEST_PASSWORD = process.env.AUTH_TEST_PASSWORD ?? null;
@@ -16,7 +17,8 @@ function isRetryableConnectionError(error: unknown): boolean {
 }
 
 function readRootEnvValue(key: string): string | null {
-  const envPath = path.resolve(process.cwd(), '../.env.local');
+  const repoRoot = path.resolve(process.cwd(), '..');
+  const envPath = getBaseEnvPath(repoRoot, process.env);
   if (!fs.existsSync(envPath)) return null;
 
   const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/u);
@@ -46,7 +48,8 @@ type AuthLogin = {
 };
 
 function readLocalSeedLogin(): AuthLogin | null {
-  const usersPath = path.resolve(process.cwd(), '../supabase/seed/auth-users.local.json');
+  const repoRoot = path.resolve(process.cwd(), '..');
+  const usersPath = getAuthUsersLocalPath(repoRoot, process.env);
   if (!fs.existsSync(usersPath)) return null;
 
   const raw = fs.readFileSync(usersPath, 'utf8');

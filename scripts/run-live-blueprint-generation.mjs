@@ -1,5 +1,4 @@
-import path from "node:path";
-
+import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
 import { loadEnvFile, npmBin, runCommand } from "./supabase-utils.mjs";
 
 const mode = process.argv[2];
@@ -9,8 +8,8 @@ if (mode !== "free" && mode !== "paid") {
 }
 
 const rootDir = process.cwd();
-const baseEnvPath = path.join(rootDir, ".env.local");
-const modeEnvPath = path.join(rootDir, `.env.ai.${mode}.local`);
+const baseEnvPath = getBaseEnvPath(rootDir, process.env);
+const modeEnvPath = getAIEnvPath(rootDir, mode, process.env);
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);

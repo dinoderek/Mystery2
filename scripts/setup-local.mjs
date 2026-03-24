@@ -1,4 +1,4 @@
-import path from "node:path";
+import { getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
   loadEnvFile,
@@ -8,7 +8,7 @@ import {
 } from "./supabase-utils.mjs";
 
 const rootDir = process.cwd();
-const baseEnvPath = path.join(rootDir, ".env.local");
+const baseEnvPath = getBaseEnvPath(rootDir, process.env);
 const options = parseScriptOptions(process.argv.slice(2));
 
 try {

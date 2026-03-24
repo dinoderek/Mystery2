@@ -14,6 +14,7 @@ import {
   BLUEPRINT_EVALUATION_PROMPT,
   BlueprintEvaluationOutputSchema,
 } from "../packages/shared/src/evaluation/index.ts";
+import { getBaseEnvPath } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
@@ -239,7 +240,7 @@ export async function loadBlueprintGenerationEnv(
   rootDir = process.cwd(),
   baseEnv = process.env,
 ) {
-  const rootEnv = await loadEnvFile(path.join(rootDir, ".env.local"), false);
+  const rootEnv = await loadEnvFile(getBaseEnvPath(rootDir, baseEnv), false);
   return { ...rootEnv, ...baseEnv };
 }
 

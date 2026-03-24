@@ -1,4 +1,4 @@
-import path from "node:path";
+import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
   npmBin,
@@ -14,8 +14,8 @@ if (mode !== "free" && mode !== "paid") {
 }
 
 const rootDir = process.cwd();
-const baseEnvPath = path.join(rootDir, ".env.local");
-const modeEnvPath = path.join(rootDir, `.env.ai.${mode}.local`);
+const baseEnvPath = getBaseEnvPath(rootDir, process.env);
+const modeEnvPath = getAIEnvPath(rootDir, mode, process.env);
 const options = parseScriptOptions(process.argv.slice(3));
 
 try {

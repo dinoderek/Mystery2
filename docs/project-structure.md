@@ -36,6 +36,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - Use the `.local` suffix for machine-specific files that must stay gitignored.
 - Examples in this repo include env files such as `.env.deploy.<env>.local`, operator config such as `.env.images.local`, and copied deployment manifests such as `deploy/bootstrap-users.<env>.local.json`.
 - When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
+- Set `MYSTERY_CONFIG_ROOT` to an absolute directory if you want those local-only files to live outside the repo and be shared across clones or worktrees. When unset, the repo root remains the local-config root.
 
 ## Feature Additions (Static Blueprint Images)
 

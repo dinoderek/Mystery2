@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
-import path from "node:path";
 
 export const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 export const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -31,7 +30,7 @@ export async function loadEnvFile(filePath, required = false) {
     contents = await fs.readFile(filePath, "utf-8");
   } catch {
     if (required) {
-      throw new Error(`Missing required env file: ${path.basename(filePath)}`);
+      throw new Error(`Missing required env file: ${filePath}`);
     }
     return {};
   }

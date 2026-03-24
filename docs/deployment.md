@@ -37,6 +37,12 @@ Create one file per environment:
 - `.env.deploy.staging.local`
 - `.env.deploy.prod.local`
 
+When `MYSTERY_CONFIG_ROOT` is set to an absolute path, these local-only files are read from that directory instead of the repo root:
+
+- `$MYSTERY_CONFIG_ROOT/.env.deploy.dev.local`
+- `$MYSTERY_CONFIG_ROOT/.env.deploy.staging.local`
+- `$MYSTERY_CONFIG_ROOT/.env.deploy.prod.local`
+
 Required keys:
 
 - `CLOUDFLARE_API_TOKEN`
@@ -64,6 +70,11 @@ Optional (avoids interactive DB password prompt during `supabase link`):
 - `deploy/bootstrap-users.dev.local.json`
 - `deploy/bootstrap-users.staging.local.json`
 
+When `MYSTERY_CONFIG_ROOT` is set, these local-only bootstrap manifests are read from:
+
+- `$MYSTERY_CONFIG_ROOT/deploy/bootstrap-users.dev.local.json`
+- `$MYSTERY_CONFIG_ROOT/deploy/bootstrap-users.staging.local.json`
+
 The `.example.json` files are committed templates only. The real `.local.json` files are gitignored and must contain `users[]` entries with `email`, `password`, and optional `email_confirm`.
 
 Create each local file by copying the matching example file and replacing all sample passwords before deploy.
@@ -85,6 +96,7 @@ Behavior:
 
 - The script reads `.env.deploy.<env>.local` for `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 - It matches users by email from `deploy/bootstrap-users.<env>.local.json`.
+- When `MYSTERY_CONFIG_ROOT` is set, both of those local-only files are resolved from that directory instead of the repo root.
 - It updates passwords in place and preserves user ids.
 - It fails before making changes if any configured email does not already exist in Supabase Auth.
 

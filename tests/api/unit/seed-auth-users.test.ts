@@ -96,4 +96,14 @@ describe("seed auth user helpers", () => {
     expect(notice).toContain("player1@test.local");
     expect(notice).toContain("Local-abc123-Aa1!");
   });
+
+  it("shows absolute paths for auth manifests outside the repo root", () => {
+    const notice = formatGeneratedAuthUsersNotice(
+      "/tmp/repo",
+      "/tmp/shared-config/supabase/seed/auth-users.local.json",
+      [{ email: "player1@test.local", password: "Local-abc123-Aa1!", email_confirm: true }],
+    );
+
+    expect(notice).toContain("/tmp/shared-config/supabase/seed/auth-users.local.json");
+  });
 });

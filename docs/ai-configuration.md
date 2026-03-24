@@ -12,14 +12,17 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - `game-start` uses `default` unless request body includes `ai_profile`.
 - Existing sessions stay pinned to their stored `ai_profile_id`.
 - OpenRouter keys are stored in `ai_profiles.openrouter_api_key` (no function-secret fallback).
+- Local-only operator config can be relocated by setting `MYSTERY_CONFIG_ROOT` to an absolute path. When unset, local-only files continue to resolve from the repo root.
 
 ## OpenRouter Injection Map
 
 - Local live gameplay:
   - `.env.ai.free.local` / `.env.ai.paid.local` provide `OPENROUTER_API_KEY`
+  - when `MYSTERY_CONFIG_ROOT` is set, those files resolve from that directory instead of the repo root
   - `scripts/seed-ai.mjs` writes that value into `ai_profiles.openrouter_api_key`
 - Deploy:
   - `.env.deploy.<env>.local` provides `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY`
+  - when `MYSTERY_CONFIG_ROOT` is set, deploy reads those local-only env files from that directory
   - deploy upserts `ai_profiles.id='default'`
 - Runtime use:
   - edge functions load the key from `ai_profiles.openrouter_api_key`
@@ -27,6 +30,7 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - Blueprint generation:
   - `scripts/generate-blueprint.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
+  - when `MYSTERY_CONFIG_ROOT` is set, `.env.local` resolves from that directory
   - it loads model defaults from `OPENROUTER_BLUEPRINT_MODEL`, then `AI_MODEL`, then CLI `--model` overrides
 - repeated `--brief-file` and `--model` flags generate every brief/model combination
 - multi-job runs write composed files via `--output-file` as `<output-file>.<model>.<brief filename>.json`
@@ -38,6 +42,7 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - Image generation:
   - `scripts/generate-blueprint-images.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
+  - when `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory
   - it uses `AI_OPENROUTER_TIMEOUT_MS` for request/download timeout control (default `120000`)
 
 ## Local Configuration Summary
@@ -59,7 +64,7 @@ The blueprint-generation CLI resolves config in this order:
 
 1. CLI flags at invocation time
 2. shell env at invocation time
-3. `.env.local`
+3. `.env.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
 
 Operator flags:
 
@@ -96,8 +101,8 @@ Use `.env.images.local` for operator image-generation settings:
 The image-generation CLI resolves config in this order:
 
 1. shell env at invocation time
-2. `.env.images.local`
-3. `.env.local`
+2. `.env.images.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
+3. `.env.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
 4. built-in default model
 
 Timeout behavior:

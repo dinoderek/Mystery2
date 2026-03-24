@@ -12,6 +12,30 @@ Install:
 
 ## First-Time Setup
 
+Optional: if you want one shared local-config directory across multiple clones or worktrees, export an absolute `MYSTERY_CONFIG_ROOT` first:
+
+```bash
+export MYSTERY_CONFIG_ROOT="/absolute/path/to/mystery-config"
+```
+
+When set, local-only files are read from that directory instead of this repo. When unset, the repo root keeps the current behavior.
+
+Shared config layout mirrors the repo-local filenames:
+
+```text
+$MYSTERY_CONFIG_ROOT/
+  .env.local
+  .env.ai.free.local
+  .env.ai.paid.local
+  .env.images.local
+  .env.deploy.dev.local
+  .env.deploy.staging.local
+  .env.deploy.prod.local
+  deploy/bootstrap-users.dev.local.json
+  deploy/bootstrap-users.staging.local.json
+  supabase/seed/auth-users.local.json
+```
+
 Run from the repo root:
 
 ```bash
@@ -81,7 +105,7 @@ npm run seed:ai -- --only <mock|free|paid>
 
 New sessions use the current `default` profile. Existing sessions stay pinned to their stored `ai_profile_id`.
 
-For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w1/docs/ai-configuration.md).
+For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w3/docs/ai-configuration.md).
 
 ## Generate Blueprints Locally
 
@@ -124,6 +148,7 @@ Optional:
 
 - Seed emails come from the committed template: `supabase/seed/auth-users.example.json`
 - Real passwords are generated into the gitignored local file: `supabase/seed/auth-users.local.json`
+  - or `$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json` when `MYSTERY_CONFIG_ROOT` is set
 - The first `seed:auth` run prints the generated credentials once and later runs continue using the same local file
 
 Default local users:
@@ -133,7 +158,7 @@ Default local users:
 | `player1@test.local` | Primary local player             |
 | `player2@test.local` | Second local player / RLS checks |
 
-Find the current passwords in `supabase/seed/auth-users.local.json`, then log in at `http://localhost:5173/login` or the redirected login screen.
+Find the current passwords in `supabase/seed/auth-users.local.json`, or in `$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json` when using a shared config root, then log in at `http://localhost:5173/login` or the redirected login screen.
 
 ## Supabase Operations
 
@@ -205,6 +230,9 @@ npm run seed:ai -- --only <mock|free|paid>
 
 Create `.env.deploy.dev.local` with:
 
+- at the repo root by default, or
+- at `$MYSTERY_CONFIG_ROOT/.env.deploy.dev.local` when using a shared config root
+
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `SUPABASE_ACCESS_TOKEN`
@@ -219,6 +247,7 @@ Create `.env.deploy.dev.local` with:
 If you want non-prod bootstrap users during deploy, also copy:
 
 - `deploy/bootstrap-users.dev.example.json` -> `deploy/bootstrap-users.dev.local.json`
+  - or `deploy/bootstrap-users.dev.example.json` -> `$MYSTERY_CONFIG_ROOT/deploy/bootstrap-users.dev.local.json` when using a shared config root
 
 Replace the sample passwords in the local file before running deploy.
 
@@ -249,6 +278,8 @@ Resolution order for `npm run generate:images`:
 2. `.env.images.local`
 3. `.env.local`
 4. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
+
+When `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory instead of the repo root.
 
 Gameplay/runtime OpenRouter config stays DB-first and profile-driven. The image-generation CLI is separate operator tooling and does not read from `ai_profiles`.
 

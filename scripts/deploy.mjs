@@ -1,6 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { getDeployEnvPath } from "./local-config.mjs";
 import {
   assertRequiredDeployEnvVars,
   buildCommandPlan,
@@ -741,7 +742,7 @@ async function main() {
   const targets = await loadTargets(targetsPath);
   const target = targets[options.env];
 
-  const envPath = path.join(rootDir, `.env.deploy.${options.env}.local`);
+  const envPath = getDeployEnvPath(rootDir, options.env, process.env);
   const envVarsFromFile = await loadEnvFileVars(envPath, true);
   const deployEnv = {
     ...envVarsFromFile,

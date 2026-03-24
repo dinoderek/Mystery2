@@ -1,4 +1,4 @@
-import path from "node:path";
+import { getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
   loadEnvFile,
@@ -15,7 +15,7 @@ if (suite !== "integration" && suite !== "e2e") {
 const options = parseScriptOptions(process.argv.slice(3));
 
 const rootDir = process.cwd();
-const baseEnvPath = path.join(rootDir, ".env.local");
+const baseEnvPath = getBaseEnvPath(rootDir, process.env);
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);

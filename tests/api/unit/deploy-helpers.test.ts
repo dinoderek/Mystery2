@@ -282,6 +282,18 @@ describe("loadBootstrapUsers", () => {
     );
   });
 
+  it("resolves bootstrap-user local paths from the external config root when configured", () => {
+    const rootDir = "/tmp/repo";
+    const configRoot = "/tmp/shared-config";
+
+    expect(
+      getBootstrapUsersPath(rootDir, "dev", { MYSTERY_CONFIG_ROOT: configRoot }),
+    ).toBe(path.join(configRoot, "deploy/bootstrap-users.dev.local.json"));
+    expect(getBootstrapUsersExamplePath(rootDir, "dev")).toBe(
+      path.join(rootDir, "deploy/bootstrap-users.dev.example.json"),
+    );
+  });
+
   it("loads object-based users file", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "deploy-users-"));
     const usersPath = path.join(tmpDir, "bootstrap-users.dev.local.json");

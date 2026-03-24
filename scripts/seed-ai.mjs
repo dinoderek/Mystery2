@@ -1,5 +1,10 @@
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import {
+  formatResolvedLocalConfigPath,
+  getAIEnvPath,
+  getBaseEnvPath,
+} from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const ROOT_DIR = process.cwd();
@@ -52,7 +57,7 @@ async function loadModeProfile(rootEnv, mode) {
     };
   }
 
-  const modeEnvPath = path.join(ROOT_DIR, `.env.ai.${mode}.local`);
+  const modeEnvPath = getAIEnvPath(ROOT_DIR, mode, process.env);
   const modeEnv = await loadEnvFile(modeEnvPath, false);
   if (Object.keys(modeEnv).length === 0) {
     return null;
@@ -70,7 +75,7 @@ async function loadModeProfile(rootEnv, mode) {
 
   if (provider === "openrouter" && !openrouterKey) {
     throw new Error(
-      `Missing OPENROUTER_API_KEY for profile "${mode}" in ${path.basename(modeEnvPath)} or .env.local.`,
+      `Missing OPENROUTER_API_KEY for profile "${mode}" in ${formatResolvedLocalConfigPath(ROOT_DIR, modeEnvPath)} or ${formatResolvedLocalConfigPath(ROOT_DIR, getBaseEnvPath(ROOT_DIR, process.env))}.`,
     );
   }
 
@@ -91,13 +96,16 @@ function chooseDefaultSource(targets, profileMap) {
 }
 
 const { only, targets } = resolveTargets(process.argv.slice(2));
-const baseEnv = await loadEnvFile(path.join(ROOT_DIR, ".env.local"), false);
+const baseEnvPath = getBaseEnvPath(ROOT_DIR, process.env);
+const baseEnv = await loadEnvFile(baseEnvPath, false);
 const env = { ...baseEnv, ...process.env };
 
 const supabaseUrl = env.API_URL || "http://127.0.0.1:54331";
 const serviceRoleKey = env.SERVICE_ROLE_KEY;
 if (!serviceRoleKey) {
-  console.error("Missing SERVICE_ROLE_KEY (expected in env or .env.local)");
+  console.error(
+    `Missing SERVICE_ROLE_KEY (expected in env or ${formatResolvedLocalConfigPath(ROOT_DIR, baseEnvPath)})`,
+  );
   process.exit(1);
 }
 
@@ -110,9 +118,13 @@ for (const target of targets) {
   const profile = await loadModeProfile(env, target);
   if (!profile) {
     if (only) {
-      throw new Error(`Missing .env.ai.${target}.local for --only ${target}`);
+      throw new Error(
+        `Missing required AI profile env file for --only ${target}: ${formatResolvedLocalConfigPath(ROOT_DIR, getAIEnvPath(ROOT_DIR, target, process.env))}`,
+      );
     }
-    console.warn(`Skipping profile "${target}": missing .env.ai.${target}.local`);
+    console.warn(
+      `Skipping profile "${target}": missing ${formatResolvedLocalConfigPath(ROOT_DIR, getAIEnvPath(ROOT_DIR, target, process.env))}`,
+    );
     continue;
   }
   profileMap.set(target, profile);

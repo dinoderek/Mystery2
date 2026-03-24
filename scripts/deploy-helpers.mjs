@@ -1,5 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  getBootstrapUsersExamplePath as resolveBootstrapUsersExamplePath,
+  getBootstrapUsersPath as resolveBootstrapUsersPath,
+} from "./local-config.mjs";
 import { npmBin, npxBin, parseEnvLine } from "./supabase-utils.mjs";
 
 export const DEPLOY_ENVIRONMENTS = ["dev", "staging", "prod"];
@@ -162,7 +166,7 @@ export async function loadEnvFileVars(filePath, required = false) {
     contents = await fs.readFile(filePath, "utf-8");
   } catch {
     if (required) {
-      throw new Error(`Missing required deploy env file: ${path.basename(filePath)}`);
+      throw new Error(`Missing required deploy env file: ${filePath}`);
     }
     return {};
   }
@@ -318,12 +322,12 @@ export function shouldSeedBlueprints(skipSeed) {
   return !skipSeed;
 }
 
-export function getBootstrapUsersPath(rootDir, envName) {
-  return path.join(rootDir, `deploy/bootstrap-users.${envName}.local.json`);
+export function getBootstrapUsersPath(rootDir, envName, env = process.env) {
+  return resolveBootstrapUsersPath(rootDir, envName, env);
 }
 
 export function getBootstrapUsersExamplePath(rootDir, envName) {
-  return path.join(rootDir, `deploy/bootstrap-users.${envName}.example.json`);
+  return resolveBootstrapUsersExamplePath(rootDir, envName);
 }
 
 export function isPlaceholderPassword(password) {

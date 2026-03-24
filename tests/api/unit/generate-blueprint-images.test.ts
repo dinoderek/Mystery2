@@ -164,6 +164,39 @@ describe("loadImageGenerationEnv", () => {
     expect(env.OPENROUTER_API_KEY).toBe("root-key");
     expect(env.OPENROUTER_IMAGE_MODEL).toBe("root-model");
   });
+
+  it("reads local env files only from the external config root when configured", async () => {
+    const repoDir = await mkdtemp(path.join(os.tmpdir(), "image-env-repo-"));
+    const configRoot = await mkdtemp(path.join(os.tmpdir(), "image-env-shared-"));
+
+    await writeFile(
+      path.join(repoDir, ".env.local"),
+      'OPENROUTER_API_KEY="repo-root-key"\nOPENROUTER_IMAGE_MODEL="repo-root-model"\n',
+      "utf-8",
+    );
+    await writeFile(
+      path.join(repoDir, ".env.images.local"),
+      'OPENROUTER_API_KEY="repo-image-key"\nOPENROUTER_IMAGE_MODEL="repo-image-model"\n',
+      "utf-8",
+    );
+    await writeFile(
+      path.join(configRoot, ".env.local"),
+      'OPENROUTER_API_KEY="shared-root-key"\nOPENROUTER_IMAGE_MODEL="shared-root-model"\n',
+      "utf-8",
+    );
+    await writeFile(
+      path.join(configRoot, ".env.images.local"),
+      'OPENROUTER_API_KEY="shared-image-key"\nOPENROUTER_IMAGE_MODEL="shared-image-model"\n',
+      "utf-8",
+    );
+
+    const env = await loadImageGenerationEnv(repoDir, {
+      MYSTERY_CONFIG_ROOT: configRoot,
+    });
+
+    expect(env.OPENROUTER_API_KEY).toBe("shared-image-key");
+    expect(env.OPENROUTER_IMAGE_MODEL).toBe("shared-image-model");
+  });
 });
 
 describe("runImageGeneration", () => {

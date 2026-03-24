@@ -37,6 +37,7 @@ Covers:
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
 - evaluation-packet assembly (`scripts/build-blueprint-evaluation-markdown.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
+  - when `MYSTERY_CONFIG_ROOT` is set, those local-only files are resolved from that directory instead of the repo root
 - image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
 - deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
   - deploy CLI arg parsing and validation
@@ -49,6 +50,7 @@ Covers:
   - first-run generation of `supabase/seed/auth-users.local.json`
   - rerun preservation of existing local passwords
   - generated-credentials output formatting
+  - external-root resolution via `MYSTERY_CONFIG_ROOT`
 
 Web-specific command parser coverage:
 
@@ -161,6 +163,7 @@ Guidance:
 
 - Keep E2E tests few but high value.
 - Use integration tests for most behavior; reserve E2E for critical journeys.
+- Vitest setup and Playwright auth/bootstrap helpers should honor `MYSTERY_CONFIG_ROOT` so shared local config works the same way in automation as it does in operator scripts.
 
 Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`) must include:
 

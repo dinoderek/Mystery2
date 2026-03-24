@@ -6,6 +6,10 @@ import {
   buildImageUploadPlan,
   createImageManifest,
 } from "./lib/blueprint-image-manifest.mjs";
+import {
+  formatResolvedLocalConfigPath,
+  getBaseEnvPath,
+} from "./local-config.mjs";
 
 const ROOT_DIR = process.cwd();
 const SOURCE_DIRS = ["blueprints", "supabase/seed/blueprints"];
@@ -103,7 +107,7 @@ function parseEnvLine(line) {
 }
 
 async function loadDotEnvLocal() {
-  const envPath = path.join(ROOT_DIR, ".env.local");
+  const envPath = getBaseEnvPath(ROOT_DIR, process.env);
   let contents;
   try {
     contents = await fs.readFile(envPath, "utf-8");
@@ -317,7 +321,9 @@ const supabaseUrl = process.env.API_URL || "http://127.0.0.1:54331";
 const supabaseKey = process.env.SERVICE_ROLE_KEY;
 
 if (!supabaseKey) {
-  console.error("Missing SERVICE_ROLE_KEY (expected in env or .env.local)");
+  console.error(
+    `Missing SERVICE_ROLE_KEY (expected in env or ${formatResolvedLocalConfigPath(ROOT_DIR, getBaseEnvPath(ROOT_DIR, process.env))})`,
+  );
   process.exit(1);
 }
 

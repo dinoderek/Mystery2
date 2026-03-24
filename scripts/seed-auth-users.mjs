@@ -3,18 +3,21 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import {
+  formatResolvedLocalConfigPath,
+  getAuthUsersExamplePath,
+  getAuthUsersLocalPath,
+  getBaseEnvPath,
+} from "./local-config.mjs";
 
 const ROOT_DIR = process.cwd();
 const DUPLICATE_USER_ERROR =
   /already (?:registered|exists)|has already been registered|duplicate key|Database error creating new user/i;
 
-export const DEFAULT_AUTH_USERS_EXAMPLE_PATH = path.join(
+export const DEFAULT_AUTH_USERS_EXAMPLE_PATH = getAuthUsersExamplePath(ROOT_DIR);
+export const DEFAULT_AUTH_USERS_LOCAL_PATH = getAuthUsersLocalPath(
   ROOT_DIR,
-  "supabase/seed/auth-users.example.json",
-);
-export const DEFAULT_AUTH_USERS_LOCAL_PATH = path.join(
-  ROOT_DIR,
-  "supabase/seed/auth-users.local.json",
+  process.env,
 );
 
 function parseEnvLine(line) {
@@ -42,7 +45,7 @@ export function generateAuthSeedPassword() {
 }
 
 async function loadDotEnvLocal(rootDir = ROOT_DIR) {
-  const envPath = path.join(rootDir, ".env.local");
+  const envPath = getBaseEnvPath(rootDir, process.env);
   let contents;
   try {
     contents = await fs.readFile(envPath, "utf-8");
@@ -128,13 +131,13 @@ export async function loadAuthUsersConfig(
 }
 
 export function formatGeneratedAuthUsersNotice(rootDir, localPath, users) {
-  const relativePath = path.relative(rootDir, localPath) || localPath;
+  const displayPath = formatResolvedLocalConfigPath(rootDir, localPath);
   const credentials = users
     .map((user) => `- ${user.email} / ${user.password}`)
     .join("\n");
 
   return [
-    `Created local auth seed file: ${relativePath}`,
+    `Created local auth seed file: ${displayPath}`,
     "Generated local credentials:",
     credentials,
   ].join("\n");
@@ -211,7 +214,9 @@ export async function main() {
   const serviceRoleKey = process.env.SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
-    throw new Error("Missing SERVICE_ROLE_KEY (expected in env or .env.local)");
+    throw new Error(
+      `Missing SERVICE_ROLE_KEY (expected in env or ${formatResolvedLocalConfigPath(ROOT_DIR, getBaseEnvPath(ROOT_DIR, process.env))})`,
+    );
   }
 
   const { created, localPath, users } = await ensureLocalAuthUsersFile();
@@ -220,8 +225,9 @@ export async function main() {
   }
 
   const result = await seedAuthUsers({ supabaseUrl, serviceRoleKey, users });
-  const relativePath = path.relative(ROOT_DIR, localPath) || localPath;
-  console.log(`Using local auth user config: ${relativePath}`);
+  console.log(
+    `Using local auth user config: ${formatResolvedLocalConfigPath(ROOT_DIR, localPath)}`,
+  );
   console.log(
     `Ensured ${users.length} auth user(s): created=${result.createdCount}, existing=${result.existingCount}`,
   );

@@ -7,6 +7,7 @@ import {
   buildImagePrompt,
   createImageId,
 } from "./lib/image-prompt-builder.mjs";
+import { getBaseEnvPath, getImagesEnvPath } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
@@ -148,8 +149,8 @@ export function parseGenerateImageArgs(argv, env = process.env) {
 }
 
 export async function loadImageGenerationEnv(rootDir = process.cwd(), baseEnv = process.env) {
-  const rootEnv = await loadEnvFile(path.join(rootDir, ".env.local"), false);
-  const imageEnv = await loadEnvFile(path.join(rootDir, ".env.images.local"), false);
+  const rootEnv = await loadEnvFile(getBaseEnvPath(rootDir, baseEnv), false);
+  const imageEnv = await loadEnvFile(getImagesEnvPath(rootDir, baseEnv), false);
 
   return {
     ...rootEnv,

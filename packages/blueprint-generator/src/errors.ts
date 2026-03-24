@@ -12,6 +12,7 @@ export interface BlueprintGenerationErrorDetails {
   responseText?: string;
   issues?: unknown;
   model?: string;
+  outputPath?: string;
   requestBody?: Record<string, unknown>;
 }
 

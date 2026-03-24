@@ -59,7 +59,7 @@ describe("game-move endpoint", () => {
       sex: "male",
     });
     expect(data.narration_parts[0]).toMatchObject({
-      image_id: "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223",
+      image_id: "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223.png",
       speaker: {
         kind: "narrator",
         key: "narrator",

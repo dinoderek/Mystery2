@@ -7,7 +7,6 @@ import {
   buildImagePrompt,
   charactersAtLocation,
   createImageId,
-  slugify,
 } from "./lib/image-prompt-builder.mjs";
 import { getBaseEnvPath, getBlueprintImagesDir, getBlueprintsDir, getImagesEnvPath } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
@@ -414,8 +413,8 @@ async function generateImageAsset({
   return Buffer.from(bytes);
 }
 
-function buildOutputFilename(blueprintName, imageId) {
-  return `${slugify(blueprintName)}.${imageId}.png`;
+function buildOutputFilename(_blueprintName, imageId) {
+  return imageId;
 }
 
 async function generateSingleTarget({

@@ -16,6 +16,7 @@
         "seed:auth": "node scripts/seed-auth-users.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",
         "seed:ai": "node scripts/seed-ai.mjs",
+        "seed:all": "node scripts/seed-all.mjs",
         "users:update-passwords": "node scripts/update-bootstrap-passwords.mjs",
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
         "build:evaluation-markdown": "node scripts/build-blueprint-evaluation-markdown.mjs",

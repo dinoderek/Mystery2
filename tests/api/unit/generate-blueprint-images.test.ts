@@ -586,9 +586,9 @@ describe("runImageGeneration", () => {
     expect(result.results[0].status).toBe("generated");
     const filePath = result.results[0].file_path;
     const fileName = path.basename(filePath);
-    // Should start with slugified blueprint title and contain the image_id
-    expect(fileName).toMatch(/^mock-blueprint\..+\.png$/);
-    expect(fileName).toContain(result.results[0].image_id);
+    // Filename IS the image_id (includes .png extension)
+    expect(fileName).toBe(result.results[0].image_id);
+    expect(fileName).toMatch(/\.png$/);
   });
 
   it("generates all targets in parallel when parallel option is set", async () => {

@@ -17,10 +17,8 @@ try {
 
   await ensureSupabaseRunning(env, { restart: options.restart });
 
-  if (options.seedStorage === "always") {
+  if (options.seedStorage !== "skip") {
     runCommand(npmBin, ["run", "seed:storage"], env);
-  } else if (options.seedStorage === "if-missing") {
-    runCommand(npmBin, ["run", "seed:storage", "--", "--if-missing"], env);
   }
 
   runCommand(npmBin, ["run", "seed:auth"], env);

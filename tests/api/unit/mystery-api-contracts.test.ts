@@ -234,10 +234,10 @@ describe("shared mystery API contracts", () => {
         title: "Mock Blueprint",
         one_liner: "A mystery",
         target_age: 8,
-        blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
       }),
     ).toMatchObject({
-      blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+      blueprint_image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
     });
 
     expect(
@@ -245,7 +245,7 @@ describe("shared mystery API contracts", () => {
         narration_parts: [{
           text: "You arrive.",
           speaker: narratorSpeaker,
-          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222.png",
         }],
         mode: "explore",
         current_location: "Kitchen",
@@ -261,7 +261,7 @@ describe("shared mystery API contracts", () => {
     ).toMatchObject({
       narration_parts: [
         {
-          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222",
+          image_id: "mock-location-123e4567-e89b-12d3-a456-426614174222.png",
         },
       ],
       visible_characters: [
@@ -281,7 +281,7 @@ describe("shared mystery API contracts", () => {
             label: "Alice",
           },
           image_id:
-            "mock-character-123e4567-e89b-12d3-a456-426614174333",
+            "mock-character-123e4567-e89b-12d3-a456-426614174333.png",
         }],
         time_remaining: 8,
         mode: "talk",
@@ -291,7 +291,7 @@ describe("shared mystery API contracts", () => {
       narration_parts: [
         {
           image_id:
-            "mock-character-123e4567-e89b-12d3-a456-426614174333",
+            "mock-character-123e4567-e89b-12d3-a456-426614174333.png",
         },
       ],
     });
@@ -301,7 +301,7 @@ describe("shared mystery API contracts", () => {
     expect(
       ImageLinkRequestSchema.parse({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
-        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
         purpose: "blueprint_cover",
       }),
     ).toMatchObject({
@@ -310,12 +310,12 @@ describe("shared mystery API contracts", () => {
 
     expect(
       ImageLinkResponseSchema.parse({
-        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
         signed_url: "https://example.com/signed-image",
         expires_at: "2099-01-01T00:00:00.000Z",
       }),
     ).toMatchObject({
-      image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+      image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
     });
   });
 });

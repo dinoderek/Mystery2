@@ -10,7 +10,7 @@ export function slugify(value) {
 
 export function createImageId(blueprintId, targetType, targetKey = null) {
   const seed = targetKey ? `${targetType}-${targetKey}` : targetType;
-  return `${slugify(seed)}-${crypto.randomUUID()}`;
+  return `${slugify(seed)}-${crypto.randomUUID()}.png`;
 }
 
 function styleBlock(blueprint) {

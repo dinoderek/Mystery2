@@ -115,7 +115,7 @@ describe("image prompt builder", () => {
   it("creates unique slugged image ids", () => {
     const imageId = createImageId(blueprint.id, "character", "char_alice");
     expect(imageId).toMatch(
-      /^character-char-alice-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      /^character-char-alice-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.png$/i,
     );
   });
 });

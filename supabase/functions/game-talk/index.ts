@@ -12,7 +12,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkStartContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
@@ -33,9 +33,9 @@ serveWithCors(async (req) => {
 
   try {
     const body = await req.json();
-    if (!body || !body.game_id || !body.character_name) {
-      log("request.invalid", { reason: "missing_game_id_or_character_name" });
-      return badRequest("Missing game_id or character_name");
+    if (!body || !body.game_id || !body.character_id) {
+      log("request.invalid", { reason: "missing_game_id_or_character_id" });
+      return badRequest("Missing game_id or character_id");
     }
 
     // Authenticate user
@@ -44,7 +44,7 @@ serveWithCors(async (req) => {
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
-    const characterName = String(body.character_name);
+    const characterId = String(body.character_id);
 
     const { data: session, error: sessionError } = await userClient
       .from("game_sessions")
@@ -82,21 +82,21 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
     const activeCharacter = blueprint.world.characters.find(
       (character) =>
-        character.first_name === characterName &&
-        character.location === session.current_location_id,
+        character.id === characterId &&
+        character.location_id === session.current_location_id,
     );
     if (!activeCharacter) {
       log("request.invalid", {
         reason: "character_not_found_in_location",
         game_id: gameId,
-        character_name: characterName,
-        location_name: session.current_location_id,
+        character_id: characterId,
+        location_id: session.current_location_id,
       });
       return badRequest(
-        `Character ${characterName} not found in ${session.current_location_id}`,
+        `Character ${characterId} not found in current location`,
       );
     }
 
@@ -110,15 +110,17 @@ serveWithCors(async (req) => {
       game_id: gameId,
       session,
       blueprint,
-      character_name: activeCharacter.first_name,
-      location_name: session.current_location_id,
+      character_id: activeCharacter.id,
+      location_id: session.current_location_id,
       conversation_history: historyRows ?? [],
     });
 
     const promptTemplate = await loadPromptTemplate("talk_start");
     const prompt = renderPrompt(promptTemplate, {
       character_name: activeCharacter.first_name,
-      location_name: session.current_location_id,
+      location_name: blueprint.world.locations.find(
+        (l) => l.id === session.current_location_id,
+      )?.name ?? session.current_location_id,
       target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
@@ -170,7 +172,7 @@ serveWithCors(async (req) => {
       .update({
         time_remaining: session.time_remaining,
         mode: "talk",
-        current_talk_character_id: activeCharacter.first_name,
+        current_talk_character_id: activeCharacter.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -188,11 +190,10 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: {
         role: "talk_start",
-        character: activeCharacter.first_name,
+        character_id: activeCharacter.id,
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        location_id: session.current_location_id,
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
-        context_version: "v1",
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: narrationParts,
@@ -215,7 +216,7 @@ serveWithCors(async (req) => {
         narration_parts: narrationParts,
         time_remaining: session.time_remaining,
         mode: "talk",
-        current_talk_character: activeCharacter.first_name,
+        current_talk_character: activeCharacter.id,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

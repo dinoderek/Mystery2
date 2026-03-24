@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { generateBlueprint } from "../../../../packages/blueprint-generator/src/index.ts";
-import { BlueprintSchema } from "../../../../packages/shared/src/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../../../../packages/shared/src/blueprint-schema-v2.ts";
 import {
   getLiveSuiteTitle,
   getLiveTestTimeoutMs,
@@ -31,7 +31,7 @@ runLive(getLiveSuiteTitle("live-ai integration: blueprint generation"), () => {
       requestId: "live-blueprint-generator-test",
     });
 
-    expect(BlueprintSchema.parse(blueprint)).toEqual(blueprint);
+    expect(BlueprintV2Schema.parse(blueprint)).toEqual(blueprint);
     expect(blueprint.world.characters.length).toBeGreaterThan(1);
     expect(blueprint.world.locations.length).toBeGreaterThan(1);
   }, getLiveTestTimeoutMs());

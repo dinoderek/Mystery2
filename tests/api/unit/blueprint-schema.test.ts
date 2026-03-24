@@ -3,13 +3,12 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { BlueprintSchema } from "../../../packages/shared/src/blueprint-schema.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 
 const ROOT_DIR = process.cwd();
 
 async function loadCanonicalBlueprints() {
-  const sourceDirs = ["blueprints", "supabase/seed/blueprints"];
+  const sourceDirs = ["supabase/seed/blueprints"];
   const results = [];
 
   for (const relativeDir of sourceDirs) {
@@ -35,13 +34,13 @@ describe("shared blueprint schema", () => {
     expect(fixtures.length).toBeGreaterThan(0);
 
     for (const fixture of fixtures) {
-      expect(() => BlueprintSchema.parse(fixture.payload)).not.toThrow();
+      expect(() => BlueprintV2Schema.parse(fixture.payload)).not.toThrow();
     }
   });
 
   it("rejects malformed blueprints", () => {
     expect(() =>
-      BlueprintSchema.parse({
+      BlueprintV2Schema.parse({
         id: "123e4567-e89b-12d3-a456-426614174000",
         metadata: {
           title: "Broken Blueprint",
@@ -51,9 +50,5 @@ describe("shared blueprint schema", () => {
         },
       })
     ).toThrow();
-  });
-
-  it("does not accept Blueprint V2 authoring payloads", () => {
-    expect(() => BlueprintSchema.parse(validBlueprintV2)).toThrow();
   });
 });

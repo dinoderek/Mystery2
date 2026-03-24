@@ -1,6 +1,6 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { internalError } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 serveWithCors(async (req) => {
@@ -58,7 +58,7 @@ serveWithCors(async (req) => {
       }
 
       try {
-        const parsed = BlueprintSchema.parse(rawJson);
+        const parsed = BlueprintV2Schema.parse(rawJson);
         blueprints.push({
           id: parsed.id,
           title: parsed.metadata.title,

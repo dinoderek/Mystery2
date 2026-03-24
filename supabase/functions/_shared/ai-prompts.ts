@@ -26,6 +26,10 @@ Task:
 - Keep language and readability appropriate for target age {{target_age}}.
 - Maintain continuity with previous conversation turns.
 - Stay consistent with known world facts and the character's perspective.
+- The character's knowledge is split into mystery clues (with roles like direct_evidence, red_herring, etc.) and flavor_knowledge (non-mystery worldbuilding).
+- Share flavor_knowledge freely in conversation to add personality and depth.
+- Only reveal mystery clues when the investigator asks about relevant topics.
+- Use the character's actual_actions (ordered timeline) to stay consistent about what the character really did.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
 - Never reveal full solution ground truth.
@@ -59,8 +63,9 @@ Task:
 - Narrate what the player observes while searching this location.
 - Keep language and readability appropriate for target age {{target_age}}.
 - Use the provided location description and search context only.
-- If search_context.next_clue is present, you must clearly reveal that clue.
-- Do not repeat clues already listed in search_context.revealed_clues.
+- If search_context.next_clue is present, you must clearly reveal that clue's text.
+- The next_clue includes a role field (e.g. direct_evidence, red_herring, supporting_evidence). Use it to calibrate narration weight: direct_evidence should feel significant, red_herring should feel intriguing but potentially misleading, supporting_evidence should feel confirmatory.
+- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
 - If search_context.next_clue is null, reveal no new clue and give only flavorful feedback.
 - Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
@@ -89,6 +94,9 @@ Return JSON:
 
 Task:
 - Evaluate the player's reasoning against the mystery's hidden truth.
+- Use the provided solution_paths to check if the player's deduction follows a valid reasoning chain.
+- Use suspect_elimination_paths to verify the player correctly ruled out innocent suspects.
+- Consider red_herrings to assess whether the player was misled by false leads.
 - Keep language and readability appropriate for target age {{target_age}}.
 - If the reasoning is incomplete, return "continue" with one targeted follow-up question.
 - If reasoning is sufficient, decide "win" or "lose".

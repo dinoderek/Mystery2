@@ -12,7 +12,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
@@ -94,9 +94,9 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
     const activeCharacter = blueprint.world.characters.find(
-      (character) => character.first_name === session.current_talk_character_id,
+      (character) => character.id === session.current_talk_character_id,
     );
     if (!activeCharacter) {
       return internalError("Character missing in blueprint");
@@ -116,9 +116,9 @@ serveWithCors(async (req) => {
       game_id: gameId,
       session,
       blueprint,
-      character_name: activeCharacter.first_name,
+      character_id: activeCharacter.id,
       player_input: playerInput,
-      location_name: session.current_location_id,
+      location_id: session.current_location_id,
       conversation_history: historyRows ?? [],
     });
 
@@ -225,7 +225,7 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character_id: isForcedEndgame
           ? null
-          : activeCharacter.first_name,
+          : activeCharacter.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -239,8 +239,9 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: {
         role: "talk_conversation",
+        character_id: activeCharacter.id,
         character_name: activeCharacter.first_name,
-        location_name: session.current_location_id,
+        location_id: session.current_location_id,
         player_input: playerInput,
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: characterSpeaker,
@@ -268,8 +269,9 @@ serveWithCors(async (req) => {
         actor: "system",
         payload: {
           role: "accusation_start",
+          character_id: activeCharacter.id,
           character_name: activeCharacter.first_name,
-          location_name: session.current_location_id,
+          location_id: session.current_location_id,
           player_input: playerInput,
           trigger: "timeout",
           follow_up_prompt: followUpPrompt,
@@ -309,7 +311,7 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character: isForcedEndgame
           ? null
-          : activeCharacter.first_name,
+          : activeCharacter.id,
         follow_up_prompt: followUpPrompt,
       }),
       { headers: { "Content-Type": "application/json" } },

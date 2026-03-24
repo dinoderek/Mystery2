@@ -13,9 +13,8 @@ For the standalone blueprint evaluator prompt and output schema, see
 
 Important version note:
 
-- live gameplay runtime still consumes Blueprint V1 from
-  `packages/shared/src/blueprint-schema.ts`
-- Blueprint V2 currently exists only for authoring, generation, and evaluation
+- live gameplay runtime now consumes Blueprint V2 from
+  `supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`
 
 ## Runtime Components
 
@@ -57,8 +56,7 @@ The evaluator currently judges blueprint quality, solvability structure,
 dead ends, red herrings, and consistency without participating in live gameplay
 state transitions.
 
-In this phase the evaluator targets Blueprint V2, while gameplay runtime still
-operates on Blueprint V1. Runtime migration to V2 is intentionally deferred.
+Both the evaluator and gameplay runtime now target Blueprint V2.
 
 ## Roles and Prompt Responsibilities
 

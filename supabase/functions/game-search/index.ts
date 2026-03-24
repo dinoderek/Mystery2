@@ -12,9 +12,13 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { parseSearchOutput } from "../_shared/ai-contracts.ts";
-import { buildSearchContext } from "../_shared/ai-context.ts";
+import {
+  buildSearchContext,
+  findLocationById,
+  type BlueprintClue,
+} from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
@@ -55,46 +59,54 @@ function readPayloadStringArray(
   );
 }
 
-function collectRevealedClues(
+function collectRevealedClueIds(
   historyRows: Array<{
     event_type: string;
     payload?: Record<string, unknown> | null;
   }>,
-  locationName: string,
-  canonicalClues: string[],
+  locationId: string,
+  canonicalClues: BlueprintClue[],
 ): string[] {
   const locationSearchEvents = historyRows.filter((entry) =>
     entry.event_type === "search" &&
-    readPayloadField(entry.payload, "location_name") === locationName
+    (readPayloadField(entry.payload, "location_id") === locationId ||
+     readPayloadField(entry.payload, "location_name") === locationId)
   );
 
-  const explicitRevealedClues: string[] = [];
+  const canonicalClueIds = canonicalClues.map((c) => c.id);
+  const explicitRevealedIds: string[] = [];
+
   for (const event of locationSearchEvents) {
-    const fromList = readPayloadStringArray(event.payload, "revealed_clues");
-    for (const clue of fromList) {
+    // Try ID-based tracking first (V2 events)
+    const fromIds = readPayloadStringArray(event.payload, "revealed_clue_ids");
+    for (const clueId of fromIds) {
       if (
-        canonicalClues.includes(clue) &&
-        !explicitRevealedClues.includes(clue)
+        canonicalClueIds.includes(clueId) &&
+        !explicitRevealedIds.includes(clueId)
       ) {
-        explicitRevealedClues.push(clue);
+        explicitRevealedIds.push(clueId);
       }
     }
 
-    const singleClue = readPayloadField(event.payload, "revealed_clue_text");
+    const singleId = readPayloadField(event.payload, "revealed_clue_id");
     if (
-      singleClue &&
-      canonicalClues.includes(singleClue) &&
-      !explicitRevealedClues.includes(singleClue)
+      singleId &&
+      canonicalClueIds.includes(singleId) &&
+      !explicitRevealedIds.includes(singleId)
     ) {
-      explicitRevealedClues.push(singleClue);
+      explicitRevealedIds.push(singleId);
     }
   }
 
-  if (explicitRevealedClues.length > 0) {
-    return explicitRevealedClues;
+  if (explicitRevealedIds.length > 0) {
+    return explicitRevealedIds;
   }
 
-  return canonicalClues.slice(0, Math.min(locationSearchEvents.length, canonicalClues.length));
+  // Fallback: infer from event count (for edge cases with no explicit IDs)
+  return canonicalClueIds.slice(
+    0,
+    Math.min(locationSearchEvents.length, canonicalClueIds.length),
+  );
 }
 
 serveWithCors(async (req) => {
@@ -154,16 +166,14 @@ serveWithCors(async (req) => {
       });
       return internalError("Blueprint missing");
     }
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
 
-    const currentLocation = blueprint.world.locations.find(
-      (location) => location.name === session.current_location_id,
-    );
+    const currentLocation = findLocationById(blueprint, session.current_location_id);
     if (!currentLocation) {
       logError("request.error", {
         reason: "current_location_missing_in_blueprint",
         game_id: gameId,
-        location_name: session.current_location_id,
+        location_id: session.current_location_id,
       });
       return internalError("Current location not found in blueprint");
     }
@@ -178,28 +188,22 @@ serveWithCors(async (req) => {
     const isForcedEndgame = newTime === 0;
     const nextMode = isForcedEndgame ? "accuse" : session.mode;
 
+    const revealedClueIds = collectRevealedClueIds(
+      historyRows ?? [],
+      currentLocation.id,
+      currentLocation.clues,
+    );
+    const nextClue = currentLocation.clues[revealedClueIds.length] ?? null;
+
     const aiContext = buildSearchContext({
       game_id: gameId,
       session,
       blueprint,
-      location_name: currentLocation.name,
-      revealed_clues: collectRevealedClues(
-        historyRows ?? [],
-        currentLocation.name,
-        currentLocation.clues,
-      ),
-      next_clue: null,
+      location_id: currentLocation.id,
+      revealed_clue_ids: revealedClueIds,
+      next_clue: nextClue,
       conversation_history: historyRows ?? [],
     });
-    const revealedClues = aiContext.search_context?.revealed_clues ?? [];
-    const nextClue = currentLocation.clues[revealedClues.length] ?? null;
-    aiContext.search_context = aiContext.search_context
-      ? {
-          ...aiContext.search_context,
-          next_clue: nextClue,
-          has_more_clues: nextClue !== null,
-        }
-      : null;
 
     const promptTemplate = await loadPromptTemplate("search");
     const prompt = renderPrompt(promptTemplate, {
@@ -306,16 +310,23 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
+    const updatedRevealedClueIds = nextClue === null
+      ? revealedClueIds
+      : [...revealedClueIds, nextClue.id];
+
     const searchSequence = await insertNarrationEvent(userClient, {
       session_id: gameId,
       event_type: "search",
       actor: "system",
       payload: {
         role: "search",
+        location_id: currentLocation.id,
         location_name: currentLocation.name,
-        revealed_clue_index: nextClue === null ? null : revealedClues.length,
-        revealed_clue_text: nextClue,
-        revealed_clues: nextClue === null ? revealedClues : [...revealedClues, nextClue],
+        revealed_clue_index: nextClue === null ? null : revealedClueIds.length,
+        revealed_clue_id: nextClue?.id ?? null,
+        revealed_clue_text: nextClue?.text ?? null,
+        revealed_clue_role: nextClue?.role ?? null,
+        revealed_clue_ids: updatedRevealedClueIds,
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: searchParts,
@@ -341,6 +352,7 @@ serveWithCors(async (req) => {
         actor: "system",
         payload: {
           role: "accusation_start",
+          location_id: currentLocation.id,
           location_name: currentLocation.name,
           trigger: "timeout",
           follow_up_prompt: followUpPrompt,

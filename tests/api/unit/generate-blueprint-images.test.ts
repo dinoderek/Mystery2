@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,11 +6,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   loadImageGenerationEnv,
   parseGenerateImageArgs,
+  resolveBlueprintPath,
   runImageGeneration,
 } from "../../../scripts/generate-blueprint-images.mjs";
 
 const blueprintFixture = {
   id: "123e4567-e89b-12d3-a456-426614174000",
+  schema_version: "v2",
   metadata: {
     title: "Mock Blueprint",
     one_liner: "A simple mystery",
@@ -77,8 +79,9 @@ describe("generate-blueprint-images args parser", () => {
     });
   });
 
-  it("fails without required blueprint path", () => {
-    expect(() => parseGenerateImageArgs([])).toThrow("Missing required --blueprint-path");
+  it("accepts empty blueprint path from args (validation deferred to resolveBlueprintPath)", () => {
+    const parsed = parseGenerateImageArgs([]);
+    expect(parsed.blueprintPath).toBe("");
   });
 
   it("parses dry mode flag", () => {
@@ -123,6 +126,43 @@ describe("generate-blueprint-images args parser", () => {
     );
 
     expect(parsed.model).toBe("openai/cli-model");
+  });
+});
+
+describe("resolveBlueprintPath", () => {
+  it("throws when value is empty", async () => {
+    await expect(resolveBlueprintPath("")).rejects.toThrow(
+      "Missing required --blueprint-path",
+    );
+  });
+
+  it("returns absolute paths as-is", async () => {
+    const result = await resolveBlueprintPath("/absolute/path/to/bp.json");
+    expect(result).toBe("/absolute/path/to/bp.json");
+  });
+
+  it("resolves relative path via configRoot/blueprints when the file exists there", async () => {
+    const configRoot = await mkdtemp(path.join(os.tmpdir(), "bp-resolve-"));
+    const blueprintsDir = path.join(configRoot, "blueprints");
+    await mkdir(blueprintsDir, { recursive: true });
+    await writeFile(path.join(blueprintsDir, "my-mystery.json"), "{}", "utf-8");
+
+    const result = await resolveBlueprintPath("my-mystery.json", "/dummy", {
+      MYSTERY_CONFIG_ROOT: configRoot,
+    });
+
+    expect(result).toBe(path.join(blueprintsDir, "my-mystery.json"));
+  });
+
+  it("falls back to the literal relative path when not found in configRoot/blueprints", async () => {
+    const configRoot = await mkdtemp(path.join(os.tmpdir(), "bp-resolve-miss-"));
+    await mkdir(path.join(configRoot, "blueprints"), { recursive: true });
+
+    const result = await resolveBlueprintPath("missing.json", "/dummy", {
+      MYSTERY_CONFIG_ROOT: configRoot,
+    });
+
+    expect(result).toBe("missing.json");
   });
 });
 

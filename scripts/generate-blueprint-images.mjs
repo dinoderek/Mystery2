@@ -7,7 +7,7 @@ import {
   buildImagePrompt,
   createImageId,
 } from "./lib/image-prompt-builder.mjs";
-import { getBaseEnvPath, getBlueprintImagesDir, getImagesEnvPath } from "./local-config.mjs";
+import { getBaseEnvPath, getBlueprintImagesDir, getBlueprintsDir, getImagesEnvPath } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
@@ -35,6 +35,31 @@ function parsePositiveInt(rawValue, fallback) {
   }
 
   return parsed;
+}
+
+/**
+ * Resolve a blueprint path by first checking `{configRoot}/blueprints/{value}`,
+ * then falling back to the literal `value`. When `--blueprint-path` is omitted
+ * entirely the function throws.
+ */
+export async function resolveBlueprintPath(value, repoRoot = process.cwd(), env = process.env) {
+  if (!value) {
+    throw new Error("Missing required --blueprint-path");
+  }
+
+  // If it's already an absolute path, use it directly.
+  if (path.isAbsolute(value)) {
+    return value;
+  }
+
+  const configCandidate = path.join(getBlueprintsDir(repoRoot, env), value);
+  try {
+    await fs.access(configCandidate);
+    return configCandidate;
+  } catch {
+    // Fall back to the literal (cwd-relative) path.
+    return value;
+  }
 }
 
 async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
@@ -128,9 +153,6 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     throw new Error(`Unknown option: ${token}`);
   }
 
-  if (!options.blueprintPath) {
-    throw new Error("Missing required --blueprint-path");
-  }
   if (!options.outputDir) {
     throw new Error("Missing required --output-dir");
   }
@@ -384,6 +406,12 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   const timeoutMs = parsePositiveInt(
     env.AI_OPENROUTER_TIMEOUT_MS,
     DEFAULT_OPENROUTER_TIMEOUT_MS,
+  );
+
+  options.blueprintPath = await resolveBlueprintPath(
+    options.blueprintPath,
+    process.cwd(),
+    env,
   );
 
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");

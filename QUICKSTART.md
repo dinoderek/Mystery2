@@ -287,16 +287,16 @@ Keep live AI opt-in. `npm run dev` and `npm run setup:local` stay on the mock pr
 
 Critical flags:
 
-- `--blueprint-path <path>`: source blueprint JSON
+- `--blueprint-path <path>`: source blueprint JSON. Relative paths are resolved against `$MYSTERY_CONFIG_ROOT/blueprints/` first; if the file is not found there the path is used as-is (relative to cwd). Absolute paths are used directly.
 - target selection: `--all`, `--blueprint`, `--characters "Alice,Bob"`, `--locations "Kitchen,Garden"`, or repeated `--character` / `--location` flags for a custom subset
 - `--output-dir <dir>`: where generated images are written
 - optional: `--model <id>` to override the default image model
 
-Generate all blueprint images:
+Generate all blueprint images (resolved from `$MYSTERY_CONFIG_ROOT/blueprints/`):
 
 ```bash
 npm run generate:images -- \
-  --blueprint-path blueprints/spring-treats-6yo.json \
+  --blueprint-path spring-treats-6yo.json \
   --model openai/gpt-image-1 \
   --all
 ```
@@ -305,7 +305,7 @@ Generate selected targets only:
 
 ```bash
 npm run generate:images -- \
-  --blueprint-path blueprints/spring-treats-6yo.json \
+  --blueprint-path spring-treats-6yo.json \
   --model openai/gpt-image-1 \
   --character "Alice" \
   --location "Kitchen"
@@ -315,7 +315,7 @@ Dry mode prints prompts and request payloads without calling OpenRouter or writi
 
 ```bash
 npm run generate:images -- \
-  --blueprint-path blueprints/spring-treats-6yo.json \
+  --blueprint-path spring-treats-6yo.json \
   --all \
   --dry-mode
 ```

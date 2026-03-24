@@ -62,10 +62,22 @@ const blueprintFixture = {
 const ONE_PIXEL_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
+function extractPromptText(body: Record<string, unknown>): string {
+  const content = (body.messages as Array<{ content: unknown }>)?.[0]?.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    const textPart = content.find(
+      (part: { type: string }) => part.type === "text",
+    );
+    return textPart?.text ?? "";
+  }
+  return "";
+}
+
 function mockFetch(url: string | URL, init?: RequestInit) {
   if (String(url).includes("/chat/completions")) {
     const body = JSON.parse(String(init?.body ?? "{}"));
-    const prompt = String(body.messages?.[0]?.content ?? "");
+    const prompt = extractPromptText(body);
 
     if (prompt.includes("Location scene image")) {
       return Promise.resolve(
@@ -164,5 +176,76 @@ describe("image generation flow", () => {
     expect(typeof patched.metadata.image_id).toBe("string");
     expect(typeof patched.world.characters[0].portrait_image_id).toBe("string");
     expect(patched.world.locations[0].location_image_id).toBeUndefined();
+  });
+
+  it("passes character portrait images as references when generating location scenes", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-flow-refs-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const apiCalls: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const allSuccessFetch = (url: string | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}"));
+      apiCalls.push({ url: String(url), body });
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  images: [
+                    {
+                      image_url: {
+                        url: `data:image/png;base64,${ONE_PIXEL_BASE64}`,
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    };
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "all",
+        overwrite: true,
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        fetchImpl: allSuccessFetch,
+        apiKey: "test-key",
+      },
+    );
+
+    expect(result.results.length).toBe(3);
+    expect(result.results.every((r: { status: string }) => r.status === "generated")).toBe(true);
+
+    // The location call (last) should have multi-part content with image references.
+    const locationCall = apiCalls[apiCalls.length - 1];
+    const content = (locationCall.body.messages as Array<{ content: unknown }>)[0].content;
+    expect(Array.isArray(content)).toBe(true);
+    const parts = content as Array<{ type: string }>;
+    const imageParts = parts.filter((p) => p.type === "image_url");
+    const textParts = parts.filter((p) => p.type === "text");
+    expect(imageParts.length).toBe(1); // 1 character at this location
+    expect(textParts.length).toBe(1);
+    expect((textParts[0] as { text: string }).text).toContain("Reference portrait images");
+
+    // Earlier calls (blueprint + character) should use plain string content.
+    for (const call of apiCalls.slice(0, 2)) {
+      const earlyContent = (call.body.messages as Array<{ content: unknown }>)[0].content;
+      expect(typeof earlyContent).toBe("string");
+    }
   });
 });

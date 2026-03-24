@@ -88,7 +88,7 @@ describe("Full E2E API Investigation Flow", () => {
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id, destination: "Kitchen" }),
+      body: JSON.stringify({ game_id, destination: "loc-kitchen" }),
     });
     expect(moveRes.status).toBe(200);
     const moveData = await moveRes.json();
@@ -106,7 +106,7 @@ describe("Full E2E API Investigation Flow", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
     const talkData = await talkRes.json();
@@ -197,7 +197,7 @@ describe("Full E2E API Investigation Flow", () => {
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id: gameId, destination: "Kitchen" }),
+      body: JSON.stringify({ game_id: gameId, destination: "loc-kitchen" }),
     });
     expect(moveRes.status).toBe(200);
     const moveData = await moveRes.json();
@@ -261,7 +261,7 @@ describe("Full E2E API Investigation Flow", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ game_id: gameId, character_name: "Alice" }),
+      body: JSON.stringify({ game_id: gameId, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
 

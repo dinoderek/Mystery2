@@ -1,6 +1,6 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import { internalError } from "../_shared/errors.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 type SessionMode = "explore" | "talk" | "accuse" | "ended";
@@ -109,7 +109,7 @@ async function loadBlueprintTitles(userClient: BlueprintStorageClient): Promise<
 
     try {
       const text = await fileData.text();
-      const parsed = BlueprintSchema.parse(JSON.parse(text));
+      const parsed = BlueprintV2Schema.parse(JSON.parse(text));
       titleByBlueprintId.set(parsed.id, parsed.metadata.title);
     } catch {
       // Skip malformed blueprint files.

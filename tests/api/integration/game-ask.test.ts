@@ -42,7 +42,7 @@ describe("game-ask endpoint", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
 
@@ -69,7 +69,7 @@ describe("game-ask endpoint", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
 
@@ -86,7 +86,7 @@ describe("game-ask endpoint", () => {
     const data = await askRes.json();
 
     expect(data.mode).toBe("talk");
-    expect(data.current_talk_character).toBe("Alice");
+    expect(data.current_talk_character).toBe("char-alice");
     expect(data.time_remaining).toBe(9);
     expect(data.discovered_clue_id).toBeUndefined();
     expect(data.narration_parts[0].text).toContain("[Mock]");
@@ -116,7 +116,7 @@ describe("game-ask endpoint", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
 

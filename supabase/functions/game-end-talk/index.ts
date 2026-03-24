@@ -6,7 +6,7 @@ import {
   RetriableAIError,
 } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
@@ -14,7 +14,7 @@ import {
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
-import { buildTalkEndContext } from "../_shared/ai-context.ts";
+import { buildTalkEndContext, findCharacterById } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -85,7 +85,9 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintSchema.parse(JSON.parse(await fileData.text()));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
+    const activeCharacter = findCharacterById(blueprint, session.current_talk_character_id);
+
     const { data: historyRows } = await userClient
       .from("game_events")
       .select("sequence,event_type,actor,narration,payload")
@@ -96,14 +98,15 @@ serveWithCors(async (req) => {
       game_id: gameId,
       session,
       blueprint,
-      character_name: session.current_talk_character_id,
-      location_name: session.current_location_id,
+      character_id: session.current_talk_character_id,
+      location_id: session.current_location_id,
       conversation_history: historyRows ?? [],
     });
 
+    const characterName = activeCharacter?.first_name ?? session.current_talk_character_id;
     const promptTemplate = await loadPromptTemplate("talk_end");
     const prompt = renderPrompt(promptTemplate, {
-      character_name: session.current_talk_character_id,
+      character_name: characterName,
       target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
@@ -167,9 +170,9 @@ serveWithCors(async (req) => {
       actor: "system",
       payload: {
         role: "talk_end",
-        character: session.current_talk_character_id,
-        character_name: session.current_talk_character_id,
-        location_name: session.current_location_id,
+        character_id: session.current_talk_character_id,
+        character_name: characterName,
+        location_id: session.current_location_id,
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: narrationParts,

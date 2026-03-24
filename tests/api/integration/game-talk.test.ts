@@ -32,13 +32,13 @@ describe("game-talk endpoint", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
 
     expect(talkRes.status).toBe(200);
     const data = await talkRes.json();
 
-    expect(data.current_talk_character).toBe("Alice");
+    expect(data.current_talk_character).toBe("char-alice");
     expect(data.mode).toBe("talk");
     expect(data.time_remaining).toBe(10);
     expect(data.narration_parts[0].text).toContain("[Mock]");

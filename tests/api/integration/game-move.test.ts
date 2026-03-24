@@ -43,16 +43,17 @@ describe("game-move endpoint", () => {
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "Living Room" }),
+      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
     });
 
     expect(moveRes.status).toBe(200);
     const data = await moveRes.json();
 
-    expect(data.current_location).toBe("Living Room");
+    expect(data.current_location).toBe("loc-living-room");
     expect(data.time_remaining).toBe(9);
     expect(data.narration_parts[0].text).toContain("[Mock]");
     expect(data.visible_characters).toContainEqual({
+      id: "char-bob",
       first_name: "Bob",
       last_name: "Jones",
       sex: "male",
@@ -81,21 +82,22 @@ describe("game-move endpoint", () => {
     const firstMoveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "Living Room" }),
+      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
     });
     expect(firstMoveRes.status).toBe(200);
 
     const secondMoveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "Kitchen" }),
+      body: JSON.stringify({ game_id, destination: "loc-kitchen" }),
     });
     expect(secondMoveRes.status).toBe(200);
     const secondMoveData = await secondMoveRes.json();
-    expect(secondMoveData.current_location).toBe("Kitchen");
+    expect(secondMoveData.current_location).toBe("loc-kitchen");
     expect(secondMoveData.time_remaining).toBe(8);
     expect(secondMoveData.narration_parts[0].speaker.kind).toBe("narrator");
     expect(secondMoveData.visible_characters).toContainEqual({
+      id: "char-alice",
       first_name: "Alice",
       last_name: "Smith",
       sex: "female",
@@ -118,7 +120,7 @@ describe("game-move endpoint", () => {
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "Living Room" }),
+      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
     });
     expect(moveRes.status).toBe(200);
     const moveData = await moveRes.json();

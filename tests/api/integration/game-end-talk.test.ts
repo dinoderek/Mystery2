@@ -33,7 +33,7 @@ describe("game-end-talk endpoint", () => {
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id, character_name: "Alice" }),
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
 

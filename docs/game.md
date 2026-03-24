@@ -25,7 +25,7 @@ A text-based mystery adventure for kids that makes reading and writing feel like
 ### Mystery Blueprint (story scaffolding)
 
 - Defines the structure and ground truth of the mystery (what happened, who did what, why).
-- **Note:** The comprehensive schema for Blueprints is defined entirely in the Zod definitions at `packages/shared/src/blueprint-schema.ts`. The schema's `.describe()` fields serve as the core narrative intent instructions for AI generators and the Narrator.
+- **Note:** The comprehensive schema for Blueprints is defined entirely in the Zod definitions at `packages/shared/src/blueprint-schema-v2.ts`. The schema's `.describe()` fields serve as the core narrative intent instructions for AI generators and the Narrator.
 
 ### Time / Turns
 
@@ -213,7 +213,7 @@ Implementation detail reference: `docs/accusation-flow.md`.
 
 ## Blueprint Schema Reference
 
-See `packages/shared/src/blueprint-schema.ts` for the exact technical schema and narrative instructions encoded in the `.describe()` fields. Blueprint metadata controls the title, difficulty, and time budget. The world model defines characters and locations. The ground truth determines what actually happened and provides the absolute facts the Narrator must adhere to.
+See `packages/shared/src/blueprint-schema-v2.ts` for the exact technical schema and narrative instructions encoded in the `.describe()` fields. Blueprint metadata controls the title, difficulty, and time budget. The world model defines characters and locations. The ground truth determines what actually happened and provides the absolute facts the Narrator must adhere to.
 
 For the current implementation map of which blueprint fields actually flow into
 generated images and narration, see `docs/blueprint-generation-flows.md`.

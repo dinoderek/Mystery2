@@ -13,7 +13,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { buildGameMovePrompt } from "../_shared/ai-prompts.ts";
-import { BlueprintSchema } from "../_shared/blueprints/blueprint-schema.ts";
+import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
@@ -73,7 +73,7 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    // Fetch blueprint locations
+    // Fetch blueprint
     const { data: fileData, error: downloadError } = await userClient.storage
       .from("blueprints")
       .download(`${session.blueprint_id}.json`);
@@ -85,10 +85,10 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
     const blueprintText = await fileData.text();
-    const blueprint = BlueprintSchema.parse(JSON.parse(blueprintText));
+    const blueprint = BlueprintV2Schema.parse(JSON.parse(blueprintText));
 
     const destLoc = blueprint.world.locations.find(
-      (l) => l.name === destination,
+      (l) => l.id === destination,
     );
     if (!destLoc) {
       log("request.invalid", {
@@ -110,19 +110,20 @@ serveWithCors(async (req) => {
       .order("sequence", { ascending: true });
     const locationHistory = selectLocationConversationHistory(
       historyRows ?? [],
-      destLoc.name,
+      destLoc.id,
     );
     const hasVisitedBefore = locationHistory.length > 0;
     const locationHistoryJson = JSON.stringify(locationHistory);
     const destinationCharactersJson = JSON.stringify(
       blueprint.world.characters
-        .filter((character) => character.location === destLoc.name)
+        .filter((character) => character.location_id === destLoc.id)
         .map((character) => ({
+          id: character.id,
           first_name: character.first_name,
           last_name: character.last_name,
           sex: character.sex,
-          appearance: character.appearance ?? null,
-          background: character.background ?? null,
+          appearance: character.appearance,
+          background: character.background,
         })),
     );
 
@@ -163,7 +164,7 @@ serveWithCors(async (req) => {
           aiProvider,
           session: {
             ...session,
-            current_location_id: destLoc.name,
+            current_location_id: destLoc.id,
             time_remaining: newTime,
           },
           blueprint,
@@ -201,7 +202,7 @@ serveWithCors(async (req) => {
     const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
-        current_location_id: destLoc.name,
+        current_location_id: destLoc.id,
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character_id: null,
@@ -222,7 +223,8 @@ serveWithCors(async (req) => {
       event_type: "move",
       actor: "system",
       payload: {
-        destination,
+        destination: destLoc.id,
+        location_id: destLoc.id,
         location_name: destLoc.name,
         location_image_id: destLoc.location_image_id ?? null,
         speaker: NARRATOR_SPEAKER,
@@ -250,6 +252,7 @@ serveWithCors(async (req) => {
         actor: "system",
         payload: {
           trigger: "timeout",
+          location_id: destLoc.id,
           location_name: destLoc.name,
           location_image_id: destLoc.location_image_id ?? null,
           follow_up_prompt: followUpPrompt,
@@ -283,8 +286,9 @@ serveWithCors(async (req) => {
     }
 
     const visible_characters = blueprint.world.characters
-      .filter((c) => c.location === destLoc.name)
+      .filter((c) => c.location_id === destLoc.id)
       .map((c) => ({
+        id: c.id,
         first_name: c.first_name,
         last_name: c.last_name,
         sex: c.sex,
@@ -293,7 +297,7 @@ serveWithCors(async (req) => {
     return new Response(
       JSON.stringify({
         narration_parts: combinedParts,
-        current_location: destLoc.name,
+        current_location: destLoc.id,
         visible_characters,
         time_remaining: newTime,
         mode: nextMode,

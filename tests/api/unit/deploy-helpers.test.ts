@@ -274,7 +274,7 @@ describe("bootstrap and seed skip logic", () => {
 describe("loadBootstrapUsers", () => {
   it("resolves local bootstrap-user paths and matching examples", () => {
     const rootDir = "/tmp/repo";
-    expect(getBootstrapUsersPath(rootDir, "dev")).toBe(
+    expect(getBootstrapUsersPath(rootDir, "dev", {})).toBe(
       path.join(rootDir, "deploy/bootstrap-users.dev.local.json"),
     );
     expect(getBootstrapUsersExamplePath(rootDir, "staging")).toBe(

@@ -9,17 +9,18 @@ import {
 import {
   formatResolvedLocalConfigPath,
   getBaseEnvPath,
+  getBlueprintImagesDir,
+  getBlueprintsDir,
 } from "./local-config.mjs";
 
 const ROOT_DIR = process.cwd();
-const SOURCE_DIRS = ["blueprints", "supabase/seed/blueprints"];
 const args = process.argv.slice(2);
 
 function parseOptions() {
   const options = {
     seedMode: "always",
     seedImages: "skip",
-    imageDir: path.join(ROOT_DIR, "generated", "blueprint-images"),
+    imageDir: getBlueprintImagesDir(ROOT_DIR),
     allowMissingImages: true,
   };
 
@@ -123,11 +124,17 @@ async function loadDotEnvLocal() {
   }
 }
 
+function collectBlueprintSourceDirs() {
+  return [
+    getBlueprintsDir(ROOT_DIR),
+    path.join(ROOT_DIR, "supabase/seed/blueprints"),
+  ];
+}
+
 async function collectBlueprintFiles() {
   const files = [];
 
-  for (const relativeDir of SOURCE_DIRS) {
-    const absoluteDir = path.join(ROOT_DIR, relativeDir);
+  for (const absoluteDir of collectBlueprintSourceDirs()) {
     let entries;
     try {
       entries = await fs.readdir(absoluteDir, { withFileTypes: true });

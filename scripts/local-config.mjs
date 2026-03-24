@@ -98,6 +98,27 @@ export function getBootstrapUsersPath(
   return resolveLocalConfigPath(`deploy/bootstrap-users.${envName}.local.json`, repoRoot, env);
 }
 
+export function getBlueprintsDir(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath("blueprints", repoRoot, env);
+}
+
+export function getBriefsDir(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath("briefs", repoRoot, env);
+}
+
+export function getBlueprintImagesDir(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath("blueprint-images", repoRoot, env);
+}
+
 export function getBootstrapUsersExamplePath(repoRoot = process.cwd(), envName) {
   return path.join(
     normalizeRoot(repoRoot),

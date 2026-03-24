@@ -320,16 +320,16 @@ describe("generate-blueprint CLI", () => {
       },
     );
 
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       briefFiles: ["/tmp/story.json"],
       output: "",
-      outputFile: "",
       models: ["openai/gpt-4.1-mini"],
       verificationModel: "google/gemini-3-flash-preview",
       openRouterApiKey: "env-key",
       timeoutMs: 90000,
       parallelism: 1,
     });
+    expect(parsed.outputFile).toMatch(/blueprints[/\\]blueprint$/);
   });
 
   it("parses repeated models, output-file mode, and parallelism", () => {
@@ -381,24 +381,21 @@ describe("generate-blueprint CLI", () => {
     expect(parsed.verificationModel).toBe("openai/gpt-4.1-mini");
   });
 
-  it("requires --output-file for multiple jobs", () => {
-    expect(() =>
-      parseGenerateBlueprintArgs(
-        [
-          "--brief-file",
-          "/tmp/one.json",
-          "--brief-file",
-          "/tmp/two.json",
-          "--model",
-          "openai/gpt-4.1-mini",
-        ],
-        {
-          OPENROUTER_API_KEY: "env-key",
-        },
-      ),
-    ).toThrow(
-      "Multiple --brief-file/--model combinations require --output-file",
+  it("defaults output-file for multiple jobs when not specified", () => {
+    const parsed = parseGenerateBlueprintArgs(
+      [
+        "--brief-file",
+        "/tmp/one.json",
+        "--brief-file",
+        "/tmp/two.json",
+        "--model",
+        "openai/gpt-4.1-mini",
+      ],
+      {
+        OPENROUTER_API_KEY: "env-key",
+      },
     );
+    expect(parsed.outputFile).toMatch(/blueprints[/\\]blueprint$/);
   });
 
   it("writes an exact output path when requested for a single job", async () => {

@@ -257,7 +257,7 @@ Then run:
 npm run deploy -- --env dev --preflight
 ```
 
-If you also want to upload generated blueprint images during deploy, add `--image-dir generated/blueprint-images`.
+If you also want to upload generated blueprint images during deploy, add `--image-dir <path>` (defaults to `$MYSTERY_CONFIG_ROOT/blueprint-images/` when set, otherwise `blueprint-images/` under the repo root).
 
 ## Image Generation
 
@@ -297,7 +297,6 @@ Generate all blueprint images:
 ```bash
 npm run generate:images -- \
   --blueprint-path blueprints/spring-treats-6yo.json \
-  --output-dir generated/blueprint-images \
   --model openai/gpt-image-1 \
   --all
 ```
@@ -307,7 +306,6 @@ Generate selected targets only:
 ```bash
 npm run generate:images -- \
   --blueprint-path blueprints/spring-treats-6yo.json \
-  --output-dir generated/blueprint-images \
   --model openai/gpt-image-1 \
   --character "Alice" \
   --location "Kitchen"
@@ -318,10 +316,11 @@ Dry mode prints prompts and request payloads without calling OpenRouter or writi
 ```bash
 npm run generate:images -- \
   --blueprint-path blueprints/spring-treats-6yo.json \
-  --output-dir generated/blueprint-images \
   --all \
   --dry-mode
 ```
+
+`--output-dir` defaults to `$MYSTERY_CONFIG_ROOT/blueprint-images/` when set, otherwise `blueprint-images/` under the repo root. Pass `--output-dir <path>` to override.
 
 ### Stop the local stack
 

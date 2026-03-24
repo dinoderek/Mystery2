@@ -8,6 +8,9 @@ import {
   getAuthUsersExamplePath,
   getAuthUsersLocalPath,
   getBaseEnvPath,
+  getBlueprintImagesDir,
+  getBlueprintsDir,
+  getBriefsDir,
   getBootstrapUsersExamplePath,
   getBootstrapUsersPath,
   getDeployEnvPath,
@@ -61,6 +64,20 @@ describe("local config resolver", () => {
     expect(getAuthUsersExamplePath(repoRoot)).not.toContain(externalRoot);
     expect(getBootstrapUsersExamplePath(repoRoot, "dev")).not.toContain(externalRoot);
     expect(getBaseEnvPath(repoRoot, env)).toContain(externalRoot);
+  });
+
+  it("resolves blueprint, brief, and image dirs from external root", () => {
+    const env = { [MYSTERY_CONFIG_ROOT_ENV]: externalRoot };
+
+    expect(getBlueprintsDir(repoRoot, env)).toBe(path.join(externalRoot, "blueprints"));
+    expect(getBriefsDir(repoRoot, env)).toBe(path.join(externalRoot, "briefs"));
+    expect(getBlueprintImagesDir(repoRoot, env)).toBe(path.join(externalRoot, "blueprint-images"));
+  });
+
+  it("resolves blueprint, brief, and image dirs from repo root when unset", () => {
+    expect(getBlueprintsDir(repoRoot, {})).toBe(path.join(repoRoot, "blueprints"));
+    expect(getBriefsDir(repoRoot, {})).toBe(path.join(repoRoot, "briefs"));
+    expect(getBlueprintImagesDir(repoRoot, {})).toBe(path.join(repoRoot, "blueprint-images"));
   });
 
   it("rejects relative MYSTERY_CONFIG_ROOT values", () => {

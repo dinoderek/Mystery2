@@ -14,7 +14,7 @@ import {
   BLUEPRINT_EVALUATION_PROMPT,
   BlueprintEvaluationOutputSchema,
 } from "../packages/shared/src/evaluation/index.ts";
-import { getBaseEnvPath } from "./local-config.mjs";
+import { getBaseEnvPath, getBlueprintsDir } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
@@ -221,15 +221,15 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
     throw new Error("Choose either --output or --output-file, not both");
   }
 
+  if (!options.output && !options.outputFile) {
+    const blueprintsDir = getBlueprintsDir();
+    options.outputFile = path.join(blueprintsDir, "blueprint");
+  }
+
   const jobCount = options.briefFiles.length * options.models.length;
   if (jobCount > 1 && options.output) {
     throw new Error(
       "--output can only be used with a single --brief-file and single --model",
-    );
-  }
-  if (jobCount > 1 && !options.outputFile) {
-    throw new Error(
-      "Multiple --brief-file/--model combinations require --output-file",
     );
   }
 

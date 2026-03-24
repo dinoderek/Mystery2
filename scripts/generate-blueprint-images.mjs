@@ -7,7 +7,7 @@ import {
   buildImagePrompt,
   createImageId,
 } from "./lib/image-prompt-builder.mjs";
-import { getBaseEnvPath, getImagesEnvPath } from "./local-config.mjs";
+import { getBaseEnvPath, getBlueprintImagesDir, getImagesEnvPath } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
@@ -54,7 +54,7 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
 export function parseGenerateImageArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
-    outputDir: "generated/blueprint-images",
+    outputDir: getBlueprintImagesDir(),
     model: env.OPENROUTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
     overwrite: false,
     dryRun: false,

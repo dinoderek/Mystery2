@@ -7,7 +7,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 ## Root Directories
 
 - `web/`: Front-end SvelteKit application for the player UI.
-- `blueprints/`: Stores local mystery blueprint JSON files that are seeded into Supabase Storage for local dev/runtime selection.
+- `blueprints/`: Stores committed seed blueprint JSON files. Generated blueprints are written to `$MYSTERY_CONFIG_ROOT/blueprints/` when the external config root is set (and also seeded from there).
 - `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests use `bootstrap-users.<env>.json`).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
@@ -37,6 +37,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - Examples in this repo include env files such as `.env.deploy.<env>.local`, operator config such as `.env.images.local`, and copied deployment manifests such as `deploy/bootstrap-users.<env>.local.json`.
 - When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
 - Set `MYSTERY_CONFIG_ROOT` to an absolute directory if you want those local-only files to live outside the repo and be shared across clones or worktrees. When unset, the repo root remains the local-config root.
+- When `MYSTERY_CONFIG_ROOT` is set, generated blueprints, story briefs, and blueprint images also default to subdirectories under that root (`blueprints/`, `briefs/`, `blueprint-images/`), keeping generated artifacts independent of any single checkout or worktree.
 
 ## Feature Additions (Static Blueprint Images)
 

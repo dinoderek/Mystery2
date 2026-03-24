@@ -49,6 +49,18 @@ declare module "../../../scripts/local-config.mjs" {
     repoRoot: string,
     envName: string,
   ): string;
+  export function getBlueprintsDir(
+    repoRoot?: string,
+    env?: Record<string, string | undefined>,
+  ): string;
+  export function getBriefsDir(
+    repoRoot?: string,
+    env?: Record<string, string | undefined>,
+  ): string;
+  export function getBlueprintImagesDir(
+    repoRoot?: string,
+    env?: Record<string, string | undefined>,
+  ): string;
   export function formatResolvedLocalConfigPath(
     repoRoot: string,
     filePath: string,

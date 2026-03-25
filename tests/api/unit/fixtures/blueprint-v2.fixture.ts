@@ -108,6 +108,11 @@ export const validBlueprintV2 = {
       },
     ],
   },
+  cover_image: {
+    description: "A bright kitchen scene with an empty cookie plate on the counter, crumbs trailing toward the hallway. A girl in a floury apron stands nervously by the sink while a boy with glasses peers in from the hall with a knowing smirk.",
+    location_ids: ["kitchen"],
+    character_ids: ["alice", "bob"],
+  },
   ground_truth: {
     what_happened: "Alice took the cookies from the kitchen and hid them in her lunch bag in the hallway.",
     why_it_happened: "She was hungry after skipping breakfast and could not resist them.",

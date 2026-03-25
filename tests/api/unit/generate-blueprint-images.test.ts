@@ -25,9 +25,10 @@ const blueprintFixture = {
   },
   world: {
     starting_location_id: "Kitchen",
-    locations: [{ name: "Kitchen", description: "A kitchen", clues: [] }],
+    locations: [{ id: "Kitchen", name: "Kitchen", description: "A kitchen", clues: [] }],
     characters: [
       {
+        id: "char-alice",
         first_name: "Alice",
         last_name: "Smith",
         location: "Kitchen",
@@ -44,6 +45,11 @@ const blueprintFixture = {
         knowledge: [],
       },
     ],
+  },
+  cover_image: {
+    description: "A mysterious kitchen with cookie crumbs and a shadowy figure.",
+    location_ids: ["Kitchen"],
+    character_ids: ["char-alice"],
   },
   ground_truth: {
     what_happened: "Alice ate the cookies.",

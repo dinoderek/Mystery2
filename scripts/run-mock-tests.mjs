@@ -1,6 +1,7 @@
 import { getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
+  injectWorktreeEnv,
   loadEnvFile,
   npmBin,
   parseScriptOptions,
@@ -19,10 +20,10 @@ const baseEnvPath = getBaseEnvPath(rootDir, process.env);
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
-  const env = {
+  const env = injectWorktreeEnv({
     ...baseVars,
     ...process.env,
-  };
+  });
 
   const vitestTarget =
     suite === "integration" ? "tests/api/integration" : "tests/api/e2e";

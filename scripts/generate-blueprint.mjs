@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -14,7 +15,7 @@ import {
   BLUEPRINT_EVALUATION_PROMPT,
   BlueprintEvaluationOutputSchema,
 } from "../packages/shared/src/evaluation/index.ts";
-import { getBaseEnvPath, getBlueprintsDir } from "./local-config.mjs";
+import { getBaseEnvPath, getBlueprintsDir, getBriefsDir, resolveLocalConfigRoot } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
@@ -129,6 +130,15 @@ function buildSummaryEntry({
   };
 }
 
+function resolveBriefFile(filePath, env = process.env) {
+  const briefsDir = getBriefsDir(undefined, env);
+  const candidate = path.join(briefsDir, filePath);
+  if (existsSync(candidate)) {
+    return candidate;
+  }
+  return filePath;
+}
+
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefFiles: [],
@@ -204,6 +214,7 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
   if (options.briefFiles.length === 0) {
     throw new Error("Missing required --brief-file");
   }
+  options.briefFiles = options.briefFiles.map((f) => resolveBriefFile(f, env));
   if (options.models.length === 0) {
     throw new Error(
       "Missing required --model (or OPENROUTER_BLUEPRINT_MODEL / AI_MODEL env)",
@@ -552,12 +563,56 @@ async function verifyGeneratedBlueprint(options) {
   return verification.data;
 }
 
+function collectDeterministicIssues(blueprint) {
+  const issues = [];
+
+  const referencedClueIds = new Set();
+  const allPaths = [
+    ...blueprint.solution_paths,
+    ...blueprint.red_herrings,
+    ...blueprint.suspect_elimination_paths,
+  ];
+  for (const rp of allPaths) {
+    for (const id of rp.location_clue_ids) referencedClueIds.add(id);
+    for (const id of rp.character_clue_ids) referencedClueIds.add(id);
+  }
+
+  for (const location of blueprint.world.locations) {
+    for (const clue of location.clues) {
+      if (!referencedClueIds.has(clue.id)) {
+        issues.push({
+          check: "unreferenced_location_clue",
+          path: `world.locations[${blueprint.world.locations.indexOf(location)}].clues[${location.clues.indexOf(clue)}]`,
+          clue_id: clue.id,
+          message: `Location clue "${clue.id}" is not referenced by any solution, red herring, or suspect elimination path.`,
+        });
+      }
+    }
+  }
+
+  for (const character of blueprint.world.characters) {
+    for (const clue of character.clues) {
+      if (!referencedClueIds.has(clue.id)) {
+        issues.push({
+          check: "unreferenced_character_clue",
+          path: `world.characters[${blueprint.world.characters.indexOf(character)}].clues[${character.clues.indexOf(clue)}]`,
+          clue_id: clue.id,
+          message: `Character clue "${clue.id}" is not referenced by any solution, red herring, or suspect elimination path.`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
 function buildVerificationRecord({
   status,
   job,
   outputPath,
   verification,
   verificationModel,
+  deterministic_issues = [],
   error,
 }) {
   return {
@@ -569,6 +624,7 @@ function buildVerificationRecord({
     blueprint_file: outputPath,
     overall_pass: verification?.overall_pass ?? null,
     evaluation: verification ?? null,
+    deterministic_issues,
     error:
       error instanceof Error
         ? {
@@ -588,6 +644,20 @@ function buildVerificationRecord({
               message: String(error),
             },
   };
+}
+
+function flattenZodIssues(formatted, prefix = "") {
+  const messages = [];
+  if (Array.isArray(formatted?._errors)) {
+    for (const msg of formatted._errors) {
+      messages.push(prefix ? `${prefix}: ${msg}` : msg);
+    }
+  }
+  for (const [key, value] of Object.entries(formatted ?? {})) {
+    if (key === "_errors") continue;
+    messages.push(...flattenZodIssues(value, prefix ? `${prefix}.${key}` : key));
+  }
+  return messages;
 }
 
 function formatBlueprintGenerationError(error) {
@@ -637,20 +707,31 @@ function formatBlueprintGenerationError(error) {
   }
 
   const lines = [`${error.name} [${error.code}]: ${error.message}`];
-  if (typeof error.details.status === "number") {
-    lines.push(`HTTP status: ${error.details.status}`);
-  }
   if (typeof error.details.model === "string") {
     lines.push(`Model: ${error.details.model}`);
   }
+
+  // For schema validation failures, keep stderr output minimal —
+  // the full response and issues are already written to the validation file.
+  if (error.code === "SCHEMA_VALIDATION_FAILED") {
+    if (typeof error.details.outputPath === "string") {
+      lines.push(`Output: ${error.details.outputPath}`);
+    }
+    return lines.join("\n");
+  }
+
+  if (typeof error.details.status === "number") {
+    lines.push(`HTTP status: ${error.details.status}`);
+  }
   if (typeof error.details.responseBody === "string") {
-    lines.push(`Response body:\n${error.details.responseBody}`);
+    lines.push(`Response body (truncated): ${error.details.responseBody.slice(0, 200)}${error.details.responseBody.length > 200 ? "..." : ""}`);
   }
   if (typeof error.details.responseText === "string") {
-    lines.push(`Response text:\n${error.details.responseText}`);
+    lines.push(`Response text length: ${error.details.responseText.length} chars`);
   }
   if (error.details.issues !== undefined) {
-    lines.push(`Issues:\n${JSON.stringify(error.details.issues, null, 2)}`);
+    const issuesSummary = flattenZodIssues(error.details.issues);
+    lines.push(`Issues (${issuesSummary.length}):\n${issuesSummary.map((msg) => `  - ${msg}`).join("\n")}`);
   }
   if (error.stack) {
     lines.push(`Stack:\n${error.stack}`);
@@ -842,12 +923,14 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             verificationError = error;
           }
 
+          const deterministicIssues = collectDeterministicIssues(blueprint);
           const verificationRecord = buildVerificationRecord({
             status: verificationStatus,
             job,
             outputPath,
             verification,
             verificationModel: options.verificationModel,
+            deterministic_issues: deterministicIssues,
             error: verificationError,
           });
           await writeFile(

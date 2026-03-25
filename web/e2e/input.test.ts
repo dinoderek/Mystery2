@@ -121,7 +121,7 @@ test.describe('Command Input', () => {
           ...narrationResponse(
             'You travel to the garden.',
             narratorSpeaker,
-            'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+            'mock-location-garden-123e4567-e89b-12d3-a456-426614174223.png',
           ),
           current_location: 'Garden',
           visible_characters: ['Bob'],
@@ -137,7 +137,7 @@ test.describe('Command Input', () => {
           ...narrationResponse(
             'Bob greets you by the flower beds.',
             narratorSpeaker,
-            'mock-character-bob-123e4567-e89b-12d3-a456-426614174334',
+            'mock-character-bob-123e4567-e89b-12d3-a456-426614174334.png',
           ),
           mode: 'talk',
           time_remaining: 8,
@@ -152,7 +152,7 @@ test.describe('Command Input', () => {
       if (payload.purpose === 'location_scene') {
         await route.fulfill({
           json: {
-            image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223',
+            image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223.png',
             signed_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
             expires_at: '2099-01-01T00:00:00.000Z',
           },

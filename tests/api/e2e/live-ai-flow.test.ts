@@ -13,7 +13,8 @@ import {
 } from "../integration/auth-helpers.ts";
 import { investigatorScript } from "./live-ai/investigator-script.ts";
 
-const API_URL = "http://127.0.0.1:54331/functions/v1";
+const SUPABASE_BASE = process.env.SUPABASE_URL || process.env.API_URL || "http://127.0.0.1:54331";
+const API_URL = `${SUPABASE_BASE}/functions/v1`;
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 const endpointByAction: Record<string, string> = {

@@ -6,6 +6,7 @@ import {
   getBaseEnvPath,
 } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
+import { resolveApiUrl } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 const CANONICAL_DEFAULT_PROFILE_ID = "default";
@@ -100,7 +101,7 @@ const baseEnvPath = getBaseEnvPath(ROOT_DIR, process.env);
 const baseEnv = await loadEnvFile(baseEnvPath, false);
 const env = { ...baseEnv, ...process.env };
 
-const supabaseUrl = env.API_URL || "http://127.0.0.1:54331";
+const supabaseUrl = env.API_URL || resolveApiUrl();
 const serviceRoleKey = env.SERVICE_ROLE_KEY;
 if (!serviceRoleKey) {
   console.error(

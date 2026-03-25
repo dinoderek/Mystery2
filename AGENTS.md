@@ -33,6 +33,8 @@ Load additional guidance based on the area you are touching:
 - SvelteKit routing or page architecture in `web/`: `docs/screen-navigation.md`
 - Edge Functions, API contracts, or database work:
   `docs/backend-conventions.md`
+- Local Supabase stack, worktree isolation, or port issues:
+  `docs/local-infrastructure.md`
 - Structural mystery data-model changes:
   `packages/shared/src/blueprint-schema-v2.ts`
 - Blueprint schema/generation flow changes or narrator/AI runtime changes:
@@ -53,6 +55,24 @@ Keep documentation lean and current.
   the core docs would become cluttered.
 - In final summaries, call out which docs changed and note any skipped quality
   gates when the change is documentation-only.
+
+## Supabase Edge Functions
+
+When you modify files under `supabase/functions/` (including shared modules in
+`supabase/functions/_shared/`), the running `supabase functions serve` process
+**does not hot-reload**. You must restart it for changes to take effect.
+Integration tests that hit Edge Function endpoints will keep testing stale code
+until the server is restarted — this is a common source of false passes or
+confusing failures.
+
+## Worktree Isolation
+
+Each git worktree automatically receives its own Supabase stack (unique
+`project_id` and port range) when `ensureSupabaseRunning()` is called. This
+enables concurrent test execution across worktrees. Orphaned stacks from
+deleted worktrees are garbage-collected automatically. See
+[`docs/local-infrastructure.md`](docs/local-infrastructure.md) for the full
+design.
 
 ## Active Technologies
 - Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage (`blueprints`) (004-ai-backend-integration, 006-actor-aware-messaging, 007-sessions)

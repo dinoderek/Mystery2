@@ -7,7 +7,7 @@ import {
 import { serveWithCors } from "../_shared/cors.ts";
 import {
   BLUEPRINT_IMAGES_BUCKET,
-  buildImageStorageCandidates,
+  buildImageStorageKey,
   ensureCanonicalImageId,
   IMAGE_LINK_TTL_SECONDS,
   normalizeSignedUrlExpiry,
@@ -85,21 +85,20 @@ serveWithCors(async (req) => {
       return notFound("Image not referenced by blueprint");
     }
 
-    for (const key of buildImageStorageCandidates(blueprintId, imageId)) {
-      const { data, error } = await userClient.storage
-        .from(BLUEPRINT_IMAGES_BUCKET)
-        .createSignedUrl(key, IMAGE_LINK_TTL_SECONDS);
+    const storageKey = buildImageStorageKey(blueprintId, imageId);
+    const { data, error } = await userClient.storage
+      .from(BLUEPRINT_IMAGES_BUCKET)
+      .createSignedUrl(storageKey, IMAGE_LINK_TTL_SECONDS);
 
-      if (!error && data?.signedUrl) {
-        return new Response(
-          JSON.stringify({
-            image_id: imageId,
-            signed_url: data.signedUrl,
-            expires_at: normalizeSignedUrlExpiry(),
-          }),
-          { headers: { "Content-Type": "application/json" } },
-        );
-      }
+    if (!error && data?.signedUrl) {
+      return new Response(
+        JSON.stringify({
+          image_id: imageId,
+          signed_url: data.signedUrl,
+          expires_at: normalizeSignedUrlExpiry(),
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      );
     }
 
     return notFound("Image asset not found");

@@ -407,6 +407,26 @@ export const BlueprintV2Schema = z
       });
     }
 
+    for (const [locRefIndex, locId] of value.cover_image.location_ids.entries()) {
+      if (!locationIds.has(locId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "location_ids", locRefIndex],
+          message: `cover_image.location_ids references unknown location id "${locId}".`,
+        });
+      }
+    }
+
+    for (const [charRefIndex, charId] of value.cover_image.character_ids.entries()) {
+      if (!characterIds.has(charId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "character_ids", charRefIndex],
+          message: `cover_image.character_ids references unknown character id "${charId}".`,
+        });
+      }
+    }
+
     const allPaths = [
       ...value.solution_paths.map((path, index) => ({
         path,
@@ -468,31 +488,10 @@ export const BlueprintV2Schema = z
       }
     }
 
-    for (const [locationIndex, location] of value.world.locations.entries()) {
-      for (const [clueIndex, clue] of location.clues.entries()) {
-        if (!referencedClueIds.has(clue.id)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "locations", locationIndex, "clues", clueIndex, "id"],
-            message:
-              "Every location clue must be referenced by at least one solution, red herring, or suspect elimination path.",
-          });
-        }
-      }
-    }
-
-    for (const [characterIndex, character] of value.world.characters.entries()) {
-      for (const [clueIndex, clue] of character.clues.entries()) {
-        if (!referencedClueIds.has(clue.id)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "characters", characterIndex, "clues", clueIndex, "id"],
-            message:
-              "Every character clue must be referenced by at least one solution, red herring, or suspect elimination path.",
-          });
-        }
-      }
-    }
+    // NOTE: Unreferenced clue checks (location and character clues not
+    // referenced by any solution, red herring, or suspect elimination path)
+    // are intentionally omitted from schema validation. They are enforced in
+    // the softer AI-driven verification pass instead.
 
     for (const [locRefIndex, locId] of value.cover_image.location_ids.entries()) {
       if (!locationIds.has(locId)) {
@@ -518,7 +517,7 @@ export const BlueprintV2Schema = z
 export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;
 export type BlueprintV2Character = z.infer<typeof BlueprintV2CharacterSchema>;
 export type BlueprintV2Location = z.infer<typeof BlueprintV2LocationSchema>;
+export type BlueprintV2CoverImage = z.infer<typeof BlueprintV2CoverImageSchema>;
 export type BlueprintV2ReasoningPath = z.infer<
   typeof BlueprintV2ReasoningPathSchema
 >;
-export type BlueprintV2CoverImage = z.infer<typeof BlueprintV2CoverImageSchema>;

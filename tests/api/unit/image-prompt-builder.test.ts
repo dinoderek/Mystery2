@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildImagePrompt,
+  buildReferenceLegend,
   createImageId,
 } from "../../../scripts/lib/image-prompt-builder.mjs";
 
@@ -51,6 +52,11 @@ const blueprint = {
       },
     ],
   },
+  cover_image: {
+    description: "A mysterious kitchen with cookie crumbs and a shadowy figure near the counter.",
+    location_ids: ["loc_kitchen"],
+    character_ids: ["char_alice"],
+  },
   ground_truth: {
     what_happened: "Alice ate the cookies.",
     why_it_happened: "Hungry.",
@@ -62,7 +68,7 @@ const blueprint = {
 };
 
 describe("image prompt builder", () => {
-  it("builds blueprint cover prompt with age context and starting location", () => {
+  it("builds blueprint cover prompt from cover_image.description", () => {
     const coverPrompt = buildImagePrompt(blueprint, {
       targetType: "blueprint",
       targetKey: null,
@@ -70,7 +76,10 @@ describe("image prompt builder", () => {
     expect(coverPrompt).toContain("Target: Mystery cover image");
     expect(coverPrompt).toContain("storybook watercolor");
     expect(coverPrompt).toContain("aged 8");
-    expect(coverPrompt).toContain("Kitchen");
+    expect(coverPrompt).toContain("Creative direction:");
+    expect(coverPrompt).toContain("mysterious kitchen with cookie crumbs");
+    expect(coverPrompt).toContain("Featured location(s): Kitchen");
+    expect(coverPrompt).toContain("Characters featured: Alice Smith (Red hair)");
   });
 
   it("builds character portrait prompt with bokeh background and no location", () => {
@@ -99,23 +108,34 @@ describe("image prompt builder", () => {
     expect(locationPrompt).toContain("Red hair");
     expect(locationPrompt).toContain("Cookie crumbs");
     expect(locationPrompt).toContain("arriving");
-    expect(locationPrompt).not.toContain("Reference portrait images");
   });
 
-  it("adds reference image hint to location prompt when referenceImageCount is provided", () => {
+  it("includes indexed reference legend when referenceImages are provided", () => {
+    const refs = [
+      { label: "Portrait of Alice Smith (Red hair)", buffer: Buffer.from([1]) },
+      { label: "Portrait of Bob Jones (Short with glasses)", buffer: Buffer.from([2]) },
+    ];
     const locationPrompt = buildImagePrompt(
       blueprint,
       { targetType: "location", targetKey: "loc_kitchen" },
-      { referenceImageCount: 2 },
+      { referenceImages: refs },
     );
-    expect(locationPrompt).toContain("Reference portrait images of the 2 character(s)");
-    expect(locationPrompt).toContain("Preserve their appearance");
+    expect(locationPrompt).toContain("Reference images (attached below in order):");
+    expect(locationPrompt).toContain("- Image 1: Portrait of Alice Smith (Red hair)");
+    expect(locationPrompt).toContain("- Image 2: Portrait of Bob Jones (Short with glasses)");
+    expect(locationPrompt).toContain("Preserve the appearance");
   });
 
-  it("creates unique slugged image ids", () => {
+  it("buildReferenceLegend returns empty string for no references", () => {
+    expect(buildReferenceLegend([])).toBe("");
+    expect(buildReferenceLegend(undefined)).toBe("");
+  });
+
+  it("creates deterministic slugged image ids without UUID", () => {
     const imageId = createImageId(blueprint.id, "character", "char_alice");
-    expect(imageId).toMatch(
-      /^character-char-alice-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    expect(imageId).toBe("character-char-alice");
+
+    const coverId = createImageId(blueprint.id, "blueprint");
+    expect(coverId).toBe("blueprint");
   });
 });

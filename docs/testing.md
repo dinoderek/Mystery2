@@ -257,9 +257,9 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 ### Shared-suite execution
 
-- Treat integration, API E2E, and Playwright suites as serialized across the repo.
-- `npm run test:integration`, `npm run test:e2e`, and `npm -w web run test:e2e` all rely on shared local resources (Supabase at `127.0.0.1:54331`, shared storage/auth state, and for Playwright a fixed dev-server port `5173`).
-- Do not run more than one of those shared-state suites at the same time from different terminals or subagents.
+- Treat integration, API E2E, and Playwright suites as serialized within a single checkout or worktree.
+- Within the same checkout, `npm run test:integration`, `npm run test:e2e`, and `npm -w web run test:e2e` all share local resources (Supabase, shared storage/auth state, and for Playwright a fixed dev-server port `5173`). Do not run more than one of those shared-state suites at the same time from different terminals.
+- **Across worktrees**, tests can run concurrently because each worktree gets its own Supabase stack with unique ports. See [`docs/local-infrastructure.md`](local-infrastructure.md) for details.
 - Parallel verification is still fine for unit-only suites such as `npx vitest run tests/api/unit/...` and `npm -w web run test:unit`.
 
 ### Deploy dry-run checks

@@ -13,21 +13,21 @@ const blueprint = {
   schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
-    image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+    image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
   },
   world: {
     locations: [
       {
         id: "loc_kitchen",
         name: "Kitchen",
-        location_image_id: "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222",
+        location_image_id: "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222.png",
       },
     ],
     characters: [
       {
         id: "char_alice",
         first_name: "Alice",
-        portrait_image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333",
+        portrait_image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333.png",
       },
     ],
   },
@@ -57,13 +57,16 @@ describe("blueprint image manifest helpers", () => {
     const plan = await buildImageUploadPlan(blueprint, tmpDir);
     expect(plan).toHaveLength(3);
     expect(plan[0].localPath).toContain(".png");
+    expect(plan[0].storageKey).toBe(
+      "123e4567-e89b-12d3-a456-426614174000/mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
+    );
     expect(plan[1].localPath).toBeNull();
     expect(plan[2].localPath).toBeNull();
 
     const manifest = createImageManifest([
-      { imageId: plan[0].imageId, status: "uploaded" },
-      { imageId: plan[1].imageId, status: "missing" },
-      { imageId: plan[2].imageId, status: "failed", error: "boom" },
+      { imageFilename: plan[0].imageFilename, status: "uploaded" },
+      { imageFilename: plan[1].imageFilename, status: "missing" },
+      { imageFilename: plan[2].imageFilename, status: "failed", error: "boom" },
     ]);
 
     expect(manifest).toMatchObject({
@@ -73,19 +76,5 @@ describe("blueprint image manifest helpers", () => {
       failed: 1,
     });
     expect(manifest.warnings.length).toBe(2);
-  });
-
-  it("resolves files using <prefix>.<imageId>.png naming pattern", async () => {
-    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "image-manifest-newname-"));
-    await mkdir(tmpDir, { recursive: true });
-    // Write file with new naming: <blueprint-name>.<imageId>.png
-    await writeFile(
-      path.join(tmpDir, "my-blueprint.mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png"),
-      Buffer.from([0, 1, 2]),
-    );
-
-    const plan = await buildImageUploadPlan(blueprint, tmpDir);
-    expect(plan).toHaveLength(3);
-    expect(plan[0].localPath).toContain("mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png");
   });
 });

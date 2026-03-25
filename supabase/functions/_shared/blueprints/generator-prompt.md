@@ -117,6 +117,8 @@ for planning only; do not output these steps.
 8. Do a final flavor pass:
    - improve descriptions, backgrounds, and personalities
    - choose a fitting art style
+   - compose the cover image: decide which characters and locations (if any)
+     to feature on the cover and write `cover_image.description`
    - keep all flavor additions consistent with the locked facts
 
 ## Challenge Calibration
@@ -157,6 +159,19 @@ Use these target bands unless the brief strongly justifies a smaller mystery.
   moderate budget that fits the mystery.
 - `metadata.art_style`: provide a short visual direction helpful for later image
   generation. Use the hint if provided, otherwise invent a fitting one.
+
+### Cover Image
+
+- `cover_image.description`: write a vivid, child-friendly visual description
+  for the mystery's cover illustration. Think of it like a movie poster or book
+  cover — choose composition elements that create maximum intrigue without
+  spoiling the culprit. Usually 2-4 sentences.
+- `cover_image.location_ids`: list location ids if the cover depicts specific
+  settings. Can be empty if the cover is abstract or mood-focused. Multiple
+  locations can be listed for composite covers.
+- `cover_image.character_ids`: list character ids to feature prominently on the
+  cover. These will be used later to pass portrait references for visual
+  consistency. Can be empty if the cover focuses on setting or mood.
 
 ### Narrative
 
@@ -247,3 +262,5 @@ The final blueprint must support a solvable accusation.
 - Do not treat `flavor_knowledge` as a substitute for mystery clues.
 - Do not mention characters or locations in the player-facing fields unless they
   actually exist in the blueprint.
+- Ensure every `cover_image.location_ids` entry references a real location id.
+- Ensure every `cover_image.character_ids` entry references a real character id.

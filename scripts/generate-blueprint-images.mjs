@@ -413,29 +413,29 @@ async function generateImageAsset({
   return Buffer.from(bytes);
 }
 
-function buildOutputFilename(_blueprintName, imageId) {
-  return imageId;
+function buildOutputFilename(baseImageId) {
+  return `${baseImageId}.png`;
 }
 
-async function findUniqueOutput(outputDir, blueprintName, baseImageId) {
-  const baseName = buildOutputFilename(blueprintName, baseImageId);
-  const basePath = path.join(outputDir, baseName);
+async function findUniqueOutput(outputDir, baseImageId) {
+  const filename = buildOutputFilename(baseImageId);
+  const outputPath = path.join(outputDir, filename);
 
   try {
-    await fs.access(basePath);
+    await fs.access(outputPath);
   } catch {
-    return { imageId: baseImageId, filename: baseName, outputPath: basePath };
+    return { imageId: `${baseImageId}.png`, filename, outputPath };
   }
 
   let count = 1;
   while (true) {
-    const imageId = `${baseImageId}.${count}`;
-    const filename = buildOutputFilename(blueprintName, imageId);
-    const outputPath = path.join(outputDir, filename);
+    const suffixedId = `${baseImageId}-${count}`;
+    const fn = buildOutputFilename(suffixedId);
+    const op = path.join(outputDir, fn);
     try {
-      await fs.access(outputPath);
+      await fs.access(op);
     } catch {
-      return { imageId, filename, outputPath };
+      return { imageId: `${suffixedId}.png`, filename: fn, outputPath: op };
     }
     count += 1;
   }
@@ -451,10 +451,9 @@ async function generateSingleTarget({
   timeoutMs,
   referenceImages = [],
 }) {
-  const baseImageId = createImageId(blueprint.id, target.targetType, target.targetKey);
+  const baseImageId = createImageId(blueprintName, target.targetType, target.targetKey);
   const { imageId, filename, outputPath } = await findUniqueOutput(
     options.outputDir,
-    blueprintName,
     baseImageId,
   );
   const label = formatTargetLabel(target);

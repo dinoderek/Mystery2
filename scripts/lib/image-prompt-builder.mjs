@@ -1,14 +1,16 @@
-export function slugify(value) {
+export function slugify(value, maxLength = 48) {
   return String(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
+    .slice(0, maxLength);
 }
 
-export function createImageId(blueprintId, targetType, targetKey = null) {
+export function createImageId(blueprintName, targetType, targetKey = null) {
+  const prefix = slugify(blueprintName);
   const seed = targetKey ? `${targetType}-${targetKey}` : targetType;
-  return slugify(seed);
+  const target = slugify(seed, 120);
+  return `${prefix}.${target}`;
 }
 
 function styleBlock(blueprint) {

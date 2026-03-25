@@ -141,7 +141,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
             {
               text: 'You move to the garden.',
               speaker: narratorSpeaker,
-              image_id: 'mock-location-garden-123e4567-e89b-12d3-a456-426614174223.png',
+              image_id: 'mock-blueprint.location-garden.png',
             },
           ],
           current_location: 'garden',

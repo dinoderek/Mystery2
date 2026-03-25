@@ -584,7 +584,7 @@ describe("runImageGeneration", () => {
     const filePath = result.results[0].file_path;
     const fileName = path.basename(filePath);
     expect(fileName).toBe("mock-blueprint.blueprint.png");
-    expect(result.results[0].image_id).toBe("blueprint");
+    expect(result.results[0].image_id).toBe("mock-blueprint.blueprint.png");
   });
 
   it("generates all targets in parallel when parallel option is set", async () => {
@@ -682,10 +682,10 @@ describe("runImageGeneration", () => {
       { apiKey: "test-key", fetchImpl: successFetch },
     );
 
-    expect(result1.results[0].image_id).toBe("blueprint");
+    expect(result1.results[0].image_id).toBe("mock-blueprint.blueprint.png");
     expect(path.basename(result1.results[0].file_path)).toBe("mock-blueprint.blueprint.png");
 
-    // Second run: file already exists, should get .1 suffix
+    // Second run: file already exists, should get -1 suffix
     const result2 = await runImageGeneration(
       {
         blueprintPath,
@@ -699,7 +699,7 @@ describe("runImageGeneration", () => {
       { apiKey: "test-key", fetchImpl: successFetch },
     );
 
-    expect(result2.results[0].image_id).toBe("blueprint.1");
-    expect(path.basename(result2.results[0].file_path)).toBe("mock-blueprint.blueprint.1.png");
+    expect(result2.results[0].image_id).toBe("mock-blueprint.blueprint-1.png");
+    expect(path.basename(result2.results[0].file_path)).toBe("mock-blueprint.blueprint-1.png");
   });
 });

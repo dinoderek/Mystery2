@@ -45,7 +45,7 @@ describe("game-talk endpoint", () => {
     expect(data.narration_parts[0].text).toContain("she");
     expect(data.narration_parts[0].text).not.toContain("because she was hungry");
     expect(data.narration_parts[0]).toMatchObject({
-      image_id: "mock-character-alice-123e4567-e89b-12d3-a456-426614174333.png",
+      image_id: "mock-blueprint.character-char-alice.png",
       speaker: {
         kind: "narrator",
         key: "narrator",

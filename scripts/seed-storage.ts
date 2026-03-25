@@ -48,8 +48,26 @@ function imageRefs(blueprint: BlueprintRef): string[] {
   return refs;
 }
 
+const KNOWN_IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp"];
+
+function hasKnownImageExt(name: string): boolean {
+  return KNOWN_IMAGE_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
+}
+
 async function readFirstExistingImagePath(imageId: string): Promise<string | null> {
-  const candidates = [".png", ".jpg", ".jpeg", ".webp"].map((ext) => `${imageDir}/${imageId}${ext}`);
+  // If image_id already carries an extension, try the exact filename first.
+  if (hasKnownImageExt(imageId)) {
+    const direct = `${imageDir}/${imageId}`;
+    try {
+      await Deno.stat(direct);
+      return direct;
+    } catch {
+      // Fall through to extension probing.
+    }
+  }
+
+  // Probe with extensions (backward compatibility for IDs without extension).
+  const candidates = KNOWN_IMAGE_EXTS.map((ext) => `${imageDir}/${imageId}${ext}`);
   for (const candidate of candidates) {
     try {
       await Deno.stat(candidate);
@@ -139,9 +157,14 @@ if (seedImages) {
           ? "image/jpeg"
           : "image/png";
 
+        // Avoid double-extension when image_id already carries one.
+        const storageFilename = hasKnownImageExt(imageId)
+          ? imageId
+          : `${imageId}${ext}`;
+
         const { error } = await supabase.storage
           .from("blueprint-images")
-          .upload(`${blueprint.id}/${imageId}${ext}`, bytes, {
+          .upload(`${blueprint.id}/${storageFilename}`, bytes, {
             contentType,
             upsert: true,
           });

@@ -492,6 +492,26 @@ export const BlueprintV2Schema = z
     // referenced by any solution, red herring, or suspect elimination path)
     // are intentionally omitted from schema validation. They are enforced in
     // the softer AI-driven verification pass instead.
+
+    for (const [locRefIndex, locId] of value.cover_image.location_ids.entries()) {
+      if (!locationIds.has(locId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "location_ids", locRefIndex],
+          message: `cover_image.location_ids references unknown location id "${locId}".`,
+        });
+      }
+    }
+
+    for (const [charRefIndex, charId] of value.cover_image.character_ids.entries()) {
+      if (!characterIds.has(charId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "character_ids", charRefIndex],
+          message: `cover_image.character_ids references unknown character id "${charId}".`,
+        });
+      }
+    }
   });
 
 export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;

@@ -94,8 +94,7 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
       }
     } catch (error) {
       if (error instanceof LiveAIRetriableExhaustedError) {
-        console.warn(`[live-ai] ${error.message}`);
-        return;
+        expect.fail(`[live-ai] Retriable retries exhausted: ${error.message}`);
       }
       throw error;
     }

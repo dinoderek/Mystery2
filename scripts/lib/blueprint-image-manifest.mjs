@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-function withReference(imageId, purpose, targetKey = null) {
-  if (!imageId || typeof imageId !== "string") return null;
-  return { imageId, purpose, targetKey };
+function withReference(imageFilename, purpose, targetKey = null) {
+  if (!imageFilename || typeof imageFilename !== "string") return null;
+  return { imageFilename, purpose, targetKey };
 }
 
 export function collectBlueprintImageReferences(blueprint) {
@@ -33,54 +33,24 @@ export function collectBlueprintImageReferences(blueprint) {
   return refs;
 }
 
-async function findFirstExistingPath(candidates) {
-  for (const candidate of candidates) {
-    try {
-      await fs.access(candidate);
-      return candidate;
-    } catch {
-      // Keep trying candidates.
-    }
-  }
-  return null;
-}
-
-const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
-
-async function findImageFile(imageDir, imageId) {
-  // Try direct <imageId>.<ext> first (legacy naming).
-  const directCandidates = IMAGE_EXTENSIONS.map(
-    (ext) => path.join(imageDir, `${imageId}${ext}`),
-  );
-  const direct = await findFirstExistingPath(directCandidates);
-  if (direct) return direct;
-
-  // Try <prefix>.<imageId>.<ext> naming (new pattern).
-  try {
-    const entries = await fs.readdir(imageDir);
-    for (const ext of IMAGE_EXTENSIONS) {
-      const suffix = `.${imageId}${ext}`;
-      const match = entries.find((entry) => entry.endsWith(suffix));
-      if (match) return path.join(imageDir, match);
-    }
-  } catch {
-    // Directory may not exist.
-  }
-
-  return null;
-}
-
 export async function buildImageUploadPlan(blueprint, imageDir) {
   const refs = collectBlueprintImageReferences(blueprint);
   const uploads = [];
 
   for (const ref of refs) {
-    const localPath = await findImageFile(imageDir, ref.imageId);
+    const localPath = path.join(imageDir, ref.imageFilename);
+    let exists = false;
+    try {
+      await fs.access(localPath);
+      exists = true;
+    } catch {
+      // File not found locally.
+    }
 
     uploads.push({
       ...ref,
-      localPath,
-      storageKey: `${blueprint.id}/${ref.imageId}${localPath ? path.extname(localPath) : ".png"}`,
+      localPath: exists ? localPath : null,
+      storageKey: `${blueprint.id}/${ref.imageFilename}`,
     });
   }
 
@@ -104,12 +74,12 @@ export function createImageManifest(results) {
     }
     if (item.status === "missing") {
       manifest.missing += 1;
-      manifest.warnings.push(`Missing local image for ${item.imageId}`);
+      manifest.warnings.push(`Missing local image for ${item.imageFilename}`);
       continue;
     }
     manifest.failed += 1;
     manifest.warnings.push(
-      `Failed upload for ${item.imageId}: ${item.error ?? "unknown error"}`,
+      `Failed upload for ${item.imageFilename}: ${item.error ?? "unknown error"}`,
     );
   }
 

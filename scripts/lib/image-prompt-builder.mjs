@@ -1,5 +1,3 @@
-import crypto from "node:crypto";
-
 export function slugify(value) {
   return String(value)
     .toLowerCase()
@@ -10,7 +8,7 @@ export function slugify(value) {
 
 export function createImageId(blueprintId, targetType, targetKey = null) {
   const seed = targetKey ? `${targetType}-${targetKey}` : targetType;
-  return `${slugify(seed)}-${crypto.randomUUID()}`;
+  return slugify(seed);
 }
 
 function styleBlock(blueprint) {

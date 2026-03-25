@@ -14,7 +14,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts and the canonical `narration_parts`/`narration_events` schemas.
   - `blueprint-generator/`: Reusable blueprint generation logic shared by local operator scripts and future backend adapters.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
-- `scripts/`: Assorted scripts needed for development and operations (e.g., `setup-local` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
+- `scripts/`: Assorted scripts needed for development and operations (e.g., `seed-all` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
   - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
 - `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
 - `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.

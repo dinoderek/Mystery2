@@ -8,7 +8,7 @@ import {
 describe("search and accusation AI output contracts", () => {
   it("accepts valid search output", () => {
     expect(parseSearchOutput({ narration: "You find dusty footprints." })).toEqual(
-      { narration: "You find dusty footprints." },
+      { narration: "You find dusty footprints.", revealed_clue_id: null, costs_turn: true },
     );
   });
 

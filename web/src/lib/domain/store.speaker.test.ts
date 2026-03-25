@@ -118,7 +118,7 @@ describe('store speaker behavior', () => {
 
     expect(invokeMock).toHaveBeenCalledTimes(1);
     const [, options] = invokeMock.mock.calls[0] as [string, { body: Record<string, unknown> }];
-    expect(options.body).toEqual({ game_id: 'game-1' });
+    expect(options.body).toEqual({ game_id: 'game-1', search_query: null });
     expect(options.body).not.toHaveProperty('history');
     expect(options.body).not.toHaveProperty('system_feedback');
   });

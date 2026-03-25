@@ -100,6 +100,11 @@ describe("game-get endpoint", () => {
       (entry: { event_type: string }) => entry.event_type === "ask",
     );
     expect(askEvent?.narration_parts[0].speaker).toMatchObject({
+      kind: "investigator",
+      key: "you",
+      label: "You",
+    });
+    expect(askEvent?.narration_parts[1].speaker).toMatchObject({
       kind: "character",
       key: "character:alice",
       label: "Alice",

@@ -65,7 +65,6 @@ describe("generate-blueprint-images args parser", () => {
       "Alice",
       "--location",
       "Kitchen",
-      "--overwrite",
     ]);
 
     expect(parsed).toMatchObject({
@@ -73,7 +72,6 @@ describe("generate-blueprint-images args parser", () => {
       outputDir: "/tmp/out",
       model: "openai/gpt-image-1",
       scope: "selected",
-      overwrite: true,
       characterKeys: ["Alice"],
       locationKeys: ["Kitchen"],
     });
@@ -279,7 +277,6 @@ describe("runImageGeneration", () => {
       outputDir,
       model: "openai/gpt-image-1",
       scope: "all",
-      overwrite: false,
       dryRun: true,
       characterKeys: [],
       locationKeys: [],
@@ -310,7 +307,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         characterKeys: [],
         locationKeys: [],
@@ -362,7 +358,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         characterKeys: [],
         locationKeys: [],
@@ -399,7 +394,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         characterKeys: [],
         locationKeys: [],
@@ -459,7 +453,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         dryMode: true,
         characterKeys: [],
@@ -524,7 +517,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         characterKeys: [],
         locationKeys: [],
@@ -552,7 +544,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "blueprint",
-        overwrite: true,
         dryRun: false,
         characterKeys: [],
         locationKeys: [],
@@ -586,9 +577,8 @@ describe("runImageGeneration", () => {
     expect(result.results[0].status).toBe("generated");
     const filePath = result.results[0].file_path;
     const fileName = path.basename(filePath);
-    // Should start with slugified blueprint title and contain the image_id
-    expect(fileName).toMatch(/^mock-blueprint\..+\.png$/);
-    expect(fileName).toContain(result.results[0].image_id);
+    expect(fileName).toBe("mock-blueprint.blueprint.png");
+    expect(result.results[0].image_id).toBe("blueprint");
   });
 
   it("generates all targets in parallel when parallel option is set", async () => {
@@ -605,7 +595,6 @@ describe("runImageGeneration", () => {
         outputDir,
         model: "openai/gpt-image-1",
         scope: "all",
-        overwrite: true,
         dryRun: false,
         parallel: true,
         characterKeys: [],
@@ -642,5 +631,69 @@ describe("runImageGeneration", () => {
     // All 3 targets (blueprint + 1 character + 1 location) should be generated
     expect(result.results).toHaveLength(3);
     expect(result.results.every((r: { status: string }) => r.status === "generated")).toBe(true);
+  });
+
+  it("appends .count suffix when output file already exists", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-dedup-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const successFetch = () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  images: [
+                    {
+                      image_url: {
+                        url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    // First run: generates mock-blueprint.blueprint.png
+    const result1 = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      { apiKey: "test-key", fetchImpl: successFetch },
+    );
+
+    expect(result1.results[0].image_id).toBe("blueprint");
+    expect(path.basename(result1.results[0].file_path)).toBe("mock-blueprint.blueprint.png");
+
+    // Second run: file already exists, should get .1 suffix
+    const result2 = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "blueprint",
+        dryRun: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      { apiKey: "test-key", fetchImpl: successFetch },
+    );
+
+    expect(result2.results[0].image_id).toBe("blueprint.1");
+    expect(path.basename(result2.results[0].file_path)).toBe("mock-blueprint.blueprint.1.png");
   });
 });

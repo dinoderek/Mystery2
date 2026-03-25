@@ -112,10 +112,11 @@ describe("image prompt builder", () => {
     expect(locationPrompt).toContain("Preserve their appearance");
   });
 
-  it("creates unique slugged image ids", () => {
+  it("creates deterministic slugged image ids without UUID", () => {
     const imageId = createImageId(blueprint.id, "character", "char_alice");
-    expect(imageId).toMatch(
-      /^character-char-alice-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    expect(imageId).toBe("character-char-alice");
+
+    const coverId = createImageId(blueprint.id, "blueprint");
+    expect(coverId).toBe("blueprint");
   });
 });

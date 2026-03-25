@@ -124,7 +124,6 @@ describe("image generation flow", () => {
           outputDir: path.join(tmpDir, "images"),
           model: "openai/gpt-image-1",
           scope: "all",
-          overwrite: true,
           dryRun: false,
           characterKeys: [],
           locationKeys: [],

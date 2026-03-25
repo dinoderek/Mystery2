@@ -8,8 +8,8 @@ describe("Blueprint V2 schema", () => {
     expect(() => BlueprintV2Schema.parse(validBlueprintV2)).not.toThrow();
   });
 
-  it("rejects location clues that are not referenced by any path", () => {
-    const broken = {
+  it("accepts location clues that are not referenced by any path", () => {
+    const withUnlinked = {
       ...validBlueprintV2,
       world: {
         ...validBlueprintV2.world,
@@ -31,9 +31,7 @@ describe("Blueprint V2 schema", () => {
       },
     };
 
-    expect(() => BlueprintV2Schema.parse(broken)).toThrow(
-      /Every location clue must be referenced/,
-    );
+    expect(() => BlueprintV2Schema.parse(withUnlinked)).not.toThrow();
   });
 
   it("rejects reasoning paths that reference missing clue ids", () => {

@@ -113,8 +113,11 @@ for planning only; do not output these steps.
    - location clues
    - character clues
    - ensure every clue has a role and belongs to one or more reasoning paths
-7. Add `flavor_knowledge` separately for character texture.
-8. Do a final flavor pass:
+7. Design sub-locations for each location. Distribute location clues so that at
+   most one clue sits at the location level and at most one clue sits in each
+   sub-location. Write narrator-only hints for each sub-location.
+8. Add `flavor_knowledge` separately for character texture.
+9. Do a final flavor pass:
    - improve descriptions, backgrounds, and personalities
    - choose a fitting art style
    - compose the cover image: decide which characters and locations (if any)
@@ -135,6 +138,8 @@ Use these target bands unless the brief strongly justifies a smaller mystery.
 ### Clue and timeline scale
 
 - Usually create 4-8 authored location/character clues total across the mystery.
+- Distribute clues so that each location has at most 1 top-level clue and each
+  sub-location has at most 1 clue.
 - Usually create 4-7 timeline steps in `ground_truth.timeline`.
 - Usually include 1-2 strong innocent red herrings.
 
@@ -190,6 +195,30 @@ Use these target bands unless the brief strongly justifies a smaller mystery.
   - `id`
   - `text`
   - `role`
+- Each location must have **at most 1 clue** in its top-level `clues[]` array.
+
+### Sub-Locations
+
+Each location should define 2-4 searchable sub-locations
+(`world.locations[].sub_locations[]`). Sub-locations are specific areas within
+the room that the player can investigate (e.g., "behind the curtains", "inside
+the desk drawer", "under the workbench").
+
+Each sub-location must have:
+- `id`: stable, short, unique identifier
+- `name`: a short, evocative name that a child can easily reference when typing
+  a search command
+- `hint`: narrator-only guidance text (never shown directly to the player) that
+  helps the AI narrator craft hints steering the player toward searching here
+- `clues[]`: at most one clue object (same shape as location clues)
+
+Distribute clues across locations and sub-locations rather than stacking
+multiple clues in one place. This ensures the player must explore broadly. A
+location with no top-level clue but 2 sub-locations each with 1 clue is fine.
+A location with 3 clues stacked in its top-level array is not.
+
+Not every sub-location needs a clue — some are atmospheric dead ends that add
+flavor and misdirection.
 
 ### Characters
 
@@ -252,6 +281,10 @@ The final blueprint must support a solvable accusation.
 
 - Output only valid JSON conforming to `BlueprintV2Schema`.
 - Do not output `image_id`, `location_image_id`, or `portrait_image_id`.
+- Each location must have at most 1 clue in its top-level `clues[]` array.
+- Each sub-location must have at most 1 clue in its `clues[]` array.
+- Each location must define 2-4 sub-locations.
+- Sub-location ids must be unique across the entire blueprint.
 - Keep the mystery child-friendly.
 - Keep all facts internally consistent.
 - Ensure there is EXACTLY ONE `is_culprit: true` character.

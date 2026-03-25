@@ -1,8 +1,8 @@
-import type { AIRoleName } from "./ai-contracts.ts";
+import type { AIPromptKey } from "./ai-contracts.ts";
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
 // behavior inside the edge bundler.
-const PROMPT_TEMPLATE_BY_ROLE: Record<AIRoleName, string> = {
+const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
   talk_start: `You are the in-character narrator for a children's mystery game.
 
 Task:
@@ -56,23 +56,66 @@ Return JSON:
 {
   "narration": "..."
 }`,
-  search: `You are the narrator for a children's mystery game.
+  search: `You are the Game Master narrator for a children's mystery game.
 
 Task:
-- Describe the player searching {{location_name}}.
-- Narrate what the player observes while searching this location.
+- The player is doing a general search of {{location_name}} (no specific target).
 - Keep language and readability appropriate for target age {{target_age}}.
 - Use the provided location description and search context only.
-- If search_context.next_clue is present, you must clearly reveal that clue's text.
-- The next_clue includes a role field (e.g. direct_evidence, red_herring, supporting_evidence). Use it to calibrate narration weight: direct_evidence should feel significant, red_herring should feel intriguing but potentially misleading, supporting_evidence should feel confirmatory.
+- If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
-- If search_context.next_clue is null, reveal no new clue and give only flavorful feedback.
+- If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
 - Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
+- costs_turn is always true for general searches.
 
 Return JSON:
 {
-  "narration": "..."
+  "narration": "...",
+  "revealed_clue_id": "clue-id-here or null",
+  "costs_turn": true
+}`,
+  search_bare: `You are the Game Master narrator for a children's mystery game.
+
+Task:
+- The player is doing a general search of {{location_name}} (no specific target).
+- Keep language and readability appropriate for target age {{target_age}}.
+- Use the provided location description and search context only.
+- If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
+- The next_clue includes a role field (e.g. direct_evidence, red_herring, supporting_evidence). Calibrate narration weight by role.
+- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
+- If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
+- If sub-locations with unrevealed clues exist, mention interesting areas that could be searched more specifically.
+- Keep response concise (2-4 sentences).
+- Do not leak full solution ground truth.
+- costs_turn is always true for general searches.
+
+Return JSON:
+{
+  "narration": "...",
+  "revealed_clue_id": "clue-id-here or null",
+  "costs_turn": true
+}`,
+  search_targeted: `You are the Game Master narrator for a children's mystery game. You act like a tabletop RPG Game Master, adjudicating the player's search attempt.
+
+Task:
+- The player is searching {{location_name}} with this description: "{{search_query}}"
+- Judge whether the player's description matches any sub-location and its unrevealed clues.
+- You have GM leeway: reward inventive, creative, or particularly cunning search descriptions. A player who describes a clever approach can match even if the wording does not exactly match the sub-location name.
+- If you judge a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
+- If no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and drop hints toward promising sub-locations that still have undiscovered clues.
+- The clue includes a role field. Calibrate narration weight by role: direct_evidence should feel significant, red_herring intriguing but potentially misleading, supporting_evidence confirmatory.
+- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
+- Keep language and readability appropriate for target age {{target_age}}.
+- Keep response concise (2-4 sentences).
+- Do not leak full solution ground truth.
+- costs_turn: true if this search represents a meaningful attempt (even if unsuccessful). false if the search is completely off the mark or nonsensical — do not punish the player for exploring. When a clue is revealed, costs_turn must be true.
+
+Return JSON:
+{
+  "narration": "...",
+  "revealed_clue_id": "clue-id-here or null",
+  "costs_turn": true or false
 }`,
   accusation_start: `You are the narrator starting the accusation phase of a children's mystery game.
 
@@ -110,7 +153,7 @@ Return JSON:
 }`,
 };
 
-export async function loadPromptTemplate(role: AIRoleName): Promise<string> {
+export async function loadPromptTemplate(role: AIPromptKey): Promise<string> {
   return PROMPT_TEMPLATE_BY_ROLE[role];
 }
 
@@ -152,6 +195,7 @@ export function buildGameMovePrompt(input: {
   has_visited_before: boolean;
   destination_history_json: string;
   destination_characters_json: string;
+  destination_sub_locations_json?: string;
 }): string {
   const revisitInstruction = input.has_visited_before
     ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
@@ -167,6 +211,12 @@ export function buildGameMovePrompt(input: {
     "Use each character's sex field to choose pronouns. Never guess pronouns.",
     "Do not invent extra characters or character details.",
     "Keep the narration concise and coherent.",
+    ...(input.destination_sub_locations_json
+      ? [
+          "When describing the location, prominently mention the searchable areas so the player knows what they can investigate. Weave them naturally into the description.",
+          `Searchable areas at this location: ${input.destination_sub_locations_json}`,
+        ]
+      : []),
     `Destination description: ${input.destination_description}`,
     `Characters at destination: ${input.destination_characters_json}`,
     `Destination history: ${input.destination_history_json}`,

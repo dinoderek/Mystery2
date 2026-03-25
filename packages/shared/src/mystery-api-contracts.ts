@@ -37,6 +37,10 @@ export const GameAskRequestSchema = GameSessionRequestSchema.extend({
   player_input: z.string().min(1),
 });
 
+export const GameSearchRequestSchema = GameSessionRequestSchema.extend({
+  search_query: z.string().min(1).nullable().optional(),
+});
+
 export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({
   player_reasoning: z.string().min(1).optional(),
 });
@@ -188,6 +192,7 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type GameStartRequest = z.infer<typeof GameStartRequestSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
+export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
 export type GameAccuseRequest = z.infer<typeof GameAccuseRequestSchema>;
 export type NarrationPart = z.infer<typeof NarrationPartSchema>;

@@ -127,6 +127,9 @@ serveWithCors(async (req) => {
         })),
     );
 
+    const subLocations = (destLoc.sub_locations ?? []).map((sl) => ({
+      name: sl.name,
+    }));
     const aiPrompt = buildGameMovePrompt({
       target_age: blueprint.metadata.target_age,
       destination_name: destLoc.name,
@@ -134,6 +137,8 @@ serveWithCors(async (req) => {
       has_visited_before: hasVisitedBefore,
       destination_history_json: locationHistoryJson,
       destination_characters_json: destinationCharactersJson,
+      destination_sub_locations_json:
+        subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

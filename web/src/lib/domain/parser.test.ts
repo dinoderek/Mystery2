@@ -42,13 +42,35 @@ describe('parseCommand - aliases and modes', () => {
   });
 
   it('matches search aliases in explore mode', () => {
-    expect(parseCommand('inspect the room', 'explore', context)).toEqual({
-      type: 'valid',
-      command: { type: 'search' },
-    });
     expect(parseCommand('look around', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'search' },
+      command: { type: 'search', query: null },
+    });
+    expect(parseCommand('search', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'search', query: null },
+    });
+  });
+
+  it('captures freeform text after search aliases', () => {
+    expect(parseCommand('search under the bed', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'search', query: 'under the bed' },
+    });
+    expect(parseCommand('inspect the bookshelf', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'search', query: 'the bookshelf' },
+    });
+    expect(parseCommand('look behind the curtains', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'search', query: 'behind the curtains' },
+    });
+  });
+
+  it('preserves original casing in search query', () => {
+    expect(parseCommand('Search Under The Desk', 'explore', context)).toEqual({
+      type: 'valid',
+      command: { type: 'search', query: 'Under The Desk' },
     });
   });
 

@@ -148,6 +148,55 @@ describe('session list resume/view API flows', () => {
     expect(investigatorParts[0].text).toBe(playerReasoning);
   });
 
+  it('preserves targeted search query in the transcript on resume', async () => {
+    const gameId = await startSession(auth);
+
+    const searchRes = await fetch(`${API_URL}/game-search`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({
+        game_id: gameId,
+        search_query: 'check under the sink',
+      }),
+    });
+    expect(searchRes.status).toBe(200);
+
+    const resumed = await loadSessionTranscript(auth, gameId);
+    const searchEvent = resumed.narration_events.find(
+      (e: { event_type: string }) => e.event_type === 'search',
+    );
+    expect(searchEvent).toBeDefined();
+
+    const investigatorParts = searchEvent.narration_parts.filter(
+      (p: { speaker: { kind: string } }) => p.speaker.kind === 'investigator',
+    );
+    expect(investigatorParts.length).toBeGreaterThanOrEqual(1);
+    expect(investigatorParts[0].text).toBe('search check under the sink');
+  });
+
+  it('preserves bare search as "search" in the transcript on resume', async () => {
+    const gameId = await startSession(auth);
+
+    const searchRes = await fetch(`${API_URL}/game-search`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({ game_id: gameId }),
+    });
+    expect(searchRes.status).toBe(200);
+
+    const resumed = await loadSessionTranscript(auth, gameId);
+    const searchEvent = resumed.narration_events.find(
+      (e: { event_type: string }) => e.event_type === 'search',
+    );
+    expect(searchEvent).toBeDefined();
+
+    const investigatorParts = searchEvent.narration_parts.filter(
+      (p: { speaker: { kind: string } }) => p.speaker.kind === 'investigator',
+    );
+    expect(investigatorParts.length).toBeGreaterThanOrEqual(1);
+    expect(investigatorParts[0].text).toBe('search');
+  });
+
   it('opens a completed session in ended mode with persisted history', async () => {
     const gameId = await startSession(auth);
 

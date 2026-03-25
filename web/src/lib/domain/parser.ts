@@ -8,7 +8,7 @@ export interface ParseContext {
 
 export type ActionCommand =
   | { type: 'move'; destination: string }
-  | { type: 'search' }
+  | { type: 'search'; query: string | null }
   | { type: 'talk'; character_name: string }
   | { type: 'ask'; question: string }
   | { type: 'accuse'; reasoning: string | null }
@@ -211,7 +211,14 @@ function parseExploreCommand(text: string, rawInput: string, context: ParseConte
 
   for (const alias of SEARCH_ALIASES) {
     if (isAliasPrefix(text, alias)) {
-      return { type: 'valid', command: { type: 'search' } };
+      const target = extractAliasTarget(text, alias);
+      return {
+        type: 'valid',
+        command: {
+          type: 'search',
+          query: target === '' ? null : rawInput.trim().slice(rawInput.trim().toLowerCase().indexOf(alias) + alias.length).trim() || target,
+        },
+      };
     }
   }
 

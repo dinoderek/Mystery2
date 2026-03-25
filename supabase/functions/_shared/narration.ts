@@ -201,7 +201,8 @@ function extractPlayerInput(row: EventRow): string | null {
     return characterName ? `talk to ${characterName}` : null;
   }
   if (eventType === "search") {
-    return "search";
+    const searchQuery = readString(row.payload.search_query);
+    return searchQuery ? `search ${searchQuery}` : "search";
   }
 
   return null;

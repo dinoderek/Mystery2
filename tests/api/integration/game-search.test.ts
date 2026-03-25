@@ -92,21 +92,130 @@ describe("game-search endpoint", () => {
       .order("sequence", { ascending: true });
     expect(error).toBeNull();
     expect(searchEvents?.[0]?.payload).toMatchObject({
-      revealed_clue_index: 0,
       revealed_clue_id: "clue-wrapper",
       revealed_clue_text: "A wrapper on the sofa.",
       revealed_clue_ids: ["clue-wrapper"],
+      search_query: null,
+      costs_turn: true,
     });
     expect(searchEvents?.[1]?.payload).toMatchObject({
-      revealed_clue_index: 1,
       revealed_clue_id: "clue-half-eaten",
       revealed_clue_text: "A half-eaten cookie.",
       revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
+      search_query: null,
+      costs_turn: true,
     });
     expect(searchEvents?.[2]?.payload).toMatchObject({
-      revealed_clue_index: null,
+      revealed_clue_id: null,
       revealed_clue_text: null,
       revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
+    });
+  });
+
+  it("reveals sub-location clue via targeted search", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+    const { game_id } = await startRes.json();
+
+    // Kitchen starts with sub-location subloc-pantry containing clue-jar
+    const searchRes = await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, search_query: "check the pantry shelf" }),
+    });
+    expect(searchRes.status).toBe(200);
+    const searchData = await searchRes.json();
+    expect(searchData.time_remaining).toBe(9);
+    expect(searchData.narration_parts[0].text).toContain("clue");
+    expect(searchData.mode).toBe("explore");
+
+    const { data: events } = await admin
+      .from("game_events")
+      .select("payload")
+      .eq("session_id", game_id)
+      .eq("event_type", "search")
+      .order("sequence", { ascending: true });
+    expect(events?.[0]?.payload).toMatchObject({
+      search_query: "check the pantry shelf",
+      revealed_clue_id: "clue-jar",
+      costs_turn: true,
+    });
+  });
+
+  it("does not cost a turn for off-mark targeted search with no clue found", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+    const { game_id } = await startRes.json();
+
+    // First do a bare search to reveal the location-level clue
+    await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id }),
+    });
+
+    // Then do targeted search on the pantry to reveal the sub-location clue
+    await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, search_query: "check the pantry" }),
+    });
+
+    // Now targeted search with all clues revealed — mock returns costs_turn: false
+    const thirdRes = await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, search_query: "look under the carpet" }),
+    });
+    expect(thirdRes.status).toBe(200);
+    const thirdData = await thirdRes.json();
+    // Time should not have decreased from the targeted search (mock returns costs_turn: false)
+    // After start (10), bare search (-1=9), targeted pantry (-1=8), free targeted = still 8
+    expect(thirdData.time_remaining).toBe(8);
+
+    const { data: events } = await admin
+      .from("game_events")
+      .select("payload")
+      .eq("session_id", game_id)
+      .eq("event_type", "search")
+      .order("sequence", { ascending: true });
+    const lastEvent = events?.[events.length - 1];
+    expect(lastEvent?.payload).toMatchObject({
+      search_query: "look under the carpet",
+      revealed_clue_id: null,
+      costs_turn: false,
+    });
+  });
+
+  it("records search_query as null for bare searches", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+    const { game_id } = await startRes.json();
+
+    await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id }),
+    });
+
+    const { data: events } = await admin
+      .from("game_events")
+      .select("payload")
+      .eq("session_id", game_id)
+      .eq("event_type", "search")
+      .order("sequence", { ascending: true });
+    expect(events?.[0]?.payload).toMatchObject({
+      search_query: null,
+      costs_turn: true,
     });
   });
 

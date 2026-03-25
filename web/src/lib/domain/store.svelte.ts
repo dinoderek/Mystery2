@@ -730,7 +730,7 @@ export class GameSessionStore {
       case 'search':
         return {
           endpoint: 'game-search',
-          body: { game_id: this.game_id },
+          body: { game_id: this.game_id, search_query: command.query },
         };
       case 'talk':
         return {

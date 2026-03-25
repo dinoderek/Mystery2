@@ -83,6 +83,71 @@ describe('session list resume/view API flows', () => {
     expect(resumedGetData.narration_events).toEqual(preResumeData.narration_events);
   });
 
+  it('preserves player inputs in the transcript on resume', async () => {
+    const gameId = await startSession(auth);
+
+    const talkRes = await fetch(`${API_URL}/game-talk`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({ game_id: gameId, character_id: 'char-alice' }),
+    });
+    expect(talkRes.status).toBe(200);
+
+    const playerQuestion = 'Where were you when the cookies disappeared?';
+    const askRes = await fetch(`${API_URL}/game-ask`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({
+        game_id: gameId,
+        player_input: playerQuestion,
+      }),
+    });
+    expect(askRes.status).toBe(200);
+
+    const resumed = await loadSessionTranscript(auth, gameId);
+    const askEvent = resumed.narration_events.find(
+      (e: { event_type: string }) => e.event_type === 'ask',
+    );
+    expect(askEvent).toBeDefined();
+
+    // The ask event must include the player's typed input as an investigator
+    // narration part so that the transcript shows the player's question on resume.
+    const investigatorParts = askEvent.narration_parts.filter(
+      (p: { speaker: { kind: string } }) => p.speaker.kind === 'investigator',
+    );
+    expect(investigatorParts.length).toBeGreaterThanOrEqual(1);
+    expect(investigatorParts[0].text).toBe(playerQuestion);
+  });
+
+  it('preserves player reasoning in the transcript on resume (accuse)', async () => {
+    const gameId = await startSession(auth);
+
+    const playerReasoning = 'I accuse Alice based on motive and opportunity.';
+    const accuseRes = await fetch(`${API_URL}/game-accuse`, {
+      method: 'POST',
+      headers: auth.headers,
+      body: JSON.stringify({
+        game_id: gameId,
+        player_reasoning: playerReasoning,
+      }),
+    });
+    expect(accuseRes.status).toBe(200);
+
+    const resumed = await loadSessionTranscript(auth, gameId);
+    // Find the accuse event that carries player reasoning (accuse_round or accuse_resolved)
+    const accuseEvent = resumed.narration_events.find(
+      (e: { event_type: string }) =>
+        e.event_type === 'accuse_round' || e.event_type === 'accuse_resolved',
+    );
+    expect(accuseEvent).toBeDefined();
+
+    const investigatorParts = accuseEvent.narration_parts.filter(
+      (p: { speaker: { kind: string } }) => p.speaker.kind === 'investigator',
+    );
+    expect(investigatorParts.length).toBeGreaterThanOrEqual(1);
+    expect(investigatorParts[0].text).toBe(playerReasoning);
+  });
+
   it('opens a completed session in ended mode with persisted history', async () => {
     const gameId = await startSession(auth);
 
@@ -127,7 +192,8 @@ describe('session list resume/view API flows', () => {
 
     expect(getData.state.mode).toBe('ended');
     expect(getData.narration_events.length).toBeGreaterThan(1);
-    expect(getData.narration_events.at(-1)?.narration_parts[0].speaker.kind).toBe('narrator');
+    const lastEventParts = getData.narration_events.at(-1)?.narration_parts ?? [];
+    expect(lastEventParts.some((p: { speaker: { kind: string } }) => p.speaker.kind === 'narrator')).toBe(true);
     expect(
       getData.narration_events.map((entry: { event_type: string }) => entry.event_type),
     ).toEqual(['start', 'accuse_round', 'accuse_resolved']);

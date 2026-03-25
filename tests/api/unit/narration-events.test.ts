@@ -107,7 +107,7 @@ describe("narration event helpers", () => {
     expect(event.narration_parts[0].text).toBe("Alice had crumbs on her coat.");
   });
 
-  it("does not prepend player input for non-ask/accuse event types", () => {
+  it("synthesizes 'move to <location>' as investigator input for move events", () => {
     const event = readNarrationEvent({
       sequence: 2,
       event_type: "move",
@@ -117,6 +117,67 @@ describe("narration event helpers", () => {
       ],
       payload: {
         destination: "loc_kitchen",
+        location_name: "Kitchen",
+        speaker: NARRATOR_SPEAKER,
+      },
+    });
+
+    expect(event.narration_parts.length).toBe(2);
+    expect(event.narration_parts[0].speaker).toEqual(INVESTIGATOR_SPEAKER);
+    expect(event.narration_parts[0].text).toBe("move to Kitchen");
+    expect(event.narration_parts[1].speaker).toEqual(NARRATOR_SPEAKER);
+  });
+
+  it("synthesizes 'talk to <character>' as investigator input for talk events", () => {
+    const event = readNarrationEvent({
+      sequence: 3,
+      event_type: "talk",
+      narration: "Alice greets you warmly.",
+      narration_parts: [
+        createNarrationPart("Alice greets you warmly.", NARRATOR_SPEAKER),
+      ],
+      payload: {
+        character_name: "Alice",
+        character_id: "char-alice",
+        speaker: NARRATOR_SPEAKER,
+      },
+    });
+
+    expect(event.narration_parts.length).toBe(2);
+    expect(event.narration_parts[0].speaker).toEqual(INVESTIGATOR_SPEAKER);
+    expect(event.narration_parts[0].text).toBe("talk to Alice");
+    expect(event.narration_parts[1].speaker).toEqual(NARRATOR_SPEAKER);
+  });
+
+  it("synthesizes 'search' as investigator input for search events", () => {
+    const event = readNarrationEvent({
+      sequence: 4,
+      event_type: "search",
+      narration: "You search the room carefully.",
+      narration_parts: [
+        createNarrationPart("You search the room carefully.", NARRATOR_SPEAKER),
+      ],
+      payload: {
+        location_name: "Kitchen",
+        speaker: NARRATOR_SPEAKER,
+      },
+    });
+
+    expect(event.narration_parts.length).toBe(2);
+    expect(event.narration_parts[0].speaker).toEqual(INVESTIGATOR_SPEAKER);
+    expect(event.narration_parts[0].text).toBe("search");
+    expect(event.narration_parts[1].speaker).toEqual(NARRATOR_SPEAKER);
+  });
+
+  it("does not prepend player input for event types without player actions", () => {
+    const event = readNarrationEvent({
+      sequence: 1,
+      event_type: "start",
+      narration: "The mystery begins.",
+      narration_parts: [
+        createNarrationPart("The mystery begins.", NARRATOR_SPEAKER),
+      ],
+      payload: {
         speaker: NARRATOR_SPEAKER,
       },
     });

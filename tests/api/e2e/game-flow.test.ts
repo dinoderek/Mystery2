@@ -214,9 +214,11 @@ describe("Full E2E API Investigation Flow", () => {
     const narrationEvents = await loadNarrationEvents(gameId, headers);
     const tail = narrationEvents.slice(-2);
     expect(tail.map((event) => event.event_type)).toEqual(["move", "forced_endgame"]);
-    expect(tail.map((event) => event.narration_parts[0].text)).toEqual(
-      moveData.narration_parts.map((part: { text: string }) => part.text),
-    );
+
+    // The move event now has a synthesized investigator command prepended
+    const moveEvent = tail[0];
+    expect(moveEvent.narration_parts[0].speaker.kind).toBe("investigator");
+    expect(moveEvent.narration_parts[1].text).toBe(moveData.narration_parts[0].text);
   });
 
   it("forces endgame when the final search consumes the last turn", async () => {
@@ -246,9 +248,11 @@ describe("Full E2E API Investigation Flow", () => {
     const narrationEvents = await loadNarrationEvents(gameId, headers);
     const tail = narrationEvents.slice(-2);
     expect(tail.map((event) => event.event_type)).toEqual(["search", "forced_endgame"]);
-    expect(tail.map((event) => event.narration_parts[0].text)).toEqual(
-      searchData.narration_parts.map((part: { text: string }) => part.text),
-    );
+
+    // The search event now has a synthesized investigator command prepended
+    const searchEvent = tail[0];
+    expect(searchEvent.narration_parts[0].speaker.kind).toBe("investigator");
+    expect(searchEvent.narration_parts[1].text).toBe(searchData.narration_parts[0].text);
   });
 
   it("forces endgame when the final question consumes the last turn", async () => {

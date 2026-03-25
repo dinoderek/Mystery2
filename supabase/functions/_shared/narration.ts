@@ -192,6 +192,17 @@ function extractPlayerInput(row: EventRow): string | null {
   if (eventType === "accuse_round" || eventType === "accuse_resolved") {
     return readString(row.payload.player_reasoning);
   }
+  if (eventType === "move") {
+    const locationName = readString(row.payload.location_name);
+    return locationName ? `move to ${locationName}` : null;
+  }
+  if (eventType === "talk") {
+    const characterName = readString(row.payload.character_name);
+    return characterName ? `talk to ${characterName}` : null;
+  }
+  if (eventType === "search") {
+    return "search";
+  }
 
   return null;
 }

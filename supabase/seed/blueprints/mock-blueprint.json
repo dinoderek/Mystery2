@@ -104,6 +104,11 @@
       }
     ]
   },
+  "cover_image": {
+    "description": "A mysterious kitchen scene viewed from the doorway: an empty cookie jar sits on a flour-dusted counter, crumbs trailing across the tiles toward the hallway. A nervous-looking girl in a floury apron stands near the counter while a boy with glasses peers in curiously from the living room.",
+    "location_ids": ["loc-kitchen"],
+    "character_ids": ["char-alice", "char-bob"]
+  },
   "ground_truth": {
     "what_happened": "Alice ate the cookies because she was hungry.",
     "why_it_happened": "She was hungry.",

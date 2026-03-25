@@ -64,6 +64,12 @@ const BlueprintV2CharacterSchema = z.object({
   ),
 });
 
+const BlueprintV2CoverImageSchema = z.object({
+  description: z.string().trim().min(1),
+  location_ids: z.array(BlueprintV2IdSchema),
+  character_ids: z.array(BlueprintV2IdSchema),
+});
+
 export const BlueprintV2Schema = z.object({
   schema_version: z.literal("v2"),
   id: z.string().uuid(),
@@ -84,6 +90,7 @@ export const BlueprintV2Schema = z.object({
     locations: z.array(BlueprintV2LocationSchema),
     characters: z.array(BlueprintV2CharacterSchema),
   }),
+  cover_image: BlueprintV2CoverImageSchema,
   ground_truth: z.object({
     what_happened: z.string().trim().min(1),
     why_it_happened: z.string().trim().min(1),

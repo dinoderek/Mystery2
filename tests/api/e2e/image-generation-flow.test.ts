@@ -49,6 +49,11 @@ const blueprintFixture = {
       },
     ],
   },
+  cover_image: {
+    description: "A mysterious kitchen with cookie crumbs and a shadowy figure.",
+    location_ids: ["loc_kitchen"],
+    character_ids: ["char_alice"],
+  },
   ground_truth: {
     what_happened: "Alice ate the cookies.",
     why_it_happened: "Hungry.",
@@ -124,7 +129,6 @@ describe("image generation flow", () => {
           outputDir: path.join(tmpDir, "images"),
           model: "openai/gpt-image-1",
           scope: "all",
-          overwrite: true,
           dryRun: false,
           characterKeys: [],
           locationKeys: [],
@@ -231,21 +235,32 @@ describe("image generation flow", () => {
     expect(result.results.length).toBe(3);
     expect(result.results.every((r: { status: string }) => r.status === "generated")).toBe(true);
 
-    // The location call (last) should have multi-part content with image references.
-    const locationCall = apiCalls[apiCalls.length - 1];
-    const content = (locationCall.body.messages as Array<{ content: unknown }>)[0].content;
-    expect(Array.isArray(content)).toBe(true);
-    const parts = content as Array<{ type: string }>;
-    const imageParts = parts.filter((p) => p.type === "image_url");
-    const textParts = parts.filter((p) => p.type === "text");
-    expect(imageParts.length).toBe(1); // 1 character at this location
-    expect(textParts.length).toBe(1);
-    expect((textParts[0] as { text: string }).text).toContain("Reference portrait images");
+    // Phase ordering: character (phase 1), location (phase 2), blueprint cover (phase 3).
+    // Phase 1 (character) should use plain string content — no references.
+    const characterCall = apiCalls[0];
+    const charContent = (characterCall.body.messages as Array<{ content: unknown }>)[0].content;
+    expect(typeof charContent).toBe("string");
 
-    // Earlier calls (blueprint + character) should use plain string content.
-    for (const call of apiCalls.slice(0, 2)) {
-      const earlyContent = (call.body.messages as Array<{ content: unknown }>)[0].content;
-      expect(typeof earlyContent).toBe("string");
-    }
+    // Phase 2 (location) should have multi-part content with portrait references.
+    const locationCall = apiCalls[1];
+    const locContent = (locationCall.body.messages as Array<{ content: unknown }>)[0].content;
+    expect(Array.isArray(locContent)).toBe(true);
+    const locParts = locContent as Array<{ type: string }>;
+    const locImageParts = locParts.filter((p) => p.type === "image_url");
+    expect(locImageParts.length).toBe(1); // 1 character at this location
+    const locTextParts = locParts.filter((p) => p.type === "text");
+    expect((locTextParts[0] as { text: string }).text).toContain("Image 1: Portrait of Alice");
+
+    // Phase 3 (cover) should have multi-part content with portrait + location references.
+    const coverCall = apiCalls[2];
+    const coverContent = (coverCall.body.messages as Array<{ content: unknown }>)[0].content;
+    expect(Array.isArray(coverContent)).toBe(true);
+    const coverParts = coverContent as Array<{ type: string }>;
+    const coverImageParts = coverParts.filter((p) => p.type === "image_url");
+    // 1 portrait (char_alice) + 1 location scene (loc_kitchen)
+    expect(coverImageParts.length).toBe(2);
+    const coverTextParts = coverParts.filter((p) => p.type === "text");
+    expect((coverTextParts[0] as { text: string }).text).toContain("Image 1: Portrait of Alice");
+    expect((coverTextParts[0] as { text: string }).text).toContain("Image 2: Location scene");
   });
 });

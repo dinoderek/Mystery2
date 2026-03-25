@@ -1,6 +1,7 @@
 import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
+  injectWorktreeEnv,
   npmBin,
   loadEnvFile,
   parseScriptOptions,
@@ -21,11 +22,11 @@ const options = parseScriptOptions(process.argv.slice(3));
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
   const modeVars = await loadEnvFile(modeEnvPath, true);
-  const env = {
+  const env = injectWorktreeEnv({
     ...baseVars,
     ...modeVars,
     ...process.env,
-  };
+  });
 
   if (!env.AI_PROVIDER) {
     throw new Error("Missing AI_PROVIDER in env configuration.");

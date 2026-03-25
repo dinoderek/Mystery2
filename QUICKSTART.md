@@ -162,6 +162,9 @@ Find the current passwords in `supabase/seed/auth-users.local.json`, or in `$MYS
 
 ## Supabase Operations
 
+For in-depth details on local infrastructure, worktree isolation, and garbage
+collection see [`docs/local-infrastructure.md`](docs/local-infrastructure.md).
+
 ### Check status
 
 ```bash
@@ -181,6 +184,19 @@ Use a restart when:
 - you changed Edge Function or other Deno-backed code and need to guarantee the shared local runtime picks it up
 
 This repo is configured with `edge_runtime.policy = "per_worker"`, but because multiple agents can share the same local Supabase project on one machine, do not rely on hot reload. In practice, treat `npm run supabase:restart` as the safe path for Deno and Edge Function changes.
+
+### Worktree isolation
+
+When running inside a git worktree (e.g. Claude Code parallel tasks), each
+worktree automatically gets its own Supabase stack with unique ports and
+project_id. No manual configuration needed — `ensureSupabaseRunning()` handles
+config patching and orphan cleanup transparently.
+
+Clean up stale worktree stacks manually:
+
+```bash
+npm run supabase:gc
+```
 
 ### Reset the local database
 

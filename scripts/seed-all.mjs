@@ -1,6 +1,7 @@
 import { getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
+  injectWorktreeEnv,
   loadEnvFile,
   npmBin,
   parseScriptOptions,
@@ -13,7 +14,7 @@ const options = parseScriptOptions(process.argv.slice(2));
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
-  const env = { ...baseVars, ...process.env };
+  const env = injectWorktreeEnv({ ...baseVars, ...process.env });
 
   await ensureSupabaseRunning(env, { restart: options.restart });
 

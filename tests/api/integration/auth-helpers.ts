@@ -3,8 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export const API_URL = 'http://127.0.0.1:54331/functions/v1';
-export const REST_URL = 'http://127.0.0.1:54331/rest/v1';
+const SUPABASE_BASE = process.env.SUPABASE_URL || process.env.API_URL || 'http://127.0.0.1:54331';
+export const API_URL = `${SUPABASE_BASE}/functions/v1`;
+export const REST_URL = `${SUPABASE_BASE}/rest/v1`;
 export const MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export type ApiAuthContext = Awaited<ReturnType<typeof setupTestAuth>>;

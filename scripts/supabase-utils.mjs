@@ -1,5 +1,10 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
+import {
+  patchConfigToml,
+  resolveWorktreePorts,
+} from "./worktree-ports.mjs";
+import { gcWorktreeSupabase } from "./gc-worktree-supabase.mjs";
 
 export const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 export const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -68,6 +73,27 @@ export function isSupabaseRunning(env) {
 
 export async function ensureSupabaseRunning(env, options = {}) {
   const { restart = false } = options;
+
+  // --- Worktree isolation: patch config and garbage-collect orphans ----------
+  const resolved = resolveWorktreePorts();
+  if (resolved.isWorktree) {
+    const patched = patchConfigToml();
+    if (patched) {
+      console.log(
+        `Worktree detected (${resolved.worktreeName}): patched config.toml → ` +
+        `project_id=${resolved.projectId}, API port=${resolved.ports.api}`,
+      );
+    }
+  }
+
+  // Opportunistic GC: remove Supabase stacks from deleted worktrees.
+  try {
+    gcWorktreeSupabase(process.cwd(), { verbose: false });
+  } catch {
+    // Non-fatal — GC is best-effort.
+  }
+  // --------------------------------------------------------------------------
+
   const running = isSupabaseRunning(env);
 
   if (restart) {
@@ -83,6 +109,31 @@ export async function ensureSupabaseRunning(env, options = {}) {
   }
   console.log("Starting supabase...");
   runCommand(npxBin, ["supabase", "start"], env);
+}
+
+/**
+ * Return the Supabase API URL for the current checkout (worktree-aware).
+ * Scripts should use this instead of hardcoding port 54331.
+ */
+export function getSupabaseApiUrl() {
+  const { ports } = resolveWorktreePorts();
+  return `http://127.0.0.1:${ports.api}`;
+}
+
+/**
+ * Inject worktree-derived Supabase URL into an env object so that child
+ * processes (seed scripts, test runners, dev server) use the correct port.
+ * Only sets API_URL / SUPABASE_URL / VITE_SUPABASE_URL when not already
+ * present in the env.
+ */
+export function injectWorktreeEnv(env) {
+  const apiUrl = getSupabaseApiUrl();
+  return {
+    ...env,
+    API_URL: env.API_URL || apiUrl,
+    SUPABASE_URL: env.SUPABASE_URL || apiUrl,
+    VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || apiUrl,
+  };
 }
 
 function parseSeedStorageArg(value) {

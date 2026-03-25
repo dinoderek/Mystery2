@@ -31,7 +31,7 @@
 <div
   class="border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm flex gap-2"
 >
-  <span class="text-t-muted/70">VISIBLE:</span>
+  <span class="text-t-muted/70">CHARACTERS:</span>
   <div>
     {#if visibleCharacters.length > 0}
       {#each visibleCharacters as char, i}

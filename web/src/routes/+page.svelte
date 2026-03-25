@@ -73,15 +73,6 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <main class="min-h-screen bg-t-bg text-t-primary p-8 font-mono">
-  <div class="mx-auto mb-4 flex max-w-2xl justify-end">
-    <button
-      type="button"
-      class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
-      onclick={() => authStore.signOut()}
-    >
-      LOGOUT
-    </button>
-  </div>
   {#if isStartingGame}
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center">
       <div class="text-center space-y-4">
@@ -91,7 +82,16 @@
     </div>
   {:else}
     <div class="max-w-2xl mx-auto border border-t-muted/30 p-8 rounded">
-      <h1 class="text-3xl font-bold mb-2">MYSTERY GAME TERMINAL</h1>
+      <div class="flex items-center justify-between mb-2">
+        <h1 class="text-3xl font-bold">MYSTERY GAME TERMINAL</h1>
+        <button
+          type="button"
+          class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+          onclick={() => authStore.signOut()}
+        >
+          LOGOUT
+        </button>
+      </div>
 
       {#if view === 'menu'}
         <p class="text-t-muted/70 mb-8 border-b border-t-muted/30 pb-4">Select where to continue</p>

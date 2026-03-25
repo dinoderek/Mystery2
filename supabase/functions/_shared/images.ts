@@ -42,3 +42,16 @@ export function buildImageStorageKey(
 ): string {
   return `${blueprintId}/${imageFilename}`;
 }
+
+/**
+ * Strip the origin from a signed storage URL and return only the path + query.
+ *
+ * Inside Supabase Edge Functions both `SUPABASE_URL` and `req.url` resolve to
+ * internal Docker hostnames that are unreachable from the browser. By returning
+ * a relative path the client can prepend its own known Supabase base URL, which
+ * works in both local dev and production.
+ */
+export function toRelativeSignedUrl(signedUrl: string): string {
+  const parsed = new URL(signedUrl);
+  return `${parsed.pathname}${parsed.search}`;
+}

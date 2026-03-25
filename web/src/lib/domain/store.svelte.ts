@@ -549,7 +549,7 @@ export class GameSessionStore {
       locations: Array.isArray(source.locations)
         ? source.locations
             .filter((location): location is Record<string, unknown> => isRecord(location))
-            .map((location) => ({ name: readString(location.name) }))
+            .map((location) => ({ id: readString(location.id), name: readString(location.name) }))
             .filter((location) => location.name.length > 0)
         : [],
       characters: Array.isArray(source.characters)
@@ -558,7 +558,7 @@ export class GameSessionStore {
             .map((character) => ({
               first_name: readString(character.first_name),
               last_name: readString(character.last_name),
-              location_name: readString(character.location_name),
+              location_name: readString(character.location_name) || readString(character.location_id),
               sex: readCharacterSex(character.sex),
             }))
             .filter((character) => character.first_name.length > 0)

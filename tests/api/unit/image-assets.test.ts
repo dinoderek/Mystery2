@@ -7,6 +7,7 @@ import {
   isCanonicalImageId,
   isExpiryWindowValid,
   normalizeSignedUrlExpiry,
+  toRelativeSignedUrl,
 } from "../../../supabase/functions/_shared/images.ts";
 import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
 
@@ -50,6 +51,22 @@ describe("image helper utilities", () => {
         `"${imageId}" (from name="${name}", type="${type}", key="${key}") rejected by isCanonicalImageId`,
       ).toBe(true);
     }
+  });
+
+  it("strips the origin from a signed URL and returns a relative path", () => {
+    const internal =
+      "http://kong:8000/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz";
+    expect(toRelativeSignedUrl(internal)).toBe(
+      "/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz",
+    );
+  });
+
+  it("strips a production origin the same way", () => {
+    const prod =
+      "https://my-project.supabase.co/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz";
+    expect(toRelativeSignedUrl(prod)).toBe(
+      "/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz",
+    );
   });
 
   it("normalizes expiry timestamps and validates window bounds", () => {

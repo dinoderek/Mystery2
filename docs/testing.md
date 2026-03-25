@@ -237,7 +237,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 `npm run test:integration`:
 
 1. Ensures Supabase is running (no restart by default)
-2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
+2. Seeds storage blueprints (upserts, safe to re-run)
 3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
 4. Uses Vitest to run the integration test suite (handling its own data isolation)
 
@@ -246,7 +246,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 `npm run test:e2e`:
 
 1. Ensures Supabase is running (no restart by default)
-2. Seeds storage blueprints only when the bucket is empty (`--if-missing`)
+2. Seeds storage blueprints (upserts, safe to re-run)
 3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
 4. Runs Vitest against the running Edge Functions to validate full player journeys
 

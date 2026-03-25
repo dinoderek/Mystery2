@@ -29,7 +29,7 @@ export interface HistoryEntry {
 }
 
 export interface GameState {
-  locations: { name: string }[];
+  locations: { id: string; name: string }[];
   characters: {
     first_name: string;
     last_name: string;

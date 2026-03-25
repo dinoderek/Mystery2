@@ -30,10 +30,8 @@ try {
 
   console.log(`Running ${suite} tests in "mock" AI mode...`);
   await ensureSupabaseRunning(env, { restart: options.restart });
-  if (options.seedStorage === "always") {
+  if (options.seedStorage === "always" || options.seedStorage === "if-missing") {
     runCommand(npmBin, ["run", "seed:storage"], env);
-  } else if (options.seedStorage === "if-missing") {
-    runCommand(npmBin, ["run", "seed:storage", "--", "--if-missing"], env);
   }
   if (options.seedAI) {
     runCommand(npmBin, ["run", "seed:ai", "--", "--only", "mock"], env);

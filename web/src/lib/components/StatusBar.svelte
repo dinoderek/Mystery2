@@ -1,6 +1,13 @@
 <script lang="ts">
   import { gameSessionStore } from "$lib/domain/store.svelte";
 
+  const currentLocationName = $derived.by(() => {
+    const state = gameSessionStore.state;
+    if (!state) return "UNKNOWN";
+    const loc = state.locations.find((l) => l.id === state.location);
+    return loc?.name || state.location;
+  });
+
   const visibleCharacters = $derived.by(() => {
     const state = gameSessionStore.state;
     if (!state) {
@@ -17,7 +24,7 @@
 <div
   class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm"
 >
-  <span>LOCATION: {gameSessionStore.state?.location || "UNKNOWN"}</span>
+  <span>LOCATION: {currentLocationName}</span>
   <span class="text-t-muted/50">type 'help' to see commands</span>
   <span>TIME: {gameSessionStore.state?.time_remaining || 0}</span>
 </div>

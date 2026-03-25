@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseUrl } from './supabase';
 import { isImageLinkExpired } from '$lib/domain/store.retry';
 
 export type ImagePurpose = 'blueprint_cover' | 'location_scene' | 'character_portrait';
@@ -84,14 +84,20 @@ export async function resolveImageLink(
     return { url: null, expiresAt: null, placeholder: true };
   }
 
+  // The edge function returns a relative path to avoid internal Docker
+  // hostnames leaking into the URL. Prepend the public Supabase base URL.
+  const fullUrl = parsed.signed_url.startsWith('/')
+    ? `${supabaseUrl}${parsed.signed_url}`
+    : parsed.signed_url;
+
   cache.set(key, {
     imageId: parsed.image_id,
-    signedUrl: parsed.signed_url,
+    signedUrl: fullUrl,
     expiresAt: parsed.expires_at,
   });
 
   return {
-    url: parsed.signed_url,
+    url: fullUrl,
     expiresAt: parsed.expires_at,
     placeholder: false,
   };

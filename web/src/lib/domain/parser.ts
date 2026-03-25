@@ -1,7 +1,7 @@
 export type GameMode = 'explore' | 'talk' | 'accuse' | 'ended';
 
 export interface ParseContext {
-  locations: Array<{ name: string }>;
+  locations: Array<{ id: string; name: string }>;
   characters: Array<{ first_name: string; last_name: string; location_name: string }>;
   currentLocation: string;
 }
@@ -113,11 +113,29 @@ function sceneCharacterSuggestions(context: ParseContext): string[] {
 
 function resolveLocation(target: string, context: ParseContext): string | null {
   const normalizedTarget = normalizeTargetForMatch(target);
+
+  // Exact ID match
   for (const location of context.locations) {
-    if (normalizeTargetForMatch(location.name) === normalizedTarget) {
-      return location.name;
+    if (location.id.toLowerCase() === normalizedTarget) {
+      return location.id;
     }
   }
+
+  // Full name match
+  for (const location of context.locations) {
+    if (normalizeTargetForMatch(location.name) === normalizedTarget) {
+      return location.id;
+    }
+  }
+
+  // Partial match: any single word of the location name
+  for (const location of context.locations) {
+    const words = normalizeTargetForMatch(location.name).split(/\s+/);
+    if (words.some((word) => word === normalizedTarget)) {
+      return location.id;
+    }
+  }
+
   return null;
 }
 
@@ -138,7 +156,10 @@ function resolveSceneCharacter(target: string, context: ParseContext): string | 
 function locationItems(context: ParseContext): ListItem[] {
   return context.locations.map((location) => {
     const characters = context.characters
-      .filter((character) => normalizeInput(character.location_name) === normalizeInput(location.name))
+      .filter((character) => {
+        const locName = normalizeInput(character.location_name);
+        return locName === normalizeInput(location.id) || locName === normalizeInput(location.name);
+      })
       .map(displayNameOf);
 
     return {

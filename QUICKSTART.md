@@ -228,7 +228,6 @@ Blueprint storage:
 
 ```bash
 npm run seed:storage
-npm run seed:storage -- --if-missing
 ```
 
 Auth users:

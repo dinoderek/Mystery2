@@ -11,6 +11,7 @@ import {
   ensureCanonicalImageId,
   IMAGE_LINK_TTL_SECONDS,
   normalizeSignedUrlExpiry,
+  toRelativeSignedUrl,
 } from "../_shared/images.ts";
 
 const UUID_PATTERN =
@@ -94,7 +95,7 @@ serveWithCors(async (req) => {
       return new Response(
         JSON.stringify({
           image_id: imageId,
-          signed_url: data.signedUrl,
+          signed_url: toRelativeSignedUrl(data.signedUrl),
           expires_at: normalizeSignedUrlExpiry(),
         }),
         { headers: { "Content-Type": "application/json" } },

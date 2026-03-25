@@ -1,6 +1,7 @@
 import { getBaseEnvPath } from "./local-config.mjs";
 import {
   ensureSupabaseRunning,
+  injectWorktreeEnv,
   npmBin,
   loadEnvFile,
   parseScriptOptions,
@@ -13,10 +14,10 @@ const options = parseScriptOptions(process.argv.slice(2));
 
 try {
   const baseVars = await loadEnvFile(baseEnvPath, false);
-  const env = {
+  const env = injectWorktreeEnv({
     ...baseVars,
     ...process.env,
-  };
+  });
 
   console.log('Starting local stack with AI profile "default" (mock config)...');
   await ensureSupabaseRunning(env, { restart: options.restart });

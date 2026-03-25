@@ -12,6 +12,7 @@ import {
   getBlueprintImagesDir,
   getBlueprintsDir,
 } from "./local-config.mjs";
+import { resolveApiUrl } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 const args = process.argv.slice(2);
@@ -324,7 +325,7 @@ async function syncBlueprintImages(client, blueprints, options) {
 await loadDotEnvLocal();
 
 const { seedMode, seedImages, imageDir, allowMissingImages } = parseOptions();
-const supabaseUrl = process.env.API_URL || "http://127.0.0.1:54331";
+const supabaseUrl = process.env.API_URL || resolveApiUrl();
 const supabaseKey = process.env.SERVICE_ROLE_KEY;
 
 if (!supabaseKey) {

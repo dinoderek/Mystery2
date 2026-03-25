@@ -102,12 +102,10 @@
 }
 
 .terminal-message {
-  border-left: 2px solid color-mix(in srgb, var(--t-muted) 35%, transparent);
   padding-left: 0.5rem;
 }
 
 .story-image-panel {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t-muted) 12%, transparent);
 }
 
 .story-image-asset {

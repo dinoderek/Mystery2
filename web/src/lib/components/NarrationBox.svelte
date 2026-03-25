@@ -154,18 +154,15 @@
           <div class="narration-image-group">
             <div class="narration-image-float">
               {#if group.imageLoading}
-                <div class="story-image-placeholder flex items-center justify-center border border-dashed border-t-muted/40 text-t-muted/70">
+                <div class="story-image-placeholder flex items-center justify-center text-sm text-t-muted/70 animate-pulse my-4">
                   Loading image...
                 </div>
               {:else if group.imageUrl}
-                <div class="story-image-panel border border-t-muted/30 bg-t-bg/60 p-2">
-                  <header class="mb-1 text-[11px] uppercase tracking-wide text-t-muted/80">
-                    {group.imageTitle}
-                  </header>
+                <div class="story-image-panel">
                   <img
                     src={group.imageUrl}
                     alt={group.imageTitle}
-                    class="story-image-asset block w-full border border-t-muted/30 object-cover"
+                    class="story-image-asset block w-full object-cover"
                     loading="lazy"
                   />
                 </div>

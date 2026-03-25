@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeInput, parseCommand, type ParseContext } from './parser';
 
 const context: ParseContext = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }, { name: 'Barn' }],
+  locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }, { id: 'barn', name: 'Barn' }],
   characters: [
     { first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' },
     { first_name: 'Mayor', last_name: 'Fox', location_name: 'Kitchen' },
@@ -25,12 +25,12 @@ describe('parseCommand - aliases and modes', () => {
   it('matches move aliases in explore mode', () => {
     expect(parseCommand('travel to kitchen', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'move', destination: 'Kitchen' },
+      command: { type: 'move', destination: 'kitchen' },
     });
 
     expect(parseCommand('head towards barn', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'move', destination: 'Barn' },
+      command: { type: 'move', destination: 'barn' },
     });
   });
 
@@ -242,5 +242,19 @@ describe('parseCommand - theme commands', () => {
   it('does not parse bare "theme" without a name as theme-set', () => {
     const result = parseCommand('theme', 'explore', context);
     expect(result.type).not.toBe('theme-set');
+  });
+});
+
+describe('parseCommand - zoom command', () => {
+  it('parses "zoom" as zoom in all modes', () => {
+    expect(parseCommand('zoom', 'explore', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'talk', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'accuse', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'ended', context)).toEqual({ type: 'zoom' });
+  });
+
+  it('normalizes casing for zoom command', () => {
+    expect(parseCommand('Zoom', 'explore', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('ZOOM', 'talk', context)).toEqual({ type: 'zoom' });
   });
 });

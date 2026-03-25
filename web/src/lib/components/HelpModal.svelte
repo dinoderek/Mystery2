@@ -86,6 +86,7 @@
         <section>
           <h3 class="text-t-primary font-bold mb-1">GENERAL</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
+            <li><span class="text-t-bright">zoom</span> - View current scene image fullscreen with narration</li>
             <li><span class="text-t-bright">help</span> - Open this detailed command reference</li>
             <li><span class="text-t-bright">quit / exit</span> - End the current session</li>
           </ul>

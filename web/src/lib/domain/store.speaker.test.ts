@@ -24,7 +24,7 @@ function createStore() {
   const store = new GameSessionStore();
   store.game_id = 'game-1';
   store.state = {
-    locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
+    locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }],
     characters: [{
       first_name: 'Alice',
       last_name: 'Smith',

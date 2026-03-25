@@ -7,6 +7,7 @@
   import NarrationBox from '$lib/components/NarrationBox.svelte';
   import InputBox from '$lib/components/InputBox.svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
+  import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
 
   onMount(() => {
     if (gameSessionStore.status !== 'active' || !gameSessionStore.game_id) {
@@ -37,4 +38,5 @@
   <StatusBar />
   <InputBox />
   <HelpModal />
+  <SceneZoomModal />
 </main>

@@ -83,6 +83,26 @@ export const BlueprintV2CharacterActualActionSchema = z.object({
     ),
 });
 
+export const BlueprintV2CoverImageSchema = z.object({
+  description: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "Creative visual description for the cover illustration, like a movie poster or book cover.",
+    ),
+  location_ids: z
+    .array(BlueprintV2IdSchema)
+    .describe(
+      "Location ids featured on the cover. Empty if the cover is abstract or doesn't depict a specific location.",
+    ),
+  character_ids: z
+    .array(BlueprintV2IdSchema)
+    .describe(
+      "Character ids to depict prominently on the cover.",
+    ),
+});
+
 export const BlueprintV2LocationSchema = z.object({
   id: BlueprintV2IdSchema.describe(
     "Stable identifier for this location. Referenced by starting_location_id and character location_id.",
@@ -246,6 +266,7 @@ export const BlueprintV2Schema = z
       locations: z.array(BlueprintV2LocationSchema),
       characters: z.array(BlueprintV2CharacterSchema),
     }),
+    cover_image: BlueprintV2CoverImageSchema,
     ground_truth: z.object({
       what_happened: z
         .string()
@@ -472,6 +493,26 @@ export const BlueprintV2Schema = z
         }
       }
     }
+
+    for (const [locRefIndex, locId] of value.cover_image.location_ids.entries()) {
+      if (!locationIds.has(locId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "location_ids", locRefIndex],
+          message: `cover_image.location_ids references unknown location id "${locId}".`,
+        });
+      }
+    }
+
+    for (const [charRefIndex, charId] of value.cover_image.character_ids.entries()) {
+      if (!characterIds.has(charId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cover_image", "character_ids", charRefIndex],
+          message: `cover_image.character_ids references unknown character id "${charId}".`,
+        });
+      }
+    }
   });
 
 export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;
@@ -480,3 +521,4 @@ export type BlueprintV2Location = z.infer<typeof BlueprintV2LocationSchema>;
 export type BlueprintV2ReasoningPath = z.infer<
   typeof BlueprintV2ReasoningPathSchema
 >;
+export type BlueprintV2CoverImage = z.infer<typeof BlueprintV2CoverImageSchema>;

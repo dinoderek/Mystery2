@@ -104,6 +104,11 @@
       }
     ]
   },
+  "cover_image": {
+    "description": "A cozy kitchen scene with a suspicious cookie jar and crumbs leading across the floor.",
+    "location_ids": ["loc-kitchen"],
+    "character_ids": ["char-alice"]
+  },
   "ground_truth": {
     "what_happened": "Alice ate the cookies because she was hungry.",
     "why_it_happened": "She was hungry.",

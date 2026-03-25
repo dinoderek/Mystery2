@@ -46,7 +46,8 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
       expect(typeof game_id).toBe("string");
 
       const searchData = await callLiveEndpointWithRetry<{
-        narration: string;
+        narration_parts: Array<{ text: string }>;
+        mode: string;
       }>({
         apiUrl: API_URL,
         endpoint: "game-search",
@@ -54,11 +55,12 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
         stepLabel: "game-search",
         body: { game_id },
       });
-      expect(typeof searchData.narration).toBe("string");
-      expect(searchData.narration.length).toBeGreaterThan(0);
+      expect(Array.isArray(searchData.narration_parts)).toBe(true);
+      expect(searchData.narration_parts.length).toBeGreaterThan(0);
+      expect(typeof searchData.narration_parts[0].text).toBe("string");
 
       const talkData = await callLiveEndpointWithRetry<{
-        narration: string;
+        narration_parts: Array<{ text: string }>;
         mode: string;
       }>({
         apiUrl: API_URL,
@@ -67,15 +69,15 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
         stepLabel: "game-talk",
         body: { game_id, character_id: "char-alice" },
       });
-      expect(typeof talkData.narration).toBe("string");
+      expect(Array.isArray(talkData.narration_parts)).toBe(true);
+      expect(talkData.narration_parts.length).toBeGreaterThan(0);
       expect(talkData.mode === "talk" || talkData.mode === "accuse").toBe(true);
 
       // Ensure live AI labeling is wired for test run visibility.
       expect(label.length).toBeGreaterThan(0);
     } catch (error) {
       if (error instanceof LiveAIRetriableExhaustedError) {
-        console.warn(`[live-ai] ${error.message}`);
-        return;
+        expect.fail(`[live-ai] Retriable retries exhausted: ${error.message}`);
       }
       throw error;
     }

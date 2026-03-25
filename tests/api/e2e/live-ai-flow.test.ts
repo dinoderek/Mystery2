@@ -58,7 +58,7 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
       for (const [index, step] of investigatorScript.steps.entries()) {
         const endpoint = endpointByAction[step.action];
         const data = await callLiveEndpointWithRetry<{
-          narration: string;
+          narration_parts: Array<{ text: string }>;
           mode?: string;
         }>({
           apiUrl: API_URL,
@@ -70,8 +70,8 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
             ...step.payload,
           },
         });
-        expect(typeof data.narration).toBe("string");
-        expect(data.narration.length).toBeGreaterThan(0);
+        expect(Array.isArray(data.narration_parts)).toBe(true);
+        expect(data.narration_parts.length).toBeGreaterThan(0);
 
         if (step.expect_mode) {
           if (step.expect_mode === "accuse") {
@@ -94,8 +94,7 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
       expect(finalStateData.state.mode).toBe("ended");
     } catch (error) {
       if (error instanceof LiveAIRetriableExhaustedError) {
-        console.warn(`[live-ai] ${error.message}`);
-        return;
+        expect.fail(`[live-ai] Retriable retries exhausted: ${error.message}`);
       }
       throw error;
     }

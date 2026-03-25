@@ -108,6 +108,11 @@ export const validBlueprintV2 = {
       },
     ],
   },
+  cover_image: {
+    description: "A bright kitchen counter with an empty cookie plate and crumbs trailing toward the hallway.",
+    location_ids: ["kitchen"],
+    character_ids: ["alice"],
+  },
   ground_truth: {
     what_happened: "Alice took the cookies from the kitchen and hid them in her lunch bag in the hallway.",
     why_it_happened: "She was hungry after skipping breakfast and could not resist them.",

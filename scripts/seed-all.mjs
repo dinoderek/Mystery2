@@ -1,20 +1,38 @@
 import { getBaseEnvPath } from "./local-config.mjs";
-import { loadEnvFile, npmBin, runCommand } from "./supabase-utils.mjs";
+import {
+  ensureSupabaseRunning,
+  loadEnvFile,
+  npmBin,
+  parseScriptOptions,
+  runCommand,
+} from "./supabase-utils.mjs";
 
 const rootDir = process.cwd();
 const baseEnvPath = getBaseEnvPath(rootDir, process.env);
-const baseEnv = await loadEnvFile(baseEnvPath, false);
-const env = { ...baseEnv, ...process.env };
+const options = parseScriptOptions(process.argv.slice(2));
 
 try {
+  const baseVars = await loadEnvFile(baseEnvPath, false);
+  const env = { ...baseVars, ...process.env };
+
+  await ensureSupabaseRunning(env, { restart: options.restart });
+
   console.log("--- seed:auth ---");
   runCommand(npmBin, ["run", "seed:auth"], env);
 
   console.log("--- seed:ai ---");
-  runCommand(npmBin, ["run", "seed:ai"], env);
+  if (options.seedAI) {
+    runCommand(npmBin, ["run", "seed:ai"], env);
+  } else {
+    console.log("(skipped)");
+  }
 
   console.log("--- seed:storage (blueprints + images) ---");
-  runCommand(npmBin, ["run", "seed:storage"], env);
+  if (options.seedStorage !== "skip") {
+    runCommand(npmBin, ["run", "seed:storage"], env);
+  } else {
+    console.log("(skipped)");
+  }
 
   console.log("All seeds complete.");
 } catch (error) {

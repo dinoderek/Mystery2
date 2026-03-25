@@ -124,6 +124,7 @@ serveWithCors(async (req) => {
     };
 
     return new Response(JSON.stringify({
+      blueprint_id: session.blueprint_id,
       state: gameState,
       narration_events: narrationEvents,
     }), {

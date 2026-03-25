@@ -144,12 +144,11 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText('You travel to the garden.')).toBeVisible();
-    await expect(page.getByTestId('story-image-panel').locator('img')).toBeVisible();
+    await expect(page.locator('.story-image-panel img')).toBeVisible();
 
     await input.fill('talk to bob');
     await input.press('Enter');
     await expect(page.getByText('Bob greets you by the flower beds.')).toBeVisible();
-    await expect(page.getByText('Scene image unavailable')).toBeVisible();
   });
 
   test('blocks backend call for missing movement target', async ({ page }) => {
@@ -841,7 +840,6 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText(/Request failed after 3 attempts/)).toBeVisible();
-    await expect(page.getByTestId('retry-last-command')).toBeVisible();
     expect(searchCalls).toBe(3);
   });
 

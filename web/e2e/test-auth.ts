@@ -111,7 +111,11 @@ async function ensureTestUser(email: string, password: string) {
       });
       error = result.error;
       break;
-    } catch (thrown) {
+    } catch (thrown: any) {
+      const msg = typeof thrown?.message === 'string' ? thrown.message : String(thrown);
+      if (/already.*registered|already.*exists|user already exists|duplicate key/i.test(msg)) {
+        return;
+      }
       if (attempt === 5 || !isRetryableConnectionError(thrown)) {
         throw thrown;
       }
@@ -121,7 +125,7 @@ async function ensureTestUser(email: string, password: string) {
 
   if (
     error &&
-    !/already (?:registered|exists)|user already exists|duplicate key/i.test(error.message)
+    !/already.*registered|already.*exists|user already exists|duplicate key/i.test(error.message)
   ) {
     throw error;
   }

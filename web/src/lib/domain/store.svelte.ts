@@ -387,6 +387,7 @@ export class GameSessionStore {
       const data = await this.loadPersistedState(gameId);
       const response = isRecord(data) ? data : {};
       this.game_id = gameId;
+      this.blueprint_id = typeof response.blueprint_id === 'string' ? response.blueprint_id : null;
       this.state = this.normalizeState(response.state, response.narration_events);
       this.lastFailedInput = null;
       this.isRetrying = false;

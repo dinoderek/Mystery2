@@ -8,7 +8,7 @@ const narratorSpeaker = {
 };
 
 const startState = {
-  locations: [{ name: 'kitchen' }, { name: 'garden' }],
+  locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
   characters: [],
   time_remaining: 10,
   location: 'kitchen',
@@ -107,25 +107,25 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
-
-    await page.getByTestId('theme-amber').click();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
+
+    const input = page.locator('input[type="text"]');
+
+    // Switch to amber theme via terminal command
+    await input.fill('theme amber');
+    await input.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'amber');
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/amber-body/);
 
-    await page.goto('/');
-    await expect(page.getByText('1. Start a new game')).toBeVisible();
-    await page.keyboard.press('1');
-    await expect(page.getByText('B1')).toBeVisible();
-    await page.getByTestId('theme-matrix').click();
-    await page.keyboard.press('1');
-    await expect(page).toHaveURL(/.*\/session/);
+    // Switch to classic theme (maps to data-theme="matrix" internally)
+    await input.fill('theme classic');
+    await input.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix');
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
   });
 
-  test('keeps narration flow active when side image falls back to placeholder', async ({ page }) => {
+  test('keeps narration flow active when side image fails to load', async ({ page }) => {
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
         status: 404,
@@ -162,8 +162,10 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.locator('input').fill('move to garden');
     await page.locator('input').press('Enter');
 
+    // Narration text should still render even when the image fails to load
     await expect(page.getByText('You move to the garden.')).toBeVisible();
-    await expect(page.getByText('Scene image unavailable')).toBeVisible();
+    // No image panel should be rendered for the failed image
+    await expect(page.locator('.story-image-panel')).toHaveCount(0);
   });
 
   test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {

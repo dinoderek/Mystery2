@@ -8,13 +8,11 @@ import {
   resolveLiveAILabel,
 } from "../../testkit/src/live-ai.ts";
 import {
+  API_URL,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "../integration/auth-helpers.ts";
 import { investigatorScript } from "./live-ai/investigator-script.ts";
-
-const SUPABASE_BASE = process.env.SUPABASE_URL || process.env.API_URL || "http://127.0.0.1:54331";
-const API_URL = `${SUPABASE_BASE}/functions/v1`;
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 const endpointByAction: Record<string, string> = {

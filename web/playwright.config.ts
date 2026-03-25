@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getBaseEnvPath } from '../scripts/local-config.mjs';
-import { resolveWorktreePorts } from '../scripts/worktree-ports.mjs';
+import { resolveWorktreePorts } from '../lib/worktree-ports.mjs';
 
 function parseEnvFile(filePath: string): Record<string, string> {
   if (!fs.existsSync(filePath)) return {};

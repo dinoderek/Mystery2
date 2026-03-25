@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { SUPABASE_URL } from "./auth-helpers";
 
 const ROOT_DIR = path.resolve(__dirname, "../../..");
 const NODE_BIN = process.execPath;
@@ -15,7 +16,7 @@ function runSeedStorage(extraArgs: string[]) {
       cwd: ROOT_DIR,
       env: {
         ...process.env,
-        API_URL: process.env.API_URL ?? "http://127.0.0.1:54331",
+        API_URL: SUPABASE_URL,
         SERVICE_ROLE_KEY: process.env.SERVICE_ROLE_KEY ?? DEFAULT_SERVICE_ROLE_KEY,
       },
       encoding: "utf-8",

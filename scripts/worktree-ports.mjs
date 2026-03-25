@@ -1,46 +1,25 @@
 /**
- * Worktree-aware Supabase port and project_id allocation.
- *
- * When running inside a git worktree, this module derives a deterministic
- * project_id and port set so that each worktree gets its own fully isolated
- * Supabase stack.  When running in the main repo checkout it returns the
- * base defaults unchanged.
- *
- * Port offset scheme:
- *   slot = hash(worktreeName) % 50 + 1          (range 1..50)
- *   each port = basePort + slot * 100
- *
- * This keeps all ports below 65 535 and avoids collisions between concurrent
- * worktrees (with overwhelming probability — 50 slots for typical workloads).
+ * Worktree port allocation — re-exports core logic from lib/ and adds
+ * operational helpers (config patching, worktree listing) that only
+ * scripts need.
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
+
+// Re-export everything from the shared module so existing script imports
+// continue to work unchanged.
+export {
+  detectWorktreeName,
+  resolveWorktreePorts,
+  resolveApiUrl,
+} from "../lib/worktree-ports.mjs";
+
+import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
 
 // ---------------------------------------------------------------------------
-// Base port map — must match the committed supabase/config.toml
-// ---------------------------------------------------------------------------
-
-const BASE_PROJECT_ID = "mystery";
-
-const BASE_PORTS = {
-  api: 54331,
-  db: 54332,
-  shadow_db: 54330,
-  studio: 54333,
-  inbucket: 54334,
-  analytics: 54337,
-  db_pooler: 54339,
-  edge_inspector: 8083,
-  vite_dev: 5173,
-};
-
-const MAX_SLOTS = 50;
-
-// ---------------------------------------------------------------------------
-// Worktree detection
+// Operational helpers (scripts only — not needed by tests or app code)
 // ---------------------------------------------------------------------------
 
 function git(...args) {
@@ -49,80 +28,6 @@ function git(...args) {
     throw new Error(`git ${args.join(" ")} failed: ${(result.stderr || "").trim()}`);
   }
   return result.stdout.trim();
-}
-
-/**
- * Returns the worktree leaf name if we are inside a git worktree, or null
- * when running from the main checkout.
- */
-export function detectWorktreeName(cwd = process.cwd()) {
-  let gitDir, gitCommonDir;
-  try {
-    gitDir = git("-C", cwd, "rev-parse", "--git-dir");
-    gitCommonDir = git("-C", cwd, "rev-parse", "--git-common-dir");
-  } catch {
-    return null;
-  }
-
-  // Normalise so the comparison is reliable on every OS.
-  const absGitDir = path.resolve(cwd, gitDir);
-  const absCommonDir = path.resolve(cwd, gitCommonDir);
-
-  if (absGitDir === absCommonDir) {
-    // Main checkout — not a worktree.
-    return null;
-  }
-
-  // gitDir for a worktree looks like  <repo>/.git/worktrees/<name>
-  return path.basename(absGitDir);
-}
-
-// ---------------------------------------------------------------------------
-// Deterministic slot from worktree name
-// ---------------------------------------------------------------------------
-
-function worktreeSlot(name) {
-  const hash = createHash("sha256").update(name).digest();
-  // Read the first 4 bytes as an unsigned 32-bit int.
-  const num = hash.readUInt32BE(0);
-  return (num % MAX_SLOTS) + 1;
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve the project_id and port map for the current working directory.
- *
- * Returns { projectId, ports, isWorktree, worktreeName, slot }.
- */
-export function resolveWorktreePorts(cwd = process.cwd()) {
-  const worktreeName = detectWorktreeName(cwd);
-
-  if (!worktreeName) {
-    return {
-      projectId: BASE_PROJECT_ID,
-      ports: { ...BASE_PORTS },
-      isWorktree: false,
-      worktreeName: null,
-      slot: 0,
-    };
-  }
-
-  const slot = worktreeSlot(worktreeName);
-  const ports = {};
-  for (const [key, base] of Object.entries(BASE_PORTS)) {
-    ports[key] = base + slot * 100;
-  }
-
-  return {
-    projectId: `${BASE_PROJECT_ID}-wt-${worktreeName.slice(0, 16)}`,
-    ports,
-    isWorktree: true,
-    worktreeName,
-    slot,
-  };
 }
 
 /**
@@ -162,14 +67,6 @@ export function patchConfigToml(repoRoot = process.cwd()) {
 
   fs.writeFileSync(configPath, content, "utf8");
   return true;
-}
-
-/**
- * Return the Supabase API URL for the resolved worktree ports.
- */
-export function resolveApiUrl(cwd = process.cwd()) {
-  const { ports } = resolveWorktreePorts(cwd);
-  return `http://127.0.0.1:${ports.api}`;
 }
 
 /**

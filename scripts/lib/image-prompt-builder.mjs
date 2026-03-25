@@ -47,8 +47,42 @@ function portraitBackgroundHint() {
   ].join(" ");
 }
 
-function targetBlock(blueprint, target, options = {}) {
+function targetBlock(blueprint, target, _options = {}) {
   if (target.targetType === "blueprint") {
+    const coverImage = blueprint.cover_image;
+    if (coverImage?.description) {
+      const lines = [
+        "Target: Mystery cover image.",
+        `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
+        `Creative direction: ${coverImage.description}`,
+      ];
+
+      const locationIds = coverImage.location_ids ?? [];
+      if (locationIds.length > 0) {
+        const locationHints = locationIds
+          .map((locId) => {
+            const loc = (blueprint.world?.locations ?? []).find((l) => l.id === locId);
+            return loc ? `${loc.name} — ${loc.description}` : locId;
+          })
+          .join("; ");
+        lines.push(`Featured location(s): ${locationHints}`);
+      }
+
+      const characterIds = coverImage.character_ids ?? [];
+      if (characterIds.length > 0) {
+        const charHints = characterIds
+          .map((charId) => {
+            const ch = (blueprint.world?.characters ?? []).find((c) => c.id === charId);
+            return ch ? `${ch.first_name} ${ch.last_name} (${ch.appearance})` : charId;
+          })
+          .join("; ");
+        lines.push(`Characters featured: ${charHints}`);
+      }
+
+      return lines.filter(Boolean).join(" ");
+    }
+
+    // Fallback for blueprints without cover_image (legacy).
     const start = startingLocation(blueprint);
     const settingHint = start
       ? `Setting: ${start.name} — ${start.description}`
@@ -109,11 +143,6 @@ function targetBlock(blueprint, target, options = {}) {
           .join("; ")}.`
       : "";
 
-  const referenceCount = options.referenceImageCount ?? 0;
-  const referenceHint = referenceCount > 0
-    ? `Reference portrait images of the ${referenceCount} character(s) at this location are attached. Preserve their appearance, clothing, proportions, and art style faithfully when rendering them in the scene.`
-    : "";
-
   const environmentalDetails = (location?.clues ?? [])
     .slice(0, 2)
     .map((clue) => clue.text)
@@ -133,7 +162,6 @@ function targetBlock(blueprint, target, options = {}) {
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
     `Description: ${location?.description ?? ""}.`,
     characterHints,
-    referenceHint,
     detailHint,
     perspectiveHint,
   ]
@@ -154,13 +182,31 @@ function outputBlock(blueprint, target) {
   return `Output: one static image, 4:3 framing, consistent visual style, seed phrase "${stableSeed}".`;
 }
 
+export function buildReferenceLegend(referenceImages) {
+  if (!referenceImages || referenceImages.length === 0) return "";
+  const lines = referenceImages.map(
+    (ref, i) => `- Image ${i + 1}: ${ref.label}`,
+  );
+  return [
+    "Reference images (attached below in order):",
+    ...lines,
+    "",
+    "Preserve the appearance of characters from their reference portraits faithfully.",
+    "When depicting referenced locations, maintain their visual style and key features.",
+  ].join("\n");
+}
+
 export function buildImagePrompt(blueprint, target, options = {}) {
+  const legend = buildReferenceLegend(options.referenceImages);
   return [
     styleBlock(blueprint),
     targetBlock(blueprint, target, options),
+    legend,
     guardrailBlock(),
     outputBlock(blueprint, target),
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export { charactersAtLocation };

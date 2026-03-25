@@ -51,4 +51,47 @@ describe("Blueprint V2 schema", () => {
       /Unknown location clue id/,
     );
   });
+
+  it("rejects cover_image.location_ids referencing a non-existent location", () => {
+    const broken = {
+      ...validBlueprintV2,
+      cover_image: {
+        description: "A test cover.",
+        location_ids: ["non-existent-loc"],
+        character_ids: [],
+      },
+    };
+
+    expect(() => BlueprintV2Schema.parse(broken)).toThrow(
+      /cover_image\.location_ids references unknown location id/,
+    );
+  });
+
+  it("rejects cover_image.character_ids referencing a non-existent character", () => {
+    const broken = {
+      ...validBlueprintV2,
+      cover_image: {
+        description: "A test cover.",
+        location_ids: [],
+        character_ids: ["non-existent-char"],
+      },
+    };
+
+    expect(() => BlueprintV2Schema.parse(broken)).toThrow(
+      /cover_image\.character_ids references unknown character id/,
+    );
+  });
+
+  it("accepts cover_image with empty location_ids and character_ids", () => {
+    const minimal = {
+      ...validBlueprintV2,
+      cover_image: {
+        description: "An abstract atmospheric cover.",
+        location_ids: [],
+        character_ids: [],
+      },
+    };
+
+    expect(() => BlueprintV2Schema.parse(minimal)).not.toThrow();
+  });
 });

@@ -97,6 +97,7 @@ describe("blueprint generator", () => {
       "metadata",
       "narrative",
       "world",
+      "cover_image",
       "ground_truth",
       "solution_paths",
       "red_herrings",

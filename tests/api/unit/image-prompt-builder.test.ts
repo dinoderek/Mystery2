@@ -131,11 +131,11 @@ describe("image prompt builder", () => {
     expect(buildReferenceLegend(undefined)).toBe("");
   });
 
-  it("creates deterministic slugged image ids without UUID", () => {
-    const imageId = createImageId(blueprint.id, "character", "char_alice");
-    expect(imageId).toBe("character-char-alice");
+  it("creates deterministic slugged image ids with blueprint prefix", () => {
+    const imageId = createImageId("Mock Blueprint", "character", "char_alice");
+    expect(imageId).toBe("mock-blueprint.character-char-alice");
 
-    const coverId = createImageId(blueprint.id, "blueprint");
-    expect(coverId).toBe("blueprint");
+    const coverId = createImageId("Mock Blueprint", "blueprint");
+    expect(coverId).toBe("mock-blueprint.blueprint");
   });
 });

@@ -11,7 +11,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "http://127.0.0.1:54331";
 const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
-const COVER_IMAGE_ID = "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png";
+const COVER_IMAGE_ID = "mock-blueprint.blueprint.png";
 
 describe("edge function auth rejection", () => {
   let auth: ApiAuthContext;
@@ -26,7 +26,7 @@ describe("edge function auth rejection", () => {
     const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const { error } = await admin.storage
       .from("blueprint-images")
-      .upload(`${BLUEPRINT_ID}/${COVER_IMAGE_ID}.png`, bytes, {
+      .upload(`${BLUEPRINT_ID}/${COVER_IMAGE_ID}`, bytes, {
         contentType: "image/png",
         upsert: true,
       });
@@ -131,7 +131,7 @@ describe("edge function auth rejection", () => {
       headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
-        image_id: "mock-blueprint-123e4567-e89b-12d3-a456-426614179999.png",
+        image_id: "mock-blueprint.nonexistent.png",
         purpose: "blueprint_cover",
       }),
     });

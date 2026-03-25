@@ -1,5 +1,5 @@
 const IMAGE_FILENAME_PATTERN =
-  /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:png|jpe?g|webp)$/i;
+  /^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*\.(?:png|jpe?g|webp)$/i;
 
 export const BLUEPRINT_IMAGES_BUCKET = "blueprint-images";
 export const IMAGE_LINK_TTL_SECONDS = 120;

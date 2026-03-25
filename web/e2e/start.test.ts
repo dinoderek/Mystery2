@@ -208,7 +208,7 @@ test.describe('US1 - Start Screen', () => {
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
               target_age: 6,
-              blueprint_image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png',
+              blueprint_image_id: 'mock-blueprint.blueprint.png',
             },
           ],
         },
@@ -218,7 +218,7 @@ test.describe('US1 - Start Screen', () => {
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
         json: {
-          image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png',
+          image_id: 'mock-blueprint.blueprint.png',
           signed_url:
             'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
           expires_at: '2099-01-01T00:00:00.000Z',
@@ -247,7 +247,7 @@ test.describe('US1 - Start Screen', () => {
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
               target_age: 6,
-              blueprint_image_id: 'mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png',
+              blueprint_image_id: 'mock-blueprint.blueprint.png',
             },
           ],
         },

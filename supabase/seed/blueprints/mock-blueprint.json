@@ -7,7 +7,7 @@
     "target_age": 10,
     "time_budget": 10,
     "art_style": "storybook watercolor, cozy warm lighting, kid-safe mystery mood",
-    "image_id": "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png"
+    "image_id": "mock-blueprint.blueprint.png"
   },
   "narrative": {
     "premise": "Someone stole the cookies.",
@@ -20,7 +20,7 @@
         "id": "loc-kitchen",
         "name": "Kitchen",
         "description": "A messy kitchen.",
-        "location_image_id": "mock-location-kitchen-123e4567-e89b-12d3-a456-426614174222.png",
+        "location_image_id": "mock-blueprint.location-loc-kitchen.png",
         "clues": [
           {
             "id": "clue-crumb",
@@ -33,7 +33,7 @@
         "id": "loc-living-room",
         "name": "Living Room",
         "description": "A cozy living room.",
-        "location_image_id": "mock-location-living-room-123e4567-e89b-12d3-a456-426614174223.png",
+        "location_image_id": "mock-blueprint.location-loc-living-room.png",
         "clues": [
           {
             "id": "clue-wrapper",
@@ -62,7 +62,7 @@
         "stated_alibi": "I was reading.",
         "motive": "Was hungry.",
         "is_culprit": true,
-        "portrait_image_id": "mock-character-alice-123e4567-e89b-12d3-a456-426614174333.png",
+        "portrait_image_id": "mock-blueprint.character-char-alice.png",
         "clues": [
           {
             "id": "clue-alice-saw-bob",
@@ -89,7 +89,7 @@
         "stated_alibi": "I was watching TV.",
         "motive": null,
         "is_culprit": false,
-        "portrait_image_id": "mock-character-bob-123e4567-e89b-12d3-a456-426614174334.png",
+        "portrait_image_id": "mock-blueprint.character-char-bob.png",
         "clues": [
           {
             "id": "clue-bob-alice-loves-cookies",

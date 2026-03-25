@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -14,7 +15,7 @@ import {
   BLUEPRINT_EVALUATION_PROMPT,
   BlueprintEvaluationOutputSchema,
 } from "../packages/shared/src/evaluation/index.ts";
-import { getBaseEnvPath, getBlueprintsDir } from "./local-config.mjs";
+import { getBaseEnvPath, getBlueprintsDir, getBriefsDir, resolveLocalConfigRoot } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
@@ -129,6 +130,15 @@ function buildSummaryEntry({
   };
 }
 
+function resolveBriefFile(filePath, env = process.env) {
+  const briefsDir = getBriefsDir(undefined, env);
+  const candidate = path.join(briefsDir, filePath);
+  if (existsSync(candidate)) {
+    return candidate;
+  }
+  return filePath;
+}
+
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefFiles: [],
@@ -204,6 +214,7 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
   if (options.briefFiles.length === 0) {
     throw new Error("Missing required --brief-file");
   }
+  options.briefFiles = options.briefFiles.map((f) => resolveBriefFile(f, env));
   if (options.models.length === 0) {
     throw new Error(
       "Missing required --model (or OPENROUTER_BLUEPRINT_MODEL / AI_MODEL env)",

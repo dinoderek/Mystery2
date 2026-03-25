@@ -32,7 +32,8 @@ export type ParseResult =
   | { type: 'help' }
   | { type: 'quit' }
   | { type: 'theme-list' }
-  | { type: 'theme-set'; themeName: string };
+  | { type: 'theme-set'; themeName: string }
+  | { type: 'zoom' };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
 const TALK_ALIASES = ['speak with', 'speak to', 'talk to'] as const;
@@ -45,6 +46,7 @@ const QUIT_ALIASES = ['quit', 'exit'] as const;
 const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
 const THEME_LIST_ALIASES = ['themes'] as const;
 const THEME_SET_PREFIX = 'theme' as const;
+const ZOOM_ALIASES = ['zoom'] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
@@ -362,7 +364,7 @@ export function normalizeInput(rawInput: string): string {
     .trim();
 }
 
-function parseGlobalThemeCommand(text: string): ParseResult | null {
+function parseGlobalCommand(text: string): ParseResult | null {
   if (isAliasExact(text, THEME_LIST_ALIASES)) {
     return { type: 'theme-list' };
   }
@@ -374,15 +376,19 @@ function parseGlobalThemeCommand(text: string): ParseResult | null {
     }
   }
 
+  if (isAliasExact(text, ZOOM_ALIASES)) {
+    return { type: 'zoom' };
+  }
+
   return null;
 }
 
 export function parseCommand(rawInput: string, mode: GameMode, context: ParseContext): ParseResult {
   const normalized = normalizeInput(rawInput);
 
-  const themeResult = parseGlobalThemeCommand(normalized);
-  if (themeResult) {
-    return themeResult;
+  const globalResult = parseGlobalCommand(normalized);
+  if (globalResult) {
+    return globalResult;
   }
 
   switch (mode) {

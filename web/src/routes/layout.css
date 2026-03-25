@@ -126,6 +126,29 @@
   );
 }
 
+/* Inline image layout — mobile: stacked on top, md+: float right at 50% */
+.narration-image-group {
+  overflow: hidden; /* contain the float */
+}
+
+.narration-image-float {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .narration-image-float {
+    float: right;
+    width: 50%;
+    margin-left: 1rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.narration-image-clear {
+  clear: both;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

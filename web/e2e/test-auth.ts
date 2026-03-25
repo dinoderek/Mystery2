@@ -121,8 +121,8 @@ async function ensureTestUser(email: string, password: string) {
       });
       error = result.error;
       break;
-    } catch (thrown: any) {
-      const msg = typeof thrown?.message === 'string' ? thrown.message : String(thrown);
+    } catch (thrown: unknown) {
+      const msg = thrown instanceof Error ? thrown.message : String(thrown);
       if (/already.*registered|already.*exists|user already exists|duplicate key/i.test(msg)) {
         return;
       }

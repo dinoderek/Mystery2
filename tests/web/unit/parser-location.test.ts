@@ -8,7 +8,7 @@ const CONTEXT: ParseContext = {
     { id: "loc-secret-garden", name: "Secret Garden" },
   ],
   characters: [
-    { first_name: "Alice", last_name: "Smith", location_name: "loc-grand-library" },
+    { id: "char-alice", first_name: "Alice", last_name: "Smith", location_name: "loc-grand-library" },
   ],
   currentLocation: "loc-grand-library",
 };

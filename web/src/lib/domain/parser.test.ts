@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeInput, parseCommand, type ParseContext } from './parser';
+import { BASE_GAME_STATE } from '../../../../tests/testkit/src/fixtures';
 
 const context: ParseContext = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }, { name: 'Barn' }],
-  characters: [
-    { first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' },
-    { first_name: 'Mayor', last_name: 'Fox', location_name: 'Kitchen' },
-    { first_name: 'Bob', last_name: 'Smith', location_name: 'Garden' },
-  ],
+  locations: BASE_GAME_STATE.locations,
+  characters: BASE_GAME_STATE.characters,
   currentLocation: 'Kitchen',
 };
 
@@ -25,19 +22,19 @@ describe('parseCommand - aliases and modes', () => {
   it('matches move aliases in explore mode', () => {
     expect(parseCommand('travel to kitchen', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'move', destination: 'Kitchen' },
+      command: { type: 'move', destination: 'loc-kitchen' },
     });
 
     expect(parseCommand('head towards barn', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'move', destination: 'Barn' },
+      command: { type: 'move', destination: 'loc-barn' },
     });
   });
 
   it('matches talk aliases in explore mode', () => {
     expect(parseCommand('speak with mayor fox', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'talk', character_name: 'Mayor' },
+      command: { type: 'talk', character_id: 'char-mayor' },
     });
   });
 
@@ -181,12 +178,12 @@ describe('parseCommand - target validation and lists', () => {
   it('resolves character by first and last name', () => {
     expect(parseCommand('talk to rosie', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'talk', character_name: 'Rosie' },
+      command: { type: 'talk', character_id: 'char-rosie' },
     });
 
     expect(parseCommand('talk to fox', 'explore', context)).toEqual({
       type: 'valid',
-      command: { type: 'talk', character_name: 'Mayor' },
+      command: { type: 'talk', character_id: 'char-mayor' },
     });
   });
 

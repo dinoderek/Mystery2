@@ -196,8 +196,8 @@ describe('session catalog helpers', () => {
       ok: true,
       json: async () => ({
         state: {
-          locations: [{ name: 'Kitchen' }],
-          characters: [{ first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
+          locations: [{ id: 'kitchen', name: 'Kitchen' }],
+          characters: [{ id: 'char-alice', first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
           time_remaining: 0,
           location: 'Kitchen',
           mode: 'ended',

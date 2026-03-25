@@ -36,7 +36,7 @@ describe("blueprints-list endpoint", () => {
     expect(mockDb.title).toBe("Mock Blueprint");
     expect(mockDb.world).toBeUndefined();
     expect(mockDb.blueprint_image_id).toBe(
-      "mock-blueprint-123e4567-e89b-12d3-a456-426614174111",
+      "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png",
     );
   });
 });

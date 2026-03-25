@@ -39,15 +39,15 @@ $MYSTERY_CONFIG_ROOT/
 Run from the repo root:
 
 ```bash
-npm run setup:local
+npm run seed:all
 ```
 
 This command:
 
-1. Ensures the local Supabase stack is running.
-2. Seeds blueprint storage if the bucket is empty.
-3. Creates `supabase/seed/auth-users.local.json` if missing, then seeds the local auth users.
-4. Seeds AI profiles in Postgres (`mock`, optional `free` / `paid`, and canonical `default`).
+1. Ensures the local Supabase stack is running (starts it if needed).
+2. Seeds auth users (creates `supabase/seed/auth-users.local.json` if missing).
+3. Seeds AI profiles in Postgres (`mock`, optional `free` / `paid`, and canonical `default`).
+4. Seeds blueprint storage and images (missing local images produce warnings, not errors).
 
 ## Run Locally With a Profile
 
@@ -144,7 +144,7 @@ Optional:
 
 ## Seeded Local Users
 
-`npm run setup:local` and `npm run seed:auth` ensure these users exist in local Supabase Auth.
+`npm run seed:all` and `npm run seed:auth` ensure these users exist in local Supabase Auth.
 
 - Seed emails come from the committed template: `supabase/seed/auth-users.example.json`
 - Real passwords are generated into the gitignored local file: `supabase/seed/auth-users.local.json`
@@ -193,16 +193,18 @@ Use this when you need a clean local database with all migrations reapplied.
 After a reset, restore local app data with:
 
 ```bash
-npm run seed:storage -- --if-missing
-npm run seed:auth
-npm run seed:ai
+npm run seed:all
 ```
 
-If you want the full bootstrap again instead of running those individually:
+### Reseed everything at once
 
 ```bash
-npm run setup:local
+npm run seed:all
 ```
+
+This ensures Supabase is running, then runs all seed steps (auth, AI profiles, blueprint storage with images) with upsert semantics.
+
+Missing local images produce `[WARN]` lines but do not fail the command. Pass `--skip-seed-images` to skip image seeding entirely, or `--skip-seed-storage` to skip blueprint/image seeding. Pass `--restart` to force a Supabase restart before seeding.
 
 ### Reseed specific parts
 
@@ -283,7 +285,7 @@ When `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that dire
 
 Gameplay/runtime OpenRouter config stays DB-first and profile-driven. The image-generation CLI is separate operator tooling and does not read from `ai_profiles`.
 
-Keep live AI opt-in. `npm run dev` and `npm run setup:local` stay on the mock profile unless you explicitly create `.env.ai.<mode>.local` and switch to it.
+Keep live AI opt-in. `npm run dev` and `npm run seed:all` stay on the mock profile unless you explicitly create `.env.ai.<mode>.local` and switch to it.
 
 Critical flags:
 

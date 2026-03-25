@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildImageStorageCandidates,
   buildImageStorageKey,
   ensureCanonicalImageId,
   IMAGE_LINK_TTL_SECONDS,
@@ -10,38 +9,27 @@ import {
   normalizeSignedUrlExpiry,
 } from "../../../supabase/functions/_shared/images.ts";
 
-const CANONICAL_ID = "mock-blueprint-123e4567-e89b-12d3-a456-426614174111";
+const CANONICAL_FILENAME =
+  "mock-blueprint-123e4567-e89b-12d3-a456-426614174111.png";
 
 describe("image helper utilities", () => {
-  it("accepts canonical image ids and rejects invalid shapes", () => {
-    expect(isCanonicalImageId(CANONICAL_ID)).toBe(true);
+  it("accepts canonical image filenames and rejects invalid shapes", () => {
+    expect(isCanonicalImageId(CANONICAL_FILENAME)).toBe(true);
     expect(isCanonicalImageId("not-valid")).toBe(false);
-    expect(ensureCanonicalImageId(CANONICAL_ID)).toBe(CANONICAL_ID);
+    expect(isCanonicalImageId("missing-ext-123e4567-e89b-12d3-a456-426614174111")).toBe(false);
+    expect(ensureCanonicalImageId(CANONICAL_FILENAME)).toBe(CANONICAL_FILENAME);
     expect(ensureCanonicalImageId("bad-id")).toBeNull();
   });
 
-  it("creates expected storage keys and extension candidates", () => {
+  it("creates expected storage key from blueprint id and image filename", () => {
     expect(
       buildImageStorageKey(
         "123e4567-e89b-12d3-a456-426614174000",
-        CANONICAL_ID,
-        "png",
+        CANONICAL_FILENAME,
       ),
     ).toBe(
-      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_ID}.png`,
+      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_FILENAME}`,
     );
-
-    expect(
-      buildImageStorageCandidates(
-        "123e4567-e89b-12d3-a456-426614174000",
-        CANONICAL_ID,
-      ),
-    ).toEqual([
-      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_ID}.png`,
-      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_ID}.jpg`,
-      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_ID}.jpeg`,
-      `123e4567-e89b-12d3-a456-426614174000/${CANONICAL_ID}.webp`,
-    ]);
   });
 
   it("normalizes expiry timestamps and validates window bounds", () => {

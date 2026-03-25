@@ -9,7 +9,7 @@ import {
   getAuthUsersLocalPath,
   getBaseEnvPath,
 } from "./local-config.mjs";
-import { resolveApiUrl } from "./worktree-ports.mjs";
+import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 const DUPLICATE_USER_ERROR =
@@ -211,7 +211,9 @@ export async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
 export async function main() {
   await loadDotEnvLocal();
 
-  const supabaseUrl = process.env.API_URL || resolveApiUrl();
+  const resolved = resolveWorktreePorts();
+  const worktreeApiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+  const supabaseUrl = resolved.isWorktree ? worktreeApiUrl : (process.env.API_URL || worktreeApiUrl);
   const serviceRoleKey = process.env.SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {

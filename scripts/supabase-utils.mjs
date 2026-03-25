@@ -121,18 +121,35 @@ export function getSupabaseApiUrl() {
 }
 
 /**
- * Inject worktree-derived Supabase URL into an env object so that child
- * processes (seed scripts, test runners, dev server) use the correct port.
- * Only sets API_URL / SUPABASE_URL / VITE_SUPABASE_URL when not already
- * present in the env.
+ * Inject worktree-derived Supabase URL and Vite dev port into an env object
+ * so that child processes (seed scripts, test runners, dev server) use the
+ * correct ports.
+ *
+ * In a worktree the derived values are **authoritative** — they override any
+ * inherited values so that scripts can never accidentally target the main
+ * checkout's Supabase instance or Vite port.  In the main checkout, existing
+ * values are preserved as before.
  */
 export function injectWorktreeEnv(env) {
-  const apiUrl = getSupabaseApiUrl();
+  const resolved = resolveWorktreePorts();
+  const apiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+
+  if (resolved.isWorktree) {
+    return {
+      ...env,
+      API_URL: apiUrl,
+      SUPABASE_URL: apiUrl,
+      VITE_SUPABASE_URL: apiUrl,
+      VITE_DEV_PORT: String(resolved.ports.vite_dev),
+    };
+  }
+
   return {
     ...env,
     API_URL: env.API_URL || apiUrl,
     SUPABASE_URL: env.SUPABASE_URL || apiUrl,
     VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || apiUrl,
+    VITE_DEV_PORT: env.VITE_DEV_PORT || String(resolved.ports.vite_dev),
   };
 }
 

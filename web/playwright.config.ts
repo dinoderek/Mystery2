@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getBaseEnvPath } from '../scripts/local-config.mjs';
+import { resolveWorktreePorts } from '../scripts/worktree-ports.mjs';
 
 function parseEnvFile(filePath: string): Record<string, string> {
   if (!fs.existsSync(filePath)) return {};
@@ -31,16 +32,27 @@ function parseEnvFile(filePath: string): Record<string, string> {
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(configDir, '..');
+const { ports, isWorktree } = resolveWorktreePorts(repoRoot);
 const rootEnv = parseEnvFile(getBaseEnvPath(repoRoot, process.env));
+
+// In a worktree the derived Supabase URL is authoritative; in the main
+// checkout we fall back to .env.local / hardcoded defaults as before.
+const supabaseUrl = isWorktree
+  ? `http://127.0.0.1:${ports.api}`
+  : (process.env.VITE_SUPABASE_URL ?? rootEnv.API_URL ?? 'http://127.0.0.1:54331');
+
 const webServerEnv = {
   ...process.env,
-  VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? rootEnv.API_URL ?? 'http://127.0.0.1:54331',
+  VITE_SUPABASE_URL: supabaseUrl,
   VITE_SUPABASE_ANON_KEY:
     process.env.VITE_SUPABASE_ANON_KEY ??
     rootEnv.ANON_KEY ??
     process.env.VITE_SUPABASE_ANON_KEY,
   VITE_E2E_AUTH_BYPASS: '1',
 };
+
+const vitePort = ports.vite_dev;
+const viteUrl = `http://localhost:${vitePort}`;
 
 /**
  * Read environment variables from file.
@@ -68,7 +80,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:5173',
+    baseURL: viteUrl,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -104,8 +116,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: `npm run dev -- --port ${vitePort}`,
+    url: viteUrl,
     reuseExistingServer: false,
     env: webServerEnv,
   },

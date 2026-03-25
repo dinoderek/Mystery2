@@ -2,10 +2,11 @@ import { setupTestAuth } from '../../testkit/src/auth';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resolveApiUrl } from '../../../lib/worktree-ports.mjs';
 
-const SUPABASE_BASE = process.env.SUPABASE_URL || process.env.API_URL || 'http://127.0.0.1:54331';
-export const API_URL = `${SUPABASE_BASE}/functions/v1`;
-export const REST_URL = `${SUPABASE_BASE}/rest/v1`;
+export const SUPABASE_URL = resolveApiUrl();
+export const API_URL = `${SUPABASE_URL}/functions/v1`;
+export const REST_URL = `${SUPABASE_URL}/rest/v1`;
 export const MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export type ApiAuthContext = Awaited<ReturnType<typeof setupTestAuth>>;
@@ -14,8 +15,6 @@ export async function setupApiTestAuth(tag: string): Promise<ApiAuthContext> {
 	const email = `${tag}-${crypto.randomUUID().slice(0, 8)}@test.local`;
 	return setupTestAuth(email, 'test-password-123');
 }
-
-const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54331';
 const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 

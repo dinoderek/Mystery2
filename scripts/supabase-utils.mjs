@@ -112,15 +112,6 @@ export async function ensureSupabaseRunning(env, options = {}) {
 }
 
 /**
- * Return the Supabase API URL for the current checkout (worktree-aware).
- * Scripts should use this instead of hardcoding port 54331.
- */
-export function getSupabaseApiUrl() {
-  const { ports } = resolveWorktreePorts();
-  return `http://127.0.0.1:${ports.api}`;
-}
-
-/**
  * Inject worktree-derived Supabase URL and Vite dev port into an env object
  * so that child processes (seed scripts, test runners, dev server) use the
  * correct ports.

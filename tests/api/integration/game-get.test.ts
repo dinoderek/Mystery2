@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import {
   API_URL,
+  SUPABASE_URL,
   ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
@@ -11,7 +12,7 @@ import {
 describe("game-get endpoint", () => {
   let auth: ApiAuthContext;
   const admin = createClient(
-    process.env.SUPABASE_URL || "http://127.0.0.1:54331",
+    SUPABASE_URL,
     process.env.SERVICE_ROLE_KEY ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
     {

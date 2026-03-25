@@ -1,6 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "http://127.0.0.1:54331";
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("API_URL");
+if (!supabaseUrl) {
+  throw new Error("SUPABASE_URL or API_URL environment variable is required");
+}
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const sourceDirs = ["blueprints", "supabase/seed/blueprints"];
 

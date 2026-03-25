@@ -13,7 +13,7 @@ import {
   getBlueprintsDir,
 } from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
-import { resolveApiUrl } from "./worktree-ports.mjs";
+import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 
@@ -211,7 +211,9 @@ for (const [key, value] of Object.entries(baseEnv)) {
 }
 
 const { seedImages, imageDir, allowMissingImages } = parseOptions();
-const supabaseUrl = process.env.API_URL || resolveApiUrl();
+const resolved = resolveWorktreePorts();
+const worktreeApiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+const supabaseUrl = resolved.isWorktree ? worktreeApiUrl : (process.env.API_URL || worktreeApiUrl);
 const supabaseKey = process.env.SERVICE_ROLE_KEY;
 
 if (!supabaseKey) {

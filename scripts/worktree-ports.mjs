@@ -34,6 +34,7 @@ const BASE_PORTS = {
   analytics: 54337,
   db_pooler: 54339,
   edge_inspector: 8083,
+  vite_dev: 5173,
 };
 
 const MAX_SLOTS = 50;

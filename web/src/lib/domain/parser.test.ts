@@ -241,3 +241,17 @@ describe('parseCommand - theme commands', () => {
     expect(result.type).not.toBe('theme-set');
   });
 });
+
+describe('parseCommand - zoom command', () => {
+  it('parses "zoom" as zoom in all modes', () => {
+    expect(parseCommand('zoom', 'explore', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'talk', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'accuse', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('zoom', 'ended', context)).toEqual({ type: 'zoom' });
+  });
+
+  it('normalizes casing for zoom command', () => {
+    expect(parseCommand('Zoom', 'explore', context)).toEqual({ type: 'zoom' });
+    expect(parseCommand('ZOOM', 'talk', context)).toEqual({ type: 'zoom' });
+  });
+});

@@ -48,9 +48,6 @@
     }
   }
 
-  async function retryLastCommand() {
-    await gameSessionStore.retryLastCommand();
-  }
 </script>
 
 <div class="mt-4 border-t border-t-muted/30 pt-4">
@@ -86,15 +83,5 @@
       spellcheck="false"
     />
 
-    {#if gameSessionStore.lastFailedInput && gameSessionStore.status !== "loading"}
-      <button
-        type="button"
-        onclick={retryLastCommand}
-        class="mt-3 border border-t-warning/60 px-2 py-1 text-xs text-t-warning hover:bg-t-dialogue/10 cursor-pointer"
-        data-testid="retry-last-command"
-      >
-        [ RETRY LAST COMMAND ]
-      </button>
-    {/if}
   {/if}
 </div>

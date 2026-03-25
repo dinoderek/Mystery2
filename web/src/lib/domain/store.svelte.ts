@@ -210,6 +210,7 @@ export class GameSessionStore {
   blueprints = $state<Blueprint[]>([]);
   activeStoryImage = $state<StoryImageState | null>(null);
   showHelp = $state(false);
+  showZoomModal = $state(false);
   isRetrying = $state(false);
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
@@ -448,6 +449,15 @@ export class GameSessionStore {
       } else {
         const names = themeStore.getThemeList().map((t) => t.name.toLowerCase()).join(', ');
         this.appendSystemFeedback(`Unknown theme "${parsed.themeName}". Available: ${names}.`);
+      }
+      return;
+    }
+
+    if (parsed.type === 'zoom') {
+      if (this.activeStoryImage?.image_url) {
+        this.showZoomModal = true;
+      } else {
+        this.appendSystemFeedback('No image to zoom into.');
       }
       return;
     }
@@ -697,6 +707,7 @@ export class GameSessionStore {
     this.status = 'idle';
     this.error = null;
     this.showHelp = false;
+    this.showZoomModal = false;
     this.isRetrying = false;
     this.retryCount = 0;
     this.lastFailedInput = null;
@@ -841,6 +852,44 @@ export class GameSessionStore {
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
     }
+  }
+
+  getActiveSceneText(): HistoryEntry[] {
+    if (!this.state || !this.activeStoryImage) {
+      return [];
+    }
+
+    const targetImageId = this.activeStoryImage.image_id;
+    const history = this.state.history;
+
+    // Find the last entry that introduced this image
+    let imageEntryIndex = -1;
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].image_id === targetImageId) {
+        imageEntryIndex = i;
+        break;
+      }
+    }
+
+    if (imageEntryIndex < 0) {
+      return [];
+    }
+
+    // The group is: all consecutive entries from imageEntryIndex that share the same sequence,
+    // plus subsequent entries with null image_id and the same sequence
+    const anchorSequence = history[imageEntryIndex].sequence;
+    const entries: HistoryEntry[] = [];
+
+    for (let i = imageEntryIndex; i < history.length; i++) {
+      const entry = history[i];
+      if (entry.sequence === anchorSequence) {
+        entries.push(entry);
+      } else {
+        break;
+      }
+    }
+
+    return entries;
   }
 
   private inferImagePurpose(entry: HistoryEntry): ImagePurpose {

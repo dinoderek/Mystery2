@@ -53,6 +53,7 @@ unique `project_id` and port range.
    | Analytics         | 54337         | 54437           | 54537           |
    | DB Pooler         | 54339         | 54439           | 54539           |
    | Edge Inspector    | 8083          | 8183            | 8283            |
+   | Vite dev server   | 5173          | 5273            | 5373            |
 
 3. **Config patching:** Before `supabase start`, `patchConfigToml()` rewrites
    `supabase/config.toml` in the worktree with the derived project_id and
@@ -60,8 +61,11 @@ unique `project_id` and port range.
    the main checkout or other worktrees.
 
 4. **Env propagation:** `injectWorktreeEnv()` sets `API_URL`, `SUPABASE_URL`,
-   and `VITE_SUPABASE_URL` so that seed scripts, test runners, and the dev
-   server all point at the correct port.
+   `VITE_SUPABASE_URL`, and `VITE_DEV_PORT` so that seed scripts, test
+   runners, and the dev server all point at the correct ports.  In a worktree
+   these values are **authoritative** — they override any inherited env vars
+   to prevent scripts from accidentally targeting the main checkout's
+   Supabase instance or Vite port.
 
 5. **Automatic in `ensureSupabaseRunning()`:** All of this is wired into the
    existing startup flow — no manual steps required.

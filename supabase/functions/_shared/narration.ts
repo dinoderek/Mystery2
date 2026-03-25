@@ -1,4 +1,5 @@
 import {
+  INVESTIGATOR_SPEAKER,
   NARRATOR_SPEAKER,
   readSpeaker,
   type Speaker,
@@ -179,20 +180,54 @@ export function parseNarrationParts(
   ];
 }
 
+function extractPlayerInput(row: EventRow): string | null {
+  if (!isRecord(row.payload)) {
+    return null;
+  }
+
+  const eventType = readString(row.event_type);
+  if (eventType === "ask") {
+    return readString(row.payload.player_input);
+  }
+  if (eventType === "accuse_round" || eventType === "accuse_resolved") {
+    return readString(row.payload.player_reasoning);
+  }
+  if (eventType === "move") {
+    const locationName = readString(row.payload.location_name);
+    return locationName ? `move to ${locationName}` : null;
+  }
+  if (eventType === "talk") {
+    const characterName = readString(row.payload.character_name);
+    return characterName ? `talk to ${characterName}` : null;
+  }
+  if (eventType === "search") {
+    return "search";
+  }
+
+  return null;
+}
+
 export function readNarrationEvent(row: EventRow): NarrationEventRecord {
   const speaker = isRecord(row.payload)
     ? readSpeaker(row.payload.speaker, fallbackSpeakerForEvent(row))
     : fallbackSpeakerForEvent(row);
   const narration = readString(row.narration);
 
+  const responseParts = parseNarrationParts(row.narration_parts, {
+    narration,
+    speaker,
+    image_id: readImageIdFromPayload(row.payload),
+  });
+
+  const playerInput = extractPlayerInput(row);
+  const narrationParts = playerInput
+    ? [createNarrationPart(playerInput, INVESTIGATOR_SPEAKER), ...responseParts]
+    : responseParts;
+
   return {
     sequence: typeof row.sequence === "number" ? row.sequence : 0,
     event_type: readString(row.event_type) ?? "event",
-    narration_parts: parseNarrationParts(row.narration_parts, {
-      narration,
-      speaker,
-      image_id: readImageIdFromPayload(row.payload),
-    }),
+    narration_parts: narrationParts,
     payload: isRecord(row.payload) ? row.payload : null,
     created_at: typeof row.created_at === "string" ? row.created_at : undefined,
   };

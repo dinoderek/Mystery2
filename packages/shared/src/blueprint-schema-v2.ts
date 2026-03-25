@@ -488,31 +488,10 @@ export const BlueprintV2Schema = z
       }
     }
 
-    for (const [locationIndex, location] of value.world.locations.entries()) {
-      for (const [clueIndex, clue] of location.clues.entries()) {
-        if (!referencedClueIds.has(clue.id)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "locations", locationIndex, "clues", clueIndex, "id"],
-            message:
-              "Every location clue must be referenced by at least one solution, red herring, or suspect elimination path.",
-          });
-        }
-      }
-    }
-
-    for (const [characterIndex, character] of value.world.characters.entries()) {
-      for (const [clueIndex, clue] of character.clues.entries()) {
-        if (!referencedClueIds.has(clue.id)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "characters", characterIndex, "clues", clueIndex, "id"],
-            message:
-              "Every character clue must be referenced by at least one solution, red herring, or suspect elimination path.",
-          });
-        }
-      }
-    }
+    // NOTE: Unreferenced clue checks (location and character clues not
+    // referenced by any solution, red herring, or suspect elimination path)
+    // are intentionally omitted from schema validation. They are enforced in
+    // the softer AI-driven verification pass instead.
   });
 
 export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;

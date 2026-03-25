@@ -230,6 +230,25 @@ Integration/E2E tests should rely on:
 
 ## Test execution
 
+### Running all tests
+
+**`npm test`** is the single command that runs every quality gate and test suite
+in the correct order:
+
+1. `npm run lint` — ESLint
+2. `npm run typecheck` — TypeScript compiler
+3. `npm -w web run check` — Svelte type checking
+4. `npm run test:unit` — API/shared unit tests (`tests/api/unit`)
+5. `npm -w web run test:unit` — Web unit tests (`web/src/lib/domain`)
+6. `npm run test:integration` — Integration tests against local Supabase
+7. `npm run test:e2e` — API E2E tests (Vitest, full player journeys)
+8. `npm -w web run test:e2e` — Playwright browser E2E tests
+
+AI agents **must** run `npm test` as the quality gate before proposing
+completion of any non-documentation change. Individual sub-scripts
+(`test:unit`, `test:integration`, etc.) are available for focused iteration
+but are not a substitute for the full suite.
+
 Before running tests, developers or CI can rely on the npm scripts to start Supabase when required and reseed storage blueprints before API-level suites.
 
 ### Integration test script
@@ -268,7 +287,7 @@ Before running tests, developers or CI can rely on the npm scripts to start Supa
 
 ### Live-AI suites (opt-in)
 
-These suites are intentionally excluded from `npm run test:all` and only run when explicitly requested.
+These suites are intentionally excluded from `npm test` and only run when explicitly requested.
 
 - Integration (live harness):
   - `npm run test:integration:live:free`
@@ -324,17 +343,18 @@ At least the following should be tested:
 
 ## Quality Gates
 
-Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion. A single-shot quality gate script (e.g., `npm run test:all` or `scripts/quality-gate.sh`) should be provided to run all these checks in one go:
+Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion. Run **`npm test`** to execute all checks in one go:
 
 Exception (documentation-only changes):
 - If a change only touches documentation files (`*.md`) and does not affect code, tests, build/deploy scripts, migrations, or environment contracts, running code quality gates is optional.
 - For doc-only changes, validate command accuracy, cross-document consistency, and link/path correctness instead.
 
-1. **Linting & Formatting:** Ensure code conforms to stylistic guidelines (`npm run lint` / `npm run format`).
-2. **Type Checking:** Ensure the TypeScript compiler passes with no errors (`npm run typecheck`).
-3. **Unit Tests:** Execute the unit test suite (`npm run test:unit`) to verify all isolated logic functions correctly.
-4. **Integration Tests:** Run the integration test suite against the local Supabase stack (`npm run test:integration`).
-5. **E2E Tests:** For front-end or critical journeys, ensure the Playwright E2E suite passes (`npm run test:e2e`).
-6. **Documentation Sync:** Ensure all architectural, feature, or tooling changes are reflected in the `docs/` directory.
+1. **Linting & Formatting:** `npm run lint` / `npm run format`
+2. **Type Checking:** `npm run typecheck` and `npm -w web run check`
+3. **Unit Tests:** `npm run test:unit` (API/shared) and `npm -w web run test:unit` (web domain)
+4. **Integration Tests:** `npm run test:integration` (local Supabase stack)
+5. **API E2E Tests:** `npm run test:e2e` (full player journeys via Vitest)
+6. **Browser E2E Tests:** `npm -w web run test:e2e` (Playwright)
+7. **Documentation Sync:** Ensure all architectural, feature, or tooling changes are reflected in the `docs/` directory.
 
-_(Note: Adjust the exact `npm run` commands above to match the actual script names in `package.json` if they differ.)_
+All of steps 1–6 are executed by `npm test`.

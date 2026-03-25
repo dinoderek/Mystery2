@@ -358,7 +358,7 @@ npm run logs:edge
 Run the full quality gate before finishing code changes:
 
 ```bash
-npm run test:all
+npm test
 ```
 
 Or run tiers individually:

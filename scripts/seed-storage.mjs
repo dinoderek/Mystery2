@@ -28,7 +28,7 @@ function parseOptions() {
   for (let index = 0; index < args.length; index += 1) {
     const token = args[index];
 
-    if (token === "--seed-images") {
+    if (token === "--seed-images" || token === "--seed-images=always") {
       options.seedImages = true;
       continue;
     }
@@ -237,7 +237,7 @@ try {
     `Upserted ${uploadedCount} blueprint(s) into storage.`,
   );
   console.log(
-    `Images: attempted=${imageManifest.attempted}, uploaded=${imageManifest.uploaded}, missing=${imageManifest.missing}, failed=${imageManifest.failed}`,
+    `Image sync manifest: attempted=${imageManifest.attempted}, uploaded=${imageManifest.uploaded}, missing=${imageManifest.missing}, failed=${imageManifest.failed}`,
   );
   if (imageManifest.warnings.length > 0) {
     for (const warning of imageManifest.warnings) {

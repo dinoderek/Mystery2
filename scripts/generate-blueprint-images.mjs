@@ -83,7 +83,6 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     blueprintPath: "",
     outputDir: getBlueprintImagesDir(),
     model: env.OPENROUTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
-    overwrite: false,
     dryRun: false,
     dryMode: false,
     parallel: false,
@@ -95,10 +94,6 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
 
-    if (token === "--overwrite") {
-      options.overwrite = true;
-      continue;
-    }
     if (token === "--dry-run") {
       options.dryRun = true;
       continue;
@@ -423,6 +418,30 @@ function buildOutputFilename(blueprintName, imageId) {
   return `${slugify(blueprintName)}.${imageId}.png`;
 }
 
+async function findUniqueOutput(outputDir, blueprintName, baseImageId) {
+  const baseName = buildOutputFilename(blueprintName, baseImageId);
+  const basePath = path.join(outputDir, baseName);
+
+  try {
+    await fs.access(basePath);
+  } catch {
+    return { imageId: baseImageId, filename: baseName, outputPath: basePath };
+  }
+
+  let count = 1;
+  while (true) {
+    const imageId = `${baseImageId}.${count}`;
+    const filename = buildOutputFilename(blueprintName, imageId);
+    const outputPath = path.join(outputDir, filename);
+    try {
+      await fs.access(outputPath);
+    } catch {
+      return { imageId, filename, outputPath };
+    }
+    count += 1;
+  }
+}
+
 async function generateSingleTarget({
   target,
   blueprint,
@@ -433,27 +452,13 @@ async function generateSingleTarget({
   timeoutMs,
   referenceImages = [],
 }) {
-  const imageId = createImageId(blueprint.id, target.targetType, target.targetKey);
-  const filename = buildOutputFilename(blueprintName, imageId);
-  const outputPath = path.join(options.outputDir, filename);
+  const baseImageId = createImageId(blueprint.id, target.targetType, target.targetKey);
+  const { imageId, filename, outputPath } = await findUniqueOutput(
+    options.outputDir,
+    blueprintName,
+    baseImageId,
+  );
   const label = formatTargetLabel(target);
-
-  if (!options.overwrite) {
-    try {
-      await fs.access(outputPath);
-      console.log(`[skip] ${label} — already exists: ${filename}`);
-      return {
-        target_type: target.targetType,
-        target_key: target.targetKey,
-        status: "skipped",
-        image_id: null,
-        file_path: null,
-        error_message: null,
-      };
-    } catch {
-      // Continue with generation.
-    }
-  }
 
   if (options.dryRun) {
     console.log(`[dry-run] ${label} — would generate: ${filename}`);

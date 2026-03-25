@@ -54,9 +54,10 @@ describe("game-start endpoint", () => {
     expect(data.state.time_remaining).toBe(10);
     expect(data.state.current_talk_character).toBeNull();
     expect(data.state.characters).toContainEqual({
+      id: "char-alice",
       first_name: "Alice",
       last_name: "Smith",
-      location_name: "Kitchen",
+      location_id: "loc-kitchen",
       sex: "female",
     });
     expect(data.narration_events).toHaveLength(1);

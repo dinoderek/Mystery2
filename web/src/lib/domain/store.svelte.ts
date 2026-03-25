@@ -566,6 +566,7 @@ export class GameSessionStore {
         ? source.characters
             .filter((character): character is Record<string, unknown> => isRecord(character))
             .map((character) => ({
+              id: readString(character.id),
               first_name: readString(character.first_name),
               last_name: readString(character.last_name),
               location_name: readString(character.location_name) || readString(character.location_id),
@@ -735,7 +736,7 @@ export class GameSessionStore {
       case 'talk':
         return {
           endpoint: 'game-talk',
-          body: { game_id: this.game_id, character_name: command.character_name },
+          body: { game_id: this.game_id, character_id: command.character_id },
         };
       case 'ask':
         if (this.state?.mode === 'accuse') {

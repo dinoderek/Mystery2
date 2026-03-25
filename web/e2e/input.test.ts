@@ -1,41 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
-
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
-const characterSpeaker = (name: string) => ({
-  kind: 'character' as const,
-  key: `character:${name.toLowerCase()}`,
-  label: name,
-});
-
-function narrationResponse(
-  text: string,
-  speaker: { kind: string; key: string; label: string },
-  imageId?: string,
-) {
-  return {
-    narration_parts: [
-      {
-        text,
-        speaker,
-        ...(imageId ? { image_id: imageId } : {}),
-      },
-    ],
-  };
-}
-
-const baseState = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }, { name: 'Barn' }],
-  characters: [
-    { first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' },
-    { first_name: 'Mayor', last_name: 'Fox', location_name: 'Kitchen' },
-    { first_name: 'Bob', last_name: 'Smith', location_name: 'Garden' },
-  ],
-  time_remaining: 10,
-  location: 'Kitchen',
-  mode: 'explore',
-  current_talk_character: null,
-};
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  characterSpeaker,
+  narrationResponse,
+  BASE_GAME_STATE as baseState,
+} from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
   await enableAuthBypass(page);
@@ -304,12 +274,134 @@ test.describe('Command Input', () => {
     expect(askPayload && 'question' in askPayload).toBe(false);
   });
 
+  test('sends character_id (not character_name) to game-talk endpoint', async ({ page }) => {
+    let talkPayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      talkPayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        json: {
+          ...narrationResponse('Mayor Fox greets you.', narratorSpeaker),
+          mode: 'talk',
+          time_remaining: 9,
+          current_talk_character: 'char-mayor',
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await expect(page.getByText('Mayor Fox greets you.')).toBeVisible();
+
+    expect(talkPayload).not.toBeNull();
+    expect(talkPayload?.character_id).toBe('char-mayor');
+    expect(talkPayload).not.toHaveProperty('character_name');
+    expect(talkPayload?.game_id).toBe('g1');
+  });
+
+  test('sends destination to game-move endpoint', async ({ page }) => {
+    let movePayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-move*', async (route) => {
+      movePayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        json: {
+          ...narrationResponse('You travel to the garden.', narratorSpeaker),
+          current_location: 'Garden',
+          visible_characters: ['Bob'],
+          time_remaining: 9,
+          mode: 'explore',
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('go to garden');
+    await input.press('Enter');
+    await expect(page.getByText('You travel to the garden.')).toBeVisible();
+
+    expect(movePayload).not.toBeNull();
+    expect(movePayload?.destination).toBe('loc-garden');
+    expect(movePayload?.game_id).toBe('g1');
+  });
+
+  test('sends game_id to game-search endpoint', async ({ page }) => {
+    let searchPayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-search*', async (route) => {
+      searchPayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        json: {
+          ...narrationResponse('You search the kitchen carefully.', narratorSpeaker),
+          time_remaining: 9,
+          mode: 'explore',
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('Enter');
+    await expect(page.getByText('You search the kitchen carefully.')).toBeVisible();
+
+    expect(searchPayload).not.toBeNull();
+    expect(searchPayload?.game_id).toBe('g1');
+  });
+
+  test('sends game_id to game-end-talk endpoint', async ({ page }) => {
+    let endTalkPayload: Record<string, unknown> | null = null;
+
+    await page.route('**/functions/v1/game-talk*', async (route) => {
+      await route.fulfill({
+        json: {
+          ...narrationResponse('Mayor Fox greets you.', narratorSpeaker),
+          mode: 'talk',
+          time_remaining: 9,
+          current_talk_character: 'char-mayor',
+        },
+      });
+    });
+
+    await page.route('**/functions/v1/game-end-talk*', async (route) => {
+      endTalkPayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        json: {
+          ...narrationResponse('You say goodbye to Mayor Fox.', narratorSpeaker),
+          mode: 'explore',
+          time_remaining: 9,
+          current_talk_character: null,
+        },
+      });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('talk to mayor');
+    await input.press('Enter');
+    await expect(page.getByText('Mayor Fox greets you.')).toBeVisible();
+
+    await input.fill('bye');
+    await input.press('Enter');
+    await expect(page.getByText('You say goodbye to Mayor Fox.')).toBeVisible();
+
+    expect(endTalkPayload).not.toBeNull();
+    expect(endTalkPayload?.game_id).toBe('g1');
+  });
+
   test('renders one generic style class for all character speakers', async ({ page }) => {
     let activeCharacter = 'Mayor';
 
     await page.route('**/functions/v1/game-talk*', async (route) => {
-      const payload = route.request().postDataJSON() as { character_name?: string };
-      activeCharacter = payload.character_name ?? 'Mayor';
+      const payload = route.request().postDataJSON() as { character_id?: string };
+      activeCharacter = payload.character_id === 'char-rosie' ? 'Rosie' : 'Mayor';
       await route.fulfill({
         json: {
           ...narrationResponse(`${activeCharacter} joins the conversation.`, narratorSpeaker),

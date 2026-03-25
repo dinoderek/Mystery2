@@ -8,16 +8,11 @@ test.describe('Full stack browser flow', () => {
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
 
-    try {
-      await expect(page.locator('h2.text-xl').first()).toBeVisible({ timeout: 8000 });
-    } catch {
-      test.skip(true, 'Requires local Supabase running with seeded blueprints.');
-      return;
-    }
+    await expect(page.locator('h2.text-xl').first()).toBeVisible({ timeout: 8000 });
 
     const caseTitles = await page.locator('h2.text-xl').allTextContents();
     const honeyCakeIndex = caseTitles.findIndex((title) => title.includes('Missing Honey Cakes'));
-    test.skip(honeyCakeIndex === -1, 'Missing Honey Cakes blueprint is not available in local storage seed.');
+    expect(honeyCakeIndex, 'Missing Honey Cakes blueprint must be available in local storage seed.').toBeGreaterThanOrEqual(0);
 
     await page.keyboard.press(String(honeyCakeIndex + 1));
     await expect(page).toHaveURL(/.*\/session/);

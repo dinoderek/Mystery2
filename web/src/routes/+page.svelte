@@ -72,16 +72,17 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="min-h-screen bg-t-bg text-t-primary p-8 font-mono">
+<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   {#if isStartingGame}
-    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+    <div class="flex-1 flex items-center justify-center">
       <div class="text-center space-y-4">
         <p class="text-t-bright text-lg">[ INITIALIZING HYPER-NEURAL NARRATIVE ENGINE ]</p>
         <TerminalSpinner text="Booting mystery session..." />
       </div>
     </div>
   {:else}
-    <div class="max-w-2xl mx-auto border border-t-muted/30 p-8 rounded">
+    <!-- Fixed header -->
+    <div class="mb-4">
       <div class="flex items-center justify-between mb-2">
         <h1 class="text-3xl font-bold">MYSTERY GAME TERMINAL</h1>
         <button
@@ -94,7 +95,15 @@
       </div>
 
       {#if view === 'menu'}
-        <p class="text-t-muted/70 mb-8 border-b border-t-muted/30 pb-4">Select where to continue</p>
+        <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Select where to continue</p>
+      {:else}
+        <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Select a case blueprint to begin investigation</p>
+      {/if}
+    </div>
+
+    <!-- Scrollable middle -->
+    <div class="flex-1 min-h-0 overflow-y-auto border border-t-muted/30 p-4">
+      {#if view === 'menu'}
         <div class="space-y-3 text-base">
           <p class="text-t-bright">1. Start a new game</p>
           <p class={`${hasInProgress ? 'text-t-bright' : 'text-t-muted/40 line-through'}`}>
@@ -116,13 +125,7 @@
             Session catalog unavailable. In-progress and completed options stay disabled.
           </p>
         {/if}
-
-        <div class="mt-8 text-center text-t-muted/60 animate-pulse">
-          [ PRESS 1, 2, OR 3 ]
-        </div>
       {:else}
-        <p class="text-t-muted/70 mb-8 border-b border-t-muted/30 pb-4">Select a case blueprint to begin investigation</p>
-
         {#if gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length === 0}
           <TerminalSpinner text="Loading available blueprints..." />
         {:else if gameSessionStore.error}
@@ -132,35 +135,38 @@
         {:else}
           <div class="space-y-4">
             {#each gameSessionStore.blueprints as blueprint, i}
-              <div class="group relative grid gap-3 border border-t-muted/20 p-4 transition-colors hover:border-t-primary md:grid-cols-[minmax(0,1fr)_11rem]">
+              <div class="group relative flex flex-col md:flex-row gap-3 border border-t-muted/20 p-4 transition-colors hover:border-t-primary">
                 <div class="absolute -left-3 -top-3 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
                   {i + 1}
                 </div>
-                <div>
-                  <h2 class="text-xl font-bold text-t-bright">{blueprint.title}</h2>
-                  <p class="text-t-muted/80 mb-2">{blueprint.one_liner}</p>
-                  <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>
-                </div>
                 {#if blueprint.blueprint_image_id}
-                  <section class="story-image-panel border border-t-muted/30 bg-t-bg/60 p-2">
-                    <header class="mb-2 text-[11px] uppercase tracking-wide text-t-muted/80">
-                      Case art
-                    </header>
+                  <div class="md:w-1/2 md:order-2">
                     <SignedImage
                       blueprintId={blueprint.id}
                       imageId={blueprint.blueprint_image_id}
                       alt="Case art"
                       placeholderText="Case image unavailable"
                     />
-                  </section>
+                  </div>
                 {/if}
+                <div class={blueprint.blueprint_image_id ? 'md:w-1/2 md:order-1' : ''}>
+                  <h2 class="text-xl font-bold text-t-bright">{blueprint.title}</h2>
+                  <p class="text-t-muted/80 mb-2">{blueprint.one_liner}</p>
+                  <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>
+                </div>
               </div>
             {/each}
           </div>
-          <div class="mt-8 text-center text-t-muted/60 animate-pulse">
-            [ PRESS NUMBER TO START OR B TO GO BACK ]
-          </div>
         {/if}
+      {/if}
+    </div>
+
+    <!-- Fixed footer -->
+    <div class="mt-4 text-center text-t-muted/60 animate-pulse">
+      {#if view === 'menu'}
+        [ PRESS 1, 2, OR 3 ]
+      {:else}
+        [ PRESS NUMBER TO START OR B TO GO BACK ]
       {/if}
     </div>
   {/if}

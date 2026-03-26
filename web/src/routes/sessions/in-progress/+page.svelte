@@ -43,11 +43,15 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="min-h-screen bg-t-bg text-t-primary p-8 font-mono">
-  <div class="max-w-3xl mx-auto border border-t-muted/30 p-8 rounded">
+<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
+  <!-- Fixed header -->
+  <div class="mb-4">
     <h1 class="text-2xl font-bold mb-2">IN-PROGRESS SESSIONS</h1>
-    <p class="text-t-muted/70 mb-6 border-b border-t-muted/30 pb-4">Pick a session number to resume. Press `b` to go back.</p>
+    <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Pick a session number to resume. Press `b` to go back.</p>
+  </div>
 
+  <!-- Scrollable middle -->
+  <div class="flex-1 min-h-0 overflow-y-auto border border-t-muted/30 p-4">
     {#if gameSessionStore.sessionCatalogStatus === 'loading' && sessions.length === 0}
       <p>Loading in-progress sessions...</p>
     {:else if sessions.length === 0}
@@ -73,7 +77,10 @@
     {#if message}
       <p class="mt-4 text-sm text-t-warning">{message}</p>
     {/if}
+  </div>
 
-    <p class="mt-8 text-center text-t-muted/60 animate-pulse">[ PRESS NUMBER TO RESUME OR B TO RETURN ]</p>
+  <!-- Fixed footer -->
+  <div class="mt-4 text-center text-t-muted/60 animate-pulse">
+    [ PRESS NUMBER TO RESUME OR B TO RETURN ]
   </div>
 </main>

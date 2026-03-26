@@ -168,7 +168,7 @@ serveWithCors(async (req) => {
       createNarrationPart(
         talkOutput.narration,
         characterSpeaker,
-        activeCharacter.portrait_image_id ?? null,
+        null,
       ),
     ];
     let combinedParts = [...askParts];

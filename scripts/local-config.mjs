@@ -119,6 +119,13 @@ export function getBlueprintImagesDir(
   return resolveLocalConfigPath("blueprint-images", repoRoot, env);
 }
 
+export function getChatGenPromptsDir(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath("chat-gen-prompts", repoRoot, env);
+}
+
 export function getBootstrapUsersExamplePath(repoRoot = process.cwd(), envName) {
   return path.join(
     normalizeRoot(repoRoot),

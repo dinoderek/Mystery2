@@ -30,11 +30,18 @@ Covers:
 - UI component logic (where practical)
 - prompt construction and parsing utilities
 - blueprint generation utilities (`packages/blueprint-generator/*`, `scripts/generate-blueprint.mjs`)
+- blueprint generation chat-packet assembly, including:
+  - packet rendering from the live generator prompt + user-message builder
+  - `--chat-packet` CLI parsing, default output path selection, and no-network behavior
 - blueprint schema versioning coverage, including:
   - V2 schema acceptance for all canonical playable fixtures
   - V2 authoring schema validation for generator/evaluator blueprints
   - V1 schema still exists for reference but is no longer used by runtime code
 - image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
+- image-generation chat-packet assembly, including:
+  - prompt reuse through `buildImagePrompt(...)`
+  - ordered reference-manifest rendering for location and cover packets
+  - `--chat-packets` CLI parsing, default output dir selection, and no-patch behavior
 - evaluation-packet assembly (`scripts/build-blueprint-evaluation-markdown.mjs`)
 - image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
   - when `MYSTERY_CONFIG_ROOT` is set, those local-only files are resolved from that directory instead of the repo root

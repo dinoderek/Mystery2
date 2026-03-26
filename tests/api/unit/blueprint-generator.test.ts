@@ -5,6 +5,10 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildBlueprintGenerationMarkdownDocument,
+  buildBlueprintGenerationMarkdownPacket,
+} from "../../../packages/blueprint-generator/src/chat-packet.ts";
+import {
   BlueprintGenerationError,
   generateBlueprint,
 } from "../../../packages/blueprint-generator/src/index.ts";
@@ -311,6 +315,42 @@ describe("blueprint generator", () => {
 });
 
 describe("generate-blueprint CLI", () => {
+  it("parses chat packet mode without requiring API env", () => {
+    const parsed = parseGenerateBlueprintArgs(
+      ["--chat-packet", "--brief-file", "/tmp/story.json"],
+      {
+        MYSTERY_CONFIG_ROOT: "/tmp/shared-config",
+      },
+    );
+
+    expect(parsed).toMatchObject({
+      briefFiles: ["/tmp/story.json"],
+      chatPacket: true,
+      output: "",
+      outputFile: "/tmp/shared-config/chat-gen-prompts/blueprint-packet",
+      models: [],
+    });
+  });
+
+  it("ignores model flags in chat packet mode", () => {
+    const parsed = parseGenerateBlueprintArgs(
+      [
+        "--chat-packet",
+        "--brief-file",
+        "/tmp/story.json",
+        "--model",
+        "openai/gpt-4.1-mini,google/gemini-2.5-flash",
+      ],
+      {},
+    );
+
+    expect(parsed.chatPacket).toBe(true);
+    expect(parsed.models).toEqual([
+      "openai/gpt-4.1-mini",
+      "google/gemini-2.5-flash",
+    ]);
+  });
+
   it("parses env-backed defaults", () => {
     const parsed = parseGenerateBlueprintArgs(
       ["--brief-file", "/tmp/story.json"],
@@ -354,6 +394,7 @@ describe("generate-blueprint CLI", () => {
 
     expect(parsed).toEqual({
       briefFiles: ["/tmp/one.json", "/tmp/two.json"],
+      chatPacket: false,
       output: "",
       outputFile: "/tmp/generated/blueprint",
       models: ["openai/gpt-4.1-mini", "google/gemini-2.5-flash"],
@@ -563,6 +604,58 @@ describe("generate-blueprint CLI", () => {
     );
 
     expect(result.outputText).toContain(validBlueprint.metadata.title);
+  });
+
+  it("writes markdown chat packets without invoking generation or verification", async () => {
+    const tmpDir = await mkdtemp(
+      path.join(os.tmpdir(), "blueprint-cli-chat-packet-"),
+    );
+    const briefPath = path.join(tmpDir, "brief.json");
+    const outputBase = path.join(tmpDir, "chat", "blueprint-packet");
+
+    await writeFile(
+      briefPath,
+      JSON.stringify({
+        brief: "A chat-export mystery packet.",
+        targetAge: 8,
+      }),
+      "utf-8",
+    );
+
+    const generateBlueprintImpl = vi.fn();
+    const verifyBlueprintImpl = vi.fn();
+
+    const result = await runBlueprintGenerationCli(
+      {
+        briefFiles: [briefPath],
+        chatPacket: true,
+        output: "",
+        outputFile: outputBase,
+        models: ["openai/gpt-4.1-mini"],
+        verificationModel: "google/gemini-3-flash-preview",
+        openRouterApiKey: "",
+        parallelism: 1,
+      },
+      {
+        generateBlueprintImpl,
+        verifyBlueprintImpl,
+      },
+    );
+
+    expect(generateBlueprintImpl).not.toHaveBeenCalled();
+    expect(verifyBlueprintImpl).not.toHaveBeenCalled();
+    expect(result.outputs).toHaveLength(1);
+
+    const packetPath = path.join(
+      tmpDir,
+      "chat",
+      "blueprint-packet.brief.chat.md",
+    );
+    const written = await readFile(packetPath, "utf-8");
+    expect(written).toContain("# Blueprint Generation Packet");
+    expect(written).toContain("## Generator Prompt");
+    expect(written).toContain("## Response Schema (JSON Schema)");
+    expect(written).toContain("\"story_brief\"");
   });
 
   it("surfaces generator failures", async () => {
@@ -844,5 +937,47 @@ describe("generate-blueprint CLI", () => {
     );
 
     expect(shouldExitNonZeroForBlueprintCliError(error, true)).toBe(true);
+  });
+});
+
+describe("blueprint generation chat packet builder", () => {
+  it("assembles a markdown document with prompt, schemas, and response rules", () => {
+    const markdown = buildBlueprintGenerationMarkdownDocument({
+      title: "Blueprint Generation Packet",
+      systemPrompt: "System prompt body",
+      userMessageJson: {
+        story_brief: {
+          brief: "A library mystery.",
+          targetAge: 8,
+        },
+      },
+      responseSchema: { type: "object", properties: { id: { type: "string" } } },
+      storyBriefSchemaSource: "export const StoryBriefSchema = z.object({});",
+      blueprintSchemaSource: "export const BlueprintV2Schema = z.object({});",
+    });
+
+    expect(markdown).toContain("# Blueprint Generation Packet");
+    expect(markdown).toContain("## Generator Prompt");
+    expect(markdown).toContain("## User Message JSON");
+    expect(markdown).toContain("## Response Contract");
+    expect(markdown).toContain("## Response Schema (JSON Schema)");
+    expect(markdown).toContain("## Story Brief Schema Reference");
+    expect(markdown).toContain("## Blueprint V2 Schema Reference");
+    expect(markdown).toContain("Do not output generated image fields");
+  });
+
+  it("builds a packet from the live generator prompt inputs", async () => {
+    const packet = await buildBlueprintGenerationMarkdownPacket({
+      storyBrief: {
+        brief: "A school mystery about a missing trophy.",
+        targetAge: 8,
+      },
+    });
+
+    expect(packet.outputText).toContain("## Generator Prompt");
+    expect(packet.outputText).toContain("## User Message JSON");
+    expect(packet.outputText).toContain("## Response Schema (JSON Schema)");
+    expect(packet.outputText).toContain("\"story_brief\"");
+    expect(packet.outputText).toContain("Do not output `image_id`");
   });
 });

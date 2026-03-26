@@ -65,6 +65,13 @@ generated Blueprint V2 and writes a sibling verification artifact next to each
 blueprint JSON file. Verification uses the shared evaluator prompt/schema and
 does not block the blueprint file from being written first.
 
+The same CLI also supports `--chat-packet` export mode. In that branch it does
+not call OpenRouter; instead it renders a markdown packet from the same
+generator system prompt, user-message JSON, and response-schema builder used by
+the live request path. That packet is intentionally one-way: the operator pastes
+it into chat, saves the returned JSON manually, and then validates it
+afterward.
+
 ### `story_brief` Shape
 
 The generator validates the incoming brief against
@@ -145,6 +152,12 @@ Image generation runs in three phases to enable reference-image consistency:
 3. **Phase 3 — Blueprint cover**: Receives both portrait and location scene
    references based on `cover_image.character_ids` and
    `cover_image.location_ids`.
+
+The image CLI also supports `--chat-packets` export mode. That branch still uses
+`buildImagePrompt(...)` for the prompt text, but replaces automatic API calls
+with one markdown packet per selected target. Each packet lists the required
+reference images in the same order that the API path would attach them, so the
+operator can upload them manually in chat.
 
 Reference images are passed as labeled `{ label, buffer }` objects. The prompt
 builder generates an indexed legend ("Image 1: Portrait of Alice Smith…") and

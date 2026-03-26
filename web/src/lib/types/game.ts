@@ -50,19 +50,12 @@ export interface Blueprint {
   one_liner: string;
   target_age: number;
   blueprint_image_id?: string | null;
-  blueprint_image_url?: string | null;
-  blueprint_image_expires_at?: string | null;
-  blueprint_image_placeholder?: boolean;
 }
 
 export interface StoryImageState {
   kind: 'blueprint' | 'location' | 'character';
   title: string;
   image_id: string;
-  image_url: string | null;
-  expires_at: string | null;
-  placeholder: boolean;
-  loading: boolean;
 }
 
 export type SessionMode = 'explore' | 'talk' | 'accuse' | 'ended';

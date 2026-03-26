@@ -35,6 +35,12 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - repeated `--brief-file` and `--model` flags generate every brief/model combination
 - multi-job runs write composed files via `--output-file` as `<output-file>.<model>.<brief filename>.json`
 - whenever a blueprint file is written, the CLI also runs post-generation verification and writes `<blueprint-file>.verification.json` beside it
+- `--chat-packet` switches the CLI into copy/paste packet mode:
+  - no OpenRouter request is made
+  - no verification request is made
+  - output defaults to `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/blueprint-packet.*.chat.md`
+  - packet content is built from the same generator prompt, user-message JSON, and response-schema builder used by the live API path
+  - repeated `--model` values are rejected; one optional model hint may still be shown in the packet
 - verification defaults to `google/gemini-3-flash-preview` unless `--verification-model <model-id>` is provided
 - if the model returns JSON that fails Blueprint V2 schema validation, the CLI still persists that raw JSON to the target blueprint file and records the failure in the sibling verification artifact
 - `--parallel` runs all queued jobs concurrently; `--parallelism <n>` caps concurrent jobs
@@ -44,6 +50,9 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
   - when `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory
   - it uses `AI_OPENROUTER_TIMEOUT_MS` for request/download timeout control (default `120000`)
+  - `--chat-packets` writes one markdown packet per selected target into `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/images` by default
+  - chat-packet mode never calls OpenRouter and never patches blueprint image IDs
+  - `--dry-run` and `--dry-mode` are invalid in chat-packet mode because the packet itself is now the no-network export format
 
 ## Local Configuration Summary
 
@@ -73,6 +82,7 @@ Operator flags:
 - `--verification-model <model-id>` chooses the verification model; default is `google/gemini-3-flash-preview`
 - `--output <path>` writes a single job to an exact file path
 - `--output-file <path>` writes one file per queued job using the composed filename
+- `--chat-packet` writes markdown packets instead of calling OpenRouter; if no output path is given it defaults under `chat-gen-prompts/`
 - successful file-writing jobs also emit a sibling verification JSON file
 - file-writing runs print a final stdout summary instead of blueprint JSON
 - `--parallel` or `--parallelism <n>` enable concurrent generation
@@ -104,6 +114,12 @@ The image-generation CLI resolves config in this order:
 2. `.env.images.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
 3. `.env.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
 4. built-in default model
+
+Operator flags:
+
+- `--chat-packets` writes one markdown prompt packet per selected target instead of calling OpenRouter
+- if `--output-dir` is omitted in chat mode, packets default to `chat-gen-prompts/images`
+- packets are one-way operator artifacts: you upload any reference images manually and paste the prompt into chat yourself
 
 Timeout behavior:
 

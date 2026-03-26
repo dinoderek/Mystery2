@@ -8,7 +8,14 @@ import {
   charactersAtLocation,
   createImageId,
 } from "./lib/image-prompt-builder.mjs";
-import { getBaseEnvPath, getBlueprintImagesDir, getBlueprintsDir, getImagesEnvPath } from "./local-config.mjs";
+import { buildImageChatPacket, formatImageTargetLabel } from "./lib/image-chat-packet-builder.mjs";
+import {
+  getBaseEnvPath,
+  getBlueprintImagesDir,
+  getBlueprintsDir,
+  getChatGenPromptsDir,
+  getImagesEnvPath,
+} from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
@@ -80,7 +87,8 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
 export function parseGenerateImageArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
-    outputDir: getBlueprintImagesDir(),
+    chatPackets: false,
+    outputDir: "",
     model: env.OPENROUTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
     dryRun: false,
     dryMode: false,
@@ -95,6 +103,10 @@ export function parseGenerateImageArgs(argv, env = process.env) {
 
     if (token === "--dry-run") {
       options.dryRun = true;
+      continue;
+    }
+    if (token === "--chat-packets") {
+      options.chatPackets = true;
       continue;
     }
     if (token === "--dry-mode") {
@@ -155,10 +167,21 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   }
 
   if (!options.outputDir) {
+    options.outputDir = options.chatPackets
+      ? path.join(getChatGenPromptsDir(undefined, env), "images")
+      : getBlueprintImagesDir(undefined, env);
+  }
+  if (!options.outputDir) {
     throw new Error("Missing required --output-dir");
   }
   if (!options.model) {
     throw new Error("Missing required --model");
+  }
+  if (options.chatPackets && options.dryMode) {
+    throw new Error("Cannot combine --chat-packets with --dry-mode");
+  }
+  if (options.chatPackets && options.dryRun) {
+    throw new Error("Cannot combine --chat-packets with --dry-run");
   }
 
   if (options.scope === null) {
@@ -238,14 +261,6 @@ function formatGenerationError(error) {
   }
 
   return String(error);
-}
-
-function formatTargetLabel(target) {
-  if (target.targetType === "blueprint") {
-    return "Blueprint";
-  }
-
-  return `${target.targetType === "character" ? "Character" : "Location"} ${target.targetKey}`;
 }
 
 function decodeDataUrl(dataUrl) {
@@ -456,7 +471,7 @@ async function generateSingleTarget({
     options.outputDir,
     baseImageId,
   );
-  const label = formatTargetLabel(target);
+  const label = formatImageTargetLabel(target);
 
   if (options.dryRun) {
     console.log(`[dry-run] ${label} — would generate: ${filename}`);
@@ -563,6 +578,59 @@ async function generateSingleTarget({
   }
 }
 
+function buildChatPacketPath(outputDir, blueprintName, target) {
+  const packetBaseName = createImageId(
+    blueprintName,
+    target.targetType,
+    target.targetKey,
+  );
+  return path.join(outputDir, `${packetBaseName}.chat.md`);
+}
+
+async function exportImageChatPackets({
+  blueprint,
+  blueprintName,
+  options,
+}) {
+  const targets = resolveImageTargets(blueprint, {
+    scope: options.scope,
+    characterKeys: options.characterKeys,
+    locationKeys: options.locationKeys,
+  });
+
+  console.log(
+    `Generating chat image packets for "${blueprintName}" - ${targets.length} target(s)`,
+  );
+
+  await fs.mkdir(options.outputDir, { recursive: true });
+
+  const results = [];
+  for (const target of targets) {
+    const packetText = buildImageChatPacket({
+      blueprint,
+      target,
+      modelHint: options.model,
+    });
+    const outputPath = buildChatPacketPath(options.outputDir, blueprintName, target);
+    await fs.writeFile(outputPath, packetText, "utf-8");
+    console.log(`[chat-packet] ${formatImageTargetLabel(target)} - ${outputPath}`);
+    results.push({
+      target_type: target.targetType,
+      target_key: target.targetKey,
+      status: "generated",
+      image_id: null,
+      file_path: outputPath,
+      error_message: null,
+      output_kind: "chat_packet",
+    });
+  }
+
+  return {
+    blueprint_id: blueprint.id,
+    results,
+  };
+}
+
 export async function runImageGeneration(rawOptions, dependencies = {}) {
   const options = { ...rawOptions };
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -596,6 +664,14 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   });
 
   const blueprintName = blueprint.metadata?.title ?? blueprint.id;
+
+  if (options.chatPackets) {
+    return exportImageChatPackets({
+      blueprint,
+      blueprintName,
+      options,
+    });
+  }
 
   // Split targets into three phases:
   //   Phase 1: character portraits (no references needed)

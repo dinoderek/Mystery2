@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { buildImageChatPacket } from "../../../scripts/lib/image-chat-packet-builder.mjs";
 import {
   loadImageGenerationEnv,
   parseGenerateImageArgs,
@@ -123,6 +124,33 @@ describe("generate-blueprint-images args parser", () => {
     ]);
 
     expect(parsed.parallel).toBe(false);
+  });
+
+  it("parses chat packet mode with a config-root-backed default output dir", () => {
+    const parsed = parseGenerateImageArgs(
+      [
+        "--chat-packets",
+        "--blueprint-path",
+        "/tmp/mock.json",
+      ],
+      {
+        MYSTERY_CONFIG_ROOT: "/tmp/shared-config",
+      },
+    );
+
+    expect(parsed.chatPackets).toBe(true);
+    expect(parsed.outputDir).toBe("/tmp/shared-config/chat-gen-prompts/images");
+  });
+
+  it("rejects dry-mode combinations in chat packet mode", () => {
+    expect(() =>
+      parseGenerateImageArgs([
+        "--chat-packets",
+        "--blueprint-path",
+        "/tmp/mock.json",
+        "--dry-mode",
+      ]),
+    ).toThrow("Cannot combine --chat-packets with --dry-mode");
   });
 
   it("uses env-backed model defaults when --model is omitted", () => {
@@ -477,7 +505,7 @@ describe("runImageGeneration", () => {
 
     const renderedLogs = logSpy.mock.calls.map((call) => call.join(" ")).join("\n");
     expect(renderedLogs).toContain("[generate] Blueprint");
-    expect(renderedLogs).toContain("[dry-mode] Blueprint:");
+    expect(renderedLogs).toContain("[dry-mode] Blueprint cover image:");
     expect(renderedLogs).toContain("\"url\": \"https://openrouter.ai/api/v1/chat/completions\"");
     expect(renderedLogs).toContain("\"model\": \"openai/gpt-image-1\"");
     expect(renderedLogs).toContain("\"modalities\": [");
@@ -701,5 +729,76 @@ describe("runImageGeneration", () => {
 
     expect(result2.results[0].image_id).toBe("mock-blueprint.blueprint-1.png");
     expect(path.basename(result2.results[0].file_path)).toBe("mock-blueprint.blueprint-1.png");
+  });
+});
+
+describe("image chat packets", () => {
+  it("builds a packet with ordered reference instructions", () => {
+    const locationPacket = buildImageChatPacket({
+      blueprint: blueprintFixture,
+      target: { targetType: "location", targetKey: "Kitchen" },
+      modelHint: "openai/gpt-image-1",
+    });
+
+    expect(locationPacket).toContain("# Image Generation Packet");
+    expect(locationPacket).toContain("## Upload Checklist");
+    expect(locationPacket).toContain("1. Portrait of Alice Smith (Red hair)");
+    expect(locationPacket).toContain("\"kind\": \"character_portrait\"");
+    expect(locationPacket).toContain("## Prompt");
+    expect(locationPacket).toContain("Reference images (attached below in order):");
+
+    const portraitPacket = buildImageChatPacket({
+      blueprint: blueprintFixture,
+      target: { targetType: "character", targetKey: "char-alice" },
+    });
+
+    expect(portraitPacket).toContain("No reference uploads are required");
+  });
+
+  it("writes one chat packet per selected target without calling fetch or patching blueprint", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-chat-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "chat-packets");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const fetchImpl = vi.fn();
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "all",
+        chatPackets: true,
+        dryRun: false,
+        dryMode: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      {
+        fetchImpl,
+      },
+    );
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(result.results).toHaveLength(3);
+    expect(
+      result.results.every((entry: { output_kind?: string }) => entry.output_kind === "chat_packet"),
+    ).toBe(true);
+
+    const coverPacketPath = path.join(
+      outputDir,
+      "mock-blueprint.blueprint.chat.md",
+    );
+    const coverPacket = await readFile(coverPacketPath, "utf-8");
+    expect(coverPacket).toContain("## Reference Manifest");
+    expect(coverPacket).toContain("\"kind\": \"character_portrait\"");
+    expect(coverPacket).toContain("\"kind\": \"location_scene\"");
+
+    const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
+    expect(patched.metadata.image_id).toBeUndefined();
+    expect(patched.world.locations[0].location_image_id).toBeUndefined();
+    expect(patched.world.characters[0].portrait_image_id).toBeUndefined();
   });
 });

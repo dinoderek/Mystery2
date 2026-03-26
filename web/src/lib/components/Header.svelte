@@ -2,14 +2,10 @@
   import { gameSessionStore } from '$lib/domain/store.svelte';
 
   const mysteryTitle = $derived.by(() => {
-    const id = gameSessionStore.game_id;
-    if (!id) return 'Unknown Mystery';
-    const allRows = [
-      ...gameSessionStore.sessionCatalog.in_progress,
-      ...gameSessionStore.sessionCatalog.completed,
-    ];
-    const row = allRows.find((entry) => entry.game_id === id);
-    return row?.mystery_title || 'Unknown Mystery';
+    const blueprintId = gameSessionStore.blueprint_id;
+    if (!blueprintId) return 'Unknown Mystery';
+    const blueprint = gameSessionStore.blueprints.find((b) => b.id === blueprintId);
+    return blueprint?.title || 'Unknown Mystery';
   });
 </script>
 

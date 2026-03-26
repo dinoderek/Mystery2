@@ -12,7 +12,8 @@
     imageTitle: string;
   }
 
-  let sentinel: HTMLDivElement;
+  let scrollContainer: HTMLDivElement;
+  let failedImageIds = $state(new Set<string>());
 
   const renderedHistory = $derived.by(() => {
     const state = gameSessionStore.state;
@@ -74,22 +75,29 @@
     return gameSessionStore.state?.location || 'Location';
   }
 
+  function scrollToBottom() {
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }
+
   $effect(() => {
     const _len = renderedHistory.length;
 
-    if (sentinel) {
-      tick().then(() => {
-        sentinel.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      });
+    if (scrollContainer) {
+      tick().then(scrollToBottom);
     }
   });
 </script>
 
 <div class="flex min-h-0 flex-1">
-  <div class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
+  <div bind:this={scrollContainer} class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
     <div class="space-y-4">
       {#each groupedHistory as group}
-        {#if group.imageId && gameSessionStore.blueprint_id}
+        {#if group.imageId && gameSessionStore.blueprint_id && !failedImageIds.has(group.imageId)}
           <div class="narration-image-group">
             <div class="narration-image-float">
               <div class="story-image-panel">
@@ -97,6 +105,8 @@
                   blueprintId={gameSessionStore.blueprint_id}
                   imageId={group.imageId}
                   alt={group.imageTitle}
+                  onload={scrollToBottom}
+                  onfail={() => { failedImageIds = new Set([...failedImageIds, group.imageId!]); }}
                 />
               </div>
             </div>
@@ -116,6 +126,5 @@
         <TerminalSpinner text="Narrator is thinking..." />
       {/if}
     </div>
-    <div bind:this={sentinel} aria-hidden="true"></div>
   </div>
 </div>

@@ -231,7 +231,7 @@ test.describe('US1 - Start Screen', () => {
     await page.keyboard.press('1');
 
     await expect(page.getByText('The Stolen Cake')).toBeVisible();
-    await expect(page.locator('[data-testid="story-image-panel"] img')).toBeVisible();
+    await expect(page.locator('.story-image-panel img')).toBeVisible();
   });
 
   test('shows placeholder when blueprint image link request fails', async ({ page }) => {

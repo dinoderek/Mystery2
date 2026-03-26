@@ -91,8 +91,8 @@ describe("game-ask endpoint", () => {
     expect(data.time_remaining).toBe(9);
     expect(data.discovered_clue_id).toBeUndefined();
     expect(data.narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_parts[0].image_id).toBeUndefined();
     expect(data.narration_parts[0]).toMatchObject({
-      image_id: "mock-blueprint.character-char-alice.png",
       speaker: {
         kind: "character",
         key: "character:alice",

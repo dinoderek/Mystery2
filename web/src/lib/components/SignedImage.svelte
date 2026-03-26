@@ -9,6 +9,8 @@
     class: className = '',
     loadingText = 'Loading image...',
     placeholderText = 'Image unavailable',
+    onload = undefined,
+    onfail = undefined,
   } = $props<{
     blueprintId: string;
     imageId: string;
@@ -16,6 +18,8 @@
     class?: string;
     loadingText?: string;
     placeholderText?: string;
+    onload?: () => void;
+    onfail?: () => void;
   }>();
 
   let entry = $state<ImageLinkEntry>({ url: null, expiresAt: null, loading: true, placeholder: false });
@@ -23,6 +27,9 @@
   onMount(() => {
     const unsubscribe = imageLinkCache.subscribe(blueprintId, imageId, (updated) => {
       entry = updated;
+      if (updated.placeholder && onfail) {
+        onfail();
+      }
     });
     return unsubscribe;
   });
@@ -38,6 +45,7 @@
     {alt}
     class="story-image-asset block w-full object-cover {className}"
     loading="lazy"
+    onload={onload}
   />
 {:else}
   <div class="story-image-placeholder flex items-center justify-center text-sm text-t-muted/80 {className}">

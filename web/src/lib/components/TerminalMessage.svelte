@@ -25,5 +25,5 @@
   <span class={`mr-2 text-sm font-bold uppercase tracking-wide ${speakerTheme.label}`}
     >{speaker.label}:</span
   >
-  <span>{text}</span>
+  <span class="whitespace-pre-line">{text}</span>
 </div>

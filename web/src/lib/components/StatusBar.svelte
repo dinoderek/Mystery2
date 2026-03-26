@@ -24,23 +24,25 @@
 <div
   class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm"
 >
-  <span>LOCATION: {currentLocationName}</span>
-  <span class="text-t-muted/50">type 'help' to see commands</span>
-  <span>TIME: {gameSessionStore.state?.time_remaining || 0}</span>
+  <span><span class="text-t-muted/70 font-bold">LOCATION:</span> {currentLocationName}</span>
+  <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
 </div>
 <div
-  class="border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm flex gap-2"
+  class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm"
 >
-  <span class="text-t-muted/70">CHARACTERS:</span>
-  <div>
-    {#if visibleCharacters.length > 0}
-      {#each visibleCharacters as char, i}
-        <span
-          >{char.first_name} {char.last_name}{i < visibleCharacters.length - 1 ? ", " : ""}</span
-        >
-      {/each}
-    {:else}
-      <span class="text-t-muted/50">None</span>
-    {/if}
+  <div class="flex gap-2">
+    <span class="text-t-muted/70 font-bold">CHARACTERS:</span>
+    <div>
+      {#if visibleCharacters.length > 0}
+        {#each visibleCharacters as char, i}
+          <span
+            >{char.first_name} {char.last_name}{i < visibleCharacters.length - 1 ? ", " : ""}</span
+          >
+        {/each}
+      {:else}
+        <span class="text-t-muted/50">None</span>
+      {/if}
+    </div>
   </div>
+  <span class="text-t-muted/50">type 'help' to see commands</span>
 </div>

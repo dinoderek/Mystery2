@@ -1,7 +1,8 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { gameSessionStore } from '$lib/domain/store.svelte';
-  import { resolveImageLink, type ImagePurpose } from '$lib/api/images';
+  import { resolveImageLink } from '$lib/api/images';
+  import { isImageLinkExpired } from '$lib/domain/store.retry';
   import type { HistoryEntry } from '$lib/types/game';
   import TerminalMessage from './TerminalMessage.svelte';
   import TerminalSpinner from './TerminalSpinner.svelte';
@@ -69,13 +70,7 @@
   });
 
   // Resolved image URLs keyed by image_id
-  let resolvedImages = $state<Map<string, { url: string | null; title: string; loading: boolean }>>(new Map());
-
-  function inferImagePurpose(entry: HistoryEntry): ImagePurpose {
-    if (entry.event_type === 'start') return 'blueprint_cover';
-    if (entry.event_type === 'talk' || entry.event_type === 'ask') return 'character_portrait';
-    return 'location_scene';
-  }
+  let resolvedImages = $state<Map<string, { url: string | null; expiresAt: string | null; title: string; loading: boolean }>>(new Map());
 
   function inferImageTitle(entry: HistoryEntry): string {
     if (entry.event_type === 'start') {
@@ -89,11 +84,14 @@
     return gameSessionStore.state?.location || 'Location';
   }
 
-  // Resolve images for groups that need them
+  // Resolve images for groups that need them, and re-resolve when expired
   $effect(() => {
     const groups = groupedHistory;
     for (const group of groups) {
-      if (!group.imageId || resolvedImages.has(group.imageId)) continue;
+      if (!group.imageId) continue;
+
+      const existing = resolvedImages.get(group.imageId);
+      if (existing && (existing.loading || !isImageLinkExpired(existing.expiresAt))) continue;
 
       const imageId = group.imageId;
       const anchorEntry = group.entries[0];
@@ -102,16 +100,16 @@
       if (!blueprintId) continue;
 
       // Mark as loading
-      resolvedImages.set(imageId, { url: null, title: inferImageTitle(anchorEntry), loading: true });
+      resolvedImages.set(imageId, { url: existing?.url ?? null, expiresAt: null, title: inferImageTitle(anchorEntry), loading: true });
       resolvedImages = new Map(resolvedImages);
 
       resolveImageLink({
         blueprintId,
         imageId,
-        purpose: inferImagePurpose(anchorEntry),
       }).then((resolved) => {
         resolvedImages.set(imageId, {
           url: resolved.placeholder ? null : resolved.url,
+          expiresAt: resolved.expiresAt,
           title: inferImageTitle(anchorEntry),
           loading: false,
         });

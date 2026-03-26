@@ -61,7 +61,6 @@ describe("signed image URL is reachable from outside Docker", () => {
       body: JSON.stringify({
         blueprint_id: MOCK_BLUEPRINT_ID,
         image_id: imageId,
-        purpose: "blueprint_cover",
       }),
     });
     expect(res.status).toBe(200);

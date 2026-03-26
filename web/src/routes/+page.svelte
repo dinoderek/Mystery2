@@ -22,6 +22,8 @@
     view = 'new-game';
     if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status === 'idle') {
       await gameSessionStore.loadBlueprints();
+    } else {
+      await gameSessionStore.refreshBlueprintImageLinks();
     }
   }
 

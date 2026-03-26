@@ -117,9 +117,9 @@ test.describe('Command Input', () => {
     });
 
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      const payload = route.request().postDataJSON() as { purpose?: string };
+      const payload = route.request().postDataJSON() as { image_id?: string };
 
-      if (payload.purpose === 'location_scene') {
+      if (payload.image_id === 'mock-blueprint.location-garden.png') {
         await route.fulfill({
           json: {
             image_id: 'mock-blueprint.location-garden.png',

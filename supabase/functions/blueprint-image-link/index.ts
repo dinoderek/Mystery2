@@ -16,27 +16,19 @@ import {
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const PURPOSES = new Set([
-  "blueprint_cover",
-  "location_scene",
-  "character_portrait",
-] as const);
-
-type ImagePurpose = "blueprint_cover" | "location_scene" | "character_portrait";
 
 function isImageReferenced(
   blueprint: BlueprintV2,
-  purpose: ImagePurpose,
   imageId: string,
 ): boolean {
-  if (purpose === "blueprint_cover") {
-    return blueprint.metadata.image_id === imageId;
+  if (blueprint.metadata.image_id === imageId) {
+    return true;
   }
 
-  if (purpose === "location_scene") {
-    return blueprint.world.locations.some((location) =>
-      location.location_image_id === imageId
-    );
+  if (blueprint.world.locations.some((location) =>
+    location.location_image_id === imageId
+  )) {
+    return true;
   }
 
   return blueprint.world.characters.some((character) =>
@@ -59,18 +51,12 @@ serveWithCors(async (req) => {
       ? body.blueprint_id
       : "";
     const imageId = ensureCanonicalImageId(body?.image_id);
-    const purpose = typeof body?.purpose === "string" && PURPOSES.has(body.purpose)
-      ? body.purpose as ImagePurpose
-      : null;
 
     if (!UUID_PATTERN.test(blueprintId)) {
       return badRequest("Invalid blueprint_id");
     }
     if (!imageId) {
       return badRequest("Invalid image_id");
-    }
-    if (!purpose) {
-      return badRequest("Invalid purpose");
     }
 
     const { data: fileData, error: downloadError } = await userClient.storage
@@ -82,7 +68,7 @@ serveWithCors(async (req) => {
 
     const rawBlueprint = await fileData.text();
     const blueprint = BlueprintV2Schema.parse(JSON.parse(rawBlueprint));
-    if (!isImageReferenced(blueprint, purpose, imageId)) {
+    if (!isImageReferenced(blueprint, imageId)) {
       return notFound("Image not referenced by blueprint");
     }
 

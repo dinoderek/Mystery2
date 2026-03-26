@@ -2,7 +2,7 @@ const IMAGE_FILENAME_PATTERN =
   /^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*\.(?:png|jpe?g|webp)$/i;
 
 export const BLUEPRINT_IMAGES_BUCKET = "blueprint-images";
-export const IMAGE_LINK_TTL_SECONDS = 120;
+export const IMAGE_LINK_TTL_SECONDS = 3600;
 
 export function isCanonicalImageId(value: unknown): value is string {
   return typeof value === "string" && IMAGE_FILENAME_PATTERN.test(value);

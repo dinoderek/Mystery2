@@ -1,5 +1,6 @@
 import { supabase } from '../api/supabase';
-import { resolveImageLink, type ImagePurpose } from '../api/images';
+import { resolveImageLink } from '../api/images';
+import { isImageLinkExpired } from './store.retry';
 import type {
   Blueprint,
   GameState,
@@ -314,7 +315,6 @@ export class GameSessionStore {
       const resolved = await resolveImageLink({
         blueprintId: blueprint.id,
         imageId: blueprint.blueprint_image_id,
-        purpose: 'blueprint_cover',
       });
 
       this.blueprints[index] = {
@@ -323,6 +323,15 @@ export class GameSessionStore {
         blueprint_image_expires_at: resolved.expiresAt,
         blueprint_image_placeholder: resolved.placeholder,
       };
+    }
+  }
+
+  async refreshBlueprintImageLinks() {
+    const stale = this.blueprints.some(
+      (b) => b.blueprint_image_id && isImageLinkExpired(b.blueprint_image_expires_at),
+    );
+    if (stale) {
+      await this.hydrateBlueprintImageLinks();
     }
   }
 
@@ -893,18 +902,6 @@ export class GameSessionStore {
     return entries;
   }
 
-  private inferImagePurpose(entry: HistoryEntry): ImagePurpose {
-    if (entry.event_type === 'start') {
-      return 'blueprint_cover';
-    }
-
-    if (entry.event_type === 'talk' || entry.event_type === 'ask') {
-      return 'character_portrait';
-    }
-
-    return 'location_scene';
-  }
-
   private inferStoryImageTitle(entry: HistoryEntry): string {
     if (entry.event_type === 'start') {
       const blueprint = this.blueprints.find((candidate) => candidate.id === this.blueprint_id);
@@ -932,15 +929,14 @@ export class GameSessionStore {
       return;
     }
 
-    const purpose = this.inferImagePurpose(latestWithImage);
+    const kind = latestWithImage.event_type === 'start'
+      ? 'blueprint' as const
+      : (latestWithImage.event_type === 'talk' || latestWithImage.event_type === 'ask')
+        ? 'character' as const
+        : 'location' as const;
     const title = this.inferStoryImageTitle(latestWithImage);
     this.activeStoryImage = {
-      kind:
-        purpose === 'blueprint_cover'
-          ? 'blueprint'
-          : purpose === 'character_portrait'
-            ? 'character'
-            : 'location',
+      kind,
       title,
       image_id: latestWithImage.image_id,
       image_url: null,
@@ -952,16 +948,10 @@ export class GameSessionStore {
     const resolved = await resolveImageLink({
       blueprintId: this.blueprint_id,
       imageId: latestWithImage.image_id,
-      purpose,
     });
 
     this.activeStoryImage = {
-      kind:
-        purpose === 'blueprint_cover'
-          ? 'blueprint'
-          : purpose === 'character_portrait'
-            ? 'character'
-            : 'location',
+      kind,
       title,
       image_id: latestWithImage.image_id,
       image_url: resolved.url,

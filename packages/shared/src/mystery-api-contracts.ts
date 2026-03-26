@@ -148,16 +148,9 @@ export const BlueprintSummarySchema = z.object({
   blueprint_image_id: z.string().nullable().optional(),
 });
 
-export const ImagePurposeSchema = z.enum([
-  "blueprint_cover",
-  "location_scene",
-  "character_portrait",
-]);
-
 export const ImageLinkRequestSchema = z.object({
   blueprint_id: z.string().uuid(),
   image_id: z.string().min(1),
-  purpose: ImagePurposeSchema,
 });
 
 export const ImageLinkResponseSchema = z.object({
@@ -216,6 +209,5 @@ export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;
 export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;
-export type ImagePurpose = z.infer<typeof ImagePurposeSchema>;
 export type ImageLinkRequest = z.infer<typeof ImageLinkRequestSchema>;
 export type ImageLinkResponse = z.infer<typeof ImageLinkResponseSchema>;

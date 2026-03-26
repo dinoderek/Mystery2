@@ -1,12 +1,9 @@
 import { supabase, supabaseUrl } from './supabase';
 import { isImageLinkExpired } from '$lib/domain/store.retry';
 
-export type ImagePurpose = 'blueprint_cover' | 'location_scene' | 'character_portrait';
-
 export interface ResolveImageLinkRequest {
   blueprintId: string;
   imageId: string | null | undefined;
-  purpose: ImagePurpose;
 }
 
 interface ImageLinkResponse {
@@ -24,7 +21,7 @@ interface CachedLink {
 const cache = new Map<string, CachedLink>();
 
 function cacheKey(request: ResolveImageLinkRequest): string {
-  return `${request.blueprintId}:${request.purpose}:${request.imageId ?? ''}`;
+  return `${request.blueprintId}:${request.imageId ?? ''}`;
 }
 
 function asImageLinkResponse(data: unknown): ImageLinkResponse | null {
@@ -71,7 +68,6 @@ export async function resolveImageLink(
     body: {
       blueprint_id: request.blueprintId,
       image_id: request.imageId,
-      purpose: request.purpose,
     },
   });
 

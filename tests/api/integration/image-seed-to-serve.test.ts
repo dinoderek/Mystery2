@@ -70,13 +70,13 @@ describe("image seed-to-serve contract", () => {
     // 3. For each image ref, verify the edge function resolves a signed URL.
     //    This proves the storage key from the seed script matches what the
     //    edge function builds via buildImageStorageKey().
-    const purposes: Record<string, string> = {
-      blueprint_cover: blueprint.metadata.image_id,
-      location_scene: blueprint.world.locations[0].location_image_id,
-      character_portrait: blueprint.world.characters[0].portrait_image_id,
-    };
+    const imageIds = [
+      blueprint.metadata.image_id,
+      blueprint.world.locations[0].location_image_id,
+      blueprint.world.characters[0].portrait_image_id,
+    ];
 
-    for (const [purpose, imageId] of Object.entries(purposes)) {
+    for (const imageId of imageIds) {
       // Verify the storage key the edge function would build matches the plan
       const edgeKey = buildImageStorageKey(blueprint.id, imageId);
       const planItem = plan.find(
@@ -94,11 +94,10 @@ describe("image seed-to-serve contract", () => {
         body: JSON.stringify({
           blueprint_id: MOCK_BLUEPRINT_ID,
           image_id: imageId,
-          purpose,
         }),
       });
 
-      expect(res.status, `${purpose} (${imageId}) returned ${res.status}`).toBe(200);
+      expect(res.status, `${imageId} returned ${res.status}`).toBe(200);
       const body = await res.json();
       expect(body.image_id).toBe(imageId);
       expect(body.signed_url).toBeTruthy();

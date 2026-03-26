@@ -60,7 +60,6 @@ describe("edge function CORS handling", () => {
       body: JSON.stringify({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
         image_id: "mock-blueprint.blueprint.png",
-        purpose: "blueprint_cover",
       }),
     });
     expect(imageRes.status).toBe(401);

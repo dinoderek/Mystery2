@@ -94,7 +94,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(missingImageAuthRes.status).toBe(401);
@@ -105,7 +104,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(invalidImageAuthRes.status).toBe(401);
@@ -116,7 +114,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(validImageRes.status).toBe(200);
@@ -131,7 +128,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: "mock-blueprint.nonexistent.png",
-        purpose: "blueprint_cover",
       }),
     });
     expect(missingImageRes.status).toBe(404);

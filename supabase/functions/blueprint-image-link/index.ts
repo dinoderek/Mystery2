@@ -14,9 +14,6 @@ import {
   toRelativeSignedUrl,
 } from "../_shared/images.ts";
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function isImageReferenced(
   blueprint: BlueprintV2,
   imageId: string,
@@ -52,8 +49,8 @@ serveWithCors(async (req) => {
       : "";
     const imageId = ensureCanonicalImageId(body?.image_id);
 
-    if (!UUID_PATTERN.test(blueprintId)) {
-      return badRequest("Invalid blueprint_id");
+    if (!blueprintId) {
+      return badRequest("Missing blueprint_id");
     }
     if (!imageId) {
       return badRequest("Invalid image_id");

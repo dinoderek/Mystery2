@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gameSessionStore } from '$lib/domain/store.svelte';
+  import SignedImage from './SignedImage.svelte';
   import TerminalMessage from './TerminalMessage.svelte';
 
   function close() {
@@ -18,7 +19,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if gameSessionStore.showZoomModal && image?.image_url}
+{#if gameSessionStore.showZoomModal && image && gameSessionStore.blueprint_id}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div
     class="fixed inset-0 z-50 bg-t-bg/95"
@@ -36,8 +37,9 @@
       {/if}
 
       <div class="zoom-image-pane">
-        <img
-          src={image.image_url}
+        <SignedImage
+          blueprintId={gameSessionStore.blueprint_id}
+          imageId={image.image_id}
           alt={image.title}
           class="max-h-full max-w-full object-contain"
         />

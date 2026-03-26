@@ -4,7 +4,7 @@
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import { authStore } from '$lib/domain/auth-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
-  import StoryImagePanel from '$lib/components/StoryImagePanel.svelte';
+  import SignedImage from '$lib/components/SignedImage.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -22,8 +22,6 @@
     view = 'new-game';
     if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status === 'idle') {
       await gameSessionStore.loadBlueprints();
-    } else {
-      await gameSessionStore.refreshBlueprintImageLinks();
     }
   }
 
@@ -144,13 +142,17 @@
                   <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>
                 </div>
                 {#if blueprint.blueprint_image_id}
-                  <StoryImagePanel
-                    title="Case art"
-                    imageUrl={blueprint.blueprint_image_url}
-                    placeholder={Boolean(blueprint.blueprint_image_placeholder)}
-                    placeholderText="Case image unavailable"
-                    compact={true}
-                  />
+                  <section class="story-image-panel border border-t-muted/30 bg-t-bg/60 p-2">
+                    <header class="mb-2 text-[11px] uppercase tracking-wide text-t-muted/80">
+                      Case art
+                    </header>
+                    <SignedImage
+                      blueprintId={blueprint.id}
+                      imageId={blueprint.blueprint_image_id}
+                      alt="Case art"
+                      placeholderText="Case image unavailable"
+                    />
+                  </section>
                 {/if}
               </div>
             {/each}

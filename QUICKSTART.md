@@ -165,6 +165,21 @@ Find the current passwords in `supabase/seed/auth-users.local.json`, or in `$MYS
 For in-depth details on local infrastructure, worktree isolation, and garbage
 collection see [`docs/local-infrastructure.md`](docs/local-infrastructure.md).
 
+### Important: use `npm run` scripts in worktrees
+
+When working inside a git worktree, always prefer the `npm run supabase:*`
+scripts over raw `npx supabase` commands. The npm scripts patch
+`supabase/config.toml` with the worktree's project_id and ports before
+invoking Supabase CLI, ensuring commands target the correct isolated stack.
+
+Running `npx supabase ...` directly in a worktree may target the wrong
+instance if the config has not been patched yet. If you must run a raw
+command, patch first:
+
+```bash
+npm run supabase:patch
+```
+
 ### Check status
 
 ```bash
@@ -201,10 +216,14 @@ npm run supabase:gc
 ### Reset the local database
 
 ```bash
-npx supabase db reset --local --yes
+npm run supabase:reset
 ```
 
 Use this when you need a clean local database with all migrations reapplied.
+This script patches `supabase/config.toml` for worktree isolation before
+running the reset, so it is safe to use in both the main checkout and
+worktrees. Avoid calling `npx supabase db reset` directly in a worktree — the
+config may not be patched yet.
 
 After a reset, restore local app data with:
 

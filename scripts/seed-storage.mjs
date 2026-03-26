@@ -12,7 +12,7 @@ import {
   getBlueprintImagesDir,
   getBlueprintsDir,
 } from "./local-config.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
 import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
@@ -209,6 +209,9 @@ const baseEnv = await loadEnvFile(baseEnvPath, false);
 for (const [key, value] of Object.entries(baseEnv)) {
   if (!process.env[key]) process.env[key] = value;
 }
+
+const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
+await ensureSupabaseRunning(env);
 
 const { seedImages, imageDir, allowMissingImages } = parseOptions();
 const resolved = resolveWorktreePorts();

@@ -5,7 +5,7 @@ import {
   getAIEnvPath,
   getBaseEnvPath,
 } from "./local-config.mjs";
-import { injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
 
 const ROOT_DIR = process.cwd();
 const CANONICAL_DEFAULT_PROFILE_ID = "default";
@@ -99,6 +99,8 @@ const { only, targets } = resolveTargets(process.argv.slice(2));
 const baseEnvPath = getBaseEnvPath(ROOT_DIR, process.env);
 const baseEnv = await loadEnvFile(baseEnvPath, false);
 const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
+
+await ensureSupabaseRunning(env);
 
 const supabaseUrl = env.API_URL;
 const serviceRoleKey = env.SERVICE_ROLE_KEY;

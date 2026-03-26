@@ -332,19 +332,23 @@ describe("generate-blueprint CLI", () => {
     });
   });
 
-  it("rejects multi-model chat packet configuration", () => {
-    expect(() =>
-      parseGenerateBlueprintArgs(
-        [
-          "--chat-packet",
-          "--brief-file",
-          "/tmp/story.json",
-          "--model",
-          "openai/gpt-4.1-mini,google/gemini-2.5-flash",
-        ],
-        {},
-      ),
-    ).toThrow("Chat packet mode supports at most one model hint");
+  it("ignores model flags in chat packet mode", () => {
+    const parsed = parseGenerateBlueprintArgs(
+      [
+        "--chat-packet",
+        "--brief-file",
+        "/tmp/story.json",
+        "--model",
+        "openai/gpt-4.1-mini,google/gemini-2.5-flash",
+      ],
+      {},
+    );
+
+    expect(parsed.chatPacket).toBe(true);
+    expect(parsed.models).toEqual([
+      "openai/gpt-4.1-mini",
+      "google/gemini-2.5-flash",
+    ]);
   });
 
   it("parses env-backed defaults", () => {
@@ -940,7 +944,6 @@ describe("blueprint generation chat packet builder", () => {
   it("assembles a markdown document with prompt, schemas, and response rules", () => {
     const markdown = buildBlueprintGenerationMarkdownDocument({
       title: "Blueprint Generation Packet",
-      modelHint: "openai/gpt-4.1-mini",
       systemPrompt: "System prompt body",
       userMessageJson: {
         story_brief: {
@@ -969,7 +972,6 @@ describe("blueprint generation chat packet builder", () => {
         brief: "A school mystery about a missing trophy.",
         targetAge: 8,
       },
-      modelHint: "openai/gpt-4.1-mini",
     });
 
     expect(packet.outputText).toContain("## Generator Prompt");

@@ -17,7 +17,6 @@ function formatJsonBlock(value: unknown): string {
 }
 
 export interface BuildBlueprintGenerationMarkdownOptions {
-  modelHint?: string;
   storyBrief: StoryBrief;
   title?: string;
 }
@@ -30,7 +29,6 @@ export interface BlueprintGenerationMarkdownPacket {
 
 export function buildBlueprintGenerationMarkdownDocument({
   title = "Blueprint Generation Packet",
-  modelHint = "",
   systemPrompt,
   userMessageJson,
   responseSchema,
@@ -38,7 +36,6 @@ export function buildBlueprintGenerationMarkdownDocument({
   blueprintSchemaSource,
 }: {
   blueprintSchemaSource: string;
-  modelHint?: string;
   responseSchema: Record<string, unknown>;
   storyBriefSchemaSource: string;
   systemPrompt: string;
@@ -56,15 +53,11 @@ export function buildBlueprintGenerationMarkdownDocument({
     "5. Optionally run the existing evaluation packet flow for a second-pass review.",
   ].join("\n");
 
-  const modelHintBlock = modelHint.trim()
-    ? `## Model Hint\n\n${modelHint.trim()}\n`
-    : "";
-
   return `# ${title}
 
 ${operatorNotes}
 
-${modelHintBlock}## Generator Prompt
+## Generator Prompt
 
 \`\`\`text
 ${systemPrompt.trim()}
@@ -106,7 +99,6 @@ ${blueprintSchemaSource.trim()}
 export async function buildBlueprintGenerationMarkdownPacket({
   storyBrief,
   title,
-  modelHint,
 }: BuildBlueprintGenerationMarkdownOptions): Promise<BlueprintGenerationMarkdownPacket> {
   const parsedStoryBrief = StoryBriefSchema.parse(storyBrief);
   const [chatInput, storyBriefSchemaSource, blueprintSchemaSource] =
@@ -121,7 +113,6 @@ export async function buildBlueprintGenerationMarkdownPacket({
     responseSchema: chatInput.responseSchema,
     outputText: buildBlueprintGenerationMarkdownDocument({
       title,
-      modelHint,
       systemPrompt: chatInput.systemPrompt,
       userMessageJson: JSON.parse(chatInput.userMessageContent) as Record<
         string,

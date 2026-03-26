@@ -83,7 +83,6 @@ export function formatImageTargetLabel(target) {
 export function buildImageChatPacket({
   blueprint,
   target,
-  modelHint = "",
 }) {
   const referenceManifest = buildImageReferenceManifest(blueprint, target);
   const prompt = buildImagePrompt(blueprint, target, {
@@ -106,10 +105,6 @@ export function buildImageChatPacket({
           ),
         ].join("\n");
 
-  const modelHintBlock = modelHint.trim()
-    ? `## Model Hint\n\n${modelHint.trim()}\n\n`
-    : "";
-
   return `# Image Generation Packet
 
 ## Target
@@ -120,7 +115,7 @@ ${formatImageTargetLabel(target)}
 
 \`${recommendedImageFilename}\`
 
-${modelHintBlock}## Upload Checklist
+## Upload Checklist
 
 ${uploadInstructions}
 

@@ -174,7 +174,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   if (!options.outputDir) {
     throw new Error("Missing required --output-dir");
   }
-  if (!options.model) {
+  if (!options.chatPackets && !options.model) {
     throw new Error("Missing required --model");
   }
   if (options.chatPackets && options.dryMode) {
@@ -609,7 +609,6 @@ async function exportImageChatPackets({
     const packetText = buildImageChatPacket({
       blueprint,
       target,
-      modelHint: options.model,
     });
     const outputPath = buildChatPacketPath(options.outputDir, blueprintName, target);
     await fs.writeFile(outputPath, packetText, "utf-8");

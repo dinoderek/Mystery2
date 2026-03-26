@@ -40,7 +40,7 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
   - no verification request is made
   - output defaults to `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/blueprint-packet.*.chat.md`
   - packet content is built from the same generator prompt, user-message JSON, and response-schema builder used by the live API path
-  - repeated `--model` values are rejected; one optional model hint may still be shown in the packet
+  - `--model` is ignored completely in chat mode so packets stay model-agnostic
 - verification defaults to `google/gemini-3-flash-preview` unless `--verification-model <model-id>` is provided
 - if the model returns JSON that fails Blueprint V2 schema validation, the CLI still persists that raw JSON to the target blueprint file and records the failure in the sibling verification artifact
 - `--parallel` runs all queued jobs concurrently; `--parallelism <n>` caps concurrent jobs
@@ -50,9 +50,10 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
   - it loads `OPENROUTER_API_KEY` from shell env, `.env.images.local`, then `.env.local`
   - when `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory
   - it uses `AI_OPENROUTER_TIMEOUT_MS` for request/download timeout control (default `120000`)
-  - `--chat-packets` writes one markdown packet per selected target into `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/images` by default
-  - chat-packet mode never calls OpenRouter and never patches blueprint image IDs
-  - `--dry-run` and `--dry-mode` are invalid in chat-packet mode because the packet itself is now the no-network export format
+- `--chat-packets` writes one markdown packet per selected target into `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/images` by default
+- chat-packet mode never calls OpenRouter and never patches blueprint image IDs
+- `--model` is ignored completely in chat mode so packets stay model-agnostic
+- `--dry-run` and `--dry-mode` are invalid in chat-packet mode because the packet itself is now the no-network export format
 
 ## Local Configuration Summary
 

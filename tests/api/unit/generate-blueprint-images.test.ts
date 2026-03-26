@@ -737,7 +737,6 @@ describe("image chat packets", () => {
     const locationPacket = buildImageChatPacket({
       blueprint: blueprintFixture,
       target: { targetType: "location", targetKey: "Kitchen" },
-      modelHint: "openai/gpt-image-1",
     });
 
     expect(locationPacket).toContain("# Image Generation Packet");

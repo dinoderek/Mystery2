@@ -247,12 +247,6 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
   }
 
   if (options.chatPacket) {
-    if (options.models.length > 1) {
-      throw new Error(
-        "Chat packet mode supports at most one model hint; remove repeated --model values or env model lists.",
-      );
-    }
-
     if (!options.output && !options.outputFile) {
       options.outputFile = path.join(
         getChatGenPromptsDir(undefined, env),
@@ -899,11 +893,10 @@ function resolveChatPacketOutputPath(options, job) {
   return "";
 }
 
-function buildChatPacketSummaryEntry({ status, briefFile, modelHint, outputPath }) {
+function buildChatPacketSummaryEntry({ status, briefFile, outputPath }) {
   return {
     status,
     brief_file: briefFile,
-    model_hint: modelHint || null,
     packet_file: outputPath || null,
   };
 }
@@ -928,8 +921,6 @@ async function runBlueprintChatPacketCli(options, dependencies = {}) {
       jobs.length,
     ),
   );
-  const modelHint = options.models[0] ?? "";
-
   logger.info(
     `[generate-blueprint] queued ${jobs.length} chat packet job(s) across ${options.briefFiles.length} brief file(s); concurrency=${concurrency}`,
   );
@@ -946,7 +937,6 @@ async function runBlueprintChatPacketCli(options, dependencies = {}) {
         const storyBrief = JSON.parse(await readFile(job.briefFile, "utf-8"));
         const packet = await buildPacketImpl({
           storyBrief,
-          modelHint,
         });
         const outputText = packet.outputText;
         const outputPath = resolveChatPacketOutputPath(options, job);
@@ -964,7 +954,6 @@ async function runBlueprintChatPacketCli(options, dependencies = {}) {
           summary: buildChatPacketSummaryEntry({
             status: "fulfilled",
             briefFile: job.briefFile,
-            modelHint,
             outputPath,
           }),
           value: {
@@ -986,7 +975,6 @@ async function runBlueprintChatPacketCli(options, dependencies = {}) {
           summary: buildChatPacketSummaryEntry({
             status: "rejected",
             briefFile: job.briefFile,
-            modelHint,
             outputPath: "",
           }),
         };

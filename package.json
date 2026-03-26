@@ -12,6 +12,8 @@
         "dev:ai:paid": "node scripts/dev-ai.mjs paid",
         "supabase:restart": "node scripts/supabase-restart.mjs",
         "supabase:gc": "node scripts/gc-worktree-supabase.mjs --verbose",
+        "supabase:patch": "node scripts/supabase-patch.mjs",
+        "supabase:reset": "node scripts/supabase-reset.mjs",
         "logs:edge": "node scripts/tail-edge-logs.mjs",
         "seed:auth": "node scripts/seed-auth-users.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",

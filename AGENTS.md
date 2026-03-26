@@ -74,6 +74,11 @@ deleted worktrees are garbage-collected automatically. See
 [`docs/local-infrastructure.md`](docs/local-infrastructure.md) for the full
 design.
 
+**In a worktree, always use `npm run` scripts** (`supabase:restart`,
+`supabase:reset`, `seed:all`, `test:integration`, etc.) rather than raw
+`npx supabase` commands. The npm scripts patch `supabase/config.toml` with
+the worktree's project_id and ports before invoking the CLI.
+
 ## Active Technologies
 - Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage (`blueprints`) (004-ai-backend-integration, 006-actor-aware-messaging, 007-sessions)
 - TypeScript 5.x (web/shared + Node scripts), TypeScript on Deno runtime for Supabase Edge Functions, SvelteKit, Tailwind CSS (`t-*` tokens), Supabase Edge Functions, Supabase JS client v2, Supabase Storage, Zod, Vitest, Playwright, OpenRouter HTTP API (004-ai-backend-integration, 006-actor-aware-messaging, 009-static-blueprint-images)

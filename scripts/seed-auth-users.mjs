@@ -9,6 +9,7 @@ import {
   getAuthUsersLocalPath,
   getBaseEnvPath,
 } from "./local-config.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
 import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
@@ -210,6 +211,10 @@ export async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
 
 export async function main() {
   await loadDotEnvLocal();
+
+  const baseEnv = await loadEnvFile(getBaseEnvPath(ROOT_DIR, process.env), false);
+  const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
+  await ensureSupabaseRunning(env);
 
   const resolved = resolveWorktreePorts();
   const worktreeApiUrl = `http://127.0.0.1:${resolved.ports.api}`;

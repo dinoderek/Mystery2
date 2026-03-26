@@ -16,6 +16,19 @@
   }
 
   let sentinel: HTMLDivElement;
+  let scrollContainer: HTMLDivElement;
+
+  function isNearBottom(): boolean {
+    if (!scrollContainer) return true;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+    return scrollHeight - scrollTop - clientHeight < 80;
+  }
+
+  function scrollToBottomIfNeeded() {
+    if (isNearBottom() && sentinel) {
+      sentinel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }
 
   const renderedHistory = $derived.by(() => {
     const state = gameSessionStore.state;
@@ -138,14 +151,14 @@
 
     if (sentinel) {
       tick().then(() => {
-        sentinel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        scrollToBottomIfNeeded();
       });
     }
   });
 </script>
 
 <div class="flex min-h-0 flex-1">
-  <div class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
+  <div bind:this={scrollContainer} class="flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono">
     <div class="space-y-4">
       {#each enrichedGroups as group}
         {#if group.imageId && (group.imageUrl || group.imageLoading)}
@@ -162,6 +175,7 @@
                     alt={group.imageTitle}
                     class="story-image-asset block w-full object-cover"
                     loading="lazy"
+                    onload={scrollToBottomIfNeeded}
                   />
                 </div>
               {/if}

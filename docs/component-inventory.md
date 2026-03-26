@@ -56,16 +56,21 @@ _(Add components here as they are built. Example format below)_
 - **Props**:
   - `text`: `string` (optional status text shown next to the spinner)
 
-### `StoryImagePanel.svelte`
+### `StoryImagePanel.svelte` *(deprecated — prefer `SignedImage.svelte`)*
 
-- **Purpose**: Reusable image/placeholder panel for blueprint covers and session-side story imagery.
+- **Purpose**: Static image/placeholder panel. Does not manage signed URL lifecycle.
+- **Note**: Replaced by `SignedImage` for all active use cases. Retained for reference.
+
+### `SignedImage.svelte`
+
+- **Purpose**: Self-managing signed-image component backed by `ImageLinkCache`. Handles resolution, caching, expiry, and automatic refresh of Supabase Storage signed URLs. Drop-in replacement anywhere a blueprint/location/character image is needed.
 - **Props**:
-  - `title`: `string` (panel label)
-  - `imageUrl`: `string | null` (signed image URL when available)
-  - `loading`: `boolean` (shows loading state while fetching signed link)
-  - `placeholder`: `boolean` (forces placeholder rendering after failed fetch)
-  - `placeholderText`: `string` (fallback message)
-  - `compact`: `boolean` (smaller card variant for start-screen blueprint cards)
+  - `blueprintId`: `string` (the blueprint that owns the image)
+  - `imageId`: `string` (canonical image filename from the blueprint)
+  - `alt`: `string` (image alt text)
+  - `class`: `string` (additional CSS classes)
+  - `loadingText`: `string` (text shown while resolving, default `"Loading image..."`)
+  - `placeholderText`: `string` (text shown on failure, default `"Image unavailable"`)
 
 ### `LoginForm.svelte`
 

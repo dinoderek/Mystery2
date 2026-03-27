@@ -18,6 +18,12 @@ const baseState = {
 async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
   await enableAuthBypass(page);
 
+  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await route.fulfill({
+      json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] },
+    });
+  });
+
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
     await route.fulfill({
       json: {
@@ -51,8 +57,8 @@ async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
   });
 
   await page.goto('/');
-  await expect(page.getByText('1. Resume a game')).toBeVisible();
-  await page.keyboard.press('1');
+  await expect(page.getByText('2. View in-progress games')).toBeVisible();
+  await page.keyboard.press('2');
   await expect(page.getByText('Cookie Mystery')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page).toHaveURL(/.*\/session/);

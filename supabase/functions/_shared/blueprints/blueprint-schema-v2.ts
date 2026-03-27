@@ -83,7 +83,21 @@ export const BlueprintV2Schema = z.object({
   }),
   narrative: z.object({
     premise: z.string().trim().min(1),
-    starting_knowledge: z.array(z.string().trim().min(1)),
+    starting_knowledge: z.object({
+      mystery_summary: z.string().trim().min(1),
+      locations: z.array(
+        z.object({
+          location_id: BlueprintV2IdSchema,
+          summary: z.string().trim().min(1),
+        }),
+      ),
+      characters: z.array(
+        z.object({
+          character_id: BlueprintV2IdSchema,
+          summary: z.string().trim().min(1),
+        }),
+      ),
+    }),
   }),
   world: z.object({
     starting_location_id: BlueprintV2IdSchema,

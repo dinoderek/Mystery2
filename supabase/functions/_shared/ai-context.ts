@@ -29,7 +29,11 @@ export interface BlueprintContext {
   };
   narrative: {
     premise: string;
-    starting_knowledge?: string[];
+    starting_knowledge?: {
+      mystery_summary: string;
+      locations: Array<{ location_id: string; summary: string }>;
+      characters: Array<{ character_id: string; summary: string }>;
+    };
   };
   world: {
     starting_location_id: string;

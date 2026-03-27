@@ -75,7 +75,9 @@ Do not classify flavor knowledge as a dead end unless it directly creates a fals
 Check for contradictions across canonical fact-bearing fields.
 Treat the following as fact-bearing:
 - narrative.premise
-- narrative.starting_knowledge
+- narrative.starting_knowledge.mystery_summary
+- narrative.starting_knowledge.locations[].summary
+- narrative.starting_knowledge.characters[].summary
 - world.locations[].description
 - world.locations[].clues when their role/classification indicates they are intended as factual mystery evidence rather than red-herring scaffolding
 - world.characters[].background

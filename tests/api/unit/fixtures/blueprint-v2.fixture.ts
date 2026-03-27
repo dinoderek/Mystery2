@@ -10,7 +10,17 @@ export const validBlueprintV2 = {
   },
   narrative: {
     premise: "The cookie plate is empty and snack time is almost here.",
-    starting_knowledge: ["The cookies disappeared from the kitchen."],
+    starting_knowledge: {
+      mystery_summary: "The cookies disappeared from the kitchen sometime around 10 AM, according to whoever set them out.",
+      locations: [
+        { location_id: "kitchen", summary: "Where the cookies were set out for snack time." },
+        { location_id: "hallway", summary: "A narrow passage connecting the rooms." },
+      ],
+      characters: [
+        { character_id: "alice", summary: "Helped bake the snacks; was in the kitchen when they vanished." },
+        { character_id: "bob", summary: "Waiting for snack time; was watching from the hallway." },
+      ],
+    },
   },
   world: {
     starting_location_id: "kitchen",

@@ -193,7 +193,6 @@ export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameMoveRequest = z.infer<typeof GameMoveRequestSchema>;
 export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
-export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
 export type GameAccuseRequest = z.infer<typeof GameAccuseRequestSchema>;
 export type NarrationPart = z.infer<typeof NarrationPartSchema>;

@@ -4,6 +4,19 @@ export interface BlueprintClue {
   id: string;
   text: string;
   role: string;
+  about_character_id?: string;
+  hint_location_id?: string;
+}
+
+export interface BlueprintAgenda {
+  type: string;
+  strategy: string;
+  priority: string;
+  details: string;
+  target_character_id?: string;
+  gated_clue_id?: string;
+  condition?: string;
+  yields_to_clue_ids?: string[];
 }
 
 export interface BlueprintActualAction {
@@ -67,6 +80,7 @@ export interface BlueprintContext {
       clues: BlueprintClue[];
       flavor_knowledge: string[];
       actual_actions: BlueprintActualAction[];
+      agendas?: BlueprintAgenda[];
     }>;
   };
   ground_truth: {
@@ -152,6 +166,8 @@ export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary 
   clues: BlueprintClue[];
   flavor_knowledge: string[];
   actual_actions: BlueprintActualAction[];
+  agendas: BlueprintAgenda[];
+  player_known_clues: Array<{ id: string; text: string; role: string }>;
 }
 
 export interface TalkContext {
@@ -377,9 +393,59 @@ function buildTalkCharacterPublicSummaries(
   }));
 }
 
+function buildPlayerKnownClues(
+  blueprint: BlueprintContext,
+  conversationHistory: ConversationFragment[],
+): Array<{ id: string; text: string; role: string }> {
+  const clueIds = new Set<string>();
+
+  for (const entry of conversationHistory) {
+    const payload = entry.payload;
+    if (!payload || typeof payload !== "object") continue;
+
+    if (entry.event_type === "search" || entry.event_type === "ask") {
+      const ids = readPayloadStringArray(payload, "revealed_clue_ids");
+      for (const id of ids) {
+        clueIds.add(id);
+      }
+      const singleId = readPayloadField(payload, "revealed_clue_id");
+      if (typeof singleId === "string" && singleId.length > 0) {
+        clueIds.add(singleId);
+      }
+    }
+  }
+
+  if (clueIds.size === 0) return [];
+
+  const clueMap = new Map<string, { id: string; text: string; role: string }>();
+  for (const location of blueprint.world.locations) {
+    for (const clue of location.clues) {
+      clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+    }
+    for (const subLoc of location.sub_locations ?? []) {
+      for (const clue of subLoc.clues) {
+        clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+      }
+    }
+  }
+  for (const character of blueprint.world.characters) {
+    for (const clue of character.clues) {
+      clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+    }
+  }
+
+  const result: Array<{ id: string; text: string; role: string }> = [];
+  for (const id of clueIds) {
+    const clue = clueMap.get(id);
+    if (clue) result.push(clue);
+  }
+  return result;
+}
+
 function buildTalkCharacterPrivateContext(
   blueprint: BlueprintContext,
   characterId: string,
+  playerKnownClues: Array<{ id: string; text: string; role: string }>,
 ): TalkCharacterPrivateContext {
   const character = blueprint.world.characters.find(
     (entry) => entry.id === characterId,
@@ -404,6 +470,8 @@ function buildTalkCharacterPrivateContext(
     clues: character.clues,
     flavor_knowledge: character.flavor_knowledge,
     actual_actions: character.actual_actions,
+    agendas: character.agendas ?? [],
+    player_known_clues: playerKnownClues,
   };
 }
 
@@ -411,6 +479,7 @@ function buildTalkContext(
   blueprint: BlueprintContext,
   locationId: string,
   characterId: string,
+  playerKnownClues: Array<{ id: string; text: string; role: string }>,
 ): TalkContext {
   const location = findLocationById(blueprint, locationId);
 
@@ -420,7 +489,11 @@ function buildTalkContext(
     active_location_description: location?.description ?? null,
     locations: buildTalkLocationSummaries(blueprint),
     characters: buildTalkCharacterPublicSummaries(blueprint),
-    active_character: buildTalkCharacterPrivateContext(blueprint, characterId),
+    active_character: buildTalkCharacterPrivateContext(
+      blueprint,
+      characterId,
+      playerKnownClues,
+    ),
   };
 }
 
@@ -523,6 +596,10 @@ export function buildTalkStartContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_start",
@@ -535,6 +612,7 @@ export function buildTalkStartContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
+      playerKnownClues,
     ),
   });
 }
@@ -548,6 +626,10 @@ export function buildTalkConversationContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_conversation",
@@ -561,6 +643,7 @@ export function buildTalkConversationContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
+      playerKnownClues,
     ),
   });
 }
@@ -573,6 +656,10 @@ export function buildTalkEndContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_end",
@@ -585,6 +672,7 @@ export function buildTalkEndContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
+      playerKnownClues,
     ),
   });
 }

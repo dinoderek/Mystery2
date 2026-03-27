@@ -81,7 +81,9 @@ Both the evaluator and gameplay runtime now target Blueprint V2.
   - `target_age` only
 - Role inputs are passed as direct top-level context fields (no separate `role_input` envelope).
 - Role-specific grounding lives outside the shared context:
-  - talk roles get grounded location summaries, public character summaries, and active-character roleplay context
+  - talk roles get grounded location summaries, public character summaries,
+    and active-character roleplay context (including `agendas` and
+    `player_known_clues` when present)
   - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint
@@ -100,7 +102,8 @@ Both the evaluator and gameplay runtime now target Blueprint V2.
 
 All AI role outputs are validated before any session/event writes:
 
-- Talk roles: require non-empty `narration`.
+- Talk start/end roles: require non-empty `narration`.
+- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting.
 - Search role: requires non-empty `narration`, plus `revealed_clue_id` (string or null) and `costs_turn` (boolean). Backend validates the AI's clue choice before persisting.
 - `accusation_start`: requires `narration` + `follow_up_prompt`.
 - `accusation_judge`: requires:

@@ -87,6 +87,13 @@ the model.
 | `oneLinerHint` | `string`   | No       | Suggested player-facing one-line summary.                     |
 | `artStyle`     | `string`   | No       | Suggested visual direction for later static image generation. |
 | `mustInclude`  | `string[]` | No       | Required story ingredients or constraints.                    |
+| `culprits`     | `number`   | No       | Number of culprits (default: 1).                              |
+| `suspects`     | `number`   | No       | Number of red-herring suspects.                               |
+| `witnesses`    | `number`   | No       | Number of witness characters.                                 |
+| `locations`    | `number`   | No       | Number of locations.                                          |
+| `redHerringTrails` | `number` | No    | Number of red herring plot threads.                           |
+| `coverUps`     | `boolean`  | No       | Whether suspects should have cover stories or false alibis.   |
+| `eliminationComplexity` | `string` | No | `"simple"`, `"moderate"`, or `"complex"`.                   |
 
 ### `user` Message Shape
 
@@ -132,6 +139,14 @@ The system prompt in `generator-prompt.md` tells the model to:
 - emit structured location clues and character clues with stable ids and roles
 - emit separate `flavor_knowledge` instead of generic mystery `knowledge`
 - emit ordered per-character `actual_actions`
+- author character agendas that create conversational friction (self-protection,
+  protect-other, implicate-other, conditional-reveal) and scale them based on
+  story brief complexity knobs
+- author cross-character knowledge clues (`alibi_knowledge`,
+  `witness_testimony`, `motive_knowledge`, `location_hint`) that create
+  character interdependence
+- enforce agenda solvability: at least one solution path must be completable
+  without narrative-condition gated clues, and no circular dependencies
 - ensure exactly one culprit and a logically consistent timeline
 - use the shared `BlueprintV2Schema`
 - emit `cover_image` with creative visual direction for the cover illustration,
@@ -273,6 +288,9 @@ Scope notes:
 | `world.characters[].clues`                                 | Talk private-character context (structured `{id, text, role}`); also available to accusation judging via full blueprint context; referenced by `solution_paths` and `suspect_elimination_paths`                                            | Character-specific mystery clues shared only when relevant topics arise.                          |
 | `world.characters[].flavor_knowledge`                      | Talk private-character context; shared freely in conversation to add personality and depth                                                                                                                                                 | Non-mystery worldbuilding facts that enrich roleplay.                                             |
 | `world.characters[].actual_actions`                        | Talk private-character context (ordered `{sequence, summary}` timeline); also available to accusation judging via full blueprint context                                                                                                  | Hidden timeline used for character consistency and endgame reasoning.                             |
+| `world.characters[].agendas`                               | Talk private-character context; shapes how the narrator AI filters responses through behavioral directives (self-protection, protect-other, implicate-other, conditional-reveal)                                                           | Defaults to `[]` (cooperative witness). Gated clues require specific player actions to unlock.    |
+| `world.characters[].clues[].about_character_id`            | Metadata for cross-character clue roles (`alibi_knowledge`, `witness_testimony`, `motive_knowledge`); used by narrator and evaluator                                                                                                     | Optional. References the character the clue is about.                                             |
+| `world.characters[].clues[].hint_location_id`              | Metadata for `location_hint` clue role; used by narrator and evaluator                                                                                                                                                                    | Optional. References the location the clue points to.                                             |
 
 ### `ground_truth`
 
@@ -322,7 +340,8 @@ Scope notes:
   `location_id`) for the destination location.
 - Talk-family endpoints receive the broader location list plus private
   active-character context including structured `clues`, `flavor_knowledge`,
-  and `actual_actions`.
+  `actual_actions`, `agendas`, and `player_known_clues` (reconstructed from
+  search and ask event payloads across the full game history).
 - Character `sex` flows into public character summaries and runtime AI
   contexts so narrator-facing prompts can instruct the model to use grounded
   pronouns instead of inferring them.

@@ -16,6 +16,7 @@ export interface TalkStartOutput {
 
 export interface TalkConversationOutput {
   narration: string;
+  revealed_clue_ids: string[];
 }
 
 export interface TalkEndOutput {
@@ -102,8 +103,14 @@ export function parseTalkConversationOutput(
   value: unknown,
 ): TalkConversationOutput {
   const parsed = requireRoleObject(value, "talk_conversation");
+  const rawIds = parsed.revealed_clue_ids;
+  const revealedClueIds: string[] =
+    Array.isArray(rawIds)
+      ? rawIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [];
   return {
     narration: requireString(parsed, "narration", "talk_conversation"),
+    revealed_clue_ids: revealedClueIds,
   };
 }
 

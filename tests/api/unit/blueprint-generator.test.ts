@@ -50,6 +50,7 @@ const passingVerification = {
     no_dead_ends: { yes: true, reasoning: "No dead ends", issues: [] },
     consistent_facts: { yes: true, reasoning: "Consistent", issues: [] },
     no_redundant_clues: { yes: true, reasoning: "Distinct", issues: [] },
+    agenda_consistency: { yes: true, reasoning: "Consistent agendas", issues: [] },
   },
   solution_paths: [
     {

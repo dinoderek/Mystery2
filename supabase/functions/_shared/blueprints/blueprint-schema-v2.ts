@@ -6,30 +6,55 @@ import { z } from "npm:zod";
 
 const BlueprintV2IdSchema = z.string().trim().min(1);
 
+const BlueprintV2ClueRoleEnum = [
+  "direct_evidence",
+  "supporting_evidence",
+  "suspect_elimination",
+  "red_herring",
+  "red_herring_elimination",
+  "corroboration",
+  "alibi_knowledge",
+  "location_hint",
+  "witness_testimony",
+  "motive_knowledge",
+] as const;
+
 const BlueprintV2LocationClueSchema = z.object({
   id: BlueprintV2IdSchema,
   text: z.string().trim().min(1),
-  role: z.enum([
-    "direct_evidence",
-    "supporting_evidence",
-    "suspect_elimination",
-    "red_herring",
-    "red_herring_elimination",
-    "corroboration",
-  ]),
+  role: z.enum(BlueprintV2ClueRoleEnum),
 });
 
 const BlueprintV2CharacterClueSchema = z.object({
   id: BlueprintV2IdSchema,
   text: z.string().trim().min(1),
-  role: z.enum([
-    "direct_evidence",
-    "supporting_evidence",
-    "suspect_elimination",
-    "red_herring",
-    "red_herring_elimination",
-    "corroboration",
+  role: z.enum(BlueprintV2ClueRoleEnum),
+  about_character_id: z.string().optional(),
+  hint_location_id: z.string().optional(),
+});
+
+const BlueprintV2AgendaSchema = z.object({
+  type: z.enum([
+    "self_protect",
+    "protect_other",
+    "implicate_other",
+    "conditional_reveal",
   ]),
+  strategy: z.string().trim().min(1),
+  priority: z.enum(["high", "medium", "low"]),
+  details: z.string().trim().min(1),
+  target_character_id: z.string().optional(),
+  gated_clue_id: z.string().optional(),
+  condition: z
+    .enum([
+      "confronted_with_evidence",
+      "clever_questioning",
+      "bluff",
+      "trust_established",
+      "pressure",
+    ])
+    .optional(),
+  yields_to_clue_ids: z.array(z.string()).optional(),
 });
 
 const BlueprintV2LocationSchema = z.object({
@@ -62,6 +87,7 @@ const BlueprintV2CharacterSchema = z.object({
       summary: z.string().trim().min(1),
     }),
   ),
+  agendas: z.array(BlueprintV2AgendaSchema).default([]),
 });
 
 const BlueprintV2CoverImageSchema = z.object({

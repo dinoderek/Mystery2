@@ -66,6 +66,13 @@ jobs:
       - name: Start Supabase
         run: supabase start
 
+      - name: Export Supabase env vars
+        run: |
+          echo "API_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+          echo "ANON_KEY=$(supabase status -o env | grep ANON_KEY | cut -d= -f2-)" >> "$GITHUB_ENV"
+          echo "SERVICE_ROLE_KEY=$(supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2-)" >> "$GITHUB_ENV"
+
       - name: Seed storage and AI profile
         run: |
           npm run seed:storage

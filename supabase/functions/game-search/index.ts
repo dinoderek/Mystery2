@@ -19,7 +19,7 @@ import {
   findLocationById,
   type BlueprintClue,
 } from "../_shared/ai-context.ts";
-import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
+import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -252,45 +252,25 @@ serveWithCors(async (req) => {
     let forcedParts: typeof searchParts = [];
 
     if (isForcedEndgame) {
-      try {
-        const forcedOutput = await generateForcedAccusationStartNarration({
-          req,
-          request_id: requestId,
-          endpoint: "game-search",
-          game_id: gameId,
-          aiProvider,
-          session: {
-            ...session,
-            time_remaining: newTime,
-          },
-          blueprint,
-          conversation_history: historyRows ?? [],
-          scene_summary: `The investigator just searched ${currentLocation.name}, and this action exhausted the remaining time.`,
-        });
-        followUpPrompt = forcedOutput.follow_up_prompt;
-        forcedParts = forcedOutput.narration_parts;
-        combinedParts = [...searchParts, ...forcedParts];
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            action: "forced_endgame_start",
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          action: "forced_endgame_start",
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
+      const result = await tryGenerateForcedEndgame({
+        req,
+        request_id: requestId,
+        endpoint: "game-search",
+        game_id: gameId,
+        aiProvider,
+        session: {
+          ...session,
+          time_remaining: newTime,
+        },
+        blueprint,
+        conversation_history: historyRows ?? [],
+        scene_summary: `The investigator just searched ${currentLocation.name}, and this action exhausted the remaining time.`,
+        log,
+      });
+      if (!result.ok) return result.response;
+      followUpPrompt = result.follow_up_prompt;
+      forcedParts = result.narration_parts;
+      combinedParts = [...searchParts, ...forcedParts];
     }
 
     const { error: updateError } = await userClient
@@ -344,44 +324,21 @@ serveWithCors(async (req) => {
       logger: narrationLogger,
     });
 
-    let forcedSequence: number | null = null;
     if (isForcedEndgame) {
-      forcedSequence = await insertNarrationEvent(userClient, {
+      await insertForcedEndgameEvent(userClient, {
         session_id: gameId,
-        event_type: "forced_endgame",
-        actor: "system",
+        action: "search",
+        action_sequence: searchSequence,
         payload: {
-          role: "accusation_start",
           location_id: currentLocation.id,
           location_name: currentLocation.name,
-          trigger: "timeout",
-          follow_up_prompt: followUpPrompt,
-          speaker: NARRATOR_SPEAKER,
         },
         narration_parts: forcedParts,
-        diagnostics: createNarrationDiagnostics({
-          action: "search",
-          event_category: "forced_endgame",
-          mode: "accuse",
-          resulting_mode: "accuse",
-          time_before: newTime,
-          time_after: newTime,
-          time_consumed: false,
-          forced_endgame: true,
-          trigger: "timeout",
-          related_sequence: searchSequence,
-        }),
-        logger: narrationLogger,
-      });
-
-      log("timeout.transition", {
-        game_id: gameId,
-        action: "search",
+        follow_up_prompt: followUpPrompt,
         time_before: session.time_remaining,
         time_after: newTime,
         resulting_mode: nextMode,
-        action_sequence: searchSequence,
-        forced_endgame_sequence: forcedSequence,
+        logger: narrationLogger,
       });
     }
 

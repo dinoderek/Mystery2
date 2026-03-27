@@ -48,7 +48,7 @@ describe("game-end-talk endpoint", () => {
 
     expect(data.mode).toBe("explore");
     expect(data.current_talk_character).toBeNull();
-    expect(data.time_remaining).toBe(10);
+    expect(data.time_remaining).toBe(9);
     expect(data.narration_parts[0]).toMatchObject({
       speaker: {
         kind: "narrator",

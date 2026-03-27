@@ -76,7 +76,7 @@ test.describe('Full stack browser flow', () => {
             },
           ],
           mode: 'talk',
-          time_remaining: 8,
+          time_remaining: 9,
           current_talk_character: 'Mayor',
         },
       });

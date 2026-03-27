@@ -7,6 +7,7 @@ build/
 !.env.example
 !.env.images.example
 coverage/
+test-results/
 .DS_Store
 Thumbs.db
 *.tmp

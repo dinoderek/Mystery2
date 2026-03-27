@@ -11,7 +11,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:e2e": "playwright test",
-    "test:unit": "vitest run src/lib/domain"
+    "test:unit": "vitest run src/lib/domain",
+    "test:unit:coverage": "vitest run src/lib/domain --coverage"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

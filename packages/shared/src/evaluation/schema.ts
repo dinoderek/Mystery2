@@ -70,6 +70,10 @@ export const ClueRoleSchema = z
     "red_herring",
     "red_herring_elimination",
     "corroboration",
+    "alibi_knowledge",
+    "location_hint",
+    "witness_testimony",
+    "motive_knowledge",
     "dead_end",
     "irrelevant",
   ])
@@ -197,6 +201,7 @@ export const BlueprintEvaluationOutputSchema = z
       no_dead_ends: EvaluationDimensionResultSchema,
       consistent_facts: EvaluationDimensionResultSchema,
       no_redundant_clues: EvaluationDimensionResultSchema,
+      agenda_consistency: EvaluationDimensionResultSchema,
     }),
     solution_paths: z
       .array(SolutionPathSchema)

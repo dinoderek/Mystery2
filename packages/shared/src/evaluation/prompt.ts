@@ -9,7 +9,9 @@ Use only the provided inputs:
 
 Important assumptions:
 - Assume the investigator can eventually discover all location clues.
-- Assume the investigator can eventually obtain all character clues.
+- Assume the investigator can eventually obtain all ungated character clues.
+- For gated character clues (those behind conditional_reveal agendas): assume the player can meet the condition if the unlock path exists (evidence is obtainable, narrative conditions are reasonable).
+- Evaluate solvability both WITH and WITHOUT narrative-condition gated clues (clever_questioning, bluff, trust_established, pressure) to verify the deterministic fallback path.
 - Ignore time-to-solve, turn costs, and action economy.
 - Treat authored path arrays as the blueprint's intended reasoning structure, but verify that the actual clue texts and ground truth support them.
 - Treat flavor knowledge as optional worldbuilding, not as mystery evidence.
@@ -33,6 +35,7 @@ The hidden truth should be specific, causally plausible, supported by the rest o
 3. solvable_paths_exist
 Decide whether at least one valid reasoning path exists from player-accessible evidence to the correct solution.
 Use the authored solution paths as the intended structure, but verify that the clue texts and ground truth genuinely support them.
+When character agendas are present, verify that at least one solution path is completable without relying on narrative-condition gated clues (clever_questioning, bluff, trust_established, pressure). Clues gated behind confronted_with_evidence are acceptable on the critical path since the unlock is deterministic.
 You must explicitly list every solution path you find.
 Each solution path must identify:
 - the conclusion it supports
@@ -53,7 +56,11 @@ Allowed evaluator roles:
 
 5. character_clues_have_role
 Decide whether every character clue has a clear role in the mystery.
-Use the same allowed evaluator roles as for location clues.
+Use the same allowed evaluator roles as for location clues, plus these cross-character knowledge roles:
+- alibi_knowledge: confirms or denies another character's stated alibi
+- witness_testimony: describes what the character witnessed another character doing
+- motive_knowledge: reveals another character's secret motive
+- location_hint: points the player toward a specific location to search
 Do not treat flavor knowledge as character clues.
 
 6. red_herrings_are_fair
@@ -98,6 +105,20 @@ Only flag a contradiction when canonical facts are mutually incompatible or unre
 Detect redundant location clues and character clues.
 A clue is redundant when it adds no meaningful new information, no necessary corroboration, no distinct suspect-elimination value, and no distinct red-herring-elimination value.
 Do not treat flavor knowledge as redundant mystery evidence because it is not part of the mystery-reasoning model.
+
+10. agenda_consistency
+Decide whether the character agendas are internally consistent and do not break solvability.
+If no character has agendas, this dimension passes automatically.
+Check:
+- Every yields_to_clue_id references an existing, obtainable clue
+- No circular dependencies between conditional_reveal agendas (direct or transitive)
+- At least one solution_path is completable without relying on narrative-condition gated clues (clever_questioning, bluff, trust_established, pressure)
+- The culprit has at least one self-protection agenda
+- At least one character has no agendas (cooperative baseline)
+- Every conditional_reveal references a valid gated_clue_id that exists in that character's clues array
+- Every target_character_id references an existing character
+- Narrative condition details are specific enough for consistent AI evaluation
+- For trust_established conditions: the details provide guidance on how trust can be earned
 
 Output requirements:
 - Return JSON matching the requested output schema exactly.

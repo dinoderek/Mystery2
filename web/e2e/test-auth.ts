@@ -97,6 +97,8 @@ function resolveSupabaseUrl(): string {
   return readRootEnvValue('API_URL') ?? 'http://127.0.0.1:54331';
 }
 
+const USER_EXISTS_RE = /already.*registered|already.*exists|user already exists|duplicate key/i;
+
 async function ensureTestUser(email: string, password: string) {
   const supabaseUrl = resolveSupabaseUrl();
   const serviceRoleKey =
@@ -123,7 +125,7 @@ async function ensureTestUser(email: string, password: string) {
       break;
     } catch (thrown: unknown) {
       const msg = thrown instanceof Error ? thrown.message : String(thrown);
-      if (/already.*registered|already.*exists|user already exists|duplicate key/i.test(msg)) {
+      if (USER_EXISTS_RE.test(msg)) {
         return;
       }
       if (attempt === 5 || !isRetryableConnectionError(thrown)) {
@@ -133,11 +135,15 @@ async function ensureTestUser(email: string, password: string) {
     }
   }
 
-  if (
-    error &&
-    !/already.*registered|already.*exists|user already exists|duplicate key/i.test(error.message)
-  ) {
-    throw error;
+  if (error && !USER_EXISTS_RE.test(error.message)) {
+    // The error may be a race-condition variant (e.g. "Database error creating
+    // new user" from a parallel worker).  Before giving up, verify whether the
+    // user actually exists — if so the creation error is benign.
+    const { data } = await admin.auth.admin.listUsers({ perPage: 1 });
+    const exists = data.users.some((u) => u.email === email);
+    if (!exists) {
+      throw error;
+    }
   }
 }
 

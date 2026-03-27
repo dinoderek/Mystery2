@@ -81,7 +81,8 @@ Both the evaluator and gameplay runtime now target Blueprint V2.
   - `target_age` only
 - Role inputs are passed as direct top-level context fields (no separate `role_input` envelope).
 - Role-specific grounding lives outside the shared context:
-  - talk roles get grounded location summaries, public character summaries, and active-character roleplay context
+  - talk roles get grounded location summaries, public character summaries,
+    and active-character roleplay context (including `agendas` when present)
   - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint

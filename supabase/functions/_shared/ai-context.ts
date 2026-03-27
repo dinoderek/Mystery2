@@ -4,6 +4,19 @@ export interface BlueprintClue {
   id: string;
   text: string;
   role: string;
+  about_character_id?: string;
+  hint_location_id?: string;
+}
+
+export interface BlueprintAgenda {
+  type: string;
+  strategy: string;
+  priority: string;
+  details: string;
+  target_character_id?: string;
+  gated_clue_id?: string;
+  condition?: string;
+  yields_to_clue_ids?: string[];
 }
 
 export interface BlueprintActualAction {
@@ -67,6 +80,7 @@ export interface BlueprintContext {
       clues: BlueprintClue[];
       flavor_knowledge: string[];
       actual_actions: BlueprintActualAction[];
+      agendas?: BlueprintAgenda[];
     }>;
   };
   ground_truth: {

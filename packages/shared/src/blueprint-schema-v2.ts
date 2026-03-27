@@ -16,6 +16,10 @@ export const BlueprintV2ClueRoleSchema = z
     "red_herring",
     "red_herring_elimination",
     "corroboration",
+    "alibi_knowledge",
+    "location_hint",
+    "witness_testimony",
+    "motive_knowledge",
   ])
   .describe("Authored purpose of a clue inside the mystery reasoning model.");
 
@@ -41,6 +45,16 @@ export const BlueprintV2CharacterClueSchema = z.object({
     .min(1)
     .describe("Concrete mystery-relevant fact a character can reveal in conversation."),
   role: BlueprintV2ClueRoleSchema,
+  about_character_id: z
+    .string()
+    .optional()
+    .describe(
+      "For alibi_knowledge, witness_testimony, motive_knowledge: which character this clue is about.",
+    ),
+  hint_location_id: z
+    .string()
+    .optional()
+    .describe("For location_hint: which location this clue points to."),
 });
 
 export const BlueprintV2ReasoningPathSchema = z.object({
@@ -155,6 +169,65 @@ export const BlueprintV2LocationSchema = z.object({
     ),
 });
 
+export const BlueprintV2AgendaConditionSchema = z.enum([
+  "confronted_with_evidence",
+  "clever_questioning",
+  "bluff",
+  "trust_established",
+  "pressure",
+]);
+export type BlueprintV2AgendaCondition = z.infer<
+  typeof BlueprintV2AgendaConditionSchema
+>;
+
+export const BlueprintV2AgendaSchema = z.object({
+  type: z.enum([
+    "self_protect",
+    "protect_other",
+    "implicate_other",
+    "conditional_reveal",
+  ]),
+  strategy: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Specific behavioral strategy from the agenda taxonomy."),
+  priority: z
+    .enum(["high", "medium", "low"])
+    .describe("Processing order. High-priority agendas take precedence."),
+  details: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "Narrative guidance for the narrator AI. Describes the specific behavior, "
+        + "what triggers it, and how it manifests in conversation.",
+    ),
+  target_character_id: z
+    .string()
+    .optional()
+    .describe(
+      "For protect_other and implicate_other: which character this agenda is about.",
+    ),
+  gated_clue_id: z
+    .string()
+    .optional()
+    .describe(
+      "For conditional_reveal: which clue is gated behind this agenda.",
+    ),
+  condition: BlueprintV2AgendaConditionSchema.optional().describe(
+    "For conditional_reveal: what unlocks the gated clue.",
+  ),
+  yields_to_clue_ids: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "For confronted_with_evidence: specific clue IDs whose content the player "
+        + "must reference in conversation to break through.",
+    ),
+});
+export type BlueprintV2Agenda = z.infer<typeof BlueprintV2AgendaSchema>;
+
 export const BlueprintV2CharacterSchema = z.object({
   id: BlueprintV2IdSchema.describe(
     "Stable identifier for this character. Reserved for future authored references.",
@@ -223,6 +296,12 @@ export const BlueprintV2CharacterSchema = z.object({
     .min(1)
     .describe(
       "Ordered factual actions this character actually took during the mystery window.",
+    ),
+  agendas: z
+    .array(BlueprintV2AgendaSchema)
+    .default([])
+    .describe(
+      "Behavioral directives that shape how this character responds in conversation.",
     ),
 });
 
@@ -475,6 +554,7 @@ export const BlueprintV2Schema = z
         previousSequence = action.sequence;
       }
 
+      const thisCharacterClueIds = new Set<string>();
       for (const [clueIndex, clue] of character.clues.entries()) {
         if (characterClueIds.has(clue.id) || locationClueIds.has(clue.id)) {
           addDuplicateIssue(
@@ -484,6 +564,140 @@ export const BlueprintV2Schema = z
           );
         }
         characterClueIds.add(clue.id);
+        thisCharacterClueIds.add(clue.id);
+      }
+
+      // --- Cross-character clue reference validations ---
+      const crossCharRoles = ["alibi_knowledge", "witness_testimony", "motive_knowledge"];
+      for (const [clueIndex, clue] of character.clues.entries()) {
+        if (crossCharRoles.includes(clue.role) && !clue.about_character_id) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "about_character_id"],
+            message: `Clue with role "${clue.role}" must have about_character_id.`,
+          });
+        }
+        if (clue.role === "location_hint" && !clue.hint_location_id) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "hint_location_id"],
+            message: `Clue with role "location_hint" must have hint_location_id.`,
+          });
+        }
+      }
+
+      // --- Agenda validations ---
+      for (const [agendaIndex, agenda] of character.agendas.entries()) {
+        const agendaPath = ["world", "characters", characterIndex, "agendas", agendaIndex];
+
+        if (
+          (agenda.type === "protect_other" || agenda.type === "implicate_other") &&
+          !agenda.target_character_id
+        ) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...agendaPath, "target_character_id"],
+            message: `Agenda type "${agenda.type}" requires target_character_id.`,
+          });
+        }
+
+        if (agenda.type === "conditional_reveal") {
+          if (!agenda.gated_clue_id) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [...agendaPath, "gated_clue_id"],
+              message: "conditional_reveal agenda requires gated_clue_id.",
+            });
+          } else if (!thisCharacterClueIds.has(agenda.gated_clue_id)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [...agendaPath, "gated_clue_id"],
+              message: `gated_clue_id "${agenda.gated_clue_id}" must reference a clue in this character's clues array.`,
+            });
+          }
+
+          if (!agenda.condition) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [...agendaPath, "condition"],
+              message: "conditional_reveal agenda requires condition.",
+            });
+          }
+
+          if (agenda.condition === "confronted_with_evidence") {
+            if (!agenda.yields_to_clue_ids || agenda.yields_to_clue_ids.length === 0) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [...agendaPath, "yields_to_clue_ids"],
+                message: "confronted_with_evidence condition requires non-empty yields_to_clue_ids.",
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // --- Deferred agenda reference validations (need all IDs collected) ---
+    const allClueIds = new Set([...locationClueIds, ...characterClueIds]);
+    for (const [characterIndex, character] of value.world.characters.entries()) {
+      const thisClueIds = new Set(character.clues.map((c) => c.id));
+
+      // Cross-character clue about_character_id must reference existing character
+      for (const [clueIndex, clue] of character.clues.entries()) {
+        if (clue.about_character_id && !characterIds.has(clue.about_character_id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "about_character_id"],
+            message: `about_character_id "${clue.about_character_id}" must reference an existing character.`,
+          });
+        }
+        if (clue.hint_location_id && !locationIds.has(clue.hint_location_id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "hint_location_id"],
+            message: `hint_location_id "${clue.hint_location_id}" must reference an existing location.`,
+          });
+        }
+      }
+
+      for (const [agendaIndex, agenda] of character.agendas.entries()) {
+        const agendaPath = ["world", "characters", characterIndex, "agendas", agendaIndex];
+
+        // target_character_id must reference a different existing character
+        if (agenda.target_character_id) {
+          if (!characterIds.has(agenda.target_character_id)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [...agendaPath, "target_character_id"],
+              message: `target_character_id "${agenda.target_character_id}" must reference an existing character.`,
+            });
+          } else if (agenda.target_character_id === character.id) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [...agendaPath, "target_character_id"],
+              message: "target_character_id must not reference the character itself.",
+            });
+          }
+        }
+
+        // yields_to_clue_ids must reference existing clues not in same character
+        if (agenda.yields_to_clue_ids) {
+          for (const [yieldIndex, clueId] of agenda.yields_to_clue_ids.entries()) {
+            if (!allClueIds.has(clueId)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [...agendaPath, "yields_to_clue_ids", yieldIndex],
+                message: `yields_to_clue_ids references unknown clue id "${clueId}".`,
+              });
+            } else if (thisClueIds.has(clueId)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [...agendaPath, "yields_to_clue_ids", yieldIndex],
+                message: `yields_to_clue_ids must not reference clues from the same character.`,
+              });
+            }
+          }
+        }
       }
     }
 

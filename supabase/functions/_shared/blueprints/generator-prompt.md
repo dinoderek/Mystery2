@@ -26,6 +26,13 @@ to guide the output:
 - `oneLinerHint`: optional guidance for `metadata.one_liner`
 - `artStyle`: optional guidance for `metadata.art_style`
 - `mustInclude`: optional required ingredients or constraints
+- `culprits`: optional number of culprits (default: 1)
+- `suspects`: optional number of red-herring suspects
+- `witnesses`: optional number of witness characters
+- `locations`: optional number of locations
+- `redHerringTrails`: optional number of red herring plot threads
+- `coverUps`: optional boolean — whether suspects should have cover stories
+- `eliminationComplexity`: optional `"simple"` | `"moderate"` | `"complex"`
 
 If `story_brief.timeBudget` is present, use it directly for
 `metadata.time_budget` and scale the mystery around it.
@@ -109,15 +116,53 @@ for planning only; do not output these steps.
    - at least one `solution_path`
    - any `red_herrings`
    - any `suspect_elimination_paths`
-6. Author clues:
+6. Author character agendas:
+   - The culprit MUST have at least one self-protection agenda
+     (`maintain_false_alibi`, `deny_motive`, or `minimize_presence`) with
+     priority `"high"`.
+   - Non-culprit characters SHOULD have agendas that create conversational
+     friction where it serves the story:
+     - `protect_other` (covering for someone — with a stated reason)
+     - `implicate_other` (grudge, rivalry, or genuine suspicion)
+     - `conditional_reveal` (gating a clue behind a condition)
+   - Some characters MUST remain agenda-free (cooperative witnesses) to ensure
+     the player isn't stonewalled everywhere.
+   - Scale agenda count and complexity to the story brief's cast size and
+     complexity settings. Smaller mysteries need fewer agendas.
+   - For `conditional_reveal` agendas with condition
+     `"confronted_with_evidence"`: every `yields_to_clue_ids` entry must
+     reference an obtainable clue from a location or a different character.
+   - For `conditional_reveal` agendas with narrative conditions
+     (`clever_questioning`, `bluff`, `trust_established`, `pressure`): the
+     `details` field must give the narrator AI enough guidance to evaluate the
+     condition consistently.
+   - For `trust_established` conditions: include a hint about what the character
+     cares about and what reassurance would help them open up.
+   - Agendas must not create circular dependencies (A's reveal requires B's
+     reveal which requires A's reveal).
+   - At least one `solution_path` must be completable even if no narrative-
+     condition reveals are unlocked. Evidence-gated reveals
+     (`confronted_with_evidence`) are acceptable on the critical path because
+     their unlock is deterministic, but `clever_questioning`, `bluff`,
+     `trust_established`, and `pressure` conditions must not be the only way
+     to reach the solution.
+7. Author cross-character knowledge clues:
+   - Where appropriate, give characters `alibi_knowledge`,
+     `witness_testimony`, `motive_knowledge`, or `location_hint` clues.
+   - These clues create a web of interdependence between characters — talking
+     to one character may unlock understanding about another.
+   - Cross-character knowledge clues may be gated behind agendas.
+   - Reference the target character or location using `about_character_id` and
+     `hint_location_id`.
+8. Author clues:
    - location clues
    - character clues
    - ensure every clue has a role and belongs to one or more reasoning paths
-7. Design sub-locations for each location. Distribute location clues so that at
+9. Design sub-locations for each location. Distribute location clues so that at
    most one clue sits at the location level and at most one clue sits in each
    sub-location. Write narrator-only hints for each sub-location.
-8. Add `flavor_knowledge` separately for character texture.
-9. Do a final flavor pass:
+10. Add `flavor_knowledge` separately for character texture.
+11. Do a final flavor pass:
    - improve descriptions, backgrounds, and personalities
    - choose a fitting art style
    - compose the cover image: decide which characters and locations (if any)
@@ -151,6 +196,23 @@ Use these target bands unless the brief strongly justifies a smaller mystery.
   3-4 locations, 3-4 characters, 5-7 meaningful clues, 1-2 red herrings.
 - For larger mysteries (13+ turns), allow richer exploration:
   4-5 locations, 4-5 characters, 6-8 meaningful clues, up to 2 red herrings.
+
+### Agenda distribution
+
+Scale agendas to the cast size and brief configuration:
+
+- Culprit: always 1+ self-protection agenda.
+- Suspect characters: likely have agendas (`self_protect`, `implicate_other`,
+  or `conditional_reveal`) — they have something to hide or an axe to grind.
+- Witness characters: may have agendas if there's a story reason (e.g.,
+  protecting someone) but many witnesses should be cooperative.
+- At least one character should be agenda-free (cooperative baseline).
+- Include at least one `conditional_reveal` with a narrative condition (not
+  just `confronted_with_evidence`) to reward clever play.
+- When the brief specifies `coverUps: true`, suspects should have
+  `maintain_false_alibi` or `provide_false_cover` agendas.
+- When `eliminationComplexity` is `"complex"`, suspect elimination may require
+  breaking through agendas.
 
 ## Field Sizing Guidance
 
@@ -253,6 +315,27 @@ flavor and misdirection.
   must not replace essential case clues.
 - `world.characters[].actual_actions[]`: ordered factual actions the character
   really took during the mystery window.
+- `world.characters[].agendas[]`: behavioral directives shaping conversation
+  responses. Each agenda has: `type`, `strategy`, `priority`, `details`, and
+  optional `target_character_id`, `gated_clue_id`, `condition`,
+  `yields_to_clue_ids`. See Internal Workflow step 6 for authoring rules.
+  Defaults to `[]` (cooperative witness).
+
+### Cross-Character Knowledge Clues
+
+Character clues may use these additional roles to reference other characters or
+locations:
+
+- `alibi_knowledge`: the character can confirm or deny another character's
+  alibi. Set `about_character_id` to the target character.
+- `witness_testimony`: the character witnessed another character doing
+  something. Set `about_character_id`.
+- `motive_knowledge`: the character knows another character's secret motive.
+  Set `about_character_id`.
+- `location_hint`: the character knows where a clue can be found. Set
+  `hint_location_id`.
+
+These clues can be gated behind agendas like any other clue.
 
 ### Reasoning Paths
 
@@ -287,6 +370,14 @@ The final blueprint must support a solvable accusation.
   claimed story or suspicious appearance.
 - Elimination: the player should be able to rule out at least one innocent
   suspect using authored clue paths.
+- Solvability with agendas: at least one `solution_path` must be completable
+  without relying on narrative-condition gated clues (`clever_questioning`,
+  `bluff`, `trust_established`, `pressure`). Clues gated behind
+  `confronted_with_evidence` are acceptable on the critical path since the
+  unlock is deterministic. Narrative-condition gated clues provide alternative
+  paths and richer gameplay but must not be the ONLY way to solve the mystery.
+- No circular dependencies: if clue A is gated behind evidence of clue B, clue
+  B must not be gated behind evidence of clue A (directly or transitively).
 
 ## Hard Constraints
 
@@ -308,3 +399,11 @@ The final blueprint must support a solvable accusation.
   actually exist in the blueprint.
 - Ensure every `cover_image.location_ids` entry references a real location id.
 - Ensure every `cover_image.character_ids` entry references a real character id.
+- Ensure every `about_character_id` on a clue references a real character id.
+- Ensure every `hint_location_id` on a clue references a real location id.
+- Ensure every agenda `target_character_id` references a different real
+  character id (not the character itself).
+- Ensure every agenda `gated_clue_id` references a clue in the same
+  character's `clues` array.
+- Ensure every `yields_to_clue_ids` entry references an obtainable clue from a
+  location or a different character.

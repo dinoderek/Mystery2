@@ -13,7 +13,7 @@ import {
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
-import { parseSearchOutput } from "../_shared/ai-contracts.ts";
+import { parseSearchOutput, type AIPromptKey } from "../_shared/ai-contracts.ts";
 import {
   buildSearchContext,
   findLocationById,
@@ -59,13 +59,26 @@ function readPayloadStringArray(
   );
 }
 
+/** Collect all canonical clue IDs for a location, including sub-location clues. */
+function collectAllLocationClueIds(
+  location: { clues: BlueprintClue[]; sub_locations?: Array<{ clues: BlueprintClue[] }> },
+): string[] {
+  const ids = location.clues.map((c) => c.id);
+  for (const sl of location.sub_locations ?? []) {
+    for (const c of sl.clues) {
+      ids.push(c.id);
+    }
+  }
+  return ids;
+}
+
 function collectRevealedClueIds(
   historyRows: Array<{
     event_type: string;
     payload?: Record<string, unknown> | null;
   }>,
   locationId: string,
-  canonicalClues: BlueprintClue[],
+  allCanonicalClueIds: string[],
 ): string[] {
   const locationSearchEvents = historyRows.filter((entry) =>
     entry.event_type === "search" &&
@@ -73,7 +86,7 @@ function collectRevealedClueIds(
      readPayloadField(entry.payload, "location_name") === locationId)
   );
 
-  const canonicalClueIds = canonicalClues.map((c) => c.id);
+  const canonicalSet = new Set(allCanonicalClueIds);
   const explicitRevealedIds: string[] = [];
 
   for (const event of locationSearchEvents) {
@@ -81,7 +94,7 @@ function collectRevealedClueIds(
     const fromIds = readPayloadStringArray(event.payload, "revealed_clue_ids");
     for (const clueId of fromIds) {
       if (
-        canonicalClueIds.includes(clueId) &&
+        canonicalSet.has(clueId) &&
         !explicitRevealedIds.includes(clueId)
       ) {
         explicitRevealedIds.push(clueId);
@@ -91,7 +104,7 @@ function collectRevealedClueIds(
     const singleId = readPayloadField(event.payload, "revealed_clue_id");
     if (
       singleId &&
-      canonicalClueIds.includes(singleId) &&
+      canonicalSet.has(singleId) &&
       !explicitRevealedIds.includes(singleId)
     ) {
       explicitRevealedIds.push(singleId);
@@ -102,11 +115,9 @@ function collectRevealedClueIds(
     return explicitRevealedIds;
   }
 
-  // Fallback: infer from event count (for edge cases with no explicit IDs)
-  return canonicalClueIds.slice(
-    0,
-    Math.min(locationSearchEvents.length, canonicalClueIds.length),
-  );
+  // Fallback: infer from event count (location-level clues only, for legacy compat)
+  const locationLevelIds = allCanonicalClueIds.slice(0, locationSearchEvents.length);
+  return locationLevelIds;
 }
 
 serveWithCors(async (req) => {
@@ -129,6 +140,10 @@ serveWithCors(async (req) => {
     const { client: userClient } = authResult;
 
     const gameId = String(body.game_id);
+    const searchQuery: string | null =
+      typeof body.search_query === "string" && body.search_query.trim().length > 0
+        ? body.search_query.trim()
+        : null;
     const narrationLogger = withLogContext(logger, { game_id: gameId });
 
     const { data: session, error: sessionError } = await userClient
@@ -184,16 +199,24 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const newTime = Math.max(session.time_remaining - 1, 0);
-    const isForcedEndgame = newTime === 0;
-    const nextMode = isForcedEndgame ? "accuse" : session.mode;
-
+    // Collect all clue IDs (location-level + sub-location)
+    const allCanonicalClueIds = collectAllLocationClueIds(currentLocation);
     const revealedClueIds = collectRevealedClueIds(
       historyRows ?? [],
       currentLocation.id,
-      currentLocation.clues,
+      allCanonicalClueIds,
     );
-    const nextClue = currentLocation.clues[revealedClueIds.length] ?? null;
+
+    // For bare search: next location-level clue in sequence
+    const locationLevelRevealed = revealedClueIds.filter((id) =>
+      currentLocation.clues.some((c) => c.id === id),
+    );
+    const nextClue = searchQuery === null
+      ? (currentLocation.clues[locationLevelRevealed.length] ?? null)
+      : null;
+
+    // Choose prompt based on search type
+    const promptKey: AIPromptKey = searchQuery ? "search_targeted" : "search_bare";
 
     const aiContext = buildSearchContext({
       game_id: gameId,
@@ -202,13 +225,15 @@ serveWithCors(async (req) => {
       location_id: currentLocation.id,
       revealed_clue_ids: revealedClueIds,
       next_clue: nextClue,
+      search_query: searchQuery,
       conversation_history: historyRows ?? [],
     });
 
-    const promptTemplate = await loadPromptTemplate("search");
+    const promptTemplate = await loadPromptTemplate(promptKey);
     const prompt = renderPrompt(promptTemplate, {
       location_name: currentLocation.name,
       target_age: blueprint.metadata.target_age,
+      search_query: searchQuery ?? "",
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
@@ -245,6 +270,42 @@ serveWithCors(async (req) => {
         code: "AI_INVALID_OUTPUT",
       });
     }
+
+    // Validate AI's revealed_clue_id
+    const allClueMap = new Map<string, BlueprintClue>();
+    for (const c of currentLocation.clues) allClueMap.set(c.id, c);
+    for (const sl of currentLocation.sub_locations ?? []) {
+      for (const c of sl.clues) allClueMap.set(c.id, c);
+    }
+
+    let validatedClueId: string | null = null;
+    let validatedClue: BlueprintClue | null = null;
+    const aiClueId = searchOutput.revealed_clue_id;
+    if (aiClueId !== null) {
+      const clue = allClueMap.get(aiClueId);
+      if (clue && !revealedClueIds.includes(aiClueId)) {
+        validatedClueId = aiClueId;
+        validatedClue = clue;
+      } else {
+        log("search.clue_validation_failed", {
+          game_id: gameId,
+          ai_clue_id: aiClueId,
+          exists: !!clue,
+          already_revealed: revealedClueIds.includes(aiClueId),
+        });
+      }
+    }
+
+    // Turn cost resolution
+    const costsTurn = searchQuery === null      // bare search always costs
+      || validatedClueId !== null               // clue found always costs
+      || searchOutput.costs_turn;               // AI decides for empty targeted search
+
+    const newTime = costsTurn
+      ? Math.max(session.time_remaining - 1, 0)
+      : session.time_remaining;
+    const isForcedEndgame = costsTurn && newTime === 0;
+    const nextMode = isForcedEndgame ? "accuse" : session.mode;
 
     const searchParts = [createNarrationPart(searchOutput.narration, NARRATOR_SPEAKER)];
     let combinedParts = [...searchParts];
@@ -290,9 +351,9 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const updatedRevealedClueIds = nextClue === null
+    const updatedRevealedClueIds = validatedClueId === null
       ? revealedClueIds
-      : [...revealedClueIds, nextClue.id];
+      : [...revealedClueIds, validatedClueId];
 
     const searchSequence = await insertNarrationEvent(userClient, {
       session_id: gameId,
@@ -302,11 +363,12 @@ serveWithCors(async (req) => {
         role: "search",
         location_id: currentLocation.id,
         location_name: currentLocation.name,
-        revealed_clue_index: nextClue === null ? null : revealedClueIds.length,
-        revealed_clue_id: nextClue?.id ?? null,
-        revealed_clue_text: nextClue?.text ?? null,
-        revealed_clue_role: nextClue?.role ?? null,
+        search_query: searchQuery,
+        revealed_clue_id: validatedClueId,
+        revealed_clue_text: validatedClue?.text ?? null,
+        revealed_clue_role: validatedClue?.role ?? null,
         revealed_clue_ids: updatedRevealedClueIds,
+        costs_turn: costsTurn,
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: searchParts,
@@ -317,7 +379,7 @@ serveWithCors(async (req) => {
         resulting_mode: nextMode,
         time_before: session.time_remaining,
         time_after: newTime,
-        time_consumed: true,
+        time_consumed: costsTurn,
         forced_endgame: isForcedEndgame,
         trigger: "player",
       }),

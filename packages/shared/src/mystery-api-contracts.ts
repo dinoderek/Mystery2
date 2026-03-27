@@ -33,7 +33,9 @@ export const GameMoveRequestSchema = GameSessionRequestSchema.extend({
   destination: z.string().min(1),
 });
 
-export const GameSearchRequestSchema = GameSessionRequestSchema;
+export const GameSearchRequestSchema = GameSessionRequestSchema.extend({
+  search_query: z.string().min(1).nullable().optional(),
+});
 
 export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
   character_id: z.string().min(1),
@@ -191,6 +193,7 @@ export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameMoveRequest = z.infer<typeof GameMoveRequestSchema>;
 export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
+export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
 export type GameAccuseRequest = z.infer<typeof GameAccuseRequestSchema>;
 export type NarrationPart = z.infer<typeof NarrationPartSchema>;

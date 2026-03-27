@@ -39,6 +39,12 @@ export interface BlueprintContext {
       description: string;
       clues: BlueprintClue[];
       location_image_id?: string;
+      sub_locations?: Array<{
+        id: string;
+        name: string;
+        hint: string;
+        clues: BlueprintClue[];
+      }>;
     }>;
     characters: Array<{
       id: string;
@@ -97,6 +103,15 @@ export interface MoveContext {
   destination_characters: TalkCharacterPublicSummary[];
 }
 
+export interface SubLocationContext {
+  id: string;
+  name: string;
+  hint: string;
+  clues: BlueprintClue[];
+  unrevealed_clues: BlueprintClue[];
+  has_unrevealed_clues: boolean;
+}
+
 export interface SearchContext {
   location_id: string;
   location_name: string;
@@ -105,6 +120,8 @@ export interface SearchContext {
   revealed_clue_ids: string[];
   next_clue: BlueprintClue | null;
   has_more_clues: boolean;
+  sub_locations: SubLocationContext[];
+  search_query: string | null;
 }
 
 export interface TalkLocationSummary {
@@ -575,12 +592,28 @@ export function buildSearchContext(input: {
   location_id: string;
   revealed_clue_ids: string[];
   next_clue: BlueprintClue | null;
+  search_query?: string | null;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   const location = findLocationById(input.blueprint, input.location_id);
   if (!location) {
     throw new Error(`Location ${input.location_id} not found in blueprint`);
   }
+
+  const revealedSet = new Set(input.revealed_clue_ids);
+  const subLocations: SubLocationContext[] = (location.sub_locations ?? []).map(
+    (sl) => {
+      const unrevealed = sl.clues.filter((c) => !revealedSet.has(c.id));
+      return {
+        id: sl.id,
+        name: sl.name,
+        hint: sl.hint,
+        clues: sl.clues,
+        unrevealed_clues: unrevealed,
+        has_unrevealed_clues: unrevealed.length > 0,
+      };
+    },
+  );
 
   return buildContext({
     game_id: input.game_id,
@@ -597,6 +630,8 @@ export function buildSearchContext(input: {
       revealed_clue_ids: input.revealed_clue_ids,
       next_clue: input.next_clue,
       has_more_clues: input.next_clue !== null,
+      sub_locations: subLocations,
+      search_query: input.search_query ?? null,
     },
   });
 }

@@ -342,7 +342,13 @@ class MockAIProvider implements AIProvider {
         const searchContext = context.search_context as
           | {
             location_name?: string | null;
-            next_clue?: { text?: string } | string | null;
+            next_clue?: { id?: string; text?: string } | string | null;
+            search_query?: string | null;
+            sub_locations?: Array<{
+              unrevealed_clues?: Array<{ id?: string; text?: string }>;
+              has_unrevealed_clues?: boolean;
+              name?: string;
+            }>;
           }
           | undefined;
         const locationName =
@@ -351,16 +357,44 @@ class MockAIProvider implements AIProvider {
             : null) ??
           requireContextString(role, context, "location_name");
         const rawNextClue = searchContext?.next_clue;
-        const nextClue =
+        const nextClueObj =
           rawNextClue && typeof rawNextClue === "object" && "text" in rawNextClue
-            ? (rawNextClue.text as string)?.trim() || null
-            : typeof rawNextClue === "string" && rawNextClue.trim().length > 0
-              ? rawNextClue.trim()
-              : null;
+            ? rawNextClue
+            : null;
+        const nextClueText = nextClueObj?.text?.trim() || (
+          typeof rawNextClue === "string" && rawNextClue.trim().length > 0
+            ? rawNextClue.trim()
+            : null
+        );
+        const nextClueId = nextClueObj?.id ?? null;
+        const searchQuery = searchContext?.search_query ?? null;
+
+        // For targeted search, try to match the first sub-location with unrevealed clues
+        if (searchQuery && searchContext?.sub_locations) {
+          const matchedSub = searchContext.sub_locations.find(
+            (sl) => sl.has_unrevealed_clues,
+          );
+          if (matchedSub?.unrevealed_clues?.[0]) {
+            const clue = matchedSub.unrevealed_clues[0];
+            return {
+              narration: `[Mock] You search ${matchedSub.name} in ${locationName} and uncover a clue: ${clue.text}`,
+              revealed_clue_id: clue.id ?? null,
+              costs_turn: true,
+            };
+          }
+          return {
+            narration: `[Mock] You search ${locationName} for "${searchQuery}", but find nothing of interest.`,
+            revealed_clue_id: null,
+            costs_turn: false,
+          };
+        }
+
         return {
-          narration: nextClue
-            ? `[Mock] You search ${locationName} and uncover a clue: ${nextClue}`
+          narration: nextClueText
+            ? `[Mock] You search ${locationName} and uncover a clue: ${nextClueText}`
             : `[Mock] You search ${locationName} again, but discover no new clue.`,
+          revealed_clue_id: nextClueId ?? null,
+          costs_turn: true,
         };
       }
       case "accusation_start": {

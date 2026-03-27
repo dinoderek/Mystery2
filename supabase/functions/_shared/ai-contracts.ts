@@ -6,6 +6,8 @@ export type AIRoleName =
   | "accusation_start"
   | "accusation_judge";
 
+export type AIPromptKey = AIRoleName | "search_bare" | "search_targeted";
+
 export type AccusationResolution = "win" | "lose" | "continue";
 
 export interface TalkStartOutput {
@@ -22,6 +24,8 @@ export interface TalkEndOutput {
 
 export interface SearchOutput {
   narration: string;
+  revealed_clue_id: string | null;
+  costs_turn: boolean;
 }
 
 export interface AccusationStartOutput {
@@ -110,7 +114,17 @@ export function parseTalkEndOutput(value: unknown): TalkEndOutput {
 
 export function parseSearchOutput(value: unknown): SearchOutput {
   const parsed = requireRoleObject(value, "search");
-  return { narration: requireString(parsed, "narration", "search") };
+  const revealedClueId = requireOptionalNullableString(
+    parsed,
+    "revealed_clue_id",
+    "search",
+  );
+  const costsTurn = parsed.costs_turn;
+  return {
+    narration: requireString(parsed, "narration", "search"),
+    revealed_clue_id: revealedClueId,
+    costs_turn: typeof costsTurn === "boolean" ? costsTurn : true,
+  };
 }
 
 export function parseAccusationStartOutput(

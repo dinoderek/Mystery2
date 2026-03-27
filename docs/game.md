@@ -123,25 +123,46 @@ When time is exhausted:
 
 ## Search
 
-**Command:** `search` (search current location)  
-Optionally later: `search <sub-location>` once sub-locations exist.
+**Command:** `search` (bare search) or `search <freeform text>` (targeted search)
 
-### Search Behavior
+### Search Modes
 
-- Narrator adjudicates what is found.
-- Search can:
-  - reveal the next canonical clue from the blueprint for this location
-  - reveal a “follow-up” searchable sub-location (e.g., “behind the curtains”, “under the bench”)
-  - reveal nothing (but should still produce flavorful feedback)
-- Repeated searches at the same location should reveal remaining blueprint clues in order until that location is exhausted.
-- After all canonical clues for that location are revealed, later searches still resolve but reveal no new clue.
+Search operates in two modes based on whether the player provides a description:
 
-**Open questions (intentionally left TBD)**
+**Bare search** (`search`):
+- Reveals the next location-level clue in sequential order (from `location.clues[]`).
+- Narration includes hints about sub-locations that still have undiscovered clues.
+- Always costs 1 turn.
 
-- How strictly search results must follow blueprint vs allowing AI-generated filler:
-  - Recommended: blueprint controls “real clues”; AI can add non-clue flavor.
-- Whether sub-locations are predefined or dynamically generated:
-  - Recommended: blueprint defines canonical sub-locations for clue-bearing areas; AI can suggest extra “non-clue” sub-spots.
+**Targeted search** (`search <freeform text>`):
+- The player describes what/where/how they want to search (e.g., `search under the desk`, `inspect the pantry shelf`).
+- The AI acts as a Game Master, judging whether the description matches a sub-location and its unrevealed clues.
+- The AI has GM leeway: creative or inventive descriptions can match even if the wording doesn't exactly match the sub-location name.
+- If a match is found, the clue is revealed. If not, the narrator provides hints toward promising sub-locations.
+- Costs 1 turn when a clue is found, or when the AI judges the search was a reasonable attempt. The AI can waive the turn cost for completely off-mark or nonsensical searches to avoid punishing children for exploring.
+
+### Sub-Locations
+
+Each location in the blueprint defines 2-4 searchable sub-locations (e.g., “behind the curtains”, “inside the desk drawer”, “under the workbench”). Sub-locations are prominently described when the player arrives at a location, so the player knows what areas they can investigate.
+
+Each sub-location has:
+- A name the player can reference in search commands.
+- A narrator-only hint that helps the AI craft steering narration (never shown directly to the player).
+- At most one clue.
+
+Not every sub-location has a clue — some are atmospheric dead ends that add flavor and misdirection.
+
+### Clue Distribution
+
+- At most 1 clue per location's top-level `clues[]` array (revealed by bare search).
+- At most 1 clue per sub-location (revealed by targeted search).
+- Clues are distributed across locations and sub-locations to encourage broad exploration.
+
+### Repeated Searches
+
+- Bare search reveals location-level clues in order until exhausted.
+- Targeted searches do not reveal already-discovered clues.
+- After all clues are found, searches still produce flavorful narration but reveal nothing new.
 
 ---
 

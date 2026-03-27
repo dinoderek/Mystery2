@@ -1,8 +1,7 @@
 # AI Agent Operations Guide
 
-This file operationalizes
-`.specify/memory/constitution.md`. If this file conflicts with the Constitution,
-the Constitution wins.
+This file operationalizes `.specify/memory/constitution.md`. If this file
+conflicts with the Constitution, the Constitution wins.
 
 ## Required Reading
 
@@ -21,8 +20,34 @@ Treat these documents as both guardrails and low-cost project context. Pull the
 relevant facts and constraints forward into specs, plans, tasks, and final
 summaries rather than treating them as passive background reading.
 
-For testing, quality-gate, observability, and summary requirements, follow the
-Constitution and `docs/testing.md`.
+## Agent Execution Rules
+
+- **Quality gates:** Any non-documentation change must finish with `npm test`.
+  Focused scripts (`test:unit`, `test:integration`, etc.) are for iteration,
+  not final sign-off.
+- **Final summaries:** Always state which quality gates ran. If anything was
+  skipped, explain why.
+- **Edge Function changes:** If you modify files under `supabase/functions/` or
+  `supabase/functions/_shared/`, run `npm run supabase:restart` before
+  integration tests, API E2E tests, browser E2E tests, or `npm test`. The test
+  scripts call `ensureSupabaseRunning()`, but they do not restart stale Edge
+  Function code automatically.
+- **Worktree-safe commands:** In a worktree, use `npm run supabase:*`,
+  `npm run seed:*`, and repo test scripts instead of raw `npx supabase`
+  commands. Use `QUICKSTART.md` for the command runbook and
+  `docs/local-infrastructure.md` for the architecture and troubleshooting.
+- **Stateful backend changes:** If you touch migrations, storage seeding, auth
+  seeding, AI profiles, or local infrastructure, use the wrapper scripts
+  (`supabase:restart`, `supabase:reset`, `seed:all`, `seed:ai`, etc.) rather
+  than raw CLI commands.
+- **AI/runtime changes:** If you change AI contracts, prompts, runtime context,
+  provider selection, or seeded AI profiles, update the mock runtime behavior
+  and affected tests in the same change. Typical touchpoints are
+  `supabase/functions/_shared/ai-provider.ts`, `scripts/seed-ai.mjs`,
+  `tests/api/unit/ai-provider.test.ts`, and any integration or API E2E suites
+  that rely on mock narration or the seeded `default` profile.
+- **AI reseeding:** After changing seeded profile behavior or local AI mode
+  configuration, rerun `npm run seed:ai` or `npm run seed:all` as appropriate.
 
 ## Task-Specific Loading Rules
 
@@ -38,7 +63,8 @@ Load additional guidance based on the area you are touching:
 - Structural mystery data-model changes:
   `packages/shared/src/blueprint-schema-v2.ts`
 - Blueprint schema/generation flow changes or narrator/AI runtime changes:
-  `docs/blueprint-generation-flows.md` and `docs/ai-runtime.md`
+  `docs/blueprint-generation-flows.md`, `docs/ai-runtime.md`, and
+  `docs/ai-configuration.md`
 
 ## Documentation Maintenance
 
@@ -48,41 +74,13 @@ Keep documentation lean and current.
   when setup steps, developer/operator workflows, runtime behavior, or
   debugging guidance changes.
 - When touching blueprint fields, blueprint-fed generation paths, narrator
-  prompts, narrator context, or other AI runtime behavior, always review and
-  update `docs/blueprint-generation-flows.md` and `docs/ai-runtime.md` in the
+  prompts, narrator context, or other AI runtime behavior, review and update
+  `docs/blueprint-generation-flows.md` and `docs/ai-runtime.md` in the same
+  change.
+- When touching seeded AI profile behavior, local profile selection, or mock
+  vs live AI workflows, review and update `docs/ai-configuration.md` in the
   same change.
 - Suggest a dedicated `docs/*.md` file when a change is significant enough that
   the core docs would become cluttered.
-- In final summaries, call out which docs changed and note any skipped quality
-  gates when the change is documentation-only.
-
-## Supabase Edge Functions
-
-When you modify files under `supabase/functions/` (including shared modules in
-`supabase/functions/_shared/`), the running `supabase functions serve` process
-**does not hot-reload**. You must restart it for changes to take effect.
-Integration tests that hit Edge Function endpoints will keep testing stale code
-until the server is restarted — this is a common source of false passes or
-confusing failures.
-
-## Worktree Isolation
-
-Each git worktree automatically receives its own Supabase stack (unique
-`project_id` and port range) when `ensureSupabaseRunning()` is called. This
-enables concurrent test execution across worktrees. Orphaned stacks from
-deleted worktrees are garbage-collected automatically. See
-[`docs/local-infrastructure.md`](docs/local-infrastructure.md) for the full
-design.
-
-**In a worktree, always use `npm run` scripts** (`supabase:restart`,
-`supabase:reset`, `seed:all`, `test:integration`, etc.) rather than raw
-`npx supabase` commands. The npm scripts patch `supabase/config.toml` with
-the worktree's project_id and ports before invoking the CLI.
-
-## Active Technologies
-- Supabase Postgres (`game_sessions`, `game_events`) + Supabase Storage (`blueprints`) (004-ai-backend-integration, 006-actor-aware-messaging, 007-sessions)
-- TypeScript 5.x (web/shared + Node scripts), TypeScript on Deno runtime for Supabase Edge Functions, SvelteKit, Tailwind CSS (`t-*` tokens), Supabase Edge Functions, Supabase JS client v2, Supabase Storage, Zod, Vitest, Playwright, OpenRouter HTTP API (004-ai-backend-integration, 006-actor-aware-messaging, 009-static-blueprint-images)
-- Supabase Storage bucket `blueprints` (JSON), planned image bucket for static blueprint assets, local operator image output directory (009-static-blueprint-images)
-
-## Recent Changes
-- 004-ai-backend-integration: Added TypeScript (Deno runtime for Supabase Edge Functions), TypeScript 5.x for tests and shared package + Supabase Edge Functions, Supabase JS client v2, Zod, OpenRouter HTTP API, Vitest, Playwright
+- In documentation-only changes, validate commands, paths, and links even when
+  code quality gates are skipped.

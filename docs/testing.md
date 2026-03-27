@@ -2,366 +2,306 @@
 
 ## Goals
 
-- Exercise:
-  - each component in isolation where possible
-  - the integrated stack (DB + auth + functions)
-  - the full user journey in a browser
-- Deterministic tests:
-  - avoid network calls to OpenRouter
-  - mock AI responses at the Edge Function boundary
-- CI-friendly:
-  - single continuously running DB instance
-  - logically isolated tests using unique IDs
+- exercise pure logic, the integrated Supabase stack, and the browser UX at the
+  correct layer
+- keep local and CI runs deterministic by default
+- make it obvious which suite to update when a change crosses a boundary
+- preserve one final quality gate: `npm test` for every non-documentation change
 
-## Test tiers
+## Suite Map
 
-### 1) Unit tests (fast, no infra)
+| Suite | Locations | Runner | Requires Supabase | Requires web dev server | AI mode | Command |
+| --- | --- | --- | --- | --- | --- | --- |
+| API/shared unit | `tests/api/unit` | Vitest | No | No | None or mocked in-process | `npm run test:unit` |
+| Web unit | `web/src/lib/**/*.test.ts` | Vitest | No | No | None | `npm -w web run test:unit` |
+| Integration | `tests/api/integration`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes | No | Seeded `mock` profile by default | `npm run test:integration` |
+| API E2E | `tests/api/e2e`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes | No | Seeded `mock` profile by default | `npm run test:e2e` |
+| Browser E2E | `web/e2e` | Playwright | Yes | Yes, via Playwright `webServer` | Seeded `mock` profile by default | `npm -w web run test:e2e` |
 
-Location:
+## Suite Responsibilities
 
-- `packages/apitests/unit`
-- `packages/shared/tests`
-- (optional) `supabase/functions/<function-name>/tests` for pure function tests
+### 1) API/shared unit
 
-Covers:
+Use this suite for fast validation of logic that does not need a running local
+stack.
 
-- domain logic (reducers/state transitions)
-- request/response schema validation
-- UI component logic (where practical)
-- prompt construction and parsing utilities
-- blueprint generation utilities (`packages/blueprint-generator/*`, `scripts/generate-blueprint.mjs`)
-- blueprint generation chat-packet assembly, including:
-  - packet rendering from the live generator prompt + user-message builder
-  - `--chat-packet` CLI parsing, default output path selection, and no-network behavior
-- blueprint schema versioning coverage, including:
-  - V2 schema acceptance for all canonical playable fixtures
-  - V2 authoring schema validation for generator/evaluator blueprints
-  - V1 schema still exists for reference but is no longer used by runtime code
-- image generation/deploy utilities (`scripts/lib/*`, `scripts/generate-blueprint-images.mjs`)
-- image-generation chat-packet assembly, including:
-  - prompt reuse through `buildImagePrompt(...)`
-  - ordered reference-manifest rendering for location and cover packets
-  - `--chat-packets` CLI parsing, default output dir selection, and no-patch behavior
-- evaluation-packet assembly (`scripts/build-blueprint-evaluation-markdown.mjs`)
-- image-generation env loading precedence (`.env.images.local`, `.env.local`, shell env, CLI overrides)
-  - when `MYSTERY_CONFIG_ROOT` is set, those local-only files are resolved from that directory instead of the repo root
-- image generation diagnostics, including preserved provider response bodies and stack traces on failed targets
-- deployment helper logic (`tests/api/unit/deploy-helpers.test.ts`) including:
-  - deploy CLI arg parsing and validation
-  - strict deploy env/manifest contract enforcement
-  - edge-function discovery (`supabase/functions/*`, excluding `_shared`)
-  - command plan assembly for `dev|staging|prod`
-  - skip behavior (`--skip-seed`, `--skip-users`) and bootstrap-user config validation
-  - `.example.json` to `.json` bootstrap-user guidance and placeholder-password rejection
-- local auth seed helper logic (`tests/api/unit/seed-auth-users.test.ts`) including:
-  - first-run generation of `supabase/seed/auth-users.local.json`
-  - rerun preservation of existing local passwords
-  - generated-credentials output formatting
-  - external-root resolution via `MYSTERY_CONFIG_ROOT`
+Update this suite when changing:
 
-Web-specific command parser coverage:
+- shared contracts and schema validation
+- prompt construction, parsing, and AI-provider helper logic
+- blueprint generation, evaluation, image-generation, and deploy helpers
+- local auth or AI seed helper logic
+- mock provider behavior in `supabase/functions/_shared/ai-provider.ts`
 
-- `web/src/lib/domain/parser.test.ts` validates:
-  - alias recognition (move/talk/search/end/help/quit/list)
-  - mode-aware behavior across explore/talk/accuse/ended
-  - canonical command hint text accuracy (`move to/go to`, `talk to`, `accuse [statement]`)
-  - accuse-mode command-like input (for example `go ...`, `talk ...`) stays narrator-facing and is treated as reasoning text
-  - client-side missing/invalid target branches and suggestions
-  - unrecognized inline hint generation
-- `web/src/lib/domain/store.retry.test.ts` validates:
-  - transient vs permanent error classification
-  - exponential backoff sequencing used by the store retry loop
-- `web/src/lib/domain/theme-store.test.ts` validates:
-  - theme listing, switching by id and name, invalid theme handling
-  - localStorage persistence and initialization
-  - CSS custom property application to DOM
-- `web/src/lib/domain/store.speaker.test.ts` validates:
-  - investigator/system/backend speaker mapping in the UI stream
-  - local help/validation feedback remains client-only (no backend write path)
+Expected coverage includes:
 
-### 2) Integration tests (real Supabase local, no browser)
+- domain logic and request/response schema validation
+- blueprint generator, evaluator, image, and deploy utility behavior
+- mock AI role output and provider-selection unit coverage
+- local auth and AI seeding helper logic
 
-Location:
+### 2) Web unit
 
-- `packages/apitests/integration`
-- plus shared helpers in `packages/testkit`
+Use this suite for browser-domain logic that can be tested without the full UI
+stack.
 
-Runs against:
+Update this suite when changing:
 
-- Supabase local stack (Postgres/Auth/Storage/Functions)
+- parser and command normalization
+- retry classification and store behavior
+- theme store behavior
+- speaker mapping or other client-only transcript transforms
 
-What we test:
+Expected coverage includes:
 
-- RLS policies (A cannot read B, etc.)
-- Edge Function authentication behavior:
-  - no token → 401/403 (where required)
-  - valid token → success
-  - CORS behavior: `OPTIONS` preflight returns success and auth failures still include CORS headers
-- Authenticated request setup:
-  - provision users through `tests/testkit/src/auth.ts` (`setupTestAuth`, `createTestUser`, `signIn`)
-  - include bearer auth headers from testkit helpers for all protected function calls
-- DB writes/reads for session lifecycle and event log
-- Session catalog endpoint behavior (`game-sessions-list`):
-  - returns `in_progress`, `completed`, and `counts`
-  - enforces recency ordering (`last_played_at`, then `created_at`, then `game_id`)
-  - maps ended sessions to completed rows with `outcome`
-  - marks missing-blueprint sessions as `can_open=false` with fallback title
-- Storage policies if used for user assets
-- Conversation/search API contract behavior:
-  - `game-ask` requires non-empty `player_input`
-  - `game-ask` and `game-search` responses are narration/time/mode focused (no clue-ID fields)
-  - speaker attribution per endpoint lives on `narration_parts[].speaker` and replay uses the persisted `narration_events[].narration_parts[]`
-  - narration-bearing `game_events.payload.diagnostics` records sequence, category, timing, and timeout-order metadata
-  - timeout-forced `mode='accuse'` transitions continue through `game-accuse` reasoning rounds without missing-context failures
-  - timeout-forced `move`, `search`, and `ask` persist the action event before the appended `forced_endgame` event
-  - `talk` and `end_talk` leave `time_remaining` unchanged
-  - accusation judge internal contract no longer includes inferred suspect fields; terminal `win|lose` resolution is authoritative
-- Static image boundary behavior:
-  - `blueprints-list` includes optional `blueprint_image_id`
-  - `game-move` includes optional `narration_parts[].image_id`
-  - `game-talk` includes optional `narration_parts[].image_id`
-  - `blueprint-image-link` enforces auth and returns signed URL/expiry on valid references
+- alias recognition and mode-aware parsing
+- inline validation and unrecognized-command guidance
+- retry/backoff classification
+- theme persistence and CSS custom property updates
+- speaker mapping and client-only feedback paths
 
-AI calls:
+### 3) Integration
 
-- Never call OpenRouter in integration tests.
-- Instead, use the seeded `mock` profile in `ai_profiles` (canonical default row is `id='default'`, and tests can still pass `ai_profile: "mock"` explicitly).
-- Assert the persisted DB side effects match expectations.
-  - accusation resolution persists `game_sessions.mode='ended'` and `game_sessions.outcome='win'|'lose'`
-- Live provider checks are isolated in dedicated opt-in suites (see below).
+Use this suite for real Supabase boundaries without a browser.
 
-Runner:
+Update this suite when changing:
 
-- Vitest/Jest (implementation choice)
+- Edge Functions or files in `supabase/functions/_shared/`
+- shared API contracts used by Edge Functions
+- auth rules, RLS, storage policies, migrations, or seeded local state
+- AI profile resolution, provider selection, or the default mock profile
 
-### 3) End-to-end tests (browser, full stack)
+Dependencies:
 
-Location:
-
-- `web/e2e` for Playwright E2E tests
-
-Harness:
-
-- Vitest (API-first flow testing)
-
-Runs against:
-
-- local UI server (SvelteKit dev or preview)
 - local Supabase stack
+- seeded storage blueprints
+- seeded `ai_profiles.id='default'` pointing at `mock`
+- test helpers in `tests/testkit`
 
-What we test:
+Expected coverage includes:
 
-- user can load UI
-- user can sign in with a provisioned account
-- unauthenticated users are redirected to `/login`
-- authenticated users are redirected away from `/login`
-- session persistence and token refresh behavior
-- logout clears session and re-protects game routes
-- user can create/continue a game session
-- session-aware landing menu exposes exactly 3 numeric options (`new`, `in-progress`, `completed`)
-- in-progress and completed options disable correctly when counts are zero
-- `/sessions/in-progress` and `/sessions/completed` list flows support numeric row selection
-- completed-session viewer opens in read-only mode and returns to `/` on any key
-- user can perform an action that triggers an Edge Function
-- UI renders returned payload and state remains consistent after refresh
-- transcript resume failures surface player-facing recovery guidance instead of silently dropping story lines
+- auth rejection/success paths and CORS behavior
+- RLS and storage access rules
+- session lifecycle writes and reads
+- persisted event payloads, diagnostics, and state transitions
+- session catalog behavior
+- signed image-link behavior
+- AI profile runtime resolution and default/mock profile behavior
 
-Guidance:
+Never call OpenRouter in this suite. Use the seeded `mock` profile and assert
+persisted side effects instead.
 
-- Keep E2E tests few but high value.
-- Use integration tests for most behavior; reserve E2E for critical journeys.
-- Vitest setup and Playwright auth/bootstrap helpers should honor `MYSTERY_CONFIG_ROOT` so shared local config works the same way in automation as it does in operator scripts.
+### 4) API E2E
 
-Web command parser E2E coverage (`web/e2e/input.test.ts`, `web/e2e/help.test.ts`) must include:
+Use this suite for full player journeys through the Edge Function layer without
+the browser UI.
 
-- alias submissions resolving to successful backend calls
-- missing/invalid targets blocked client-side (no backend call)
-- inline `locations`/`characters` list rendering
-- brief unrecognized-command inline guidance
-- detailed help modal on `help`
-- transient failure retries and retry-exhaustion/manual-retry UX
-- no retry on permanent 4xx failures
-- parser-to-backend payload mapping for talk/ask (`player_input`) and accuse reasoning (`player_reasoning`)
-- accuse-mode multi-round continuity: reasoning text continues to route to `game-accuse` even when the text resembles explore/talk commands
-- accusation end-state UX: success/failure message, input lock, and `press any key` return-to-list prompt
-- quit end-state UX: local `quit`/`exit` shows the same `press any key` return-to-list prompt and returns to `/` on keypress
-- actor label rendering in the terminal stream (`You`, `Narrator`, character name, `System`)
-- theme-aware speaker style behavior across at least two themes, with one shared generic style for all character speakers
-- terminal loading indicators:
-  - narration-area wait spinner during backend calls
-- centered start-screen spinner while a selected mystery is initializing
-- image rendering checks:
-  - start screen blueprint cover image via signed link
-  - session side panel updates on move/talk image IDs
-  - placeholder fallback when signed-link requests fail
+Update this suite when changing:
 
-Theme command E2E coverage (`web/e2e/theme.test.ts`) must include:
+- multi-step gameplay flows across endpoints
+- session start/resume/endgame lifecycle
+- AI-profile-dependent API journeys
+- seeded mock narration or API expectations that span multiple turns
 
-- `themes` listing available themes without player input echo in narration
-- `theme <name>` switching CSS custom properties and confirming without player echo
-- theme persistence across page navigation (localStorage)
-- invalid theme name error feedback with available theme list
-- theme commands working across all game modes (not just explore)
+Dependencies:
 
-Full-stack browser coverage (`web/e2e/full-stack.spec.ts`) should exercise parser + store + backend state machine without network route mocking when local Supabase is available.
+- local Supabase stack
+- seeded storage blueprints
+- seeded `default` mock profile
+- test helpers in `tests/testkit`
 
-Auth browser coverage (`web/e2e/auth.spec.ts`) must include:
+Expected coverage includes:
 
-- required-field validation for login form
-- invalid credential feedback
-- credential resolution from explicit env vars, the local auth seed manifest, or ephemeral fallback via `web/e2e/test-auth.ts`
-- successful login redirect behavior
-- session persistence across reload
-- refresh-failure path redirecting to `/login` with a friendly message
-- logout flow and route protection (`/` and `/session`)
+- new-game flow and resumable-session flow
+- move, search, talk, ask, end-talk, and accuse journeys
+- mock-profile-backed end-to-end API behavior
 
-Sessions navigation E2E coverage (`web/e2e/sessions-navigation.test.ts`) must include:
+### 5) Browser E2E
 
-- in-progress rows render title, turns-left, and last-played values
-- completed rows render title, outcome, and last-played values
-- numeric row selection opens `/session` for resume/review paths
-- non-openable rows (`can_open=false`) show guard messaging and do not navigate
+Use this suite for browser navigation, auth UX, rendering, and retry behavior.
 
-## Test Isolation Strategy (Logical Isolation)
+Update this suite when changing:
 
-Because starting and stopping Supabase is resource-intensive and slow, we rely on **Logical Isolation** rather than database resets. A single Supabase instance runs continuously. Every test is responsible for:
+- route protection and login/logout behavior
+- terminal rendering, command entry UX, loading states, and retries
+- session list navigation
+- theme commands and browser persistence
+- image rendering and signed-link failure UX
 
-1. **Unique IDs:** Generating unique `user_id` and/or `session_id`s (UUIDs) during setup.
-2. **Scoping:** Asserting only against its own unique IDs (no `SELECT COUNT(*) FROM table` without scoping to a specific user).
-3. **Cleanup (Optional but recommended):** Relying on Postgres `ON DELETE CASCADE` via an `afterAll` hook to delete the mock `user_id`, cleanly wiping test data without a hard reset.
+Dependencies:
 
-Integration/E2E tests should rely on:
+- local Supabase stack
+- running local web server
+- seeded local auth users and seeded `default` mock profile
 
-- programmatic seeding via `packages/testkit` with unique IDs for every test run
-- avoiding global database assertions
+Expected coverage includes:
 
-## Test execution
+- login, logout, redirect, and refresh-failure flows
+- command submission and parser-to-backend wiring
+- retry and error UX
+- transcript, speaker labels, and terminal loading indicators
+- in-progress/completed session navigation
+- theme commands and persistence
+- signed image rendering and placeholder fallback
 
-### Running all tests
+Keep this suite high value. Prefer integration tests for backend behavior and
+reserve Playwright for browser-specific user journeys.
 
-**`npm test`** is the single command that runs every quality gate and test suite
-in the correct order:
+## Change-To-Test Mapping
 
-1. `npm run lint` — ESLint
-2. `npm run typecheck` — TypeScript compiler
-3. `npm -w web run check` — Svelte type checking
-4. `npm run test:unit` — API/shared unit tests (`tests/api/unit`)
-5. `npm -w web run test:unit` — Web unit tests (`web/src/lib/domain`)
-6. `npm run test:integration` — Integration tests against local Supabase
-7. `npm run test:e2e` — API E2E tests (Vitest, full player journeys)
-8. `npm -w web run test:e2e` — Playwright browser E2E tests
+- shared logic, parser behavior, prompt builders, script helpers, and pure
+  contract validation -> unit tests
+- Edge Functions, auth, RLS, storage, migrations, seeded runtime state, and
+  API contracts -> integration tests
+- multi-endpoint player journeys through Edge Functions -> API E2E
+- browser auth/navigation/rendering/retry UX -> browser E2E
 
-AI agents **must** run `npm test` as the quality gate before proposing
-completion of any non-documentation change. Individual sub-scripts
-(`test:unit`, `test:integration`, etc.) are available for focused iteration
-but are not a substitute for the full suite.
+When a change crosses more than one boundary, update every affected suite. For
+example, a change to AI output contracts may require:
 
-Before running tests, developers or CI can rely on the npm scripts to start Supabase when required and reseed storage blueprints before API-level suites.
+- unit updates for `supabase/functions/_shared/ai-provider.ts`
+- integration updates for Edge Function payloads and seeded profile flow
+- API E2E updates if mock narration or session flow assertions change
+- browser E2E updates only if the rendered UX or retry behavior changes
 
-### Integration test script
+## Agent Workflow
+
+- Use focused suites while iterating.
+- Before finalizing any non-documentation change, run `npm test`.
+- If you changed files under `supabase/functions/` or
+  `supabase/functions/_shared/`, run `npm run supabase:restart` before
+  integration, API E2E, browser E2E, or `npm test`.
+- `npm run test:integration` and `npm run test:e2e` call
+  `ensureSupabaseRunning()` and reseed storage plus the canonical `default`
+  mock profile, but they do not restart stale Edge Function code.
+- If you changed AI contracts, prompts, runtime context, provider selection, or
+  seeded AI profile behavior, update the mock provider unit coverage in
+  `tests/api/unit/ai-provider.test.ts` and any affected integration or API E2E
+  assertions, then reseed via `npm run seed:ai` or `npm run seed:all`.
+- Live-AI suites are opt-in only and are never a substitute for the default
+  mock-backed quality gate.
+
+## Test Isolation Strategy
+
+Because starting and stopping Supabase is resource-intensive, integration and
+E2E suites use logical isolation instead of database resets.
+
+Every test is responsible for:
+
+1. generating unique `user_id` and/or `session_id` values
+2. scoping assertions to its own identifiers
+3. optionally cleaning up through `ON DELETE CASCADE` rather than full resets
+
+Integration, API E2E, and browser E2E tests should rely on:
+
+- programmatic setup via `tests/testkit`
+- unique IDs per test run
+- no global count assertions without scoping
+
+## Test Execution
+
+### Final quality gate
+
+`npm test` runs the full non-documentation quality gate in this order:
+
+1. `npm run lint`
+2. `npm run typecheck`
+3. `npm -w web run check`
+4. `npm run test:unit`
+5. `npm -w web run test:unit`
+6. `npm run test:integration`
+7. `npm run test:e2e`
+8. `npm -w web run test:e2e`
+
+Focused sub-scripts are for iteration only. They do not replace the final
+`npm test` gate.
+
+Documentation sync is still required alongside that gate whenever setup,
+runtime behavior, testing workflow, or debugging guidance changes.
+
+### Script behavior
 
 `npm run test:integration`:
 
-1. Ensures Supabase is running (no restart by default)
-2. Seeds storage blueprints (upserts, safe to re-run)
-3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
-4. Uses Vitest to run the integration test suite (handling its own data isolation)
-
-### E2E test script
+1. ensures Supabase is running
+2. seeds storage blueprints
+3. seeds or refreshes the canonical `default` AI profile in mock mode
+4. runs Vitest on `tests/api/integration`
 
 `npm run test:e2e`:
 
-1. Ensures Supabase is running (no restart by default)
-2. Seeds storage blueprints (upserts, safe to re-run)
-3. Seeds/refreshes canonical `default` AI profile in Postgres (mock config)
-4. Runs Vitest against the running Edge Functions to validate full player journeys
+1. ensures Supabase is running
+2. seeds storage blueprints
+3. seeds or refreshes the canonical `default` AI profile in mock mode
+4. runs Vitest on `tests/api/e2e`
 
 `npm -w web run test:e2e`:
 
-1. Runs Playwright browser E2E for the web app
-2. Current project matrix is Chromium-only (`web/playwright.config.ts`) for local stability
+1. starts the local web app through Playwright's `webServer` configuration
+2. runs Playwright browser E2E against that local app
+3. uses the current local project browser matrix in `web/playwright.config.ts`
 
 ### Shared-suite execution
 
-- Treat integration, API E2E, and Playwright suites as serialized within a single checkout or worktree.
-- Within the same checkout, `npm run test:integration`, `npm run test:e2e`, and `npm -w web run test:e2e` all share local resources (Supabase, shared storage/auth state, and the Vite dev-server port). Do not run more than one of those shared-state suites at the same time from different terminals.
-- **Across worktrees**, tests can run concurrently because each worktree gets its own Supabase stack **and** Vite dev-server port, all with unique ports. See [`docs/local-infrastructure.md`](local-infrastructure.md) for details.
-- Parallel verification is still fine for unit-only suites such as `npx vitest run tests/api/unit/...` and `npm -w web run test:unit`.
+- Treat integration, API E2E, and browser E2E as serialized within a single
+  checkout or worktree.
+- Within one checkout, those suites share local Supabase state and the Vite dev
+  server port. Do not run more than one of them at the same time from separate
+  terminals.
+- Across worktrees, they can run concurrently because each worktree gets its
+  own Supabase stack and Vite port. See
+  [`docs/local-infrastructure.md`](local-infrastructure.md).
+- Unit-only suites can run in parallel more safely.
 
-### Deploy dry-run checks
+## Live-AI Suites (Opt-In)
 
-`npm run test:unit` includes deploy helper dry-run coverage for the staged plan shape, function-job resolution, and serial override behavior, plus runner coverage for parallel lane ordering and sibling-lane cancellation. Full remote deploy verification remains manual via `npm run deploy -- --env <env> --dry-run --skip-users` and live deploy smoke checks.
+These suites are excluded from `npm test` and run only when explicitly
+requested:
 
-### Live-AI suites (opt-in)
-
-These suites are intentionally excluded from `npm test` and only run when explicitly requested.
-
-- Integration (live harness):
-  - `npm run test:integration:live:free`
-  - `npm run test:integration:live:paid`
-- API E2E (investigator script):
-  - `npm run test:e2e:live:free`
-  - `npm run test:e2e:live:paid`
-- Blueprint generation:
-  - `npm run test:blueprint:live:free`
-  - `npm run test:blueprint:live:paid`
-- Browser smoke (optional):
-  - `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
+- `npm run test:integration:live:free`
+- `npm run test:integration:live:paid`
+- `npm run test:e2e:live:free`
+- `npm run test:e2e:live:paid`
+- `npm run test:blueprint:live:free`
+- `npm run test:blueprint:live:paid`
+- `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
 
 Live suites require:
 
 - `AI_LIVE=1`
-- mode-specific local AI env files (`.env.ai.free.local`, `.env.ai.paid.local`) with `AI_PROVIDER`, `AI_MODEL`, and `OPENROUTER_API_KEY` for OpenRouter modes
-- `npm run seed:ai -- --only <free|paid>` to sync profile model/key into Postgres for the selected live mode
-- resilient retry handling for retriable `503` failures (`details.retriable=true`) in live tests
-- higher timeout budget for real model latency (default 600s per live test)
-- live suites may short-circuit with a warning when retries are exhausted by upstream transient failures
-- blueprint live suites validate generated payloads against the shared `BlueprintV2Schema`
+- `.env.ai.free.local` or `.env.ai.paid.local`
+- `npm run seed:ai -- --only <free|paid>` to sync the selected live profile
+- resilient handling of retriable `503` failures
 
-Live API E2E investigator coverage must exercise all actions:
+See [`docs/ai-configuration.md`](ai-configuration.md) for the canonical local
+profile and reseeding rules.
 
-- `move`
-- `search`
-- `talk`
-- `ask`
-- `end_talk`
-- `accuse_reasoning`
+## RLS And Boundary Minimum Bar
 
-## RLS policy testing (minimum bar)
+At minimum, integration coverage should prove:
 
-At least the following should be tested:
+- user A can create and read their own session rows
+- user B cannot read or mutate user A's rows
+- storage access is limited to the intended user unless explicitly shared
+- protected Edge Functions reject missing or invalid auth
 
-- User A can create and read their own session rows.
-- User B cannot read or mutate User A’s session rows.
-- If any “shared session” concept exists:
-  - invited users can read (and maybe write) depending on design
-- Storage:
-  - user can access their own objects
-  - user cannot access others (unless explicitly shared)
+## Observability During Tests
 
-## Observability during tests
+On failures, capture or inspect:
 
-- On failures, capture:
-  - Playwright screenshots/traces (E2E)
-  - Edge Function logs from local Supabase (integration)
-  - DB state snapshot for debugging (optional helper in testkit)
-- Preferred local log tail command:
-  - `npm run logs:edge`
+- Playwright screenshots and traces
+- Edge Function logs from local Supabase via `npm run logs:edge`
+- relevant DB state snapshots when testkit helpers provide them
 
-## Quality Gates
+## Documentation-Only Changes
 
-Before finalizing and merging any work, the following Quality Gates **must** be executed and passed successfully. AI Agents and developers should verify these before proposing completion. Run **`npm test`** to execute all checks in one go:
+If a change only touches documentation files and does not affect runtime code,
+tooling, migrations, tests, or environment contracts, code quality gates are
+optional.
 
-Exception (documentation-only changes):
-- If a change only touches documentation files (`*.md`) and does not affect code, tests, build/deploy scripts, migrations, or environment contracts, running code quality gates is optional.
-- For doc-only changes, validate command accuracy, cross-document consistency, and link/path correctness instead.
+For documentation-only changes, validate instead:
 
-1. **Linting & Formatting:** `npm run lint` / `npm run format`
-2. **Type Checking:** `npm run typecheck` and `npm -w web run check`
-3. **Unit Tests:** `npm run test:unit` (API/shared) and `npm -w web run test:unit` (web domain)
-4. **Integration Tests:** `npm run test:integration` (local Supabase stack)
-5. **API E2E Tests:** `npm run test:e2e` (full player journeys via Vitest)
-6. **Browser E2E Tests:** `npm -w web run test:e2e` (Playwright)
-7. **Documentation Sync:** Ensure all architectural, feature, or tooling changes are reflected in the `docs/` directory.
-
-All of steps 1–6 are executed by `npm test`.
+- command accuracy
+- path and link correctness
+- cross-document consistency
+- stale references to old suite names or locations

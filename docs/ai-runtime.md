@@ -204,11 +204,16 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
   - canonical default profile id is `ai_profiles.id='default'`
 - Provider secrets:
   - OpenRouter API key is read from `ai_profiles.openrouter_api_key` only
-- Local profile seeding:
-  - `npm run seed:ai` seeds `mock`, optional `free`/`paid`, and canonical `default`
-  - `npm run seed:ai -- --only free` (or `paid` / `mock`) updates that profile and updates `default` without restarting Supabase
-- Live suite commands:
-  - `npm run test:integration:live:free`
-  - `npm run test:integration:live:paid`
-  - `npm run test:e2e:live:free`
-  - `npm run test:e2e:live:paid`
+- Local profile seeding, mock vs live mode behavior, and reseeding rules are
+  owned by [`docs/ai-configuration.md`](ai-configuration.md).
+
+## Change Management
+
+When changing role output contracts, prompt/context shape, provider selection,
+or session/profile resolution:
+
+- update the mock provider behavior and unit coverage
+- update any integration or API E2E assertions that depend on the seeded
+  `default` mock profile
+- update [`docs/ai-configuration.md`](ai-configuration.md) if seeded profile
+  behavior or local profile workflow changed

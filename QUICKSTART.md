@@ -105,7 +105,8 @@ npm run seed:ai -- --only <mock|free|paid>
 
 New sessions use the current `default` profile. Existing sessions stay pinned to their stored `ai_profile_id`.
 
-For the canonical rules behind that behavior, see [`docs/ai-configuration.md`](/Users/dinohughes/Projects/my2/w3/docs/ai-configuration.md).
+For the canonical rules behind that behavior, see
+[`docs/ai-configuration.md`](docs/ai-configuration.md).
 
 ## Generate Blueprints Locally
 
@@ -180,6 +181,29 @@ command, patch first:
 npm run supabase:patch
 ```
 
+### When to restart vs reseed
+
+Use `npm run supabase:restart` when:
+
+- you changed files under `supabase/functions/` or `supabase/functions/_shared/`
+- containers are unhealthy or stuck
+- you changed Supabase config that only applies on restart
+
+Use `npm run seed:all` when:
+
+- a new worktree stack needs the full local state
+- you reset the database
+- you changed seed data across auth, storage, and AI profiles
+
+Use `npm run seed:ai -- --only <mock|free|paid>` when:
+
+- you are switching the local runtime profile
+- you edited `.env.ai.<mode>.local`
+- you changed seeded AI profile behavior without needing a full database reset
+
+`seed:ai` updates Postgres profile rows. It does not restart containers because
+profile selection is DB-driven.
+
 ### Check status
 
 ```bash
@@ -199,6 +223,22 @@ Use a restart when:
 - you changed Edge Function or other Deno-backed code and need to guarantee the shared local runtime picks it up
 
 This repo is configured with `edge_runtime.policy = "per_worker"`, but because multiple agents can share the same local Supabase project on one machine, do not rely on hot reload. In practice, treat `npm run supabase:restart` as the safe path for Deno and Edge Function changes.
+
+### Test scripts and stale Edge Function code
+
+`npm run test:integration` and `npm run test:e2e` both call
+`ensureSupabaseRunning()`, seed storage, and reseed the canonical `default`
+mock AI profile. They do **not** restart stale Edge Function code
+automatically.
+
+After changing files under `supabase/functions/` or
+`supabase/functions/_shared/`, run:
+
+```bash
+npm run supabase:restart
+```
+
+before `npm run test:integration`, `npm run test:e2e`, or `npm test`.
 
 ### Worktree isolation
 
@@ -261,6 +301,10 @@ AI profiles:
 npm run seed:ai
 npm run seed:ai -- --only <mock|free|paid>
 ```
+
+Use `seed:ai -- --only <mode>` when only the local AI profile rows need to be
+refreshed. Use `seed:all` when auth, storage, and AI state all need to be
+recreated together.
 
 ## Deploy To Dev
 
@@ -364,6 +408,14 @@ npm run generate:images -- \
 npx supabase stop
 ```
 
+In the main checkout, that command is fine as written. In a worktree, patch the
+config first so the stop targets the current isolated stack:
+
+```bash
+npm run supabase:patch
+npx supabase stop
+```
+
 ## Logs
 
 Tail local Edge Function logs with:
@@ -388,3 +440,6 @@ npm run test:integration
 npm run test:e2e
 npm -w web run test:e2e
 ```
+
+For suite ownership, dependencies, and which test level to update for a given
+change, see [`docs/testing.md`](docs/testing.md).

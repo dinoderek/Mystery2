@@ -14,6 +14,12 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - OpenRouter keys are stored in `ai_profiles.openrouter_api_key` (no function-secret fallback).
 - Local-only operator config can be relocated by setting `MYSTERY_CONFIG_ROOT` to an absolute path. When unset, local-only files continue to resolve from the repo root.
 
+This document is the canonical source for:
+
+- `default` vs named local profiles (`mock`, `free`, `paid`)
+- when `npm run seed:ai` is sufficient
+- which local and test workflows rely on the seeded mock profile
+
 ## OpenRouter Injection Map
 
 - Local live gameplay:
@@ -61,6 +67,46 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 - `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
 - `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
 - gameplay/runtime OpenRouter config stays DB-first; local blueprint/image generation use direct operator env values instead of AI profile rows
+
+## Testing And Mock Profile Rules
+
+The default automated test path is mock-backed:
+
+- `npm run test:integration` reseeds `ai_profiles.id='default'` to mock mode
+- `npm run test:e2e` reseeds `ai_profiles.id='default'` to mock mode
+- browser E2E normally runs against that same local mock-backed runtime
+
+Use `npm run seed:ai -- --only <mock|free|paid>` when:
+
+- switching between local runtime modes
+- updating `.env.ai.<mode>.local`
+- changing seeded profile rows or provider/model defaults
+
+Use `npm run seed:all` instead when auth users, storage, and AI profiles all
+need to be recreated together.
+
+Because profile selection is stored in Postgres, `seed:ai` does not require a
+Supabase restart by itself.
+
+## Change Management For AI Runtime Work
+
+When changing AI output contracts, prompt/context shape, provider selection, or
+profile resolution:
+
+- update the seeded profile behavior if local or test defaults changed
+- update mock-provider coverage in `tests/api/unit/ai-provider.test.ts`
+- update any affected integration or API E2E assertions that rely on mock
+  narration or the seeded `default` profile
+- rerun `npm run seed:ai` or `npm run seed:all` before local verification
+
+Typical touchpoints include:
+
+- `supabase/functions/_shared/ai-provider.ts`
+- `supabase/functions/_shared/ai-profile.ts`
+- `scripts/seed-ai.mjs`
+- `tests/api/unit/ai-provider.test.ts`
+- `tests/api/integration/ai-profile-runtime.test.ts`
+- `tests/api/e2e/*` when journey assertions depend on seeded mock behavior
 
 ## Blueprint Generation Configuration
 

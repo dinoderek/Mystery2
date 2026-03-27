@@ -7,6 +7,7 @@ import {
   parseScriptOptions,
   runCommand,
 } from "./supabase-utils.mjs";
+import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const mode = process.argv[2];
 if (mode !== "free" && mode !== "paid") {
@@ -48,7 +49,8 @@ try {
   if (options.seedAI) {
     runCommand(npmBin, ["run", "seed:ai", "--", "--only", mode], env);
   }
-  runCommand(npmBin, ["-w", "web", "run", "dev"], env);
+  const { ports } = resolveWorktreePorts();
+  runCommand(npmBin, ["-w", "web", "run", "dev", "--", "--port", String(ports.vite_dev)], env);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

@@ -53,6 +53,7 @@ unique `project_id` and port range.
    | Analytics         | 54337         | 54437           | 54537           |
    | DB Pooler         | 54339         | 54439           | 54539           |
    | Edge Inspector    | 8083          | 8183            | 8283            |
+   | Vite dev server   | 5173          | 5273            | 5373            |
 
 3. **Config patching:** Before `supabase start`, `patchConfigToml()` rewrites
    `supabase/config.toml` in the worktree with the derived project_id and
@@ -60,8 +61,11 @@ unique `project_id` and port range.
    the main checkout or other worktrees.
 
 4. **Env propagation:** `injectWorktreeEnv()` sets `API_URL`, `SUPABASE_URL`,
-   and `VITE_SUPABASE_URL` so that seed scripts, test runners, and the dev
-   server all point at the correct port.
+   `VITE_SUPABASE_URL`, and `VITE_DEV_PORT` so that seed scripts, test
+   runners, and the dev server all point at the correct ports.  In a worktree
+   these values are **authoritative** — they override any inherited env vars
+   to prevent scripts from accidentally targeting the main checkout's
+   Supabase instance or Vite port.
 
 5. **Automatic in `ensureSupabaseRunning()`:** All of this is wired into the
    existing startup flow — no manual steps required.
@@ -129,7 +133,7 @@ this change:
 1. Stop the old stack: `npx supabase stop` (from the main checkout).
 2. If Docker still has `supabase_*_w1` containers, remove them:
    `docker ps -a --filter "label=com.supabase.cli.project=w1" -q | xargs docker rm -f`
-3. Run `npm run setup:local` to start the new `mystery` stack.
+3. Run `npm run seed:all` to start the new `mystery` stack and seed data.
 
 ## Troubleshooting
 
@@ -162,8 +166,34 @@ Each worktree stack has its own database.  After the first `supabase start` in
 a new worktree, run:
 
 ```bash
-npm run setup:local
+npm run seed:all
 ```
 
 This seeds blueprints, auth users, and AI profiles into the worktree's
 database.
+
+### Resetting the database in a worktree
+
+Always use the worktree-safe wrapper:
+
+```bash
+npm run supabase:reset
+```
+
+This patches `supabase/config.toml` before running `supabase db reset`, so it
+targets the correct worktree stack.  Avoid calling `npx supabase db reset`
+directly — the config may not be patched yet.
+
+### Raw `npx supabase` commands in worktrees
+
+The `npm run supabase:*` scripts (`supabase:restart`, `supabase:reset`,
+`supabase:gc`) are worktree-safe — they patch `supabase/config.toml` before
+invoking the CLI.  If you need to run a raw `npx supabase` command (e.g.
+`supabase status`, `supabase migration new`), first ensure the config has
+been patched:
+
+```bash
+npm run supabase:patch
+```
+
+This is a fast no-op in the main checkout and idempotent in worktrees.

@@ -299,6 +299,7 @@ test.describe('Sessions navigation', () => {
     await page.route('**/functions/v1/game-get?game_id=game-in-progress*', async (route) => {
       await route.fulfill({
         json: {
+          blueprint_id: 'bp-1',
           state: baseGameState,
           narration_events: [
             {
@@ -374,6 +375,7 @@ test.describe('Sessions navigation', () => {
     await page.route('**/functions/v1/game-get?game_id=game-completed*', async (route) => {
       await route.fulfill({
         json: {
+          blueprint_id: 'bp-2',
           state: {
             ...baseGameState,
             mode: 'ended',

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getAuthUsersLocalPath, getBaseEnvPath } from '../../scripts/local-config.mjs';
+import { resolveWorktreePorts } from '../../lib/worktree-ports.mjs';
 
 const TEST_EMAIL = process.env.AUTH_TEST_EMAIL ?? null;
 const TEST_PASSWORD = process.env.AUTH_TEST_PASSWORD ?? null;
@@ -86,9 +87,18 @@ export function resolvePreferredLogin(): AuthLogin {
   };
 }
 
+function resolveSupabaseUrl(): string {
+  if (process.env.VITE_SUPABASE_URL) return process.env.VITE_SUPABASE_URL;
+
+  const repoRoot = path.resolve(process.cwd(), '..');
+  const { ports, isWorktree } = resolveWorktreePorts(repoRoot);
+  if (isWorktree) return `http://127.0.0.1:${ports.api}`;
+
+  return readRootEnvValue('API_URL') ?? 'http://127.0.0.1:54331';
+}
+
 async function ensureTestUser(email: string, password: string) {
-  const supabaseUrl =
-    process.env.VITE_SUPABASE_URL ?? readRootEnvValue('API_URL') ?? 'http://127.0.0.1:54331';
+  const supabaseUrl = resolveSupabaseUrl();
   const serviceRoleKey =
     process.env.SERVICE_ROLE_KEY ?? readRootEnvValue('SERVICE_ROLE_KEY');
 
@@ -111,7 +121,11 @@ async function ensureTestUser(email: string, password: string) {
       });
       error = result.error;
       break;
-    } catch (thrown) {
+    } catch (thrown: unknown) {
+      const msg = thrown instanceof Error ? thrown.message : String(thrown);
+      if (/already.*registered|already.*exists|user already exists|duplicate key/i.test(msg)) {
+        return;
+      }
       if (attempt === 5 || !isRetryableConnectionError(thrown)) {
         throw thrown;
       }
@@ -121,7 +135,7 @@ async function ensureTestUser(email: string, password: string) {
 
   if (
     error &&
-    !/already (?:registered|exists)|user already exists|duplicate key/i.test(error.message)
+    !/already.*registered|already.*exists|user already exists|duplicate key/i.test(error.message)
   ) {
     throw error;
   }

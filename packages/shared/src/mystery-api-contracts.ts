@@ -29,8 +29,14 @@ export const GameStartRequestSchema = z.object({
   ai_profile: z.string().min(1).optional(),
 });
 
+export const GameMoveRequestSchema = GameSessionRequestSchema.extend({
+  destination: z.string().min(1),
+});
+
+export const GameSearchRequestSchema = GameSessionRequestSchema;
+
 export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
-  character_name: z.string().min(1),
+  character_id: z.string().min(1),
 });
 
 export const GameAskRequestSchema = GameSessionRequestSchema.extend({
@@ -106,13 +112,15 @@ export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
 });
 
 export const LocationSummarySchema = z.object({
+  id: z.string().min(1),
   name: z.string(),
 });
 
 export const CharacterSummarySchema = z.object({
+  id: z.string().min(1),
   first_name: z.string(),
   last_name: z.string(),
-  location_name: z.string(),
+  location_id: z.string(),
   sex: CharacterSexSchema,
 });
 
@@ -144,16 +152,9 @@ export const BlueprintSummarySchema = z.object({
   blueprint_image_id: z.string().nullable().optional(),
 });
 
-export const ImagePurposeSchema = z.enum([
-  "blueprint_cover",
-  "location_scene",
-  "character_portrait",
-]);
-
 export const ImageLinkRequestSchema = z.object({
   blueprint_id: z.string().uuid(),
   image_id: z.string().min(1),
-  purpose: ImagePurposeSchema,
 });
 
 export const ImageLinkResponseSchema = z.object({
@@ -191,6 +192,8 @@ export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type GameStartRequest = z.infer<typeof GameStartRequestSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
+export type GameMoveRequest = z.infer<typeof GameMoveRequestSchema>;
+export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
 export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
 export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
@@ -211,6 +214,5 @@ export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;
 export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;
-export type ImagePurpose = z.infer<typeof ImagePurposeSchema>;
 export type ImageLinkRequest = z.infer<typeof ImageLinkRequestSchema>;
 export type ImageLinkResponse = z.infer<typeof ImageLinkResponseSchema>;

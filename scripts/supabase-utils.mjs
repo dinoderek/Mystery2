@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import {
   patchConfigToml,
+  resolveApiUrl,
   resolveWorktreePorts,
 } from "./worktree-ports.mjs";
 import { gcWorktreeSupabase } from "./gc-worktree-supabase.mjs";
@@ -63,6 +64,57 @@ export function runCommand(command, args, env, allowFailure = false) {
   }
 }
 
+/**
+ * Poll GoTrue and the Edge Functions runtime until both respond, so that tests
+ * don't race against container startup on a fresh `supabase start`.
+ */
+async function waitForSupabaseReady(maxWaitMs = 30_000, intervalMs = 500) {
+  const baseUrl = resolveApiUrl();
+  const authHealthUrl = `${baseUrl}/auth/v1/health`;
+  // Any edge function will do — we just need a non-timeout response.
+  const edgeFnProbeUrl = `${baseUrl}/functions/v1/blueprints-list`;
+  const deadline = Date.now() + maxWaitMs;
+
+  let authReady = false;
+  let edgeReady = false;
+
+  while (Date.now() < deadline && (!authReady || !edgeReady)) {
+    const checks = [];
+
+    if (!authReady) {
+      checks.push(
+        fetch(authHealthUrl, { signal: AbortSignal.timeout(2000) })
+          .then((res) => { if (res.ok) authReady = true; })
+          .catch(() => {}),
+      );
+    }
+
+    if (!edgeReady) {
+      checks.push(
+        fetch(edgeFnProbeUrl, { signal: AbortSignal.timeout(2000) })
+          .then((res) => {
+            // Any HTTP response (even 401) means the runtime is up.
+            if (res.status > 0) edgeReady = true;
+          })
+          .catch(() => {}),
+      );
+    }
+
+    await Promise.all(checks);
+    if (authReady && edgeReady) break;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+
+  if (!authReady || !edgeReady) {
+    const missing = [!authReady && "auth", !edgeReady && "edge-functions"]
+      .filter(Boolean)
+      .join(", ");
+    console.warn(
+      `Readiness check: ${missing} did not respond within ${maxWaitMs / 1000}s — tests may be flaky.`,
+    );
+  }
+}
+
 export function isSupabaseRunning(env) {
   const result = spawnSync(npxBin, ["supabase", "status"], {
     stdio: "pipe",
@@ -100,6 +152,7 @@ export async function ensureSupabaseRunning(env, options = {}) {
     console.log("Restarting supabase...");
     runCommand(npxBin, ["supabase", "stop"], env, true);
     runCommand(npxBin, ["supabase", "start"], env);
+    await waitForSupabaseReady();
     return;
   }
 
@@ -109,30 +162,39 @@ export async function ensureSupabaseRunning(env, options = {}) {
   }
   console.log("Starting supabase...");
   runCommand(npxBin, ["supabase", "start"], env);
+  await waitForSupabaseReady();
 }
 
 /**
- * Return the Supabase API URL for the current checkout (worktree-aware).
- * Scripts should use this instead of hardcoding port 54331.
- */
-export function getSupabaseApiUrl() {
-  const { ports } = resolveWorktreePorts();
-  return `http://127.0.0.1:${ports.api}`;
-}
-
-/**
- * Inject worktree-derived Supabase URL into an env object so that child
- * processes (seed scripts, test runners, dev server) use the correct port.
- * Only sets API_URL / SUPABASE_URL / VITE_SUPABASE_URL when not already
- * present in the env.
+ * Inject worktree-derived Supabase URL and Vite dev port into an env object
+ * so that child processes (seed scripts, test runners, dev server) use the
+ * correct ports.
+ *
+ * In a worktree the derived values are **authoritative** — they override any
+ * inherited values so that scripts can never accidentally target the main
+ * checkout's Supabase instance or Vite port.  In the main checkout, existing
+ * values are preserved as before.
  */
 export function injectWorktreeEnv(env) {
-  const apiUrl = getSupabaseApiUrl();
+  const resolved = resolveWorktreePorts();
+  const apiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+
+  if (resolved.isWorktree) {
+    return {
+      ...env,
+      API_URL: apiUrl,
+      SUPABASE_URL: apiUrl,
+      VITE_SUPABASE_URL: apiUrl,
+      VITE_DEV_PORT: String(resolved.ports.vite_dev),
+    };
+  }
+
   return {
     ...env,
     API_URL: env.API_URL || apiUrl,
     SUPABASE_URL: env.SUPABASE_URL || apiUrl,
     VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || apiUrl,
+    VITE_DEV_PORT: env.VITE_DEV_PORT || String(resolved.ports.vite_dev),
   };
 }
 

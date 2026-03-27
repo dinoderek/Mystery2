@@ -10,9 +10,17 @@ import { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
+const BLUEPRINT_GENERATION_INSTRUCTIONS =
+  "Return only a JSON object that satisfies the provided response schema.";
 
 export { BlueprintGenerationError } from "./errors.ts";
 export { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
+
+export interface BlueprintGenerationChatInput {
+  responseSchema: Record<string, unknown>;
+  systemPrompt: string;
+  userMessageContent: string;
+}
 
 export interface GenerateBlueprintOptions {
   storyBrief: StoryBrief;
@@ -285,10 +293,10 @@ function mapOpenRouterError(
   );
 }
 
-export async function generateBlueprint(
-  options: GenerateBlueprintOptions,
-): Promise<BlueprintV2> {
-  const parsedBrief = StoryBriefSchema.safeParse(options.storyBrief);
+export async function buildBlueprintGenerationChatInput(
+  storyBrief: StoryBrief,
+): Promise<BlueprintGenerationChatInput> {
+  const parsedBrief = StoryBriefSchema.safeParse(storyBrief);
   if (!parsedBrief.success) {
     throw new BlueprintGenerationError(
       "INVALID_STORY_BRIEF",
@@ -297,6 +305,19 @@ export async function generateBlueprint(
     );
   }
 
+  return {
+    systemPrompt: await loadBlueprintGeneratorPrompt(),
+    userMessageContent: JSON.stringify({
+      story_brief: parsedBrief.data,
+      instructions: BLUEPRINT_GENERATION_INSTRUCTIONS,
+    }),
+    responseSchema: buildBlueprintJsonSchema(),
+  };
+}
+
+export async function generateBlueprint(
+  options: GenerateBlueprintOptions,
+): Promise<BlueprintV2> {
   const model = options.model.trim();
   if (!model) {
     throw new BlueprintGenerationError("OPENROUTER_ERROR", "Missing model");
@@ -310,19 +331,15 @@ export async function generateBlueprint(
     );
   }
 
-  const prompt = await loadBlueprintGeneratorPrompt();
+  const chatInput = await buildBlueprintGenerationChatInput(options.storyBrief);
   const fetchImpl = options.fetchImpl ?? fetch;
   const requestBody = {
     model,
     messages: [
-      { role: "system" as const, content: prompt },
+      { role: "system" as const, content: chatInput.systemPrompt },
       {
         role: "user" as const,
-        content: JSON.stringify({
-          story_brief: parsedBrief.data,
-          instructions:
-            "Return only a JSON object that satisfies the provided response schema.",
-        }),
+        content: chatInput.userMessageContent,
       },
     ],
     response_format: {
@@ -330,7 +347,7 @@ export async function generateBlueprint(
       json_schema: {
         name: "BlueprintV2",
         strict: true,
-        schema: buildBlueprintJsonSchema(),
+        schema: chatInput.responseSchema,
       },
     },
     provider: {

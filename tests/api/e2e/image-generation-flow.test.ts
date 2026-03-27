@@ -249,7 +249,7 @@ describe("image generation flow", () => {
     const locImageParts = locParts.filter((p) => p.type === "image_url");
     expect(locImageParts.length).toBe(1); // 1 character at this location
     const locTextParts = locParts.filter((p) => p.type === "text");
-    expect((locTextParts[0] as { text: string }).text).toContain("Image 1: Portrait of Alice");
+    expect((locTextParts[0] as unknown as { text: string }).text).toContain("Image 1: Portrait of Alice");
 
     // Phase 3 (cover) should have multi-part content with portrait + location references.
     const coverCall = apiCalls[2];
@@ -260,7 +260,7 @@ describe("image generation flow", () => {
     // 1 portrait (char_alice) + 1 location scene (loc_kitchen)
     expect(coverImageParts.length).toBe(2);
     const coverTextParts = coverParts.filter((p) => p.type === "text");
-    expect((coverTextParts[0] as { text: string }).text).toContain("Image 1: Portrait of Alice");
-    expect((coverTextParts[0] as { text: string }).text).toContain("Image 2: Location scene");
+    expect((coverTextParts[0] as unknown as { text: string }).text).toContain("Image 1: Portrait of Alice");
+    expect((coverTextParts[0] as unknown as { text: string }).text).toContain("Image 2: Location scene");
   });
 });

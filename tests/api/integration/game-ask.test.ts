@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import {
   API_URL,
+  SUPABASE_URL,
   ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
@@ -11,7 +12,7 @@ import {
 describe("game-ask endpoint", () => {
   let auth: ApiAuthContext;
   const admin = createClient(
-    process.env.SUPABASE_URL || "http://127.0.0.1:54331",
+    SUPABASE_URL,
     process.env.SERVICE_ROLE_KEY ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
     {
@@ -90,8 +91,8 @@ describe("game-ask endpoint", () => {
     expect(data.time_remaining).toBe(9);
     expect(data.discovered_clue_id).toBeUndefined();
     expect(data.narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_parts[0].image_id).toBeUndefined();
     expect(data.narration_parts[0]).toMatchObject({
-      image_id: "mock-blueprint.character-char-alice.png",
       speaker: {
         kind: "character",
         key: "character:alice",

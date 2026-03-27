@@ -8,7 +8,7 @@ const narratorSpeaker = {
 };
 
 const startState = {
-  locations: [{ name: 'kitchen' }, { name: 'garden' }],
+  locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
   characters: [],
   time_remaining: 10,
   location: 'kitchen',
@@ -107,25 +107,122 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
-
-    await page.getByTestId('theme-amber').click();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
+
+    const input = page.locator('input[type="text"]');
+
+    // Switch to amber theme via terminal command
+    await input.fill('theme amber');
+    await input.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'amber');
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/amber-body/);
+
+    // Switch to classic theme (maps to data-theme="matrix" internally)
+    await input.fill('theme classic');
+    await input.press('Enter');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix');
+    await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
+  });
+
+  test('auto-scrolls to bottom after image loads', async ({ page }) => {
+    // Serve an SVG with explicit dimensions so it takes up space in the layout,
+    // simulating a real scene image that shifts content when it loads.
+    const testImage = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">' +
+      '<rect fill="#333" width="400" height="300"/></svg>',
+    );
+
+    // Delay the signed-URL response so text renders before the image.
+    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+      await new Promise((r) => setTimeout(r, 300));
+      await route.fulfill({
+        json: {
+          image_id: 'mock-blueprint.location-garden.png',
+          signed_url: '/storage/v1/object/sign/fake/img.png',
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        },
+      });
+    });
+
+    // Serve the test image for the signed URL
+    await page.route('**/storage/v1/object/sign/**', async (route) => {
+      await route.fulfill({
+        contentType: 'image/svg+xml',
+        body: testImage,
+      });
+    });
+
+    // Pad the narration so the scroll area overflows before the image group
+    const paddingParts = Array.from({ length: 20 }, (_, i) => ({
+      text: `Padding line ${i + 1} to force overflow in the scroll area.`,
+      speaker: narratorSpeaker,
+    }));
+
+    await page.route('**/functions/v1/game-start*', async (route) => {
+      await route.fulfill({
+        json: {
+          game_id: 'g1',
+          state: startState,
+          narration_events: [
+            {
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
+            },
+          ],
+        },
+      });
+    }, { times: 1 });
+
+    await page.route('**/functions/v1/game-move*', async (route) => {
+      await route.fulfill({
+        json: {
+          narration_parts: [
+            ...paddingParts,
+            {
+              text: 'You move to the garden.',
+              speaker: narratorSpeaker,
+              image_id: 'mock-blueprint.location-garden.png',
+            },
+          ],
+          current_location: 'garden',
+          visible_characters: [],
+          time_remaining: 9,
+          mode: 'explore',
+        },
+      });
+    });
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page.getByText('B1')).toBeVisible();
-    await page.getByTestId('theme-matrix').click();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix');
-    await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
+
+    await page.locator('input').fill('move to garden');
+    await page.locator('input').press('Enter');
+
+    // Wait for the image to actually load in the DOM
+    await expect(page.locator('.story-image-asset')).toBeVisible({ timeout: 5000 });
+
+    // Give smooth-scroll time to finish after image load
+    await page.waitForTimeout(1000);
+
+    const scrollInfo = await page.locator('.overflow-y-auto').evaluate((node) => ({
+      scrollTop: node.scrollTop,
+      scrollHeight: node.scrollHeight,
+      clientHeight: node.clientHeight,
+    }));
+
+    // The sentinel is at the very bottom — we should be scrolled there
+    expect(scrollInfo.scrollTop + scrollInfo.clientHeight).toBeGreaterThanOrEqual(
+      scrollInfo.scrollHeight - 5,
+    );
   });
 
-  test('keeps narration flow active when side image falls back to placeholder', async ({ page }) => {
+  test('keeps narration flow active when side image fails to load', async ({ page }) => {
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
         status: 404,
@@ -162,8 +259,10 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.locator('input').fill('move to garden');
     await page.locator('input').press('Enter');
 
+    // Narration text should still render even when the image fails to load
     await expect(page.getByText('You move to the garden.')).toBeVisible();
-    await expect(page.getByText('Scene image unavailable')).toBeVisible();
+    // No image panel should be rendered for the failed image
+    await expect(page.locator('.story-image-panel')).toHaveCount(0);
   });
 
   test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {

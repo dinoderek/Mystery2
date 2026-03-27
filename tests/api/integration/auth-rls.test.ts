@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAuthenticatedClient } from "../../testkit/src/auth";
-import { API_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
+import { API_URL, SUPABASE_URL, setupApiTestAuth, type ApiAuthContext } from "./auth-helpers";
 
 describe("RLS ownership policies", () => {
   let userA: ApiAuthContext;
@@ -102,7 +102,7 @@ describe("RLS ownership policies", () => {
     const anonKey = process.env.ANON_KEY ?? "";
     expect(anonKey.length).toBeGreaterThan(0);
 
-    const supabaseUrl = process.env.SUPABASE_URL || "http://127.0.0.1:54331";
+    const supabaseUrl = SUPABASE_URL;
     const anonClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });

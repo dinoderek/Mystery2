@@ -12,8 +12,8 @@ import {
   getBlueprintImagesDir,
   getBlueprintsDir,
 } from "./local-config.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
-import { resolveApiUrl } from "./worktree-ports.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
+import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 
@@ -28,7 +28,7 @@ function parseOptions() {
   for (let index = 0; index < args.length; index += 1) {
     const token = args[index];
 
-    if (token === "--seed-images") {
+    if (token === "--seed-images" || token === "--seed-images=always") {
       options.seedImages = true;
       continue;
     }
@@ -210,8 +210,13 @@ for (const [key, value] of Object.entries(baseEnv)) {
   if (!process.env[key]) process.env[key] = value;
 }
 
+const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
+await ensureSupabaseRunning(env);
+
 const { seedImages, imageDir, allowMissingImages } = parseOptions();
-const supabaseUrl = process.env.API_URL || resolveApiUrl();
+const resolved = resolveWorktreePorts();
+const worktreeApiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+const supabaseUrl = resolved.isWorktree ? worktreeApiUrl : (process.env.API_URL || worktreeApiUrl);
 const supabaseKey = process.env.SERVICE_ROLE_KEY;
 
 if (!supabaseKey) {
@@ -235,7 +240,7 @@ try {
     `Upserted ${uploadedCount} blueprint(s) into storage.`,
   );
   console.log(
-    `Images: attempted=${imageManifest.attempted}, uploaded=${imageManifest.uploaded}, missing=${imageManifest.missing}, failed=${imageManifest.failed}`,
+    `Image sync manifest: attempted=${imageManifest.attempted}, uploaded=${imageManifest.uploaded}, missing=${imageManifest.missing}, failed=${imageManifest.failed}`,
   );
   if (imageManifest.warnings.length > 0) {
     for (const warning of imageManifest.warnings) {

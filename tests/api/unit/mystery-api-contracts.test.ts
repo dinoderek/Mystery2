@@ -3,6 +3,9 @@ import {
   BlueprintSummarySchema,
   GameAccuseRequestSchema,
   GameAskRequestSchema,
+  GameMoveRequestSchema,
+  GameSearchRequestSchema,
+  GameTalkRequestSchema,
   NarrationEventSchema,
   SessionCatalogResponseSchema,
   SessionSummarySchema,
@@ -64,6 +67,60 @@ describe("shared mystery API contracts", () => {
       game_id: "123e4567-e89b-12d3-a456-426614174000",
       player_input: "Where were you?",
     });
+  });
+
+  it("requires destination for game-move requests", () => {
+    expect(() =>
+      GameMoveRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+      })
+    ).toThrow();
+
+    expect(
+      GameMoveRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+        destination: "loc-kitchen",
+      }),
+    ).toEqual({
+      game_id: "123e4567-e89b-12d3-a456-426614174000",
+      destination: "loc-kitchen",
+    });
+  });
+
+  it("accepts game-search requests with only game_id", () => {
+    expect(
+      GameSearchRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    ).toEqual({
+      game_id: "123e4567-e89b-12d3-a456-426614174000",
+    });
+  });
+
+  it("requires character_id (not character_name) for game-talk requests", () => {
+    expect(() =>
+      GameTalkRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+      })
+    ).toThrow();
+
+    expect(
+      GameTalkRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+        character_id: "char-alice",
+      }),
+    ).toEqual({
+      game_id: "123e4567-e89b-12d3-a456-426614174000",
+      character_id: "char-alice",
+    });
+
+    // Verify character_name alone does NOT satisfy the schema
+    expect(() =>
+      GameTalkRequestSchema.parse({
+        game_id: "123e4567-e89b-12d3-a456-426614174000",
+        character_name: "Alice",
+      })
+    ).toThrow();
   });
 
   it("accepts reasoning-first game-accuse requests", () => {
@@ -145,12 +202,13 @@ describe("shared mystery API contracts", () => {
   it("accepts game state plus persisted narration events", () => {
     expect(
       GameStateSchema.parse({
-        locations: [{ name: "Kitchen" }],
+        locations: [{ id: "loc-kitchen", name: "Kitchen" }],
         characters: [
           {
+            id: "char-alice",
             first_name: "Alice",
             last_name: "Smith",
-            location_name: "Kitchen",
+            location_id: "loc-kitchen",
             sex: "female",
           },
         ],
@@ -302,10 +360,9 @@ describe("shared mystery API contracts", () => {
       ImageLinkRequestSchema.parse({
         blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
         image_id: "mock-blueprint.blueprint.png",
-        purpose: "blueprint_cover",
       }),
     ).toMatchObject({
-      purpose: "blueprint_cover",
+      image_id: "mock-blueprint.blueprint.png",
     });
 
     expect(

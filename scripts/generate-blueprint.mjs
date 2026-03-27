@@ -10,12 +10,18 @@ import {
   StoryBriefSchema,
   generateBlueprint,
 } from "../packages/blueprint-generator/src/index.ts";
+import { buildBlueprintGenerationMarkdownPacket } from "../packages/blueprint-generator/src/chat-packet.ts";
 import { BlueprintV2Schema } from "../packages/shared/src/blueprint-schema-v2.ts";
 import {
   BLUEPRINT_EVALUATION_PROMPT,
   BlueprintEvaluationOutputSchema,
 } from "../packages/shared/src/evaluation/index.ts";
-import { getBaseEnvPath, getBlueprintsDir, getBriefsDir, resolveLocalConfigRoot } from "./local-config.mjs";
+import {
+  getBaseEnvPath,
+  getBlueprintsDir,
+  getBriefsDir,
+  getChatGenPromptsDir,
+} from "./local-config.mjs";
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
@@ -61,6 +67,10 @@ function stripJsonExtension(filePath) {
   return filePath.endsWith(".json") ? filePath.slice(0, -5) : filePath;
 }
 
+function stripMarkdownExtension(filePath) {
+  return filePath.endsWith(".md") ? filePath.slice(0, -3) : filePath;
+}
+
 function buildGeneratedOutputPath(outputFile, model, briefFile) {
   const baseOutputFile = stripJsonExtension(outputFile);
   const modelSegment = sanitizeFilenameSegment(model, "model");
@@ -74,6 +84,17 @@ function buildGeneratedOutputPath(outputFile, model, briefFile) {
 
 function buildVerificationOutputPath(outputPath) {
   return `${stripJsonExtension(outputPath)}.verification.json`;
+}
+
+function buildChatPacketOutputPath(outputFile, briefFile) {
+  const withoutJson = stripJsonExtension(outputFile);
+  const baseOutputFile = stripMarkdownExtension(withoutJson);
+  const briefSegment = sanitizeFilenameSegment(
+    path.parse(briefFile).name,
+    "brief",
+  );
+
+  return `${baseOutputFile}.${briefSegment}.chat.md`;
 }
 
 function formatGenerationJob(job) {
@@ -142,6 +163,7 @@ function resolveBriefFile(filePath, env = process.env) {
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefFiles: [],
+    chatPacket: false,
     output: "",
     outputFile: "",
     models: parseModelList(
@@ -163,6 +185,10 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
     if (token === "--brief-file") {
       options.briefFiles.push(String(argv[index + 1] ?? ""));
       index += 1;
+      continue;
+    }
+    if (token === "--chat-packet") {
+      options.chatPacket = true;
       continue;
     }
     if (token === "--output") {
@@ -215,32 +241,44 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
     throw new Error("Missing required --brief-file");
   }
   options.briefFiles = options.briefFiles.map((f) => resolveBriefFile(f, env));
-  if (options.models.length === 0) {
-    throw new Error(
-      "Missing required --model (or OPENROUTER_BLUEPRINT_MODEL / AI_MODEL env)",
-    );
-  }
-  if (!options.openRouterApiKey) {
-    throw new Error(
-      "Missing required --openrouter-api-key (or OPENROUTER_API_KEY env)",
-    );
-  }
-  if (!options.verificationModel) {
-    throw new Error("Missing required --verification-model");
-  }
+
   if (options.output && options.outputFile) {
     throw new Error("Choose either --output or --output-file, not both");
   }
 
-  if (!options.output && !options.outputFile) {
+  if (options.chatPacket) {
+    if (!options.output && !options.outputFile) {
+      options.outputFile = path.join(
+        getChatGenPromptsDir(undefined, env),
+        "blueprint-packet",
+      );
+    }
+  } else if (options.models.length === 0) {
+    throw new Error(
+      "Missing required --model (or OPENROUTER_BLUEPRINT_MODEL / AI_MODEL env)",
+    );
+  }
+  if (!options.chatPacket && !options.openRouterApiKey) {
+    throw new Error(
+      "Missing required --openrouter-api-key (or OPENROUTER_API_KEY env)",
+    );
+  }
+  if (!options.chatPacket && !options.verificationModel) {
+    throw new Error("Missing required --verification-model");
+  }
+  if (!options.chatPacket && !options.output && !options.outputFile) {
     const blueprintsDir = getBlueprintsDir();
     options.outputFile = path.join(blueprintsDir, "blueprint");
   }
 
-  const jobCount = options.briefFiles.length * options.models.length;
+  const jobCount = options.chatPacket
+    ? options.briefFiles.length
+    : options.briefFiles.length * options.models.length;
   if (jobCount > 1 && options.output) {
     throw new Error(
-      "--output can only be used with a single --brief-file and single --model",
+      options.chatPacket
+        ? "--output can only be used with a single --brief-file in --chat-packet mode"
+        : "--output can only be used with a single --brief-file and single --model",
     );
   }
 
@@ -847,7 +885,135 @@ function resolveOutputPath(options, job) {
   return "";
 }
 
+function resolveChatPacketOutputPath(options, job) {
+  if (options.output) return options.output;
+  if (options.outputFile) {
+    return buildChatPacketOutputPath(options.outputFile, job.briefFile);
+  }
+  return "";
+}
+
+function buildChatPacketSummaryEntry({ status, briefFile, outputPath }) {
+  return {
+    status,
+    brief_file: briefFile,
+    packet_file: outputPath || null,
+  };
+}
+
+function formatChatPacketJob(job) {
+  return `brief=${job.briefFile}`;
+}
+
+async function runBlueprintChatPacketCli(options, dependencies = {}) {
+  const readFile = dependencies.readFile ?? fs.readFile;
+  const writeFile = dependencies.writeFile ?? fs.writeFile;
+  const mkdir = dependencies.mkdir ?? fs.mkdir;
+  const logger = dependencies.logger ?? createCliLogger();
+  const buildPacketImpl =
+    dependencies.buildBlueprintPacketImpl ?? buildBlueprintGenerationMarkdownPacket;
+
+  const jobs = options.briefFiles.map((briefFile) => ({ briefFile }));
+  const concurrency = Math.max(
+    1,
+    Math.min(
+      Number.isFinite(options.parallelism) ? options.parallelism : jobs.length,
+      jobs.length,
+    ),
+  );
+  logger.info(
+    `[generate-blueprint] queued ${jobs.length} chat packet job(s) across ${options.briefFiles.length} brief file(s); concurrency=${concurrency}`,
+  );
+
+  const settled = await runWithConcurrencyLimit(
+    jobs,
+    concurrency,
+    async (job, index) => {
+      logger.info(
+        `[generate-blueprint] [${index + 1}/${jobs.length}] building chat packet ${formatChatPacketJob(job)}`,
+      );
+
+      try {
+        const storyBrief = JSON.parse(await readFile(job.briefFile, "utf-8"));
+        const packet = await buildPacketImpl({
+          storyBrief,
+        });
+        const outputText = packet.outputText;
+        const outputPath = resolveChatPacketOutputPath(options, job);
+
+        if (outputPath) {
+          await mkdir(path.dirname(outputPath), { recursive: true });
+          await writeFile(outputPath, outputText, "utf-8");
+          logger.info(
+            `[generate-blueprint] [${index + 1}/${jobs.length}] wrote chat packet ${outputPath}`,
+          );
+        }
+
+        return {
+          status: "fulfilled",
+          summary: buildChatPacketSummaryEntry({
+            status: "fulfilled",
+            briefFile: job.briefFile,
+            outputPath,
+          }),
+          value: {
+            briefFile: job.briefFile,
+            outputPath,
+            outputText,
+          },
+        };
+      } catch (error) {
+        logger.error(
+          `[generate-blueprint] [${index + 1}/${jobs.length}] failed chat packet ${formatChatPacketJob(job)}`,
+        );
+        logger.error(formatBlueprintGenerationError(error));
+
+        return {
+          status: "rejected",
+          error,
+          job,
+          summary: buildChatPacketSummaryEntry({
+            status: "rejected",
+            briefFile: job.briefFile,
+            outputPath: "",
+          }),
+        };
+      }
+    },
+  );
+
+  const failures = settled.filter((entry) => entry.status === "rejected");
+  if (failures.length > 0) {
+    if (failures.length === 1 && jobs.length === 1) {
+      failures[0].error.results = settled;
+      throw failures[0].error;
+    }
+
+    throw new BlueprintBatchGenerationError(
+      `Blueprint chat packet generation failed for ${failures.length} of ${jobs.length} job(s)`,
+      failures,
+      settled,
+    );
+  }
+
+  const outputs = settled.map((entry) => entry.value);
+  const singleOutput = outputs[0] ?? null;
+
+  return {
+    outputText:
+      outputs.length === 1 && !singleOutput?.outputPath
+        ? singleOutput.outputText
+        : "",
+    outputs,
+    results: settled,
+  };
+}
+
 export async function runBlueprintGenerationCli(options, dependencies = {}) {
+  if (options.chatPacket) {
+    return runBlueprintChatPacketCli(options, dependencies);
+  }
+
   const readFile = dependencies.readFile ?? fs.readFile;
   const writeFile = dependencies.writeFile ?? fs.writeFile;
   const mkdir = dependencies.mkdir ?? fs.mkdir;

@@ -196,8 +196,8 @@ describe('session catalog helpers', () => {
       ok: true,
       json: async () => ({
         state: {
-          locations: [{ name: 'Kitchen' }],
-          characters: [{ first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
+          locations: [{ id: 'kitchen', name: 'Kitchen' }],
+          characters: [{ id: 'char-alice', first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
           time_remaining: 0,
           location: 'Kitchen',
           mode: 'ended',
@@ -283,5 +283,65 @@ describe('session catalog helpers', () => {
     expect(store.error).toBe(
       'Failed to load transcript. Return to the mystery list and reopen the case.',
     );
+  });
+});
+
+describe('mystery title from blueprint lookup', () => {
+  /**
+   * Mirrors the derived logic in Header.svelte:
+   *   blueprint_id → blueprints.find() → title
+   */
+  function getMysteryTitle(store: GameSessionStore): string {
+    const blueprintId = store.blueprint_id;
+    if (!blueprintId) return 'Unknown Mystery';
+    const blueprint = store.blueprints.find((b) => b.id === blueprintId);
+    return blueprint?.title || 'Unknown Mystery';
+  }
+
+  it('resolves title from blueprints even when session catalog is empty', () => {
+    const store = new GameSessionStore();
+    store.blueprint_id = 'bp-1';
+    store.blueprints = [
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
+    ];
+    // Session catalog has no rows — this was the original bug scenario
+    expect(store.sessionCatalog.in_progress).toHaveLength(0);
+    expect(store.sessionCatalog.completed).toHaveLength(0);
+    expect(getMysteryTitle(store)).toBe('The Haunted Manor');
+  });
+
+  it('resolves title for a newly started game before catalog refresh', () => {
+    const store = new GameSessionStore();
+    store.game_id = 'game-new';
+    store.blueprint_id = 'bp-2';
+    store.blueprints = [
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
+      { id: 'bp-2', title: 'Murder at Midnight', one_liner: '', target_age: 14, blueprint_image_id: null },
+    ];
+    // game-new doesn't exist in the catalog yet (startGame doesn't refresh it)
+    expect(getMysteryTitle(store)).toBe('Murder at Midnight');
+  });
+
+  it('returns fallback when no blueprint_id is set', () => {
+    const store = new GameSessionStore();
+    expect(getMysteryTitle(store)).toBe('Unknown Mystery');
+  });
+
+  it('returns fallback when blueprint_id does not match any loaded blueprint', () => {
+    const store = new GameSessionStore();
+    store.blueprint_id = 'bp-missing';
+    store.blueprints = [
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
+    ];
+    expect(getMysteryTitle(store)).toBe('Unknown Mystery');
+  });
+
+  it('returns fallback when matching blueprint has an empty title', () => {
+    const store = new GameSessionStore();
+    store.blueprint_id = 'bp-1';
+    store.blueprints = [
+      { id: 'bp-1', title: '', one_liner: '', target_age: 12, blueprint_image_id: null },
+    ];
+    expect(getMysteryTitle(store)).toBe('Unknown Mystery');
   });
 });

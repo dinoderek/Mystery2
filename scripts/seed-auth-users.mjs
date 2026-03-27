@@ -9,7 +9,8 @@ import {
   getAuthUsersLocalPath,
   getBaseEnvPath,
 } from "./local-config.mjs";
-import { resolveApiUrl } from "./worktree-ports.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
+import { resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const ROOT_DIR = process.cwd();
 const DUPLICATE_USER_ERROR =
@@ -211,7 +212,13 @@ export async function seedAuthUsers({ supabaseUrl, serviceRoleKey, users }) {
 export async function main() {
   await loadDotEnvLocal();
 
-  const supabaseUrl = process.env.API_URL || resolveApiUrl();
+  const baseEnv = await loadEnvFile(getBaseEnvPath(ROOT_DIR, process.env), false);
+  const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
+  await ensureSupabaseRunning(env);
+
+  const resolved = resolveWorktreePorts();
+  const worktreeApiUrl = `http://127.0.0.1:${resolved.ports.api}`;
+  const supabaseUrl = resolved.isWorktree ? worktreeApiUrl : (process.env.API_URL || worktreeApiUrl);
   const serviceRoleKey = process.env.SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {

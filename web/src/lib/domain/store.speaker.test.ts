@@ -26,6 +26,7 @@ function createStore() {
   store.state = {
     locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }],
     characters: [{
+      id: 'char-alice',
       first_name: 'Alice',
       last_name: 'Smith',
       location_name: 'Kitchen',

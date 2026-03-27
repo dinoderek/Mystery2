@@ -1,5 +1,4 @@
 import { supabase } from '../api/supabase';
-import { resolveImageLink, type ImagePurpose } from '../api/images';
 import type {
   Blueprint,
   GameState,
@@ -271,13 +270,9 @@ export class GameSessionStore {
           one_liner: readString(entry.one_liner),
           target_age: readInt(entry.target_age),
           blueprint_image_id: readNullableString(entry.blueprint_image_id),
-          blueprint_image_url: null,
-          blueprint_image_expires_at: null,
-          blueprint_image_placeholder: false,
         }))
         .filter((entry) => entry.id.length > 0);
 
-      await this.hydrateBlueprintImageLinks();
       this.status = 'idle';
     }
   }
@@ -305,27 +300,6 @@ export class GameSessionStore {
     this.sessionCatalogStatus = 'ready';
   }
 
-  private async hydrateBlueprintImageLinks() {
-    for (const [index, blueprint] of this.blueprints.entries()) {
-      if (!blueprint.blueprint_image_id) {
-        continue;
-      }
-
-      const resolved = await resolveImageLink({
-        blueprintId: blueprint.id,
-        imageId: blueprint.blueprint_image_id,
-        purpose: 'blueprint_cover',
-      });
-
-      this.blueprints[index] = {
-        ...blueprint,
-        blueprint_image_url: resolved.url,
-        blueprint_image_expires_at: resolved.expiresAt,
-        blueprint_image_placeholder: resolved.placeholder,
-      };
-    }
-  }
-
   async startGame(blueprintId: string) {
     this.status = 'loading';
     const { data, error } = await supabase.functions.invoke('game-start', {
@@ -343,7 +317,7 @@ export class GameSessionStore {
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
-      await this.refreshStoryImageFromHistory();
+      this.refreshStoryImageFromHistory();
       this.status = 'active';
     }
   }
@@ -387,12 +361,13 @@ export class GameSessionStore {
       const data = await this.loadPersistedState(gameId);
       const response = isRecord(data) ? data : {};
       this.game_id = gameId;
+      this.blueprint_id = typeof response.blueprint_id === 'string' ? response.blueprint_id : null;
       this.state = this.normalizeState(response.state, response.narration_events);
       this.lastFailedInput = null;
       this.isRetrying = false;
       this.retryCount = 0;
       this.showHelp = false;
-      await this.refreshStoryImageFromHistory();
+      this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
         this.viewerMode = 'read_only_completed';
@@ -454,7 +429,7 @@ export class GameSessionStore {
     }
 
     if (parsed.type === 'zoom') {
-      if (this.activeStoryImage?.image_url) {
+      if (this.activeStoryImage) {
         this.showZoomModal = true;
       } else {
         this.appendSystemFeedback('No image to zoom into.');
@@ -566,6 +541,7 @@ export class GameSessionStore {
         ? source.characters
             .filter((character): character is Record<string, unknown> => isRecord(character))
             .map((character) => ({
+              id: readString(character.id),
               first_name: readString(character.first_name),
               last_name: readString(character.last_name),
               location_name: readString(character.location_name) || readString(character.location_id),
@@ -735,7 +711,7 @@ export class GameSessionStore {
       case 'talk':
         return {
           endpoint: 'game-talk',
-          body: { game_id: this.game_id, character_name: command.character_name },
+          body: { game_id: this.game_id, character_id: command.character_id },
         };
       case 'ask':
         if (this.state?.mode === 'accuse') {
@@ -891,18 +867,6 @@ export class GameSessionStore {
     return entries;
   }
 
-  private inferImagePurpose(entry: HistoryEntry): ImagePurpose {
-    if (entry.event_type === 'start') {
-      return 'blueprint_cover';
-    }
-
-    if (entry.event_type === 'talk' || entry.event_type === 'ask') {
-      return 'character_portrait';
-    }
-
-    return 'location_scene';
-  }
-
   private inferStoryImageTitle(entry: HistoryEntry): string {
     if (entry.event_type === 'start') {
       const blueprint = this.blueprints.find((candidate) => candidate.id === this.blueprint_id);
@@ -918,7 +882,7 @@ export class GameSessionStore {
     return `${location} scene`;
   }
 
-  private async refreshStoryImageFromHistory() {
+  private refreshStoryImageFromHistory() {
     if (!this.blueprint_id || !this.state) {
       this.activeStoryImage = null;
       return;
@@ -930,42 +894,16 @@ export class GameSessionStore {
       return;
     }
 
-    const purpose = this.inferImagePurpose(latestWithImage);
-    const title = this.inferStoryImageTitle(latestWithImage);
-    this.activeStoryImage = {
-      kind:
-        purpose === 'blueprint_cover'
-          ? 'blueprint'
-          : purpose === 'character_portrait'
-            ? 'character'
-            : 'location',
-      title,
-      image_id: latestWithImage.image_id,
-      image_url: null,
-      expires_at: null,
-      placeholder: false,
-      loading: true,
-    };
-
-    const resolved = await resolveImageLink({
-      blueprintId: this.blueprint_id,
-      imageId: latestWithImage.image_id,
-      purpose,
-    });
+    const kind = latestWithImage.event_type === 'start'
+      ? 'blueprint' as const
+      : (latestWithImage.event_type === 'talk' || latestWithImage.event_type === 'ask')
+        ? 'character' as const
+        : 'location' as const;
 
     this.activeStoryImage = {
-      kind:
-        purpose === 'blueprint_cover'
-          ? 'blueprint'
-          : purpose === 'character_portrait'
-            ? 'character'
-            : 'location',
-      title,
+      kind,
+      title: this.inferStoryImageTitle(latestWithImage),
       image_id: latestWithImage.image_id,
-      image_url: resolved.url,
-      expires_at: resolved.expiresAt,
-      placeholder: resolved.placeholder,
-      loading: false,
     };
   }
 
@@ -1000,7 +938,7 @@ export class GameSessionStore {
             }
 
             this.applyBackendState(payload, invocation.endpoint);
-            await this.refreshStoryImageFromHistory();
+            this.refreshStoryImageFromHistory();
           }
 
           this.status = 'active';

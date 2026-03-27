@@ -5,8 +5,7 @@ import {
   getAIEnvPath,
   getBaseEnvPath,
 } from "./local-config.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
-import { resolveApiUrl } from "./worktree-ports.mjs";
+import { ensureSupabaseRunning, injectWorktreeEnv, loadEnvFile } from "./supabase-utils.mjs";
 
 const ROOT_DIR = process.cwd();
 const CANONICAL_DEFAULT_PROFILE_ID = "default";
@@ -99,9 +98,11 @@ function chooseDefaultSource(targets, profileMap) {
 const { only, targets } = resolveTargets(process.argv.slice(2));
 const baseEnvPath = getBaseEnvPath(ROOT_DIR, process.env);
 const baseEnv = await loadEnvFile(baseEnvPath, false);
-const env = { ...baseEnv, ...process.env };
+const env = injectWorktreeEnv({ ...baseEnv, ...process.env });
 
-const supabaseUrl = env.API_URL || resolveApiUrl();
+await ensureSupabaseRunning(env);
+
+const supabaseUrl = env.API_URL;
 const serviceRoleKey = env.SERVICE_ROLE_KEY;
 if (!serviceRoleKey) {
   console.error(

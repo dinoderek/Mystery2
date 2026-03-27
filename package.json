@@ -12,12 +12,15 @@
         "dev:ai:paid": "node scripts/dev-ai.mjs paid",
         "supabase:restart": "node scripts/supabase-restart.mjs",
         "supabase:gc": "node scripts/gc-worktree-supabase.mjs --verbose",
+        "supabase:patch": "node scripts/supabase-patch.mjs",
+        "supabase:reset": "node scripts/supabase-reset.mjs",
         "logs:edge": "node scripts/tail-edge-logs.mjs",
         "seed:auth": "node scripts/seed-auth-users.mjs",
         "seed:storage": "node scripts/seed-storage.mjs",
         "seed:ai": "node scripts/seed-ai.mjs",
         "seed:all": "node scripts/seed-all.mjs",
         "users:update-passwords": "node scripts/update-bootstrap-passwords.mjs",
+        "validate:blueprint": "node scripts/validate-blueprint.mjs",
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
         "build:evaluation-markdown": "node scripts/build-blueprint-evaluation-markdown.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
@@ -38,7 +41,7 @@
         "test:blueprint:live:free": "node scripts/run-live-blueprint-generation.mjs free",
         "test:blueprint:live:paid": "node scripts/run-live-blueprint-generation.mjs paid",
         "test:live": "npm run test:integration:live:free && npm run test:integration:live:paid && npm run test:e2e:live:free && npm run test:e2e:live:paid",
-        "test:all": "npm run lint && npm run typecheck && npm -w web run check && npm run test:unit && npm run test:integration && npm run test:e2e && npm -w web run test:e2e"
+        "test": "npm run lint && npm run typecheck && npm -w web run check && npm run test:unit && npm -w web run test:unit && npm run test:integration && npm run test:e2e && npm -w web run test:e2e"
     },
     "devDependencies": {
         "@types/node": "^25.3.3",

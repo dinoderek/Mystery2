@@ -2,14 +2,14 @@ export type GameMode = 'explore' | 'talk' | 'accuse' | 'ended';
 
 export interface ParseContext {
   locations: Array<{ id: string; name: string }>;
-  characters: Array<{ first_name: string; last_name: string; location_name: string }>;
+  characters: Array<{ id: string; first_name: string; last_name: string; location_name: string }>;
   currentLocation: string;
 }
 
 export type ActionCommand =
   | { type: 'move'; destination: string }
   | { type: 'search'; query: string | null }
-  | { type: 'talk'; character_name: string }
+  | { type: 'talk'; character_id: string }
   | { type: 'ask'; question: string }
   | { type: 'accuse'; reasoning: string | null }
   | { type: 'end_talk' };
@@ -149,7 +149,7 @@ function resolveSceneCharacter(target: string, context: ParseContext): string | 
     const full = normalizeInput(displayNameOf(character));
 
     if (normalizedTarget === first || normalizedTarget === last || normalizedTarget === full) {
-      return character.first_name;
+      return character.id;
     }
   }
   return null;
@@ -266,8 +266,8 @@ function parseExploreCommand(text: string, rawInput: string, context: ParseConte
       };
     }
 
-    const characterName = resolveSceneCharacter(target, context);
-    if (!characterName) {
+    const characterId = resolveSceneCharacter(target, context);
+    if (!characterId) {
       return {
         type: 'invalid-target',
         commandType: 'talk',
@@ -278,7 +278,7 @@ function parseExploreCommand(text: string, rawInput: string, context: ParseConte
 
     return {
       type: 'valid',
-      command: { type: 'talk', character_name: characterName },
+      command: { type: 'talk', character_id: characterId },
     };
   }
 

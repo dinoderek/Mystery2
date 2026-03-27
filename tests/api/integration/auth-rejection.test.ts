@@ -2,12 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import {
   API_URL,
+  SUPABASE_URL,
   ensureMockBlueprintSeeded,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "./auth-helpers";
-
-const SUPABASE_URL = process.env.SUPABASE_URL || "http://127.0.0.1:54331";
 const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -95,7 +94,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(missingImageAuthRes.status).toBe(401);
@@ -106,7 +104,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(invalidImageAuthRes.status).toBe(401);
@@ -117,7 +114,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: COVER_IMAGE_ID,
-        purpose: "blueprint_cover",
       }),
     });
     expect(validImageRes.status).toBe(200);
@@ -132,7 +128,6 @@ describe("edge function auth rejection", () => {
       body: JSON.stringify({
         blueprint_id: BLUEPRINT_ID,
         image_id: "mock-blueprint.nonexistent.png",
-        purpose: "blueprint_cover",
       }),
     });
     expect(missingImageRes.status).toBe(404);

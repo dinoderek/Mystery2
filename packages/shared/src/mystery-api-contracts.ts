@@ -33,7 +33,9 @@ export const GameMoveRequestSchema = GameSessionRequestSchema.extend({
   destination: z.string().min(1),
 });
 
-export const GameSearchRequestSchema = GameSessionRequestSchema;
+export const GameSearchRequestSchema = GameSessionRequestSchema.extend({
+  search_query: z.string().min(1).nullable().optional(),
+});
 
 export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
   character_id: z.string().min(1),
@@ -41,10 +43,6 @@ export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
 
 export const GameAskRequestSchema = GameSessionRequestSchema.extend({
   player_input: z.string().min(1),
-});
-
-export const GameSearchRequestSchema = GameSessionRequestSchema.extend({
-  search_query: z.string().min(1).nullable().optional(),
 });
 
 export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({

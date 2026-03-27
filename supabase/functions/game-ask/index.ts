@@ -159,6 +159,13 @@ serveWithCors(async (req) => {
       });
     }
 
+    const validCharacterClueIds = new Set(
+      activeCharacter.clues.map((c) => c.id),
+    );
+    const validatedRevealedClueIds = talkOutput.revealed_clue_ids.filter(
+      (id) => validCharacterClueIds.has(id),
+    );
+
     const narrationParts = [
       createNarrationPart(
         talkOutput.narration,
@@ -189,6 +196,7 @@ serveWithCors(async (req) => {
         player_input: playerInput,
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: characterSpeaker,
+        revealed_clue_ids: validatedRevealedClueIds,
       },
       narration_parts: narrationParts,
       diagnostics: createNarrationDiagnostics({

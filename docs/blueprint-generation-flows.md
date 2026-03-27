@@ -340,7 +340,8 @@ Scope notes:
   `location_id`) for the destination location.
 - Talk-family endpoints receive the broader location list plus private
   active-character context including structured `clues`, `flavor_knowledge`,
-  and `actual_actions`.
+  `actual_actions`, `agendas`, and `player_known_clues` (reconstructed from
+  search and ask event payloads across the full game history).
 - Character `sex` flows into public character summaries and runtime AI
   contexts so narrator-facing prompts can instruct the model to use grounded
   pronouns instead of inferring them.

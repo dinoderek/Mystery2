@@ -22,7 +22,15 @@ const blueprintFixture = {
   },
   narrative: {
     premise: "Someone stole the cookies.",
-    starting_knowledge: [],
+    starting_knowledge: {
+      mystery_summary: "Someone stole the cookies.",
+      locations: [
+        { location_id: "Kitchen", summary: "A kitchen." },
+      ],
+      characters: [
+        { character_id: "char-alice", summary: "The baker." },
+      ],
+    },
   },
   world: {
     starting_location_id: "Kitchen",

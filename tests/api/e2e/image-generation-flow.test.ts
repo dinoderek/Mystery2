@@ -17,7 +17,15 @@ const blueprintFixture = {
   },
   narrative: {
     premise: "Someone stole the cookies.",
-    starting_knowledge: ["The cookies vanished at noon."],
+    starting_knowledge: {
+      mystery_summary: "The cookies vanished from the kitchen around noon.",
+      locations: [
+        { location_id: "loc_kitchen", summary: "Where the cookies were kept." },
+      ],
+      characters: [
+        { character_id: "char_alice", summary: "The baker; ran the kitchen." },
+      ],
+    },
   },
   world: {
     starting_location_id: "loc_kitchen",

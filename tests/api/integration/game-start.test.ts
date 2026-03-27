@@ -85,7 +85,7 @@ describe("game-start endpoint", () => {
     expect(data.narration_events[0].narration_parts[0].text).toContain("[Mock]");
     expect(data.narration_events[0].narration_parts[1].text).toContain("You already know:");
     expect(data.narration_events[0].narration_parts[1].text).toContain(
-      "The cookie jar was open.",
+      "The mystery:",
     );
     expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
   });

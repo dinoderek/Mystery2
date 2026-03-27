@@ -255,9 +255,43 @@ export const BlueprintV2Schema = z
         .trim()
         .min(1)
         .describe("The hook provided to the player when the game starts."),
-      starting_knowledge: z
-        .array(z.string().trim().min(1))
-        .describe("Facts the player knows immediately."),
+      starting_knowledge: z.object({
+        mystery_summary: z
+          .string()
+          .trim()
+          .min(1)
+          .describe(
+            "One-liner stating what happened, approximate time, and how the time was established.",
+          ),
+        locations: z.array(
+          z.object({
+            location_id: BlueprintV2IdSchema.describe(
+              "References a world.locations[].id.",
+            ),
+            summary: z
+              .string()
+              .trim()
+              .min(1)
+              .describe(
+                "One-liner about this location from the player's perspective.",
+              ),
+          }),
+        ),
+        characters: z.array(
+          z.object({
+            character_id: BlueprintV2IdSchema.describe(
+              "References a world.characters[].id.",
+            ),
+            summary: z
+              .string()
+              .trim()
+              .min(1)
+              .describe(
+                "High-level who they are and their relevance to the mystery.",
+              ),
+          }),
+        ),
+      }),
     }),
     world: z.object({
       starting_location_id: BlueprintV2IdSchema.describe(
@@ -405,6 +439,62 @@ export const BlueprintV2Schema = z
         path: ["world", "characters"],
         message: "Blueprint V2 must contain exactly one culprit.",
       });
+    }
+
+    const skLocationIds = new Set<string>();
+    for (const [skLocIndex, skLoc] of value.narrative.starting_knowledge.locations.entries()) {
+      if (!locationIds.has(skLoc.location_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "locations", skLocIndex, "location_id"],
+          message: `starting_knowledge references unknown location id "${skLoc.location_id}".`,
+        });
+      }
+      if (skLocationIds.has(skLoc.location_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "locations", skLocIndex, "location_id"],
+          message: `Duplicate location id "${skLoc.location_id}" in starting_knowledge.`,
+        });
+      }
+      skLocationIds.add(skLoc.location_id);
+    }
+    for (const locId of locationIds) {
+      if (!skLocationIds.has(locId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "locations"],
+          message: `starting_knowledge is missing an entry for location "${locId}".`,
+        });
+      }
+    }
+
+    const skCharacterIds = new Set<string>();
+    for (const [skCharIndex, skChar] of value.narrative.starting_knowledge.characters.entries()) {
+      if (!characterIds.has(skChar.character_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "characters", skCharIndex, "character_id"],
+          message: `starting_knowledge references unknown character id "${skChar.character_id}".`,
+        });
+      }
+      if (skCharacterIds.has(skChar.character_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "characters", skCharIndex, "character_id"],
+          message: `Duplicate character id "${skChar.character_id}" in starting_knowledge.`,
+        });
+      }
+      skCharacterIds.add(skChar.character_id);
+    }
+    for (const charId of characterIds) {
+      if (!skCharacterIds.has(charId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["narrative", "starting_knowledge", "characters"],
+          message: `starting_knowledge is missing an entry for character "${charId}".`,
+        });
+      }
     }
 
     for (const [locRefIndex, locId] of value.cover_image.location_ids.entries()) {

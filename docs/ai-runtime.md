@@ -157,7 +157,7 @@ For `game-start`:
 
 1. Load the selected blueprint and resolve the session AI profile.
 2. Generate the opening narration from `premise` plus `target_age`.
-3. Append `starting_knowledge` as an additional narrator part in the persisted `start` event.
+3. Format `starting_knowledge` (a structured object with `mystery_summary`, per-location summaries, and per-character summaries) into a "You already know:" block and append it as an additional narrator part in the persisted `start` event.
 
 For `game-move`:
 

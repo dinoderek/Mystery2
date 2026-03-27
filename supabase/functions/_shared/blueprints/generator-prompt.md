@@ -177,8 +177,19 @@ Use these target bands unless the brief strongly justifies a smaller mystery.
 
 - `narrative.premise`: short opening hook, usually 2-4 sentences. It should set
   up the problem without spoiling the hidden truth.
-- `narrative.starting_knowledge`: 2-4 short facts the player reasonably knows
-  at the start.
+- `narrative.starting_knowledge`: structured object giving the player a mental
+  map of the mystery world. Contains three required parts:
+  - `mystery_summary`: one sentence stating what happened, the approximate time,
+    and how the time was established (e.g. "The cake disappeared from the oven
+    between 6 and 7 AM according to the baker").
+  - `locations[]`: one entry per location with `location_id` (must match a
+    `world.locations[].id`) and a short `summary` — a player-facing one-liner
+    about the place.
+  - `characters[]`: one entry per character with `character_id` (must match a
+    `world.characters[].id`) and a short `summary` — a high-level description
+    of who they are (e.g. "elderly retired coastguard") plus their relevance to
+    the mystery (e.g. "was seen near the dock at the time of disappearance").
+  Every location and every character in the world must have exactly one entry.
 
 ### Locations
 

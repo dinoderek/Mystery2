@@ -11,7 +11,17 @@
   },
   "narrative": {
     "premise": "Someone stole the cookies.",
-    "starting_knowledge": ["The cookie jar was open."]
+    "starting_knowledge": {
+      "mystery_summary": "The cookies vanished from the kitchen sometime around noon, according to Alice who baked them.",
+      "locations": [
+        { "location_id": "loc-kitchen", "summary": "Where the cookies were baked and last seen." },
+        { "location_id": "loc-living-room", "summary": "The cozy room next to the kitchen." }
+      ],
+      "characters": [
+        { "character_id": "char-alice", "summary": "The resident baker; she baked the missing cookies." },
+        { "character_id": "char-bob", "summary": "A weekend guest; was in the living room around the time of the disappearance." }
+      ]
+    }
   },
   "world": {
     "starting_location_id": "loc-kitchen",

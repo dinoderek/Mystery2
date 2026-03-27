@@ -20,7 +20,17 @@ const blueprint: BlueprintContext = {
   },
   narrative: {
     premise: "Someone stole the pie.",
-    starting_knowledge: ["The kitchen window was open."],
+    starting_knowledge: {
+      mystery_summary: "Someone stole the pie from the kitchen around noon.",
+      locations: [
+        { location_id: "loc-kitchen", summary: "Where the pie was last seen." },
+        { location_id: "loc-garden", summary: "A quiet outdoor space." },
+      ],
+      characters: [
+        { character_id: "char-alice", summary: "The baker; was in the kitchen." },
+        { character_id: "char-bob", summary: "A guest; was out in the garden." },
+      ],
+    },
   },
   world: {
     starting_location_id: "loc-kitchen",

@@ -25,16 +25,64 @@ import {
 } from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-function formatStartingKnowledgeBlock(startingKnowledge: string[]): string | null {
-  const facts = startingKnowledge.map((entry) => entry.trim()).filter(Boolean);
-  if (facts.length === 0) {
-    return null;
+interface StartingKnowledge {
+  mystery_summary: string;
+  locations: Array<{ location_id: string; summary: string }>;
+  characters: Array<{ character_id: string; summary: string }>;
+}
+
+interface WorldData {
+  locations: Array<{ id: string; name: string }>;
+  characters: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    location_id: string;
+  }>;
+}
+
+function formatStartingKnowledgeBlock(
+  sk: StartingKnowledge | undefined,
+  world: WorldData,
+): string | null {
+  if (!sk) return null;
+
+  const locationMap = new Map(world.locations.map((l) => [l.id, l.name]));
+  const charsByLocation = new Map<string, string[]>();
+  for (const c of world.characters) {
+    const list = charsByLocation.get(c.location_id) ?? [];
+    list.push(`${c.first_name} ${c.last_name}`);
+    charsByLocation.set(c.location_id, list);
   }
 
-  return [
-    "You already know:",
-    ...facts.map((fact) => `- ${fact}`),
-  ].join("\n");
+  const lines: string[] = ["You already know:"];
+  lines.push("");
+  lines.push(`The mystery: ${sk.mystery_summary}`);
+
+  if (sk.locations.length > 0) {
+    lines.push("");
+    lines.push("Locations:");
+    for (const loc of sk.locations) {
+      const name = locationMap.get(loc.location_id) ?? loc.location_id;
+      const people = charsByLocation.get(loc.location_id);
+      const peopleSuffix = people ? ` (${people.join(", ")})` : "";
+      lines.push(`- ${name}: ${loc.summary}${peopleSuffix}`);
+    }
+  }
+
+  if (sk.characters.length > 0) {
+    lines.push("");
+    lines.push("People:");
+    for (const ch of sk.characters) {
+      const character = world.characters.find((c) => c.id === ch.character_id);
+      const name = character
+        ? `${character.first_name} ${character.last_name}`
+        : ch.character_id;
+      lines.push(`- ${name}: ${ch.summary}`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 serveWithCors(async (req) => {
@@ -185,7 +233,8 @@ serveWithCors(async (req) => {
       ),
     ];
     const startingKnowledgeBlock = formatStartingKnowledgeBlock(
-      blueprint.narrative.starting_knowledge ?? [],
+      blueprint.narrative.starting_knowledge,
+      blueprint.world,
     );
     if (startingKnowledgeBlock) {
       narrationParts.push(
@@ -202,7 +251,7 @@ serveWithCors(async (req) => {
         payload: {
           speaker: NARRATOR_SPEAKER,
           blueprint_image_id: blueprint.metadata.image_id ?? null,
-          starting_knowledge: blueprint.narrative.starting_knowledge ?? [],
+          starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
         },
         narration_parts: narrationParts,
         diagnostics: createNarrationDiagnostics({
@@ -257,7 +306,7 @@ serveWithCors(async (req) => {
             payload: {
               speaker: NARRATOR_SPEAKER,
               blueprint_image_id: blueprint.metadata.image_id ?? null,
-              starting_knowledge: blueprint.narrative.starting_knowledge ?? [],
+              starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
               diagnostics: createNarrationDiagnostics({
                 action: "start",
                 event_category: "start",

@@ -103,6 +103,31 @@ export const BlueprintV2CoverImageSchema = z.object({
     ),
 });
 
+export const BlueprintV2SubLocationSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for this sub-location within a location.",
+  ),
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "Short evocative name a child can reference, e.g. 'behind the curtains'.",
+    ),
+  hint: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "Narrator-only guidance text used to craft hints steering the player here. Never shown directly to the player.",
+    ),
+  clues: z
+    .array(BlueprintV2LocationClueSchema)
+    .describe(
+      "Clues discoverable by searching this sub-location. At most one clue per sub-location is recommended.",
+    ),
+});
+
 export const BlueprintV2LocationSchema = z.object({
   id: BlueprintV2IdSchema.describe(
     "Stable identifier for this location. Referenced by starting_location_id and character location_id.",
@@ -121,7 +146,13 @@ export const BlueprintV2LocationSchema = z.object({
     ),
   clues: z
     .array(BlueprintV2LocationClueSchema)
-    .describe("Structured searchable clues for this location."),
+    .describe("Location-level clues found by bare search. Sequential reveal."),
+  sub_locations: z
+    .array(BlueprintV2SubLocationSchema)
+    .default([])
+    .describe(
+      "Searchable areas within this location. Player must describe their search to find clues here.",
+    ),
 });
 
 export const BlueprintV2CharacterSchema = z.object({
@@ -329,6 +360,7 @@ export const BlueprintV2Schema = z
   })
   .superRefine((value, context) => {
     const locationIds = new Set<string>();
+    const subLocationIds = new Set<string>();
     const characterIds = new Set<string>();
     const locationClueIds = new Set<string>();
     const characterClueIds = new Set<string>();
@@ -350,6 +382,28 @@ export const BlueprintV2Schema = z
           );
         }
         locationClueIds.add(clue.id);
+      }
+
+      for (const [subLocIndex, subLoc] of (location.sub_locations ?? []).entries()) {
+        if (subLocationIds.has(subLoc.id) || locationIds.has(subLoc.id)) {
+          addDuplicateIssue(
+            context,
+            ["world", "locations", locationIndex, "sub_locations", subLocIndex, "id"],
+            subLoc.id,
+          );
+        }
+        subLocationIds.add(subLoc.id);
+
+        for (const [clueIndex, clue] of subLoc.clues.entries()) {
+          if (locationClueIds.has(clue.id) || characterClueIds.has(clue.id)) {
+            addDuplicateIssue(
+              context,
+              ["world", "locations", locationIndex, "sub_locations", subLocIndex, "clues", clueIndex, "id"],
+              clue.id,
+            );
+          }
+          locationClueIds.add(clue.id);
+        }
       }
     }
 
@@ -607,6 +661,7 @@ export const BlueprintV2Schema = z
 export type BlueprintV2 = z.infer<typeof BlueprintV2Schema>;
 export type BlueprintV2Character = z.infer<typeof BlueprintV2CharacterSchema>;
 export type BlueprintV2Location = z.infer<typeof BlueprintV2LocationSchema>;
+export type BlueprintV2SubLocation = z.infer<typeof BlueprintV2SubLocationSchema>;
 export type BlueprintV2CoverImage = z.infer<typeof BlueprintV2CoverImageSchema>;
 export type BlueprintV2ReasoningPath = z.infer<
   typeof BlueprintV2ReasoningPathSchema

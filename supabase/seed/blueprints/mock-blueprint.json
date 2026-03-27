@@ -37,6 +37,26 @@
             "text": "A crumb on the floor.",
             "role": "direct_evidence"
           }
+        ],
+        "sub_locations": [
+          {
+            "id": "subloc-pantry",
+            "name": "the pantry shelf",
+            "hint": "The top shelf has items pushed aside recently.",
+            "clues": [
+              {
+                "id": "clue-jar",
+                "text": "An empty cookie jar hidden behind cereal boxes.",
+                "role": "supporting_evidence"
+              }
+            ]
+          },
+          {
+            "id": "subloc-sink",
+            "name": "under the kitchen sink",
+            "hint": "A damp cloth is draped over the cabinet door.",
+            "clues": []
+          }
         ]
       },
       {
@@ -54,6 +74,14 @@
             "id": "clue-half-eaten",
             "text": "A half-eaten cookie.",
             "role": "supporting_evidence"
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "subloc-bookshelf",
+            "name": "behind the bookshelf",
+            "hint": "Some books look like they were recently moved.",
+            "clues": []
           }
         ]
       }
@@ -128,7 +156,7 @@
     {
       "id": "path-alice-did-it",
       "summary": "Crumbs in the kitchen and Alice's motive point to her as the culprit.",
-      "location_clue_ids": ["clue-crumb"],
+      "location_clue_ids": ["clue-crumb", "clue-jar"],
       "character_clue_ids": ["clue-bob-alice-loves-cookies"]
     }
   ],

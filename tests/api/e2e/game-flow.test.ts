@@ -256,7 +256,7 @@ describe("Full E2E API Investigation Flow", () => {
     expect(searchEvent.narration_parts[1].text).toBe(searchData.narration_parts[0].text);
   });
 
-  it("forces endgame when the final question consumes the last turn", async () => {
+  it("forces endgame when starting a conversation consumes the last turn", async () => {
     const headers = auth.headers;
     const gameId = await startGameSession(headers);
     await admin
@@ -270,36 +270,18 @@ describe("Full E2E API Investigation Flow", () => {
       body: JSON.stringify({ game_id: gameId, character_id: "char-alice" }),
     });
     expect(talkRes.status).toBe(200);
+    const talkData = await talkRes.json();
 
-    const askRes = await fetch(`${API_URL}/game-ask`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_input: "Where were you when this happened?",
-      }),
-    });
-    expect(askRes.status).toBe(200);
-    const askData = await askRes.json();
-
-    expect(askData.mode).toBe("accuse");
-    expect(askData.time_remaining).toBe(0);
-    expect(askData.follow_up_prompt).toBeTruthy();
-    expect(askData.narration_parts).toHaveLength(2);
+    expect(talkData.mode).toBe("accuse");
+    expect(talkData.time_remaining).toBe(0);
+    expect(talkData.follow_up_prompt).toBeTruthy();
+    expect(talkData.narration_parts).toHaveLength(2);
     expect(
-      askData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
-    ).toEqual(["character", "narrator"]);
+      talkData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
+    ).toEqual(["narrator", "narrator"]);
 
     const narrationEvents = await loadNarrationEvents(gameId, headers);
     const tail = narrationEvents.slice(-2);
-    expect(tail.map((event) => event.event_type)).toEqual(["ask", "forced_endgame"]);
-
-    // The ask event now includes the player's input as an investigator part
-    // prepended to the character's response (for resume fidelity).
-    const askEvent = tail[0];
-    expect(askEvent.narration_parts[0].speaker.kind).toBe("investigator");
-    expect(askEvent.narration_parts[0].text).toBe("Where were you when this happened?");
-    // The character response follows the player input
-    expect(askEvent.narration_parts[1].text).toBe(askData.narration_parts[0].text);
+    expect(tail.map((event) => event.event_type)).toEqual(["talk", "forced_endgame"]);
   });
 });

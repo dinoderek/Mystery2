@@ -1,6 +1,5 @@
 import { requireAuth, isAuthError } from "../_shared/auth.ts";
 import {
-  aiRetriableError,
   asRetriableAIResponse,
   badRequest,
   internalError,
@@ -15,7 +14,7 @@ import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { buildGameMovePrompt } from "../_shared/ai-prompts.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
-import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
+import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import {
   createNarrationDiagnostics,
@@ -127,6 +126,9 @@ serveWithCors(async (req) => {
         })),
     );
 
+    const subLocations = (destLoc.sub_locations ?? []).map((sl) => ({
+      name: sl.name,
+    }));
     const aiPrompt = buildGameMovePrompt({
       target_age: blueprint.metadata.target_age,
       destination_name: destLoc.name,
@@ -134,6 +136,8 @@ serveWithCors(async (req) => {
       has_visited_before: hasVisitedBefore,
       destination_history_json: locationHistoryJson,
       destination_characters_json: destinationCharactersJson,
+      destination_sub_locations_json:
+        subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
@@ -152,50 +156,30 @@ serveWithCors(async (req) => {
 
     let combinedParts = [...moveParts];
     let followUpPrompt: string | null = null;
-    let forcedParts: ReturnType<typeof moveParts.slice> = [];
+    let forcedParts: typeof moveParts = [];
 
     if (isForcedEndgame) {
-      try {
-        const forcedOutput = await generateForcedAccusationStartNarration({
-          req,
-          request_id: requestId,
-          endpoint: "game-move",
-          game_id: game_id,
-          aiProvider,
-          session: {
-            ...session,
-            current_location_id: destLoc.id,
-            time_remaining: newTime,
-          },
-          blueprint,
-          conversation_history: historyRows ?? [],
-          scene_summary:
-            `The investigator moved to ${destLoc.name}, and that final movement exhausted all remaining time.`,
-        });
-        followUpPrompt = forcedOutput.follow_up_prompt;
-        forcedParts = forcedOutput.narration_parts;
-        combinedParts = [...moveParts, ...forcedParts];
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: game_id,
-            action: "forced_endgame_start",
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: game_id,
-          action: "forced_endgame_start",
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
+      const result = await tryGenerateForcedEndgame({
+        req,
+        request_id: requestId,
+        endpoint: "game-move",
+        game_id: game_id,
+        aiProvider,
+        session: {
+          ...session,
+          current_location_id: destLoc.id,
+          time_remaining: newTime,
+        },
+        blueprint,
+        conversation_history: historyRows ?? [],
+        scene_summary:
+          `The investigator moved to ${destLoc.name}, and that final movement exhausted all remaining time.`,
+        log,
+      });
+      if (!result.ok) return result.response;
+      followUpPrompt = result.follow_up_prompt;
+      forcedParts = result.narration_parts;
+      combinedParts = [...moveParts, ...forcedParts];
     }
 
     // Update Session
@@ -244,44 +228,22 @@ serveWithCors(async (req) => {
       logger: narrationLogger,
     });
 
-    let forcedSequence: number | null = null;
     if (isForcedEndgame) {
-      forcedSequence = await insertNarrationEvent(userClient, {
+      await insertForcedEndgameEvent(userClient, {
         session_id: game_id,
-        event_type: "forced_endgame",
-        actor: "system",
+        action: "move",
+        action_sequence: moveSequence,
         payload: {
-          trigger: "timeout",
           location_id: destLoc.id,
           location_name: destLoc.name,
           location_image_id: destLoc.location_image_id ?? null,
-          follow_up_prompt: followUpPrompt,
-          speaker: NARRATOR_SPEAKER,
         },
         narration_parts: forcedParts,
-        diagnostics: createNarrationDiagnostics({
-          action: "move",
-          event_category: "forced_endgame",
-          mode: "accuse",
-          resulting_mode: "accuse",
-          time_before: newTime,
-          time_after: newTime,
-          time_consumed: false,
-          forced_endgame: true,
-          trigger: "timeout",
-          related_sequence: moveSequence,
-        }),
-        logger: narrationLogger,
-      });
-
-      log("timeout.transition", {
-        game_id,
-        action: "move",
+        follow_up_prompt: followUpPrompt,
         time_before: session.time_remaining,
         time_after: newTime,
         resulting_mode: nextMode,
-        action_sequence: moveSequence,
-        forced_endgame_sequence: forcedSequence,
+        logger: narrationLogger,
       });
     }
 

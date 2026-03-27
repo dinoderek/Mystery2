@@ -15,7 +15,6 @@ import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
-import { generateForcedAccusationStartNarration } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -24,7 +23,6 @@ import {
 } from "../_shared/narration.ts";
 import {
   createCharacterSpeaker,
-  NARRATOR_SPEAKER,
 } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
@@ -108,9 +106,6 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const newTime = Math.max(session.time_remaining - 1, 0);
-    const isForcedEndgame = newTime === 0;
-    const nextMode = isForcedEndgame ? "accuse" : "talk";
     const characterSpeaker = createCharacterSpeaker(activeCharacter.first_name);
     const aiContext = buildTalkConversationContext({
       game_id: gameId,
@@ -164,68 +159,17 @@ serveWithCors(async (req) => {
       });
     }
 
-    const askParts = [
+    const narrationParts = [
       createNarrationPart(
         talkOutput.narration,
         characterSpeaker,
         null,
       ),
     ];
-    let combinedParts = [...askParts];
-    let followUpPrompt: string | null = null;
-    let forcedParts: typeof askParts = [];
-
-    if (isForcedEndgame) {
-      try {
-        const forcedOutput = await generateForcedAccusationStartNarration({
-          req,
-          request_id: requestId,
-          endpoint: "game-ask",
-          game_id: gameId,
-          aiProvider,
-          session: {
-            ...session,
-            time_remaining: newTime,
-          },
-          blueprint,
-          conversation_history: historyRows ?? [],
-          scene_summary:
-            `The investigator asked ${activeCharacter.first_name} a final question, and that last moment used up all remaining time.`,
-        });
-        followUpPrompt = forcedOutput.follow_up_prompt;
-        forcedParts = forcedOutput.narration_parts;
-        combinedParts = [...askParts, ...forcedParts];
-      } catch (error) {
-        if (error instanceof RetriableAIError) {
-          log("request.ai_retriable", {
-            game_id: gameId,
-            action: "forced_endgame_start",
-            code: error.details.code ?? null,
-            status: error.details.status ?? null,
-            error: error.message,
-          });
-          return aiRetriableError(error.message, error.details);
-        }
-        log("request.ai_retriable", {
-          game_id: gameId,
-          action: "forced_endgame_start",
-          code: "AI_INVALID_OUTPUT",
-          error: "AI output validation failed",
-        });
-        return aiRetriableError("AI output validation failed", {
-          code: "AI_INVALID_OUTPUT",
-        });
-      }
-    }
 
     const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
-        time_remaining: newTime,
-        mode: nextMode,
-        current_talk_character_id: isForcedEndgame
-          ? null
-          : activeCharacter.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -233,7 +177,7 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const askSequence = await insertNarrationEvent(userClient, {
+    await insertNarrationEvent(userClient, {
       session_id: gameId,
       event_type: "ask",
       actor: "system",
@@ -246,73 +190,27 @@ serveWithCors(async (req) => {
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: characterSpeaker,
       },
-      narration_parts: askParts,
+      narration_parts: narrationParts,
       diagnostics: createNarrationDiagnostics({
         action: "ask",
         event_category: "ask",
         mode: "talk",
-        resulting_mode: nextMode,
+        resulting_mode: "talk",
         time_before: session.time_remaining,
-        time_after: newTime,
-        time_consumed: true,
-        forced_endgame: isForcedEndgame,
+        time_after: session.time_remaining,
+        time_consumed: false,
+        forced_endgame: false,
         trigger: "player",
       }),
       logger: narrationLogger,
     });
 
-    let forcedSequence: number | null = null;
-    if (isForcedEndgame) {
-      forcedSequence = await insertNarrationEvent(userClient, {
-        session_id: gameId,
-        event_type: "forced_endgame",
-        actor: "system",
-        payload: {
-          role: "accusation_start",
-          character_id: activeCharacter.id,
-          character_name: activeCharacter.first_name,
-          location_id: session.current_location_id,
-          player_input: playerInput,
-          trigger: "timeout",
-          follow_up_prompt: followUpPrompt,
-          speaker: NARRATOR_SPEAKER,
-        },
-        narration_parts: forcedParts,
-        diagnostics: createNarrationDiagnostics({
-          action: "ask",
-          event_category: "forced_endgame",
-          mode: "accuse",
-          resulting_mode: "accuse",
-          time_before: newTime,
-          time_after: newTime,
-          time_consumed: false,
-          forced_endgame: true,
-          trigger: "timeout",
-          related_sequence: askSequence,
-        }),
-        logger: narrationLogger,
-      });
-
-      log("timeout.transition", {
-        game_id: gameId,
-        action: "ask",
-        time_before: session.time_remaining,
-        time_after: newTime,
-        resulting_mode: nextMode,
-        action_sequence: askSequence,
-        forced_endgame_sequence: forcedSequence,
-      });
-    }
-
     return new Response(
       JSON.stringify({
-        narration_parts: combinedParts,
-        time_remaining: newTime,
-        mode: nextMode,
-        current_talk_character: isForcedEndgame
-          ? null
-          : activeCharacter.id,
-        follow_up_prompt: followUpPrompt,
+        narration_parts: narrationParts,
+        time_remaining: session.time_remaining,
+        mode: "talk",
+        current_talk_character: activeCharacter.id,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -105,6 +105,7 @@
                   blueprintId={gameSessionStore.blueprint_id}
                   imageId={group.imageId}
                   alt={group.imageTitle}
+                  class="w-full object-cover"
                   onload={scrollToBottom}
                   onfail={() => { failedImageIds = new Set([...failedImageIds, group.imageId!]); }}
                 />

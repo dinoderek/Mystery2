@@ -43,7 +43,7 @@
   <img
     src={entry.url}
     {alt}
-    class="story-image-asset block w-full object-cover {className}"
+    class="story-image-asset block {className}"
     loading="lazy"
     onload={onload}
   />

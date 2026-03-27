@@ -1,0 +1,100 @@
+name: Test Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # Phase 1 — static checks and unit tests (no Supabase needed)
+  # ------------------------------------------------------------------
+  static-and-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Svelte check
+        run: npm -w web run check
+
+      - name: Unit tests (API/shared)
+        run: npm run test:unit
+
+      - name: Unit tests (web)
+        run: npm -w web run test:unit
+
+  # ------------------------------------------------------------------
+  # Phase 2 — integration & e2e (needs local Supabase)
+  # ------------------------------------------------------------------
+  integration-and-e2e:
+    runs-on: ubuntu-latest
+    needs: static-and-unit
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Seed storage and AI profile
+        run: |
+          npm run seed:storage
+          npm run seed:ai -- --only mock
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: API E2E tests
+        run: npm run test:e2e
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser E2E tests
+        run: npm -w web run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: web/test-results/
+          retention-days: 14

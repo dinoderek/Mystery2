@@ -202,16 +202,25 @@ Integration, API E2E, and browser E2E tests should rely on:
 
 ### Final quality gate
 
-`npm test` runs the full non-documentation quality gate in this order:
+`npm test` (aliased as `npm run test:gate`) runs the test gate orchestrator
+(`scripts/run-test-gate.mjs`), which executes in two phases:
+
+**Phase 1 (parallel):**
 
 1. `npm run lint`
 2. `npm run typecheck`
 3. `npm -w web run check`
 4. `npm run test:unit`
 5. `npm -w web run test:unit`
+
+**Phase 2 (serial — shares Supabase state):**
+
 6. `npm run test:integration`
 7. `npm run test:e2e`
 8. `npm -w web run test:e2e`
+
+Phase 2 only runs if all phase 1 steps pass. After phase 2, a non-fatal leak
+check runs to detect orphaned test users.
 
 Focused sub-scripts are for iteration only. They do not replace the final
 `npm test` gate.
@@ -287,11 +296,107 @@ At minimum, integration coverage should prove:
 
 ## Observability During Tests
 
-On failures, capture or inspect:
+### Log files and timing
 
-- Playwright screenshots and traces
+Every `npm test` run writes timestamped logs to `test-results/<timestamp>/`.
+Each step gets its own log file (`lint.log`, `typecheck.log`, `unit-api.log`,
+etc.) and a `summary.log` with per-step pass/fail status and wall-clock
+timing. The orchestrator keeps the last 5 runs and prunes older ones.
+
+Example `summary.log` output:
+
+```
+lint               4.2s  PASS
+typecheck          8.1s  PASS
+unit-api           2.3s  PASS
+integration       18.4s  PASS
+─────────────────────────────
+Total             45.1s  PASS
+```
+
+Use these logs for post-mortem debugging, especially in agent workflows where
+console scrollback may be lost.
+
+### Playwright artifacts
+
+On failure, Playwright captures screenshots and traces automatically
+(`screenshot: 'only-on-failure'`, `trace: 'retain-on-failure'`). Reports land
+in `web/playwright-report/` and `web/test-results/`.
+
+### Other failure inspection
+
 - Edge Function logs from local Supabase via `npm run logs:edge`
 - relevant DB state snapshots when testkit helpers provide them
+
+## Test Coverage
+
+Coverage is configured but **not enforced** — no threshold gates yet. Use
+coverage to identify gaps and track trends.
+
+### Running coverage locally
+
+```bash
+npm run test:unit:coverage          # API/shared unit → coverage/api/
+npm -w web run test:unit:coverage   # Web unit → web/coverage/
+```
+
+Both produce `text-summary` (console), `json`, and `html` reports. Open
+`coverage/api/index.html` or `web/coverage/index.html` for browsable reports.
+
+Coverage uses the Vitest v8 provider and measures the source files listed in
+each `vitest.config.ts` `coverage.include` array.
+
+### What is covered
+
+- **API/shared unit coverage**: `supabase/functions/**/*.ts`,
+  `packages/shared/src/**/*.ts`
+- **Web unit coverage**: `src/lib/**/*.ts`, `src/lib/**/*.svelte`
+
+Integration and E2E suites do not collect coverage (they test through HTTP
+boundaries).
+
+## Leak Detection
+
+After phase 2 of the test gate, a non-fatal leak check queries the local
+Supabase auth store for users with emails matching `*@test.local`. These are
+test users that were not cleaned up by `afterEach` teardown.
+
+Results appear in the console output and in `test-results/<timestamp>/summary.log`.
+The check never fails the gate — it only logs warnings.
+
+The utility lives at `tests/testkit/src/leak-detector.ts` and can be called
+independently:
+
+```ts
+import { detectTestUserLeaks } from '@testkit/leak-detector';
+const count = await detectTestUserLeaks();
+```
+
+## CI Pipeline
+
+A GitHub Actions workflow (`.github/workflows/test.yml`) runs on every push to
+`main` and every pull request targeting `main`.
+
+### Jobs
+
+1. **static-and-unit** — lint, typecheck, svelte-check, unit tests (no
+   Supabase needed)
+2. **integration-and-e2e** — starts local Supabase, seeds, runs integration,
+   API E2E, and browser E2E tests
+
+### Artifacts
+
+On every run (pass or fail), the workflow uploads:
+
+- Playwright HTML report (`playwright-report/`)
+- Playwright test results with screenshots/traces (`test-results/`)
+
+Artifacts are retained for 14 days.
+
+### Concurrency
+
+Uses `concurrency.cancel-in-progress` so new pushes to the same branch cancel
+stale runs.
 
 ## Documentation-Only Changes
 

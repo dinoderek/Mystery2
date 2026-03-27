@@ -34,5 +34,14 @@ export default defineConfig({
     environment: "node",
     globals: true,
     passWithNoTests: false,
+    testTimeout: 15_000,
+    hookTimeout: 15_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "json", "html"],
+      reportsDirectory: "./coverage",
+      include: ["src/lib/**/*.ts", "src/lib/**/*.svelte"],
+      exclude: ["**/*.test.ts", "**/node_modules/**"],
+    },
   },
 });

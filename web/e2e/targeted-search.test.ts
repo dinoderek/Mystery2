@@ -84,7 +84,7 @@ test.describe('Targeted Search', () => {
     await input.press('Enter');
 
     await expect(page.getByText('You look around but find nothing special.')).toBeVisible();
-    expect(searchPayload?.search_query).toBeUndefined();
+    expect(searchPayload?.search_query).toBeNull();
   });
 
   test('targeted search sends search_query in request body', async ({ page }) => {

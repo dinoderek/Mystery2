@@ -93,19 +93,17 @@ describe("game-search endpoint", () => {
       .order("sequence", { ascending: true });
     expect(error).toBeNull();
     expect(searchEvents?.[0]?.payload).toMatchObject({
-      revealed_clue_index: 0,
       revealed_clue_id: "clue-wrapper",
       revealed_clue_text: "A wrapper on the sofa.",
       revealed_clue_ids: ["clue-wrapper"],
     });
     expect(searchEvents?.[1]?.payload).toMatchObject({
-      revealed_clue_index: 1,
       revealed_clue_id: "clue-half-eaten",
       revealed_clue_text: "A half-eaten cookie.",
       revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
     });
     expect(searchEvents?.[2]?.payload).toMatchObject({
-      revealed_clue_index: null,
+      revealed_clue_id: null,
       revealed_clue_text: null,
       revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
     });

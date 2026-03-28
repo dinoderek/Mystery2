@@ -2,25 +2,23 @@
 
 ## Prerequisites
 
-Install:
-
-- [Node.js](https://nodejs.org/) 18+
-- [npm](https://www.npmjs.com/)
-- [Docker](https://www.docker.com/) for local Supabase
+- [Node.js](https://nodejs.org/) 18+, [npm](https://www.npmjs.com/)
+- [Docker](https://www.docker.com/) (local Supabase)
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
-- [Deno](https://deno.land/) for Edge Function tooling
+- [Deno](https://deno.land/) (Edge Function tooling)
 
 ## First-Time Setup
 
-Optional: if you want one shared local-config directory across multiple clones or worktrees, export an absolute `MYSTERY_CONFIG_ROOT` first:
+**Optional shared config root** — to share local-only files across clones or
+worktrees, export an absolute path before any other command:
 
 ```bash
 export MYSTERY_CONFIG_ROOT="/absolute/path/to/mystery-config"
 ```
 
-When set, local-only files are read from that directory instead of this repo. When unset, the repo root keeps the current behavior.
-
-Shared config layout mirrors the repo-local filenames:
+When set, gitignored files (`.env.*.local`, seed files, generated outputs)
+resolve from that directory instead of the repo root. Layout mirrors repo-local
+filenames:
 
 ```text
 $MYSTERY_CONFIG_ROOT/
@@ -36,92 +34,78 @@ $MYSTERY_CONFIG_ROOT/
   supabase/seed/auth-users.local.json
 ```
 
-Run from the repo root:
+**Bootstrap everything:**
 
 ```bash
 npm run seed:all
 ```
 
-This command:
+This starts local Supabase (if needed), seeds auth users, AI profiles, blueprint
+storage, and images. Missing images produce warnings, not errors.
 
-1. Ensures the local Supabase stack is running (starts it if needed).
-2. Seeds auth users (creates `supabase/seed/auth-users.local.json` if missing).
-3. Seeds AI profiles in Postgres (`mock`, optional `free` / `paid`, and canonical `default`).
-4. Seeds blueprint storage and images (missing local images produce warnings, not errors).
+## Local Development
 
-## Run Locally With a Profile
-
-### Deterministic local development
+### Mock AI (default)
 
 ```bash
 npm run dev
 ```
 
-Use this for normal development and tests. It:
+Starts Supabase, seeds storage and mock AI profile, runs SvelteKit at
+`http://localhost:5173`.
 
-- ensures Supabase is running
-- seeds blueprint storage if missing
-- reseeds AI so `ai_profiles.id='default'` points to `mock`
-- starts the SvelteKit dev server at `http://localhost:5173`
+### Live AI
 
-### Live AI using a named profile
+Create one or both gitignored env files for live provider calls:
 
-Create one or both gitignored env files if you want live provider calls.
-
-`.env.ai.free.local`
+`.env.ai.free.local` / `.env.ai.paid.local`:
 
 ```bash
 AI_PROVIDER="openrouter"
-AI_MODEL="z-ai/glm-4.5-air:free"
-OPENROUTER_API_KEY="<server-only-secret>"
+AI_MODEL="<model-id>"
+OPENROUTER_API_KEY="<key>"
 ```
 
-`.env.ai.paid.local`
+Then:
 
 ```bash
-AI_PROVIDER="openrouter"
-AI_MODEL="google/gemini-3-flash-preview"
-OPENROUTER_API_KEY="<server-only-secret>"
+npm run dev:ai:free   # or dev:ai:paid
 ```
 
-Then run one of:
-
-```bash
-npm run dev:ai:free
-npm run dev:ai:paid
-```
-
-Those commands use the selected profile to reseed `ai_profiles.id='default'` before starting the web app.
-
-### Switching profiles without restarting Supabase
-
-Changing AI profile data is a database operation, not a container restart operation.
-
-After editing `.env.ai.<mode>.local`, apply it with:
+### Switch profile without restarting
 
 ```bash
 npm run seed:ai -- --only <mock|free|paid>
 ```
 
-New sessions use the current `default` profile. Existing sessions stay pinned to their stored `ai_profile_id`.
+New sessions use the updated `default` profile. Existing sessions keep their
+stored `ai_profile_id`. See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 
-For the canonical rules behind that behavior, see
-[`docs/ai-configuration.md`](docs/ai-configuration.md).
+## Seeded Local Users
 
-## Generate Blueprints Locally
+| Email                | Purpose                          |
+| -------------------- | -------------------------------- |
+| `player1@test.local` | Primary local player             |
+| `player2@test.local` | Second player / RLS checks       |
 
-Create a structured brief JSON file, for example:
+Passwords are generated into `supabase/seed/auth-users.local.json` (or
+`$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json`) on the first
+`seed:auth` run and reused thereafter.
+
+## Blueprint Generation
+
+Create a brief JSON:
 
 ```json
 {
-  "brief": "A child-friendly mystery in a school library where a special bookmark goes missing before story time.",
+  "brief": "A child-friendly mystery in a school library.",
   "targetAge": 8,
   "timeBudget": 14,
   "mustInclude": ["at least three suspects", "one red herring motive"]
 }
 ```
 
-Then run:
+### Generate blueprints (calls OpenRouter)
 
 ```bash
 npm run generate:blueprint -- \
@@ -129,250 +113,45 @@ npm run generate:blueprint -- \
   --model openai/gpt-4.1-mini
 ```
 
-Optional:
+Key flags:
 
-- provide `--openrouter-api-key` explicitly, or rely on `OPENROUTER_API_KEY`
-- provide `--output path/to/blueprint.json` to write a single job to an exact file instead of printing JSON to stdout
-- provide `--output-file path/to/blueprint` to write composed output files as `path/to/blueprint.<model>.<brief filename>.json`
-- repeat `--brief-file` and/or `--model` to generate every brief/model combination in one run; multi-job runs require `--output-file`
-- optionally set `--verification-model <model>` to choose the verifier separately; default is `google/gemini-3-flash-preview`
-- add `--parallel` to run all queued jobs concurrently, or `--parallelism <n>` to cap concurrency
-- when a blueprint file is written, the CLI also writes a sibling verification file as `path/to/blueprint.<...>.verification.json`
-- verification runs after the blueprint JSON is written; if verification fails, both files still remain on disk and the CLI reports the failure in the final summary without failing the process
-- if generator-side schema validation fails after the model returns JSON, the CLI still writes that raw generated JSON to the blueprint file and writes the sibling verification/error file, then reports the failure in the final summary without failing the process
-- when `--output` or `--output-file` is used, stdout prints only a final per-job summary with blueprint path and verification status
-- set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid repeating `--model`; comma-separated values are supported for multi-model runs
+| Flag | Purpose |
+|------|---------|
+| `--openrouter-api-key <key>` | Explicit key (falls back to `OPENROUTER_API_KEY` env) |
+| `--output <path>` | Write single job to exact file (stdout otherwise) |
+| `--output-file <prefix>` | Write composed filenames `<prefix>.<model>.<brief>.json` |
+| `--verification-model <id>` | Verifier model (default: `google/gemini-3-flash-preview`) |
+| `--parallel` / `--parallelism <n>` | Concurrent jobs |
 
-## Seeded Local Users
+Repeat `--brief-file` and/or `--model` for multi-job runs (requires
+`--output-file`). Set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid
+repeating `--model`.
 
-`npm run seed:all` and `npm run seed:auth` ensure these users exist in local Supabase Auth.
+Both blueprint and sibling `.verification.json` files are written on
+completion. Schema or verification failures are reported in the summary without
+failing the process.
 
-- Seed emails come from the committed template: `supabase/seed/auth-users.example.json`
-- Real passwords are generated into the gitignored local file: `supabase/seed/auth-users.local.json`
-  - or `$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json` when `MYSTERY_CONFIG_ROOT` is set
-- The first `seed:auth` run prints the generated credentials once and later runs continue using the same local file
-
-Default local users:
-
-| Email                | Purpose                          |
-| -------------------- | -------------------------------- |
-| `player1@test.local` | Primary local player             |
-| `player2@test.local` | Second local player / RLS checks |
-
-Find the current passwords in `supabase/seed/auth-users.local.json`, or in `$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json` when using a shared config root, then log in at `http://localhost:5173/login` or the redirected login screen.
-
-## Supabase Operations
-
-For in-depth details on local infrastructure, worktree isolation, and garbage
-collection see [`docs/local-infrastructure.md`](docs/local-infrastructure.md).
-
-### Important: use `npm run` scripts in worktrees
-
-When working inside a git worktree, always prefer the `npm run supabase:*`
-scripts over raw `npx supabase` commands. The npm scripts patch
-`supabase/config.toml` with the worktree's project_id and ports before
-invoking Supabase CLI, ensuring commands target the correct isolated stack.
-
-Running `npx supabase ...` directly in a worktree may target the wrong
-instance if the config has not been patched yet. If you must run a raw
-command, patch first:
+### Export chat packets (no API key needed)
 
 ```bash
-npm run supabase:patch
+npm run generate:blueprint -- \
+  --brief-file path/to/story-brief.json \
+  --chat-packet
 ```
 
-### When to restart vs reseed
-
-Use `npm run supabase:restart` when:
-
-- you changed files under `supabase/functions/` or `supabase/functions/_shared/`
-- containers are unhealthy or stuck
-- you changed Supabase config that only applies on restart
-
-Use `npm run seed:all` when:
-
-- a new worktree stack needs the full local state
-- you reset the database
-- you changed seed data across auth, storage, and AI profiles
-
-Use `npm run seed:ai -- --only <mock|free|paid>` when:
-
-- you are switching the local runtime profile
-- you edited `.env.ai.<mode>.local`
-- you changed seeded AI profile behavior without needing a full database reset
-
-`seed:ai` updates Postgres profile rows. It does not restart containers because
-profile selection is DB-driven.
-
-### Check status
-
-```bash
-npx supabase status
-```
-
-### Restart the local stack
-
-```bash
-npm run supabase:restart
-```
-
-Use a restart when:
-
-- the local Supabase containers are unhealthy or stuck
-- you changed Supabase config that is only picked up on container restart
-- you changed Edge Function or other Deno-backed code and need to guarantee the shared local runtime picks it up
-
-This repo is configured with `edge_runtime.policy = "per_worker"`, but because multiple agents can share the same local Supabase project on one machine, do not rely on hot reload. In practice, treat `npm run supabase:restart` as the safe path for Deno and Edge Function changes.
-
-### Test scripts and stale Edge Function code
-
-`npm run test:integration` and `npm run test:e2e` both call
-`ensureSupabaseRunning()`, seed storage, and reseed the canonical `default`
-mock AI profile. They do **not** restart stale Edge Function code
-automatically.
-
-After changing files under `supabase/functions/` or
-`supabase/functions/_shared/`, run:
-
-```bash
-npm run supabase:restart
-```
-
-before `npm run test:integration`, `npm run test:e2e`, or `npm test`.
-
-### Worktree isolation
-
-When running inside a git worktree (e.g. Claude Code parallel tasks), each
-worktree automatically gets its own Supabase stack with unique ports and
-project_id. No manual configuration needed — `ensureSupabaseRunning()` handles
-config patching and orphan cleanup transparently.
-
-Clean up stale worktree stacks manually:
-
-```bash
-npm run supabase:gc
-```
-
-### Reset the local database
-
-```bash
-npm run supabase:reset
-```
-
-Use this when you need a clean local database with all migrations reapplied.
-This script patches `supabase/config.toml` for worktree isolation before
-running the reset, so it is safe to use in both the main checkout and
-worktrees. Avoid calling `npx supabase db reset` directly in a worktree — the
-config may not be patched yet.
-
-After a reset, restore local app data with:
-
-```bash
-npm run seed:all
-```
-
-### Reseed everything at once
-
-```bash
-npm run seed:all
-```
-
-This ensures Supabase is running, then runs all seed steps (auth, AI profiles, blueprint storage with images) with upsert semantics.
-
-Missing local images produce `[WARN]` lines but do not fail the command. Pass `--skip-seed-images` to skip image seeding entirely, or `--skip-seed-storage` to skip blueprint/image seeding. Pass `--restart` to force a Supabase restart before seeding.
-
-### Reseed specific parts
-
-Blueprint storage:
-
-```bash
-npm run seed:storage
-```
-
-Auth users:
-
-```bash
-npm run seed:auth
-```
-
-AI profiles:
-
-```bash
-npm run seed:ai
-npm run seed:ai -- --only <mock|free|paid>
-```
-
-Use `seed:ai -- --only <mode>` when only the local AI profile rows need to be
-refreshed. Use `seed:all` when auth, storage, and AI state all need to be
-recreated together.
-
-## Deploy To Dev
-
-Create `.env.deploy.dev.local` with:
-
-- at the repo root by default, or
-- at `$MYSTERY_CONFIG_ROOT/.env.deploy.dev.local` when using a shared config root
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `AI_DEFAULT_PROFILE_ID=default`
-- `AI_DEFAULT_PROFILE_PROVIDER`
-- `AI_DEFAULT_PROFILE_MODEL`
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY` when `AI_DEFAULT_PROFILE_PROVIDER=openrouter`
-
-If you want non-prod bootstrap users during deploy, also copy:
-
-- `deploy/bootstrap-users.dev.example.json` -> `deploy/bootstrap-users.dev.local.json`
-  - or `deploy/bootstrap-users.dev.example.json` -> `$MYSTERY_CONFIG_ROOT/deploy/bootstrap-users.dev.local.json` when using a shared config root
-
-Replace the sample passwords in the local file before running deploy.
-
-Then run:
-
-```bash
-npm run deploy -- --env dev --preflight
-```
-
-If you also want to upload generated blueprint images during deploy, add `--image-dir <path>` (defaults to `$MYSTERY_CONFIG_ROOT/blueprint-images/` when set, otherwise `blueprint-images/` under the repo root).
+Builds the full generation prompt as a Markdown file you can paste into any
+chat UI. No `--model` or API key required. Output defaults to
+`$MYSTERY_CONFIG_ROOT/chat-gen-prompts/` (or `chat-gen-prompts/` under repo
+root). Override with `--output` or `--output-file`.
 
 ## Image Generation
 
-Preferred env file:
+Env file: copy `.env.images.example` to `.env.images.local`.
 
-- copy `.env.images.example` to `.env.images.local`
+Supported keys: `OPENROUTER_API_KEY`, optional `OPENROUTER_IMAGE_MODEL`
+(default: `openai/gpt-image-1`).
 
-Supported keys:
-
-- `OPENROUTER_API_KEY`
-- optional: `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`)
-
-`OPENROUTER_API_KEY` is not required when using `--dry-mode`.
-
-Resolution order for `npm run generate:images`:
-
-1. shell env at invocation time
-2. `.env.images.local`
-3. `.env.local`
-4. built-in model default (`openai/gpt-image-1`) when no model is set anywhere
-
-When `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory instead of the repo root.
-
-Gameplay/runtime OpenRouter config stays DB-first and profile-driven. The image-generation CLI is separate operator tooling and does not read from `ai_profiles`.
-
-Keep live AI opt-in. `npm run dev` and `npm run seed:all` stay on the mock profile unless you explicitly create `.env.ai.<mode>.local` and switch to it.
-
-Critical flags:
-
-- `--blueprint-path <path>`: source blueprint JSON. Relative paths are resolved against `$MYSTERY_CONFIG_ROOT/blueprints/` first; if the file is not found there the path is used as-is (relative to cwd). Absolute paths are used directly.
-- target selection: `--all`, `--blueprint`, `--characters "Alice,Bob"`, `--locations "Kitchen,Garden"`, or repeated `--character` / `--location` flags for a custom subset
-- `--output-dir <dir>`: where generated images are written
-- optional: `--model <id>` to override the default image model
-
-Generate all blueprint images (resolved from `$MYSTERY_CONFIG_ROOT/blueprints/`):
+### Generate images (calls OpenRouter)
 
 ```bash
 npm run generate:images -- \
@@ -381,58 +160,111 @@ npm run generate:images -- \
   --all
 ```
 
-Generate selected targets only:
+Key flags:
 
-```bash
-npm run generate:images -- \
-  --blueprint-path spring-treats-6yo.json \
-  --model openai/gpt-image-1 \
-  --character "Alice" \
-  --location "Kitchen"
-```
+| Flag | Purpose |
+|------|---------|
+| `--all` | All targets |
+| `--blueprint` | Blueprint-level image only |
+| `--characters "A,B"` / `--character "A"` | Character subset |
+| `--locations "X,Y"` / `--location "X"` | Location subset |
+| `--output-dir <dir>` | Override output directory |
+| `--dry-mode` | Print prompts without calling API |
 
-Dry mode prints prompts and request payloads without calling OpenRouter or writing files:
+`--blueprint-path` resolves from `$MYSTERY_CONFIG_ROOT/blueprints/` first, then
+falls back to the literal path. `--output-dir` defaults to
+`$MYSTERY_CONFIG_ROOT/blueprint-images/` (or `blueprint-images/`).
+
+### Export image chat packets (no API key needed)
 
 ```bash
 npm run generate:images -- \
   --blueprint-path spring-treats-6yo.json \
   --all \
-  --dry-mode
+  --chat-packets
 ```
 
-`--output-dir` defaults to `$MYSTERY_CONFIG_ROOT/blueprint-images/` when set, otherwise `blueprint-images/` under the repo root. Pass `--output-dir <path>` to override.
+Writes Markdown prompt files instead of calling OpenRouter. Output defaults to
+`$MYSTERY_CONFIG_ROOT/chat-gen-prompts/images/`. Cannot combine with
+`--dry-mode` or `--dry-run`.
+
+## Supabase Operations
+
+For full details see [`docs/local-infrastructure.md`](docs/local-infrastructure.md).
+
+### Worktrees: use `npm run` scripts
+
+In a git worktree, always use `npm run supabase:*` scripts instead of raw
+`npx supabase` commands. The scripts patch `supabase/config.toml` with the
+worktree's project_id and ports. If you must run a raw command, patch first:
+
+```bash
+npm run supabase:patch
+```
+
+### When to restart vs reseed
+
+| Scenario | Command |
+|----------|---------|
+| Changed Edge Functions or `_shared/` code | `npm run supabase:restart` |
+| Containers unhealthy/stuck | `npm run supabase:restart` |
+| New worktree needs full state | `npm run seed:all` |
+| Database reset | `npm run supabase:reset` then `npm run seed:all` |
+| Switch AI profile or edited `.env.ai.*.local` | `npm run seed:ai -- --only <mock\|free\|paid>` |
+
+### Other commands
+
+```bash
+npx supabase status          # check status
+npm run supabase:gc           # clean up stale worktree stacks
+npm run supabase:reset        # reset DB (re-applies migrations)
+npm run seed:storage          # reseed blueprint storage only
+npm run seed:auth             # reseed auth users only
+npm run seed:ai               # reseed all AI profiles
+npm run logs:edge             # tail Edge Function logs
+```
 
 ### Stop the local stack
 
 ```bash
-npx supabase stop
+npx supabase stop             # main checkout
+# In a worktree: npm run supabase:patch && npx supabase stop
 ```
 
-In the main checkout, that command is fine as written. In a worktree, patch the
-config first so the stop targets the current isolated stack:
+### Test scripts and stale Edge Functions
+
+Test scripts (`test:integration`, `test:e2e`) call `ensureSupabaseRunning()`
+and reseed mock AI, but do **not** restart stale Edge Function code. After
+changing `supabase/functions/`, run `npm run supabase:restart` before tests.
+
+## Deploy To Dev
+
+Create `.env.deploy.dev.local` (at repo root or `$MYSTERY_CONFIG_ROOT/`) with:
+
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`
+- `AI_DEFAULT_PROFILE_ID=default`, `AI_DEFAULT_PROFILE_PROVIDER`, `AI_DEFAULT_PROFILE_MODEL`
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY` (when provider is `openrouter`)
+
+Optional bootstrap users: copy `deploy/bootstrap-users.dev.example.json` to
+`deploy/bootstrap-users.dev.local.json` and replace sample passwords.
 
 ```bash
-npm run supabase:patch
-npx supabase stop
+npm run deploy -- --env dev --preflight
 ```
 
-## Logs
-
-Tail local Edge Function logs with:
-
-```bash
-npm run logs:edge
-```
+Add `--image-dir <path>` to upload generated blueprint images during deploy.
 
 ## Testing
 
-Run the full quality gate before finishing code changes:
+Full quality gate:
 
 ```bash
 npm test
 ```
 
-Or run tiers individually:
+Individual tiers:
 
 ```bash
 npm run test:unit
@@ -441,5 +273,4 @@ npm run test:e2e
 npm -w web run test:e2e
 ```
 
-For suite ownership, dependencies, and which test level to update for a given
-change, see [`docs/testing.md`](docs/testing.md).
+See [`docs/testing.md`](docs/testing.md) for suite ownership and guidance.

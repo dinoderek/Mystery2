@@ -9,7 +9,9 @@ and sentence complexity appropriate for that reading level.
 
 Task:
 - Start a new conversation with {{character_name}} in {{location_name}}.
-- Briefly describe the character as the investigator approaches them.
+- Briefly describe the character as the investigator approaches them,
+  then have the character greet or acknowledge the investigator in their
+  own voice using direct dialogue.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
 - Keep response concise (1-3 sentences).
@@ -19,6 +21,9 @@ Task:
   A character with a self-protection agenda might be wary or overly casual.
   A character wanting to implicate someone might be eager to talk.
   A nervous character protecting someone might seem distracted.
+- Use a mix of brief scene-setting narration and direct first-person speech
+  from the character. Example: {{character_name}} looked up from the counter.
+  "Oh, hello there. Can I help you with something?"
 
 Return JSON:
 {
@@ -38,6 +43,17 @@ Task:
 - Use the provided character sex to choose pronouns. Never guess pronouns.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
+
+## Voice and Dialogue Style
+IMPORTANT: Write as the character speaking directly, using first-person
+dialogue. The character talks TO the investigator, not ABOUT themselves.
+
+Good: "I was in the kitchen all evening." She crossed her arms. "Ask anyone — they all saw me there."
+Bad: Mrs. Baker said that she was in the kitchen all evening and that anyone could confirm this.
+
+Use a mix of direct speech and brief action beats (gestures, expressions,
+body language) to bring the character to life. The character should feel
+like a real person the player is talking to, not a summary being read aloud.
 
 ## Character Behavior
 

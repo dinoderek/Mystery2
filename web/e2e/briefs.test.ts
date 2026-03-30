@@ -194,9 +194,20 @@ test.describe('Brief Management', () => {
   // Journey 2: Create new brief
   test('creates a new brief with required and optional fields', async ({ page }) => {
     await enableAuthBypass(page);
-    await mockBriefsList(page, []);
+
+    let savedPayload: Record<string, unknown> | null = null;
+
+    // Register all mocks upfront before any navigation
+    await page.route('**/functions/v1/briefs-list*', async (route) => {
+      const briefs = savedPayload
+        ? [{ ...BRIEF_1, title_hint: 'The Clocktower Secret' }]
+        : [];
+      await route.fulfill({ json: { briefs } });
+    });
+    await mockBriefsSave(page, (p) => { savedPayload = p; });
 
     await page.goto('/briefs');
+    await expect(page.getByTestId('briefs-empty')).toBeVisible();
 
     // Press 'n' to create
     await page.keyboard.press('n');
@@ -215,11 +226,6 @@ test.describe('Brief Management', () => {
     await tagInput.fill('hidden diary');
     await tagInput.press('Enter');
     await expect(page.getByText('hidden diary')).toBeVisible();
-
-    // Save
-    let savedPayload: Record<string, unknown> | null = null;
-    await mockBriefsSave(page, (p) => { savedPayload = p; });
-    await mockBriefsList(page, [{ ...BRIEF_1, title_hint: 'The Clocktower Secret' }]);
 
     await page.keyboard.press('Control+s');
 
@@ -255,9 +261,11 @@ test.describe('Brief Management', () => {
     // Confirm
     await page.keyboard.press('y');
 
+    // Wait for async archive to complete (confirm dialog disappears)
+    await expect(page.getByTestId('archive-confirm')).not.toBeVisible();
+
     // Verify archived
     expect(archivedId).toBe('brief-bbb');
-    await expect(page.getByTestId('archive-confirm')).not.toBeVisible();
   });
 
   // Journey 4: Validation failure on create
@@ -399,12 +407,21 @@ test.describe('Brief Management', () => {
   // Journey 10: Duplicate brief
   test('duplicates a brief with pre-populated form', async ({ page }) => {
     await enableAuthBypass(page);
-    await mockBriefsList(page, [BRIEF_1]);
+
+    let savedPayload: Record<string, unknown> | null = null;
+
+    // Register all mocks upfront before any navigation
     await mockBriefsGet(page, BRIEF_FULL);
+    await page.route('**/functions/v1/briefs-list*', async (route) => {
+      const briefs = savedPayload ? [BRIEF_1, BRIEF_2] : [BRIEF_1];
+      await route.fulfill({ json: { briefs } });
+    });
+    await mockBriefsSave(page, (p) => { savedPayload = p; });
 
     await page.goto('/briefs');
+    await expect(page.getByTestId('brief-row')).toHaveCount(1);
 
-    // Press 'd' to duplicate
+    // Press 'd' to duplicate — triggers async load then navigate
     await page.keyboard.press('d');
     await expect(page).toHaveURL(/\/briefs\/new$/);
 
@@ -414,11 +431,7 @@ test.describe('Brief Management', () => {
     // Brief text should be pre-populated
     await expect(page.getByTestId('brief-field')).toHaveValue(BRIEF_FULL.brief);
 
-    // Save should not include original id
-    let savedPayload: Record<string, unknown> | null = null;
-    await mockBriefsSave(page, (p) => { savedPayload = p; });
-    await mockBriefsList(page);
-
+    // Save
     await page.keyboard.press('Control+s');
 
     await expect(page).toHaveURL(/\/briefs$/);
@@ -433,6 +446,8 @@ test.describe('Brief Management', () => {
     await mockSessionCatalog(page);
 
     await page.goto('/briefs');
+    // Wait for page to hydrate and render the empty state
+    await expect(page.getByTestId('briefs-empty')).toBeVisible();
     await page.keyboard.press('b');
     await expect(page).toHaveURL(/\/$/);
   });

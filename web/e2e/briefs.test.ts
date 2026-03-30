@@ -38,7 +38,6 @@ const BRIEF_3 = {
 const BRIEF_FULL = {
   ...BRIEF_1,
   time_budget: 15,
-  one_liner_hint: 'Find the missing masterpiece',
   art_style: 'watercolor noir',
   must_include: ['hidden passage', 'old diary'],
   culprits: 1,
@@ -175,6 +174,7 @@ test.describe('Brief Management', () => {
     await expect(briefField).toHaveValue('A stolen painting in a Victorian mansion with hidden passages');
     await expect(page.getByTestId('target-age-field')).toHaveValue('10');
     await expect(page.getByTestId('title-hint-field')).toHaveValue('The Vanishing Vermeer');
+    // Note: target-age is now a <select>, toHaveValue checks the selected option value
 
     // Change title
     const titleInput = page.getByTestId('title-hint-field');
@@ -215,17 +215,15 @@ test.describe('Brief Management', () => {
 
     // Fill required fields
     await page.getByTestId('brief-field').fill('A mystery at the old clocktower');
-    await page.getByTestId('target-age-field').fill('10');
+    await page.getByTestId('target-age-field').selectOption('10');
 
     // Fill optional fields
     await page.getByTestId('title-hint-field').fill('The Clocktower Secret');
     await page.getByTestId('art-style-field').fill('pixel art detective');
 
-    // Add a must-include tag
-    const tagInput = page.getByTestId('must-include-field');
-    await tagInput.fill('hidden diary');
-    await tagInput.press('Enter');
-    await expect(page.getByText('hidden diary')).toBeVisible();
+    // Add must-include items (multiline textarea)
+    const mustInclude = page.getByTestId('must-include-field');
+    await mustInclude.fill('hidden diary');
 
     await page.keyboard.press('Control+s');
 
@@ -275,15 +273,15 @@ test.describe('Brief Management', () => {
     await page.goto('/briefs/new');
 
     // Try to save with empty brief
-    await page.getByTestId('target-age-field').fill('10');
+    await page.getByTestId('target-age-field').selectOption('10');
     await page.keyboard.press('Control+s');
 
     await expect(page.getByTestId('error-brief')).toBeVisible();
     await expect(page.getByTestId('error-brief')).toContainText('required');
 
-    // Fill brief, clear target age
+    // Fill brief, reset target age to empty
     await page.getByTestId('brief-field').fill('A mystery');
-    await page.getByTestId('target-age-field').clear();
+    await page.getByTestId('target-age-field').selectOption('');
     await page.keyboard.press('Control+s');
 
     await expect(page.getByTestId('error-targetAge')).toBeVisible();
@@ -348,30 +346,19 @@ test.describe('Brief Management', () => {
     const briefField = page.getByTestId('brief-field');
     await briefField.fill('A mystery');
 
-    // Tab to target age
+    // Tab to target age (now a select dropdown)
     await page.keyboard.press('Tab');
     const targetAge = page.getByTestId('target-age-field');
     await expect(targetAge).toBeFocused();
 
-    // Fill target age
-    await targetAge.fill('10');
+    // Select target age
+    await targetAge.selectOption('10');
 
-    // Test tag input
-    const tagInput = page.getByTestId('must-include-field');
-    await tagInput.focus();
-    await tagInput.fill('hidden diary');
-    await tagInput.press('Enter');
-    await expect(page.getByText('hidden diary')).toBeVisible();
-
-    // Add another tag
-    await tagInput.fill('secret passage');
-    await tagInput.press('Enter');
-    await expect(page.getByText('secret passage')).toBeVisible();
-
-    // Backspace on empty removes last tag
-    await tagInput.press('Backspace');
-    await expect(page.getByText('secret passage')).not.toBeVisible();
-    await expect(page.getByText('hidden diary')).toBeVisible();
+    // Test must-include multiline textarea
+    const mustInclude = page.getByTestId('must-include-field');
+    await mustInclude.focus();
+    await mustInclude.fill('hidden diary\nsecret passage');
+    await expect(mustInclude).toHaveValue('hidden diary\nsecret passage');
   });
 
   // Journey 8: Dirty form guard

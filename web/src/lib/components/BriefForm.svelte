@@ -18,24 +18,46 @@
   let targetAge = $state<number | null>(init?.target_age ?? null);
   let timeBudget = $state<number | null>(init?.time_budget ?? null);
   let titleHint = $state(init?.title_hint ?? '');
-  let oneLinerHint = $state(init?.one_liner_hint ?? '');
   let artStyle = $state(init?.art_style ?? '');
-  let mustInclude = $state<string[]>(init?.must_include ? [...init.must_include] : []);
+  let mustIncludeText = $state(init?.must_include ? init.must_include.join('\n') : '');
   let culprits = $state<number | null>(init?.culprits ?? null);
   let suspects = $state<number | null>(init?.suspects ?? null);
   let witnesses = $state<number | null>(init?.witnesses ?? null);
   let locations = $state<number | null>(init?.locations ?? null);
   let redHerringTrails = $state<number | null>(init?.red_herring_trails ?? null);
-  let coverUps = $state<boolean>(init?.cover_ups ?? false);
+  let coverUps = $state<boolean | null>(init?.cover_ups ?? null);
   let eliminationComplexity = $state<string>(init?.elimination_complexity ?? '');
 
-  let tagInput = $state('');
   let errors = $state<Record<string, string>>({});
   let dirty = $state(false);
   let showExitConfirm = $state(false);
+  let focusedField = $state<string | null>(null);
 
   const isSaving = $derived(briefStore.status === 'saving');
   const isEdit = !!init?.id;
+
+  /** Descriptions shown in the bottom helper row keyed by field name. */
+  const fieldDescriptions: Record<string, string> = {
+    brief: 'The core mystery premise that drives the entire story. Be vivid and specific — this is what the AI builds the blueprint around.',
+    targetAge: 'The intended player age (6-11). Influences vocabulary, puzzle complexity, and theme intensity.',
+    timeBudget: 'Maximum number of turns the player has to solve the mystery. Lower = tighter pacing.',
+    locations: 'How many distinct places the player can visit. More locations means a larger world to explore.',
+    culprits: 'Number of guilty characters. Usually 1; use 2 for conspiracy-style mysteries.',
+    suspects: 'Number of innocent characters who look guilty. More suspects = harder elimination.',
+    witnesses: 'Characters who know something useful but are not suspects. They give flavour and clues.',
+    redHerringTrails: 'False leads woven into the story. More trails = more misdirection for the player.',
+    coverUps: 'Whether suspects have false alibis or cover stories that the player must see through.',
+    eliminationComplexity: 'How hard it is to rule out a suspect. Simple = one clue. Moderate = cross-reference 2+ clues. Complex = multi-step reasoning.',
+    artStyle: 'Visual direction for generated artwork (e.g. "watercolor noir", "pixel art detective").',
+    titleHint: 'Suggested mystery title. The generator may use it as-is or draw inspiration from it.',
+    mustInclude: 'Required story ingredients — characters, objects, themes, or constraints the blueprint must contain. One item per line.',
+  };
+
+  const fieldDescription = $derived(
+    focusedField && fieldDescriptions[focusedField]
+      ? fieldDescriptions[focusedField]
+      : 'Select a field to see its description.'
+  );
 
   // Track dirty state on any field change
   function markDirty() {
@@ -49,36 +71,44 @@
       e.brief = 'Mystery premise is required';
     }
 
-    if (targetAge == null || targetAge < 1 || !Number.isInteger(targetAge)) {
-      e.targetAge = 'Target age must be a positive integer';
+    if (targetAge == null || targetAge < 6 || targetAge > 11 || !Number.isInteger(targetAge)) {
+      e.targetAge = 'Target age must be between 6 and 11';
     }
 
-    if (timeBudget != null && (timeBudget < 1 || !Number.isInteger(timeBudget))) {
-      e.timeBudget = 'Time budget must be a positive integer';
+    if (timeBudget != null && (timeBudget < 1 || timeBudget > 100 || !Number.isInteger(timeBudget))) {
+      e.timeBudget = 'Time budget must be between 1 and 100';
     }
 
-    if (culprits != null && (culprits < 1 || !Number.isInteger(culprits))) {
-      e.culprits = 'Culprits must be a positive integer';
+    if (culprits != null && (culprits < 1 || culprits > 2 || !Number.isInteger(culprits))) {
+      e.culprits = 'Culprits must be 1 or 2';
     }
 
-    if (suspects != null && (suspects < 0 || !Number.isInteger(suspects))) {
-      e.suspects = 'Suspects must be a non-negative integer';
+    if (suspects != null && (suspects < 1 || suspects > 6 || !Number.isInteger(suspects))) {
+      e.suspects = 'Suspects must be between 1 and 6';
     }
 
-    if (witnesses != null && (witnesses < 0 || !Number.isInteger(witnesses))) {
-      e.witnesses = 'Witnesses must be a non-negative integer';
+    if (witnesses != null && (witnesses < 1 || witnesses > 6 || !Number.isInteger(witnesses))) {
+      e.witnesses = 'Witnesses must be between 1 and 6';
     }
 
-    if (locations != null && (locations < 1 || !Number.isInteger(locations))) {
-      e.locations = 'Locations must be a positive integer';
+    if (locations != null && (locations < 1 || locations > 10 || !Number.isInteger(locations))) {
+      e.locations = 'Locations must be between 1 and 10';
     }
 
-    if (redHerringTrails != null && (redHerringTrails < 0 || !Number.isInteger(redHerringTrails))) {
-      e.redHerringTrails = 'Red herring trails must be a non-negative integer';
+    if (redHerringTrails != null && (redHerringTrails < 1 || redHerringTrails > 10 || !Number.isInteger(redHerringTrails))) {
+      e.redHerringTrails = 'Red herring trails must be between 1 and 10';
     }
 
     errors = e;
     return Object.keys(e).length === 0;
+  }
+
+  /** Parse the must-include textarea into a clean string array. */
+  function parseMustInclude(): string[] {
+    return mustIncludeText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
   }
 
   function buildPayload(): Record<string, unknown> {
@@ -87,15 +117,14 @@
       target_age: targetAge,
       time_budget: timeBudget,
       title_hint: titleHint.trim() || null,
-      one_liner_hint: oneLinerHint.trim() || null,
       art_style: artStyle.trim() || null,
-      must_include: mustInclude,
+      must_include: parseMustInclude(),
       culprits,
       suspects,
       locations,
       witnesses,
       red_herring_trails: redHerringTrails,
-      cover_ups: coverUps || null,
+      cover_ups: coverUps,
       elimination_complexity: eliminationComplexity || null,
     };
 
@@ -126,9 +155,8 @@
       target_age: targetAge!,
       time_budget: timeBudget,
       title_hint: titleHint.trim() || null,
-      one_liner_hint: oneLinerHint.trim() || null,
       art_style: artStyle.trim() || null,
-      must_include: mustInclude,
+      must_include: parseMustInclude(),
       culprits,
       suspects,
       witnesses,
@@ -159,33 +187,9 @@
     await goto('/briefs');
   }
 
-  function addTag() {
-    const tag = tagInput.trim();
-    if (tag && !mustInclude.includes(tag)) {
-      mustInclude = [...mustInclude, tag];
-      markDirty();
-    }
-    tagInput = '';
-  }
-
-  function removeTag(index: number) {
-    mustInclude = mustInclude.filter((_, i) => i !== index);
-    markDirty();
-  }
-
-  function handleTagKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      addTag();
-    } else if (event.key === 'Backspace' && tagInput === '' && mustInclude.length > 0) {
-      removeTag(mustInclude.length - 1);
-    }
-  }
-
-  function parseNumberInput(value: string): number | null {
-    if (value === '') return null;
-    const n = parseInt(value, 10);
-    return Number.isFinite(n) ? n : null;
+  /** Generate integer range [min, max] as option values. */
+  function range(min: number, max: number): number[] {
+    return Array.from({ length: max - min + 1 }, (_, i) => min + i);
   }
 
   async function handleKeydown(event: KeyboardEvent) {
@@ -220,6 +224,11 @@
       handleDownload();
     }
   }
+
+  // Shared input classes for reuse
+  const selectCls = 'w-24 bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none';
+  const inputSmallCls = 'w-24 bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none';
+  const inputFullCls = 'w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none';
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -244,216 +253,179 @@
   <!-- Scrollable form -->
   <div class="flex-1 min-h-0 overflow-y-auto border border-t-muted/30 p-4 space-y-6">
 
-    <!-- Section 1: Creative Direction -->
-    <fieldset>
-      <legend class="text-t-bright text-lg font-bold border-b border-t-muted/30 pb-2 mb-4 w-full">
-        Creative Direction
-      </legend>
+    <!-- Premise (full-width multiline) -->
+    <div>
+      <label for="brief-text" class="block text-t-bright text-sm mb-1">Mystery Premise *</label>
+      <textarea
+        id="brief-text"
+        data-testid="brief-field"
+        class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 min-h-24 focus:border-t-primary focus:outline-none"
+        bind:value={brief}
+        oninput={markDirty}
+        onfocus={() => focusedField = 'brief'}
+        placeholder="Describe the mystery premise..."
+      ></textarea>
+      {#if errors.brief}<p class="text-t-error text-xs mt-1" data-testid="error-brief">{errors.brief}</p>{/if}
+    </div>
 
-      <div class="space-y-4">
-        <!-- brief (required) -->
-        <div>
-          <label for="brief-text" class="block text-t-bright text-sm mb-1">Mystery Premise *</label>
-          <textarea
-            id="brief-text"
-            data-testid="brief-field"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 min-h-24 focus:border-t-primary focus:outline-none"
-            bind:value={brief}
-            oninput={markDirty}
-            placeholder="Describe the mystery premise..."
-          ></textarea>
-          {#if errors.brief}<p class="text-t-error text-xs mt-1" data-testid="error-brief">{errors.brief}</p>{/if}
-        </div>
-
-        <!-- targetAge (required) -->
-        <div>
-          <label for="target-age" class="block text-t-bright text-sm mb-1">Target Age *</label>
-          <input
-            id="target-age"
-            data-testid="target-age-field"
-            type="number"
-            min="1"
-            class="w-24 bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            value={targetAge ?? ''}
-            oninput={(e) => { targetAge = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-          />
-          {#if errors.targetAge}<p class="text-t-error text-xs mt-1" data-testid="error-targetAge">{errors.targetAge}</p>{/if}
-        </div>
-
-        <!-- titleHint -->
-        <div>
-          <label for="title-hint" class="block text-t-bright text-sm mb-1">Title Hint</label>
-          <input
-            id="title-hint"
-            data-testid="title-hint-field"
-            type="text"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            bind:value={titleHint}
-            oninput={markDirty}
-            placeholder="Suggested mystery title"
-          />
-        </div>
-
-        <!-- oneLinerHint -->
-        <div>
-          <label for="one-liner" class="block text-t-bright text-sm mb-1">One-Liner Summary</label>
-          <input
-            id="one-liner"
-            data-testid="one-liner-field"
-            type="text"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            bind:value={oneLinerHint}
-            oninput={markDirty}
-            placeholder="Short player-facing summary"
-          />
-        </div>
-
-        <!-- artStyle -->
-        <div>
-          <label for="art-style" class="block text-t-bright text-sm mb-1">Art Style</label>
-          <input
-            id="art-style"
-            data-testid="art-style-field"
-            type="text"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            bind:value={artStyle}
-            oninput={markDirty}
-            placeholder="Visual direction (e.g., 'watercolor noir')"
-          />
-        </div>
-
-        <!-- mustInclude (tag input) -->
-        <div>
-          <label for="must-include-input" class="block text-t-bright text-sm mb-1">Must Include</label>
-          <div class="flex flex-wrap gap-2 mb-2">
-            {#each mustInclude as tag, i}
-              <span class="inline-flex items-center gap-1 border border-t-muted/40 px-2 py-0.5 text-sm text-t-muted">
-                {tag}
-                <button
-                  type="button"
-                  class="text-t-error hover:text-t-bright text-xs"
-                  onclick={() => removeTag(i)}
-                  aria-label="Remove {tag}"
-                >x</button>
-              </span>
-            {/each}
-          </div>
-          <input
-            id="must-include-input"
-            data-testid="must-include-field"
-            type="text"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            bind:value={tagInput}
-            onkeydown={handleTagKeydown}
-            placeholder="Type and press Enter to add"
-          />
-        </div>
+    <!-- Row: Target Age + Time Budget -->
+    <div class="flex gap-6">
+      <div>
+        <label for="target-age" class="block text-t-bright text-sm mb-1">Target Age *</label>
+        <select
+          id="target-age"
+          data-testid="target-age-field"
+          class={selectCls}
+          value={targetAge ?? ''}
+          onchange={(e) => { targetAge = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+          onfocus={() => focusedField = 'targetAge'}
+        >
+          <option value="">—</option>
+          {#each range(6, 11) as age}
+            <option value={age}>{age}</option>
+          {/each}
+        </select>
+        {#if errors.targetAge}<p class="text-t-error text-xs mt-1" data-testid="error-targetAge">{errors.targetAge}</p>{/if}
       </div>
-    </fieldset>
 
-    <!-- Section 2: Structural Parameters -->
+      <div>
+        <label for="time-budget" class="block text-t-bright text-sm mb-1">Time Budget</label>
+        <input
+          id="time-budget"
+          data-testid="time-budget-field"
+          type="number"
+          min="1"
+          max="100"
+          class={inputSmallCls}
+          value={timeBudget ?? ''}
+          oninput={(e) => { timeBudget = (e.target as HTMLInputElement).value === '' ? null : parseInt((e.target as HTMLInputElement).value, 10); markDirty(); }}
+          onfocus={() => focusedField = 'timeBudget'}
+          placeholder="turns"
+        />
+        {#if errors.timeBudget}<p class="text-t-error text-xs mt-1">{errors.timeBudget}</p>{/if}
+      </div>
+    </div>
+
+    <!-- Section: Mystery Size -->
     <fieldset>
       <legend class="text-t-bright text-lg font-bold border-b border-t-muted/30 pb-2 mb-4 w-full">
-        Structural Parameters
+        Mystery Size
       </legend>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="flex flex-wrap gap-6">
         <div>
-          <label for="time-budget" class="block text-t-bright text-sm mb-1">Time Budget</label>
-          <input
-            id="time-budget"
-            data-testid="time-budget-field"
-            type="number"
-            min="1"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            value={timeBudget ?? ''}
-            oninput={(e) => { timeBudget = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-            placeholder="turns"
-          />
-          {#if errors.timeBudget}<p class="text-t-error text-xs mt-1">{errors.timeBudget}</p>{/if}
+          <label for="locations" class="block text-t-bright text-sm mb-1">Locations</label>
+          <select
+            id="locations"
+            data-testid="locations-field"
+            class={selectCls}
+            value={locations ?? ''}
+            onchange={(e) => { locations = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+            onfocus={() => focusedField = 'locations'}
+          >
+            <option value="">—</option>
+            {#each range(1, 10) as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
+          {#if errors.locations}<p class="text-t-error text-xs mt-1">{errors.locations}</p>{/if}
         </div>
 
         <div>
           <label for="culprits" class="block text-t-bright text-sm mb-1">Culprits</label>
-          <input
+          <select
             id="culprits"
             data-testid="culprits-field"
-            type="number"
-            min="1"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
+            class={selectCls}
             value={culprits ?? ''}
-            oninput={(e) => { culprits = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-            placeholder="1"
-          />
+            onchange={(e) => { culprits = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+            onfocus={() => focusedField = 'culprits'}
+          >
+            <option value="">—</option>
+            {#each range(1, 2) as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
           {#if errors.culprits}<p class="text-t-error text-xs mt-1">{errors.culprits}</p>{/if}
         </div>
 
         <div>
           <label for="suspects" class="block text-t-bright text-sm mb-1">Suspects</label>
-          <input
+          <select
             id="suspects"
             data-testid="suspects-field"
-            type="number"
-            min="0"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
+            class={selectCls}
             value={suspects ?? ''}
-            oninput={(e) => { suspects = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-          />
+            onchange={(e) => { suspects = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+            onfocus={() => focusedField = 'suspects'}
+          >
+            <option value="">—</option>
+            {#each range(1, 6) as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
           {#if errors.suspects}<p class="text-t-error text-xs mt-1">{errors.suspects}</p>{/if}
         </div>
 
         <div>
           <label for="witnesses" class="block text-t-bright text-sm mb-1">Witnesses</label>
-          <input
+          <select
             id="witnesses"
             data-testid="witnesses-field"
-            type="number"
-            min="0"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
+            class={selectCls}
             value={witnesses ?? ''}
-            oninput={(e) => { witnesses = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-          />
+            onchange={(e) => { witnesses = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+            onfocus={() => focusedField = 'witnesses'}
+          >
+            <option value="">—</option>
+            {#each range(1, 6) as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
           {#if errors.witnesses}<p class="text-t-error text-xs mt-1">{errors.witnesses}</p>{/if}
         </div>
+      </div>
+    </fieldset>
 
-        <div>
-          <label for="locations" class="block text-t-bright text-sm mb-1">Locations</label>
-          <input
-            id="locations"
-            data-testid="locations-field"
-            type="number"
-            min="1"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
-            value={locations ?? ''}
-            oninput={(e) => { locations = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-          />
-          {#if errors.locations}<p class="text-t-error text-xs mt-1">{errors.locations}</p>{/if}
-        </div>
+    <!-- Section: Complexities -->
+    <fieldset>
+      <legend class="text-t-bright text-lg font-bold border-b border-t-muted/30 pb-2 mb-4 w-full">
+        Complexities
+      </legend>
 
+      <div class="flex flex-wrap gap-6">
         <div>
           <label for="red-herrings" class="block text-t-bright text-sm mb-1">Red Herring Trails</label>
-          <input
+          <select
             id="red-herrings"
             data-testid="red-herrings-field"
-            type="number"
-            min="0"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
+            class={selectCls}
             value={redHerringTrails ?? ''}
-            oninput={(e) => { redHerringTrails = parseNumberInput((e.target as HTMLInputElement).value); markDirty(); }}
-          />
+            onchange={(e) => { redHerringTrails = (e.target as HTMLSelectElement).value === '' ? null : parseInt((e.target as HTMLSelectElement).value, 10); markDirty(); }}
+            onfocus={() => focusedField = 'redHerringTrails'}
+          >
+            <option value="">—</option>
+            {#each range(1, 10) as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
           {#if errors.redHerringTrails}<p class="text-t-error text-xs mt-1">{errors.redHerringTrails}</p>{/if}
         </div>
 
-        <div class="flex items-center gap-2">
-          <input
+        <div>
+          <label for="cover-ups" class="block text-t-bright text-sm mb-1">Cover Ups</label>
+          <select
             id="cover-ups"
             data-testid="cover-ups-field"
-            type="checkbox"
-            class="accent-[var(--t-primary)]"
-            bind:checked={coverUps}
-            onchange={markDirty}
-          />
-          <label for="cover-ups" class="text-t-bright text-sm">Cover Ups</label>
+            class={selectCls}
+            value={coverUps == null ? '' : coverUps ? 'yes' : 'no'}
+            onchange={(e) => { const v = (e.target as HTMLSelectElement).value; coverUps = v === '' ? null : v === 'yes'; markDirty(); }}
+            onfocus={() => focusedField = 'coverUps'}
+          >
+            <option value="">—</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
         </div>
 
         <div>
@@ -461,9 +433,10 @@
           <select
             id="elimination"
             data-testid="elimination-field"
-            class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 focus:border-t-primary focus:outline-none"
+            class={selectCls}
             bind:value={eliminationComplexity}
             onchange={markDirty}
+            onfocus={() => focusedField = 'eliminationComplexity'}
           >
             <option value="">—</option>
             <option value="simple">Simple</option>
@@ -474,14 +447,75 @@
       </div>
     </fieldset>
 
+    <!-- Section: Flavor -->
+    <fieldset>
+      <legend class="text-t-bright text-lg font-bold border-b border-t-muted/30 pb-2 mb-4 w-full">
+        Flavor
+      </legend>
+
+      <div class="space-y-4">
+        <div>
+          <label for="art-style" class="block text-t-bright text-sm mb-1">Art Style</label>
+          <input
+            id="art-style"
+            data-testid="art-style-field"
+            type="text"
+            class={inputFullCls}
+            bind:value={artStyle}
+            oninput={markDirty}
+            onfocus={() => focusedField = 'artStyle'}
+            placeholder="Visual direction (e.g., 'watercolor noir')"
+          />
+        </div>
+
+        <div>
+          <label for="title-hint" class="block text-t-bright text-sm mb-1">Title Hint</label>
+          <input
+            id="title-hint"
+            data-testid="title-hint-field"
+            type="text"
+            class={inputFullCls}
+            bind:value={titleHint}
+            oninput={markDirty}
+            onfocus={() => focusedField = 'titleHint'}
+            placeholder="Suggested mystery title"
+          />
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Section: Must Include -->
+    <fieldset>
+      <legend class="text-t-bright text-lg font-bold border-b border-t-muted/30 pb-2 mb-4 w-full">
+        Must Include
+      </legend>
+
+      <div>
+        <textarea
+          id="must-include-input"
+          data-testid="must-include-field"
+          class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 min-h-24 focus:border-t-primary focus:outline-none"
+          bind:value={mustIncludeText}
+          oninput={markDirty}
+          onfocus={() => focusedField = 'mustInclude'}
+          placeholder="One item per line&#10;e.g.&#10;hidden passage&#10;old diary&#10;a talking parrot"
+        ></textarea>
+      </div>
+    </fieldset>
+
     <!-- Save error -->
     {#if briefStore.error}
       <p class="text-t-error text-sm" data-testid="save-error">{briefStore.error}</p>
     {/if}
   </div>
 
+  <!-- Field description helper -->
+  <div class="mt-2 px-2 py-1 text-t-muted/70 text-xs border border-t-muted/20 min-h-[1.75rem]">
+    {fieldDescription}
+  </div>
+
   <!-- Footer with actions -->
-  <div class="mt-4 flex items-center justify-between">
+  <div class="mt-2 flex items-center justify-between">
     <div class="text-t-muted/60 text-xs space-x-2">
       <span>[Ctrl+S] Save</span>
       <span>[Ctrl+Shift+D] Download</span>

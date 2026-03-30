@@ -5,7 +5,6 @@ export const StoryBriefSchema = z.object({
   targetAge: z.number().int().positive(),
   timeBudget: z.number().int().positive().optional(),
   titleHint: z.string().trim().min(1).optional(),
-  oneLinerHint: z.string().trim().min(1).optional(),
   artStyle: z.string().trim().min(1).optional(),
   mustInclude: z.array(z.string().trim().min(1)).optional(),
   culprits: z.number().int().positive().optional().describe("Number of culprits. Default: 1."),

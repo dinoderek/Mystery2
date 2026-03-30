@@ -23,7 +23,6 @@ to guide the output:
 - `targetAge`: the target reading level and age-appropriateness anchor
 - `timeBudget`: optional challenge anchor for `metadata.time_budget`
 - `titleHint`: optional guidance for `metadata.title`
-- `oneLinerHint`: optional guidance for `metadata.one_liner`
 - `artStyle`: optional seed hint for `metadata.visual_direction`
 - `mustInclude`: optional required ingredients or constraints
 - `culprits`: optional number of culprits (default: 1)

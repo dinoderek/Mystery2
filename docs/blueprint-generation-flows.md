@@ -84,7 +84,6 @@ the model.
 | `targetAge`    | `number`   | Yes      | Reading level / tone target for generated content.            |
 | `timeBudget`   | `number`   | No       | Hint for the blueprint's turn budget.                         |
 | `titleHint`    | `string`   | No       | Suggested mystery title.                                      |
-| `oneLinerHint` | `string`   | No       | Suggested player-facing one-line summary.                     |
 | `artStyle`     | `string`   | No       | Suggested visual direction for later static image generation. |
 | `mustInclude`  | `string[]` | No       | Required story ingredients or constraints.                    |
 | `culprits`     | `number`   | No       | Number of culprits (default: 1).                              |
@@ -107,7 +106,6 @@ message with this structure:
     "targetAge": 8,
     "timeBudget": 10,
     "titleHint": "optional string",
-    "oneLinerHint": "optional string",
     "artStyle": "optional string",
     "mustInclude": ["optional", "string", "array"]
   },

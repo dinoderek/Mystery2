@@ -454,7 +454,7 @@ catch hallucinated IDs.
 ### Story Brief Configuration Knobs
 
 The story brief already has fields like `brief`, `targetAge`, `timeBudget`,
-`titleHint`, `oneLinerHint`, `artStyle`, and `mustInclude`. Add new optional
+`titleHint`, `artStyle`, and `mustInclude`. Add new optional
 fields to control mystery complexity:
 
 ```typescript

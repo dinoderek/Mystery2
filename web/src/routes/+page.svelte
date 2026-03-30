@@ -45,6 +45,11 @@
 
       if (key === '3' && hasCompleted) {
         await goto('/sessions/completed');
+        return;
+      }
+
+      if (key === '4') {
+        await goto('/briefs');
       }
 
       return;
@@ -114,6 +119,7 @@
             3. View completed games
             <span class="text-xs text-t-muted/80">({gameSessionStore.sessionCatalog.counts.completed})</span>
           </p>
+          <p class="text-t-bright">4. Manage briefs</p>
         </div>
 
         {#if gameSessionStore.sessionCatalogStatus === 'loading'}
@@ -165,7 +171,7 @@
     <!-- Fixed footer -->
     <div class="mt-4 text-center text-t-muted/60 animate-pulse">
       {#if view === 'menu'}
-        [ PRESS 1, 2, OR 3 ]
+        [ PRESS 1, 2, 3, OR 4 ]
       {:else}
         [ PRESS NUMBER TO START OR B TO GO BACK ]
       {/if}

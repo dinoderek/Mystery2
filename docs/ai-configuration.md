@@ -57,9 +57,14 @@ This document is the canonical source for:
   - when `MYSTERY_CONFIG_ROOT` is set, those local-only files resolve from that directory
   - it uses `AI_OPENROUTER_TIMEOUT_MS` for request/download timeout control (default `120000`)
 - `--chat-packets` writes one markdown packet per selected target into `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/images` by default
+- `--chat-packets-combined` writes all targets into a single combined markdown file (useful for working through all images in one ChatGPT/Gemini session)
 - chat-packet mode never calls OpenRouter and never patches blueprint image IDs
+- packets include a "Copy-Paste Prompt" section (unfenced) for easy selection in web UIs, plus "Save Instructions" with the expected filename and follow-up `--import-images` command
 - `--model` is ignored completely in chat mode so packets stay model-agnostic
 - `--dry-run` and `--dry-mode` are invalid in chat-packet mode because the packet itself is now the no-network export format
+- `--import-images` scans a directory for `.png` files matching the expected naming convention, patches the blueprint with matched image IDs
+- `--import-dir <dir>` overrides the directory to scan (default: `{MYSTERY_CONFIG_ROOT}/blueprint-images`)
+- `--import-images` cannot be combined with `--chat-packets`, `--dry-run`, or `--dry-mode`
 
 ## Local Configuration Summary
 

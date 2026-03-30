@@ -125,16 +125,27 @@ ${uploadInstructions}
 ${JSON.stringify(referenceManifest, null, 2)}
 \`\`\`
 
-## Prompt
+## Copy-Paste Prompt
+
+${prompt.trim()}
+
+## Prompt (fenced)
 
 \`\`\`text
 ${prompt.trim()}
 \`\`\`
+
+## Save Instructions
+
+Save the generated image as \`${recommendedImageFilename}\` in your blueprint-images directory.
+Then run: \`npm run generate:images -- --blueprint-path <your-blueprint> --import-images\`
+to automatically patch the blueprint with matched image IDs.
 
 ## Notes
 
 - This is a chat packet only; it does not call the image API.
 - The reference manifest is descriptive. You must choose and upload the actual files manually.
 - Reuse the listed upload order so the prompt legend stays aligned with the attached images.
+- The "Copy-Paste Prompt" section above is unfenced for easy selection in web UIs.
 `;
 }

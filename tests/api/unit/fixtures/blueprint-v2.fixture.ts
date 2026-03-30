@@ -7,6 +7,13 @@ export const validBlueprintV2 = {
     target_age: 8,
     time_budget: 12,
     art_style: "storybook illustration, warm kitchen lighting",
+    visual_direction: {
+      art_style: "soft gouache illustration with visible brushwork",
+      color_palette: "warm kitchen tones — butter yellow, terracotta, cream, sage green",
+      mood: "cozy and inviting with a hint of mischief",
+      lighting: "warm morning sunlight streaming through a large kitchen window, soft shadows",
+      texture: "matte paper with subtle grain",
+    },
   },
   narrative: {
     premise: "The cookie plate is empty and snack time is almost here.",

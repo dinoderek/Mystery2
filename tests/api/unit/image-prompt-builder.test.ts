@@ -6,6 +6,14 @@ import {
   createImageId,
 } from "../../../scripts/lib/image-prompt-builder.mjs";
 
+const visualDirection = {
+  art_style: "soft gouache illustration with visible brushwork",
+  color_palette: "warm kitchen tones — butter yellow, terracotta, cream",
+  mood: "cozy and inviting with a hint of mischief",
+  lighting: "warm morning sunlight through a large window, soft shadows",
+  texture: "matte paper with subtle grain",
+};
+
 const blueprint = {
   schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
@@ -15,6 +23,7 @@ const blueprint = {
     target_age: 8,
     time_budget: 10,
     art_style: "storybook watercolor",
+    visual_direction: visualDirection,
   },
   narrative: {
     premise: "Someone stole the cookies.",
@@ -82,7 +91,11 @@ describe("image prompt builder", () => {
       targetKey: null,
     });
     expect(coverPrompt).toContain("Target: Mystery cover image");
-    expect(coverPrompt).toContain("storybook watercolor");
+    expect(coverPrompt).toContain("Art style: soft gouache");
+    expect(coverPrompt).toContain("Color palette: warm kitchen tones");
+    expect(coverPrompt).toContain("Mood: cozy and inviting");
+    expect(coverPrompt).toContain("Lighting: warm morning sunlight");
+    expect(coverPrompt).toContain("Texture: matte paper");
     expect(coverPrompt).toContain("aged 8");
     expect(coverPrompt).toContain("Creative direction:");
     expect(coverPrompt).toContain("mysterious kitchen with cookie crumbs");
@@ -137,6 +150,52 @@ describe("image prompt builder", () => {
   it("buildReferenceLegend returns empty string for no references", () => {
     expect(buildReferenceLegend([])).toBe("");
     expect(buildReferenceLegend(undefined)).toBe("");
+  });
+
+  it("falls back to legacy art_style when visual_direction is absent", () => {
+    const legacyBlueprint = {
+      ...blueprint,
+      metadata: { ...blueprint.metadata, visual_direction: undefined },
+    };
+    const prompt = buildImagePrompt(legacyBlueprint, {
+      targetType: "blueprint",
+      targetKey: null,
+    });
+    expect(prompt).toContain("Style: storybook watercolor");
+    expect(prompt).not.toContain("Art style:");
+    expect(prompt).not.toContain("Color palette:");
+  });
+
+  it("falls back to default style when both visual_direction and art_style are absent", () => {
+    const bareBlueprint = {
+      ...blueprint,
+      metadata: {
+        ...blueprint.metadata,
+        visual_direction: undefined,
+        art_style: undefined,
+      },
+    };
+    const prompt = buildImagePrompt(bareBlueprint, {
+      targetType: "blueprint",
+      targetKey: null,
+    });
+    expect(prompt).toContain("Style: storybook illustration, warm lighting, playful detective mood");
+  });
+
+  it("omits texture line when texture is not provided", () => {
+    const noTextureBlueprint = {
+      ...blueprint,
+      metadata: {
+        ...blueprint.metadata,
+        visual_direction: { ...visualDirection, texture: undefined },
+      },
+    };
+    const prompt = buildImagePrompt(noTextureBlueprint, {
+      targetType: "blueprint",
+      targetKey: null,
+    });
+    expect(prompt).toContain("Art style:");
+    expect(prompt).not.toContain("Texture:");
   });
 
   it("creates deterministic slugged image ids with blueprint prefix", () => {

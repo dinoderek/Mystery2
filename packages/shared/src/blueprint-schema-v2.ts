@@ -350,7 +350,50 @@ export const BlueprintV2Schema = z
         .min(1)
         .optional()
         .describe(
-          "Optional visual direction used when generating static artwork for this mystery.",
+          "Legacy visual direction string. Prefer visual_direction when available.",
+        ),
+      visual_direction: z
+        .object({
+          art_style: z
+            .string()
+            .trim()
+            .min(1)
+            .describe(
+              "Core rendering technique or medium (e.g. 'soft watercolor with wet-on-wet bleeds', 'gouache illustration', 'cel-shaded cartoon').",
+            ),
+          color_palette: z
+            .string()
+            .trim()
+            .min(1)
+            .describe(
+              "3-5 dominant colors and their emotional register (e.g. 'warm autumnal — amber, rust, cream, olive').",
+            ),
+          mood: z
+            .string()
+            .trim()
+            .min(1)
+            .describe(
+              "Emotional atmosphere in 1-2 phrases (e.g. 'cozy and whimsical with an undercurrent of suspense').",
+            ),
+          lighting: z
+            .string()
+            .trim()
+            .min(1)
+            .describe(
+              "Primary light source and quality (e.g. 'golden hour side-lighting with long warm shadows').",
+            ),
+          texture: z
+            .string()
+            .trim()
+            .min(1)
+            .optional()
+            .describe(
+              "Surface or material quality (e.g. 'visible paper grain', 'smooth digital', 'chalky matte finish').",
+            ),
+        })
+        .optional()
+        .describe(
+          "Structured visual direction for image generation. When present, takes precedence over art_style.",
         ),
       image_id: z
         .string()

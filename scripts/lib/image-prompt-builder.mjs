@@ -14,6 +14,25 @@ export function createImageId(blueprintName, targetType, targetKey = null) {
 }
 
 function styleBlock(blueprint) {
+  const vd = blueprint?.metadata?.visual_direction;
+  if (vd) {
+    const lines = [
+      `Art style: ${vd.art_style}`,
+      `Color palette: ${vd.color_palette}`,
+      `Mood: ${vd.mood}`,
+      `Lighting: ${vd.lighting}`,
+    ];
+    if (vd.texture) lines.push(`Texture: ${vd.texture}`);
+    const age = blueprint?.metadata?.target_age;
+    if (age) {
+      lines.push(
+        `Audience: children aged ${age}. Visual complexity should be age-appropriate.`,
+      );
+    }
+    return lines.join("\n");
+  }
+
+  // Legacy fallback for blueprints without visual_direction.
   const artStyle =
     blueprint?.metadata?.art_style?.trim() ||
     "storybook illustration, warm lighting, playful detective mood";

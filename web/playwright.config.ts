@@ -74,7 +74,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: process.env.CI ? 2 : 4,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['list'], ['html']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -121,7 +121,7 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --port ${vitePort}`,
     url: viteUrl,
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     env: webServerEnv,
   },
 });

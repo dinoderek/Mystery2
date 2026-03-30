@@ -43,9 +43,9 @@ jobs:
         run: npm -w web run test:unit
 
   # ------------------------------------------------------------------
-  # Phase 2 — integration & e2e (needs local Supabase)
+  # Phase 2a — integration & API e2e (needs local Supabase)
   # ------------------------------------------------------------------
-  integration-and-e2e:
+  integration-and-api-e2e:
     runs-on: ubuntu-latest
     needs: static-and-unit
     timeout-minutes: 20
@@ -75,9 +75,7 @@ jobs:
           echo "SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
       - name: Seed storage and AI profile
-        run: |
-          npm run seed:storage
-          npm run seed:ai -- --only mock
+        run: npm run seed:storage & npm run seed:ai -- --only mock & wait
 
       - name: Integration tests
         run: npm run test:integration
@@ -85,8 +83,55 @@ jobs:
       - name: API E2E tests
         run: npm run test:e2e
 
+  # ------------------------------------------------------------------
+  # Phase 2b — browser e2e (parallel with Phase 2a)
+  # ------------------------------------------------------------------
+  browser-e2e:
+    runs-on: ubuntu-latest
+    needs: static-and-unit
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Export Supabase env vars
+        run: |
+          eval "$(supabase status -o env)"
+          echo "API_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+
+      - name: Seed storage and AI profile
+        run: npm run seed:storage & npm run seed:ai -- --only mock & wait
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('web/package-lock.json', 'web/package.json') }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Browser E2E tests
         run: npm -w web run test:e2e

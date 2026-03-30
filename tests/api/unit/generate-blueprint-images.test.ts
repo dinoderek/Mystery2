@@ -740,6 +740,121 @@ describe("runImageGeneration", () => {
   });
 });
 
+describe("import images", () => {
+  it("parses --import-images flag", () => {
+    const parsed = parseGenerateImageArgs([
+      "--blueprint-path",
+      "/tmp/mock.json",
+      "--import-images",
+    ], {
+      MYSTERY_CONFIG_ROOT: "/tmp/shared-config",
+    });
+
+    expect(parsed.importImages).toBe(true);
+    expect(parsed.importDir).toBe("/tmp/shared-config/blueprint-images");
+  });
+
+  it("parses --import-images with explicit --import-dir", () => {
+    const parsed = parseGenerateImageArgs([
+      "--blueprint-path",
+      "/tmp/mock.json",
+      "--import-images",
+      "--import-dir",
+      "/tmp/my-images",
+    ]);
+
+    expect(parsed.importImages).toBe(true);
+    expect(parsed.importDir).toBe("/tmp/my-images");
+  });
+
+  it("rejects combining --import-images with --chat-packets", () => {
+    expect(() =>
+      parseGenerateImageArgs([
+        "--blueprint-path",
+        "/tmp/mock.json",
+        "--import-images",
+        "--chat-packets",
+      ]),
+    ).toThrow("Cannot combine --import-images with --chat-packets");
+  });
+
+  it("rejects combining --import-images with --dry-run", () => {
+    expect(() =>
+      parseGenerateImageArgs([
+        "--blueprint-path",
+        "/tmp/mock.json",
+        "--import-images",
+        "--dry-run",
+      ]),
+    ).toThrow("Cannot combine --import-images with --dry-run");
+  });
+
+  it("matches images by filename and patches the blueprint", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "import-images-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const imagesDir = path.join(tmpDir, "images");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+    await mkdir(imagesDir, { recursive: true });
+
+    // Create a matching image file for the character portrait
+    await writeFile(
+      path.join(imagesDir, "mock-blueprint.character-char-alice.png"),
+      "fake-png-data",
+      "utf-8",
+    );
+
+    const result = await runImageGeneration({
+      blueprintPath,
+      outputDir: imagesDir,
+      importImages: true,
+      importDir: imagesDir,
+      model: "",
+      scope: "all",
+      dryRun: false,
+      characterKeys: [],
+      locationKeys: [],
+    });
+
+    expect(result.blueprint_id).toBe(blueprintFixture.id);
+
+    const matched = result.results.filter((r: { status: string }) => r.status === "generated");
+    const missing = result.results.filter((r: { status: string }) => r.status === "skipped");
+
+    expect(matched).toHaveLength(1);
+    expect(matched[0].target_key).toBe("char-alice");
+    expect(matched[0].image_id).toBe("mock-blueprint.character-char-alice.png");
+    expect(missing).toHaveLength(2);
+
+    // Verify blueprint was patched
+    const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
+    expect(patched.world.characters[0].portrait_image_id).toBe(
+      "mock-blueprint.character-char-alice.png",
+    );
+  });
+
+  it("reports all missing when import directory does not exist", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "import-images-missing-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const result = await runImageGeneration({
+      blueprintPath,
+      outputDir: "/tmp/nonexistent-dir-12345",
+      importImages: true,
+      importDir: "/tmp/nonexistent-dir-12345",
+      model: "",
+      scope: "all",
+      dryRun: false,
+      characterKeys: [],
+      locationKeys: [],
+    });
+
+    expect(result.results.every((r: { status: string }) => r.status === "failed")).toBe(true);
+  });
+});
+
 describe("image chat packets", () => {
   it("builds a packet with ordered reference instructions", () => {
     const locationPacket = buildImageChatPacket({
@@ -751,7 +866,8 @@ describe("image chat packets", () => {
     expect(locationPacket).toContain("## Upload Checklist");
     expect(locationPacket).toContain("1. Portrait of Alice Smith (Red hair)");
     expect(locationPacket).toContain("\"kind\": \"character_portrait\"");
-    expect(locationPacket).toContain("## Prompt");
+    expect(locationPacket).toContain("## Copy-Paste Prompt");
+    expect(locationPacket).toContain("## Prompt (fenced)");
     expect(locationPacket).toContain("Reference images (attached below in order):");
 
     const portraitPacket = buildImageChatPacket({
@@ -760,6 +876,73 @@ describe("image chat packets", () => {
     });
 
     expect(portraitPacket).toContain("No reference uploads are required");
+  });
+
+  it("includes save instructions with recommended filename", () => {
+    const packet = buildImageChatPacket({
+      blueprint: blueprintFixture,
+      target: { targetType: "character", targetKey: "char-alice" },
+    });
+
+    expect(packet).toContain("## Save Instructions");
+    expect(packet).toContain("mock-blueprint.character-char-alice.png");
+    expect(packet).toContain("--import-images");
+  });
+
+  it("parses --chat-packets-combined flag", () => {
+    const parsed = parseGenerateImageArgs(
+      [
+        "--chat-packets-combined",
+        "--blueprint-path",
+        "/tmp/mock.json",
+      ],
+      {
+        MYSTERY_CONFIG_ROOT: "/tmp/shared-config",
+      },
+    );
+
+    expect(parsed.chatPackets).toBe(true);
+    expect(parsed.chatPacketsCombined).toBe(true);
+  });
+
+  it("writes a single combined file with --chat-packets-combined", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "gen-images-combined-"));
+    const blueprintPath = path.join(tmpDir, "blueprint.json");
+    const outputDir = path.join(tmpDir, "chat-packets");
+
+    await writeFile(blueprintPath, JSON.stringify(blueprintFixture, null, 2), "utf-8");
+
+    const result = await runImageGeneration(
+      {
+        blueprintPath,
+        outputDir,
+        model: "openai/gpt-image-1",
+        scope: "all",
+        chatPackets: true,
+        chatPacketsCombined: true,
+        dryRun: false,
+        dryMode: false,
+        characterKeys: [],
+        locationKeys: [],
+      },
+      { fetchImpl: vi.fn() },
+    );
+
+    expect(result.results).toHaveLength(3);
+    expect(
+      result.results.every((entry: { output_kind?: string }) => entry.output_kind === "chat_packet"),
+    ).toBe(true);
+
+    // All results point to the same combined file
+    const filePaths = new Set(result.results.map((r: { file_path: string }) => r.file_path));
+    expect(filePaths.size).toBe(1);
+
+    const combinedPath = result.results[0].file_path;
+    const combinedContent = await readFile(combinedPath, "utf-8");
+    expect(combinedContent).toContain("Blueprint cover image");
+    expect(combinedContent).toContain("Character portrait");
+    expect(combinedContent).toContain("Location scene");
+    expect(combinedContent).toContain("---");
   });
 
   it("writes one chat packet per selected target without calling fetch or patching blueprint", async () => {

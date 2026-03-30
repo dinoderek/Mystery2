@@ -88,6 +88,9 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
     chatPackets: false,
+    chatPacketsCombined: false,
+    importImages: false,
+    importDir: "",
     outputDir: "",
     model: env.OPENROUTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
     dryRun: false,
@@ -107,6 +110,20 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     }
     if (token === "--chat-packets") {
       options.chatPackets = true;
+      continue;
+    }
+    if (token === "--chat-packets-combined") {
+      options.chatPackets = true;
+      options.chatPacketsCombined = true;
+      continue;
+    }
+    if (token === "--import-images") {
+      options.importImages = true;
+      continue;
+    }
+    if (token === "--import-dir") {
+      options.importDir = String(argv[index + 1] ?? "");
+      index += 1;
       continue;
     }
     if (token === "--dry-mode") {
@@ -166,6 +183,9 @@ export function parseGenerateImageArgs(argv, env = process.env) {
     throw new Error(`Unknown option: ${token}`);
   }
 
+  if (options.importImages && !options.importDir) {
+    options.importDir = getBlueprintImagesDir(undefined, env);
+  }
   if (!options.outputDir) {
     options.outputDir = options.chatPackets
       ? path.join(getChatGenPromptsDir(undefined, env), "images")
@@ -174,7 +194,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   if (!options.outputDir) {
     throw new Error("Missing required --output-dir");
   }
-  if (!options.chatPackets && !options.model) {
+  if (!options.importImages && !options.chatPackets && !options.model) {
     throw new Error("Missing required --model");
   }
   if (options.chatPackets && options.dryMode) {
@@ -182,6 +202,15 @@ export function parseGenerateImageArgs(argv, env = process.env) {
   }
   if (options.chatPackets && options.dryRun) {
     throw new Error("Cannot combine --chat-packets with --dry-run");
+  }
+  if (options.importImages && options.chatPackets) {
+    throw new Error("Cannot combine --import-images with --chat-packets");
+  }
+  if (options.importImages && options.dryRun) {
+    throw new Error("Cannot combine --import-images with --dry-run");
+  }
+  if (options.importImages && options.dryMode) {
+    throw new Error("Cannot combine --import-images with --dry-mode");
   }
 
   if (options.scope === null) {
@@ -578,6 +607,89 @@ async function generateSingleTarget({
   }
 }
 
+async function importGeneratedImages({
+  blueprint,
+  blueprintName,
+  options,
+}) {
+  const targets = resolveImageTargets(blueprint, {
+    scope: options.scope,
+    characterKeys: options.characterKeys,
+    locationKeys: options.locationKeys,
+  });
+
+  const importDir = options.importDir || options.outputDir;
+  console.log(
+    `Importing images for "${blueprintName}" from ${importDir} — ${targets.length} target(s)`,
+  );
+
+  let entries;
+  try {
+    entries = await fs.readdir(importDir);
+  } catch {
+    console.error(`[error] Import directory not found: ${importDir}`);
+    return {
+      blueprint_id: blueprint.id,
+      results: targets.map((target) => ({
+        target_type: target.targetType,
+        target_key: target.targetKey,
+        status: "failed",
+        image_id: null,
+        file_path: null,
+        error_message: `Import directory not found: ${importDir}`,
+      })),
+    };
+  }
+
+  const pngFiles = new Set(entries.filter((file) => file.endsWith(".png")));
+  const results = [];
+
+  for (const target of targets) {
+    const baseImageId = createImageId(blueprintName, target.targetType, target.targetKey);
+    const expectedFilename = `${baseImageId}.png`;
+    const label = formatImageTargetLabel(target);
+
+    if (pngFiles.has(expectedFilename)) {
+      const filePath = path.join(importDir, expectedFilename);
+      console.log(`[matched] ${label} — ${filePath}`);
+      results.push({
+        target_type: target.targetType,
+        target_key: target.targetKey,
+        status: "generated",
+        image_id: expectedFilename,
+        file_path: filePath,
+        error_message: null,
+      });
+    } else {
+      console.log(`[missing] ${label} — expected ${expectedFilename}`);
+      results.push({
+        target_type: target.targetType,
+        target_key: target.targetKey,
+        status: "skipped",
+        image_id: null,
+        file_path: null,
+        error_message: `File not found: ${expectedFilename}`,
+      });
+    }
+  }
+
+  const matched = results.filter((r) => r.status === "generated");
+  const missing = results.filter((r) => r.status !== "generated");
+  console.log(
+    `[summary] ${matched.length} matched, ${missing.length} missing`,
+  );
+
+  if (matched.length > 0) {
+    await patchBlueprintFile(options.blueprintPath, results);
+    console.log(`[patched] Blueprint updated with ${matched.length} image ID(s)`);
+  }
+
+  return {
+    blueprint_id: blueprint.id,
+    results,
+  };
+}
+
 function buildChatPacketPath(outputDir, blueprintName, target) {
   const packetBaseName = createImageId(
     blueprintName,
@@ -598,30 +710,50 @@ async function exportImageChatPackets({
     locationKeys: options.locationKeys,
   });
 
+  const mode = options.chatPacketsCombined ? "combined" : "individual";
   console.log(
-    `Generating chat image packets for "${blueprintName}" - ${targets.length} target(s)`,
+    `Generating chat image packets for "${blueprintName}" - ${targets.length} target(s) (${mode})`,
   );
 
   await fs.mkdir(options.outputDir, { recursive: true });
 
   const results = [];
+  const combinedSections = [];
+
   for (const target of targets) {
     const packetText = buildImageChatPacket({
       blueprint,
       target,
     });
-    const outputPath = buildChatPacketPath(options.outputDir, blueprintName, target);
-    await fs.writeFile(outputPath, packetText, "utf-8");
-    console.log(`[chat-packet] ${formatImageTargetLabel(target)} - ${outputPath}`);
+
+    if (options.chatPacketsCombined) {
+      combinedSections.push(packetText);
+    } else {
+      const outputPath = buildChatPacketPath(options.outputDir, blueprintName, target);
+      await fs.writeFile(outputPath, packetText, "utf-8");
+      console.log(`[chat-packet] ${formatImageTargetLabel(target)} - ${outputPath}`);
+    }
+
     results.push({
       target_type: target.targetType,
       target_key: target.targetKey,
       status: "generated",
       image_id: null,
-      file_path: outputPath,
+      file_path: options.chatPacketsCombined ? null : buildChatPacketPath(options.outputDir, blueprintName, target),
       error_message: null,
       output_kind: "chat_packet",
     });
+  }
+
+  if (options.chatPacketsCombined && combinedSections.length > 0) {
+    const combinedName = createImageId(blueprintName, "all-targets");
+    const combinedPath = path.join(options.outputDir, `${combinedName}.chat.md`);
+    const combinedContent = combinedSections.join("\n---\n\n");
+    await fs.writeFile(combinedPath, combinedContent, "utf-8");
+    console.log(`[chat-packet-combined] ${targets.length} target(s) — ${combinedPath}`);
+    for (const result of results) {
+      result.file_path = combinedPath;
+    }
   }
 
   return {
@@ -663,6 +795,14 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   });
 
   const blueprintName = blueprint.metadata?.title ?? blueprint.id;
+
+  if (options.importImages) {
+    return importGeneratedImages({
+      blueprint,
+      blueprintName,
+      options,
+    });
+  }
 
   if (options.chatPackets) {
     return exportImageChatPackets({

@@ -12,6 +12,9 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Services not needed by the test suite.  Excluding them avoids pulling
+  # their Docker images and cuts ~30-40s off `supabase start`.
+  SUPABASE_EXCLUDE: studio,imgproxy,logflare,vector,postgres-meta,mailpit,supavisor,realtime
 
 jobs:
   # ------------------------------------------------------------------
@@ -60,36 +63,23 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Cache Supabase Docker images
-        uses: actions/cache@v4
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+      # Start Supabase in the background so npm ci runs in parallel.
+      - name: Start Supabase (background)
+        run: supabase start -x "$SUPABASE_EXCLUDE" &
 
-      - name: Load cached Docker images
+      - run: npm ci
+
+      - name: Wait for Supabase
         run: |
-          if [ -d /tmp/supabase-docker ]; then
-            for img in /tmp/supabase-docker/*.tar; do
-              docker load -i "$img" 2>/dev/null || true
+          timeout 180 bash -c '
+            until curl -sf http://127.0.0.1:54331/rest/v1/ > /dev/null 2>&1; do
+              sleep 2
             done
-          fi
-
-      - name: Start Supabase
-        run: supabase start
-
-      - name: Save Docker images to cache
-        run: |
-          mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgrest|gotrue|realtime|storage|kong|imgproxy|postgres' | while read -r img; do
-            fname=$(echo "$img" | tr '/:' '_')
-            [ -f "/tmp/supabase-docker/${fname}.tar" ] || docker save -o "/tmp/supabase-docker/${fname}.tar" "$img"
-          done
+          '
 
       - name: Export Supabase env vars
         run: |
@@ -123,47 +113,16 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Cache Supabase Docker images
-        uses: actions/cache@v4
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+      # Start Supabase in the background so npm ci + Playwright install
+      # run in parallel.
+      - name: Start Supabase (background)
+        run: supabase start -x "$SUPABASE_EXCLUDE" &
 
-      - name: Load cached Docker images
-        run: |
-          if [ -d /tmp/supabase-docker ]; then
-            for img in /tmp/supabase-docker/*.tar; do
-              docker load -i "$img" 2>/dev/null || true
-            done
-          fi
-
-      - name: Start Supabase
-        run: supabase start
-
-      - name: Save Docker images to cache
-        run: |
-          mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgrest|gotrue|realtime|storage|kong|imgproxy|postgres' | while read -r img; do
-            fname=$(echo "$img" | tr '/:' '_')
-            [ -f "/tmp/supabase-docker/${fname}.tar" ] || docker save -o "/tmp/supabase-docker/${fname}.tar" "$img"
-          done
-
-      - name: Export Supabase env vars
-        run: |
-          eval "$(supabase status -o env)"
-          echo "API_URL=$API_URL" >> "$GITHUB_ENV"
-          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
-          echo "ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
-          echo "SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-
-      - name: Seed storage and AI profile
-        run: npm run seed:storage & npm run seed:ai -- --only mock & wait
+      - run: npm ci
 
       - name: Cache Playwright browsers
         id: playwright-cache
@@ -179,6 +138,25 @@ jobs:
       - name: Install Playwright system deps (cache hit)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+
+      - name: Wait for Supabase
+        run: |
+          timeout 180 bash -c '
+            until curl -sf http://127.0.0.1:54331/rest/v1/ > /dev/null 2>&1; do
+              sleep 2
+            done
+          '
+
+      - name: Export Supabase env vars
+        run: |
+          eval "$(supabase status -o env)"
+          echo "API_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+
+      - name: Seed storage and AI profile
+        run: npm run seed:storage & npm run seed:ai -- --only mock & wait
 
       - name: Browser E2E tests
         run: npm -w web run test:e2e

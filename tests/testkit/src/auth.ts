@@ -55,7 +55,8 @@ export function createAuthenticatedClient(accessToken: string) {
 /** Delete a test user via the admin API. */
 export async function cleanupTestUser(userId: string) {
   const admin = getAdminClient();
-  // Remove owned sessions first to satisfy the game_sessions.user_id FK.
+  // Remove owned rows first to satisfy FK constraints against auth.users.
+  await admin.from("briefs").delete().eq("user_id", userId);
   await admin.from("game_sessions").delete().eq("user_id", userId);
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) {

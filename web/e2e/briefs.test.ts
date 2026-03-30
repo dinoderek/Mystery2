@@ -144,8 +144,19 @@ test.describe('Brief Management', () => {
   // Journey 1: List → Edit → Save → List updated
   test('lists briefs, edits one, saves, and reflects changes', async ({ page }) => {
     await enableAuthBypass(page);
-    await mockBriefsList(page, [BRIEF_1, BRIEF_2]);
+
+    let savedPayload: Record<string, unknown> | null = null;
+
+    // Set up all mocks upfront with dynamic responses
+    await page.route('**/functions/v1/briefs-list*', async (route) => {
+      // After save, return updated list
+      const briefs = savedPayload
+        ? [{ ...BRIEF_1, title_hint: 'The Missing Masterpiece' }, BRIEF_2]
+        : [BRIEF_1, BRIEF_2];
+      await route.fulfill({ json: { briefs } });
+    });
     await mockBriefsGet(page, BRIEF_FULL);
+    await mockBriefsSave(page, (p) => { savedPayload = p; });
 
     await page.goto('/briefs');
 
@@ -171,16 +182,6 @@ test.describe('Brief Management', () => {
     await titleInput.fill('The Missing Masterpiece');
 
     // Save with Ctrl+S
-    let savedPayload: Record<string, unknown> | null = null;
-
-    // Re-mock the save to capture payload, and re-mock list with updated data
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
-    await mockBriefsList(page, [
-      { ...BRIEF_1, title_hint: 'The Missing Masterpiece' },
-      BRIEF_2,
-    ]);
-    await mockBriefsSave(page, (p) => { savedPayload = p; });
-
     await page.keyboard.press('Control+s');
 
     // Wait for navigation back to list
@@ -238,6 +239,9 @@ test.describe('Brief Management', () => {
     await enableAuthBypass(page);
     await mockBriefsList(page, [BRIEF_1, BRIEF_2, BRIEF_3]);
 
+    let archivedId: string | null = null;
+    await mockBriefsArchive(page, (id) => { archivedId = id; });
+
     await page.goto('/briefs');
     await expect(page.getByTestId('brief-row')).toHaveCount(3);
 
@@ -247,9 +251,6 @@ test.describe('Brief Management', () => {
 
     // Confirmation prompt
     await expect(page.getByTestId('archive-confirm')).toBeVisible();
-
-    let archivedId: string | null = null;
-    await mockBriefsArchive(page, (id) => { archivedId = id; });
 
     // Confirm
     await page.keyboard.press('y');

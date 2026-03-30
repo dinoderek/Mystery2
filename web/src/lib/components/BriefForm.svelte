@@ -19,7 +19,8 @@
   let timeBudget = $state<number | null>(init?.time_budget ?? null);
   let titleHint = $state(init?.title_hint ?? '');
   let artStyle = $state(init?.art_style ?? '');
-  let mustIncludeText = $state(init?.must_include ? init.must_include.join('\n') : '');
+  let mustIncludeItems = $state<string[]>(init?.must_include ? [...init.must_include] : []);
+  let mustIncludeInput = $state('');
   let culprits = $state<number | null>(init?.culprits ?? null);
   let suspects = $state<number | null>(init?.suspects ?? null);
   let witnesses = $state<number | null>(init?.witnesses ?? null);
@@ -103,12 +104,17 @@
     return Object.keys(e).length === 0;
   }
 
-  /** Parse the must-include textarea into a clean string array. */
-  function parseMustInclude(): string[] {
-    return mustIncludeText
-      .split('\n')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+  function addMustIncludeItem() {
+    const trimmed = mustIncludeInput.trim();
+    if (trimmed.length === 0) return;
+    mustIncludeItems = [...mustIncludeItems, trimmed];
+    mustIncludeInput = '';
+    markDirty();
+  }
+
+  function removeMustIncludeItem(index: number) {
+    mustIncludeItems = mustIncludeItems.filter((_, i) => i !== index);
+    markDirty();
   }
 
   function buildPayload(): Record<string, unknown> {
@@ -118,7 +124,7 @@
       time_budget: timeBudget,
       title_hint: titleHint.trim() || null,
       art_style: artStyle.trim() || null,
-      must_include: parseMustInclude(),
+      must_include: mustIncludeItems,
       culprits,
       suspects,
       locations,
@@ -156,7 +162,7 @@
       time_budget: timeBudget,
       title_hint: titleHint.trim() || null,
       art_style: artStyle.trim() || null,
-      must_include: parseMustInclude(),
+      must_include: mustIncludeItems,
       culprits,
       suspects,
       witnesses,
@@ -490,17 +496,45 @@
         Must Include
       </legend>
 
-      <div>
-        <textarea
+      <div class="flex gap-2 mb-3">
+        <input
           id="must-include-input"
-          data-testid="must-include-field"
-          class="w-full bg-t-bg border border-t-muted/30 text-t-primary font-mono p-2 min-h-24 focus:border-t-primary focus:outline-none"
-          bind:value={mustIncludeText}
-          oninput={markDirty}
+          data-testid="must-include-input"
+          type="text"
+          class={inputFullCls}
+          bind:value={mustIncludeInput}
           onfocus={() => focusedField = 'mustInclude'}
-          placeholder="One item per line&#10;e.g.&#10;hidden passage&#10;old diary&#10;a talking parrot"
-        ></textarea>
+          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMustIncludeItem(); } }}
+          placeholder="e.g. hidden passage, old diary, a talking parrot"
+        />
+        <button
+          type="button"
+          data-testid="must-include-add"
+          class="border border-t-primary px-3 py-1 text-sm text-t-primary hover:bg-t-primary/10 whitespace-nowrap"
+          onclick={addMustIncludeItem}
+        >
+          + ADD
+        </button>
       </div>
+
+      {#if mustIncludeItems.length > 0}
+        <ul class="space-y-1" data-testid="must-include-list">
+          {#each mustIncludeItems as item, i}
+            <li class="flex items-center gap-2 text-sm">
+              <span class="text-t-muted/50">-</span>
+              <span class="flex-1">{item}</span>
+              <button
+                type="button"
+                data-testid="must-include-remove-{i}"
+                class="text-t-muted/50 hover:text-t-error text-xs px-1"
+                onclick={() => removeMustIncludeItem(i)}
+              >
+                [x]
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </fieldset>
 
     <!-- Save error -->

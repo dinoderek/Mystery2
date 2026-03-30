@@ -221,9 +221,10 @@ test.describe('Brief Management', () => {
     await page.getByTestId('title-hint-field').fill('The Clocktower Secret');
     await page.getByTestId('art-style-field').fill('pixel art detective');
 
-    // Add must-include items (multiline textarea)
-    const mustInclude = page.getByTestId('must-include-field');
-    await mustInclude.fill('hidden diary');
+    // Add must-include items
+    const mustIncludeInput = page.getByTestId('must-include-input');
+    await mustIncludeInput.fill('hidden diary');
+    await page.getByTestId('must-include-add').click();
 
     await page.keyboard.press('Control+s');
 
@@ -354,11 +355,16 @@ test.describe('Brief Management', () => {
     // Select target age
     await targetAge.selectOption('10');
 
-    // Test must-include multiline textarea
-    const mustInclude = page.getByTestId('must-include-field');
-    await mustInclude.focus();
-    await mustInclude.fill('hidden diary\nsecret passage');
-    await expect(mustInclude).toHaveValue('hidden diary\nsecret passage');
+    // Test must-include input + add button
+    const mustIncludeInput = page.getByTestId('must-include-input');
+    await mustIncludeInput.fill('hidden diary');
+    await page.getByTestId('must-include-add').click();
+    await mustIncludeInput.fill('secret passage');
+    await page.getByTestId('must-include-add').click();
+    const list = page.getByTestId('must-include-list');
+    await expect(list.locator('li')).toHaveCount(2);
+    await expect(list.locator('li').nth(0)).toContainText('hidden diary');
+    await expect(list.locator('li').nth(1)).toContainText('secret passage');
   });
 
   // Journey 8: Dirty form guard

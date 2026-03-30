@@ -10,6 +10,9 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ------------------------------------------------------------------
   # Phase 1 — static checks and unit tests (no Supabase needed)
@@ -63,8 +66,30 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Supabase Docker images
+        uses: actions/cache@v4
+        with:
+          path: /tmp/supabase-docker
+          key: supabase-docker-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+
+      - name: Load cached Docker images
+        run: |
+          if [ -d /tmp/supabase-docker ]; then
+            for img in /tmp/supabase-docker/*.tar; do
+              docker load -i "$img" 2>/dev/null || true
+            done
+          fi
+
       - name: Start Supabase
         run: supabase start
+
+      - name: Save Docker images to cache
+        run: |
+          mkdir -p /tmp/supabase-docker
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgrest|gotrue|realtime|storage|kong|imgproxy|postgres' | while read -r img; do
+            fname=$(echo "$img" | tr '/:' '_')
+            [ -f "/tmp/supabase-docker/${fname}.tar" ] || docker save -o "/tmp/supabase-docker/${fname}.tar" "$img"
+          done
 
       - name: Export Supabase env vars
         run: |
@@ -104,8 +129,30 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Supabase Docker images
+        uses: actions/cache@v4
+        with:
+          path: /tmp/supabase-docker
+          key: supabase-docker-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+
+      - name: Load cached Docker images
+        run: |
+          if [ -d /tmp/supabase-docker ]; then
+            for img in /tmp/supabase-docker/*.tar; do
+              docker load -i "$img" 2>/dev/null || true
+            done
+          fi
+
       - name: Start Supabase
         run: supabase start
+
+      - name: Save Docker images to cache
+        run: |
+          mkdir -p /tmp/supabase-docker
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgrest|gotrue|realtime|storage|kong|imgproxy|postgres' | while read -r img; do
+            fname=$(echo "$img" | tr '/:' '_')
+            [ -f "/tmp/supabase-docker/${fname}.tar" ] || docker save -o "/tmp/supabase-docker/${fname}.tar" "$img"
+          done
 
       - name: Export Supabase env vars
         run: |

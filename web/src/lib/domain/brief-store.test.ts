@@ -28,7 +28,6 @@ const SAMPLE_SUMMARY: BriefSummary = {
 const SAMPLE_FULL: BriefFull = {
   ...SAMPLE_SUMMARY,
   time_budget: 15,
-  one_liner_hint: 'Find the missing masterpiece',
   art_style: 'watercolor noir',
   must_include: ['hidden passage', 'old diary'],
   culprits: 1,
@@ -208,7 +207,6 @@ describe('BriefStore', () => {
       expect(parsed.targetAge).toBe(SAMPLE_FULL.target_age);
       expect(parsed.timeBudget).toBe(SAMPLE_FULL.time_budget);
       expect(parsed.titleHint).toBe(SAMPLE_FULL.title_hint);
-      expect(parsed.oneLinerHint).toBe(SAMPLE_FULL.one_liner_hint);
       expect(parsed.artStyle).toBe(SAMPLE_FULL.art_style);
       expect(parsed.mustInclude).toEqual(SAMPLE_FULL.must_include);
       expect(parsed.culprits).toBe(SAMPLE_FULL.culprits);
@@ -222,7 +220,6 @@ describe('BriefStore', () => {
         ...SAMPLE_FULL,
         time_budget: null,
         title_hint: null,
-        one_liner_hint: null,
         art_style: null,
         must_include: [],
         culprits: null,

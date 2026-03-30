@@ -8,7 +8,6 @@ interface BriefPayload {
   target_age: number;
   time_budget?: number | null;
   title_hint?: string | null;
-  one_liner_hint?: string | null;
   art_style?: string | null;
   must_include?: string[];
   culprits?: number | null;
@@ -60,9 +59,6 @@ function validatePayload(
       time_budget: typeof p.time_budget === "number" ? p.time_budget : null,
       title_hint: typeof p.title_hint === "string" && p.title_hint.trim()
         ? p.title_hint.trim()
-        : null,
-      one_liner_hint: typeof p.one_liner_hint === "string" && p.one_liner_hint.trim()
-        ? p.one_liner_hint.trim()
         : null,
       art_style: typeof p.art_style === "string" && p.art_style.trim()
         ? p.art_style.trim()

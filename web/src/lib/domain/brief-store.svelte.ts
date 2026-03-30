@@ -14,7 +14,6 @@ function toStoryBriefJson(brief: BriefFull): Record<string, unknown> {
   };
   if (brief.time_budget != null) out.timeBudget = brief.time_budget;
   if (brief.title_hint != null) out.titleHint = brief.title_hint;
-  if (brief.one_liner_hint != null) out.oneLinerHint = brief.one_liner_hint;
   if (brief.art_style != null) out.artStyle = brief.art_style;
   if (brief.must_include.length > 0) out.mustInclude = brief.must_include;
   if (brief.culprits != null) out.culprits = brief.culprits;

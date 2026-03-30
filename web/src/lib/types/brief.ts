@@ -10,7 +10,6 @@ export interface BriefSummary {
 
 export interface BriefFull extends BriefSummary {
   time_budget: number | null;
-  one_liner_hint: string | null;
   art_style: string | null;
   must_include: string[];
   culprits: number | null;

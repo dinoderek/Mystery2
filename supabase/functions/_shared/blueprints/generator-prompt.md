@@ -24,7 +24,7 @@ to guide the output:
 - `timeBudget`: optional challenge anchor for `metadata.time_budget`
 - `titleHint`: optional guidance for `metadata.title`
 - `oneLinerHint`: optional guidance for `metadata.one_liner`
-- `artStyle`: optional guidance for `metadata.art_style`
+- `artStyle`: optional seed hint for `metadata.visual_direction`
 - `mustInclude`: optional required ingredients or constraints
 - `culprits`: optional number of culprits (default: 1)
 - `suspects`: optional number of red-herring suspects
@@ -164,7 +164,7 @@ for planning only; do not output these steps.
 10. Add `flavor_knowledge` separately for character texture.
 11. Do a final flavor pass:
    - improve descriptions, backgrounds, and personalities
-   - choose a fitting art style
+   - compose the visual direction (see `metadata.visual_direction` guidance)
    - compose the cover image: decide which characters and locations (if any)
      to feature on the cover and write `cover_image.description`
    - keep all flavor additions consistent with the locked facts
@@ -224,8 +224,27 @@ Scale agendas to the cast size and brief configuration:
 - `metadata.target_age`: copy the requested target age from `story_brief`.
 - `metadata.time_budget`: use the provided budget if present; otherwise infer a
   moderate budget that fits the mystery.
-- `metadata.art_style`: provide a short visual direction helpful for later image
-  generation. Use the hint if provided, otherwise invent a fitting one.
+- `metadata.art_style`: leave null. Superseded by `visual_direction`.
+- `metadata.visual_direction`: compose a structured visual direction object with
+  these fields:
+  - `art_style`: the core rendering technique or medium. Be specific —
+    "watercolor" alone is too broad; "soft watercolor with visible wet-on-wet
+    bleeds" gives image models something concrete to work with. Match the medium
+    to the mystery's setting and era.
+  - `color_palette`: name 3–5 dominant colors and their emotional register. Tie
+    the palette to the setting (seaside mystery → coastal blues and sandy
+    neutrals; bakery mystery → warm pastels and cream).
+  - `mood`: the emotional atmosphere in 1–2 phrases. Connect it to the mystery's
+    tone — a lighthearted whodunit feels different from a spooky mansion mystery.
+  - `lighting`: specify the primary light source and quality. "Warm afternoon
+    sunlight through large windows" is far more useful than "bright." Consider
+    time of day, indoor vs. outdoor, warm vs. cool, and shadow quality.
+  - `texture` (optional): surface quality — paper grain, smooth digital, chalky,
+    glossy. Skip if the art_style already implies it strongly enough.
+
+  Use the `artStyle` hint from the brief as a starting seed if provided. Expand
+  it into the full structured form regardless — a single-phrase hint should
+  inform the direction, not be copied verbatim.
 
 ### Cover Image
 

@@ -111,7 +111,7 @@ describe("blueprint generator", () => {
     expect(body.response_format.json_schema.schema.metadata).toBeUndefined();
     expect(
       body.response_format.json_schema.schema.properties.metadata.required,
-    ).toEqual(["title", "one_liner", "target_age", "time_budget", "art_style"]);
+    ).toEqual(["title", "one_liner", "target_age", "time_budget", "art_style", "visual_direction"]);
     expect(
       body.response_format.json_schema.schema.properties.metadata.properties
         .image_id,
@@ -120,6 +120,19 @@ describe("blueprint generator", () => {
       body.response_format.json_schema.schema.properties.metadata.properties
         .art_style.type,
     ).toEqual(["string", "null"]);
+    const vdSchema =
+      body.response_format.json_schema.schema.properties.metadata.properties
+        .visual_direction;
+    expect(vdSchema).toBeDefined();
+    // optional → nullable via anyOf wrapper
+    const objectVariant = Array.isArray(vdSchema.anyOf)
+      ? vdSchema.anyOf.find((v: Record<string, unknown>) => v.type === "object")
+      : vdSchema;
+    expect(objectVariant?.properties).toHaveProperty("art_style");
+    expect(objectVariant?.properties).toHaveProperty("color_palette");
+    expect(objectVariant?.properties).toHaveProperty("mood");
+    expect(objectVariant?.properties).toHaveProperty("lighting");
+    expect(objectVariant?.properties).toHaveProperty("texture");
     expect(
       body.response_format.json_schema.schema.properties.world.properties
         .locations.items.properties.location_image_id,

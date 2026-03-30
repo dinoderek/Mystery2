@@ -105,6 +105,15 @@ export const BlueprintV2Schema = z.object({
     target_age: z.number().int().positive(),
     time_budget: z.number().int().positive(),
     art_style: z.string().trim().min(1).optional(),
+    visual_direction: z
+      .object({
+        art_style: z.string().trim().min(1),
+        color_palette: z.string().trim().min(1),
+        mood: z.string().trim().min(1),
+        lighting: z.string().trim().min(1),
+        texture: z.string().trim().min(1).optional(),
+      })
+      .optional(),
     image_id: z.string().optional(),
   }),
   narrative: z.object({

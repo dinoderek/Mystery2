@@ -18,6 +18,7 @@ Thumbs.db
 .claude/
 generated/blueprint-images/
 .generated/blueprint-images/
+.npm-cache
 # Local-only configuration and secrets use the `.local` suffix.
 deploy/bootstrap-users.*.local.json
 supabase/seed/auth-users.local.json

@@ -1,0 +1,61 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm -w web run check
+      - run: npm run test:unit
+
+  deploy:
+    name: Deploy to Supabase (dev)
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Write deploy env file
+        env:
+          DEPLOY_ENV_DEV: ${{ secrets.DEPLOY_ENV_DEV }}
+          BOOTSTRAP_USERS_DEV: ${{ secrets.BOOTSTRAP_USERS_DEV }}
+        run: |
+          if [ -z "$DEPLOY_ENV_DEV" ]; then
+            echo "Missing DEPLOY_ENV_DEV secret" >&2
+            exit 1
+          fi
+          printf '%s\n' "$DEPLOY_ENV_DEV" > .env.deploy.dev.local
+          chmod 600 .env.deploy.dev.local
+          if [ -n "$BOOTSTRAP_USERS_DEV" ]; then
+            mkdir -p deploy
+            printf '%s\n' "$BOOTSTRAP_USERS_DEV" > deploy/bootstrap-users.dev.local.json
+            chmod 600 deploy/bootstrap-users.dev.local.json
+          fi
+
+      - name: Deploy
+        run: npm run deploy:dev

@@ -121,6 +121,63 @@ The orchestrator (`scripts/deploy.mjs`) executes in staged order:
 
 `--dry-run` now prints grouped serial/parallel phases. Child-process output in live deploys is prefixed with `[pages]` or `[supabase]` while the lanes are running concurrently.
 
+## GitHub Actions CI/CD
+
+The workflow at `.github/workflows/ci-cd.yml` runs on every push and PR to
+`main`. It has two jobs:
+
+1. **Quality gates** — `npm ci`, `npm run lint`, `npm run typecheck`,
+   `npm -w web run check`, `npm run test:unit`. Runs on pushes and PRs.
+2. **Deploy (dev)** — runs only on pushes to `main`, after quality gates pass.
+   It reconstructs the local deploy config from secrets, then runs
+   `npm run deploy:dev`.
+
+### One-time GitHub setup
+
+1. In the repo on GitHub, go to **Settings → Environments** and create an
+   environment named `dev`. Optionally add required reviewers here for
+   manual approval before the deploy job runs.
+2. Go to **Settings → Secrets and variables → Actions → New repository secret**
+   (or scope them to the `dev` environment) and add the secrets below.
+
+### Required secrets
+
+Both secrets are **file-shaped**: copy the entire contents of the local file
+and paste them as the secret value. Do not try to set one variable per secret —
+the workflow writes each secret back to a single file on disk before running
+the deploy script, so the format must match what `scripts/deploy.mjs` already
+reads locally.
+
+- **`DEPLOY_ENV_DEV`** — full contents of your working
+  `.env.deploy.dev.local`. Must include every key in `REQUIRED_DEPLOY_ENV_VARS`
+  (see `scripts/deploy-helpers.mjs`): `CLOUDFLARE_API_TOKEN`,
+  `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_ACCESS_TOKEN`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `AI_DEFAULT_PROFILE_ID`,
+  `AI_DEFAULT_PROFILE_PROVIDER`, `AI_DEFAULT_PROFILE_MODEL`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, plus any optional keys your
+  dev target needs (e.g. `SUPABASE_DB_PASSWORD`,
+  `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY`).
+- **`BOOTSTRAP_USERS_DEV`** — full contents of
+  `deploy/bootstrap-users.dev.local.json`. Required because `dev` deploys
+  bootstrap auth users (see `shouldBootstrapUsers` in
+  `scripts/deploy-helpers.mjs`). Start from
+  `deploy/bootstrap-users.dev.example.json` and replace the sample passwords
+  before pasting.
+
+Fastest way to capture these values on macOS:
+
+```sh
+pbcopy < .env.deploy.dev.local
+# paste into the DEPLOY_ENV_DEV secret
+
+pbcopy < deploy/bootstrap-users.dev.local.json
+# paste into the BOOTSTRAP_USERS_DEV secret
+```
+
+The workflow recreates these files at the exact paths the deploy script
+expects, so no further configuration is required. To rotate credentials,
+update the secret value and re-run the workflow.
+
 ## Rollback
 
 - **Frontend rollback**: redeploy a previous known-good web artifact/commit.

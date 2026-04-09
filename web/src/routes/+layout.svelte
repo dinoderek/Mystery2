@@ -8,6 +8,7 @@
 	import { gameSessionStore } from '$lib/domain/store.svelte';
 	import { authStore } from '$lib/domain/auth-store.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
+	import MobileKeyboardProxy from '$lib/components/MobileKeyboardProxy.svelte';
 
 	let { children } = $props();
 
@@ -54,4 +55,5 @@
 	</main>
 {:else}
 	{@render children()}
+	<MobileKeyboardProxy />
 {/if}

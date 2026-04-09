@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import { formatLastPlayed, pickSessionByNumericKey } from '$lib/domain/session-list';
+  import MobileBackButton from '$lib/components/MobileBackButton.svelte';
+  import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
 
   let message = $state<string | null>(null);
 
@@ -10,7 +12,15 @@
 
   onMount(() => {
     void gameSessionStore.loadSessionCatalog(true);
+    mobileKeyboard.inputMode = 'numeric';
+    return () => {
+      mobileKeyboard.inputMode = 'none';
+    };
   });
+
+  async function goBack() {
+    await goto('/');
+  }
 
   async function handleKeydown(event: KeyboardEvent) {
     const key = event.key.toLowerCase();
@@ -42,6 +52,8 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+
+<MobileBackButton onback={goBack} />
 
 <main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   <!-- Fixed header -->

@@ -93,18 +93,20 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /mobile\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    /* Mobile Safari (WebKit). Best-effort iOS coverage: emulates viewport,
+       touch, and pointer/hover media queries. The actual iOS software
+       keyboard is an OS-level UI layer no automation framework can render,
+       so these tests verify the proxy input + inputmode + tap-driven focus
+       contract that makes iOS raise the keyboard. */
+    {
+      name: 'mobile-safari',
+      testMatch: /mobile\.spec\.ts/,
+      use: { ...devices['iPhone 13'] },
+    },
 
     /* Test against branded browsers. */
     // {

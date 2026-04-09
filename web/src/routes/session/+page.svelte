@@ -8,11 +8,16 @@
   import InputBox from '$lib/components/InputBox.svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
   import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
+  import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
 
   onMount(() => {
     if (gameSessionStore.status !== 'active' || !gameSessionStore.game_id) {
       goto('/');
     }
+    mobileKeyboard.inputMode = 'text';
+    return () => {
+      mobileKeyboard.inputMode = 'none';
+    };
   });
 
   async function handleKeydown(event: KeyboardEvent) {

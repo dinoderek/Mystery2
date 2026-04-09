@@ -5,6 +5,8 @@
   import { authStore } from '$lib/domain/auth-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
   import SignedImage from '$lib/components/SignedImage.svelte';
+  import MobileBackButton from '$lib/components/MobileBackButton.svelte';
+  import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -16,7 +18,16 @@
 
   onMount(() => {
     void gameSessionStore.loadSessionCatalog(true);
+    mobileKeyboard.inputMode = 'numeric';
+    return () => {
+      mobileKeyboard.inputMode = 'none';
+    };
   });
+
+  function backToMenu() {
+    view = 'menu';
+    gameSessionStore.error = null;
+  }
 
   async function enterNewGameFlow() {
     view = 'new-game';
@@ -56,8 +67,7 @@
     }
 
     if (key === 'b') {
-      view = 'menu';
-      gameSessionStore.error = null;
+      backToMenu();
       return;
     }
 
@@ -76,6 +86,10 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+
+{#if view === 'new-game'}
+  <MobileBackButton onback={backToMenu} />
+{/if}
 
 <main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   {#if isStartingGame}

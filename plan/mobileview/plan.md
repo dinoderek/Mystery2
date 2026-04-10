@@ -197,7 +197,7 @@ completely untouched.
 
 ```
   ┌──────────────────────────────────┐
-  │  ←   The Missing Amulet      ≡  │  ← MobileTopBar
+  │  ←  The Missing Amulet  [8] ≡  │  ← MobileTopBar
   ├──────────────────────────────────┤
   │                                  │
   │  NARRATOR                        │
@@ -246,7 +246,7 @@ requires free text (e.g. "Search" opens input with pre-filled "search ", or
 
 ```
   ┌──────────────────────────────────┐
-  │  ←   The Missing Amulet      ≡  │
+  │  ←  The Missing Amulet  [8] ≡  │
   ├──────────────────────────────────┤
   │                                  │
   │  NARRATOR                        │
@@ -275,8 +275,13 @@ requires free text (e.g. "Search" opens input with pre-filled "search ", or
    auto-scrolls to the bottom.
 6. If the store enters `loading` state, the input is disabled and the send
    button shows a spinner.
-7. **Cancelling:** User can tap the **back arrow** in the top bar or swipe the
-   keyboard down to dismiss and return to reading mode without submitting.
+7. **Cancelling:** A **✕ button** next to the input field lets the user cancel
+   and return to reading mode. The keyboard can also be swiped down.
+8. **Input preservation:** If the user switches back to reading mode (e.g. by
+   scrolling up to re-read narration) the text they have typed so far is
+   **preserved**. When they return to input mode, their draft is still there.
+   The draft is only cleared after a successful send or an explicit cancel
+   (tapping ✕).
 
 **Pre-filled input from quick actions:**
 - When a quick-action button triggers input mode (e.g. "Search"), the input bar
@@ -356,7 +361,7 @@ current game mode.
 
 ```
   ┌──────────────────────────────────┐
-  │  ←   The Missing Amulet      ≡  │
+  │  ←  The Missing Amulet  [8] ≡  │
   ├──────────────────────────────────┤
   │                                  │
   │  (narration, dimmed)             │
@@ -366,17 +371,26 @@ current game mode.
   │                                  │
   │  ┌────────────────────────────┐  │
   │  │  The Library           →  │  │
+  │  │  Mrs. Smith, Prof. Oak    │  │
   │  ├────────────────────────────┤  │
   │  │  The Garden            →  │  │
+  │  │  Billy                    │  │
   │  ├────────────────────────────┤  │
   │  │  The Kitchen           →  │  │
+  │  │  (empty)                  │  │
   │  ├────────────────────────────┤  │
   │  │  The Study             →  │  │
+  │  │  Detective Finch          │  │
   │  └────────────────────────────┘  │
   │                                  │
   │         [ CANCEL ]               │
   └──────────────────────────────────┘
 ```
+
+Each location row also lists the **characters currently at that location**
+(derived by filtering `state.characters` by `location_name`). Locations with no
+characters show "(empty)" in dimmed text. This helps the player decide where to
+go without needing to open the status panel.
 
 **Talk overlay:** Same structure, titled "WHO DO YOU WANT TO TALK TO?", listing
 characters at the current location with their full names. Characters not at the
@@ -463,15 +477,18 @@ The `HelpModal` component is reused unchanged.
   │                                  │
   │  ──────────────────────────────  │
   │                                  │
-  │  ┌──────┐ ┌──────┐ ┌──────┐     │
-  │  │ Help │ │ Zoom │ │ Aᴬ   │     │
-  │  └──────┘ └──────┘ └──────┘     │
+  │  ┌──────┐ ┌──────┐              │
+  │  │ Help │ │ Zoom │              │
+  │  └──────┘ └──────┘              │
   │                                  │
   │  ──────────────────────────────  │
   │                                  │
-  │  THEME:                          │
+  │  APPEARANCE:                     │
+  │  Theme:                          │
   │  ○ Classic  ● Amber  ○ Ice      │
   │  ○ Phosphor  ○ Noir             │
+  │  Text size:                      │
+  │  ○ Small  ● Medium  ○ Large     │
   │                                  │
   │  ──────────────────────────────  │
   │                                  │
@@ -537,21 +554,20 @@ The `HelpModal` component is reused unchanged.
 
 #### J11. Change text size
 
-**New feature for mobile.** A zoom button (Aᴬ) in the drawer that cycles
-through text sizes.
+**New feature for mobile.** Text size selector in the drawer's **Appearance**
+section (grouped alongside the theme picker since both control visuals).
 
 **Sizes:** Small (14px) → Medium (16px, default) → Large (18px)
 
 **Flow:**
 
 1. User opens the drawer via hamburger.
-2. User taps the **Aᴬ** button in the actions row.
-3. Text size cycles to the next value. The label on the button updates to show
-   the current size (e.g. "Aᴬ M" → "Aᴬ L" → "Aᴬ S").
-4. The change applies immediately to the narration text. The user can see the
-   effect before closing the drawer (since the narration is behind the
+2. In the **Appearance** section, below the theme picker, the user sees three
+   radio-style options: Small, Medium (default), Large.
+3. Tapping a size applies it immediately to the narration text. The user can see
+   the effect before closing the drawer (since the narration is behind the
    semi-transparent backdrop).
-5. The preference is persisted in `localStorage` (key:
+4. The preference is persisted in `localStorage` (key:
    `mystery-game-text-size`).
 
 **Implementation:**
@@ -763,14 +779,23 @@ Implements journeys J4 through J11.
 
 **New file:** `web/src/lib/components/mobile/MobileTopBar.svelte`
 
+```
+  ┌──────────────────────────────────┐
+  │  ←  The Missing Amulet  [8] ≡  │
+  └──────────────────────────────────┘
+```
+
 **Props:**
 - `title: string`
+- `turnsRemaining?: number` — shown as a badge `[8]` between title and hamburger
 - `onback?: () => void`
 - `onmenu?: () => void`
 - `showMenu?: boolean` (default true)
 
-Fixed-height bar. Back arrow left, truncated title center, hamburger right. All
-touch targets minimum 44x44px. Uses safe area inset padding at top.
+Fixed-height bar. Back arrow left, truncated title center-left, turns badge
+right of title, hamburger far right. The turns badge gives the player a
+constant reminder of remaining time without opening the drawer.
+All touch targets minimum 44x44px. Uses safe area inset padding at top.
 
 ### 4.2 Mobile drawer
 
@@ -783,8 +808,10 @@ Implements J8 (help), J9 (status), J11 (text size), and part of J10 (quit).
 
 **Sections:**
 1. **Status** — Location, time, characters (same derivations as `StatusBar`).
-2. **Actions** — Tap buttons: Help, Zoom (if image available), Aᴬ (text size).
-3. **Theme** — 5 themes from `themeStore.getThemeList()`, tap to switch.
+2. **Actions** — Tap buttons: Help, Zoom (if image available).
+3. **Appearance** — Theme picker (5 themes from `themeStore.getThemeList()`) and
+   text size toggle (Aᴬ cycling Small/Medium/Large). Grouped together since
+   both control visual presentation.
 4. **Quit** — "End Session" button.
 
 Uses `transition:slide` for animation. Backdrop overlay closes on tap.
@@ -799,13 +826,18 @@ Implements J5 (write input).
 
 **Props:**
 - `onsend: (text: string) => void`
+- `oncancel: () => void` — ✕ button callback, returns to reading mode
 - `disabled: boolean`
 - `placeholder: string`
 - `prefill?: string` — optional pre-filled text from quick actions
 
 - Input `font-size: 16px` (prevents iOS auto-zoom).
 - Submit on Enter or send button tap.
-- Clears after submission.
+- **✕ cancel button** on the left side of the bar clears draft and returns to
+  reading mode.
+- Draft text is preserved in parent state (`MobileSession`) if the user
+  switches to reading mode without cancelling (e.g. scrolling back). Only
+  cleared on successful send or explicit cancel.
 - Uses safe area inset padding at bottom.
 
 ### 4.4 Quick-action bar

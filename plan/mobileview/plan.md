@@ -1075,3 +1075,60 @@ Leverage the existing `mobile-safari` project (iPhone 13 / WebKit / touch).
 ### Verification
 
 After each phase, run `npm test` (the project quality gate).
+
+---
+
+## Task Cards
+
+See `plan/mobileview/tasks.md` for the full task breakdown (T01-T14).
+
+### Execution sequence and parallelism
+
+```
+  T01 Infrastructure
+   │
+   ├──────────┬──────────┐
+   │          │          │
+  T02       T03        T04          ← Group A (parallel)
+  TopBar   Carousel   Prefs store
+   │          │          │
+   ├─────┬────┘          │
+   │     │               │
+  T05   T06              │           ← Group B (parallel)
+  Home   Session lists   │
+   │     │               │
+   ├─────┘               │
+   │                     │
+  T07                    │
+  PW: Home               │
+   │                     │
+   ├──────────┬──────────┼──────────┐
+   │          │          │          │
+  T08       T09        T10        T11   ← Group C (parallel)
+  InputBar  ActionBar  Drawer    ImageViewer
+   │        + Picker     │          │
+   └────┬─────┴──────────┴──────────┘
+        │
+       T12  Session orchestrator
+        │
+       T13  PW: Session
+        │
+       T14  Polish + docs
+```
+
+| Task | Name | Depends on | Parallel group |
+|------|------|------------|----------------|
+| T01 | Infrastructure | — | — |
+| T02 | MobileTopBar | T01 | A |
+| T03 | MobileCarousel + CSS | T01 | A |
+| T04 | Mobile prefs store | T01 | A |
+| T05 | MobileHome + route | T02, T03 | B |
+| T06 | Session list carousels | T02, T03 | B |
+| T07 | Playwright: home | T05, T06 | — |
+| T08 | MobileInputBar | T01 | C |
+| T09 | MobileActionBar + Picker | T01 | C |
+| T10 | MobileDrawer | T04 | C |
+| T11 | MobileImageViewer | T01 | C |
+| T12 | MobileSession + route | T02, T08-T11 | — |
+| T13 | Playwright: session | T12 | — |
+| T14 | Polish + docs | T12, T13 | — |

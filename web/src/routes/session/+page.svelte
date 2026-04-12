@@ -9,8 +9,11 @@
   import HelpModal from '$lib/components/HelpModal.svelte';
   import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
   import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
+  import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
+  import MobileSession from '$lib/components/mobile/MobileSession.svelte';
 
   onMount(() => {
+    if (mobileDetect.isMobile) return;
     if (gameSessionStore.status !== 'active' || !gameSessionStore.game_id) {
       goto('/');
     }
@@ -21,6 +24,7 @@
   });
 
   async function handleKeydown(event: KeyboardEvent) {
+    if (mobileDetect.isMobile) return;
     if (!gameSessionStore.awaitingReturnToList && gameSessionStore.viewerMode !== 'read_only_completed') {
       return;
     }
@@ -37,6 +41,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+{#if !mobileDetect.isMobile}
 <main class="min-h-screen bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   <Header />
   <NarrationBox />
@@ -45,3 +50,6 @@
   <HelpModal />
   <SceneZoomModal />
 </main>
+{:else}
+<MobileSession />
+{/if}

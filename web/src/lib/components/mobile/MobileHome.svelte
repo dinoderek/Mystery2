@@ -3,51 +3,27 @@
   import { goto } from '$app/navigation';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import { authStore } from '$lib/domain/auth-store.svelte';
+  import { MobileHomeState } from '$lib/domain/mobile-home.svelte';
   import MobileTopBar from './MobileTopBar.svelte';
   import MobileCarousel from './MobileCarousel.svelte';
   import SignedImage from '$lib/components/SignedImage.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
-  type MobileView = 'menu' | 'new-game';
-
-  let view = $state<MobileView>('menu');
-  let startingBlueprintId = $state<string | null>(null);
-
-  const inProgressCount = $derived(gameSessionStore.sessionCatalog.counts.in_progress);
-  const completedCount = $derived(gameSessionStore.sessionCatalog.counts.completed);
-  const hasInProgress = $derived(inProgressCount > 0);
-  const hasCompleted = $derived(completedCount > 0);
-  const isLoadingBlueprints = $derived(
-    gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length === 0
-  );
+  const home = new MobileHomeState();
 
   onMount(() => {
     void gameSessionStore.loadSessionCatalog(true);
   });
 
-  async function enterNewGameFlow() {
-    view = 'new-game';
-    if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status === 'idle') {
-      await gameSessionStore.loadBlueprints();
-    }
-  }
-
-  function backToMenu() {
-    view = 'menu';
-    gameSessionStore.error = null;
-  }
-
   async function handleBlueprintTap(blueprint: { id: string }, _index: number) {
-    startingBlueprintId = blueprint.id;
-    await gameSessionStore.startGame(blueprint.id);
-    if (gameSessionStore.status === 'active') {
+    const success = await home.startBlueprint(blueprint.id);
+    if (success) {
       await goto('/session');
     }
-    startingBlueprintId = null;
   }
 </script>
 
-{#if view === 'menu'}
+{#if home.view === 'menu'}
   <main class="flex flex-col h-screen bg-t-bg font-mono">
     <!-- Header area -->
     <div class="flex items-center justify-between px-4 pt-6 pb-2">
@@ -67,7 +43,7 @@
       <button
         type="button"
         class="w-full max-w-xs min-h-[48px] border border-t-primary text-t-bright font-bold py-3 px-4 text-base active:bg-t-primary/10"
-        onclick={enterNewGameFlow}
+        onclick={() => home.enterNewGameFlow()}
         data-testid="mobile-home-new-game"
       >
         Start New Case
@@ -75,26 +51,26 @@
 
       <button
         type="button"
-        class="w-full max-w-xs min-h-[48px] border py-3 px-4 text-base {hasInProgress
+        class="w-full max-w-xs min-h-[48px] border py-3 px-4 text-base {home.hasInProgress
           ? 'border-t-primary text-t-bright font-bold active:bg-t-primary/10'
           : 'border-t-muted/30 text-t-muted/40 cursor-not-allowed'}"
-        disabled={!hasInProgress}
+        disabled={!home.hasInProgress}
         onclick={() => goto('/sessions/in-progress')}
         data-testid="mobile-home-resume"
       >
-        Resume Case ({inProgressCount})
+        Resume Case ({home.inProgressCount})
       </button>
 
       <button
         type="button"
-        class="w-full max-w-xs min-h-[48px] border py-3 px-4 text-base {hasCompleted
+        class="w-full max-w-xs min-h-[48px] border py-3 px-4 text-base {home.hasCompleted
           ? 'border-t-primary text-t-bright font-bold active:bg-t-primary/10'
           : 'border-t-muted/30 text-t-muted/40 cursor-not-allowed'}"
-        disabled={!hasCompleted}
+        disabled={!home.hasCompleted}
         onclick={() => goto('/sessions/completed')}
         data-testid="mobile-home-history"
       >
-        Case History ({completedCount})
+        Case History ({home.completedCount})
       </button>
     </div>
 
@@ -112,9 +88,9 @@
 {:else}
   <!-- New-game view with blueprint carousel -->
   <main class="flex flex-col h-screen bg-t-bg font-mono">
-    <MobileTopBar title="Choose a Mystery" onback={backToMenu} showMenu={false} />
+    <MobileTopBar title="Choose a Mystery" onback={() => home.backToMenu()} showMenu={false} />
 
-    {#if startingBlueprintId}
+    {#if home.startingBlueprintId}
       <div class="flex-1 flex items-center justify-center">
         <div class="text-center space-y-4">
           <p class="text-t-bright text-lg">[ INITIALIZING ]</p>
@@ -130,7 +106,7 @@
         <MobileCarousel
           items={gameSessionStore.blueprints}
           onselect={handleBlueprintTap}
-          loading={isLoadingBlueprints}
+          loading={home.isLoadingBlueprints}
           emptyMessage="No blueprints available"
         >
           {#snippet children(blueprint, _i)}

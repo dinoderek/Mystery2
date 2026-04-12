@@ -516,6 +516,7 @@ export function buildCommandPlan(options) {
       "--project-ref",
       target.supabaseProjectRef,
       "--use-api",
+      "--no-verify-jwt",
       "--jobs",
       String(resolvedFunctionJobs),
     ],

@@ -7,6 +7,8 @@
   import SignedImage from '$lib/components/SignedImage.svelte';
   import MobileBackButton from '$lib/components/MobileBackButton.svelte';
   import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
+  import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
+  import MobileHome from '$lib/components/mobile/MobileHome.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -37,6 +39,7 @@
   }
 
   async function handleKeydown(event: KeyboardEvent) {
+    if (mobileDetect.isMobile) return;
     if (isStartingGame) {
       return;
     }
@@ -87,6 +90,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+{#if !mobileDetect.isMobile}
 {#if view === 'new-game'}
   <MobileBackButton onback={backToMenu} />
 {/if}
@@ -192,3 +196,6 @@
     </div>
   {/if}
 </main>
+{:else}
+<MobileHome />
+{/if}

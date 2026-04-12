@@ -93,7 +93,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /mobile\.spec\.ts/,
+      testIgnore: /mobile.*\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
 
@@ -104,7 +104,7 @@ export default defineConfig({
        contract that makes iOS raise the keyboard. */
     {
       name: 'mobile-safari',
-      testMatch: /mobile\.spec\.ts/,
+      testMatch: /mobile.*\.spec\.ts/,
       use: { ...devices['iPhone 13'] },
     },
 

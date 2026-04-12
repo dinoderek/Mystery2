@@ -21,4 +21,5 @@ generated/blueprint-images/
 .npm-cache
 # Local-only configuration and secrets use the `.local` suffix.
 deploy/bootstrap-users.*.local.json
+supabase/config.toml
 supabase/seed/auth-users.local.json

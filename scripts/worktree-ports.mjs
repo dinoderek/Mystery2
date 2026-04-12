@@ -31,38 +31,54 @@ function git(...args) {
 }
 
 /**
- * Patch supabase/config.toml in-place with worktree-specific project_id and
- * ports.  Returns true if the file was modified, false if no changes were
- * needed (e.g. main checkout or already patched).
+ * Generate supabase/config.toml from config.toml.template.
+ *
+ * In a worktree the generated file gets worktree-specific project_id and
+ * ports.  In the main checkout it is an unmodified copy of the template.
+ * Either way, config.toml is gitignored so there is never a dirty working
+ * tree.
+ *
+ * Returns true if the file was written, false if the existing config.toml
+ * already matched (content-identical).
  */
 export function patchConfigToml(repoRoot = process.cwd()) {
-  const resolved = resolveWorktreePorts(repoRoot);
-  if (!resolved.isWorktree) return false;
-
+  const templatePath = path.join(repoRoot, "supabase", "config.toml.template");
   const configPath = path.join(repoRoot, "supabase", "config.toml");
-  let content = fs.readFileSync(configPath, "utf8");
 
-  const replacements = [
-    [/^project_id\s*=\s*"[^"]*"/m, `project_id = "${resolved.projectId}"`],
-    // [api]
-    [/(^\[api\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.api}`],
-    // [db]
-    [/(^\[db\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.db}`],
-    [/(^shadow_port\s*=\s*)\d+/m, `$1${resolved.ports.shadow_db}`],
-    // [db.pooler]
-    [/(^\[db\.pooler\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.db_pooler}`],
-    // [studio]
-    [/(^\[studio\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.studio}`],
-    // [inbucket]
-    [/(^\[inbucket\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.inbucket}`],
-    // [analytics]
-    [/(^\[analytics\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.analytics}`],
-    // [edge_runtime] inspector_port
-    [/(^inspector_port\s*=\s*)\d+/m, `$1${resolved.ports.edge_inspector}`],
-  ];
+  let content = fs.readFileSync(templatePath, "utf8");
 
-  for (const [pattern, replacement] of replacements) {
-    content = content.replace(pattern, replacement);
+  const resolved = resolveWorktreePorts(repoRoot);
+  if (resolved.isWorktree) {
+    const replacements = [
+      [/^project_id\s*=\s*"[^"]*"/m, `project_id = "${resolved.projectId}"`],
+      // [api]
+      [/(^\[api\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.api}`],
+      // [db]
+      [/(^\[db\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.db}`],
+      [/(^shadow_port\s*=\s*)\d+/m, `$1${resolved.ports.shadow_db}`],
+      // [db.pooler]
+      [/(^\[db\.pooler\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.db_pooler}`],
+      // [studio]
+      [/(^\[studio\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.studio}`],
+      // [inbucket]
+      [/(^\[inbucket\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.inbucket}`],
+      // [analytics]
+      [/(^\[analytics\][\s\S]*?^port\s*=\s*)\d+/m, `$1${resolved.ports.analytics}`],
+      // [edge_runtime] inspector_port
+      [/(^inspector_port\s*=\s*)\d+/m, `$1${resolved.ports.edge_inspector}`],
+    ];
+
+    for (const [pattern, replacement] of replacements) {
+      content = content.replace(pattern, replacement);
+    }
+  }
+
+  // Skip write if existing config.toml is already identical.
+  try {
+    const existing = fs.readFileSync(configPath, "utf8");
+    if (existing === content) return false;
+  } catch {
+    // File doesn't exist yet — will be created below.
   }
 
   fs.writeFileSync(configPath, content, "utf8");

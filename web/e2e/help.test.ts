@@ -1,48 +1,35 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
-
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
-const baseState = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
-  characters: [{ first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' }],
-  time_remaining: 10,
-  location: 'Kitchen',
-  mode: 'explore',
-  current_talk_character: null,
-};
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  BASE_GAME_STATE as baseState,
+  EMPTY_CATALOG,
+  createBlueprintSummary,
+  createNarrationEvent,
+} from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
   await enableAuthBypass(page);
 
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-    await route.fulfill({
-      json: {
-        in_progress: [],
-        completed: [],
-        counts: { in_progress: 0, completed: 0 },
-      },
-    });
+    await route.fulfill({ json: EMPTY_CATALOG });
   });
 
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
-      json: {
-        blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }],
-      },
+      json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
     });
   });
 
   await page.route('**/functions/v1/game-start*', async (route) => {
     await route.fulfill({
       json: {
-        game_id: 'g1',
+        game_id: '00000000-0000-0000-0000-000000000001',
         state: baseState,
         narration_events: [
-          {
-            sequence: 1,
-            event_type: 'start',
+          createNarrationEvent({
             narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-          },
+          }),
         ],
       },
     });

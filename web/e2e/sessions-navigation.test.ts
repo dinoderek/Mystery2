@@ -1,20 +1,18 @@
 import { expect, test } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  EMPTY_CATALOG,
+  createGameState,
+  createBlueprintSummary,
+  createSessionSummary,
+  createSessionCatalog,
+  createNarrationEvent,
+  createSearchResponse,
+  createAccuseResponse,
+} from '../../tests/testkit/src/fixtures';
 
-const narratorSpeaker = {
-  kind: 'narrator',
-  key: 'narrator',
-  label: 'Narrator',
-};
-
-const baseGameState = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
-  characters: [{ first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen' }],
-  time_remaining: 8,
-  location: 'Kitchen',
-  mode: 'explore',
-  current_talk_character: null,
-};
+const baseGameState = createGameState({ time_remaining: 8 });
 
 test.describe('Sessions navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -28,63 +26,42 @@ test.describe('Sessions navigation', () => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
-        await route.fulfill({
-          json: {
-            in_progress: [],
-            completed: [],
-            counts: {
-              in_progress: 0,
-              completed: 0,
-            },
-          },
-        });
+        await route.fulfill({ json: EMPTY_CATALOG });
         return;
       }
 
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [
-            {
-              game_id: 'fresh-session',
-              blueprint_id: 'bp-1',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000011',
+              blueprint_id: '00000000-0000-0000-0000-000000000002',
               mystery_title: 'The Missing Honey Cakes',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
               time_remaining: 8,
-              outcome: null,
               last_played_at: '2026-03-10T10:00:00.000Z',
               created_at: '2026-03-10T09:50:00.000Z',
-            },
+            }),
           ],
-          completed: [],
-          counts: {
-            in_progress: 1,
-            completed: 0,
-          },
-        },
+          counts: { in_progress: 1, completed: 0 },
+        }),
       });
     });
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: {
-          blueprints: [{ id: 'bp-1', title: 'The Missing Honey Cakes', one_liner: 'Track the crumbs', target_age: 8 }],
-        },
+        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000002', title: 'The Missing Honey Cakes', one_liner: 'Track the crumbs', target_age: 8 })] },
       });
     });
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'fresh-session',
+          game_id: '00000000-0000-0000-0000-000000000011',
           state: baseGameState,
           narration_events: [
-            {
-              sequence: 1,
-              event_type: 'start',
+            createNarrationEvent({
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -120,63 +97,44 @@ test.describe('Sessions navigation', () => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
-        await route.fulfill({
-          json: {
-            in_progress: [],
-            completed: [],
-            counts: {
-              in_progress: 0,
-              completed: 0,
-            },
-          },
-        });
+        await route.fulfill({ json: EMPTY_CATALOG });
         return;
       }
 
       await route.fulfill({
-        json: {
-          in_progress: [],
+        json: createSessionCatalog({
           completed: [
-            {
-              game_id: 'ended-session',
-              blueprint_id: 'bp-2',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000012',
+              blueprint_id: '00000000-0000-0000-0000-000000000003',
               mystery_title: 'The Locked Library',
-              mystery_available: true,
-              can_open: true,
               mode: 'ended',
               time_remaining: 0,
               outcome: 'win',
               last_played_at: '2026-03-10T10:00:00.000Z',
               created_at: '2026-03-10T09:40:00.000Z',
-            },
+            }),
           ],
-          counts: {
-            in_progress: 0,
-            completed: 1,
-          },
-        },
+          counts: { in_progress: 0, completed: 1 },
+        }),
       });
     });
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: {
-          blueprints: [{ id: 'bp-2', title: 'The Locked Library', one_liner: 'Solve the archive mystery', target_age: 9 }],
-        },
+        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000003', title: 'The Locked Library', one_liner: 'Solve the archive mystery', target_age: 9 })] },
       });
     });
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'ended-session',
+          game_id: '00000000-0000-0000-0000-000000000012',
           state: baseGameState,
           narration_events: [
-            {
-              sequence: 1,
-              event_type: 'start',
+            createNarrationEvent({
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -184,12 +142,9 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/functions/v1/game-accuse*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createAccuseResponse({
           narration_parts: [{ text: 'Case closed. Excellent reasoning.', speaker: narratorSpeaker }],
-          mode: 'ended',
-          result: 'win',
-          time_remaining: 0,
-        },
+        }),
       });
     });
 
@@ -223,41 +178,24 @@ test.describe('Sessions navigation', () => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
-        await route.fulfill({
-          json: {
-            in_progress: [],
-            completed: [],
-            counts: {
-              in_progress: 0,
-              completed: 0,
-            },
-          },
-        });
+        await route.fulfill({ json: EMPTY_CATALOG });
         return;
       }
 
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [
-            {
-              game_id: 'route-refresh-session',
-              blueprint_id: 'bp-1',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000013',
+              blueprint_id: '00000000-0000-0000-0000-000000000002',
               mystery_title: 'The Missing Honey Cakes',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
               time_remaining: 8,
-              outcome: null,
               last_played_at: '2026-03-10T10:00:00.000Z',
               created_at: '2026-03-10T09:50:00.000Z',
-            },
+            }),
           ],
-          completed: [],
-          counts: {
-            in_progress: 1,
-            completed: 0,
-          },
-        },
+          counts: { in_progress: 1, completed: 0 },
+        }),
       });
     });
 
@@ -272,41 +210,31 @@ test.describe('Sessions navigation', () => {
   test('renders in-progress list, supports b/back, and resumes by number', async ({ page }) => {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [
-            {
-              game_id: 'game-in-progress',
-              blueprint_id: 'bp-1',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000014',
+              blueprint_id: '00000000-0000-0000-0000-000000000002',
               mystery_title: 'The Missing Honey Cakes',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
               time_remaining: 8,
-              outcome: null,
               last_played_at: '2026-03-10T10:00:00.000Z',
               created_at: '2026-03-09T10:00:00.000Z',
-            },
+            }),
           ],
-          completed: [],
-          counts: {
-            in_progress: 1,
-            completed: 0,
-          },
-        },
+          counts: { in_progress: 1, completed: 0 },
+        }),
       });
     });
 
-    await page.route('**/functions/v1/game-get?game_id=game-in-progress*', async (route) => {
+    await page.route('**/functions/v1/game-get?game_id=00000000-0000-0000-0000-000000000014*', async (route) => {
       await route.fulfill({
         json: {
-          blueprint_id: 'bp-1',
+          blueprint_id: '00000000-0000-0000-0000-000000000002',
           state: baseGameState,
           narration_events: [
-            {
-              sequence: 1,
-              event_type: 'start',
+            createNarrationEvent({
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -314,11 +242,10 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/functions/v1/game-search*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSearchResponse({
           narration_parts: [{ text: 'You inspect the room and spot fresh crumbs.', speaker: narratorSpeaker }],
           time_remaining: 7,
-          mode: 'explore',
-        },
+        }),
       });
     });
 
@@ -348,50 +275,44 @@ test.describe('Sessions navigation', () => {
   test('renders completed list and opens ended sessions in read-only mode', async ({ page }) => {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
-          in_progress: [],
+        json: createSessionCatalog({
           completed: [
-            {
-              game_id: 'game-completed',
-              blueprint_id: 'bp-2',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000015',
+              blueprint_id: '00000000-0000-0000-0000-000000000003',
               mystery_title: 'The Locked Library',
-              mystery_available: true,
-              can_open: true,
               mode: 'ended',
               time_remaining: 0,
               outcome: 'win',
               last_played_at: '2026-03-11T10:00:00.000Z',
               created_at: '2026-03-09T10:00:00.000Z',
-            },
+            }),
           ],
-          counts: {
-            in_progress: 0,
-            completed: 1,
-          },
-        },
+          counts: { in_progress: 0, completed: 1 },
+        }),
       });
     });
 
-    await page.route('**/functions/v1/game-get?game_id=game-completed*', async (route) => {
+    await page.route('**/functions/v1/game-get?game_id=00000000-0000-0000-0000-000000000015*', async (route) => {
       await route.fulfill({
         json: {
-          blueprint_id: 'bp-2',
+          blueprint_id: '00000000-0000-0000-0000-000000000003',
           state: {
             ...baseGameState,
             mode: 'ended',
             time_remaining: 0,
           },
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
-            },
-            {
+            }),
+            createNarrationEvent({
               sequence: 2,
               event_type: 'accuse_judge',
               narration_parts: [{ text: 'Case closed. Reviewing log.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -419,12 +340,11 @@ test.describe('Sessions navigation', () => {
   test('blocks opening rows when can_open is false', async ({ page }) => {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
-          in_progress: [],
+        json: createSessionCatalog({
           completed: [
-            {
-              game_id: 'disabled-completed',
-              blueprint_id: 'bp-missing',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000016',
+              blueprint_id: '00000000-0000-0000-0000-000000000099',
               mystery_title: 'Unknown Mystery',
               mystery_available: false,
               can_open: false,
@@ -433,13 +353,10 @@ test.describe('Sessions navigation', () => {
               outcome: null,
               last_played_at: '2026-03-11T10:00:00.000Z',
               created_at: '2026-03-09T10:00:00.000Z',
-            },
+            }),
           ],
-          counts: {
-            in_progress: 0,
-            completed: 1,
-          },
-        },
+          counts: { in_progress: 0, completed: 1 },
+        }),
       });
     });
 

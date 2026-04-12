@@ -1,46 +1,41 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
-
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  EMPTY_CATALOG,
+  createBlueprintSummary,
+  createGameState,
+  createNarrationEvent,
+} from '../../tests/testkit/src/fixtures';
 
 test.describe('US2 - Status Bar', () => {
     test('displays correct status information (location, hints, time)', async ({ page }) => {
         await enableAuthBypass(page);
         await page.route('**/functions/v1/game-sessions-list*', async route => {
-            await route.fulfill({
-                json: {
-                    in_progress: [],
-                    completed: [],
-                    counts: { in_progress: 0, completed: 0 }
-                }
-            });
+            await route.fulfill({ json: EMPTY_CATALOG });
         });
         await page.route('**/functions/v1/blueprints-list', async route => {
-            await route.fulfill({ json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] } });
+            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
         });
 
         await page.route('**/functions/v1/game-start', async route => {
             await route.fulfill({
                 json: {
-                    game_id: 'g1',
-                    state: {
-                        locations: [{ name: 'kitchen' }, { name: 'garden' }],
+                    game_id: '00000000-0000-0000-0000-000000000001',
+                    state: createGameState({
+                        locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
                         characters: [
-                            { first_name: 'Bob', last_name: 'Smith', location_name: 'kitchen' },
-                            { first_name: 'Alice', last_name: 'Brown', location_name: 'garden' }
+                            { id: 'char-bob', first_name: 'Bob', last_name: 'Smith', location_id: 'loc-kitchen', location_name: 'kitchen', sex: 'male' },
+                            { id: 'char-alice', first_name: 'Alice', last_name: 'Brown', location_id: 'loc-garden', location_name: 'garden', sex: 'female' },
                         ],
                         time_remaining: 8,
                         location: 'kitchen',
-                        mode: 'explore',
-                        current_talk_character: null,
-                    },
+                    }),
                     narration_events: [
-                        {
-                            sequence: 1,
-                            event_type: 'start',
-                            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }]
-                        }
-                    ]
+                        createNarrationEvent({
+                            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
+                        }),
+                    ],
                 }
             });
         });

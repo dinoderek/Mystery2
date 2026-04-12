@@ -1,5 +1,15 @@
 import { test, expect, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  EMPTY_CATALOG,
+  createSessionSummary,
+  createSessionCatalog,
+  createBlueprintSummary,
+  createImageLinkResponse,
+  createGameState,
+  createNarrationEvent,
+} from '../../tests/testkit/src/fixtures';
 
 /**
  * Extended mobile E2E coverage for the home screen, blueprint carousel,
@@ -10,8 +20,6 @@ import { enableAuthBypass } from './test-auth';
  * this file adds the remaining T07 acceptance criteria.
  */
 
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
-
 // ---------------------------------------------------------------------------
 // Helpers — mock API routes
 // ---------------------------------------------------------------------------
@@ -19,11 +27,7 @@ const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' }
 async function mockEmptyCatalog(page: Page) {
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
     await route.fulfill({
-      json: {
-        in_progress: [],
-        completed: [],
-        counts: { in_progress: 0, completed: 0 },
-      },
+      json: EMPTY_CATALOG,
     });
   });
 }
@@ -31,11 +35,11 @@ async function mockEmptyCatalog(page: Page) {
 async function mockCatalogWithSessions(page: Page) {
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
     await route.fulfill({
-      json: {
+      json: createSessionCatalog({
         in_progress: [
-          {
-            game_id: 'g-1',
-            blueprint_id: 'bp-1',
+          createSessionSummary({
+            game_id: '00000000-0000-0000-0000-000000000001',
+            blueprint_id: '00000000-0000-0000-0000-000000000002',
             mystery_title: 'In Progress Mystery',
             mystery_available: true,
             can_open: true,
@@ -44,12 +48,12 @@ async function mockCatalogWithSessions(page: Page) {
             outcome: null,
             last_played_at: '2026-03-10T12:00:00.000Z',
             created_at: '2026-03-09T12:00:00.000Z',
-          },
+          }),
         ],
         completed: [
-          {
-            game_id: 'g-2',
-            blueprint_id: 'bp-2',
+          createSessionSummary({
+            game_id: '00000000-0000-0000-0000-000000000010',
+            blueprint_id: '00000000-0000-0000-0000-000000000003',
             mystery_title: 'Completed Mystery',
             mystery_available: true,
             can_open: true,
@@ -58,37 +62,37 @@ async function mockCatalogWithSessions(page: Page) {
             outcome: 'win',
             last_played_at: '2026-03-11T12:00:00.000Z',
             created_at: '2026-03-08T12:00:00.000Z',
-          },
+          }),
         ],
         counts: { in_progress: 1, completed: 1 },
-      },
+      }),
     });
   });
 }
 
 async function mockBlueprints(page: Page, count: number = 1) {
   const blueprints = [
-    {
-      id: 'bp-1',
+    createBlueprintSummary({
+      id: '00000000-0000-0000-0000-000000000002',
       title: 'The Stolen Cake',
       one_liner: 'Find the cake',
       target_age: 6,
       blueprint_image_id: 'mock-cover.png',
-    },
-    {
-      id: 'bp-2',
+    }),
+    createBlueprintSummary({
+      id: '00000000-0000-0000-0000-000000000003',
       title: 'The Missing Dog',
       one_liner: 'Find the dog',
       target_age: 9,
       blueprint_image_id: null,
-    },
-    {
-      id: 'bp-3',
+    }),
+    createBlueprintSummary({
+      id: '00000000-0000-0000-0000-000000000004',
       title: 'The Haunted Barn',
       one_liner: 'Explore the barn',
       target_age: 12,
       blueprint_image_id: null,
-    },
+    }),
   ].slice(0, count);
 
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
@@ -99,12 +103,12 @@ async function mockBlueprints(page: Page, count: number = 1) {
 async function mockBlueprintImageLink(page: Page) {
   await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
     await route.fulfill({
-      json: {
+      json: createImageLinkResponse({
         image_id: 'mock-cover.png',
         signed_url:
           'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
         expires_at: '2099-01-01T00:00:00.000Z',
-      },
+      }),
     });
   });
 }
@@ -113,21 +117,21 @@ async function mockGameStart(page: Page) {
   await page.route('**/functions/v1/game-start*', async (route) => {
     await route.fulfill({
       json: {
-        game_id: 'game-new',
-        state: {
+        game_id: '00000000-0000-0000-0000-000000000020',
+        state: createGameState({
           locations: [{ id: 'loc-1', name: 'Kitchen' }],
           characters: [],
           time_remaining: 10,
           location: 'Kitchen',
           mode: 'explore',
           current_talk_character: null,
-        },
+        }),
         narration_events: [
-          {
+          createNarrationEvent({
             sequence: 1,
             event_type: 'start',
             narration_parts: [{ text: 'Your investigation begins.', speaker: narratorSpeaker }],
-          },
+          }),
         ],
       },
     });
@@ -138,8 +142,8 @@ async function mockResumeSession(page: Page) {
   await page.route('**/functions/v1/game-get*', async (route) => {
     await route.fulfill({
       json: {
-        blueprint_id: 'bp-1',
-        state: {
+        blueprint_id: '00000000-0000-0000-0000-000000000002',
+        state: createGameState({
           locations: [{ id: 'loc-1', name: 'Kitchen' }],
           characters: [],
           time_remaining: 6,
@@ -147,13 +151,13 @@ async function mockResumeSession(page: Page) {
           mode: 'explore',
           current_talk_character: null,
           history: [],
-        },
+        }),
         narration_events: [
-          {
+          createNarrationEvent({
             sequence: 1,
             event_type: 'narration',
             narration_parts: [{ text: 'Welcome back.', speaker: narratorSpeaker }],
-          },
+          }),
         ],
       },
     });

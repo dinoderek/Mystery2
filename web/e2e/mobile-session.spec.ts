@@ -1,5 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  characterSpeaker as createCharacterSpeaker,
+  createGameState,
+  createSessionSummary,
+  createSessionCatalog,
+  createBlueprintSummary,
+  createImageLinkResponse,
+  createNarrationEvent,
+  createSearchResponse,
+  createMoveResponse,
+  createTalkStartResponse,
+  createTalkEndResponse,
+  createAccuseResponse,
+} from '../../tests/testkit/src/fixtures';
 
 /**
  * Mobile E2E coverage for the session screen (T13).
@@ -9,22 +24,28 @@ import { enableAuthBypass } from './test-auth';
  * drawer (help, status, text size, theme), exit, and end state.
  */
 
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
-const characterSpeaker = { kind: 'character', key: 'character:rosie', label: 'Rosie Jones' } as const;
+const rosieCharacterSpeaker = createCharacterSpeaker('Rosie Jones');
+
+// ---------------------------------------------------------------------------
+// Shared IDs — match testkit defaults where possible
+// ---------------------------------------------------------------------------
+
+const GAME_ID = '00000000-0000-0000-0000-000000000001';
+const BLUEPRINT_ID = '00000000-0000-0000-0000-000000000002';
 
 // ---------------------------------------------------------------------------
 // Base game state
 // ---------------------------------------------------------------------------
 
-const baseGameState = {
+const baseGameState = createGameState({
   locations: [
     { id: 'Kitchen', name: 'Kitchen' },
     { id: 'Garden', name: 'Garden' },
     { id: 'Barn', name: 'Barn' },
   ],
   characters: [
-    { id: 'char-rosie', first_name: 'Rosie', last_name: 'Jones', location_name: 'Kitchen', sex: 'female' },
-    { id: 'char-bob', first_name: 'Bob', last_name: 'Smith', location_name: 'Garden', sex: 'male' },
+    { id: 'char-rosie', first_name: 'Rosie', last_name: 'Jones', location_id: 'Kitchen', location_name: 'Kitchen', sex: 'female' },
+    { id: 'char-bob', first_name: 'Bob', last_name: 'Smith', location_id: 'Garden', location_name: 'Garden', sex: 'male' },
   ],
   time_remaining: 8,
   location: 'Kitchen',
@@ -37,7 +58,21 @@ const baseGameState = {
     speaker: { kind: string; key: string; label: string };
     image_id?: string | null;
   }>,
-};
+});
+
+// ---------------------------------------------------------------------------
+// Reusable factory instances
+// ---------------------------------------------------------------------------
+
+const inProgressSession = createSessionSummary({
+  game_id: GAME_ID,
+  blueprint_id: BLUEPRINT_ID,
+  time_remaining: 8,
+});
+
+const blueprint = createBlueprintSummary({ id: BLUEPRINT_ID });
+
+const defaultImageLink = createImageLinkResponse();
 
 // ---------------------------------------------------------------------------
 // Helpers — mock API routes
@@ -50,35 +85,18 @@ async function setupActiveSession(page: Page, overrides?: { state?: Partial<type
   // Session catalog so MobileHome doesn't flicker
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
     await route.fulfill({
-      json: {
-        in_progress: [
-          {
-            game_id: 'g-1',
-            blueprint_id: 'bp-1',
-            mystery_title: 'The Stolen Cake',
-            mystery_available: true,
-            can_open: true,
-            mode: 'explore',
-            time_remaining: 8,
-            outcome: null,
-            last_played_at: '2026-03-10T12:00:00.000Z',
-            created_at: '2026-03-09T12:00:00.000Z',
-          },
-        ],
+      json: createSessionCatalog({
+        in_progress: [inProgressSession],
         completed: [],
         counts: { in_progress: 1, completed: 0 },
-      },
+      }),
     });
   });
 
   // Blueprints list (needed for title resolution)
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
-      json: {
-        blueprints: [
-          { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
-        ],
-      },
+      json: { blueprints: [blueprint] },
     });
   });
 
@@ -86,14 +104,14 @@ async function setupActiveSession(page: Page, overrides?: { state?: Partial<type
   await page.route('**/functions/v1/game-start*', async (route) => {
     await route.fulfill({
       json: {
-        game_id: 'g-1',
+        game_id: GAME_ID,
         state,
         narration_events: [
-          {
+          createNarrationEvent({
             sequence: 1,
             event_type: 'start',
             narration_parts: [{ text: 'Your investigation begins at the old farmhouse.', speaker: narratorSpeaker }],
-          },
+          }),
         ],
       },
     });
@@ -101,14 +119,7 @@ async function setupActiveSession(page: Page, overrides?: { state?: Partial<type
 
   // Signed image link (for cover images)
   await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-    await route.fulfill({
-      json: {
-        image_id: 'mock-cover.png',
-        signed_url:
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-        expires_at: '2099-01-01T00:00:00.000Z',
-      },
-    });
+    await route.fulfill({ json: defaultImageLink });
   });
 }
 
@@ -187,11 +198,11 @@ test.describe('mobile session — input mode', () => {
 
     await page.route('**/functions/v1/game-search*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSearchResponse({
           narration_parts: [{ text: 'You find a muddy footprint near the pantry.', speaker: narratorSpeaker }],
           time_remaining: 7,
           mode: 'explore',
-        },
+        }),
       });
     });
 
@@ -251,11 +262,11 @@ test.describe('mobile session — quick actions', () => {
 
     await page.route('**/functions/v1/game-search*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSearchResponse({
           narration_parts: [{ text: 'You spot fresh crumbs on the counter.', speaker: narratorSpeaker }],
           time_remaining: 7,
           mode: 'explore',
-        },
+        }),
       });
     });
 
@@ -302,13 +313,13 @@ test.describe('mobile session — quick actions', () => {
 
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createMoveResponse({
           narration_parts: [{ text: 'You walk through the garden gate.', speaker: narratorSpeaker }],
           time_remaining: 7,
           mode: 'explore',
           current_location: 'Garden',
-          visible_characters: [{ first_name: 'Bob' }],
-        },
+          visible_characters: [{ first_name: 'Bob', last_name: 'Smith', sex: 'male' }],
+        }),
       });
     });
 
@@ -346,12 +357,12 @@ test.describe('mobile session — quick actions', () => {
 
     await page.route('**/functions/v1/game-talk*', async (route) => {
       await route.fulfill({
-        json: {
-          narration_parts: [{ text: 'Rosie looks up from the stove.', speaker: characterSpeaker }],
+        json: createTalkStartResponse({
+          narration_parts: [{ text: 'Rosie looks up from the stove.', speaker: rosieCharacterSpeaker }],
           time_remaining: 7,
           mode: 'talk',
           current_talk_character: 'Rosie Jones',
-        },
+        }),
       });
     });
 
@@ -378,19 +389,19 @@ test.describe('mobile session — quick actions', () => {
         mode: 'talk',
         current_talk_character: 'Rosie Jones',
         history: [
-          { sequence: 1, event_type: 'talk', text: 'Rosie waves hello.', speaker: characterSpeaker },
+          { sequence: 1, event_type: 'talk', text: 'Rosie waves hello.', speaker: rosieCharacterSpeaker },
         ],
       },
     });
 
     await page.route('**/functions/v1/game-end-talk*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createTalkEndResponse({
           narration_parts: [{ text: 'You end the conversation.', speaker: narratorSpeaker }],
           time_remaining: 7,
           mode: 'explore',
           current_talk_character: null,
-        },
+        }),
       });
     });
 
@@ -524,10 +535,10 @@ test.describe('mobile session — image viewer', () => {
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'g-1',
+          game_id: GAME_ID,
           state: baseGameState,
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [
@@ -537,7 +548,7 @@ test.describe('mobile session — image viewer', () => {
                   image_id: 'scene-kitchen.png',
                 },
               ],
-            },
+            }),
           ],
         },
       });
@@ -546,12 +557,7 @@ test.describe('mobile session — image viewer', () => {
     // The image link mock must return the same image_id as the narration event
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
-        json: {
-          image_id: 'scene-kitchen.png',
-          signed_url:
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-          expires_at: '2099-01-01T00:00:00.000Z',
-        },
+        json: createImageLinkResponse({ image_id: 'scene-kitchen.png' }),
       });
     });
 
@@ -574,10 +580,10 @@ test.describe('mobile session — image viewer', () => {
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'g-1',
+          game_id: GAME_ID,
           state: baseGameState,
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [
@@ -587,7 +593,7 @@ test.describe('mobile session — image viewer', () => {
                   image_id: 'scene-kitchen.png',
                 },
               ],
-            },
+            }),
           ],
         },
       });
@@ -595,12 +601,7 @@ test.describe('mobile session — image viewer', () => {
 
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
-        json: {
-          image_id: 'scene-kitchen.png',
-          signed_url:
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-          expires_at: '2099-01-01T00:00:00.000Z',
-        },
+        json: createImageLinkResponse({ image_id: 'scene-kitchen.png' }),
       });
     });
 
@@ -659,12 +660,12 @@ test.describe('mobile session — end state', () => {
 
     await page.route('**/functions/v1/game-accuse*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createAccuseResponse({
           narration_parts: [{ text: 'Excellent reasoning, detective.', speaker: narratorSpeaker }],
           mode: 'ended',
           result: 'win',
           time_remaining: 0,
-        },
+        }),
       });
     });
 
@@ -692,12 +693,12 @@ test.describe('mobile session — end state', () => {
 
     await page.route('**/functions/v1/game-accuse*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createAccuseResponse({
           narration_parts: [{ text: 'The evidence does not support your accusation.', speaker: narratorSpeaker }],
           mode: 'ended',
           result: 'lose',
           time_remaining: 0,
-        },
+        }),
       });
     });
 
@@ -715,74 +716,60 @@ test.describe('mobile session — end state', () => {
   test('read-only completed session hides action bar and reply button', async ({ page }) => {
     await enableAuthBypass(page);
 
+    const completedSession = createSessionSummary({
+      game_id: '00000000-0000-0000-0000-000000000099',
+      blueprint_id: BLUEPRINT_ID,
+      mode: 'ended',
+      time_remaining: 0,
+      outcome: 'win',
+      last_played_at: '2026-03-11T12:00:00.000Z',
+      created_at: '2026-03-08T12:00:00.000Z',
+    });
+
     // Mock catalog with completed session
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [],
-          completed: [
-            {
-              game_id: 'g-completed',
-              blueprint_id: 'bp-1',
-              mystery_title: 'The Stolen Cake',
-              mystery_available: true,
-              can_open: true,
-              mode: 'ended',
-              time_remaining: 0,
-              outcome: 'win',
-              last_played_at: '2026-03-11T12:00:00.000Z',
-              created_at: '2026-03-08T12:00:00.000Z',
-            },
-          ],
+          completed: [completedSession],
           counts: { in_progress: 0, completed: 1 },
-        },
+        }),
       });
     });
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: {
-          blueprints: [
-            { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
-          ],
-        },
+        json: { blueprints: [blueprint] },
       });
     });
 
     await page.route('**/functions/v1/game-get*', async (route) => {
       await route.fulfill({
         json: {
-          blueprint_id: 'bp-1',
+          blueprint_id: BLUEPRINT_ID,
           state: {
             ...baseGameState,
             mode: 'ended',
             time_remaining: 0,
           },
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [{ text: 'Your investigation begins.', speaker: narratorSpeaker }],
-            },
-            {
+            }),
+            createNarrationEvent({
               sequence: 2,
               event_type: 'accuse_judge',
               narration_parts: [{ text: 'Case solved.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
     });
 
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      await route.fulfill({
-        json: {
-          image_id: 'mock-cover.png',
-          signed_url:
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-          expires_at: '2099-01-01T00:00:00.000Z',
-        },
-      });
+      await route.fulfill({ json: defaultImageLink });
     });
 
     await enableAuthBypass(page);

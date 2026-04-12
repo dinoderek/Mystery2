@@ -1,20 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
-
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  EMPTY_CATALOG,
+  createBlueprintSummary,
+  createGameState,
+  createNarrationEvent,
+  createSessionSummary,
+  createSessionCatalog,
+  createImageLinkResponse,
+} from '../../tests/testkit/src/fixtures';
 
 test.describe('US1 - Start Screen', () => {
   async function mockEmptyCatalog(page: import('@playwright/test').Page) {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
-          in_progress: [],
-          completed: [],
-          counts: {
-            in_progress: 0,
-            completed: 0,
-          },
-        },
+        json: EMPTY_CATALOG,
       });
     });
   }
@@ -41,40 +42,32 @@ test.describe('US1 - Start Screen', () => {
 
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [
-            {
-              game_id: 'g-in-progress',
-              blueprint_id: 'bp-1',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000010',
+              blueprint_id: '00000000-0000-0000-0000-000000000011',
               mystery_title: 'In Progress Mystery',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
               time_remaining: 6,
-              outcome: null,
-              last_played_at: '2026-03-10T12:00:00.000Z',
-              created_at: '2026-03-09T12:00:00.000Z',
-            },
+            }),
           ],
           completed: [
-            {
-              game_id: 'g-completed',
-              blueprint_id: 'bp-2',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000020',
+              blueprint_id: '00000000-0000-0000-0000-000000000021',
               mystery_title: 'Completed Mystery',
-              mystery_available: true,
-              can_open: true,
               mode: 'ended',
               time_remaining: 0,
               outcome: 'win',
               last_played_at: '2026-03-09T12:00:00.000Z',
               created_at: '2026-03-08T12:00:00.000Z',
-            },
+            }),
           ],
           counts: {
             in_progress: 1,
             completed: 1,
           },
-        },
+        }),
       });
     });
 
@@ -100,8 +93,8 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
-            { id: 'bp-2', title: 'The Missing Dog', one_liner: 'Find the dog', target_age: 9 },
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000012', title: 'The Missing Dog', one_liner: 'Find the dog', target_age: 9 }),
           ],
         },
       });
@@ -110,21 +103,14 @@ test.describe('US1 - Start Screen', () => {
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'game-123',
-          state: {
-            locations: [],
-            characters: [],
-            time_remaining: 10,
-            location: 'living room',
-            mode: 'explore',
-            current_talk_character: null,
-          },
+          game_id: '00000000-0000-0000-0000-000000000123',
+          state: createGameState({ locations: [], characters: [], location: 'living room' }),
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -149,7 +135,7 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
           ],
         },
       });
@@ -159,21 +145,14 @@ test.describe('US1 - Start Screen', () => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       await route.fulfill({
         json: {
-          game_id: 'game-123',
-          state: {
-            locations: [],
-            characters: [],
-            time_remaining: 10,
-            location: 'living room',
-            mode: 'explore',
-            current_talk_character: null,
-          },
+          game_id: '00000000-0000-0000-0000-000000000123',
+          state: createGameState({ locations: [], characters: [], location: 'living room' }),
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -203,13 +182,13 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            {
+            createBlueprintSummary({
               id: '123e4567-e89b-12d3-a456-426614174000',
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
               target_age: 6,
               blueprint_image_id: 'mock-blueprint.blueprint.png',
-            },
+            }),
           ],
         },
       });
@@ -217,12 +196,11 @@ test.describe('US1 - Start Screen', () => {
 
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createImageLinkResponse({
           image_id: 'mock-blueprint.blueprint.png',
           signed_url:
             'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-          expires_at: '2099-01-01T00:00:00.000Z',
-        },
+        }),
       });
     });
 
@@ -242,13 +220,13 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            {
+            createBlueprintSummary({
               id: '123e4567-e89b-12d3-a456-426614174000',
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
               target_age: 6,
               blueprint_image_id: 'mock-blueprint.blueprint.png',
-            },
+            }),
           ],
         },
       });

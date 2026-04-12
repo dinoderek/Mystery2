@@ -1,59 +1,53 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  EMPTY_CATALOG,
+  createBlueprintSummary,
+  createGameState,
+  createNarrationEvent,
+  createMoveResponse,
+  createImageLinkResponse,
+  createSessionSummary,
+  createSessionCatalog,
+} from '../../tests/testkit/src/fixtures';
 
-const narratorSpeaker = {
-  kind: 'narrator',
-  key: 'narrator',
-  label: 'Narrator',
-};
-
-const startState = {
+const startState = createGameState({
   locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
   characters: [],
-  time_remaining: 10,
   location: 'kitchen',
-  mode: 'explore',
-  current_talk_character: null,
-};
+});
 
 test.describe('US2/US3 - Narration Rendering', () => {
   test.beforeEach(async ({ page }) => {
     await enableAuthBypass(page);
 
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [],
-          completed: [],
-          counts: { in_progress: 0, completed: 0 },
-        },
-      });
+      await route.fulfill({ json: EMPTY_CATALOG });
     });
 
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: {
-          blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }],
-        },
+        json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
       });
     });
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'g1',
+          game_id: '00000000-0000-0000-0000-000000000001',
           state: startState,
           narration_events: [
-            {
+            createNarrationEvent({
               sequence: 1,
               event_type: 'start',
               narration_parts: [{ text: 'Game started. The cake is gone.', speaker: narratorSpeaker }],
-            },
-            {
+            }),
+            createNarrationEvent({
               sequence: 2,
               event_type: 'move',
               narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -61,13 +55,10 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createMoveResponse({
           narration_parts: [{ text: 'You move to the garden.', speaker: narratorSpeaker }],
           current_location: 'garden',
-          visible_characters: [],
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        }),
       });
     });
   });
@@ -137,11 +128,11 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
       await new Promise((r) => setTimeout(r, 300));
       await route.fulfill({
-        json: {
+        json: createImageLinkResponse({
           image_id: 'mock-blueprint.location-garden.png',
-          signed_url: '/storage/v1/object/sign/fake/img.png',
+          signed_url: 'http://127.0.0.1/storage/v1/object/sign/fake/img.png',
           expires_at: new Date(Date.now() + 3600_000).toISOString(),
-        },
+        }),
       });
     });
 
@@ -162,14 +153,12 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
         json: {
-          game_id: 'g1',
+          game_id: '00000000-0000-0000-0000-000000000001',
           state: startState,
           narration_events: [
-            {
-              sequence: 1,
-              event_type: 'start',
+            createNarrationEvent({
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
-            },
+            }),
           ],
         },
       });
@@ -177,7 +166,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createMoveResponse({
           narration_parts: [
             ...paddingParts,
             {
@@ -187,10 +176,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
             },
           ],
           current_location: 'garden',
-          visible_characters: [],
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        }),
       });
     });
 
@@ -233,7 +219,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createMoveResponse({
           narration_parts: [
             {
               text: 'You move to the garden.',
@@ -242,10 +228,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
             },
           ],
           current_location: 'garden',
-          visible_characters: [],
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        }),
       });
     });
 
@@ -268,24 +251,19 @@ test.describe('US2/US3 - Narration Rendering', () => {
   test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createSessionCatalog({
           in_progress: [
-            {
-              game_id: 'g1',
-              blueprint_id: 'b1',
+            createSessionSummary({
+              game_id: '00000000-0000-0000-0000-000000000001',
+              blueprint_id: '00000000-0000-0000-0000-000000000002',
               mystery_title: 'B1',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
               time_remaining: 4,
-              outcome: null,
               last_played_at: '2026-03-16T10:00:00.000Z',
               created_at: '2026-03-16T09:00:00.000Z',
-            },
+            }),
           ],
-          completed: [],
           counts: { in_progress: 1, completed: 0 },
-        },
+        }),
       });
     });
 

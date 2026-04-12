@@ -9,8 +9,10 @@ to troubleshoot odd cases.
 
 ## Overview
 
-The local stack runs Supabase services in Docker containers. In the main
-checkout the project uses `project_id = "mystery"` in `supabase/config.toml`.
+The local stack runs Supabase services in Docker containers. The base
+configuration lives in `supabase/config.toml.template` (checked in) with
+`project_id = "mystery"` and default ports. The actual `supabase/config.toml`
+is generated from this template at startup and is gitignored.
 
 The repo is designed so that separate git worktrees can run isolated local
 Supabase stacks at the same time without clobbering each other's containers,
@@ -33,8 +35,8 @@ Each worktree gets a derived `project_id` and an offset port range.
 1. `scripts/worktree-ports.mjs` detects whether the current directory is the
    main checkout or a git worktree.
 2. For worktrees, it hashes the worktree name into a deterministic slot.
-3. `patchConfigToml()` rewrites `supabase/config.toml` in that worktree with
-   the derived `project_id` and ports.
+3. `patchConfigToml()` generates `supabase/config.toml` from
+   `config.toml.template` with the derived `project_id` and ports.
 4. `injectWorktreeEnv()` exports the matching `API_URL`, `SUPABASE_URL`,
    `VITE_SUPABASE_URL`, and `VITE_DEV_PORT` so scripts and the web app point at
    the right local services.
@@ -59,7 +61,8 @@ Each worktree gets a derived `project_id` and an offset port range.
 
 | File | Role |
 | --- | --- |
-| `scripts/worktree-ports.mjs` | Worktree detection, port derivation, config patching |
+| `supabase/config.toml.template` | Checked-in base config; source of truth for `config.toml` |
+| `scripts/worktree-ports.mjs` | Worktree detection, port derivation, config generation |
 | `scripts/supabase-utils.mjs` | Startup orchestration, readiness checks, env injection |
 | `scripts/gc-worktree-supabase.mjs` | Garbage-collects orphaned worktree stacks |
 
@@ -67,8 +70,8 @@ Each worktree gets a derived `project_id` and an offset port range.
 
 - In worktrees, prefer the repo wrapper scripts (`npm run supabase:*`,
   `npm run seed:*`, repo test scripts) over raw `npx supabase` commands.
-- Raw `npx supabase` commands are risky in worktrees because the config may not
-  be patched yet for the current directory.
+- Raw `npx supabase` commands are risky in worktrees because `config.toml` may
+  not have been generated yet for the current worktree.
 - If you truly need a raw CLI command such as `supabase status` or
   `supabase migration new`, run `npm run supabase:patch` first.
 - Test and dev scripts use `ensureSupabaseRunning()` plus
@@ -94,7 +97,7 @@ Outside a worktree, the system behaves like a normal single-checkout setup:
 
 - `project_id` stays `mystery`
 - default ports remain unchanged
-- no worktree config patching is needed
+- `config.toml` is generated as an unmodified copy of the template
 - inherited env vars are preserved
 
 ## Troubleshooting
@@ -138,4 +141,4 @@ Use `npm run supabase:reset`, then reseed with `npm run seed:all`.
 
 ### You need raw `npx supabase` in a worktree
 
-Patch the current worktree config first with `npm run supabase:patch`.
+Generate the config first with `npm run supabase:patch`.

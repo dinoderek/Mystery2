@@ -195,8 +195,9 @@ For full details see [`docs/local-infrastructure.md`](docs/local-infrastructure.
 ### Worktrees: use `npm run` scripts
 
 In a git worktree, always use `npm run supabase:*` scripts instead of raw
-`npx supabase` commands. The scripts patch `supabase/config.toml` with the
-worktree's project_id and ports. If you must run a raw command, patch first:
+`npx supabase` commands. The scripts generate `supabase/config.toml` from
+`config.toml.template` with the worktree's project_id and ports. If you must
+run a raw command, generate the config first:
 
 ```bash
 npm run supabase:patch

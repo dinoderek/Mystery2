@@ -45,17 +45,21 @@ Each worktree gets a derived `project_id` and an offset port range.
 
 ### Port Layout
 
-| Service | Main checkout | Worktree slot 1 | Worktree slot 2 |
-| --- | --- | --- | --- |
-| API (functions) | 54331 | 54431 | 54531 |
-| Database | 54332 | 54432 | 54532 |
-| Shadow DB | 54330 | 54430 | 54530 |
-| Studio | 54333 | 54433 | 54533 |
-| Inbucket | 54334 | 54434 | 54534 |
-| Analytics | 54337 | 54437 | 54537 |
-| DB Pooler | 54339 | 54439 | 54539 |
-| Edge Inspector | 8083 | 8183 | 8283 |
-| Vite dev server | 5173 | 5273 | 5373 |
+Ports are divided into three bands. Supabase services share the 54xxx range
+with stride 10 per slot. Vite and edge inspector each get their own band with
+stride 1, giving 1000 usable slots.
+
+| Service | Base (main) | Stride | Slot 1 | Slot 2 |
+| --- | --- | --- | --- | --- |
+| Vite dev server | 51000 | +1 | 51001 | 51002 |
+| Edge Inspector | 53000 | +1 | 53001 | 53002 |
+| API (functions) | 54331 | +10 | 54341 | 54351 |
+| Database | 54332 | +10 | 54342 | 54352 |
+| Shadow DB | 54330 | +10 | 54340 | 54350 |
+| Studio | 54333 | +10 | 54343 | 54353 |
+| Inbucket | 54334 | +10 | 54344 | 54354 |
+| Analytics | 54337 | +10 | 54347 | 54357 |
+| DB Pooler | 54339 | +10 | 54349 | 54359 |
 
 ### Key Files
 
@@ -126,9 +130,9 @@ docker ps --filter "label=com.supabase.cli.project" \
 
 If stale worktree stacks are present, clean them up with `npm run supabase:gc`.
 
-The slot allocator has 50 buckets, so collisions are uncommon but possible.
-Recreating the worktree under a different name will usually move it to a new
-slot.
+The slot allocator has 1000 buckets, so collisions are extremely rare (~0.3%
+with 3 concurrent worktrees). If one does occur, recreating the worktree under
+a different name will move it to a new slot.
 
 ### A new worktree has an empty database
 

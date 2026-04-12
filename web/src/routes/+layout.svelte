@@ -8,6 +8,7 @@
 	import { gameSessionStore } from '$lib/domain/store.svelte';
 	import { authStore } from '$lib/domain/auth-store.svelte';
 	import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
+	import { mobilePrefs } from '$lib/domain/mobile-prefs.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 	import MobileKeyboardProxy from '$lib/components/MobileKeyboardProxy.svelte';
 
@@ -17,6 +18,7 @@
 		themeStore.init();
 		gameSessionStore.initializeTheme();
 		mobileDetect.init();
+		mobilePrefs.init();
 	});
 
 	function isE2EAuthBypassEnabled(): boolean {

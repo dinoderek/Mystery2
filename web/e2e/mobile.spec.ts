@@ -69,7 +69,7 @@ test.describe('mobile keyboard proxy', () => {
     await expect(page.getByText('1. Start a new game')).toBeVisible();
   });
 
-  test('in-progress list exposes numeric proxy and back button', async ({ page }) => {
+  test('in-progress list shows carousel on mobile with back navigation', async ({ page }) => {
     await enableAuthBypass(page);
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
       await route.fulfill({
@@ -97,9 +97,11 @@ test.describe('mobile keyboard proxy', () => {
     await page.goto('/sessions/in-progress');
     await expect(page.getByText('In Progress Mystery')).toBeVisible();
 
-    await expect(page.getByTestId('mobile-keyboard-proxy')).toHaveAttribute('inputmode', 'numeric');
+    // Mobile shows MobileTopBar with back arrow instead of keyboard proxy
+    await expect(page.getByTestId('mobile-topbar-title')).toHaveText('Resume Case');
+    await expect(page.getByTestId('mobile-topbar-back')).toBeVisible();
 
-    await page.getByTestId('mobile-back').tap();
+    await page.getByTestId('mobile-topbar-back').tap();
     await expect(page).toHaveURL(/\/$/);
   });
 });

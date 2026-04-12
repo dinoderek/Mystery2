@@ -13,7 +13,7 @@
   const bar = new MobileActionBarState();
 </script>
 
-<div class="font-mono px-3 py-2" data-testid="mobile-action-bar">
+<div class="font-mono px-3 py-2 pb-[env(safe-area-inset-bottom)]" data-testid="mobile-action-bar">
   <div class="flex gap-2 overflow-x-auto scrollbar-none">
     {#if bar.mode === 'explore'}
       <button

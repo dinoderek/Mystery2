@@ -6,6 +6,12 @@
   import TerminalSpinner from './TerminalSpinner.svelte';
   import SignedImage from './SignedImage.svelte';
 
+  let {
+    onimagetap,
+  }: {
+    onimagetap?: (imageId: string) => void;
+  } = $props();
+
   interface HistoryGroup {
     entries: HistoryEntry[];
     imageId: string | null;
@@ -100,7 +106,14 @@
         {#if group.imageId && gameSessionStore.blueprint_id && !failedImageIds.has(group.imageId)}
           <div class="narration-image-group">
             <div class="narration-image-float">
-              <div class="story-image-panel">
+              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+              <div
+                class="story-image-panel{onimagetap ? ' cursor-pointer' : ''}"
+                role={onimagetap ? 'button' : undefined}
+                tabindex={onimagetap ? 0 : undefined}
+                onclick={onimagetap ? () => onimagetap!(group.imageId!) : undefined}
+                onkeydown={onimagetap ? (e: KeyboardEvent) => { if (e.key === 'Enter') onimagetap!(group.imageId!); } : undefined}
+              >
                 <SignedImage
                   blueprintId={gameSessionStore.blueprint_id}
                   imageId={group.imageId}

@@ -1,4 +1,6 @@
-export const validBlueprintV2 = {
+import { BlueprintV2Schema } from "../../../../packages/shared/src/blueprint-schema-v2.ts";
+
+const _raw = {
   schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
@@ -167,3 +169,9 @@ export const validBlueprintV2 = {
     },
   ],
 } as const;
+
+// Validate against the Zod schema at import time — any schema drift
+// (added required fields, renamed keys, etc.) fails immediately.
+BlueprintV2Schema.parse(_raw);
+
+export const validBlueprintV2 = _raw;

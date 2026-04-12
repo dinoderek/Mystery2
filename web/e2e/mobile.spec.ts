@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  EMPTY_CATALOG,
+  createSessionSummary,
+  createSessionCatalog,
+  createBlueprintSummary,
+} from '../../tests/testkit/src/fixtures';
 
 // Mobile-only spec. Runs under the `mobile-safari` Playwright project
 // (iPhone 13 / WebKit) where `(hover: none) and (pointer: coarse)` is true.
@@ -7,62 +13,42 @@ import { enableAuthBypass } from './test-auth';
 test.describe('mobile home screen', () => {
   async function mockEmptyCatalog(page: import('@playwright/test').Page) {
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [],
-          completed: [],
-          counts: { in_progress: 0, completed: 0 },
-        },
-      });
+      await route.fulfill({ json: EMPTY_CATALOG });
     });
   }
 
   async function mockCatalogWithSessions(page: import('@playwright/test').Page) {
+    const inProgressSession = createSessionSummary({
+      game_id: '00000000-0000-0000-0000-000000000001',
+      blueprint_id: '00000000-0000-0000-0000-000000000002',
+      mystery_title: 'In Progress Mystery',
+      time_remaining: 6,
+    });
+    const completedSession = createSessionSummary({
+      game_id: '00000000-0000-0000-0000-000000000010',
+      blueprint_id: '00000000-0000-0000-0000-000000000003',
+      mystery_title: 'Completed Mystery',
+      mode: 'ended',
+      time_remaining: 0,
+      outcome: 'win',
+      last_played_at: '2026-03-11T12:00:00.000Z',
+      created_at: '2026-03-08T12:00:00.000Z',
+    });
+    const catalog = createSessionCatalog({
+      in_progress: [inProgressSession],
+      completed: [completedSession],
+      counts: { in_progress: 1, completed: 1 },
+    });
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [
-            {
-              game_id: 'g-1',
-              blueprint_id: 'bp-1',
-              mystery_title: 'In Progress Mystery',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
-              time_remaining: 6,
-              outcome: null,
-              last_played_at: '2026-03-10T12:00:00.000Z',
-              created_at: '2026-03-09T12:00:00.000Z',
-            },
-          ],
-          completed: [
-            {
-              game_id: 'g-2',
-              blueprint_id: 'bp-2',
-              mystery_title: 'Completed Mystery',
-              mystery_available: true,
-              can_open: true,
-              mode: 'ended',
-              time_remaining: 0,
-              outcome: 'win',
-              last_played_at: '2026-03-11T12:00:00.000Z',
-              created_at: '2026-03-08T12:00:00.000Z',
-            },
-          ],
-          counts: { in_progress: 1, completed: 1 },
-        },
-      });
+      await route.fulfill({ json: catalog });
     });
   }
 
   async function mockBlueprints(page: import('@playwright/test').Page) {
+    const blueprint = createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000002' });
     await page.route('**/functions/v1/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: {
-          blueprints: [
-            { id: 'bp-1', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 },
-          ],
-        },
+        json: { blueprints: [blueprint] },
       });
     });
   }
@@ -138,27 +124,18 @@ test.describe('mobile home screen', () => {
 
   test('in-progress list shows carousel on mobile with back navigation', async ({ page }) => {
     await enableAuthBypass(page);
+    const inProgressSession = createSessionSummary({
+      game_id: '00000000-0000-0000-0000-000000000001',
+      blueprint_id: '00000000-0000-0000-0000-000000000002',
+      mystery_title: 'In Progress Mystery',
+      time_remaining: 6,
+    });
+    const catalog = createSessionCatalog({
+      in_progress: [inProgressSession],
+      counts: { in_progress: 1, completed: 0 },
+    });
     await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-      await route.fulfill({
-        json: {
-          in_progress: [
-            {
-              game_id: 'g-1',
-              blueprint_id: 'bp-1',
-              mystery_title: 'In Progress Mystery',
-              mystery_available: true,
-              can_open: true,
-              mode: 'explore',
-              time_remaining: 6,
-              outcome: null,
-              last_played_at: '2026-03-10T12:00:00.000Z',
-              created_at: '2026-03-09T12:00:00.000Z',
-            },
-          ],
-          completed: [],
-          counts: { in_progress: 1, completed: 0 },
-        },
-      });
+      await route.fulfill({ json: catalog });
     });
 
     await page.goto('/sessions/in-progress');

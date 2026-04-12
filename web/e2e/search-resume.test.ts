@@ -1,49 +1,40 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import {
+  NARRATOR_SPEAKER as narratorSpeaker,
+  INVESTIGATOR_SPEAKER as investigatorSpeaker,
+  createGameState,
+  createBlueprintSummary,
+  createSessionSummary,
+  createSessionCatalog,
+} from '../../tests/testkit/src/fixtures';
 
-const narratorSpeaker = { kind: 'narrator', key: 'narrator', label: 'Narrator' } as const;
-const investigatorSpeaker = { kind: 'investigator', key: 'investigator', label: 'You' } as const;
-
-const baseState = {
-  locations: [{ name: 'Kitchen' }, { name: 'Garden' }],
-  characters: [
-    { first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen', sex: 'female' },
-  ],
-  time_remaining: 7,
-  location: 'Kitchen',
-  mode: 'explore',
-  current_talk_character: null,
-};
+const baseState = createGameState({ time_remaining: 7 });
 
 async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
   await enableAuthBypass(page);
 
   await page.route('**/functions/v1/blueprints-list*', async (route) => {
     await route.fulfill({
-      json: { blueprints: [{ id: 'b1', title: 'B1', one_liner: '1', target_age: 6 }] },
+      json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
     });
   });
 
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
     await route.fulfill({
-      json: {
+      json: createSessionCatalog({
         in_progress: [
-          {
-            game_id: 'g-resume',
-            blueprint_id: 'b1',
+          createSessionSummary({
+            game_id: '00000000-0000-0000-0000-000000000001',
+            blueprint_id: '00000000-0000-0000-0000-000000000002',
             mystery_title: 'Cookie Mystery',
-            mystery_available: true,
-            can_open: true,
-            mode: 'explore',
             time_remaining: 7,
-            outcome: null,
-            last_played_at: '2026-01-01T00:00:00Z',
-            created_at: '2026-01-01T00:00:00Z',
-          },
+            last_played_at: '2026-01-01T00:00:00.000Z',
+            created_at: '2026-01-01T00:00:00.000Z',
+          }),
         ],
-        completed: [],
         counts: { in_progress: 1, completed: 0 },
-      },
+      }),
     });
   });
 

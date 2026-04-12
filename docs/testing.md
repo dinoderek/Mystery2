@@ -181,6 +181,41 @@ example, a change to AI output contracts may require:
 - Live-AI suites are opt-in only and are never a substitute for the default
   mock-backed quality gate.
 
+## Mock Data Conventions
+
+Browser E2E mocks and the blueprint unit fixture are typed against the shared
+Zod schemas in `packages/shared/src/mystery-api-contracts.ts` and
+`packages/shared/src/blueprint-schema-v2.ts`.
+
+### Rules
+
+- Use the factory functions and validated constants in
+  `tests/testkit/src/fixtures.ts` instead of hand-writing inline mock objects.
+- Never define inline mock objects for shapes that have Zod schemas
+  (`Speaker`, `GameState`, `SessionSummary`, `BlueprintSummary`, etc.).
+- Factories call `Schema.parse()` at creation time — if the schema adds a
+  required field or renames a key, the mock fails immediately rather than
+  silently passing against a stale shape.
+- Pass only the overrides that differ from factory defaults. This keeps tests
+  focused on what is being tested.
+- When adding a new response type to the shared schemas, add a corresponding
+  factory in `tests/testkit/src/fixtures.ts` and validate it with
+  `Schema.parse()`.
+
+### Available factories
+
+Constants: `NARRATOR_SPEAKER`, `INVESTIGATOR_SPEAKER`, `LOCATIONS`,
+`CHARACTERS`, `BASE_GAME_STATE`, `EMPTY_CATALOG`, `MOCK_BLUEPRINT`,
+`MOCK_IMAGE_LINK`.
+
+Functions: `characterSpeaker(name)`, `narrationResponse(text, speaker, imageId?)`,
+`createNarrationEvent(overrides?)`, `createGameState(overrides?)`,
+`createGameStartResponse(overrides?)`, `createSessionSummary(overrides?)`,
+`createSessionCatalog(overrides?)`, `createBlueprintSummary(overrides?)`,
+`createMoveResponse(overrides?)`, `createSearchResponse(overrides?)`,
+`createTalkStartResponse(overrides?)`, `createTalkEndResponse(overrides?)`,
+`createAccuseResponse(overrides?)`, `createImageLinkResponse(overrides?)`.
+
 ## Test Isolation Strategy
 
 Because starting and stopping Supabase is resource-intensive, integration and

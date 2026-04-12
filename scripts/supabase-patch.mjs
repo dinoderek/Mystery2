@@ -1,24 +1,24 @@
 /**
- * Patch supabase/config.toml for worktree isolation.
+ * Generate supabase/config.toml from config.toml.template.
  *
- * Safe to run in both worktrees and the main checkout (no-op in the latter).
- * Use this before running raw `npx supabase` commands in a worktree.
+ * Safe to run in both worktrees and the main checkout.  In a worktree the
+ * generated file gets worktree-specific ports; in the main checkout it is an
+ * unmodified copy of the template.
  */
 
 import { patchConfigToml, resolveWorktreePorts } from "./worktree-ports.mjs";
 
 const resolved = resolveWorktreePorts();
+const written = patchConfigToml();
 
-if (!resolved.isWorktree) {
-  console.log("Main checkout detected — config.toml already correct, nothing to patch.");
-  process.exit(0);
-}
-
-const patched = patchConfigToml();
-if (patched) {
-  console.log(
-    `Patched config.toml → project_id=${resolved.projectId}, API port=${resolved.ports.api}`,
-  );
+if (written) {
+  if (resolved.isWorktree) {
+    console.log(
+      `Generated config.toml → project_id=${resolved.projectId}, API port=${resolved.ports.api}`,
+    );
+  } else {
+    console.log("Generated config.toml from template (main checkout defaults).");
+  }
 } else {
-  console.log("config.toml already patched for this worktree.");
+  console.log("config.toml is already up to date.");
 }

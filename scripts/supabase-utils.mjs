@@ -126,16 +126,14 @@ export function isSupabaseRunning(env) {
 export async function ensureSupabaseRunning(env, options = {}) {
   const { restart = false } = options;
 
-  // --- Worktree isolation: patch config and garbage-collect orphans ----------
+  // --- Generate config.toml from template and garbage-collect orphans --------
   const resolved = resolveWorktreePorts();
-  if (resolved.isWorktree) {
-    const patched = patchConfigToml();
-    if (patched) {
-      console.log(
-        `Worktree detected (${resolved.worktreeName}): patched config.toml → ` +
-        `project_id=${resolved.projectId}, API port=${resolved.ports.api}`,
-      );
-    }
+  const configWritten = patchConfigToml();
+  if (configWritten && resolved.isWorktree) {
+    console.log(
+      `Worktree detected (${resolved.worktreeName}): generated config.toml → ` +
+      `project_id=${resolved.projectId}, API port=${resolved.ports.api}`,
+    );
   }
 
   // Opportunistic GC: remove Supabase stacks from deleted worktrees.

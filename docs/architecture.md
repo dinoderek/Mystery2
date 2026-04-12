@@ -38,6 +38,13 @@ Responsibilities:
 - Call Edge Functions for AI-backed turns (never call OpenRouter directly).
 - Render session-aware navigation (`/`, `/sessions/in-progress`, `/sessions/completed`) using catalog data from Edge Functions.
 
+The UI maintains **dual component trees**: each page route checks
+`mobileDetect.isMobile` and renders either a desktop component tree or a
+dedicated mobile tree from `src/lib/components/mobile/`. Shared components
+(e.g. `NarrationBox`, `HelpModal`) are reused across both trees. See
+`docs/screen-navigation.md` (Mobile UI Layer) and
+`docs/component-inventory.md` (Mobile Components) for the full inventory.
+
 Constraints:
 
 - **No secrets** in the browser bundle.

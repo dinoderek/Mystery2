@@ -56,6 +56,11 @@ Load additional guidance based on the area you are touching:
 - SvelteKit styling or themes in `web/`: `docs/styling-conventions.md`
 - New UI elements or component reuse in `web/`: `docs/component-inventory.md`
 - SvelteKit routing or page architecture in `web/`: `docs/screen-navigation.md`
+- SvelteKit page routes with mobile counterparts: check for the
+  `mobileDetect.isMobile` branch in each route's `+page.svelte` and update
+  both desktop and mobile component trees. See
+  `docs/screen-navigation.md` (Mobile UI Layer) and
+  `docs/component-inventory.md` (Mobile Components) for the full inventory.
 - Edge Functions, API contracts, or database work:
   `docs/backend-conventions.md`
 - Local Supabase stack, worktree isolation, or port issues:

@@ -28,3 +28,47 @@ See `docs/theming.md` for the full token reference and how to create new themes.
 - Global base styles and theme CSS variables are defined in `src/routes/layout.css`.
 - The Tailwind `@theme` block in `layout.css` maps CSS variables to Tailwind color utilities.
 - Theme definitions live in `src/lib/domain/theme-store.svelte.ts`.
+
+## 5. Responsive / Mobile
+
+The app uses **component branching**, not Tailwind breakpoints, for mobile
+layouts. Each route's `+page.svelte` checks `mobileDetect.isMobile` and renders
+either the desktop component tree or a dedicated mobile component tree from
+`src/lib/components/mobile/`.
+
+### Detection pattern
+
+```svelte
+{#if !mobileDetect.isMobile}
+  <DesktopView />
+{:else}
+  <MobileView />
+{/if}
+```
+
+`MobileDetectStore` (`src/lib/domain/mobile-detect.svelte.ts`) uses
+`matchMedia('(hover: none) and (pointer: coarse)')` to set `isMobile`.
+
+### Safe-area insets
+
+Mobile components must account for device notches and home indicators using
+`env(safe-area-inset-*)` Tailwind classes:
+
+- **Top bars**: `pt-[env(safe-area-inset-top)]` (e.g. `MobileTopBar`)
+- **Bottom bars**: `pb-[env(safe-area-inset-bottom)]` (e.g. `MobileInputBar`,
+  `MobileActionBar`)
+
+The root `app.html` sets `<meta name="viewport" content="..., viewport-fit=cover">`
+to enable inset values.
+
+### Touch targets
+
+Interactive elements in mobile components should have a minimum tap target of
+**44px** to meet accessibility and usability guidelines.
+
+### What not to do
+
+- Do not use Tailwind responsive breakpoints (`sm:`, `md:`, `lg:`) for
+  desktop-vs-mobile layout switching. Use `mobileDetect.isMobile` branching.
+- Do not duplicate shared components. Reuse existing components (e.g.
+  `NarrationBox`, `HelpModal`) inside both desktop and mobile trees.

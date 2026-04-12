@@ -15,7 +15,7 @@
 </script>
 
 <header
-  class="flex items-center h-12 border-b border-t-muted/30 bg-t-bg font-mono px-2 shrink-0"
+  class="flex items-center h-12 border-b border-t-muted/30 bg-t-bg font-mono px-2 shrink-0 pt-[env(safe-area-inset-top)]"
 >
   {#if onback}
     <button

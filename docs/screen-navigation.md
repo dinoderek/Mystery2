@@ -87,6 +87,82 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
   - Includes a logout action that clears browser auth session.
 
+## Mobile UI Layer
+
+When `mobileDetect.isMobile` is true, route pages render a separate mobile
+component tree. Desktop markup is preserved unchanged inside `{#if}` guards.
+All shared stores (game, auth, theme) are reused; only layout and interaction
+patterns differ.
+
+See `plan/mobileview/plan.md` for detailed wireframes and user journey
+descriptions (J1-J11).
+
+### Mobile Detection
+
+`MobileDetectStore` (`src/lib/domain/mobile-detect.svelte.ts`) exposes
+`isMobile: boolean` via `matchMedia('(hover: none) and (pointer: coarse)')`.
+Initialised in root layout `onMount`. Routes branch on this value to render
+mobile or desktop component trees.
+
+### Mobile Routes
+
+#### `/` — Mobile Home (`MobileHome.svelte`)
+
+Two internal views (no route change):
+- **Menu view**: Three buttons — "Start New Case", "Resume Case (N)",
+  "Case History (N)". Logout button top-right.
+- **New-game view**: `MobileTopBar` + `MobileCarousel` of blueprints.
+  Tap card to start game → `/session`.
+
+Journeys: J1 (select blueprint), J2/J3 (navigation to session lists).
+
+#### `/sessions/in-progress` — Mobile Resume (`MobileCarousel`)
+
+`MobileTopBar` ("Resume Case") + carousel of in-progress sessions.
+Cards show title, turns remaining, last played. Tap to resume → `/session`.
+Unavailable sessions are dimmed. Back arrow returns to `/`.
+
+Journey: J2 (resume game).
+
+#### `/sessions/completed` — Mobile History (`MobileCarousel`)
+
+Same layout as in-progress. Cards show title, outcome, last played.
+Tap to view in read-only mode → `/session`. Back arrow returns to `/`.
+
+Journey: J3 (view history).
+
+#### `/session` — Mobile Session (`MobileSession.svelte`)
+
+Orchestrates the full gameplay experience with two internal modes:
+
+- **Reading mode**: `MobileTopBar` (title, turns, menu) + `NarrationBox`
+  (reused) + `MobileActionBar` (quick actions) + floating reply button.
+  Text size controlled by `mobilePrefs.textSize`.
+- **Input mode**: Last interaction context + `MobileInputBar` with
+  auto-focused text input. Draft preserved between mode switches.
+
+Overlays: `MobileDrawer` (status, help, zoom, themes, text size, quit),
+`MobileImageViewer` (fullscreen image on tap), `HelpModal`.
+
+Journeys: J4 (read), J5 (write), J6 (quick actions), J7 (image viewer),
+J8 (help), J9 (status), J10 (exit), J11 (text size).
+
+#### `/briefs/*` — Gated on Mobile
+
+All briefs routes (`/briefs`, `/briefs/new`, `/briefs/[id]`) redirect to
+`/` on mobile via an `onMount` guard. The brief creator is desktop-only.
+
+### Mobile Navigation Patterns
+
+- **Back arrow** in `MobileTopBar` uses `goto('/')` or parent-provided callback.
+- **Hamburger menu** toggles the `MobileDrawer`.
+- **Quick actions** in `MobileActionBar` open `MobileListPicker` bottom-sheets
+  for location/character selection, or submit commands directly.
+- **Reply button** switches from reading to input mode (within `/session`).
+- **Safe area insets**: `viewport-fit=cover` in `app.html`;
+  `MobileTopBar` uses `pt-[env(safe-area-inset-top)]`,
+  `MobileInputBar`/`MobileActionBar` use `pb-[env(safe-area-inset-bottom)]`.
+
 ## Navigation Patterns
 
 - Use standard HTML `<a>` tags for standard links to leverage SvelteKit's built-in client-side router.

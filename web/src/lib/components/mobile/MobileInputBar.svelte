@@ -31,7 +31,7 @@
 </script>
 
 <div
-  class="flex items-center gap-1 px-2 py-1 border-t border-t-muted/30 bg-t-bg font-mono shrink-0"
+  class="flex items-center gap-1 px-2 py-1 border-t border-t-muted/30 bg-t-bg font-mono shrink-0 pb-[env(safe-area-inset-bottom)]"
   data-testid="mobile-input-bar"
 >
   <button

@@ -428,6 +428,7 @@ describe("buildCommandPlan", () => {
         "--project-ref",
         `${envName}-ref`,
         "--use-api",
+        "--no-verify-jwt",
         "--jobs",
         "2",
       ]);

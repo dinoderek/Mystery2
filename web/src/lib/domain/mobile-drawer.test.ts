@@ -1,18 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GameState } from '../types/game';
 
 const storeMock = vi.hoisted(() => ({
-  state: null as {
-    locations: { id: string; name: string }[];
-    characters: { first_name: string; last_name: string; location_name: string }[];
-    time_remaining: number;
-    location: string;
-  } | null,
+  state: null as GameState | null,
   showHelp: false,
   showZoomModal: false,
   activeStoryImage: null as { image_id: string } | null,
   submitInput: vi.fn(),
   setTheme: vi.fn(),
 }));
+
+function makeState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    locations: [{ id: 'loc-1', name: 'Library' }],
+    characters: [],
+    time_remaining: 10,
+    location: 'loc-1',
+    mode: 'explore',
+    current_talk_character: null,
+    history: [],
+    ...overrides,
+  };
+}
 
 const themeMock = vi.hoisted(() => ({
   activeId: 'classic',
@@ -76,25 +85,17 @@ describe('MobileDrawerState', () => {
   });
 
   it('returns location name when location id matches', () => {
-    storeMock.state = {
+    storeMock.state = makeState({
       locations: [
         { id: 'loc-1', name: 'Library' },
         { id: 'loc-2', name: 'Kitchen' },
       ],
-      characters: [],
-      time_remaining: 10,
-      location: 'loc-1',
-    };
+    });
     expect(drawer.currentLocationName).toBe('Library');
   });
 
   it('falls back to raw location id when no match found', () => {
-    storeMock.state = {
-      locations: [{ id: 'loc-1', name: 'Library' }],
-      characters: [],
-      time_remaining: 10,
-      location: 'loc-unknown',
-    };
+    storeMock.state = makeState({ location: 'loc-unknown' });
     expect(drawer.currentLocationName).toBe('loc-unknown');
   });
 
@@ -105,16 +106,13 @@ describe('MobileDrawerState', () => {
   });
 
   it('filters characters by current location (case-insensitive)', () => {
-    storeMock.state = {
-      locations: [{ id: 'loc-1', name: 'Library' }],
+    storeMock.state = makeState({
       characters: [
-        { first_name: 'Alice', last_name: 'Smith', location_name: 'loc-1' },
-        { first_name: 'Bob', last_name: 'Jones', location_name: 'loc-2' },
-        { first_name: 'Carol', last_name: 'White', location_name: 'LOC-1' },
+        { id: 'c1', first_name: 'Alice', last_name: 'Smith', location_name: 'loc-1', sex: 'female' },
+        { id: 'c2', first_name: 'Bob', last_name: 'Jones', location_name: 'loc-2', sex: 'male' },
+        { id: 'c3', first_name: 'Carol', last_name: 'White', location_name: 'LOC-1', sex: 'female' },
       ],
-      time_remaining: 10,
-      location: 'loc-1',
-    };
+    });
     const chars = drawer.visibleCharacters;
     expect(chars).toHaveLength(2);
     expect(chars[0].first_name).toBe('Alice');
@@ -122,14 +120,11 @@ describe('MobileDrawerState', () => {
   });
 
   it('returns empty array when no characters at current location', () => {
-    storeMock.state = {
-      locations: [{ id: 'loc-1', name: 'Library' }],
+    storeMock.state = makeState({
       characters: [
-        { first_name: 'Bob', last_name: 'Jones', location_name: 'loc-2' },
+        { id: 'c1', first_name: 'Bob', last_name: 'Jones', location_name: 'loc-2', sex: 'male' },
       ],
-      time_remaining: 10,
-      location: 'loc-1',
-    };
+    });
     expect(drawer.visibleCharacters).toEqual([]);
   });
 
@@ -140,12 +135,7 @@ describe('MobileDrawerState', () => {
   });
 
   it('returns time_remaining from state', () => {
-    storeMock.state = {
-      locations: [],
-      characters: [],
-      time_remaining: 7,
-      location: 'loc-1',
-    };
+    storeMock.state = makeState({ time_remaining: 7 });
     expect(drawer.timeRemaining).toBe(7);
   });
 

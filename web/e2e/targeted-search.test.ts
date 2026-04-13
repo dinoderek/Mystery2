@@ -2,9 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
-  BASE_GAME_STATE as baseState,
   EMPTY_CATALOG,
   createBlueprintSummary,
+  createGameStartResponse,
   createNarrationEvent,
   createSearchResponse,
   narrationResponse,
@@ -25,15 +25,13 @@ async function bootstrapSession(page: Page) {
 
   await page.route('**/functions/v1/game-start*', async (route) => {
     await route.fulfill({
-      json: {
-        game_id: '00000000-0000-0000-0000-000000000001',
-        state: baseState,
+      json: createGameStartResponse({
         narration_events: [
           createNarrationEvent({
             narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
           }),
         ],
-      },
+      }),
     });
   });
 

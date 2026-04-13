@@ -5,6 +5,7 @@ import {
   EMPTY_CATALOG,
   createBlueprintSummary,
   createGameState,
+  createGameStartResponse,
   createNarrationEvent,
 } from '../../tests/testkit/src/fixtures';
 
@@ -20,8 +21,7 @@ test.describe('US2 - Status Bar', () => {
 
         await page.route('**/functions/v1/game-start', async route => {
             await route.fulfill({
-                json: {
-                    game_id: '00000000-0000-0000-0000-000000000001',
+                json: createGameStartResponse({
                     state: createGameState({
                         locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
                         characters: [
@@ -36,7 +36,7 @@ test.describe('US2 - Status Bar', () => {
                             narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
                         }),
                     ],
-                }
+                })
             });
         });
 

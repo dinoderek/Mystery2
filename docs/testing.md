@@ -201,6 +201,10 @@ Zod schemas in `packages/shared/src/mystery-api-contracts.ts` and
 - When adding a new response type to the shared schemas, add a corresponding
   factory in `tests/testkit/src/fixtures.ts` and validate it with
   `Schema.parse()`.
+- For shapes that have a TypeScript type but no Zod schema, annotate mock data
+  with that type explicitly. This ensures `npm run typecheck` catches drift
+  (missing fields, renamed keys, wrong property types) at compile time rather
+  than letting untyped object literals silently go stale.
 
 ### Available factories
 

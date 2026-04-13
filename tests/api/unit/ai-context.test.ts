@@ -7,8 +7,10 @@ import {
   buildSearchContext,
   buildTalkConversationContext,
   type BlueprintContext,
+  type ConversationFragment,
   selectCharacterConversationHistory,
   selectLocationConversationHistory,
+  type SessionSnapshot,
 } from "../../../supabase/functions/_shared/ai-context.ts";
 
 const blueprint: BlueprintContext = {
@@ -119,8 +121,8 @@ const blueprint: BlueprintContext = {
   ],
 };
 
-const session = {
-  mode: "talk" as const,
+const session: SessionSnapshot = {
+  mode: "talk",
   current_location_id: "loc-kitchen",
   current_talk_character_id: "char-alice",
   time_remaining: 8,
@@ -128,7 +130,7 @@ const session = {
 
 describe("ai-context guardrails", () => {
   it("selects destination-relative history for move/search usage", () => {
-    const history = [
+    const history: ConversationFragment[] = [
       {
         sequence: 1,
         event_type: "move",
@@ -161,7 +163,7 @@ describe("ai-context guardrails", () => {
   });
 
   it("includes same-character talk history and preserves player_input", () => {
-    const history = [
+    const history: ConversationFragment[] = [
       {
         sequence: 1,
         event_type: "talk",
@@ -240,7 +242,7 @@ describe("ai-context guardrails", () => {
   });
 
   it("builds search context with structured clue progression", () => {
-    const history = [
+    const history: ConversationFragment[] = [
       {
         sequence: 1,
         event_type: "search",
@@ -282,7 +284,7 @@ describe("ai-context guardrails", () => {
   });
 
   it("builds move context with public summaries for destination characters", () => {
-    const history = [
+    const history: ConversationFragment[] = [
       {
         sequence: 1,
         event_type: "move",

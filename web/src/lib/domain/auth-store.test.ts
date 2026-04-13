@@ -56,7 +56,7 @@ function emitAuthState(event: AuthEvent, session: MockSession | null = null) {
 	authState.callback(event, session);
 }
 
-const makeSession = (overrides: Record<string, unknown> = {}) => ({
+const makeSession = (overrides: Record<string, unknown> = {}): MockSession => ({
 	access_token: 'access-token',
 	refresh_token: 'refresh-token',
 	expires_in: 3600,

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameState, HistoryEntry, StoryImageState } from '../types/game';
+import { NARRATOR_SPEAKER } from '../../../../tests/testkit/src/fixtures';
 
 const storeMock = vi.hoisted(() => ({
   submitInput: vi.fn(),
@@ -54,7 +55,7 @@ function makeHistoryEntry(overrides: Partial<HistoryEntry> = {}): HistoryEntry {
     sequence: 1,
     event_type: 'narration',
     text: 'Something happened.',
-    speaker: { kind: 'narrator', key: 'narrator', label: 'NARRATOR' },
+    speaker: NARRATOR_SPEAKER,
     image_id: null,
     ...overrides,
   };

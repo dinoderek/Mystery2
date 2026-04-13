@@ -21,6 +21,7 @@ import {
   MoveResponseSchema,
   SearchResponseSchema,
   TalkStartResponseSchema,
+  TalkAskResponseSchema,
   TalkEndResponseSchema,
   AccuseResponseSchema,
   ImageLinkResponseSchema,
@@ -35,6 +36,7 @@ import {
   type MoveResponse,
   type SearchResponse,
   type TalkStartResponse,
+  type TalkAskResponse,
   type TalkEndResponse,
   type AccuseResponse,
   type ImageLinkResponse,
@@ -303,6 +305,19 @@ export function createTalkStartResponse(
     ...overrides,
   };
   return validate(TalkStartResponseSchema, response);
+}
+
+export function createTalkAskResponse(
+  overrides?: Partial<TalkAskResponse>,
+): TalkAskResponse {
+  const response: TalkAskResponse = {
+    narration_parts: [{ text: "The character answers your question.", speaker: NARRATOR_SPEAKER }],
+    time_remaining: 9,
+    mode: "talk",
+    current_talk_character: "Rosie Jones",
+    ...overrides,
+  };
+  return validate(TalkAskResponseSchema, response);
 }
 
 export function createTalkEndResponse(

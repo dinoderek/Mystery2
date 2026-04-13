@@ -1,11 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import { EMPTY_CATALOG } from '../../tests/testkit/src/fixtures';
+import type { BriefSummary, BriefFull } from '../src/lib/types/brief';
 
 /* ------------------------------------------------------------------ */
 /*  Fixtures                                                          */
 /* ------------------------------------------------------------------ */
 
-const BRIEF_1 = {
+const BRIEF_1: BriefSummary = {
   id: 'brief-aaa',
   brief: 'A stolen painting in a Victorian mansion with hidden passages',
   title_hint: 'The Vanishing Vermeer',
@@ -15,7 +17,7 @@ const BRIEF_1 = {
   archived_at: null,
 };
 
-const BRIEF_2 = {
+const BRIEF_2: BriefSummary = {
   id: 'brief-bbb',
   brief: 'A haunted lighthouse where ships keep disappearing',
   title_hint: 'The Lighthouse Keeper',
@@ -25,7 +27,7 @@ const BRIEF_2 = {
   archived_at: null,
 };
 
-const BRIEF_3 = {
+const BRIEF_3: BriefSummary = {
   id: 'brief-ccc',
   brief: 'A mystery at the school science fair',
   title_hint: null,
@@ -35,7 +37,7 @@ const BRIEF_3 = {
   archived_at: null,
 };
 
-const BRIEF_FULL = {
+const BRIEF_FULL: BriefFull = {
   ...BRIEF_1,
   time_budget: 15,
   art_style: 'watercolor noir',
@@ -55,13 +57,7 @@ const BRIEF_FULL = {
 
 async function mockSessionCatalog(page: Page) {
   await page.route('**/functions/v1/game-sessions-list*', async (route) => {
-    await route.fulfill({
-      json: {
-        in_progress: [],
-        completed: [],
-        counts: { in_progress: 0, completed: 0 },
-      },
-    });
+    await route.fulfill({ json: EMPTY_CATALOG });
   });
 }
 

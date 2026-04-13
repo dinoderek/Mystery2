@@ -8,8 +8,8 @@ const storeMock = vi.hoisted(() => ({
   error: null as string | null,
   blueprints: [] as Array<{ id: string }>,
   sessionCatalog: {
-    in_progress: [],
-    completed: [],
+    in_progress: [] as unknown[],
+    completed: [] as unknown[],
     counts: { in_progress: 0, completed: 0 },
   },
 }));
@@ -19,6 +19,7 @@ vi.mock('./store.svelte', () => ({
 }));
 
 import { MobileHomeState } from './mobile-home.svelte';
+import { EMPTY_CATALOG } from '../../../../tests/testkit/src/fixtures';
 
 describe('MobileHomeState', () => {
   let state: MobileHomeState;
@@ -28,11 +29,7 @@ describe('MobileHomeState', () => {
     storeMock.status = 'idle';
     storeMock.error = null;
     storeMock.blueprints = [];
-    storeMock.sessionCatalog = {
-      in_progress: [],
-      completed: [],
-      counts: { in_progress: 0, completed: 0 },
-    };
+    storeMock.sessionCatalog = { ...EMPTY_CATALOG };
     storeMock.loadBlueprints.mockReset();
     storeMock.startGame.mockReset();
   });

@@ -6,6 +6,7 @@ import {
   EMPTY_CATALOG,
   createBlueprintSummary,
   createNarrationEvent,
+  createSearchResponse,
   narrationResponse,
 } from '../../tests/testkit/src/fixtures';
 
@@ -51,11 +52,9 @@ test.describe('Targeted Search', () => {
     await page.route('**/functions/v1/game-search*', async (route) => {
       searchPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
-        json: {
-          ...narrationResponse('You look around but find nothing special.', narratorSpeaker),
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        json: createSearchResponse({
+          narration_parts: narrationResponse('You look around but find nothing special.', narratorSpeaker).narration_parts,
+        }),
       });
     });
 
@@ -75,11 +74,9 @@ test.describe('Targeted Search', () => {
     await page.route('**/functions/v1/game-search*', async (route) => {
       searchPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
-        json: {
-          ...narrationResponse('You find a clue under the desk!', narratorSpeaker),
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        json: createSearchResponse({
+          narration_parts: narrationResponse('You find a clue under the desk!', narratorSpeaker).narration_parts,
+        }),
       });
     });
 
@@ -99,11 +96,9 @@ test.describe('Targeted Search', () => {
     await page.route('**/functions/v1/game-search*', async (route) => {
       searchPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
-        json: {
-          ...narrationResponse('Nothing on the old bookshelf.', narratorSpeaker),
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        json: createSearchResponse({
+          narration_parts: narrationResponse('Nothing on the old bookshelf.', narratorSpeaker).narration_parts,
+        }),
       });
     });
 
@@ -120,11 +115,9 @@ test.describe('Targeted Search', () => {
   test('shows investigator message for targeted search', async ({ page }) => {
     await page.route('**/functions/v1/game-search*', async (route) => {
       await route.fulfill({
-        json: {
-          ...narrationResponse('You peek behind the curtains.', narratorSpeaker),
-          time_remaining: 9,
-          mode: 'explore',
-        },
+        json: createSearchResponse({
+          narration_parts: narrationResponse('You peek behind the curtains.', narratorSpeaker).narration_parts,
+        }),
       });
     });
 

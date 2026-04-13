@@ -9,9 +9,10 @@ import {
   parseBuildBlueprintEvaluationMarkdownArgs,
   runBuildBlueprintEvaluationMarkdownCli,
 } from "../../../scripts/build-blueprint-evaluation-markdown.mjs";
+import type { StoryBrief } from "../../../packages/blueprint-generator/src/story-brief.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
-const validStoryBrief = {
+const validStoryBrief: StoryBrief = {
   brief: "A child-friendly mystery about a missing tray of cookies.",
   targetAge: 8,
   timeBudget: 10,

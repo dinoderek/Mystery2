@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   ensureMockBlueprintSeeded,
@@ -50,11 +51,7 @@ describe("game-end-talk endpoint", () => {
     expect(data.current_talk_character).toBeNull();
     expect(data.time_remaining).toBe(9);
     expect(data.narration_parts[0]).toMatchObject({
-      speaker: {
-        kind: "narrator",
-        key: "narrator",
-        label: "Narrator",
-      },
+      speaker: NARRATOR_SPEAKER,
     });
     expect(data.narration_parts[0].text).toContain("[Mock]");
   });

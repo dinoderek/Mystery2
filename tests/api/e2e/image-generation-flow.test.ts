@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { runImageGeneration } from "../../../scripts/generate-blueprint-images.mjs";
 
 const blueprintFixture = {
@@ -34,7 +35,7 @@ const blueprintFixture = {
         id: "loc_kitchen",
         name: "Kitchen",
         description: "A kitchen",
-        clues: [],
+        clues: [{ id: "clue-crumbs", text: "Cookie crumbs on the counter.", role: "direct_evidence" }],
       },
     ],
     characters: [
@@ -67,10 +68,22 @@ const blueprintFixture = {
     why_it_happened: "Hungry.",
     timeline: [],
   },
-  solution_paths: [],
+  solution_paths: [
+    {
+      id: "solution-crumbs",
+      summary: "Follow the cookie crumbs.",
+      description: "Cookie crumbs point to Alice.",
+      location_clue_ids: ["clue-crumbs"],
+      character_clue_ids: [],
+    },
+  ],
   red_herrings: [],
   suspect_elimination_paths: [],
 };
+
+// Validate against the Zod schema at definition time — any schema drift
+// (added required fields, renamed keys, etc.) fails immediately.
+BlueprintV2Schema.parse(blueprintFixture);
 
 const ONE_PIXEL_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";

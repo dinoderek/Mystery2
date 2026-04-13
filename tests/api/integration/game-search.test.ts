@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -58,11 +59,7 @@ describe("game-search endpoint", () => {
     expect(firstData.time_remaining).toBe(8);
     expect(firstData.narration_parts[0].text).toContain("A wrapper on the sofa.");
     expect(firstData.mode).toBe("explore");
-    expect(firstData.narration_parts[0].speaker).toMatchObject({
-      kind: "narrator",
-      key: "narrator",
-      label: "Narrator",
-    });
+    expect(firstData.narration_parts[0].speaker).toMatchObject(NARRATOR_SPEAKER);
 
     const secondSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",

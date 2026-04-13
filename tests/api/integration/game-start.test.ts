@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
@@ -65,19 +66,11 @@ describe("game-start endpoint", () => {
       event_type: "start",
       narration_parts: [
         {
-          speaker: {
-            kind: "narrator",
-            key: "narrator",
-            label: "Narrator",
-          },
+          speaker: NARRATOR_SPEAKER,
           image_id: "mock-blueprint.blueprint.png",
         },
         {
-          speaker: {
-            kind: "narrator",
-            key: "narrator",
-            label: "Narrator",
-          },
+          speaker: NARRATOR_SPEAKER,
         },
       ],
     });

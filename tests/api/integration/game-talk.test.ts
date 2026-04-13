@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -56,11 +57,7 @@ describe("game-talk endpoint", () => {
     expect(data.narration_parts[0].text).not.toContain("because she was hungry");
     expect(data.narration_parts[0]).toMatchObject({
       image_id: "mock-blueprint.character-char-alice.png",
-      speaker: {
-        kind: "narrator",
-        key: "narrator",
-        label: "Narrator",
-      },
+      speaker: NARRATOR_SPEAKER,
     });
   });
 

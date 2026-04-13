@@ -6,28 +6,25 @@ import {
   buildReferenceLegend,
   createImageId,
 } from "../../../scripts/lib/image-prompt-builder.mjs";
+import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
-const visualDirection = {
-  art_style: "soft gouache illustration with visible brushwork",
-  color_palette: "warm kitchen tones — butter yellow, terracotta, cream",
-  mood: "cozy and inviting with a hint of mischief",
-  lighting: "warm morning sunlight through a large window, soft shadows",
-  texture: "matte paper with subtle grain",
-};
+const visualDirection = validBlueprintV2.metadata.visual_direction;
 
+// Build a test-specific blueprint from the shared fixture, overriding only
+// the fields that these image-prompt-builder tests depend on (art_style
+// fallback value and single-location/single-character world for assertion
+// clarity).  The shared fixture is already Zod-validated at import time, so
+// schema drift is caught even though we spread from it.
 const blueprint = {
-  schema_version: "v2",
-  id: "123e4567-e89b-12d3-a456-426614174000",
+  ...validBlueprintV2,
   metadata: {
+    ...validBlueprintV2.metadata,
     title: "Mock Blueprint",
     one_liner: "A simple test mystery.",
-    target_age: 8,
-    time_budget: 10,
     art_style: "storybook watercolor",
-    visual_direction: visualDirection,
   },
   narrative: {
-    premise: "Someone stole the cookies.",
+    ...validBlueprintV2.narrative,
     starting_knowledge: {
       mystery_summary: "The cookies vanished from the kitchen around noon.",
       locations: [
@@ -52,21 +49,12 @@ const blueprint = {
     ],
     characters: [
       {
+        ...validBlueprintV2.world.characters[0],
         id: "char_alice",
-        first_name: "Alice",
-        last_name: "Smith",
         location_id: "loc_kitchen",
-        sex: "female",
         appearance: "Red hair",
         background: "The head baker who runs the kitchen.",
-        personality: "Nervous",
         initial_attitude_towards_investigator: "Guarded and evasive",
-        stated_alibi: "Reading",
-        motive: "Hungry",
-        is_culprit: true,
-        clues: [],
-        flavor_knowledge: [],
-        actual_actions: [{ sequence: 1, summary: "Ate the cookies." }],
       },
     ],
   },
@@ -74,11 +62,6 @@ const blueprint = {
     description: "A mysterious kitchen with cookie crumbs and a shadowy figure near the counter.",
     location_ids: ["loc_kitchen"],
     character_ids: ["char_alice"],
-  },
-  ground_truth: {
-    what_happened: "Alice ate the cookies.",
-    why_it_happened: "Hungry.",
-    timeline: [],
   },
   solution_paths: [
     {
@@ -93,8 +76,7 @@ const blueprint = {
   suspect_elimination_paths: [],
 };
 
-// Validate against the Zod schema at definition time — any schema drift
-// (added required fields, renamed keys, etc.) fails immediately.
+// Validate the derived blueprint to ensure spread + overrides remain valid.
 BlueprintV2Schema.parse(blueprint);
 
 describe("image prompt builder", () => {

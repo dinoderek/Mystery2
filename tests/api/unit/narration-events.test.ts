@@ -9,6 +9,7 @@ import {
   INVESTIGATOR_SPEAKER,
   NARRATOR_SPEAKER,
 } from "../../../supabase/functions/_shared/speaker.ts";
+import { characterSpeaker as fixtureCharacterSpeaker } from "../../testkit/src/fixtures.ts";
 
 describe("narration event helpers", () => {
   it("preserves ordered narration parts when reading persisted events", () => {
@@ -38,22 +39,18 @@ describe("narration event helpers", () => {
   });
 
   it("prepends player input as investigator narration part for ask events", () => {
-    const characterSpeaker = {
-      kind: "character" as const,
-      key: "character:alice",
-      label: "Alice",
-    };
+    const aliceSpeaker = fixtureCharacterSpeaker("Alice");
     const event = readNarrationEvent({
       sequence: 5,
       event_type: "ask",
       narration: "Alice responds thoughtfully.",
       narration_parts: [
-        createNarrationPart("Alice responds thoughtfully.", characterSpeaker),
+        createNarrationPart("Alice responds thoughtfully.", aliceSpeaker),
       ],
       payload: {
         player_input: "Where were you when the cookies disappeared?",
         character_name: "Alice",
-        speaker: characterSpeaker,
+        speaker: aliceSpeaker,
       },
     });
 
@@ -62,7 +59,7 @@ describe("narration event helpers", () => {
     expect(event.narration_parts[0].text).toBe(
       "Where were you when the cookies disappeared?",
     );
-    expect(event.narration_parts[1].speaker).toEqual(characterSpeaker);
+    expect(event.narration_parts[1].speaker).toEqual(aliceSpeaker);
     expect(event.narration_parts[1].text).toBe("Alice responds thoughtfully.");
   });
 

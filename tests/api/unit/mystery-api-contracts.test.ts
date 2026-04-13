@@ -18,17 +18,17 @@ import {
   SpeakerSchema,
   TalkAskResponseSchema,
 } from "../../../packages/shared/src/mystery-api-contracts.ts";
-
-const narratorSpeaker = {
-  kind: "narrator",
-  key: "narrator",
-  label: "Narrator",
-} as const;
-
-const narratorPart = {
-  text: "Case begins.",
-  speaker: narratorSpeaker,
-} as const;
+import {
+  NARRATOR_SPEAKER,
+  characterSpeaker,
+  createGameState,
+  createSessionSummary,
+  createSessionCatalog,
+  createBlueprintSummary,
+  createMoveResponse,
+  createImageLinkResponse,
+  createNarrationEvent,
+} from "../../testkit/src/fixtures.ts";
 
 describe("shared mystery API contracts", () => {
   it("accepts game-start requests with optional ai_profile", () => {
@@ -148,11 +148,7 @@ describe("shared mystery API contracts", () => {
       TalkAskResponseSchema.parse({
         narration_parts: [{
           text: "Alice answers.",
-          speaker: {
-            kind: "character",
-            key: "character:alice",
-            label: "Alice",
-          },
+          speaker: characterSpeaker("Alice"),
         }],
         time_remaining: 8,
         mode: "talk",
@@ -168,14 +164,14 @@ describe("shared mystery API contracts", () => {
       SearchResponseSchema.parse({
         narration_parts: [{
           text: "You inspect the room.",
-          speaker: narratorSpeaker,
+          speaker: NARRATOR_SPEAKER,
         }],
         time_remaining: 8,
         mode: "explore",
       }),
     ).toMatchObject({
       mode: "explore",
-      narration_parts: [{ speaker: narratorSpeaker }],
+      narration_parts: [{ speaker: NARRATOR_SPEAKER }],
     });
   });
 
@@ -200,53 +196,29 @@ describe("shared mystery API contracts", () => {
   });
 
   it("accepts game state plus persisted narration events", () => {
+    const gameState = createGameState({ time_remaining: 8 });
     expect(
-      GameStateSchema.parse({
-        locations: [{ id: "loc-kitchen", name: "Kitchen" }],
-        characters: [
-          {
-            id: "char-alice",
-            first_name: "Alice",
-            last_name: "Smith",
-            location_id: "loc-kitchen",
-            sex: "female",
-          },
-        ],
-        time_remaining: 8,
-        location: "Kitchen",
-        mode: "explore",
-        current_talk_character: null,
-      }),
+      GameStateSchema.parse(gameState),
     ).toMatchObject({
       mode: "explore",
       location: "Kitchen",
     });
 
+    const event = createNarrationEvent();
     expect(
-      NarrationEventSchema.parse({
-        sequence: 1,
-        event_type: "start",
-        narration_parts: [narratorPart],
-      }),
+      NarrationEventSchema.parse(event),
     ).toMatchObject({
-      narration_parts: [narratorPart],
+      narration_parts: event.narration_parts,
     });
   });
 
   it("accepts session summary rows with nullable outcome", () => {
+    const summary = createSessionSummary({
+      mystery_title: "The Missing Honey Cakes",
+      time_remaining: 7,
+    });
     expect(
-      SessionSummarySchema.parse({
-        game_id: "123e4567-e89b-12d3-a456-426614174000",
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174001",
-        mystery_title: "The Missing Honey Cakes",
-        mystery_available: true,
-        can_open: true,
-        mode: "explore",
-        time_remaining: 7,
-        outcome: null,
-        last_played_at: "2026-03-10T12:00:00.000Z",
-        created_at: "2026-03-09T12:00:00.000Z",
-      }),
+      SessionSummarySchema.parse(summary),
     ).toMatchObject({
       mystery_title: "The Missing Honey Cakes",
       can_open: true,
@@ -255,28 +227,23 @@ describe("shared mystery API contracts", () => {
   });
 
   it("requires grouped catalog arrays and counts", () => {
+    const catalog = createSessionCatalog({
+      completed: [
+        createSessionSummary({
+          game_id: "123e4567-e89b-12d3-a456-426614174010",
+          blueprint_id: "123e4567-e89b-12d3-a456-426614174020",
+          mystery_title: "Unknown Mystery",
+          mystery_available: false,
+          can_open: false,
+          mode: "ended",
+          time_remaining: 0,
+          outcome: "lose",
+        }),
+      ],
+      counts: { in_progress: 0, completed: 1 },
+    });
     expect(
-      SessionCatalogResponseSchema.parse({
-        in_progress: [],
-        completed: [
-          {
-            game_id: "123e4567-e89b-12d3-a456-426614174010",
-            blueprint_id: "123e4567-e89b-12d3-a456-426614174020",
-            mystery_title: "Unknown Mystery",
-            mystery_available: false,
-            can_open: false,
-            mode: "ended",
-            time_remaining: 0,
-            outcome: "lose",
-            last_played_at: "2026-03-10T12:00:00.000Z",
-            created_at: "2026-03-08T12:00:00.000Z",
-          },
-        ],
-        counts: {
-          in_progress: 0,
-          completed: 1,
-        },
-      }),
+      SessionCatalogResponseSchema.parse(catalog),
     ).toMatchObject({
       counts: {
         in_progress: 0,
@@ -286,46 +253,38 @@ describe("shared mystery API contracts", () => {
   });
 
   it("accepts optional image identifiers on player-visible payloads", () => {
+    const blueprint = createBlueprintSummary({
+      title: "Mock Blueprint",
+      one_liner: "A mystery",
+      target_age: 8,
+      blueprint_image_id: "mock-blueprint.blueprint.png",
+    });
     expect(
-      BlueprintSummarySchema.parse({
-        id: "123e4567-e89b-12d3-a456-426614174000",
-        title: "Mock Blueprint",
-        one_liner: "A mystery",
-        target_age: 8,
-        blueprint_image_id: "mock-blueprint.blueprint.png",
-      }),
+      BlueprintSummarySchema.parse(blueprint),
     ).toMatchObject({
       blueprint_image_id: "mock-blueprint.blueprint.png",
     });
 
+    const moveResponse = createMoveResponse({
+      narration_parts: [{
+        text: "You arrive.",
+        speaker: NARRATOR_SPEAKER,
+        image_id: "mock-blueprint.location-loc-kitchen.png",
+      }],
+      current_location: "Kitchen",
+      visible_characters: [
+        { first_name: "Alice", last_name: "Smith", sex: "female" },
+      ],
+      time_remaining: 8,
+    });
     expect(
-      MoveResponseSchema.parse({
-        narration_parts: [{
-          text: "You arrive.",
-          speaker: narratorSpeaker,
-          image_id: "mock-blueprint.location-loc-kitchen.png",
-        }],
-        mode: "explore",
-        current_location: "Kitchen",
-        visible_characters: [
-          {
-            first_name: "Alice",
-            last_name: "Smith",
-            sex: "female",
-          },
-        ],
-        time_remaining: 8,
-      }),
+      MoveResponseSchema.parse(moveResponse),
     ).toMatchObject({
       narration_parts: [
-        {
-          image_id: "mock-blueprint.location-loc-kitchen.png",
-        },
+        { image_id: "mock-blueprint.location-loc-kitchen.png" },
       ],
       visible_characters: [
-        {
-          sex: "female",
-        },
+        { sex: "female" },
       ],
     });
 
@@ -333,13 +292,8 @@ describe("shared mystery API contracts", () => {
       TalkAskResponseSchema.parse({
         narration_parts: [{
           text: "Alice answers.",
-          speaker: {
-            kind: "character",
-            key: "character:alice",
-            label: "Alice",
-          },
-          image_id:
-            "mock-blueprint.character-char-alice.png",
+          speaker: characterSpeaker("Alice"),
+          image_id: "mock-blueprint.character-char-alice.png",
         }],
         time_remaining: 8,
         mode: "talk",
@@ -347,10 +301,7 @@ describe("shared mystery API contracts", () => {
       }),
     ).toMatchObject({
       narration_parts: [
-        {
-          image_id:
-            "mock-blueprint.character-char-alice.png",
-        },
+        { image_id: "mock-blueprint.character-char-alice.png" },
       ],
     });
   });
@@ -365,12 +316,12 @@ describe("shared mystery API contracts", () => {
       image_id: "mock-blueprint.blueprint.png",
     });
 
+    const imageLink = createImageLinkResponse({
+      image_id: "mock-blueprint.blueprint.png",
+      signed_url: "https://example.com/signed-image",
+    });
     expect(
-      ImageLinkResponseSchema.parse({
-        image_id: "mock-blueprint.blueprint.png",
-        signed_url: "https://example.com/signed-image",
-        expires_at: "2099-01-01T00:00:00.000Z",
-      }),
+      ImageLinkResponseSchema.parse(imageLink),
     ).toMatchObject({
       image_id: "mock-blueprint.blueprint.png",
     });

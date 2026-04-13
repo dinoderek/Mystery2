@@ -12,13 +12,14 @@ import {
   buildImageStorageKey,
   isCanonicalImageId,
 } from "../../../supabase/functions/_shared/images.ts";
+import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 
-const blueprint = {
+const blueprint: Pick<BlueprintV2, "schema_version" | "id" | "metadata" | "world"> = {
   schema_version: "v2",
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     image_id: "mock-blueprint.blueprint.png",
-  },
+  } as BlueprintV2["metadata"],
   world: {
     locations: [
       {
@@ -34,7 +35,7 @@ const blueprint = {
         portrait_image_id: "mock-blueprint.character-char-alice.png",
       },
     ],
-  },
+  } as unknown as BlueprintV2["world"],
 };
 
 describe("blueprint image manifest helpers", () => {

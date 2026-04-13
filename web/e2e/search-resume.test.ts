@@ -7,6 +7,7 @@ import {
   createBlueprintSummary,
   createSessionSummary,
   createSessionCatalog,
+  createNarrationEvent,
 } from '../../tests/testkit/src/fixtures';
 
 const baseState = createGameState({ time_remaining: 7 });
@@ -58,12 +59,12 @@ async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
 test.describe('Search Resume - Player Message Restoration', () => {
   test('restores targeted search as investigator message with query text', async ({ page }) => {
     await setupResumeSession(page, [
-      {
+      createNarrationEvent({
         sequence: 1,
         event_type: 'start',
         narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-      },
-      {
+      }),
+      createNarrationEvent({
         sequence: 2,
         event_type: 'search',
         narration_parts: [
@@ -71,7 +72,7 @@ test.describe('Search Resume - Player Message Restoration', () => {
           { text: 'You find crumbs under the desk!', speaker: narratorSpeaker },
         ],
         payload: { search_query: 'under the desk' },
-      },
+      }),
     ]);
 
     await expect(page.getByText('search under the desk')).toBeVisible();
@@ -80,12 +81,12 @@ test.describe('Search Resume - Player Message Restoration', () => {
 
   test('restores bare search as investigator message with just "search"', async ({ page }) => {
     await setupResumeSession(page, [
-      {
+      createNarrationEvent({
         sequence: 1,
         event_type: 'start',
         narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-      },
-      {
+      }),
+      createNarrationEvent({
         sequence: 2,
         event_type: 'search',
         narration_parts: [
@@ -93,7 +94,7 @@ test.describe('Search Resume - Player Message Restoration', () => {
           { text: 'You look around and notice a crumb.', speaker: narratorSpeaker },
         ],
         payload: { search_query: null },
-      },
+      }),
     ]);
 
     const investigatorLines = page.locator('[data-speaker-kind="investigator"]');
@@ -103,12 +104,12 @@ test.describe('Search Resume - Player Message Restoration', () => {
 
   test('restores mixed history with move, bare search, and targeted search', async ({ page }) => {
     await setupResumeSession(page, [
-      {
+      createNarrationEvent({
         sequence: 1,
         event_type: 'start',
         narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-      },
-      {
+      }),
+      createNarrationEvent({
         sequence: 2,
         event_type: 'search',
         narration_parts: [
@@ -116,8 +117,8 @@ test.describe('Search Resume - Player Message Restoration', () => {
           { text: 'A crumb on the floor.', speaker: narratorSpeaker },
         ],
         payload: { search_query: null },
-      },
-      {
+      }),
+      createNarrationEvent({
         sequence: 3,
         event_type: 'search',
         narration_parts: [
@@ -125,8 +126,8 @@ test.describe('Search Resume - Player Message Restoration', () => {
           { text: 'Nothing behind the curtains.', speaker: narratorSpeaker },
         ],
         payload: { search_query: 'behind the curtains' },
-      },
-      {
+      }),
+      createNarrationEvent({
         sequence: 4,
         event_type: 'search',
         narration_parts: [
@@ -134,7 +135,7 @@ test.describe('Search Resume - Player Message Restoration', () => {
           { text: 'You find a hidden cookie jar!', speaker: narratorSpeaker },
         ],
         payload: { search_query: 'in the pantry' },
-      },
+      }),
     ]);
 
     await expect(page.getByText('A crumb on the floor.')).toBeVisible();

@@ -11,18 +11,21 @@ import {
   resolveBlueprintPath,
   runImageGeneration,
 } from "../../../scripts/generate-blueprint-images.mjs";
+import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
+// Build a single-location, single-character blueprint from the shared fixture
+// so that image generation tests can assert on exact target counts (3) and
+// specific file-name slugs derived from "Mock Blueprint".
 const blueprintFixture = {
-  id: "123e4567-e89b-12d3-a456-426614174000",
-  schema_version: "v2",
+  ...validBlueprintV2,
   metadata: {
+    ...validBlueprintV2.metadata,
     title: "Mock Blueprint",
     one_liner: "A simple mystery",
-    target_age: 8,
     time_budget: 10,
   },
   narrative: {
-    premise: "Someone stole the cookies.",
+    ...validBlueprintV2.narrative,
     starting_knowledge: {
       mystery_summary: "Someone stole the cookies.",
       locations: [
@@ -43,11 +46,9 @@ const blueprintFixture = {
     }],
     characters: [
       {
+        ...validBlueprintV2.world.characters[0],
         id: "char-alice",
-        first_name: "Alice",
-        last_name: "Smith",
         location_id: "Kitchen",
-        sex: "female",
         appearance: "Red hair",
         background: "Baker",
         personality: "Nervous",
@@ -84,8 +85,7 @@ const blueprintFixture = {
   suspect_elimination_paths: [],
 };
 
-// Validate against the Zod schema at definition time — any schema drift
-// (added required fields, renamed keys, etc.) fails immediately.
+// Validate the derived blueprint to ensure spread + overrides remain valid.
 BlueprintV2Schema.parse(blueprintFixture);
 
 describe("generate-blueprint-images args parser", () => {

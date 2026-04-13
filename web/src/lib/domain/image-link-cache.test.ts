@@ -19,6 +19,7 @@ vi.mock('./store.retry', async (importOriginal) => {
 
 // Must import after mocking
 import { imageLinkCache, type ImageLinkEntry } from '../api/image-link-cache';
+import { createImageLinkResponse } from '../../../../tests/testkit/src/fixtures';
 
 function futureExpiry(minutes: number): string {
   return new Date(Date.now() + minutes * 60 * 1000).toISOString();
@@ -28,13 +29,15 @@ function pastExpiry(): string {
   return new Date(Date.now() - 60_000).toISOString();
 }
 
-function mockSuccessResponse(imageId: string, expiresAt?: string) {
+function mockSuccessResponse(imageId: string, expiresAt?: string, signedUrl?: string) {
   return {
-    data: {
+    data: createImageLinkResponse({
       image_id: imageId,
-      signed_url: '/storage/v1/object/sign/blueprint-images/test/img.png?token=abc',
+      // Use an absolute URL so Zod validation passes in the factory.
+      // Tests that exercise relative-URL prepending override via signedUrl param.
+      signed_url: signedUrl ?? 'http://localhost:54321/storage/v1/object/sign/blueprint-images/test/img.png?token=abc',
       expires_at: expiresAt ?? futureExpiry(60),
-    },
+    }),
     error: null,
   };
 }

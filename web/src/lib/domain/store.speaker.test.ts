@@ -13,12 +13,13 @@ vi.mock('../api/supabase', () => ({
 }));
 
 import { GameSessionStore } from './store.svelte';
+import type { Speaker } from '../types/game';
 
-const narratorSpeaker = {
+const narratorSpeaker: Speaker = {
   kind: 'narrator',
   key: 'narrator',
   label: 'Narrator',
-} as const;
+};
 
 function createStore() {
   const store = new GameSessionStore();

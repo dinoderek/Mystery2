@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -61,11 +62,7 @@ describe("game-move endpoint", () => {
     });
     expect(data.narration_parts[0]).toMatchObject({
       image_id: "mock-blueprint.location-loc-living-room.png",
-      speaker: {
-        kind: "narrator",
-        key: "narrator",
-        label: "Narrator",
-      },
+      speaker: NARRATOR_SPEAKER,
     });
   });
 

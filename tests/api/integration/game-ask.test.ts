@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { characterSpeaker } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -93,11 +94,7 @@ describe("game-ask endpoint", () => {
     expect(data.narration_parts[0].text).toContain("[Mock]");
     expect(data.narration_parts[0].image_id).toBeUndefined();
     expect(data.narration_parts[0]).toMatchObject({
-      speaker: {
-        kind: "character",
-        key: "character:alice",
-        label: "Alice",
-      },
+      speaker: characterSpeaker("Alice"),
     });
   });
 

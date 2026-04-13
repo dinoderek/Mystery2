@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { NARRATOR_SPEAKER, characterSpeaker } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -82,17 +83,11 @@ describe("game-get endpoint", () => {
     });
     expect(getData.narration_events.length).toBeGreaterThanOrEqual(3);
     expect(getData.narration_events[0].event_type).toBe("start");
-    expect(getData.narration_events[0].narration_parts[0].speaker).toMatchObject({
-      kind: "narrator",
-      key: "narrator",
-      label: "Narrator",
-    });
+    expect(getData.narration_events[0].narration_parts[0].speaker).toMatchObject(
+      NARRATOR_SPEAKER,
+    );
     expect(getData.narration_events[0].narration_parts[1]).toMatchObject({
-      speaker: {
-        kind: "narrator",
-        key: "narrator",
-        label: "Narrator",
-      },
+      speaker: NARRATOR_SPEAKER,
     });
     expect(getData.narration_events[0].narration_parts[1].text).toContain("You already know:");
 
@@ -104,11 +99,9 @@ describe("game-get endpoint", () => {
       key: "you",
       label: "You",
     });
-    expect(askEvent?.narration_parts[1].speaker).toMatchObject({
-      kind: "character",
-      key: "character:alice",
-      label: "Alice",
-    });
+    expect(askEvent?.narration_parts[1].speaker).toMatchObject(
+      characterSpeaker("Alice"),
+    );
 
     const persistedSystemLines = getData.narration_events.flatMap(
       (entry: { narration_parts: Array<{ speaker: { kind: string } }> }) => entry.narration_parts,

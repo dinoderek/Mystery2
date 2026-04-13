@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import {
   buildImagePrompt,
   buildReferenceLegend,
@@ -79,10 +80,22 @@ const blueprint = {
     why_it_happened: "Hungry.",
     timeline: [],
   },
-  solution_paths: [],
+  solution_paths: [
+    {
+      id: "solution-crumbs",
+      summary: "Follow the cookie crumbs.",
+      description: "Cookie crumbs on the counter point to Alice.",
+      location_clue_ids: ["clue_crumbs"],
+      character_clue_ids: [],
+    },
+  ],
   red_herrings: [],
   suspect_elimination_paths: [],
 };
+
+// Validate against the Zod schema at definition time — any schema drift
+// (added required fields, renamed keys, etc.) fails immediately.
+BlueprintV2Schema.parse(blueprint);
 
 describe("image prompt builder", () => {
   it("builds blueprint cover prompt from cover_image.description", () => {

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { buildImageChatPacket } from "../../../scripts/lib/image-chat-packet-builder.mjs";
 import {
   loadImageGenerationEnv,
@@ -34,24 +35,29 @@ const blueprintFixture = {
   },
   world: {
     starting_location_id: "Kitchen",
-    locations: [{ id: "Kitchen", name: "Kitchen", description: "A kitchen", clues: [] }],
+    locations: [{
+      id: "Kitchen",
+      name: "Kitchen",
+      description: "A kitchen",
+      clues: [{ id: "clue-crumbs", text: "Cookie crumbs on the counter.", role: "direct_evidence" }],
+    }],
     characters: [
       {
         id: "char-alice",
         first_name: "Alice",
         last_name: "Smith",
-        location: "Kitchen",
+        location_id: "Kitchen",
         sex: "female",
         appearance: "Red hair",
         background: "Baker",
         personality: "Nervous",
         initial_attitude_towards_investigator: "guarded",
-        location_id: "Kitchen",
-        mystery_action_real: "Ate cookies",
         stated_alibi: "Reading",
         motive: "Hungry",
         is_culprit: true,
-        knowledge: [],
+        clues: [],
+        flavor_knowledge: [],
+        actual_actions: [{ sequence: 1, summary: "Ate cookies" }],
       },
     ],
   },
@@ -65,7 +71,22 @@ const blueprintFixture = {
     why_it_happened: "Hungry.",
     timeline: [],
   },
+  solution_paths: [
+    {
+      id: "solution-crumbs",
+      summary: "Follow the cookie crumbs.",
+      description: "Cookie crumbs point to Alice.",
+      location_clue_ids: ["clue-crumbs"],
+      character_clue_ids: [],
+    },
+  ],
+  red_herrings: [],
+  suspect_elimination_paths: [],
 };
+
+// Validate against the Zod schema at definition time — any schema drift
+// (added required fields, renamed keys, etc.) fails immediately.
+BlueprintV2Schema.parse(blueprintFixture);
 
 describe("generate-blueprint-images args parser", () => {
   it("parses selective target options", () => {

@@ -4,6 +4,7 @@ import {
   NARRATOR_SPEAKER as narratorSpeaker,
   characterSpeaker,
   narrationResponse,
+  createNarrationEvent,
   BASE_GAME_STATE as baseState,
 } from '../../tests/testkit/src/fixtures';
 
@@ -33,13 +34,7 @@ async function bootstrapSession(page: Page) {
       json: {
         game_id: 'g1',
         state: baseState,
-        narration_events: [
-          {
-            sequence: 1,
-            event_type: 'start',
-            narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
-          },
-        ],
+        narration_events: [createNarrationEvent()],
       },
     });
   });
@@ -606,14 +601,8 @@ test.describe('Command Input', () => {
       await route.fulfill({
         json: {
           narration_parts: [
-            {
-              text: 'Mayor Fox answers, but a nagging doubt remains.',
-              speaker: characterSpeaker('Mayor'),
-            },
-            {
-              text: 'Time is up; accusation begins now.',
-              speaker: narratorSpeaker,
-            },
+            ...narrationResponse('Mayor Fox answers, but a nagging doubt remains.', characterSpeaker('Mayor')).narration_parts,
+            ...narrationResponse('Time is up; accusation begins now.', narratorSpeaker).narration_parts,
           ],
           mode: 'accuse',
           time_remaining: 0,

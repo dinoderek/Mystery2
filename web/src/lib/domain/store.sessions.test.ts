@@ -18,6 +18,14 @@ vi.mock('../api/supabase', () => ({
 
 import { normalizeSessionCatalog, normalizeSessionSummary, sortSessionSummaries } from './store.svelte';
 import { GameSessionStore } from './store.svelte';
+import type { SessionSummary } from '../types/game';
+import {
+  NARRATOR_SPEAKER,
+  characterSpeaker,
+  createSessionSummary,
+  createNarrationEvent,
+  createGameState,
+} from '../../../../tests/testkit/src/fixtures';
 
 describe('session catalog helpers', () => {
   beforeEach(() => {
@@ -64,82 +72,57 @@ describe('session catalog helpers', () => {
   });
 
   it('sorts by recency with stable tie-breakers', () => {
-    const sorted = sortSessionSummaries([
-      {
-        game_id: 'a',
-        blueprint_id: 'bp-a',
+    const UUID_A = '00000000-0000-0000-0000-00000000000a';
+    const UUID_B = '00000000-0000-0000-0000-00000000000b';
+    const UUID_C = '00000000-0000-0000-0000-00000000000c';
+
+    // Zod-validated via createSessionSummary(); explicit annotation bridges
+    // the shared and frontend SessionSummary types for svelte-check.
+    const entries: SessionSummary[] = [
+      createSessionSummary({
+        game_id: UUID_A,
         mystery_title: 'A',
-        mystery_available: true,
-        can_open: true,
-        mode: 'explore',
-        time_remaining: 5,
-        outcome: null,
         last_played_at: '2026-03-10T12:00:00.000Z',
         created_at: '2026-03-08T12:00:00.000Z',
-      },
-      {
-        game_id: 'c',
-        blueprint_id: 'bp-c',
+      }) as SessionSummary,
+      createSessionSummary({
+        game_id: UUID_C,
         mystery_title: 'C',
-        mystery_available: true,
-        can_open: true,
-        mode: 'explore',
-        time_remaining: 5,
-        outcome: null,
         last_played_at: '2026-03-10T12:00:00.000Z',
         created_at: '2026-03-08T12:00:00.000Z',
-      },
-      {
-        game_id: 'b',
-        blueprint_id: 'bp-b',
+      }) as SessionSummary,
+      createSessionSummary({
+        game_id: UUID_B,
         mystery_title: 'B',
-        mystery_available: true,
-        can_open: true,
-        mode: 'explore',
-        time_remaining: 5,
-        outcome: null,
         last_played_at: '2026-03-11T12:00:00.000Z',
         created_at: '2026-03-07T12:00:00.000Z',
-      },
-    ]);
+      }) as SessionSummary,
+    ];
+    const sorted = sortSessionSummaries(entries);
 
-    expect(sorted.map((entry) => entry.game_id)).toEqual(['b', 'c', 'a']);
+    expect(sorted.map((entry) => entry.game_id)).toEqual([UUID_B, UUID_C, UUID_A]);
   });
 
   it('normalizes grouped arrays and derives counts from mode', () => {
+    const inProgress: SessionSummary[] = [
+      createSessionSummary({ mystery_title: 'Mystery 1', time_remaining: 7 }) as SessionSummary,
+    ];
+    const completed: SessionSummary[] = [
+      createSessionSummary({
+        game_id: '00000000-0000-0000-0000-000000000003',
+        blueprint_id: '00000000-0000-0000-0000-000000000004',
+        mystery_title: 'Mystery 2',
+        mode: 'ended',
+        time_remaining: 0,
+        outcome: 'win',
+        last_played_at: '2026-03-11T12:00:00.000Z',
+        created_at: '2026-03-08T12:00:00.000Z',
+      }) as SessionSummary,
+    ];
     const catalog = normalizeSessionCatalog({
-      in_progress: [
-        {
-          game_id: 'g-1',
-          blueprint_id: 'bp-1',
-          mystery_title: 'Mystery 1',
-          mystery_available: true,
-          can_open: true,
-          mode: 'explore',
-          time_remaining: 7,
-          outcome: null,
-          last_played_at: '2026-03-10T12:00:00.000Z',
-          created_at: '2026-03-09T12:00:00.000Z',
-        },
-      ],
-      completed: [
-        {
-          game_id: 'g-2',
-          blueprint_id: 'bp-2',
-          mystery_title: 'Mystery 2',
-          mystery_available: true,
-          can_open: true,
-          mode: 'ended',
-          time_remaining: 0,
-          outcome: 'win',
-          last_played_at: '2026-03-11T12:00:00.000Z',
-          created_at: '2026-03-08T12:00:00.000Z',
-        },
-      ],
-      counts: {
-        in_progress: 999,
-        completed: 999,
-      },
+      in_progress: inProgress,
+      completed,
+      counts: { in_progress: 999, completed: 999 },
     });
 
     expect(catalog.in_progress).toHaveLength(1);
@@ -152,25 +135,17 @@ describe('session catalog helpers', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        state: {
-          locations: [{ name: 'Kitchen' }],
+        state: createGameState({
+          locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
           characters: [],
           time_remaining: 3,
-          location: 'Kitchen',
-          mode: 'explore',
-          current_talk_character: null,
-        },
+        }),
         narration_events: [
-          {
+          createNarrationEvent({
             sequence: 1,
             event_type: 'move',
-            narration_parts: [
-              {
-                text: 'You enter the kitchen.',
-                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
-              },
-            ],
-          },
+            narration_parts: [{ text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER }],
+          }),
         ],
       }),
     });
@@ -184,7 +159,7 @@ describe('session catalog helpers', () => {
         sequence: 1,
         event_type: 'move',
         text: 'You enter the kitchen.',
-        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        speaker: NARRATOR_SPEAKER,
         image_id: null,
       },
     ]);
@@ -192,43 +167,39 @@ describe('session catalog helpers', () => {
 
   it('flattens multi-part resumed transcripts without changing order', async () => {
     const store = new GameSessionStore();
+    const aliceSpeaker = characterSpeaker('Alice');
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        state: {
-          locations: [{ id: 'kitchen', name: 'Kitchen' }],
-          characters: [{ id: 'char-alice', first_name: 'Alice', last_name: 'Smith', location_name: 'Kitchen' }],
+        state: createGameState({
+          locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
+          characters: [{
+            id: 'char-alice',
+            first_name: 'Alice',
+            last_name: 'Smith',
+            location_id: 'loc-kitchen',
+            location_name: 'Kitchen',
+            sex: 'female' as const,
+          }],
           time_remaining: 0,
-          location: 'Kitchen',
           mode: 'ended',
-          current_talk_character: null,
-        },
+        }),
         narration_events: [
-          {
+          createNarrationEvent({
             sequence: 1,
             event_type: 'ask',
             narration_parts: [
-              {
-                text: 'Alice says she heard the clock strike nine.',
-                speaker: { kind: 'character', key: 'character:alice', label: 'Alice' },
-                image_id: 'portrait-alice',
-              },
-              {
-                text: 'The room falls silent as time runs out.',
-                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
-              },
+              { text: 'Alice says she heard the clock strike nine.', speaker: aliceSpeaker, image_id: 'portrait-alice' },
+              { text: 'The room falls silent as time runs out.', speaker: NARRATOR_SPEAKER },
             ],
-          },
-          {
+          }),
+          createNarrationEvent({
             sequence: 2,
             event_type: 'forced_endgame',
             narration_parts: [
-              {
-                text: 'You must make your accusation now.',
-                speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
-              },
+              { text: 'You must make your accusation now.', speaker: NARRATOR_SPEAKER },
             ],
-          },
+          }),
         ],
       }),
     });
@@ -244,21 +215,21 @@ describe('session catalog helpers', () => {
         sequence: 1,
         event_type: 'ask',
         text: 'Alice says she heard the clock strike nine.',
-        speaker: { kind: 'character', key: 'character:alice', label: 'Alice' },
+        speaker: aliceSpeaker,
         image_id: 'portrait-alice',
       },
       {
         sequence: 1,
         event_type: 'ask',
         text: 'The room falls silent as time runs out.',
-        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        speaker: NARRATOR_SPEAKER,
         image_id: null,
       },
       {
         sequence: 2,
         event_type: 'forced_endgame',
         text: 'You must make your accusation now.',
-        speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' },
+        speaker: NARRATOR_SPEAKER,
         image_id: null,
       },
     ]);

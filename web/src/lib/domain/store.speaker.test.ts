@@ -13,12 +13,7 @@ vi.mock('../api/supabase', () => ({
 }));
 
 import { GameSessionStore } from './store.svelte';
-
-const narratorSpeaker = {
-  kind: 'narrator',
-  key: 'narrator',
-  label: 'Narrator',
-} as const;
+import { NARRATOR_SPEAKER } from '../../../../tests/testkit/src/fixtures';
 
 function createStore() {
   const store = new GameSessionStore();
@@ -41,7 +36,7 @@ function createStore() {
         sequence: 1,
         event_type: 'start',
         text: 'Case begins.',
-        speaker: narratorSpeaker,
+        speaker: NARRATOR_SPEAKER,
       },
     ],
   };
@@ -61,7 +56,7 @@ describe('store speaker behavior', () => {
       data: {
         narration_parts: [{
           text: 'You search the kitchen.',
-          speaker: narratorSpeaker,
+          speaker: NARRATOR_SPEAKER,
         }],
         mode: 'explore',
         time_remaining: 9,
@@ -106,7 +101,7 @@ describe('store speaker behavior', () => {
       data: {
         narration_parts: [{
           text: 'You search the kitchen.',
-          speaker: narratorSpeaker,
+          speaker: NARRATOR_SPEAKER,
         }],
         mode: 'explore',
         time_remaining: 9,

@@ -5,6 +5,7 @@ import {
   EMPTY_CATALOG,
   createBlueprintSummary,
   createGameState,
+  createGameStartResponse,
   createNarrationEvent,
   createMoveResponse,
   createImageLinkResponse,
@@ -34,8 +35,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
-        json: {
-          game_id: '00000000-0000-0000-0000-000000000001',
+        json: createGameStartResponse({
           state: startState,
           narration_events: [
             createNarrationEvent({
@@ -49,7 +49,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
               narration_parts: [{ text: 'You enter the kitchen.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 
@@ -152,15 +152,14 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
-        json: {
-          game_id: '00000000-0000-0000-0000-000000000001',
+        json: createGameStartResponse({
           state: startState,
           narration_events: [
             createNarrationEvent({
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     }, { times: 1 });
 

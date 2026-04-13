@@ -4,6 +4,7 @@ import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   createGameState,
+  createGameStartResponse,
   createBlueprintSummary,
   createSessionSummary,
   createSessionCatalog,
@@ -55,7 +56,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000011',
           state: baseGameState,
           narration_events: [
@@ -63,7 +64,7 @@ test.describe('Sessions navigation', () => {
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 
@@ -128,7 +129,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000012',
           state: baseGameState,
           narration_events: [
@@ -136,7 +137,7 @@ test.describe('Sessions navigation', () => {
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 

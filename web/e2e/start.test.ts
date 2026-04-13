@@ -5,6 +5,7 @@ import {
   EMPTY_CATALOG,
   createBlueprintSummary,
   createGameState,
+  createGameStartResponse,
   createNarrationEvent,
   createSessionSummary,
   createSessionCatalog,
@@ -102,7 +103,7 @@ test.describe('US1 - Start Screen', () => {
 
     await page.route('**/functions/v1/game-start*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000123',
           state: createGameState({ locations: [], characters: [], location: 'living room' }),
           narration_events: [
@@ -112,7 +113,7 @@ test.describe('US1 - Start Screen', () => {
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 
@@ -144,7 +145,7 @@ test.describe('US1 - Start Screen', () => {
     await page.route('**/functions/v1/game-start*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       await route.fulfill({
-        json: {
+        json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000123',
           state: createGameState({ locations: [], characters: [], location: 'living room' }),
           narration_events: [
@@ -154,7 +155,7 @@ test.describe('US1 - Start Screen', () => {
               narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 

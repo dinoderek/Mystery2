@@ -8,8 +8,8 @@ import {
 import {
   INVESTIGATOR_SPEAKER,
   NARRATOR_SPEAKER,
-} from "../../../supabase/functions/_shared/speaker.ts";
-import { characterSpeaker as fixtureCharacterSpeaker } from "../../testkit/src/fixtures.ts";
+  characterSpeaker as fixtureCharacterSpeaker,
+} from "../../testkit/src/fixtures.ts";
 
 describe("narration event helpers", () => {
   it("preserves ordered narration parts when reading persisted events", () => {

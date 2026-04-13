@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { NARRATOR_SPEAKER, characterSpeaker } from "../../testkit/src/fixtures";
+import { NARRATOR_SPEAKER, INVESTIGATOR_SPEAKER, characterSpeaker } from "../../testkit/src/fixtures";
 import {
   API_URL,
   SUPABASE_URL,
@@ -94,11 +94,9 @@ describe("game-get endpoint", () => {
     const askEvent = getData.narration_events.find(
       (entry: { event_type: string }) => entry.event_type === "ask",
     );
-    expect(askEvent?.narration_parts[0].speaker).toMatchObject({
-      kind: "investigator",
-      key: "you",
-      label: "You",
-    });
+    expect(askEvent?.narration_parts[0].speaker).toMatchObject(
+      INVESTIGATOR_SPEAKER,
+    );
     expect(askEvent?.narration_parts[1].speaker).toMatchObject(
       characterSpeaker("Alice"),
     );

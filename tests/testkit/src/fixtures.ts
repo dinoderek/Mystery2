@@ -61,7 +61,7 @@ export const NARRATOR_SPEAKER: Speaker = validate(SpeakerSchema, {
 
 export const INVESTIGATOR_SPEAKER: Speaker = validate(SpeakerSchema, {
   kind: "investigator" as const,
-  key: "investigator",
+  key: "you",
   label: "You",
 });
 

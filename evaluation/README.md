@@ -36,10 +36,10 @@ cp evaluation/config/cli.example.json evaluation/config/cli.json
 # bundled wrappers in evaluation/config/wrappers/ which invoke `claude`.
 
 # 2. Run end-to-end (generation + evaluation):
-node evaluation/pipeline/run.mjs --spec evaluation/specs/001-lighthouse-lens
+npm run eval -- --spec evaluation/specs/001-lighthouse-lens
 
 # Or skip generation and evaluate an existing blueprint:
-node evaluation/pipeline/run.mjs \
+npm run eval -- \
   --spec evaluation/specs/001-lighthouse-lens \
   --blueprint path/to/blueprint.json
 ```
@@ -162,3 +162,6 @@ edit it to change how the judge frames itself across dimensions.
 - Tier 2 dimensions.
 - Multiple samples per brief (K-run aggregation).
 - Judge self-consistency sampling.
+
+The `npm run eval` script wraps `node evaluation/pipeline/run.mjs`; pass
+pipeline flags after `--`.

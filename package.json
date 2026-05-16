@@ -24,6 +24,7 @@
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
         "build:evaluation-markdown": "node scripts/build-blueprint-evaluation-markdown.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
+        "eval": "node evaluation/pipeline/run.mjs",
         "deploy": "node scripts/deploy.mjs",
         "deploy:dev": "npm run deploy -- --env dev",
         "deploy:staging": "npm run deploy -- --env staging",

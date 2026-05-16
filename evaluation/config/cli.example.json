@@ -1,0 +1,19 @@
+{
+  "_comment": "Pipeline LLM CLI bindings. Copy to cli.json and customise. The runner writes the system prompt to {{system_prompt_file}} and the user message to {{user_message_file}}, then spawns cmd with the rendered args. stdout is captured, parsed as JSON, and extract_path (dotted) selects the model's actual text response before that text is JSON-parsed by the runner. Set extract_path to null if the CLI emits the model response directly as plain JSON on stdout.",
+
+  "generate": {
+    "description": "Invokes an LLM CLI to produce a Blueprint V2 from a story brief. Receives the generator-prompt.md as system and the brief-wrapped user message as input.",
+    "cmd": "evaluation/config/wrappers/claude-generate.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "timeout_ms": 600000
+  },
+
+  "judge": {
+    "description": "Invokes an LLM CLI to judge a single dimension. System prompt is judge-system.md + the dimension definition. User message is the brief + blueprint.",
+    "cmd": "evaluation/config/wrappers/claude-judge.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "timeout_ms": 180000
+  }
+}

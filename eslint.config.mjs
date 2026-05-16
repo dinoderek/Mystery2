@@ -10,6 +10,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "supabase/functions/**", // Handled by deno lint
       "scripts/**",
+      "evaluation/**", // top-level evaluation pipeline (Node CLI utilities)
       ".specify/**", // speckit
       ".agent/**", // speckit
       ".claude/**", // local agent worktrees

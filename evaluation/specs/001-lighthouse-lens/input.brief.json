@@ -1,0 +1,14 @@
+{
+  "brief": "Overnight, the giant glass lens from the lighthouse on Gull Rock has vanished from the lantern room. The keeper is frantic — without it, ships will run aground on tonight's high tide. The investigator must find out who took the lens and why before the tide turns. The truth involves the tide schedule pinned to the keeper's wall.",
+  "targetAge": 10,
+  "timeBudget": 8,
+  "titleHint": "The Missing Lighthouse Lens",
+  "mustInclude": ["lighthouse lens", "tide schedule"],
+  "culprits": 1,
+  "suspects": 1,
+  "witnesses": 1,
+  "locations": 3,
+  "redHerringTrails": 1,
+  "coverUps": true,
+  "eliminationComplexity": "simple"
+}

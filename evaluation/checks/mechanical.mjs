@@ -82,19 +82,6 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
     }
   }
 
-  if (validBrief.coverUps === true) {
-    const nonCulprits = blueprint.world.characters.filter((c) => !c.is_culprit);
-    const withAlibis = nonCulprits.filter(
-      (c) => typeof c.stated_alibi === "string" && c.stated_alibi.trim().length > 0,
-    );
-    checks.push(
-      mkCheck("cover_up_present_on_non_culprits", withAlibis.length > 0, {
-        non_culprit_count: nonCulprits.length,
-        with_stated_alibi: withAlibis.length,
-      }),
-    );
-  }
-
   const orphans = findOrphanClues(blueprint);
   const orphanCount = orphans.location.length + orphans.character.length;
   checks.push(

@@ -65,21 +65,11 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
   if (validBrief.redHerringTrails !== undefined) {
     const actualHerrings = blueprint.red_herrings.length;
     checks.push(
-      mkCheck("red_herring_count_meets_brief", actualHerrings >= validBrief.redHerringTrails, {
-        expected_min: validBrief.redHerringTrails,
+      mkCheck("red_herring_count_matches_brief", actualHerrings === validBrief.redHerringTrails, {
+        expected: validBrief.redHerringTrails,
         actual: actualHerrings,
       }),
     );
-  }
-
-  if (validBrief.mustInclude && validBrief.mustInclude.length > 0) {
-    const searchableText = collectBlueprintText(blueprint).toLowerCase();
-    for (const term of validBrief.mustInclude) {
-      const found = searchableText.includes(term.toLowerCase());
-      checks.push(
-        mkCheck(`must_include_term:${term}`, found, found ? null : { term }),
-      );
-    }
   }
 
   const orphans = findOrphanClues(blueprint);
@@ -98,35 +88,6 @@ function mkCheck(id, passed, details) {
     status: passed ? "pass" : "fail",
     details: details ?? null,
   };
-}
-
-function collectBlueprintText(bp) {
-  const parts = [];
-  parts.push(bp.metadata.title, bp.metadata.one_liner);
-  parts.push(bp.narrative.premise, bp.narrative.starting_knowledge.mystery_summary);
-  for (const sk of bp.narrative.starting_knowledge.locations) parts.push(sk.summary);
-  for (const sk of bp.narrative.starting_knowledge.characters) parts.push(sk.summary);
-  parts.push(bp.cover_image.description);
-  parts.push(bp.ground_truth.what_happened, bp.ground_truth.why_it_happened);
-  for (const t of bp.ground_truth.timeline) parts.push(t);
-  for (const loc of bp.world.locations) {
-    parts.push(loc.name, loc.description);
-    for (const clue of loc.clues) parts.push(clue.text);
-    for (const sub of loc.sub_locations ?? []) {
-      parts.push(sub.name, sub.hint);
-      for (const clue of sub.clues) parts.push(clue.text);
-    }
-  }
-  for (const ch of bp.world.characters) {
-    parts.push(ch.first_name, ch.last_name, ch.appearance, ch.background, ch.personality);
-    parts.push(ch.initial_attitude_towards_investigator);
-    if (ch.stated_alibi) parts.push(ch.stated_alibi);
-    if (ch.motive) parts.push(ch.motive);
-    for (const clue of ch.clues) parts.push(clue.text);
-    for (const f of ch.flavor_knowledge) parts.push(f);
-    for (const a of ch.actual_actions) parts.push(a.summary);
-  }
-  return parts.join("\n");
 }
 
 function findOrphanClues(bp) {

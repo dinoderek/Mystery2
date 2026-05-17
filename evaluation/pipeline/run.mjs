@@ -3,6 +3,8 @@ import path from "node:path";
 import process from "node:process";
 import url from "node:url";
 
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 import { buildBlueprintGenerationChatInput } from "../../packages/blueprint-generator/src/index.ts";
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 
@@ -205,6 +207,7 @@ async function main() {
         const systemPrompt = composeJudgeSystemPrompt({
           base: judgeSystemBase,
           dimensionText: dim.text,
+          schema: dim.schema,
           context: judgeContext,
         });
         const userMessage = JSON.stringify({
@@ -230,19 +233,20 @@ async function main() {
           } catch {
             parsed = null;
           }
-          if (!parsed || typeof parsed !== "object" || !("verdict" in parsed)) {
+          const validation = validateJudgeOutput(parsed, dim.schema);
+          if (!validation.ok) {
             dimError = {
               stage: "judge_parse",
-              message: "Judge output did not match expected shape (missing verdict).",
+              message: validation.message,
               raw: extracted.slice(0, 1000),
             };
           } else {
-            const status = parsed.verdict === "pass" ? "pass" : "fail";
+            const status = validation.data.verdict === "pass" ? "pass" : "fail";
             judgeResult = {
               kind: "judge",
               status,
-              reasoning: parsed.reasoning ?? "",
-              raw: parsed,
+              reasoning: validation.data.reasoning ?? "",
+              raw: validation.data,
             };
             process.stdout.write(`[eval]   judge: ${status}\n`);
           }
@@ -287,12 +291,47 @@ async function main() {
   );
 }
 
-function composeJudgeSystemPrompt({ base, dimensionText, context }) {
+function composeJudgeSystemPrompt({ base, dimensionText, schema, context }) {
   let composed = `${base}\n\n---\n\n${dimensionText}`;
+  if (schema) {
+    const jsonSchema = zodToJsonSchema(schema, { target: "jsonSchema7" });
+    composed +=
+      `\n\n---\n\n## Output JSON Schema (authoritative)\n\n` +
+      `Your response MUST be a single JSON object matching this schema. ` +
+      `If the prose contract above and this schema disagree, the schema wins.\n\n` +
+      `\`\`\`json\n${JSON.stringify(jsonSchema, null, 2)}\n\`\`\`\n`;
+  }
   if (context && typeof context === "object") {
     composed += `\n\n---\n\n## Per-spec context\n\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n`;
   }
   return composed;
+}
+
+function validateJudgeOutput(parsed, schema) {
+  if (parsed === null || typeof parsed !== "object") {
+    return { ok: false, message: "Judge output is not a JSON object." };
+  }
+  if (!schema) {
+    if (!("verdict" in parsed)) {
+      return {
+        ok: false,
+        message: "Judge output did not match expected shape (missing verdict).",
+      };
+    }
+    return { ok: true, data: parsed };
+  }
+  const result = schema.safeParse(parsed);
+  if (!result.success) {
+    const issues = result.error.issues
+      .slice(0, 5)
+      .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+      .join("; ");
+    return {
+      ok: false,
+      message: `Judge output failed schema validation: ${issues}`,
+    };
+  }
+  return { ok: true, data: result.data };
 }
 
 const isMain =

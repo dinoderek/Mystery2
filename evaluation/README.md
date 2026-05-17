@@ -97,8 +97,11 @@ Three result kinds, one envelope.
   process. Catches obvious structural failures before paying for an LLM
   judgment.
 - **Judge** — LLM call per dimension via the pluggable CLI. Each dimension
-  has a `dimensions/<id>.md` file with the judge instructions and required
-  output shape.
+  has a `dimensions/<id>.md` file with the judge instructions and a
+  co-located `dimensions/<id>.schema.ts` Zod schema for the judge's JSON
+  output. The pipeline serializes the Zod schema as JSON Schema, appends it
+  to the system prompt, and validates the judge's response against it. A
+  schema mismatch produces a `judge_parse` error in the envelope.
 
 A dimension's `overall` is `pass` only if every sub-result it produced is
 `pass`. If only an analyzer is defined and it passes, that's a pass. If
@@ -125,7 +128,11 @@ are not yet in scope.
 
 The evaluator itself is the moving target. To improve it:
 
-- Edit `dimensions/<id>.md` — that's the judge prompt.
+- Edit `dimensions/<id>.md` — that's the judge prompt (prose contract).
+- Edit `dimensions/<id>.schema.ts` — that's the Zod schema injected into
+  the prompt and used to validate the judge's output. If the prose and
+  schema drift, the schema is treated as authoritative in the system
+  prompt.
 - Edit `checks/analyzers/<id>.mjs` — that's the deterministic pre-check.
 - Re-run with `--blueprint` against a saved blueprint to keep the
   generation cost out of the loop.

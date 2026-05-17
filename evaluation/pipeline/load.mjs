@@ -38,7 +38,24 @@ export async function loadDimensionDefinition(dimensionId) {
   const filename = dimensionIdToFilename(dimensionId);
   const filePath = path.join(REPO_ROOT, "evaluation", "dimensions", filename);
   const text = await readText(filePath);
-  return { id: dimensionId, filePath, text };
+
+  const schemaFilename = dimensionIdToFilename(dimensionId, "schema.ts");
+  const schemaPath = path.join(REPO_ROOT, "evaluation", "dimensions", schemaFilename);
+  let schema = null;
+  try {
+    await fs.access(schemaPath);
+    const mod = await import(url.pathToFileURL(schemaPath).href);
+    if (!mod.schema) {
+      throw new Error(`${schemaFilename} must export a named 'schema' (Zod schema).`);
+    }
+    schema = mod.schema;
+  } catch (err) {
+    if (err.code !== "ENOENT" && !/no such file/i.test(err.message)) {
+      throw err;
+    }
+  }
+
+  return { id: dimensionId, filePath, text, schema, schemaPath: schema ? schemaPath : null };
 }
 
 export async function loadJudgeSystemPrompt() {

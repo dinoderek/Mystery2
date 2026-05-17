@@ -106,10 +106,16 @@ only a judge is configured and it passes, that's a pass.
 
 ## Tier 1 dimensions (current scope)
 
-1. **Solvability** — analyzer + judge.
-2. **Fairness / convergence** — analyzer + judge.
-3. **Internal coherence** — analyzer + judge.
-4. **Character grounding (anti-hallucination)** — analyzer + judge.
+1. **Solvability** — judge only.
+2. **Fairness / convergence** — judge only.
+3. **Internal coherence** — judge only.
+4. **Character grounding (anti-hallucination)** — judge + optional
+   context-driven analyzer (skipped unless the outcome spec supplies
+   `min_chars` / `min_flavor_items`).
+
+Analyzers exist only where they add signal not already encoded in
+`BlueprintV2Schema.superRefine`. If a structural rule should always hold,
+the right home is the schema, not an evaluation analyzer.
 
 Tiers 2 and 3 (clue economy, red-herring quality, cover-up quality, narrative
 economy, resolution, path independence, challenge, interest, hook, tone)

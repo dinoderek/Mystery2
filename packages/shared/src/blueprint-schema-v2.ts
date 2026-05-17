@@ -467,6 +467,7 @@ export const BlueprintV2Schema = z
         .describe("The core motive of the culprit."),
       timeline: z
         .array(z.string().trim().min(1))
+        .min(1)
         .describe("Chronological sequence of events leading up to the mystery."),
     }),
     solution_paths: z

@@ -42,6 +42,7 @@ export function buildEnvelope({
       pass: dimensions.filter((d) => d.overall === "pass").length,
       fail: dimensions.filter((d) => d.overall === "fail").length,
       error: dimensions.filter((d) => d.overall === "error").length,
+      skipped: dimensions.filter((d) => d.overall === "skipped").length,
     },
   };
 
@@ -75,6 +76,10 @@ export function combineDimension({ id, analyzer, judge, error }) {
       error: { stage: "compose", message: "Dimension produced neither analyzer nor judge result." },
     };
   }
-  const overall = sub.every((s) => s === "pass") ? "pass" : "fail";
+  const considered = sub.filter((s) => s !== "skipped");
+  if (considered.length === 0) {
+    return { id, analyzer, judge, overall: "skipped" };
+  }
+  const overall = considered.every((s) => s === "pass") ? "pass" : "fail";
   return { id, analyzer, judge, overall };
 }

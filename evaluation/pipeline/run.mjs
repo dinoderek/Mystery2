@@ -273,14 +273,17 @@ async function main() {
   await fs.writeFile(resultPath, JSON.stringify(envelope, null, 2));
 
   process.stdout.write(`\n[eval] result: ${path.relative(root, resultPath)}\n`);
+  const dimTotal =
+    envelope.summary.dimensions.pass +
+    envelope.summary.dimensions.fail +
+    envelope.summary.dimensions.error +
+    envelope.summary.dimensions.skipped;
   process.stdout.write(
     `[eval] summary: mechanical ${envelope.summary.mechanical.pass}/${
       envelope.summary.mechanical.pass + envelope.summary.mechanical.fail
-    } pass, dimensions ${envelope.summary.dimensions.pass}/${
-      envelope.summary.dimensions.pass +
-      envelope.summary.dimensions.fail +
-      envelope.summary.dimensions.error
-    } pass\n`,
+    } pass, dimensions ${envelope.summary.dimensions.pass}/${dimTotal} pass (${
+      envelope.summary.dimensions.skipped
+    } skipped)\n`,
   );
 }
 

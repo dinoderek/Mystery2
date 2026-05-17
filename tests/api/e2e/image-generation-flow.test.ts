@@ -66,7 +66,7 @@ const blueprintFixture = {
   ground_truth: {
     what_happened: "Alice ate the cookies.",
     why_it_happened: "Hungry.",
-    timeline: [],
+    timeline: ["Alice ate the cookies."],
   },
   solution_paths: [
     {

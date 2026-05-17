@@ -1,33 +1,35 @@
 // Character grounding analyzer (deterministic part).
 //
-// Heuristic: count characters of authored text per character across the
-// fields a runtime GM relies on to stay grounded. If a character is below
-// a minimum total, flag them as thin. The threshold is intentionally
-// generous — the goal is to catch obviously starved characters; the judge
-// decides whether the content is actually rich or just verbose.
+// Runs ONLY when the outcome spec's dimension context provides explicit
+// thresholds. With no thresholds in context, returns "skipped" — the
+// analyzer does not invent defaults. If we want hard floors that always
+// apply, encode them in the schema instead.
 //
-// Fields counted (joined with newlines):
-//   - background, personality, initial_attitude_towards_investigator
-//   - appearance
-//   - motive (if non-null), stated_alibi (if non-null)
-//   - actual_actions[].summary (joined)
-//   - flavor_knowledge[] (joined)
-//   - clues[].text (joined) — these double as known facts in conversation
-//
-// Default minimum: 600 characters per character. Tune via context.min_chars.
-
-const DEFAULT_MIN_CHARS = 600;
-const DEFAULT_MIN_FLAVOR_ITEMS = 2;
+// Recognised context fields:
+//   - min_chars         (number) minimum joined text length across
+//                       grounding fields per character
+//   - min_flavor_items  (number) minimum flavor_knowledge entries per
+//                       character
 
 export function analyze({ blueprint, context }) {
   const minChars =
     typeof context?.min_chars === "number" && context.min_chars > 0
       ? context.min_chars
-      : DEFAULT_MIN_CHARS;
+      : null;
   const minFlavor =
     typeof context?.min_flavor_items === "number" && context.min_flavor_items >= 0
       ? context.min_flavor_items
-      : DEFAULT_MIN_FLAVOR_ITEMS;
+      : null;
+
+  if (minChars === null && minFlavor === null) {
+    return {
+      status: "skipped",
+      details: {
+        reason:
+          "No min_chars or min_flavor_items in outcome spec context; analyzer does not invent defaults.",
+      },
+    };
+  }
 
   const perCharacter = blueprint.world.characters.map((ch) => {
     const parts = [
@@ -44,12 +46,12 @@ export function analyze({ blueprint, context }) {
     const totalChars = parts.join("\n").length;
     const flavorCount = ch.flavor_knowledge.length;
 
-    const thinReasons = [];
-    if (totalChars < minChars) {
-      thinReasons.push(`total_grounding_chars=${totalChars} below min=${minChars}`);
+    const failures = [];
+    if (minChars !== null && totalChars < minChars) {
+      failures.push(`total_grounding_chars=${totalChars} below min=${minChars}`);
     }
-    if (flavorCount < minFlavor) {
-      thinReasons.push(`flavor_knowledge_count=${flavorCount} below min=${minFlavor}`);
+    if (minFlavor !== null && flavorCount < minFlavor) {
+      failures.push(`flavor_knowledge_count=${flavorCount} below min=${minFlavor}`);
     }
 
     return {
@@ -57,20 +59,20 @@ export function analyze({ blueprint, context }) {
       first_name: ch.first_name,
       total_grounding_chars: totalChars,
       flavor_knowledge_count: flavorCount,
-      passes_threshold: thinReasons.length === 0,
-      thin_reasons: thinReasons,
+      passes: failures.length === 0,
+      failures,
     };
   });
 
-  const thin = perCharacter.filter((c) => !c.passes_threshold);
+  const failing = perCharacter.filter((c) => !c.passes);
 
   return {
-    status: thin.length === 0 ? "pass" : "fail",
+    status: failing.length === 0 ? "pass" : "fail",
     details: {
       min_chars: minChars,
       min_flavor_items: minFlavor,
       per_character: perCharacter,
-      thin_character_ids: thin.map((c) => c.character_id),
+      failing_character_ids: failing.map((c) => c.character_id),
     },
   };
 }

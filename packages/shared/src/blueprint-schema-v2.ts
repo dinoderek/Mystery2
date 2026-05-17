@@ -81,6 +81,10 @@ export const BlueprintV2ReasoningPathSchema = z.object({
 });
 
 export const BlueprintV2CharacterActualActionSchema = z.object({
+  // TODO: revisit the explicit `sequence` field. Either drop it and use
+  // array order (touches generator prompt and runtime narrator), or keep
+  // it and enforce 1..N density in superRefine alongside the existing
+  // unique/ascending checks. See PR #78 discussion.
   sequence: z
     .number()
     .int()

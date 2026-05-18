@@ -1,25 +1,35 @@
 // Result envelope shape used for run output JSON.
 //
 // {
-//   schema_version: "0.1",
+//   schema_version: "0.2",
 //   run_id: string,
 //   started_at, ended_at: ISO 8601 strings,
 //   spec_dir: relative path to the spec directory,
-//   blueprint_path: relative path to the blueprint used,
-//   generation: { skipped: bool, source: "cli" | "preexisting", duration_ms?: number },
+//   blueprint_path: relative path to the blueprint used (null if generation failed),
+//   generation: {
+//     skipped: bool,
+//     source: "cli" | "preexisting",
+//     duration_ms?: number,
+//     attempts?: [ { attempt, outcome: "ok"|"cli_fail", duration_ms, error? } ]
+//   } | null,
 //   mechanical: [ { id, kind: "mechanical", status, details } ],
 //   dimensions: [
 //     {
 //       id,
 //       analyzer?: { status, details },
-//       judge?: { status, reasoning, raw },
-//       overall: "pass" | "fail" | "error",
-//       error?: { stage, message }
+//       judge?: {
+//         status, reasoning, raw,
+//         attempts?: [ { attempt, outcome: "ok"|"cli_fail"|"schema_fail", duration_ms, error? } ]
+//       },
+//       overall: "pass" | "fail" | "error" | "skipped",
+//       error?: { stage, message, attempts? }
 //     }
 //   ],
+//   run_error: { stage, message } | null,
 //   summary: {
 //     mechanical: { pass, fail },
-//     dimensions: { pass, fail, error }
+//     dimensions: { pass, fail, error, skipped },
+//     retries: { generate, judge_total }
 //   }
 // }
 
@@ -32,7 +42,13 @@ export function buildEnvelope({
   generation,
   mechanical,
   dimensions,
+  runError = null,
 }) {
+  const generateRetries = countExtraAttempts(generation?.attempts);
+  const judgeTotalRetries = dimensions.reduce((acc, d) => {
+    return acc + countExtraAttempts(d.judge?.attempts ?? d.error?.attempts);
+  }, 0);
+
   const summary = {
     mechanical: {
       pass: mechanical.filter((c) => c.status === "pass").length,
@@ -44,10 +60,14 @@ export function buildEnvelope({
       error: dimensions.filter((d) => d.overall === "error").length,
       skipped: dimensions.filter((d) => d.overall === "skipped").length,
     },
+    retries: {
+      generate: generateRetries,
+      judge_total: judgeTotalRetries,
+    },
   };
 
   return {
-    schema_version: "0.1",
+    schema_version: "0.2",
     run_id: runId,
     started_at: startedAt,
     ended_at: endedAt,
@@ -56,8 +76,14 @@ export function buildEnvelope({
     generation,
     mechanical,
     dimensions,
+    run_error: runError,
     summary,
   };
+}
+
+function countExtraAttempts(attempts) {
+  if (!Array.isArray(attempts) || attempts.length <= 1) return 0;
+  return attempts.length - 1;
 }
 
 export function combineDimension({ id, analyzer, judge, error }) {

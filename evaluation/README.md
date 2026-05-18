@@ -81,18 +81,57 @@ The pipeline never imports an LLM SDK. Every model call is a subprocess.
 | `args`         | Argument array. `{{system_prompt_file}}` and `{{user_message_file}}` are replaced with paths to temp files.          |
 | `extract_path` | After parsing stdout as JSON, walk this dotted path. The extracted value (a string) is then JSON-parsed by the pipe. |
 | `timeout_ms`   | Hard kill after this many milliseconds.                                                                              |
+| `retries`      | Optional. Up to N additional attempts on transient failures (total = 1 + N). Default 0. See "Retries" below.         |
 
 To bind a different LLM CLI: write a wrapper that takes the two paths as
 args, calls your CLI, and prints `{ "result": "<model-output>" }` (or any
 shape whose `extract_path` resolves to the model's output string).
+
+## Execution graph
+
+- The four Tier 1 dimensions are evaluated **in parallel** via `Promise.all`.
+  Analyzer (in-process) and judge (CLI shell-out) for each dimension run
+  sequentially within the dimension, but the four dimensions overlap.
+- Generation, mechanical checks, and blueprint schema validation all run
+  before any dimension is dispatched.
+- A `result.json` envelope is **always written**, even when the run aborts
+  mid-flight (e.g., generation fails). On whole-run failure the envelope
+  carries `run_error: { stage, message }` and exits non-zero. Consumers can
+  distinguish "didn't run" from "crashed in generation" by the presence and
+  contents of the envelope.
+
+## Retries
+
+`retries: N` on a step config gives that step up to N additional attempts
+after the first (total = 1 + N). Retries are configured per-step (generate
+and judge are independent).
+
+| step       | retriable conditions                                                                            |
+|------------|-------------------------------------------------------------------------------------------------|
+| `generate` | CLI non-zero exit, timeout, stdout not JSON, `extract_path` miss.                               |
+| `judge`    | All of the above, plus Zod validation failure of the model's structured output (`judge_parse`). |
+
+Per-attempt diagnostics are written to the envelope:
+
+- `generation.attempts: [{ attempt, outcome: "ok"|"cli_fail", duration_ms, error? }]`
+- `dimensions[].judge.attempts: [...]` on success, or
+  `dimensions[].error.attempts: [...]` on final failure, with outcomes
+  `"ok" | "cli_fail" | "schema_fail"`.
+- `summary.retries.generate` and `summary.retries.judge_total` aggregate
+  the extra attempts used.
+
+When a step has `retries > 0`, each attempt gets its own log files:
+`generate.attempt-1.stdout.log`, `judge-solvability.attempt-2.stderr.log`,
+etc. When `retries: 0` (the default) the original filenames are kept
+(`generate.stdout.log`).
 
 ## Mechanical vs analyzer vs judge
 
 Three result kinds, one envelope.
 
 - **Mechanical** — runs on every blueprint regardless of outcome spec.
-  Failure means the artifact is broken (schema invalid, mustInclude missing,
-  brief counts wrong, orphan clues, etc.).
+  Failure means the artifact is broken (schema invalid, brief counts wrong,
+  orphan clues, etc.).
 - **Analyzer** — deterministic code per dimension. Cheap. Runs first, in
   process. Catches obvious structural failures before paying for an LLM
   judgment.

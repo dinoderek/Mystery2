@@ -153,3 +153,54 @@ export async function runCli({
   }
   return { extracted: cursor, raw: parsed };
 }
+
+// Wraps runCli with a retry loop. Always returns a result object — does not
+// throw. On the final failure, returns { ok: false, error, attempts }.
+// Each attempt invokes runCli with a per-attempt step name when retries > 0
+// so each attempt gets its own stdout/stderr/invocation log files.
+export async function runCliWithRetries({
+  step,
+  config,
+  systemPrompt,
+  userMessage,
+  logDir,
+  retries = 0,
+}) {
+  const max = 1 + Math.max(0, Number.isInteger(retries) ? retries : 0);
+  const attempts = [];
+  for (let i = 1; i <= max; i += 1) {
+    const startedAt = Date.now();
+    const attemptStep = max === 1 ? step : `${step}.attempt-${i}`;
+    try {
+      const result = await runCli({
+        step: attemptStep,
+        config,
+        systemPrompt,
+        userMessage,
+        logDir,
+      });
+      attempts.push({
+        attempt: i,
+        outcome: "ok",
+        duration_ms: Date.now() - startedAt,
+      });
+      return { ok: true, ...result, attempts };
+    } catch (err) {
+      attempts.push({
+        attempt: i,
+        outcome: "cli_fail",
+        duration_ms: Date.now() - startedAt,
+        error: String(err.message ?? err).slice(0, 500),
+      });
+      if (i === max) {
+        return {
+          ok: false,
+          error: { message: String(err.message ?? err) },
+          attempts,
+        };
+      }
+    }
+  }
+  // Unreachable; the loop always returns.
+  return { ok: false, error: { message: "runCliWithRetries fell through" }, attempts };
+}

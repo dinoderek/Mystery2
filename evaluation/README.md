@@ -208,6 +208,110 @@ edit it to change how the judge frames itself across dimensions.
 }
 ```
 
+## Running under Claude Code (web)
+
+In Claude Code on the web there is no shell access to external LLM CLIs, but
+the in-session assistant can dispatch subagents and read/write files. The
+pipeline still shells out to a `cmd` per `config/cli.json` — we just point
+that `cmd` at a wrapper that talks to the assistant via a file bus instead
+of an external process.
+
+```
+pipeline ──spawn──► node file-bus.mjs ──write──► evaluation/agent-bus/inbox/<id>/
+                          │                              │
+                          │                              ▼
+                          │                       dispatcher (the session
+                          │                       assistant) reads the
+                          │                       request, runs a subagent,
+                          │                       writes the reply
+                          │                              │
+                          └◄──poll──── evaluation/agent-bus/outbox/<id>.json
+```
+
+### One-time setup
+
+```bash
+cp evaluation/config/cli.claude-code.example.json evaluation/config/cli.json
+```
+
+This points both `generate` and `judge` at
+`evaluation/config/wrappers/file-bus.mjs`. Timeouts and retries are
+unchanged from the default config.
+
+### Running an eval
+
+1. Start the pipeline in a background bash:
+   `npm run eval -- --spec evaluation/specs/001-lighthouse-lens`
+2. Ask the session assistant to "process the agent bus." The assistant
+   polls `evaluation/agent-bus/inbox/` and for each new request `<id>/`:
+   - reads `system.txt` and `user.txt`,
+   - dispatches a `general-purpose` subagent with the system prompt and
+     user message verbatim, instructed to:
+     - produce only the JSON object the prompt asks for,
+     - **self-validate via `node evaluation/pipeline/validate.mjs <schema>
+       <candidate.json>` before submitting**, iterating until the
+       validator returns `OK` (max ~6 iterations),
+     - report success based on the outbox write returning cleanly — do
+       not re-inspect the inbox after writing (the wrapper cleans up
+       immediately on consume, so a post-write `ls` will look empty),
+   - writes `evaluation/agent-bus/outbox/<id>.json` as
+     `{ "result": "<subagent reply>" }`.
+3. The wrapper picks up the response and prints it to stdout; the
+   pipeline continues exactly as if a CLI had answered.
+4. The assistant's loop terminates when the inbox has been empty for
+   >30s and `pgrep -f 'evaluation/pipeline/run.mjs'` returns nothing.
+
+### File bus contract
+
+| Path | Shape | Producer |
+|------|-------|----------|
+| `agent-bus/inbox/<id>/system.txt` | system prompt verbatim | wrapper |
+| `agent-bus/inbox/<id>/user.txt`   | user message verbatim  | wrapper |
+| `agent-bus/inbox/<id>/request.json` | `{ id, step, system_path, user_path, created_at, deadline_at, pipeline_timeout_ms }` | wrapper |
+| `agent-bus/outbox/<id>.json`       | `{ "result": "<text>" }` — `result` is the model output as a string | dispatcher |
+| `agent-bus/outbox/<id>.error.json` | `{ "error": "<message>" }` — surfaces a dispatcher-side failure to the pipeline (triggers a retry per `cli.json`) | dispatcher |
+
+`<id>` is `<step>-<utc-timestamp>-<uuid8>` (e.g.
+`judge-20260521T101530-9f3ab12c`). The step prefix makes the inbox easy to
+scan when debugging.
+
+The wrapper cleans up its own inbox/outbox files on exit, so a successful
+run leaves `evaluation/agent-bus/` empty. The directory is gitignored.
+
+### Self-validation
+
+The dispatcher subagent is required to validate its candidate output
+against the relevant Zod schema before writing the outbox. The same
+schemas the pipeline imports are exposed via a CLI:
+
+```bash
+node evaluation/pipeline/validate.mjs <schema> <candidate.json>
+```
+
+Schemas: `blueprint` (full Blueprint V2), `solvability`, `fairness`,
+`coherence`, `character_grounding`. On success prints `OK` and exits 0;
+on failure prints `{ "ok": false, "issues": [{ path, code, message,
+expected, received }, …] }` to stdout and exits 1. The issues array is
+flat and path-keyed for easy machine consumption by the agent.
+
+This catches schema violations *before* the pipeline does, so the agent
+can self-correct and the run exercises the judges instead of bailing at
+the mechanical check.
+
+### Timeouts
+
+The wrapper exits 15s before the pipeline's configured `timeout_ms` so the
+pipeline gets a usable stderr instead of a generic SIGKILL message. Tune
+`timeout_ms` (and the matching positional arg in `args`) in `cli.json` if
+the assistant needs more time per request.
+
+### Retries
+
+`retries` semantics are identical to CLI mode: a dispatcher error
+(`<id>.error.json`) or a wrapper timeout exits non-zero, and
+`runCliWithRetries` retries up to `retries` more times. Each attempt gets
+its own request id and its own log files under `runs/<run_id>/logs/`.
+
 ## What's next
 
 - Storage and visualizer for run history.

@@ -51,8 +51,11 @@ if (schemaName === "blueprint") {
     path.join(repoRoot, "packages/shared/src/blueprint-schema-v2.ts")
   ));
 } else if (dimensionSchemas.has(schemaName)) {
+  // Dimension ids use underscores everywhere except their schema filenames,
+  // which use kebab-case to match the .md files next to them.
+  const fileSlug = schemaName.replaceAll("_", "-");
   ({ schema } = await import(
-    path.join(repoRoot, "evaluation/dimensions", `${schemaName}.schema.ts`)
+    path.join(repoRoot, "evaluation/dimensions", `${fileSlug}.schema.ts`)
   ));
 } else {
   process.stderr.write(

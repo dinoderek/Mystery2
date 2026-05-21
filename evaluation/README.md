@@ -246,8 +246,14 @@ unchanged from the default config.
    polls `evaluation/agent-bus/inbox/` and for each new request `<id>/`:
    - reads `system.txt` and `user.txt`,
    - dispatches a `general-purpose` subagent with the system prompt and
-     user message verbatim, instructed to return only the JSON object the
-     prompt asks for (no markdown fences, no commentary, no tool calls),
+     user message verbatim, instructed to:
+     - produce only the JSON object the prompt asks for,
+     - **self-validate via `node evaluation/pipeline/validate.mjs <schema>
+       <candidate.json>` before submitting**, iterating until the
+       validator returns `OK` (max ~6 iterations),
+     - report success based on the outbox write returning cleanly — do
+       not re-inspect the inbox after writing (the wrapper cleans up
+       immediately on consume, so a post-write `ls` will look empty),
    - writes `evaluation/agent-bus/outbox/<id>.json` as
      `{ "result": "<subagent reply>" }`.
 3. The wrapper picks up the response and prints it to stdout; the
@@ -271,6 +277,26 @@ scan when debugging.
 
 The wrapper cleans up its own inbox/outbox files on exit, so a successful
 run leaves `evaluation/agent-bus/` empty. The directory is gitignored.
+
+### Self-validation
+
+The dispatcher subagent is required to validate its candidate output
+against the relevant Zod schema before writing the outbox. The same
+schemas the pipeline imports are exposed via a CLI:
+
+```bash
+node evaluation/pipeline/validate.mjs <schema> <candidate.json>
+```
+
+Schemas: `blueprint` (full Blueprint V2), `solvability`, `fairness`,
+`coherence`, `character_grounding`. On success prints `OK` and exits 0;
+on failure prints `{ "ok": false, "issues": [{ path, code, message,
+expected, received }, …] }` to stdout and exits 1. The issues array is
+flat and path-keyed for easy machine consumption by the agent.
+
+This catches schema violations *before* the pipeline does, so the agent
+can self-correct and the run exercises the judges instead of bailing at
+the mechanical check.
 
 ### Timeouts
 

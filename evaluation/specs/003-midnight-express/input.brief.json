@@ -1,0 +1,14 @@
+{
+  "brief": "The Midnight Express rolled into Cobblefield Station just before dawn with the conductor's leather satchel — containing the only key to the mail carriage — gone. Inside the mail carriage was a sealed crate of rare zoo birds bound for the city aviary; by morning the crate is empty and the birds are loose along the line. The culprit knew the train, knew the schedule, and laid down false trails to point the investigator at innocent travellers. The investigator has until the express leaves on its return run at sundown to work out who took the satchel, who opened the crate, and why. The truth involves the train's whistle log, a torn ticket stub found on the platform, and a passenger's birdwatching journal.",
+  "targetAge": 11,
+  "timeBudget": 18,
+  "titleHint": "The Midnight Express Bird Heist",
+  "mustInclude": ["whistle log", "torn ticket stub", "birdwatching journal"],
+  "culprits": 1,
+  "suspects": 3,
+  "witnesses": 2,
+  "locations": 5,
+  "redHerringTrails": 3,
+  "coverUps": true,
+  "eliminationComplexity": "complex"
+}

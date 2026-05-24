@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
 
 // Render args with file-path placeholders.
 //
@@ -23,6 +24,7 @@ export async function runCli({
   systemPrompt,
   userMessage,
   logDir,
+  env = null,
 }) {
   if (!config || !config.cmd) {
     throw new Error(`CLI config for step "${step}" missing cmd`);
@@ -56,7 +58,11 @@ export async function runCli({
 
   try {
     await new Promise((resolve, reject) => {
-      const child = spawn(config.cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
+      const spawnOptions = { stdio: ["ignore", "pipe", "pipe"] };
+      if (env && typeof env === "object") {
+        spawnOptions.env = { ...process.env, ...env };
+      }
+      const child = spawn(config.cmd, args, spawnOptions);
 
       const timeout = setTimeout(() => {
         timedOut = true;
@@ -158,6 +164,11 @@ export async function runCli({
 // throw. On the final failure, returns { ok: false, error, attempts }.
 // Each attempt invokes runCli with a per-attempt step name when retries > 0
 // so each attempt gets its own stdout/stderr/invocation log files.
+//
+// Optional `validateExtracted` is called with the extracted string after a
+// successful CLI invocation. If it throws, the attempt is recorded as
+// `parse_fail` and the retry loop continues. The thrown error's message is
+// recorded on the attempt; on final failure it becomes the result error.
 export async function runCliWithRetries({
   step,
   config,
@@ -165,26 +176,24 @@ export async function runCliWithRetries({
   userMessage,
   logDir,
   retries = 0,
+  validateExtracted = null,
+  env = null,
 }) {
   const max = 1 + Math.max(0, Number.isInteger(retries) ? retries : 0);
   const attempts = [];
   for (let i = 1; i <= max; i += 1) {
     const startedAt = Date.now();
     const attemptStep = max === 1 ? step : `${step}.attempt-${i}`;
+    let result;
     try {
-      const result = await runCli({
+      result = await runCli({
         step: attemptStep,
         config,
         systemPrompt,
         userMessage,
         logDir,
+        env,
       });
-      attempts.push({
-        attempt: i,
-        outcome: "ok",
-        duration_ms: Date.now() - startedAt,
-      });
-      return { ok: true, ...result, attempts };
     } catch (err) {
       attempts.push({
         attempt: i,
@@ -199,7 +208,34 @@ export async function runCliWithRetries({
           attempts,
         };
       }
+      continue;
     }
+    if (validateExtracted) {
+      try {
+        validateExtracted(result.extracted);
+      } catch (err) {
+        attempts.push({
+          attempt: i,
+          outcome: "parse_fail",
+          duration_ms: Date.now() - startedAt,
+          error: String(err.message ?? err).slice(0, 500),
+        });
+        if (i === max) {
+          return {
+            ok: false,
+            error: { message: String(err.message ?? err) },
+            attempts,
+          };
+        }
+        continue;
+      }
+    }
+    attempts.push({
+      attempt: i,
+      outcome: "ok",
+      duration_ms: Date.now() - startedAt,
+    });
+    return { ok: true, ...result, attempts };
   }
   // Unreachable; the loop always returns.
   return { ok: false, error: { message: "runCliWithRetries fell through" }, attempts };

@@ -174,6 +174,17 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
     process.stdout.write(`[eval] generating blueprint via cli=${cliConfig.generate?.cmd}\n`);
     const chatInput = await buildBlueprintGenerationChatInput(brief);
     const userMessage = chatInput.userMessageContent;
+    // The agent-based wrapper ignores the pipeline-rendered system prompt and
+    // reads the canonical generator prompt + schema from disk via the
+    // workspace. We still pass `chatInput.systemPrompt` so the contract with
+    // any non-agent wrapper still works.
+    //
+    // Pass a workspace base id to the wrapper. The wrapper appends a per-
+    // invocation random suffix so retried attempts get fresh workspaces. The
+    // base id is the spec slug — workspaces under ~/mysteryevals/ are
+    // alphabetically grouped by brief.
+    const workspaceBaseId = path.basename(specDir);
+    process.stdout.write(`[eval]   workspace_base=${workspaceBaseId}\n`);
     const generateRetries = cliConfig.generate?.retries ?? 0;
     if (generateRetries > 0) {
       process.stdout.write(`[eval]   generate retries configured: ${generateRetries}\n`);
@@ -185,6 +196,30 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
       userMessage,
       logDir,
       retries: generateRetries,
+      env: { EVAL_WORKSPACE_BASE_ID: workspaceBaseId },
+      validateExtracted: (extracted) => {
+        let parsed;
+        try {
+          parsed = JSON.parse(extracted);
+        } catch (err) {
+          throw new Error(
+            `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
+          );
+        }
+        const check = BlueprintV2Schema.safeParse(parsed);
+        if (!check.success) {
+          const issues = check.error.issues
+            .slice(0, 5)
+            .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+            .join("; ");
+          throw new Error(
+            `Generated blueprint failed BlueprintV2Schema: ${issues}` +
+              (check.error.issues.length > 5
+                ? ` (+${check.error.issues.length - 5} more issues)`
+                : ""),
+          );
+        }
+      },
     });
     const totalDurationMs = generateOutcome.attempts.reduce(
       (sum, a) => sum + a.duration_ms,

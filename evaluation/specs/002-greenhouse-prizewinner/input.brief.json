@@ -1,0 +1,14 @@
+{
+  "brief": "On the morning of the county fair, the prize-winning giant pumpkin grown by the school gardening club has been smashed in the greenhouse. Judging starts at noon. The investigator must figure out who smashed the pumpkin and why before the contest is canceled. The truth involves the watering rota that was changed two days earlier and a missing greenhouse key.",
+  "targetAge": 10,
+  "timeBudget": 12,
+  "titleHint": "The Smashed Prize Pumpkin",
+  "mustInclude": ["watering rota", "greenhouse key"],
+  "culprits": 1,
+  "suspects": 2,
+  "witnesses": 2,
+  "locations": 4,
+  "redHerringTrails": 2,
+  "coverUps": true,
+  "eliminationComplexity": "moderate"
+}

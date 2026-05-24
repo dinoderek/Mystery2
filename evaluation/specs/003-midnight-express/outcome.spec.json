@@ -1,0 +1,24 @@
+{
+  "spec_version": "0.1",
+  "label": "Midnight Express — Tier 1 evaluation (complex, single culprit)",
+  "input_brief": "input.brief.json",
+  "dimensions": [
+    { "id": "solvability" },
+    { "id": "fairness" },
+    { "id": "coherence" },
+    {
+      "id": "character_grounding",
+      "context": {
+        "probe_topics": [
+          "their reason for being on the Midnight Express tonight",
+          "where they were when the train pulled into Cobblefield Station",
+          "their relationship with the other passengers and crew",
+          "what they know about the sealed crate of birds",
+          "their handling of tickets, keys, or the conductor's satchel",
+          "their movements through the carriages between midnight and dawn",
+          "their feelings about the loose birds and the bird heist"
+        ]
+      }
+    }
+  ]
+}

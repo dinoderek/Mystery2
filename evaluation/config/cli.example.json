@@ -6,16 +6,16 @@
     "cmd": "evaluation/config/wrappers/claude-generate.sh",
     "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
     "extract_path": "result",
-    "timeout_ms": 600000,
-    "retries": 0
+    "timeout_ms": 1800000,
+    "retries": 1
   },
 
   "judge": {
-    "description": "Invokes an LLM CLI to judge a single dimension. System prompt is judge-system.md + the dimension definition + the dimension's Zod output schema. User message is the brief + blueprint.",
+    "description": "Invokes an LLM CLI to judge a single dimension. With the agent-based wrapper this is a multi-turn Claude session that reads dimension/brief/blueprint/schema from a workspace and self-validates its verdict before exiting.",
     "cmd": "evaluation/config/wrappers/claude-judge.sh",
     "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
     "extract_path": "result",
-    "timeout_ms": 180000,
+    "timeout_ms": 1800000,
     "retries": 1
   }
 }

@@ -280,6 +280,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
     `[eval] evaluating ${outcome.dimensions.length} dimension(s) in parallel\n`,
   );
 
+  const judgeWorkspaceBase = path.basename(specDir);
   runState.dimensions = await Promise.all(
     outcome.dimensions.map((dimRef) =>
       evaluateDimension({
@@ -290,6 +291,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
         judgeSystemBase,
         judgeStep,
         logDir,
+        judgeWorkspaceBase,
       }),
     ),
   );
@@ -303,6 +305,7 @@ async function evaluateDimension({
   judgeSystemBase,
   judgeStep,
   logDir,
+  judgeWorkspaceBase,
 }) {
   const dimId = dimRef.id;
   const tag = `[eval][${dimId}]`;
@@ -366,6 +369,10 @@ async function evaluateDimension({
           userMessage,
           logDir,
           schema: dim.schema,
+          env: {
+            EVAL_DIMENSION_ID: dimId,
+            EVAL_WORKSPACE_BASE_ID: judgeWorkspaceBase,
+          },
         });
         if (judgeOutcome.ok) {
           const status = judgeOutcome.data.verdict === "pass" ? "pass" : "fail";
@@ -410,6 +417,7 @@ async function runJudgeWithRetries({
   userMessage,
   logDir,
   schema,
+  env = null,
 }) {
   const retries = Number.isInteger(config.retries) ? Math.max(0, config.retries) : 0;
   const max = 1 + retries;
@@ -427,6 +435,7 @@ async function runJudgeWithRetries({
         systemPrompt,
         userMessage,
         logDir,
+        env,
       });
       extracted = result.extracted;
     } catch (err) {

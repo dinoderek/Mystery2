@@ -70,6 +70,11 @@ Load additional guidance based on the area you are touching:
 - Blueprint schema/generation flow changes or narrator/AI runtime changes:
   `docs/blueprint-generation-flows.md`, `docs/ai-runtime.md`, and
   `docs/ai-configuration.md`
+- Blueprint generation or evaluation pipeline work (anything under
+  `evaluation/`, `packages/shared/src/evaluation/`, or the generator/judge
+  harnesses): `docs/evaluation-pipeline.md`. Note that
+  `docs/blueprint-evaluation.md` describes the deprecated single-prompt
+  evaluator and is historical.
 
 ## Documentation Maintenance
 

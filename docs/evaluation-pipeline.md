@@ -1,0 +1,331 @@
+# Evaluation Pipeline (Design)
+
+**Status:** In active development. Supersedes the single-prompt evaluator
+described in `docs/blueprint-evaluation.md` (now deprecated; scheduled for
+removal in a follow-up branch).
+
+This document explains **why** the evaluation pipeline at `evaluation/` is
+shaped the way it is. For how to run it, see `evaluation/README.md`.
+
+## What this is
+
+A harness for judging the quality of a generated Blueprint V2 as a mystery
+artifact. Given an authored input brief, it generates a blueprint with a
+pluggable LLM CLI and then runs a battery of mechanical checks, deterministic
+analyzers, and LLM judges against the result, producing a single structured
+verdict envelope.
+
+The harness itself — not any individual blueprint — is the moving target. The
+shape below exists to make the harness cheap to iterate on: judges, prompts,
+schemas, and dimensions are all expected to change.
+
+## Goals
+
+1. **Catch authoring failures before runtime.** A blueprint that ships to the
+   gameplay runtime with structural holes, ungrounded characters, or
+   non-converging evidence will invite the runtime narrator to fabricate. We
+   want those failures surfaced at authoring time, not at play time.
+2. **Be cheap to iterate on.** Adding a new quality dimension should be a
+   matter of writing one markdown brief + one Zod schema + (optionally) one
+   deterministic analyzer. No code-path changes.
+3. **Run inside arbitrary execution environments.** The pipeline itself never
+   imports an LLM SDK. Every model call is a subprocess. The same pipeline
+   runs against a local CLI, a hosted CLI, or — via the file-bus — an
+   in-session Claude Code subagent.
+4. **Be parallel.** Independent dimensions evaluate concurrently so wall-clock
+   time scales with the slowest judge, not their sum.
+5. **Stay legible under failure.** A run that aborts mid-flight still writes a
+   structured envelope. Per-attempt logs and retry diagnostics are always
+   captured.
+
+## Architecture: three tiers
+
+Each Blueprint V2 is evaluated by **three kinds of check**, in order of cost.
+
+| Tier        | What it is                                    | Where it lives                       | Cost   | Always runs?                       |
+|-------------|-----------------------------------------------|--------------------------------------|--------|------------------------------------|
+| Mechanical  | Deterministic structural checks               | `evaluation/checks/mechanical.mjs`   | Free   | Yes — on every run                 |
+| Analyzer    | Deterministic per-dimension checks            | `evaluation/checks/analyzers/<id>.mjs` | Free | Only if a dimension defines one    |
+| Judge       | LLM call per dimension via the pluggable CLI  | `evaluation/dimensions/<id>.md` + `<id>.schema.ts` | Expensive | Per dimension enabled for the run |
+
+### Why split mechanical / analyzer / judge
+
+Two reasons, both empirical from iterating on the old single-prompt evaluator:
+
+- **Judge quality goes up when each judge has a narrow job.** A single
+  prompt that has to assess solvability, fairness, coherence, and character
+  grounding all at once produces worse signal on each of them than four
+  focused judges. The judge stays inside its dimension's frame and its output
+  schema is small enough to be enforced.
+- **Anything a judge can be replaced by code, should be.** LLM time is the
+  bottleneck and LLM judgments drift. If a check is fully expressible as code
+  (schema validity, brief-derived counts, orphan clues), it belongs in the
+  mechanical tier or in an analyzer. The judge is reserved for genuinely
+  qualitative questions.
+
+### Why one judge per dimension
+
+- **Parallelism.** Dimensions are independent. Running four 30s judges in
+  parallel is 30s of wall-clock; running one 2-minute mega-judge is 2 minutes.
+- **Iteration isolation.** Editing the fairness prompt cannot regress
+  solvability scores. Each dimension's prompt, output schema, and analyzer
+  evolve on their own clock.
+- **Targeted retries.** A schema-validation failure on the coherence judge
+  retries only the coherence judge, not the entire evaluation.
+
+### Combining results
+
+For each dimension:
+
+- If neither analyzer nor judge produces a result, `overall = "skipped"`.
+- If any non-skipped result is `"fail"`, `overall = "fail"`.
+- If an analyzer or judge errored (CLI failure, schema mismatch after
+  retries), `overall = "error"`.
+- Otherwise `overall = "pass"`.
+
+A run's summary aggregates `mechanical: {pass, fail}` and
+`dimensions: {pass, fail, error, skipped}` plus retry counters. There is no
+single overall pass/fail flag — consumers decide what counts as ship-ready.
+
+## Pipeline stages
+
+`evaluation/pipeline/run.mjs` runs four sequential stages.
+
+```
+load spec ──► generate blueprint ──► mechanical checks ──► dimensions
+                                                            ├─ solvability     (judge)
+                                                            ├─ fairness        (judge)
+                                                            ├─ coherence       (judge)
+                                                            └─ character_grounding (judge)
+                                                            // all four in parallel
+```
+
+1. **Load spec.** Reads `input.brief.json` and (today) `outcome.spec.json`.
+   See "Spec file" below for the planned change.
+2. **Generate blueprint.** Either reads `--blueprint <path>` or shells out to
+   the generator CLI. Output is validated against `BlueprintV2Schema`. Failure
+   here aborts the run; the envelope still gets written with
+   `run_error: { stage: "generate", message }`.
+3. **Mechanical checks.** Cheap structural checks against the brief and
+   blueprint. Failures here do **not** block dimension evaluation — we still
+   want LLM judgments on a partially-broken blueprint, because they often
+   surface the same problem from a different angle.
+4. **Dimensions.** All enabled dimensions evaluate in parallel via
+   `Promise.all`. Inside a dimension, analyzer runs before judge; analyzer
+   error skips the judge for that dimension only.
+
+The envelope is always written, even on whole-run failure.
+
+## Pluggable CLI
+
+The pipeline never imports an LLM SDK. Every model call is a subprocess
+spawned per `evaluation/config/cli.json`. Two modes are supported.
+
+### Subprocess mode (default)
+
+`cmd` is a shell script that wraps any LLM CLI. The runner writes the system
+prompt and user message to two temp files, substitutes their paths into
+`args` (via the placeholders `{{system_prompt_file}}` and
+`{{user_message_file}}`), spawns the process, captures stdout, parses it as
+JSON, and walks `extract_path` to get the model's text. That text is then
+parsed against the dimension's Zod schema.
+
+To bind a new LLM: write a wrapper that takes the two file paths, calls your
+CLI, and prints `{ "result": "<model-output>" }` on stdout. The bundled
+wrappers in `evaluation/config/wrappers/` invoke `claude`.
+
+### File-bus mode (running inside Claude Code web)
+
+When the pipeline runs inside a Claude Code session that has no shell access
+to external LLM CLIs, the wrapper at `evaluation/config/wrappers/file-bus.mjs`
+substitutes a file-based message bus for the subprocess call:
+
+```
+pipeline ──spawn──► file-bus.mjs ──write──► agent-bus/inbox/<id>/
+                                                  │
+                                                  ▼
+                                          supervising assistant
+                                          (the session itself)
+                                          dispatches a subagent
+                                                  │
+                                                  ▼
+                                          agent-bus/outbox/<id>.json
+                                                  │
+                          ◄──poll──── file-bus.mjs
+```
+
+The supervising assistant reads the request, dispatches a `general-purpose`
+subagent with the system + user prompts, the subagent self-validates its
+output via `evaluation/pipeline/validate.mjs`, and writes the result to the
+outbox. From the pipeline's perspective, this is indistinguishable from a CLI
+call — same retries, same logging, same timeouts.
+
+This mode exists because we want the same pipeline to be runnable by a Claude
+Code session orchestrating its own subagents, without standing up a separate
+infrastructure path.
+
+## Generator and judge harnesses
+
+Generation and judgment both run inside one-shot **workspaces**, not as
+single-turn prompt/response calls. A workspace is a directory the wrapper
+populates with everything the agent needs:
+
+- the canonical prompt or dimension brief
+- the inputs (brief, blueprint, schemas)
+- read-only reference docs (game overview, runtime consumption, briefs guide)
+- a validator script the agent must run before declaring done
+- an output path
+
+The agent inside the workspace iterates until its output passes the
+validator, then exits. The wrapper reads the output and returns it to the
+pipeline.
+
+| Harness  | Workspace template                           | Output            | Validator                                |
+|----------|----------------------------------------------|-------------------|------------------------------------------|
+| Generator | `evaluation/generator-harness/template/`    | `blueprint.json`  | `scripts/validate-blueprint.mjs`         |
+| Judge    | `evaluation/judge-harness/template/`        | `verdict.json`    | `evaluation/pipeline/validate.mjs <schema>` |
+
+This pattern matters for two reasons:
+
+- **Self-correction.** Agents that can run their own validator catch their
+  own schema and semantic mistakes before the pipeline does, so retries
+  exercise the model on a real failure rather than on a trivial JSON typo.
+- **Reproducibility.** A workspace is a complete record of what the agent
+  saw. Bugs reproduce by re-running the workspace; we don't have to
+  reconstruct the prompt context after the fact.
+
+## Output envelope
+
+Every run writes `runs/<run_id>/`:
+
+- `blueprint.json` — the generated or supplied blueprint
+- `result.json` — the structured envelope (shape in `envelope.mjs`)
+- `logs/` — per-step stdout/stderr and invocation metadata, including one
+  log triple per retry attempt when retries are configured
+
+The envelope shape is version-tagged (`schema_version`). Top-level fields:
+`run_id`, `started_at`, `ended_at`, `spec_dir`, `blueprint_path`,
+`generation`, `mechanical[]`, `dimensions[]`, `run_error`, `summary`. Each
+dimension carries its analyzer result, judge result, attempts, and combined
+`overall` status. Consumers can distinguish "didn't run" from "crashed during
+generation" by inspecting `run_error.stage`.
+
+## Retries
+
+Configured per step (`config.generate.retries`, `config.judge.retries`).
+Default 1 (max 2 attempts).
+
+| Step       | Retriable conditions                                                                            |
+|------------|-------------------------------------------------------------------------------------------------|
+| `generate` | CLI exit, timeout, non-JSON stdout, `extract_path` miss, Blueprint V2 Zod validation failure    |
+| `judge`    | All of the above plus dimension-schema Zod validation failure (`schema_fail`)                   |
+
+Per-attempt logs and outcomes (`ok | cli_fail | schema_fail`) are recorded in
+the envelope so we can see whether retries are reducing flake or masking a
+systematic bug.
+
+## Dimensions
+
+Today's set (all Tier 1):
+
+| ID                  | Question                                                                                                    | Analyzer? |
+|---------------------|-------------------------------------------------------------------------------------------------------------|-----------|
+| `solvability`       | Does at least one `solution_path` entail the culprit and `ground_truth.what_happened`?                      | No        |
+| `fairness`          | Does the evidence **uniquely** point at the culprit? (No non-culprit is equally well supported.)            | No        |
+| `coherence`         | Are timeline, character knowledge, and geography internally consistent?                                     | No        |
+| `character_grounding` | Does each character have enough authored material that the runtime narrator won't need to fabricate?      | No        |
+
+The dimensions are an active work-in-progress. Expected near-term changes:
+
+- The character-grounding probe topics are currently hand-authored per
+  mystery in the spec file. They should move into the dimension brief as a
+  generic baseline covering: other characters (most important), locations,
+  the mystery, the character's own background, and the character's
+  preferences / biases / loves / hates. Per-mystery additions should be
+  additive, not authoritative.
+- The schema's `red_herrings` field is named for the genre convention but
+  obscures what it actually is: a set of leads pointing the investigator at
+  the wrong conclusion, always with an authored way to disprove them. A
+  rename to something like `false_leads` is on the table, along with making
+  the "reward" for solving a false lead explicit in the schema (eliminates
+  suspect X / unlocks clue Y / disproves false lead Z).
+- Tier 2/3 dimensions (clue economy, red-herring quality, cover-up quality,
+  narrative economy, resolution, path independence, challenge, interest,
+  hook, tone) are intended but not yet in scope.
+
+### Adding a dimension
+
+Three files:
+
+- `evaluation/dimensions/<id>.md` — the judge's prose contract, including
+  what it asks, judge instructions, and a documented output shape.
+- `evaluation/dimensions/<id>.schema.ts` — the Zod schema for the judge's
+  JSON output. The pipeline serializes this to JSON Schema, appends it to
+  the system prompt, and uses it to validate the judge's response. When the
+  prose and schema disagree, the schema is authoritative.
+- `evaluation/checks/analyzers/<id>.mjs` — optional. A deterministic
+  pre-check that runs before the judge.
+
+No code changes elsewhere. The loader picks them up by ID.
+
+## Spec file
+
+**Today:** each `evaluation/specs/<id>/` directory holds an
+`input.brief.json` plus an `outcome.spec.json` listing which dimensions to
+evaluate and per-dimension `context` (e.g., probe topics for
+character_grounding). The outcome spec is hand-authored per mystery.
+
+**Planned:** drop `outcome.spec.json` entirely. The set of dimensions to run
+and all dimension context (probe topic baselines, thresholds, …) lives in the
+dimension definitions themselves, not in the per-mystery spec. A mystery
+directory contains only the input brief.
+
+The motivation: today a new mystery quietly loses dimension coverage if its
+spec author forgets to include a dimension or its `context`. With dimension
+defaults in the dimension brief, every mystery gets the same baseline
+treatment for free. Per-mystery customization, if ever needed again, should
+re-enter through a different door (e.g., per-dimension override files
+opt-in), not through a mandatory spec file.
+
+## Relationship to the old evaluator
+
+The single-prompt evaluator at `packages/shared/src/evaluation/`
+(`prompt.ts`, `schema.ts`) is **deprecated**. It is still wired into
+`scripts/generate-blueprint.mjs` for post-generation verification (writes a
+sibling `*.verification.json` file) and that path still works.
+
+Direction:
+
+- No new dimensions or features land in the old evaluator.
+- The new pipeline is the only place evaluator work happens.
+- A follow-up branch will delete the old evaluator and migrate the
+  post-generation verification call to invoke the new pipeline (or a
+  pipeline-aligned variant), then remove `docs/blueprint-evaluation.md`.
+
+Until that follow-up lands, treat the old doc as historical. This doc is the
+canonical reference.
+
+## Intentionally out of scope (for now)
+
+- **Multi-sample / K-run aggregation.** Each run evaluates one blueprint
+  once. Sampling K blueprints per brief and aggregating verdicts is roadmap.
+- **Judge self-consistency sampling.** Each dimension runs its judge once
+  per attempt. Sampling the same judge multiple times and majority-voting
+  is roadmap.
+- **Run storage and visualization.** Runs live on disk under `runs/`. A
+  storage layer and visualizer for run history is roadmap.
+- **Action economy / time-to-solve.** Whether the mystery is solvable in
+  reasonable wall-clock time at play time is not measured. Game-runtime
+  concerns belong in a different harness.
+
+## Roadmap
+
+1. Drop `outcome.spec.json`; move dimension defaults into dimension briefs.
+2. Tighten character_grounding's baseline probe coverage.
+3. Rename / restructure `red_herrings` with an explicit payoff contract.
+4. Migrate `generate-blueprint.mjs` verification to the new pipeline; delete
+   the old evaluator.
+5. Add Tier 2 dimensions (clue economy, red-herring quality, cover-up
+   quality, narrative economy).
+6. K-run aggregation and judge self-consistency sampling.
+7. Run storage + visualizer.

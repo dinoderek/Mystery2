@@ -146,17 +146,19 @@ for planning only; do not output these steps.
      `trust_established`, and `pressure` conditions must not be the only way
      to reach the solution.
 7. Author cross-character knowledge clues:
-   - Where appropriate, give characters `alibi_knowledge`,
-     `witness_testimony`, `motive_knowledge`, or `location_hint` clues.
+   - Where appropriate, give characters clues that confirm or deny another
+     character's alibi, recount what they witnessed another character doing,
+     reveal another character's motive, or point at a specific location.
    - These clues create a web of interdependence between characters — talking
      to one character may unlock understanding about another.
    - Cross-character knowledge clues may be gated behind agendas.
-   - Reference the target character or location using `about_character_id` and
-     `hint_location_id`.
+   - When a clue concerns another character, set `about_character_id` to that
+     character's id. When a clue points at a location, set `hint_location_id`
+     to that location's id. Both fields are optional.
 8. Author clues:
    - location clues
    - character clues
-   - ensure every clue has a role and belongs to one or more reasoning paths
+   - ensure every clue belongs to one or more reasoning paths
 9. Design sub-locations for each location. Distribute location clues so that at
    most one clue sits at the location level and at most one clue sits in each
    sub-location. Write narrator-only hints for each sub-location.
@@ -282,10 +284,8 @@ Scale agendas to the cast size and brief configuration:
 - `world.locations[].name`: distinct, easy to read, and easy to type.
 - `world.locations[].description`: concise room-entry description, usually 2-4
   sentences.
-- `world.locations[].clues[]`: short structured clue objects with:
-  - `id`
-  - `text`
-  - `role`
+- `world.locations[].clues[]`: short structured clue objects with `id` and
+  `text`.
 - Each location must have **at most 1 clue** in its top-level `clues[]` array.
 
 ### Sub-Locations
@@ -341,17 +341,17 @@ flavor and misdirection.
 
 ### Cross-Character Knowledge Clues
 
-Character clues may use these additional roles to reference other characters or
-locations:
+Character clues may carry optional cross-references to make their relationships
+to other entities explicit:
 
-- `alibi_knowledge`: the character can confirm or deny another character's
-  alibi. Set `about_character_id` to the target character.
-- `witness_testimony`: the character witnessed another character doing
-  something. Set `about_character_id`.
-- `motive_knowledge`: the character knows another character's secret motive.
-  Set `about_character_id`.
-- `location_hint`: the character knows where a clue can be found. Set
-  `hint_location_id`.
+- If the clue concerns another character (e.g. confirms or denies their alibi,
+  reports something they were seen doing, reveals a secret motive), set
+  `about_character_id` to that character's id.
+- If the clue points the investigator at a specific location (e.g. "you should
+  check the boathouse"), set `hint_location_id` to that location's id.
+
+Both fields are optional. The clue's purpose in the mystery is conveyed by
+which reasoning paths reference it, not by an explicit role tag.
 
 These clues can be gated behind agendas like any other clue.
 
@@ -363,10 +363,27 @@ These clues can be gated behind agendas like any other clue.
   - `id`
   - `summary`
   - optional `description`
+  - `payoff` (recommended for `red_herrings[]` and `suspect_elimination_paths[]`;
+    optional for `solution_paths[]` because the payoff is the truth)
   - `location_clue_ids[]`
   - `character_clue_ids[]`
 - Each path must reference at least one clue id.
 - Path arrays define the path type implicitly. Do not add a separate kind field.
+
+#### Path payoff
+
+Every non-solution path should give the player a concrete reward for following
+it. State the reward in `payoff`:
+
+- For `red_herrings[]`: name the false lead that gets disproved, the
+  contradiction surfaced, or the suspect newly cleared (e.g. "Marisol's
+  apparent grudge against the baker is shown to be a misunderstanding").
+- For `suspect_elimination_paths[]`: name the innocent suspect ruled out and
+  the evidence that rules them out (e.g. "Theo is eliminated because the
+  greenhouse log places him at the south gate during the theft window").
+
+A path whose payoff would read "the player wasted turns" is a path that
+shouldn't ship. Either give it a real payoff or cut it.
 
 ### Ground Truth
 

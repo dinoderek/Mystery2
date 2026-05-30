@@ -244,7 +244,7 @@ describe("ai-provider mock role output", () => {
       context: {
         search_context: {
           location_name: "Kitchen",
-          next_clue: { id: "clue-crumb", text: "A crumb on the floor.", role: "direct_evidence" },
+          next_clue: { id: "clue-crumb", text: "A crumb on the floor." },
         },
       },
       parse: parseSearchOutput,

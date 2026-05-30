@@ -3,7 +3,6 @@ import type { AIRoleName } from "./ai-contracts.ts";
 export interface BlueprintClue {
   id: string;
   text: string;
-  role: string;
   about_character_id?: string;
   hint_location_id?: string;
 }
@@ -167,7 +166,7 @@ export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary 
   flavor_knowledge: string[];
   actual_actions: BlueprintActualAction[];
   agendas: BlueprintAgenda[];
-  player_known_clues: Array<{ id: string; text: string; role: string }>;
+  player_known_clues: Array<{ id: string; text: string }>;
 }
 
 export interface TalkContext {
@@ -396,7 +395,7 @@ function buildTalkCharacterPublicSummaries(
 function buildPlayerKnownClues(
   blueprint: BlueprintContext,
   conversationHistory: ConversationFragment[],
-): Array<{ id: string; text: string; role: string }> {
+): Array<{ id: string; text: string }> {
   const clueIds = new Set<string>();
 
   for (const entry of conversationHistory) {
@@ -417,24 +416,24 @@ function buildPlayerKnownClues(
 
   if (clueIds.size === 0) return [];
 
-  const clueMap = new Map<string, { id: string; text: string; role: string }>();
+  const clueMap = new Map<string, { id: string; text: string }>();
   for (const location of blueprint.world.locations) {
     for (const clue of location.clues) {
-      clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+      clueMap.set(clue.id, { id: clue.id, text: clue.text });
     }
     for (const subLoc of location.sub_locations ?? []) {
       for (const clue of subLoc.clues) {
-        clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+        clueMap.set(clue.id, { id: clue.id, text: clue.text });
       }
     }
   }
   for (const character of blueprint.world.characters) {
     for (const clue of character.clues) {
-      clueMap.set(clue.id, { id: clue.id, text: clue.text, role: clue.role });
+      clueMap.set(clue.id, { id: clue.id, text: clue.text });
     }
   }
 
-  const result: Array<{ id: string; text: string; role: string }> = [];
+  const result: Array<{ id: string; text: string }> = [];
   for (const id of clueIds) {
     const clue = clueMap.get(id);
     if (clue) result.push(clue);
@@ -445,7 +444,7 @@ function buildPlayerKnownClues(
 function buildTalkCharacterPrivateContext(
   blueprint: BlueprintContext,
   characterId: string,
-  playerKnownClues: Array<{ id: string; text: string; role: string }>,
+  playerKnownClues: Array<{ id: string; text: string }>,
 ): TalkCharacterPrivateContext {
   const character = blueprint.world.characters.find(
     (entry) => entry.id === characterId,
@@ -479,7 +478,7 @@ function buildTalkContext(
   blueprint: BlueprintContext,
   locationId: string,
   characterId: string,
-  playerKnownClues: Array<{ id: string; text: string; role: string }>,
+  playerKnownClues: Array<{ id: string; text: string }>,
 ): TalkContext {
   const location = findLocationById(blueprint, locationId);
 

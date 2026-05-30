@@ -194,7 +194,6 @@ Task:
 - Keep language and readability appropriate for target age {{target_age}}.
 - Use the provided location description and search context only.
 - If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
-- The next_clue includes a role field (e.g. direct_evidence, red_herring, supporting_evidence). Calibrate narration weight by role.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
 - If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
 - If sub-locations with unrevealed clues exist, mention interesting areas that could be searched more specifically.
@@ -216,7 +215,6 @@ Task:
 - You have GM leeway: reward inventive, creative, or particularly cunning search descriptions. A player who describes a clever approach can match even if the wording does not exactly match the sub-location name.
 - If you judge a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
 - If no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and drop hints toward promising sub-locations that still have undiscovered clues.
-- The clue includes a role field. Calibrate narration weight by role: direct_evidence should feel significant, red_herring intriguing but potentially misleading, supporting_evidence confirmatory.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
 - Keep language and readability appropriate for target age {{target_age}}.
 - Keep response concise (2-4 sentences).

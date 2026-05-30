@@ -2,7 +2,7 @@
 
 This is a one-shot workspace created by the evaluation pipeline to run a
 Claude agent as a blueprint generator. Each evaluation pipeline run produces
-a fresh workspace under `~/mysteryevals/<semantic-id>/`.
+a fresh workspace under `~/mysteryevals/<run-date>/generator-<brief>/`.
 
 ## Layout
 
@@ -44,6 +44,7 @@ repo to detect drift. CI / `npm test` wiring is intentionally not done yet.
 Workspaces accumulate. Prune with:
 
 ```
-rm -rf ~/mysteryevals/<id>     # one
-rm -rf ~/mysteryevals/         # all
+rm -rf ~/mysteryevals/<run-date>/generator-<brief>   # one generator
+rm -rf ~/mysteryevals/<run-date>/                     # one run (generators + evaluators)
+rm -rf ~/mysteryevals/                                # all runs
 ```

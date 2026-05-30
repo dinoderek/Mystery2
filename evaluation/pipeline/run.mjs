@@ -69,6 +69,8 @@ async function main() {
   const specSlug = path.basename(specDir);
   const runId =
     args.runId ?? `${startedAt.toISOString().replace(/[:.]/g, "-")}-${specSlug}`;
+  // Date bucket (UTC) for the external agent workspaces under ~/mysteryevals/.
+  const runDate = startedAt.toISOString().slice(0, 10);
   const runDir = path.join(root, "evaluation", "runs", runId);
   const logDir = path.join(runDir, "logs");
   await fs.mkdir(logDir, { recursive: true });
@@ -85,7 +87,7 @@ async function main() {
   };
 
   try {
-    await runPipeline({ args, root, specDir, runDir, logDir, runState });
+    await runPipeline({ args, root, specDir, runDir, logDir, runState, runDate });
   } catch (err) {
     runState.runError = {
       stage: err.runErrorStage ?? "unknown",
@@ -129,7 +131,7 @@ async function main() {
   if (runState.runError) process.exit(1);
 }
 
-async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
+async function runPipeline({ args, root, specDir, runDir, logDir, runState, runDate }) {
   const { brief, outcome } = await taggedStage("load_spec", () => loadSpec(specDir));
 
   let blueprintJson;
@@ -179,10 +181,9 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
     // workspace. We still pass `chatInput.systemPrompt` so the contract with
     // any non-agent wrapper still works.
     //
-    // Pass a workspace base id to the wrapper. The wrapper appends a per-
-    // invocation random suffix so retried attempts get fresh workspaces. The
-    // base id is the spec slug — workspaces under ~/mysteryevals/ are
-    // alphabetically grouped by brief.
+    // Pass the brief name (spec slug) and run date to the wrapper. The
+    // generator workspace is ~/mysteryevals/<run-date>/generator-<brief>/;
+    // a retry or same-day re-run reuses the path (the wrapper clears it first).
     const workspaceBaseId = path.basename(specDir);
     process.stdout.write(`[eval]   workspace_base=${workspaceBaseId}\n`);
     const generateRetries = cliConfig.generate?.retries ?? 0;
@@ -196,7 +197,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
       userMessage,
       logDir,
       retries: generateRetries,
-      env: { EVAL_WORKSPACE_BASE_ID: workspaceBaseId },
+      env: { EVAL_WORKSPACE_BASE_ID: workspaceBaseId, EVAL_RUN_DATE: runDate },
       validateExtracted: (extracted) => {
         let parsed;
         try {
@@ -292,6 +293,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
         judgeStep,
         logDir,
         judgeWorkspaceBase,
+        runDate,
       }),
     ),
   );
@@ -306,6 +308,7 @@ async function evaluateDimension({
   judgeStep,
   logDir,
   judgeWorkspaceBase,
+  runDate,
 }) {
   const dimId = dimRef.id;
   const tag = `[eval][${dimId}]`;
@@ -372,6 +375,7 @@ async function evaluateDimension({
           env: {
             EVAL_DIMENSION_ID: dimId,
             EVAL_WORKSPACE_BASE_ID: judgeWorkspaceBase,
+            EVAL_RUN_DATE: runDate,
           },
         });
         if (judgeOutcome.ok) {

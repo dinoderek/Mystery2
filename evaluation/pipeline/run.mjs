@@ -14,6 +14,7 @@ import { buildEnvelope, combineDimension } from "./envelope.mjs";
 import {
   loadCliConfig,
   loadDimensionDefinition,
+  loadDimensions,
   loadJudgeSystemPrompt,
   loadSpec,
   repoRoot,
@@ -37,8 +38,7 @@ function usage() {
   return `Usage: node evaluation/pipeline/run.mjs --spec <spec-dir> [options]
 
 Required:
-  --spec <dir>           Path to a spec directory containing input.brief.json
-                         and outcome.spec.json.
+  --spec <dir>           Path to a spec directory containing input.brief.json.
 
 Options:
   --config <file>        Path to cli.json (default: evaluation/config/cli.json).
@@ -132,7 +132,8 @@ async function main() {
 }
 
 async function runPipeline({ args, root, specDir, runDir, logDir, runState, runDate }) {
-  const { brief, outcome } = await taggedStage("load_spec", () => loadSpec(specDir));
+  const { brief } = await taggedStage("load_spec", () => loadSpec(specDir));
+  const dimensions = await taggedStage("load_dimensions", () => loadDimensions());
 
   let blueprintJson;
   let cliConfig = null;
@@ -278,12 +279,12 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState, runD
   const judgeStep = cliConfig?.judge ?? null;
 
   process.stdout.write(
-    `[eval] evaluating ${outcome.dimensions.length} dimension(s) in parallel\n`,
+    `[eval] evaluating ${dimensions.length} dimension(s) in parallel\n`,
   );
 
   const judgeWorkspaceBase = path.basename(specDir);
   runState.dimensions = await Promise.all(
-    outcome.dimensions.map((dimRef) =>
+    dimensions.map((dimRef) =>
       evaluateDimension({
         dimRef,
         brief,

@@ -100,8 +100,8 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
                                                             // all four in parallel
 ```
 
-1. **Load spec.** Reads `input.brief.json` and (today) `outcome.spec.json`.
-   See "Spec file" below for the planned change.
+1. **Load spec.** Reads `input.brief.json`. The dimension set + context comes
+   from `evaluation/dimensions/registry.json` (see "Spec file" below).
 2. **Generate blueprint.** Either reads `--blueprint <path>` or shells out to
    the generator CLI. Output is validated against `BlueprintV2Schema`. Failure
    here aborts the run; the envelope still gets written with
@@ -207,12 +207,11 @@ Today's set (all Tier 1):
 
 The dimensions are an active work-in-progress. Expected near-term changes:
 
-- The character-grounding probe topics are currently hand-authored per
-  mystery in the spec file. They should move into the dimension brief as a
-  generic baseline covering: other characters (most important), locations,
-  the mystery, the character's own background, and the character's
-  preferences / biases / loves / hates. Per-mystery additions should be
-  additive, not authoritative.
+- The character-grounding probe topics are now a fixed generic baseline in
+  `evaluation/dimensions/registry.json` — the character's own background and
+  life, likes & dislikes, personality / attitude / appearance, and knowledge
+  of the other characters, the locations, and the mystery — applied to every
+  character in every mystery rather than hand-authored per spec.
 - The schema's `red_herrings` field is named for the genre convention but
   obscures what it actually is: a set of leads pointing the investigator at
   the wrong conclusion, always with an authored way to disprove them. A
@@ -240,22 +239,21 @@ No code changes elsewhere. The loader picks them up by ID.
 
 ## Spec file
 
-**Today:** each `evaluation/specs/<id>/` directory holds an
-`input.brief.json` plus an `outcome.spec.json` listing which dimensions to
-evaluate and per-dimension `context` (e.g., probe topics for
-character_grounding). The outcome spec is hand-authored per mystery.
+Each `evaluation/specs/<id>/` directory holds **only** an `input.brief.json`;
+there is no per-mystery `outcome.spec.json`.
 
-**Planned:** drop `outcome.spec.json` entirely. The set of dimensions to run
-and all dimension context (probe topic baselines, thresholds, …) lives in the
-dimension definitions themselves, not in the per-mystery spec. A mystery
-directory contains only the input brief.
+The set of dimensions to run, and all dimension context (probe-topic
+baselines, thresholds, …), lives centrally in
+`evaluation/dimensions/registry.json` — the standard evaluation battery
+applied to every blueprint. `loadDimensions()` reads it; `loadSpec()` reads
+only the brief.
 
-The motivation: today a new mystery quietly loses dimension coverage if its
-spec author forgets to include a dimension or its `context`. With dimension
-defaults in the dimension brief, every mystery gets the same baseline
-treatment for free. Per-mystery customization, if ever needed again, should
-re-enter through a different door (e.g., per-dimension override files
-opt-in), not through a mandatory spec file.
+The motivation: a new mystery used to quietly lose dimension coverage if its
+spec author forgot a dimension or its `context` (e.g. specs 002/003 silently
+never ran `path_payoff`). With the battery centralized, every mystery gets the
+same baseline treatment for free and runs stay comparable. Per-mystery
+customization, if ever needed again, should re-enter through a different door
+(e.g. opt-in per-dimension override files), not a mandatory spec file.
 
 ## Relationship to the old evaluator
 
@@ -290,8 +288,10 @@ canonical reference.
 
 ## Roadmap
 
-1. Drop `outcome.spec.json`; move dimension defaults into dimension briefs.
-2. Tighten character_grounding's baseline probe coverage.
+1. ~~Drop `outcome.spec.json`; move dimension defaults into a central
+   registry.~~ **Done** — `evaluation/dimensions/registry.json`.
+2. ~~Tighten character_grounding's baseline probe coverage.~~ **Done** — a
+   six-topic generic baseline in the registry.
 3. Rename / restructure `red_herrings` with an explicit payoff contract.
 4. Migrate `generate-blueprint.mjs` verification to the new pipeline; delete
    the old evaluator.

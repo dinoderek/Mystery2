@@ -1,7 +1,7 @@
 # Mystery blueprint evaluation pipeline
 
 A walking-skeleton pipeline for evaluating Blueprint V2 generation against
-an authored input spec and an authored outcome spec.
+an authored input brief, using a central, story-agnostic dimension battery.
 
 **Status:** spec 001 (Lighthouse Lens), Tier 1 dimensions only.
 
@@ -10,9 +10,12 @@ an authored input spec and an authored outcome spec.
 Given:
 
 - An **input brief** (`specs/<id>/input.brief.json`) — a `story_brief` of the
-  same shape the production generator consumes.
-- An **outcome spec** (`specs/<id>/outcome.spec.json`) — the list of quality
-  dimensions to evaluate beyond the always-on mechanical checks.
+  same shape the production generator consumes. A spec directory contains only
+  this file.
+- The **standard dimension battery** (`dimensions/registry.json`) — the
+  quality dimensions evaluated on every blueprint beyond the always-on
+  mechanical checks, plus their default context (e.g. character-grounding
+  probe topics). Central, not per-mystery.
 
 The pipeline:
 
@@ -21,7 +24,7 @@ The pipeline:
    `--blueprint <path>`.
 2. Runs always-on **mechanical** checks (schema, brief-derived counts,
    `mustInclude`, cover-ups, orphan clues).
-3. For each dimension in the outcome spec, runs the **analyzer** (cheap
+3. For each dimension in the registry, runs the **analyzer** (cheap
    deterministic code) and then the **judge** (shells out to the LLM CLI's
    `judge` step) and combines them into a per-dimension verdict.
 4. Writes a single structured result envelope (`runs/<run_id>/result.json`)
@@ -48,11 +51,11 @@ npm run eval -- \
 
 ```
 evaluation/
-├── specs/                  # one directory per input brief + outcome spec
+├── specs/                  # one directory per input brief (brief only)
 │   └── 001-lighthouse-lens/
-│       ├── input.brief.json
-│       └── outcome.spec.json
+│       └── input.brief.json
 ├── dimensions/             # one .md per quality dimension (the judge prompt)
+│   └── registry.json       # the standard battery + default per-dimension context
 ├── prompts/                # shared prompt fragments
 │   └── judge-system.md
 ├── checks/
@@ -129,7 +132,7 @@ etc. When `retries: 0` (the default) the original filenames are kept
 
 Three result kinds, one envelope.
 
-- **Mechanical** — runs on every blueprint regardless of outcome spec.
+- **Mechanical** — runs on every blueprint regardless of the dimension set.
   Failure means the artifact is broken (schema invalid, brief counts wrong,
   orphan clues, etc.).
 - **Analyzer** — deterministic code per dimension. Cheap. Runs first, in
@@ -151,9 +154,8 @@ only a judge is configured and it passes, that's a pass.
 1. **Solvability** — judge only.
 2. **Fairness / convergence** — judge only.
 3. **Internal coherence** — judge only.
-4. **Character grounding (anti-hallucination)** — judge + optional
-   context-driven analyzer (skipped unless the outcome spec supplies
-   `min_chars` / `min_flavor_items`).
+4. **Character grounding (anti-hallucination)** — judge only. Its probe-topic
+   baseline comes from `dimensions/registry.json`.
 
 Analyzers exist only where they add signal not already encoded in
 `BlueprintV2Schema.superRefine`. If a structural rule should always hold,

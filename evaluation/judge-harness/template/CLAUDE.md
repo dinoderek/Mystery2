@@ -14,9 +14,9 @@ passes.
 - `./brief.json` — the story brief that was given to the generator.
 - `./blueprint.json` — the full Blueprint V2 JSON produced by the generator.
   This is your evidence base.
-- `./context.json` — per-dimension context loaded from the outcome spec.
-  Empty object `{}` if the dimension has no context. For
-  `character_grounding`, this contains `probe_topics`.
+- `./context.json` — per-dimension context from the dimension registry
+  (`evaluation/dimensions/registry.json`). Empty object `{}` if the dimension
+  has no context. For `character_grounding`, this contains `probe_topics`.
 - `./prompts/judge-system.md` — the shared judge system prompt (preamble
   shared across all dimensions).
 - `./schema/output-schema.ts` — the Zod schema your `verdict.json` must

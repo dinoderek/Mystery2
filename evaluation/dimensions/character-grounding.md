@@ -22,10 +22,12 @@ For each character in `world.characters`, assess whether the available
 authored material would let a competent game-master answer plausible player
 questions without inventing facts.
 
-Probe topics (loaded from the outcome spec's `context.probe_topics`, or use a
-sensible default per the brief if absent):
-
-{{probe_topics_block}}
+Probe topics are supplied to you under `probe_topics` (in `./context.json` in
+the judge workspace). They are the **same baseline for every character in every
+mystery** — grounding is not story-specific. Use each topic string verbatim. The
+baseline covers the character's own background and a brief sketch of their life;
+their likes and dislikes; their personality, attitude, and appearance; and their
+knowledge of the other characters, the locations, and the central mystery.
 
 For each character, simulate: a player walks up and asks each probe topic. For
 each topic, decide:

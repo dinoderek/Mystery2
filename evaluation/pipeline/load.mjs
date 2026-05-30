@@ -24,10 +24,26 @@ export async function readText(filePath) {
 
 export async function loadSpec(specDir) {
   const absSpecDir = path.resolve(specDir);
-  const outcome = await readJson(path.join(absSpecDir, "outcome.spec.json"));
-  const briefRelPath = outcome.input_brief ?? "input.brief.json";
-  const brief = await readJson(path.join(absSpecDir, briefRelPath));
-  return { specDir: absSpecDir, brief, outcome };
+  const brief = await readJson(path.join(absSpecDir, "input.brief.json"));
+  return { specDir: absSpecDir, brief };
+}
+
+// The standard evaluation battery: which dimensions run on every blueprint and
+// their default context. Central and story-agnostic — see
+// evaluation/dimensions/registry.json. Replaces the old per-mystery
+// outcome.spec.json dimension lists.
+export async function loadDimensions() {
+  const registryPath = path.join(
+    REPO_ROOT,
+    "evaluation",
+    "dimensions",
+    "registry.json",
+  );
+  const registry = await readJson(registryPath);
+  if (!Array.isArray(registry.dimensions)) {
+    throw new Error(`${registryPath} must define a "dimensions" array.`);
+  }
+  return registry.dimensions;
 }
 
 export async function loadCliConfig(configPath) {

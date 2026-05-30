@@ -42,12 +42,10 @@ const _raw = {
           {
             id: "loc-crumbs",
             text: "Cookie crumbs lead toward the hallway.",
-            role: "direct_evidence",
           },
           {
             id: "loc-open-window",
             text: "The kitchen window is open even though it is cold outside.",
-            role: "red_herring",
           },
         ],
       },
@@ -59,7 +57,6 @@ const _raw = {
           {
             id: "loc-bag",
             text: "A lunch bag near the peg rack smells faintly of cookies.",
-            role: "corroboration",
           },
         ],
       },
@@ -82,7 +79,6 @@ const _raw = {
           {
             id: "char-alice-bag",
             text: "Alice says she kept going back to the hallway for her lunch bag.",
-            role: "supporting_evidence",
           },
         ],
         flavor_knowledge: ["Alice thinks Bob tells boring jokes."],
@@ -114,7 +110,7 @@ const _raw = {
           {
             id: "char-bob-saw-bag",
             text: "Bob saw Alice carrying her lunch bag before snack time.",
-            role: "suspect_elimination",
+            about_character_id: "alice",
           },
         ],
         flavor_knowledge: ["Bob is proud of arranging the hallway coat hooks by color."],

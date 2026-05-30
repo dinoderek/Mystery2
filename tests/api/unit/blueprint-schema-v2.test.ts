@@ -22,7 +22,6 @@ describe("Blueprint V2 schema", () => {
                   {
                     id: "loc-unlinked",
                     text: "An extra clue with no path.",
-                    role: "supporting_evidence" as const,
                   },
                 ],
               }
@@ -314,43 +313,27 @@ describe("Blueprint V2 schema", () => {
       };
     }
 
-    it("accepts alibi_knowledge clue with about_character_id", () => {
+    it("accepts a character clue with about_character_id pointing at another character", () => {
       const bp = withBobClue({
         id: "char-bob-alibi-knowledge",
         text: "Bob saw Alice near the oven at 10:05.",
-        role: "alibi_knowledge",
         about_character_id: "alice",
       });
       expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
     });
 
-    it("rejects alibi_knowledge clue without about_character_id", () => {
+    it("accepts a character clue with no cross-references", () => {
       const bp = withBobClue({
-        id: "char-bob-alibi-bad",
-        text: "Bob saw someone near the oven.",
-        role: "alibi_knowledge",
+        id: "char-bob-plain",
+        text: "Bob heard the back door slam.",
       });
-      expect(() => BlueprintV2Schema.parse(bp)).toThrow(
-        /must have about_character_id/,
-      );
-    });
-
-    it("rejects location_hint clue without hint_location_id", () => {
-      const bp = withBobClue({
-        id: "char-bob-loc-hint-bad",
-        text: "Bob says to check somewhere.",
-        role: "location_hint",
-      });
-      expect(() => BlueprintV2Schema.parse(bp)).toThrow(
-        /must have hint_location_id/,
-      );
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
     });
 
     it("rejects about_character_id referencing nonexistent character", () => {
       const bp = withBobClue({
         id: "char-bob-witness-bad",
         text: "Bob saw a ghost.",
-        role: "witness_testimony",
         about_character_id: "ghost",
       });
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(
@@ -362,7 +345,6 @@ describe("Blueprint V2 schema", () => {
       const bp = withBobClue({
         id: "char-bob-hint-bad",
         text: "Bob says to check the basement.",
-        role: "location_hint",
         hint_location_id: "basement",
       });
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(

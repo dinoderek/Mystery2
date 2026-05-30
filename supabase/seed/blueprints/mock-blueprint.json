@@ -34,8 +34,7 @@
         "clues": [
           {
             "id": "clue-crumb",
-            "text": "A crumb on the floor.",
-            "role": "direct_evidence"
+            "text": "A crumb on the floor."
           }
         ],
         "sub_locations": [
@@ -46,8 +45,7 @@
             "clues": [
               {
                 "id": "clue-jar",
-                "text": "An empty cookie jar hidden behind cereal boxes.",
-                "role": "supporting_evidence"
+                "text": "An empty cookie jar hidden behind cereal boxes."
               }
             ]
           },
@@ -67,13 +65,11 @@
         "clues": [
           {
             "id": "clue-wrapper",
-            "text": "A wrapper on the sofa.",
-            "role": "red_herring"
+            "text": "A wrapper on the sofa."
           },
           {
             "id": "clue-half-eaten",
-            "text": "A half-eaten cookie.",
-            "role": "supporting_evidence"
+            "text": "A half-eaten cookie."
           }
         ],
         "sub_locations": [
@@ -105,7 +101,7 @@
           {
             "id": "clue-alice-saw-bob",
             "text": "Bob was in the living room.",
-            "role": "suspect_elimination"
+            "about_character_id": "char-bob"
           }
         ],
         "flavor_knowledge": ["Alice loves baking on weekends."],
@@ -132,7 +128,7 @@
           {
             "id": "clue-bob-alice-loves-cookies",
             "text": "Alice loves cookies.",
-            "role": "supporting_evidence"
+            "about_character_id": "char-alice"
           }
         ],
         "flavor_knowledge": ["Bob is visiting for the weekend."],
@@ -164,6 +160,7 @@
     {
       "id": "path-wrapper-mislead",
       "summary": "The wrapper on the sofa might suggest Bob, but it was from an old snack.",
+      "payoff": "Bob is cleared as the wrapper-source suspect once the wrapper is shown to be from an old snack he ate the previous day.",
       "location_clue_ids": ["clue-wrapper"],
       "character_clue_ids": []
     }
@@ -172,6 +169,7 @@
     {
       "id": "path-bob-innocent",
       "summary": "Bob was watching TV the whole time, confirmed by Alice.",
+      "payoff": "Bob is ruled out as the culprit because Alice's testimony and the half-eaten cookie place him in the living room throughout the theft window.",
       "location_clue_ids": ["clue-half-eaten"],
       "character_clue_ids": ["clue-alice-saw-bob"]
     }

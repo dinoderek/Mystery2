@@ -8,21 +8,6 @@ const BlueprintV2IdSchema = z
 
 export const BlueprintV2CharacterSexSchema = z.enum(["male", "female"]);
 
-export const BlueprintV2ClueRoleSchema = z
-  .enum([
-    "direct_evidence",
-    "supporting_evidence",
-    "suspect_elimination",
-    "red_herring",
-    "red_herring_elimination",
-    "corroboration",
-    "alibi_knowledge",
-    "location_hint",
-    "witness_testimony",
-    "motive_knowledge",
-  ])
-  .describe("Authored purpose of a clue inside the mystery reasoning model.");
-
 export const BlueprintV2LocationClueSchema = z.object({
   id: BlueprintV2IdSchema.describe(
     "Stable identifier for a location clue. Referenced by reasoning paths.",
@@ -32,7 +17,6 @@ export const BlueprintV2LocationClueSchema = z.object({
     .trim()
     .min(1)
     .describe("Concrete clue text discovered by searching a location."),
-  role: BlueprintV2ClueRoleSchema,
 });
 
 export const BlueprintV2CharacterClueSchema = z.object({
@@ -44,17 +28,18 @@ export const BlueprintV2CharacterClueSchema = z.object({
     .trim()
     .min(1)
     .describe("Concrete mystery-relevant fact a character can reveal in conversation."),
-  role: BlueprintV2ClueRoleSchema,
   about_character_id: z
     .string()
     .optional()
     .describe(
-      "For alibi_knowledge, witness_testimony, motive_knowledge: which character this clue is about.",
+      "Optional. If this clue concerns another character (alibi, observation, motive), the id of that character. Validated to reference an existing character.",
     ),
   hint_location_id: z
     .string()
     .optional()
-    .describe("For location_hint: which location this clue points to."),
+    .describe(
+      "Optional. If this clue points the investigator at a specific location, the id of that location. Validated to reference an existing location.",
+    ),
 });
 
 export const BlueprintV2ReasoningPathSchema = z.object({
@@ -72,6 +57,14 @@ export const BlueprintV2ReasoningPathSchema = z.object({
     .min(1)
     .optional()
     .describe("Optional extra explanation of the path for human readers."),
+  payoff: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      "What the player concretely gains by completing this path. For solution paths, the truth of the mystery. For red herrings, a named elimination, contradiction, or false-lead disproof. For suspect-elimination paths, the suspect who is ruled out. Optional for backwards compatibility, but every non-solution path should have one or the path_payoff judge will flag it.",
+    ),
   location_clue_ids: z
     .array(BlueprintV2IdSchema)
     .describe("Ids of location clues that belong to this path."),
@@ -613,25 +606,6 @@ export const BlueprintV2Schema = z
         }
         characterClueIds.add(clue.id);
         thisCharacterClueIds.add(clue.id);
-      }
-
-      // --- Cross-character clue reference validations ---
-      const crossCharRoles = ["alibi_knowledge", "witness_testimony", "motive_knowledge"];
-      for (const [clueIndex, clue] of character.clues.entries()) {
-        if (crossCharRoles.includes(clue.role) && !clue.about_character_id) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "characters", characterIndex, "clues", clueIndex, "about_character_id"],
-            message: `Clue with role "${clue.role}" must have about_character_id.`,
-          });
-        }
-        if (clue.role === "location_hint" && !clue.hint_location_id) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "characters", characterIndex, "clues", clueIndex, "hint_location_id"],
-            message: `Clue with role "location_hint" must have hint_location_id.`,
-          });
-        }
       }
 
       // --- Agenda validations ---

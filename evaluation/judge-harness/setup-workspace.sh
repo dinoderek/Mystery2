@@ -37,6 +37,8 @@ case "$DIM_ID" in
     DIM_FILE_SLUG="$DIM_ID" ;;
   character_grounding)
     DIM_FILE_SLUG="character-grounding" ;;
+  path_payoff)
+    DIM_FILE_SLUG="path-payoff" ;;
   *)
     echo "unknown dimension id: $DIM_ID" >&2; exit 1 ;;
 esac

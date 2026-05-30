@@ -43,7 +43,7 @@ const blueprint = {
         name: "Kitchen",
         description: "A messy kitchen.",
         clues: [
-          { id: "clue_crumbs", text: "Cookie crumbs on the counter.", role: "direct_evidence" },
+          { id: "clue_crumbs", text: "Cookie crumbs on the counter." },
         ],
       },
     ],

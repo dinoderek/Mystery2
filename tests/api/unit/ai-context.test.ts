@@ -42,7 +42,7 @@ const blueprint: BlueprintContext = {
         name: "Kitchen",
         description: "A messy kitchen",
         clues: [
-          { id: "clue-crumbs", text: "crumbs", role: "direct_evidence" },
+          { id: "clue-crumbs", text: "crumbs" },
         ],
       },
       {
@@ -67,7 +67,7 @@ const blueprint: BlueprintContext = {
         motive: "hungry",
         is_culprit: true,
         clues: [
-          { id: "clue-alice-bob", text: "Bob was in the garden.", role: "suspect_elimination" },
+          { id: "clue-alice-bob", text: "Bob was in the garden.", about_character_id: "char-bob" },
         ],
         flavor_knowledge: ["Alice loves baking."],
         actual_actions: [
@@ -88,7 +88,7 @@ const blueprint: BlueprintContext = {
         motive: null,
         is_culprit: false,
         clues: [
-          { id: "clue-bob-alice", text: "Alice looked worried.", role: "supporting_evidence" },
+          { id: "clue-bob-alice", text: "Alice looked worried.", about_character_id: "char-alice" },
         ],
         flavor_knowledge: ["Bob is visiting for the weekend."],
         actual_actions: [
@@ -235,7 +235,7 @@ describe("ai-context guardrails", () => {
       sex: "female",
       personality: "nervous",
       stated_alibi: "I was reading",
-      clues: [{ id: "clue-alice-bob", text: "Bob was in the garden.", role: "suspect_elimination" }],
+      clues: [{ id: "clue-alice-bob", text: "Bob was in the garden.", about_character_id: "char-bob" }],
       flavor_knowledge: ["Alice loves baking."],
       actual_actions: [{ sequence: 1, summary: "stole the pie" }],
     });
@@ -273,7 +273,7 @@ describe("ai-context guardrails", () => {
       location_id: "loc-kitchen",
       location_name: "Kitchen",
       location_description: "A messy kitchen",
-      clues: [{ id: "clue-crumbs", text: "crumbs", role: "direct_evidence" }],
+      clues: [{ id: "clue-crumbs", text: "crumbs" }],
       revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
       has_more_clues: false,

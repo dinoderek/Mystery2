@@ -12,13 +12,15 @@
 #            the pipeline's default extract_path ".result" works unchanged.
 #
 # Required env:
-#   EVAL_WORKSPACE_BASE_ID — semantic prefix for the workspace dir name. The
-#                            wrapper appends a per-invocation random suffix so
-#                            retried attempts get distinct workspaces.
+#   EVAL_WORKSPACE_BASE_ID — the brief name; used for the workspace folder name.
+# Optional env:
+#   EVAL_RUN_DATE          — YYYY-MM-DD bucket for this run's workspaces.
+#                            Defaults to today (date +%F) when invoked directly.
 #
-# This wrapper creates a fresh one-shot generator workspace under
-# ~/mysteryevals/<base>-<rand>/, invokes the claude CLI inside it as an
-# agent, and reads the resulting ./blueprint.json back out.
+# This wrapper creates a one-shot generator workspace under
+# ~/mysteryevals/<run-date>/generator-<brief>/, invokes the claude CLI inside
+# it as an agent, and reads the resulting ./blueprint.json back out. The folder
+# name is stable per brief, so a retry/re-run reuses (and resets) it.
 
 set -euo pipefail
 
@@ -26,23 +28,35 @@ USER_MESSAGE_FILE="${2:?missing user message file path}"
 : "${EVAL_WORKSPACE_BASE_ID:?EVAL_WORKSPACE_BASE_ID env var required}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-WORKSPACE_PARENT="$HOME/mysteryevals"
-# 6-hex random suffix → 16M-space, negligible collision risk under reasonable
-# usage. openssl is in macOS base and most Linux distros.
-WORKSPACE_SUFFIX="$(openssl rand -hex 3)"
-WORKSPACE_ID="${EVAL_WORKSPACE_BASE_ID}-${WORKSPACE_SUFFIX}"
-WORKSPACE="$WORKSPACE_PARENT/$WORKSPACE_ID"
+# Group all agent workspaces for one eval run under a dated root, and give the
+# generator a stable, readable per-brief folder name.
+EVAL_RUN_DATE="${EVAL_RUN_DATE:-$(date +%F)}"
+WORKSPACE_PARENT="$HOME/mysteryevals/${EVAL_RUN_DATE}"
+WORKSPACE="$WORKSPACE_PARENT/generator-${EVAL_WORKSPACE_BASE_ID}"
 
 mkdir -p "$WORKSPACE_PARENT"
+# Stable name means a retry or same-day re-run reuses the path; clear any prior
+# attempt first (per-attempt logs are still captured under evaluation/runs/).
+rm -rf "$WORKSPACE"
 "$REPO_ROOT/evaluation/generator-harness/setup-workspace.sh" "$WORKSPACE" >&2
-cp "$USER_MESSAGE_FILE" "$WORKSPACE/brief.json"
+
+# Write the brief into the workspace, pretty-printed when it is JSON.
+node -e '
+  const fs = require("fs");
+  const raw = fs.readFileSync(process.argv[1], "utf8");
+  try {
+    fs.writeFileSync(process.argv[2], JSON.stringify(JSON.parse(raw), null, 2) + "\n");
+  } catch {
+    fs.writeFileSync(process.argv[2], raw);
+  }
+' "$USER_MESSAGE_FILE" "$WORKSPACE/brief.json"
 
 cd "$WORKSPACE"
 # Drop the user message file path mapping (the agent reads brief.json from
 # disk). The CLI prompt is the explicit kickoff message — workspace CLAUDE.md
 # provides the rest.
 claude --print --output-format json \
-       --model claude-opus-4-7 \
+       --model opus \
        --effort xhigh \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./blueprint.json that passes the validator." \
@@ -53,6 +67,16 @@ if [[ ! -f "$WORKSPACE/blueprint.json" ]]; then
   echo "agent did not produce blueprint.json in $WORKSPACE" >&2
   exit 3
 fi
+
+# Pretty-print the agent's JSON artifacts in place so the workspace is readable.
+node -e '
+  const fs = require("fs");
+  for (const f of process.argv.slice(1)) {
+    try {
+      fs.writeFileSync(f, JSON.stringify(JSON.parse(fs.readFileSync(f, "utf8")), null, 2) + "\n");
+    } catch {}
+  }
+' "$WORKSPACE/blueprint.json" "$WORKSPACE/claude.stdout.json"
 
 # Re-emit the agent's final blueprint in the pipeline's expected envelope shape.
 # Use node to JSON-escape the blueprint string safely.

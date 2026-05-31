@@ -264,6 +264,26 @@ check runs to detect orphaned test users.
 Focused sub-scripts are for iteration only. They do not replace the final
 `npm test` gate.
 
+#### Cloud-session waiver
+
+Phase 2 needs a local Supabase stack in Docker. The cloud execution
+environment (Claude Code on the web) has no Docker, so Phase 2 is **waived
+there — and only there**. The waiver is gated on a positive,
+environment-owned marker, never on Docker or Supabase reachability:
+
+- When `MYSTERY_CLOUD_SESSION` is set (by the cloud environment definition),
+  the gate runs Phase 1, marks the Phase 2 suites `WAIVED`, and still exits
+  `0` if Phase 1 passes. The Supabase-backed suites must be run locally before
+  merge.
+- When `MYSTERY_CLOUD_SESSION` is unset (every local machine), Phase 2 always
+  runs. A stack that is not up is a setup step to complete
+  (`npm run supabase:restart` + seeds), not a reason to skip: if the stack
+  cannot start, the gate **fails** rather than skipping.
+
+The marker is read directly by `scripts/run-test-gate.mjs`. Agents must not
+set, export, or fabricate it to authorize a waiver. Keep it out of any local
+`.env*` files so it cannot leak into a local run.
+
 Documentation sync is still required alongside that gate whenever setup,
 runtime behavior, testing workflow, or debugging guidance changes.
 

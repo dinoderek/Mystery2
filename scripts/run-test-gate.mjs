@@ -4,6 +4,14 @@
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
+ * Phase 2 needs a local Supabase stack in Docker. In the cloud execution
+ * environment (Claude Code on the web) there is no Docker, so Phase 2 is
+ * WAIVED — but only when the environment-owned marker `MYSTERY_CLOUD_SESSION`
+ * is set. Locally that marker is absent, so Phase 2 always runs and a stack
+ * that is not up is a setup step to complete, never a reason to skip. The
+ * marker is set by the cloud environment definition; agents must not set,
+ * export, or fabricate it to authorize a waiver.
+ *
  * Produces timestamped log files in test-results/ and a summary with timing.
  */
 
@@ -116,12 +124,20 @@ function runStep(step, logDir) {
 // Main
 // ---------------------------------------------------------------------------
 
+// Waiver is gated on a positive, environment-owned marker — never on Docker
+// or Supabase reachability, which is the excuse this is designed to prevent.
+const cloudSession = Boolean(process.env.MYSTERY_CLOUD_SESSION);
+
 const baseDir = path.resolve("test-results");
 const runDir = path.join(baseDir, timestamp());
 fs.mkdirSync(runDir, { recursive: true });
 
 console.log(`\n=== Test Gate ===`);
-console.log(`Log directory: ${runDir}\n`);
+console.log(`Log directory: ${runDir}`);
+if (cloudSession) {
+  console.log(`Cloud session detected (MYSTERY_CLOUD_SESSION set).`);
+}
+console.log("");
 
 const results = [];
 const totalStart = performance.now();
@@ -141,6 +157,30 @@ if (phase1Failed.length > 0) {
     `\nPhase 1 failures: ${phase1Failed.map((r) => r.name).join(", ")}`,
   );
   console.error("Skipping phase 2.\n");
+} else if (cloudSession) {
+  // --- Phase 2: WAIVED (cloud session) ---
+  // The cloud container has no Docker, so the Supabase-backed suites cannot
+  // run. Record them as explicitly waived (not skipped, not passed) so the
+  // summary is honest and the gate still goes green on Phase 1. These suites
+  // must be run locally before merge.
+  const phase2Steps = STEPS.filter((s) => s.phase === 2);
+  console.log(
+    `\n--- Phase 2 WAIVED: cloud session (MYSTERY_CLOUD_SESSION set) ---`,
+  );
+  console.log(
+    `Supabase-backed suites (${phase2Steps
+      .map((s) => s.name)
+      .join(", ")}) do not run without Docker. Run them locally before merge.\n`,
+  );
+  for (const step of phase2Steps) {
+    results.push({
+      name: step.name,
+      passed: false,
+      waived: true,
+      durationMs: 0,
+      logPath: null,
+    });
+  }
 } else {
   // --- Phase 2: serial ---
   const phase2Steps = STEPS.filter((s) => s.phase === 2);
@@ -187,26 +227,38 @@ if (phase1Failed.length > 0) {
 
 const totalMs = performance.now() - totalStart;
 
+// Waived steps do not fail the gate; skipped/failed steps do.
+const overallPass = results.every((r) => r.passed || r.waived);
+
 // --- Summary ---
 const lines = [
   "=== Test Gate Summary ===",
   "",
   ...results.map((r) => {
-    const status = r.skipped ? "SKIP" : r.passed ? "PASS" : "FAIL";
+    const status = r.skipped
+      ? "SKIP"
+      : r.waived
+        ? "WAIVED"
+        : r.passed
+          ? "PASS"
+          : "FAIL";
     const time = r.durationMs
       ? `${(r.durationMs / 1000).toFixed(1)}s`
       : "  -  ";
     const padName = r.name.padEnd(16);
     const padTime = time.padStart(7);
     let line = `${padName} ${padTime}  ${status}`;
-    if (!r.passed && !r.skipped && r.logPath) {
+    if (!r.passed && !r.skipped && !r.waived && r.logPath) {
       const err = firstErrorLine(r.logPath);
       if (err) line += `\n${"".padEnd(27)}${err}`;
     }
     return line;
   }),
   "─".repeat(40),
-  `${"Total".padEnd(16)} ${(totalMs / 1000).toFixed(1).padStart(7)}s  ${results.every((r) => r.passed) ? "PASS" : "FAIL"}`,
+  `${"Total".padEnd(16)} ${(totalMs / 1000).toFixed(1).padStart(7)}s  ${overallPass ? "PASS" : "FAIL"}`,
+  ...(cloudSession
+    ? ["", "Phase 2 WAIVED: cloud session (MYSTERY_CLOUD_SESSION). Run Supabase-backed suites locally before merge."]
+    : []),
   "",
 ];
 
@@ -216,4 +268,4 @@ fs.writeFileSync(path.join(runDir, "summary.log"), summary);
 
 pruneOldRuns(baseDir);
 
-process.exit(results.every((r) => r.passed) ? 0 : 1);
+process.exit(overallPass ? 0 : 1);

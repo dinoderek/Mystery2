@@ -29,9 +29,9 @@ schemas, and dimensions are all expected to change.
    matter of writing one markdown brief + one Zod schema + (optionally) one
    deterministic analyzer. No code-path changes.
 3. **Run inside arbitrary execution environments.** The pipeline itself never
-   imports an LLM SDK. Every model call is a subprocess. The same pipeline
-   runs against a local CLI, a hosted CLI, or — via the file-bus — an
-   in-session Claude Code subagent.
+   imports an LLM SDK. Every model call is a subprocess, so the same pipeline
+   runs against any LLM CLI you bind in `config/cli.json` — the bundled
+   wrappers invoke `claude`.
 4. **Be parallel.** Independent dimensions evaluate concurrently so wall-clock
    time scales with the slowest judge, not their sum.
 5. **Stay legible under failure.** A run that aborts mid-flight still writes a
@@ -133,36 +133,6 @@ parsed against the dimension's Zod schema.
 To bind a new LLM: write a wrapper that takes the two file paths, calls your
 CLI, and prints `{ "result": "<model-output>" }` on stdout. The bundled
 wrappers in `evaluation/config/wrappers/` invoke `claude`.
-
-### File-bus mode (running inside Claude Code web)
-
-When the pipeline runs inside a Claude Code session that has no shell access
-to external LLM CLIs, the wrapper at `evaluation/config/wrappers/file-bus.mjs`
-substitutes a file-based message bus for the subprocess call:
-
-```
-pipeline ──spawn──► file-bus.mjs ──write──► agent-bus/inbox/<id>/
-                                                  │
-                                                  ▼
-                                          supervising assistant
-                                          (the session itself)
-                                          dispatches a subagent
-                                                  │
-                                                  ▼
-                                          agent-bus/outbox/<id>.json
-                                                  │
-                          ◄──poll──── file-bus.mjs
-```
-
-The supervising assistant reads the request, dispatches a `general-purpose`
-subagent with the system + user prompts, the subagent self-validates its
-output via `evaluation/pipeline/validate.mjs`, and writes the result to the
-outbox. From the pipeline's perspective, this is indistinguishable from a CLI
-call — same retries, same logging, same timeouts.
-
-This mode exists because we want the same pipeline to be runnable by a Claude
-Code session orchestrating its own subagents, without standing up a separate
-infrastructure path.
 
 ## Generator and judge harnesses
 

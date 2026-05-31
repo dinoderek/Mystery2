@@ -2,10 +2,10 @@
 //
 // Exposes the same Zod schemas the pipeline already imports so that an agent
 // (or any caller) can validate a candidate JSON file against them before
-// submission. Used by the file-bus dispatcher loop: the supervising
-// assistant dispatches a subagent, the subagent self-validates its
-// candidate output with this script, and only submits to the bus once
-// validation passes.
+// submission. The judge harness's validator
+// (evaluation/judge-harness/scripts/validate-judge-output.mjs) delegates its
+// shape check here, so an in-workspace judge agent self-validates its
+// candidate verdict against the dimension schema before declaring done.
 //
 // Usage:
 //   node evaluation/pipeline/validate.mjs <schema> <candidate.json>
@@ -16,6 +16,7 @@
 //   fairness               — judge output for fairness
 //   coherence              — judge output for coherence
 //   character_grounding    — judge output for character grounding
+//   path_payoff            — judge output for path payoff
 //
 // Output:
 //   On success: prints "OK" to stdout, exits 0.
@@ -43,6 +44,7 @@ const dimensionSchemas = new Set([
   "fairness",
   "coherence",
   "character_grounding",
+  "path_payoff",
 ]);
 
 let schema;

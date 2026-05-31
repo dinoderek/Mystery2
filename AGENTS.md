@@ -25,6 +25,26 @@ summaries rather than treating them as passive background reading.
 - **Quality gates:** Any non-documentation change must finish with `npm test`.
   Focused scripts (`test:unit`, `test:integration`, etc.) are for iteration,
   not final sign-off.
+- **Quality-gate environment policy:** The `npm test` gate is mandatory and is
+  **not** optional based on tool availability.
+  - **Local / any environment where `MYSTERY_CLOUD_SESSION` is unset (the
+    default):** run the full gate, including the Supabase-backed suites
+    (integration, API E2E, browser E2E). If the local Supabase stack is not
+    running, **start it** (`npm run supabase:restart`, then the relevant
+    `seed:*` scripts) and run the suites. "Supabase wasn't running," "Docker
+    wasn't started," or "the stack was unavailable" are setup steps you are
+    responsible for completing — **never** reasons to skip a suite. A change
+    whose backend suites did not run has not passed the gate, and the gate
+    itself fails rather than skips when the stack cannot start.
+  - **Cloud session only (`MYSTERY_CLOUD_SESSION=1`, set by the environment,
+    never by you):** the Supabase-backed suites are **waived** because the
+    cloud container has no Docker. The gate runs the full Phase 1 subset
+    (lint, typecheck, svelte-check, both unit suites) and marks the backend
+    suites `WAIVED`. In your summary, record them as
+    `waived: cloud session (MYSTERY_CLOUD_SESSION)` and run them locally before
+    merge. Do not claim the backend suites passed.
+  - You may not set, export, or fabricate `MYSTERY_CLOUD_SESSION` to authorize
+    a waiver. If it is absent, there is no waiver.
 - **Final summaries:** Always state which quality gates ran. If anything was
   skipped, explain why.
 - **Edge Function changes:** If you modify files under `supabase/functions/` or

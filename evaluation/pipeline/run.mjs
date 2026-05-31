@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { performance } from "node:perf_hooks";
 import process from "node:process";
 import url from "node:url";
 
@@ -21,6 +22,11 @@ import {
   repoRoot,
   tryLoadAnalyzer,
 } from "./load.mjs";
+import {
+  createRunTimer,
+  formatDuration,
+  formatTimingSummary,
+} from "./timing.mjs";
 
 function parseArgs(argv) {
   const args = {
@@ -79,11 +85,13 @@ async function main() {
   }
 
   const startedAt = new Date();
+  const timer = createRunTimer();
   const root = repoRoot();
   const specDir = path.resolve(args.spec);
   const specSlug = path.basename(specDir);
   const runId =
-    args.runId ?? `${startedAt.toISOString().replace(/[:.]/g, "-")}-${specSlug}`;
+    args.runId ??
+    `${startedAt.toISOString().replace(/[:.]/g, "-")}-${specSlug}`;
   // One self-contained output directory per run holds ALL artifacts (result,
   // blueprint, logs, and the generator/judge agent workspaces). It lives
   // OUTSIDE the repo by default so debug iterations don't churn git. Layout:
@@ -91,7 +99,8 @@ async function main() {
   // where <date> and <time> are UTC tokens. Every run gets its own directory,
   // so nothing from a prior run is ever overwritten or deleted.
   const runDate = startedAt.toISOString().slice(0, 10);
-  const runStamp = startedAt.toISOString().slice(11, 19).replace(/:/g, "-") + "Z";
+  const runStamp =
+    startedAt.toISOString().slice(11, 19).replace(/:/g, "-") + "Z";
   const outputRoot = path.resolve(
     args.outputRoot ??
       process.env.MYSTERYEVALS_DIR ??
@@ -114,7 +123,7 @@ async function main() {
   };
 
   try {
-    await runPipeline({ args, root, specDir, runDir, logDir, runState });
+    await runPipeline({ args, root, specDir, runDir, logDir, runState, timer });
   } catch (err) {
     runState.runError = {
       stage: err.runErrorStage ?? "unknown",
@@ -124,6 +133,7 @@ async function main() {
   }
 
   const endedAt = new Date();
+  const timing = timer.summarize();
   const envelope = buildEnvelope({
     runId,
     startedAt: startedAt.toISOString(),
@@ -134,12 +144,18 @@ async function main() {
     mechanical: runState.mechanical,
     dimensions: runState.dimensions,
     runError: runState.runError,
+    timing,
   });
 
   const resultPath = path.join(runDir, "result.json");
+  const writeStartedAt = performance.now();
   await fs.writeFile(resultPath, JSON.stringify(envelope, null, 2));
+  const writeMs = performance.now() - writeStartedAt;
 
-  process.stdout.write(`\n[eval] result: ${resultPath}\n`);
+  process.stdout.write(`\n${formatTimingSummary(timing)}\n`);
+  process.stdout.write(
+    `\n[eval] result: ${resultPath} (write ${formatDuration(writeMs)})\n`,
+  );
   const dimTotal =
     envelope.summary.dimensions.pass +
     envelope.summary.dimensions.fail +
@@ -156,16 +172,28 @@ async function main() {
   if (runState.runError) process.exit(1);
 }
 
-async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
-  const { brief } = await taggedStage("load_spec", () => loadSpec(specDir));
-  const dimensions = await taggedStage("load_dimensions", () => loadDimensions());
+async function runPipeline({
+  args,
+  root,
+  specDir,
+  runDir,
+  logDir,
+  runState,
+  timer,
+}) {
+  const { brief } = await timer.stage("load_spec", () => loadSpec(specDir));
+  const dimensions = await timer.stage("load_dimensions", () =>
+    loadDimensions(),
+  );
 
   let blueprintJson;
   let cliConfig = null;
   if (args.blueprint) {
     const blueprintPath = path.resolve(args.blueprint);
-    process.stdout.write(`[eval] blueprint=${path.relative(root, blueprintPath)} (preexisting)\n`);
-    blueprintJson = await taggedStage("load_blueprint", async () =>
+    process.stdout.write(
+      `[eval] blueprint=${path.relative(root, blueprintPath)} (preexisting)\n`,
+    );
+    blueprintJson = await timer.stage("load_blueprint", async () =>
       JSON.parse(await fs.readFile(blueprintPath, "utf8")),
     );
     runState.generation = {
@@ -180,7 +208,12 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
         cliConfig = null;
       }
     } else {
-      const defaultConfigPath = path.join(root, "evaluation", "config", "cli.json");
+      const defaultConfigPath = path.join(
+        root,
+        "evaluation",
+        "config",
+        "cli.json",
+      );
       try {
         cliConfig = await loadCliConfig(defaultConfigPath);
       } catch {
@@ -190,7 +223,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
   } else {
     const configPath =
       args.config ?? path.join(root, "evaluation", "config", "cli.json");
-    cliConfig = await taggedStage("load_cli_config", async () => {
+    cliConfig = await timer.stage("load_cli_config", async () => {
       try {
         return await loadCliConfig(configPath);
       } catch (err) {
@@ -199,8 +232,12 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
         );
       }
     });
-    process.stdout.write(`[eval] generating blueprint via cli=${cliConfig.generate?.cmd}\n`);
-    const chatInput = await buildBlueprintGenerationChatInput(brief);
+    process.stdout.write(
+      `[eval] generating blueprint via cli=${cliConfig.generate?.cmd}\n`,
+    );
+    const chatInput = await timer.stage("build_generation_input", () =>
+      buildBlueprintGenerationChatInput(brief),
+    );
     const userMessage = chatInput.userMessageContent;
     // The agent-based wrapper ignores the pipeline-rendered system prompt and
     // reads the canonical generator prompt + schema from disk via the
@@ -211,40 +248,47 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
     // keeping the agent workspace inside this run's output directory.
     const generateRetries = cliConfig.generate?.retries ?? 0;
     if (generateRetries > 0) {
-      process.stdout.write(`[eval]   generate retries configured: ${generateRetries}\n`);
+      process.stdout.write(
+        `[eval]   generate retries configured: ${generateRetries}\n`,
+      );
     }
-    const generateOutcome = await runCliWithRetries({
-      step: "generate",
-      config: cliConfig.generate,
-      systemPrompt: chatInput.systemPrompt,
-      userMessage,
-      logDir,
-      retries: generateRetries,
-      env: { EVAL_RUN_DIR: runDir },
-      validateExtracted: (extracted) => {
-        let parsed;
-        try {
-          parsed = JSON.parse(extracted);
-        } catch (err) {
-          throw new Error(
-            `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
-          );
-        }
-        const check = BlueprintV2Schema.safeParse(parsed);
-        if (!check.success) {
-          const issues = check.error.issues
-            .slice(0, 5)
-            .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
-            .join("; ");
-          throw new Error(
-            `Generated blueprint failed BlueprintV2Schema: ${issues}` +
-              (check.error.issues.length > 5
-                ? ` (+${check.error.issues.length - 5} more issues)`
-                : ""),
-          );
-        }
-      },
-    });
+    const generateOutcome = await timer.stage(
+      "generate",
+      () =>
+        runCliWithRetries({
+          step: "generate",
+          config: cliConfig.generate,
+          systemPrompt: chatInput.systemPrompt,
+          userMessage,
+          logDir,
+          retries: generateRetries,
+          env: { EVAL_RUN_DIR: runDir },
+          validateExtracted: (extracted) => {
+            let parsed;
+            try {
+              parsed = JSON.parse(extracted);
+            } catch (err) {
+              throw new Error(
+                `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
+              );
+            }
+            const check = BlueprintV2Schema.safeParse(parsed);
+            if (!check.success) {
+              const issues = check.error.issues
+                .slice(0, 5)
+                .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+                .join("; ");
+              throw new Error(
+                `Generated blueprint failed BlueprintV2Schema: ${issues}` +
+                  (check.error.issues.length > 5
+                    ? ` (+${check.error.issues.length - 5} more issues)`
+                    : ""),
+              );
+            }
+          },
+        }),
+      (outcome) => ({ attempts: outcome.attempts.length }),
+    );
     const totalDurationMs = generateOutcome.attempts.reduce(
       (sum, a) => sum + a.duration_ms,
       0,
@@ -280,43 +324,60 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
   }
 
   const blueprintPath = path.join(runDir, "blueprint.json");
-  await fs.writeFile(blueprintPath, JSON.stringify(blueprintJson, null, 2));
+  await timer.stage("write_blueprint", () =>
+    fs.writeFile(blueprintPath, JSON.stringify(blueprintJson, null, 2)),
+  );
   runState.blueprintPath = blueprintPath;
 
   process.stdout.write(`[eval] running mechanical checks\n`);
-  runState.mechanical = runMechanicalChecks({
-    brief,
-    blueprintCandidate: blueprintJson,
-  });
+  runState.mechanical = await timer.stage(
+    "mechanical",
+    async () =>
+      runMechanicalChecks({
+        brief,
+        blueprintCandidate: blueprintJson,
+      }),
+    (checks) => ({ checks: checks.length }),
+  );
   const mechFailed = runState.mechanical.filter((c) => c.status === "fail");
   process.stdout.write(
-    `[eval] mechanical: ${runState.mechanical.length - mechFailed.length}/${runState.mechanical.length} passed\n`,
+    `[eval] mechanical: ${runState.mechanical.length - mechFailed.length}/${runState.mechanical.length} passed (${formatDuration(timer.lastStageMs())})\n`,
   );
 
   let parsedBlueprint = null;
-  const bpCheck = BlueprintV2Schema.safeParse(blueprintJson);
+  const bpCheck = await timer.stage("blueprint_schema_validate", async () =>
+    BlueprintV2Schema.safeParse(blueprintJson),
+  );
   if (bpCheck.success) parsedBlueprint = bpCheck.data;
 
-  const judgeSystemBase = await loadJudgeSystemPrompt();
+  const judgeSystemBase = await timer.stage("load_judge_system_prompt", () =>
+    loadJudgeSystemPrompt(),
+  );
   const judgeStep = cliConfig?.judge ?? null;
 
   process.stdout.write(
     `[eval] evaluating ${dimensions.length} dimension(s) in parallel\n`,
   );
 
-  runState.dimensions = await Promise.all(
-    dimensions.map((dimRef) =>
-      evaluateDimension({
-        dimRef,
-        brief,
-        parsedBlueprint,
-        blueprintJson,
-        judgeSystemBase,
-        judgeStep,
-        logDir,
-        runDir,
-      }),
-    ),
+  runState.dimensions = await timer.stage(
+    "dimensions",
+    () =>
+      Promise.all(
+        dimensions.map((dimRef) =>
+          evaluateDimension({
+            dimRef,
+            brief,
+            parsedBlueprint,
+            blueprintJson,
+            judgeSystemBase,
+            judgeStep,
+            logDir,
+            runDir,
+            timer,
+          }),
+        ),
+      ),
+    (results) => ({ count: results.length, parallel: true }),
   );
 }
 
@@ -329,104 +390,138 @@ async function evaluateDimension({
   judgeStep,
   logDir,
   runDir,
+  timer,
 }) {
   const dimId = dimRef.id;
   const tag = `[eval][${dimId}]`;
-
-  if (!parsedBlueprint) {
-    process.stdout.write(`${tag} skipped (blueprint failed schema validation)\n`);
-    return combineDimension({
-      id: dimId,
-      analyzer: null,
-      judge: null,
-      error: {
-        stage: "prep",
-        message: "Blueprint failed schema validation; analyzers and judge skipped.",
-      },
-    });
-  }
-
-  let analyzerResult = null;
-  let judgeResult = null;
-  let dimError = null;
+  const dimTimer = timer.dimension(dimId);
 
   try {
-    const analyzer = await tryLoadAnalyzer(dimId);
-    if (analyzer) {
-      const r = analyzer.analyze({
-        brief,
-        blueprint: parsedBlueprint,
-        context: dimRef.context ?? null,
+    if (!parsedBlueprint) {
+      process.stdout.write(
+        `${tag} skipped (blueprint failed schema validation)\n`,
+      );
+      return combineDimension({
+        id: dimId,
+        analyzer: null,
+        judge: null,
+        error: {
+          stage: "prep",
+          message:
+            "Blueprint failed schema validation; analyzers and judge skipped.",
+        },
       });
-      analyzerResult = { ...r, kind: "analyzer" };
-      process.stdout.write(`${tag} analyzer: ${r.status}\n`);
     }
-  } catch (err) {
-    dimError = { stage: "analyzer", message: err.message };
-  }
 
-  if (!dimError) {
+    let analyzerResult = null;
+    let judgeResult = null;
+    let dimError = null;
+
     try {
-      const dim = await loadDimensionDefinition(dimId);
-      const judgeContext = dimRef.context ?? null;
-      const systemPrompt = composeJudgeSystemPrompt({
-        base: judgeSystemBase,
-        dimensionText: dim.text,
-        schema: dim.schema,
-        context: judgeContext,
-      });
-      const userMessage = JSON.stringify({
-        dimension_id: dimId,
-        context: judgeContext,
-        story_brief: brief,
-        blueprint: blueprintJson,
-      });
-
-      if (!judgeStep) {
-        process.stdout.write(`${tag} judge: skipped (no cli.json judge step)\n`);
-      } else {
-        const judgeOutcome = await runJudgeWithRetries({
-          step: `judge-${dimId}`,
-          config: judgeStep,
-          systemPrompt,
-          userMessage,
-          logDir,
-          schema: dim.schema,
-          env: {
-            EVAL_DIMENSION_ID: dimId,
-            EVAL_RUN_DIR: runDir,
-          },
-        });
-        if (judgeOutcome.ok) {
-          const status = judgeOutcome.data.verdict === "pass" ? "pass" : "fail";
-          judgeResult = {
-            kind: "judge",
-            status,
-            reasoning: judgeOutcome.data.reasoning ?? "",
-            raw: judgeOutcome.data,
-            attempts: judgeOutcome.attempts,
-          };
-          const retries = judgeOutcome.attempts.length - 1;
-          const retryNote = retries > 0 ? ` (after ${retries} retry/retries)` : "";
-          process.stdout.write(`${tag} judge: ${status}${retryNote}\n`);
-        } else {
-          dimError = { ...judgeOutcome.error, attempts: judgeOutcome.attempts };
-          process.stdout.write(
-            `${tag} judge: error (${dimError.stage}, ${judgeOutcome.attempts.length} attempt(s))\n`,
-          );
-        }
+      const analyzer = await dimTimer.step("load_analyzer", () =>
+        tryLoadAnalyzer(dimId),
+      );
+      if (analyzer) {
+        const r = await dimTimer.step("analyzer", async () =>
+          analyzer.analyze({
+            brief,
+            blueprint: parsedBlueprint,
+            context: dimRef.context ?? null,
+          }),
+        );
+        analyzerResult = { ...r, kind: "analyzer" };
+        process.stdout.write(
+          `${tag} analyzer: ${r.status} (${formatDuration(dimTimer.lastStepMs())})\n`,
+        );
       }
     } catch (err) {
-      dimError = { stage: "judge", message: err.message };
+      dimError = { stage: "analyzer", message: err.message };
     }
-  }
 
-  return combineDimension({
-    id: dimId,
-    analyzer: analyzerResult,
-    judge: judgeResult,
-    error: dimError,
-  });
+    if (!dimError) {
+      try {
+        const dim = await dimTimer.step("load_definition", () =>
+          loadDimensionDefinition(dimId),
+        );
+        const judgeContext = dimRef.context ?? null;
+        const systemPrompt = await dimTimer.step("compose_prompt", async () =>
+          composeJudgeSystemPrompt({
+            base: judgeSystemBase,
+            dimensionText: dim.text,
+            schema: dim.schema,
+            context: judgeContext,
+          }),
+        );
+        const userMessage = JSON.stringify({
+          dimension_id: dimId,
+          context: judgeContext,
+          story_brief: brief,
+          blueprint: blueprintJson,
+        });
+
+        if (!judgeStep) {
+          process.stdout.write(
+            `${tag} judge: skipped (no cli.json judge step)\n`,
+          );
+        } else {
+          const judgeOutcome = await dimTimer.step(
+            "judge",
+            () =>
+              runJudgeWithRetries({
+                step: `judge-${dimId}`,
+                config: judgeStep,
+                systemPrompt,
+                userMessage,
+                logDir,
+                schema: dim.schema,
+                env: {
+                  EVAL_DIMENSION_ID: dimId,
+                  EVAL_RUN_DIR: runDir,
+                },
+              }),
+            (outcome) => ({ attempts: outcome.attempts.length }),
+          );
+          const judgeMs = dimTimer.lastStepMs();
+          if (judgeOutcome.ok) {
+            const status =
+              judgeOutcome.data.verdict === "pass" ? "pass" : "fail";
+            judgeResult = {
+              kind: "judge",
+              status,
+              reasoning: judgeOutcome.data.reasoning ?? "",
+              raw: judgeOutcome.data,
+              attempts: judgeOutcome.attempts,
+            };
+            const retries = judgeOutcome.attempts.length - 1;
+            const retryNote =
+              retries > 0 ? ` (after ${retries} retry/retries)` : "";
+            process.stdout.write(
+              `${tag} judge: ${status}${retryNote} (${formatDuration(judgeMs)})\n`,
+            );
+          } else {
+            dimError = {
+              ...judgeOutcome.error,
+              attempts: judgeOutcome.attempts,
+            };
+            process.stdout.write(
+              `${tag} judge: error (${dimError.stage}, ${judgeOutcome.attempts.length} attempt(s), ${formatDuration(judgeMs)})\n`,
+            );
+          }
+        }
+      } catch (err) {
+        dimError = { stage: "judge", message: err.message };
+      }
+    }
+
+    return combineDimension({
+      id: dimId,
+      analyzer: analyzerResult,
+      judge: judgeResult,
+      error: dimError,
+    });
+  } finally {
+    dimTimer.finalize();
+  }
 }
 
 // Wraps the judge call with a single retry budget that covers both
@@ -442,7 +537,9 @@ async function runJudgeWithRetries({
   schema,
   env = null,
 }) {
-  const retries = Number.isInteger(config.retries) ? Math.max(0, config.retries) : 0;
+  const retries = Number.isInteger(config.retries)
+    ? Math.max(0, config.retries)
+    : 0;
   const max = 1 + retries;
   const attempts = [];
 
@@ -512,16 +609,11 @@ async function runJudgeWithRetries({
     }
   }
   // Unreachable.
-  return { ok: false, error: { stage: "judge", message: "runJudgeWithRetries fell through" }, attempts };
-}
-
-async function taggedStage(stage, fn) {
-  try {
-    return await fn();
-  } catch (err) {
-    if (!err.runErrorStage) err.runErrorStage = stage;
-    throw err;
-  }
+  return {
+    ok: false,
+    error: { stage: "judge", message: "runJudgeWithRetries fell through" },
+    attempts,
+  };
 }
 
 function composeJudgeSystemPrompt({ base, dimensionText, schema, context }) {

@@ -69,7 +69,12 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pin the CLI version. `latest` resolves via an unauthenticated
+          # GitHub releases API call that is rate-limited per runner IP and
+          # intermittently fails ("Failed to resolve latest Supabase CLI
+          # release: rate limit exceeded"). A pinned version downloads
+          # directly and skips that lookup. Bump deliberately.
+          version: 2.102.0
 
       - name: Generate config.toml from template
         run: cp supabase/config.toml.template supabase/config.toml
@@ -122,7 +127,12 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pin the CLI version. `latest` resolves via an unauthenticated
+          # GitHub releases API call that is rate-limited per runner IP and
+          # intermittently fails ("Failed to resolve latest Supabase CLI
+          # release: rate limit exceeded"). A pinned version downloads
+          # directly and skips that lookup. Bump deliberately.
+          version: 2.102.0
 
       - name: Generate config.toml from template
         run: cp supabase/config.toml.template supabase/config.toml

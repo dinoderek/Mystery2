@@ -182,10 +182,19 @@ agent's `claude.stderr.log` — are never overwritten or deleted.
 
 The envelope shape is version-tagged (`schema_version`). Top-level fields:
 `run_id`, `started_at`, `ended_at`, `spec_dir`, `blueprint_path`,
-`generation`, `mechanical[]`, `dimensions[]`, `run_error`, `summary`. Each
-dimension carries its analyzer result, judge result, attempts, and combined
-`overall` status. Consumers can distinguish "didn't run" from "crashed during
-generation" by inspecting `run_error.stage`.
+`generation`, `mechanical[]`, `dimensions[]`, `run_error`, `summary`, and
+`timing`. Each dimension carries its analyzer result, judge result, attempts,
+and combined `overall` status. Consumers can distinguish "didn't run" from
+"crashed during generation" by inspecting `run_error.stage`.
+
+`timing` is a monotonic-clock breakdown (integer milliseconds) of every
+pipeline stage plus per-dimension sub-steps, mirrored to stdout at the end of
+each run. Because dimensions evaluate in parallel, the `dimensions` stage
+duration is wall-clock (≈ the slowest dimension), not the sum of the
+per-dimension durations; and a stage's duration is the wall-clock of the whole
+stage **including retries**, so it can exceed the summed per-attempt
+`duration_ms` under `generation`/`judge`. See `evaluation/README.md` for the
+field-by-field shape.
 
 ## Retries
 

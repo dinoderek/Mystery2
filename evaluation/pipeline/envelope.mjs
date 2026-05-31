@@ -1,7 +1,7 @@
 // Result envelope shape used for run output JSON.
 //
 // {
-//   schema_version: "0.2",
+//   schema_version: "0.3",
 //   run_id: string,
 //   started_at, ended_at: ISO 8601 strings,
 //   spec_dir: relative path to the spec directory,
@@ -30,8 +30,19 @@
 //     mechanical: { pass, fail },
 //     dimensions: { pass, fail, error, skipped },
 //     retries: { generate, judge_total }
-//   }
+//   },
+//   timing: {
+//     total_ms: number,            // monotonic wall-clock for the whole run
+//     clock: "monotonic",          // durations use performance.now()
+//     stages: [ { name, duration_ms, detail?, failed? } ],
+//     dimensions: [ { id, duration_ms, steps: [ { name, duration_ms, detail?, failed? } ] } ]
+//   } | null                       // null only if the run aborted before timing was attached
 // }
+//
+// Durations here are measured on a monotonic clock and are independent of the
+// per-attempt `duration_ms` fields under `generation`/`judge` (which stay on
+// Date.now()). A stage duration is the wall-clock of the whole stage including
+// retries, so it can exceed the sum of its attempts.
 
 export function buildEnvelope({
   runId,
@@ -43,6 +54,7 @@ export function buildEnvelope({
   mechanical,
   dimensions,
   runError = null,
+  timing = null,
 }) {
   const generateRetries = countExtraAttempts(generation?.attempts);
   const judgeTotalRetries = dimensions.reduce((acc, d) => {
@@ -67,7 +79,7 @@ export function buildEnvelope({
   };
 
   return {
-    schema_version: "0.2",
+    schema_version: "0.3",
     run_id: runId,
     started_at: startedAt,
     ended_at: endedAt,
@@ -78,6 +90,7 @@ export function buildEnvelope({
     dimensions,
     run_error: runError,
     summary,
+    timing,
   };
 }
 
@@ -99,7 +112,10 @@ export function combineDimension({ id, analyzer, judge, error }) {
       analyzer,
       judge,
       overall: "error",
-      error: { stage: "compose", message: "Dimension produced neither analyzer nor judge result." },
+      error: {
+        stage: "compose",
+        message: "Dimension produced neither analyzer nor judge result.",
+      },
     };
   }
   const considered = sub.filter((s) => s !== "skipped");

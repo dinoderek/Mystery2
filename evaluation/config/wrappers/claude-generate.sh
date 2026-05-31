@@ -12,32 +12,39 @@
 #            the pipeline's default extract_path ".result" works unchanged.
 #
 # Required env:
-#   EVAL_WORKSPACE_BASE_ID — the brief name; used for the workspace folder name.
-# Optional env:
-#   EVAL_RUN_DATE          — YYYY-MM-DD bucket for this run's workspaces.
-#                            Defaults to today (date +%F) when invoked directly.
+#   EVAL_RUN_DIR — this run's output directory (absolute). The generator
+#                  workspace is created at <EVAL_RUN_DIR>/generator/, so the
+#                  agent workspace lives alongside result.json/blueprint.json/
+#                  logs/ inside the one self-contained run directory.
+# Optional env (standalone fallback when invoked WITHOUT the pipeline):
+#   EVAL_WORKSPACE_BASE_ID — brief name used in the fallback run dir name.
 #
-# This wrapper creates a one-shot generator workspace under
-# ~/mysteryevals/<run-date>/generator-<brief>/, invokes the claude CLI inside
-# it as an agent, and reads the resulting ./blueprint.json back out. The folder
-# name is stable per brief, so a retry/re-run reuses (and resets) it.
+# This wrapper creates a one-shot generator workspace, invokes the claude CLI
+# inside it as an agent, and reads the resulting ./blueprint.json back out.
+# Nothing is ever deleted: a workspace collision branches to a -retry sibling,
+# so prior attempts (and their claude.stderr.log diagnostics) are preserved.
 
 set -euo pipefail
 
 USER_MESSAGE_FILE="${2:?missing user message file path}"
-: "${EVAL_WORKSPACE_BASE_ID:?EVAL_WORKSPACE_BASE_ID env var required}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-# Group all agent workspaces for one eval run under a dated root, and give the
-# generator a stable, readable per-brief folder name.
-EVAL_RUN_DATE="${EVAL_RUN_DATE:-$(date +%F)}"
-WORKSPACE_PARENT="$HOME/mysteryevals/${EVAL_RUN_DATE}"
-WORKSPACE="$WORKSPACE_PARENT/generator-${EVAL_WORKSPACE_BASE_ID}"
+# The pipeline passes EVAL_RUN_DIR (the run's output directory). When invoked
+# directly without the pipeline, fall back to a fresh standalone run dir under
+# the default output root so the wrapper is still usable on its own.
+if [[ -n "${EVAL_RUN_DIR:-}" ]]; then
+  RUN_DIR="$EVAL_RUN_DIR"
+else
+  RUN_DIR="${MYSTERYEVALS_DIR:-$HOME/mysteryevals}/$(date +%F)/$(date -u +%H-%M-%SZ)/run-${EVAL_WORKSPACE_BASE_ID:-standalone}"
+fi
+WORKSPACE="$RUN_DIR/generator"
 
-mkdir -p "$WORKSPACE_PARENT"
-# Stable name means a retry or same-day re-run reuses the path; clear any prior
-# attempt first (per-attempt logs are still captured under evaluation/runs/).
-rm -rf "$WORKSPACE"
+mkdir -p "$RUN_DIR"
+# Never delete: if the workspace already exists (e.g. a generate retry within
+# the same run), branch to a sibling so the prior attempt's diagnostics survive.
+if [[ -e "$WORKSPACE" ]]; then
+  WORKSPACE="${WORKSPACE}-retry-$(openssl rand -hex 3)"
+fi
 "$REPO_ROOT/evaluation/generator-harness/setup-workspace.sh" "$WORKSPACE" >&2
 
 # Write the brief into the workspace, pretty-printed when it is JSON.

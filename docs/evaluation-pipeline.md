@@ -166,12 +166,19 @@ This pattern matters for two reasons:
 
 ## Output envelope
 
-Every run writes `runs/<run_id>/`:
+Every run writes one self-contained output directory outside the repo
+(default `~/mysteryevals/<date>/<time>/run-<brief>/`, override with
+`--output-root` / `$MYSTERYEVALS_DIR`):
 
-- `blueprint.json` — the generated or supplied blueprint
 - `result.json` — the structured envelope (shape in `envelope.mjs`)
+- `blueprint.json` — the generated or supplied blueprint
 - `logs/` — per-step stdout/stderr and invocation metadata, including one
   log triple per retry attempt when retries are configured
+- `generator/` — the generator agent workspace (preserved)
+- `evaluators/<dimension>/` — each judge agent workspace (preserved)
+
+Each run gets its own `<date>/<time>/` subtree, so prior runs — including each
+agent's `claude.stderr.log` — are never overwritten or deleted.
 
 The envelope shape is version-tagged (`schema_version`). Top-level fields:
 `run_id`, `started_at`, `ended_at`, `spec_dir`, `blueprint_path`,
@@ -280,8 +287,9 @@ canonical reference.
 - **Judge self-consistency sampling.** Each dimension runs its judge once
   per attempt. Sampling the same judge multiple times and majority-voting
   is roadmap.
-- **Run storage and visualization.** Runs live on disk under `runs/`. A
-  storage layer and visualizer for run history is roadmap.
+- **Run storage and visualization.** Runs live on disk in per-run output
+  directories under the output root (default `~/mysteryevals/`). A storage
+  layer and visualizer for run history is roadmap.
 - **Action economy / time-to-solve.** Whether the mystery is solvable in
   reasonable wall-clock time at play time is not measured. Game-runtime
   concerns belong in a different harness.

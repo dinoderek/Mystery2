@@ -1,0 +1,15 @@
+{
+  "brief": "A floating market made of little boats, drifting stalls, and lantern bridges at night. The market is run entirely by children, and a thief has stolen the Magical Sapphire, a legendary gem that powers with magical energy the whole market. Without power the market can't function as it should... everything is darker than it should be, lit by candels, lanterns and makeshift fires. The great colored lights of the market lay dormant and shine only with dim reflected light",
+  "targetAge": 7,
+  "timeBudget": 50,
+  "titleHint": "The Thief of the Sunlit Gem",
+  "oneLinerHint": "When a precious gem disappears from a floating market run by children, the young detective must follow watery clues before trading ends.",
+  "artStyle": "Stained-glass fantasy with jewel tones, glowing reflections on water, luminous lanterns, and elegant shapes inspired by storybook windows.",
+  "culprits":1,
+  "suspects":2,
+  "witnesses":2,
+  "locations":4,
+  "redHerringTrails":1,
+  "coverUps":true,
+  "eliminationComplexity":"simple"
+}

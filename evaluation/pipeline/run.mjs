@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
@@ -22,13 +23,20 @@ import {
 } from "./load.mjs";
 
 function parseArgs(argv) {
-  const args = { spec: null, config: null, blueprint: null, runId: null };
+  const args = {
+    spec: null,
+    config: null,
+    blueprint: null,
+    runId: null,
+    outputRoot: null,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--spec") args.spec = argv[++i];
     else if (arg === "--config") args.config = argv[++i];
     else if (arg === "--blueprint") args.blueprint = argv[++i];
     else if (arg === "--run-id") args.runId = argv[++i];
+    else if (arg === "--output-root") args.outputRoot = argv[++i];
     else if (arg === "--help" || arg === "-h") args.help = true;
   }
   return args;
@@ -45,12 +53,19 @@ Options:
   --blueprint <file>     Skip the generate step and use this existing blueprint
                          JSON instead.
   --run-id <id>          Override the run id (default: timestamp-spec_slug).
+  --output-root <dir>    Root directory for run output (default: $MYSTERYEVALS_DIR
+                         or ~/mysteryevals). Each run gets its own self-contained
+                         output directory <root>/<date>/<time>/run-<brief>/ that
+                         holds ALL artifacts — result, blueprint, logs, and the
+                         generator/judge agent workspaces.
   -h, --help             Show this help.
 
-Outputs:
-  evaluation/runs/<run_id>/blueprint.json   (when generation succeeds)
-  evaluation/runs/<run_id>/result.json      (always written)
-  evaluation/runs/<run_id>/logs/*.{stdout,stderr,invocation}.{log,json}
+Output directory (<root>/<date>/<time>/run-<brief>/):
+  result.json                              the structured envelope (always written)
+  blueprint.json                           the generated or supplied blueprint
+  logs/*.{stdout,stderr,invocation}.{log,json}   per-step CLI logs
+  generator/                               generator agent workspace (preserved)
+  evaluators/<dimension>/                  each judge agent workspace (preserved)
 `;
 }
 
@@ -69,14 +84,26 @@ async function main() {
   const specSlug = path.basename(specDir);
   const runId =
     args.runId ?? `${startedAt.toISOString().replace(/[:.]/g, "-")}-${specSlug}`;
-  // Date bucket (UTC) for the external agent workspaces under ~/mysteryevals/.
+  // One self-contained output directory per run holds ALL artifacts (result,
+  // blueprint, logs, and the generator/judge agent workspaces). It lives
+  // OUTSIDE the repo by default so debug iterations don't churn git. Layout:
+  //   <outputRoot>/<date>/<time>/run-<brief>/
+  // where <date> and <time> are UTC tokens. Every run gets its own directory,
+  // so nothing from a prior run is ever overwritten or deleted.
   const runDate = startedAt.toISOString().slice(0, 10);
-  const runDir = path.join(root, "evaluation", "runs", runId);
+  const runStamp = startedAt.toISOString().slice(11, 19).replace(/:/g, "-") + "Z";
+  const outputRoot = path.resolve(
+    args.outputRoot ??
+      process.env.MYSTERYEVALS_DIR ??
+      path.join(os.homedir(), "mysteryevals"),
+  );
+  const runDir = path.join(outputRoot, runDate, runStamp, `run-${specSlug}`);
   const logDir = path.join(runDir, "logs");
   await fs.mkdir(logDir, { recursive: true });
 
   process.stdout.write(`[eval] run_id=${runId}\n`);
   process.stdout.write(`[eval] spec_dir=${path.relative(root, specDir)}\n`);
+  process.stdout.write(`[eval] output_dir=${runDir}\n`);
 
   const runState = {
     blueprintPath: null,
@@ -87,7 +114,7 @@ async function main() {
   };
 
   try {
-    await runPipeline({ args, root, specDir, runDir, logDir, runState, runDate });
+    await runPipeline({ args, root, specDir, runDir, logDir, runState });
   } catch (err) {
     runState.runError = {
       stage: err.runErrorStage ?? "unknown",
@@ -102,9 +129,7 @@ async function main() {
     startedAt: startedAt.toISOString(),
     endedAt: endedAt.toISOString(),
     specDir: path.relative(root, specDir),
-    blueprintPath: runState.blueprintPath
-      ? path.relative(root, runState.blueprintPath)
-      : null,
+    blueprintPath: runState.blueprintPath,
     generation: runState.generation,
     mechanical: runState.mechanical,
     dimensions: runState.dimensions,
@@ -114,7 +139,7 @@ async function main() {
   const resultPath = path.join(runDir, "result.json");
   await fs.writeFile(resultPath, JSON.stringify(envelope, null, 2));
 
-  process.stdout.write(`\n[eval] result: ${path.relative(root, resultPath)}\n`);
+  process.stdout.write(`\n[eval] result: ${resultPath}\n`);
   const dimTotal =
     envelope.summary.dimensions.pass +
     envelope.summary.dimensions.fail +
@@ -131,7 +156,7 @@ async function main() {
   if (runState.runError) process.exit(1);
 }
 
-async function runPipeline({ args, root, specDir, runDir, logDir, runState, runDate }) {
+async function runPipeline({ args, root, specDir, runDir, logDir, runState }) {
   const { brief } = await taggedStage("load_spec", () => loadSpec(specDir));
   const dimensions = await taggedStage("load_dimensions", () => loadDimensions());
 
@@ -182,11 +207,8 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState, runD
     // workspace. We still pass `chatInput.systemPrompt` so the contract with
     // any non-agent wrapper still works.
     //
-    // Pass the brief name (spec slug) and run date to the wrapper. The
-    // generator workspace is ~/mysteryevals/<run-date>/generator-<brief>/;
-    // a retry or same-day re-run reuses the path (the wrapper clears it first).
-    const workspaceBaseId = path.basename(specDir);
-    process.stdout.write(`[eval]   workspace_base=${workspaceBaseId}\n`);
+    // The wrapper builds its generator workspace at <EVAL_RUN_DIR>/generator/,
+    // keeping the agent workspace inside this run's output directory.
     const generateRetries = cliConfig.generate?.retries ?? 0;
     if (generateRetries > 0) {
       process.stdout.write(`[eval]   generate retries configured: ${generateRetries}\n`);
@@ -198,7 +220,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState, runD
       userMessage,
       logDir,
       retries: generateRetries,
-      env: { EVAL_WORKSPACE_BASE_ID: workspaceBaseId, EVAL_RUN_DATE: runDate },
+      env: { EVAL_RUN_DIR: runDir },
       validateExtracted: (extracted) => {
         let parsed;
         try {
@@ -282,7 +304,6 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState, runD
     `[eval] evaluating ${dimensions.length} dimension(s) in parallel\n`,
   );
 
-  const judgeWorkspaceBase = path.basename(specDir);
   runState.dimensions = await Promise.all(
     dimensions.map((dimRef) =>
       evaluateDimension({
@@ -293,8 +314,7 @@ async function runPipeline({ args, root, specDir, runDir, logDir, runState, runD
         judgeSystemBase,
         judgeStep,
         logDir,
-        judgeWorkspaceBase,
-        runDate,
+        runDir,
       }),
     ),
   );
@@ -308,8 +328,7 @@ async function evaluateDimension({
   judgeSystemBase,
   judgeStep,
   logDir,
-  judgeWorkspaceBase,
-  runDate,
+  runDir,
 }) {
   const dimId = dimRef.id;
   const tag = `[eval][${dimId}]`;
@@ -375,8 +394,7 @@ async function evaluateDimension({
           schema: dim.schema,
           env: {
             EVAL_DIMENSION_ID: dimId,
-            EVAL_WORKSPACE_BASE_ID: judgeWorkspaceBase,
-            EVAL_RUN_DATE: runDate,
+            EVAL_RUN_DIR: runDir,
           },
         });
         if (judgeOutcome.ok) {

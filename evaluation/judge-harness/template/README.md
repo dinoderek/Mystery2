@@ -2,8 +2,9 @@
 
 A one-shot workspace created by the evaluation pipeline to run a Claude
 agent as a single-dimension judge. Each `evaluateDimension` call produces a
-workspace under `~/mysteryevals/<run-date>/evaluators-<brief>/<dimension>/`.
-All dimensions for a brief share the `evaluators-<brief>` parent.
+workspace under `~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>/<dimension>/`.
+All dimensions for one run share the `evaluators-<brief>` parent, and every run
+gets its own `<run-stamp>` subtree, so prior runs are never overwritten.
 
 ## Layout
 
@@ -43,7 +44,7 @@ All dimensions for a brief share the `evaluators-<brief>` parent.
 Workspaces accumulate. Prune with:
 
 ```
-rm -rf ~/mysteryevals/<run-date>/evaluators-<brief>          # one brief's evaluators
-rm -rf ~/mysteryevals/<run-date>/evaluators-<brief>/<dim>    # one dimension
-rm -rf ~/mysteryevals/<run-date>/                            # one run
+rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>        # one run's evaluators
+rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>/<dim>  # one dimension
+rm -rf ~/mysteryevals/<run-date>/<run-stamp>/                          # one run
 ```

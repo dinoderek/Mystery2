@@ -1,7 +1,7 @@
 # Mystery blueprint evaluation pipeline
 
 A walking-skeleton pipeline for evaluating Blueprint V2 generation against
-an authored input spec and an authored outcome spec.
+an authored input brief, using a central, story-agnostic dimension battery.
 
 **Status:** spec 001 (Lighthouse Lens), Tier 1 dimensions only.
 
@@ -10,9 +10,12 @@ an authored input spec and an authored outcome spec.
 Given:
 
 - An **input brief** (`specs/<id>/input.brief.json`) — a `story_brief` of the
-  same shape the production generator consumes.
-- An **outcome spec** (`specs/<id>/outcome.spec.json`) — the list of quality
-  dimensions to evaluate beyond the always-on mechanical checks.
+  same shape the production generator consumes. A spec directory contains only
+  this file.
+- The **standard dimension battery** (`dimensions/registry.json`) — the
+  quality dimensions evaluated on every blueprint beyond the always-on
+  mechanical checks, plus their default context (e.g. character-grounding
+  probe topics). Central, not per-mystery.
 
 The pipeline:
 
@@ -21,11 +24,13 @@ The pipeline:
    `--blueprint <path>`.
 2. Runs always-on **mechanical** checks (schema, brief-derived counts,
    `mustInclude`, cover-ups, orphan clues).
-3. For each dimension in the outcome spec, runs the **analyzer** (cheap
+3. For each dimension in the registry, runs the **analyzer** (cheap
    deterministic code) and then the **judge** (shells out to the LLM CLI's
    `judge` step) and combines them into a per-dimension verdict.
-4. Writes a single structured result envelope (`runs/<run_id>/result.json`)
-   plus the generated blueprint and per-step CLI logs.
+4. Writes everything for the run into one self-contained output directory
+   outside the repo (default `~/mysteryevals/<date>/<time>/run-<brief>/`): the
+   `result.json` envelope, the generated `blueprint.json`, per-step CLI `logs/`,
+   and the `generator/` + `evaluators/<dimension>/` agent workspaces.
 
 ## Quick start
 
@@ -48,11 +53,11 @@ npm run eval -- \
 
 ```
 evaluation/
-├── specs/                  # one directory per input brief + outcome spec
+├── specs/                  # one directory per input brief (brief only)
 │   └── 001-lighthouse-lens/
-│       ├── input.brief.json
-│       └── outcome.spec.json
+│       └── input.brief.json
 ├── dimensions/             # one .md per quality dimension (the judge prompt)
+│   └── registry.json       # the standard battery + default per-dimension context
 ├── prompts/                # shared prompt fragments
 │   └── judge-system.md
 ├── checks/
@@ -66,7 +71,27 @@ evaluation/
 ├── config/
 │   ├── cli.example.json    # template — copy to cli.json
 │   └── wrappers/           # bundled default CLI wrappers
-└── runs/                   # gitignored; one directory per run
+└── (no runs/ — output goes outside the repo, see below)
+```
+
+## Output directory
+
+Every run writes one self-contained directory **outside the repo** so debug
+iterations don't churn git. Default root is `$MYSTERYEVALS_DIR` or
+`~/mysteryevals`; override with `--output-root <dir>`.
+
+```
+<root>/<date>/<time>/run-<brief>/
+├── result.json                 the structured envelope (always written)
+├── blueprint.json              the generated or supplied blueprint
+├── logs/                       per-step CLI stdout/stderr/invocation
+├── generator/                  generator agent workspace (preserved)
+└── evaluators/<dimension>/     each judge agent workspace (preserved)
+```
+
+Each run gets its own `<date>/<time>/` subtree, so prior runs are never
+overwritten or deleted — including each agent's `claude.stderr.log`, which makes
+failures debuggable after the fact.
 ```
 
 ## Pluggable CLI
@@ -129,7 +154,7 @@ etc. When `retries: 0` (the default) the original filenames are kept
 
 Three result kinds, one envelope.
 
-- **Mechanical** — runs on every blueprint regardless of outcome spec.
+- **Mechanical** — runs on every blueprint regardless of the dimension set.
   Failure means the artifact is broken (schema invalid, brief counts wrong,
   orphan clues, etc.).
 - **Analyzer** — deterministic code per dimension. Cheap. Runs first, in
@@ -151,9 +176,8 @@ only a judge is configured and it passes, that's a pass.
 1. **Solvability** — judge only.
 2. **Fairness / convergence** — judge only.
 3. **Internal coherence** — judge only.
-4. **Character grounding (anti-hallucination)** — judge + optional
-   context-driven analyzer (skipped unless the outcome spec supplies
-   `min_chars` / `min_flavor_items`).
+4. **Character grounding (anti-hallucination)** — judge only. Its probe-topic
+   baseline comes from `dimensions/registry.json`.
 
 Analyzers exist only where they add signal not already encoded in
 `BlueprintV2Schema.superRefine`. If a structural rule should always hold,
@@ -188,7 +212,7 @@ edit it to change how the judge frames itself across dimensions.
   "started_at": "...",
   "ended_at": "...",
   "spec_dir": "evaluation/specs/001-lighthouse-lens",
-  "blueprint_path": "evaluation/runs/.../blueprint.json",
+  "blueprint_path": "/Users/you/mysteryevals/<date>/<time>/run-<brief>/blueprint.json",
   "generation": { "skipped": false, "source": "cli", "duration_ms": 42000, "cmd": "..." },
   "mechanical": [
     { "id": "schema_valid", "kind": "mechanical", "status": "pass", "details": null }
@@ -208,6 +232,113 @@ edit it to change how the judge frames itself across dimensions.
 }
 ```
 
+<<<<<<< HEAD
+=======
+## Running under Claude Code (web)
+
+In Claude Code on the web there is no shell access to external LLM CLIs, but
+the in-session assistant can dispatch subagents and read/write files. The
+pipeline still shells out to a `cmd` per `config/cli.json` — we just point
+that `cmd` at a wrapper that talks to the assistant via a file bus instead
+of an external process.
+
+```
+pipeline ──spawn──► node file-bus.mjs ──write──► evaluation/agent-bus/inbox/<id>/
+                          │                              │
+                          │                              ▼
+                          │                       dispatcher (the session
+                          │                       assistant) reads the
+                          │                       request, runs a subagent,
+                          │                       writes the reply
+                          │                              │
+                          └◄──poll──── evaluation/agent-bus/outbox/<id>.json
+```
+
+### One-time setup
+
+```bash
+cp evaluation/config/cli.claude-code.example.json evaluation/config/cli.json
+```
+
+This points both `generate` and `judge` at
+`evaluation/config/wrappers/file-bus.mjs`. Timeouts and retries are
+unchanged from the default config.
+
+### Running an eval
+
+1. Start the pipeline in a background bash:
+   `npm run eval -- --spec evaluation/specs/001-lighthouse-lens`
+2. Ask the session assistant to "process the agent bus." The assistant
+   polls `evaluation/agent-bus/inbox/` and for each new request `<id>/`:
+   - reads `system.txt` and `user.txt`,
+   - dispatches a `general-purpose` subagent with the system prompt and
+     user message verbatim, instructed to:
+     - produce only the JSON object the prompt asks for,
+     - **self-validate via `node evaluation/pipeline/validate.mjs <schema>
+       <candidate.json>` before submitting**, iterating until the
+       validator returns `OK` (max ~6 iterations),
+     - report success based on the outbox write returning cleanly — do
+       not re-inspect the inbox after writing (the wrapper cleans up
+       immediately on consume, so a post-write `ls` will look empty),
+   - writes `evaluation/agent-bus/outbox/<id>.json` as
+     `{ "result": "<subagent reply>" }`.
+3. The wrapper picks up the response and prints it to stdout; the
+   pipeline continues exactly as if a CLI had answered.
+4. The assistant's loop terminates when the inbox has been empty for
+   >30s and `pgrep -f 'evaluation/pipeline/run.mjs'` returns nothing.
+
+### File bus contract
+
+| Path | Shape | Producer |
+|------|-------|----------|
+| `agent-bus/inbox/<id>/system.txt` | system prompt verbatim | wrapper |
+| `agent-bus/inbox/<id>/user.txt`   | user message verbatim  | wrapper |
+| `agent-bus/inbox/<id>/request.json` | `{ id, step, system_path, user_path, created_at, deadline_at, pipeline_timeout_ms }` | wrapper |
+| `agent-bus/outbox/<id>.json`       | `{ "result": "<text>" }` — `result` is the model output as a string | dispatcher |
+| `agent-bus/outbox/<id>.error.json` | `{ "error": "<message>" }` — surfaces a dispatcher-side failure to the pipeline (triggers a retry per `cli.json`) | dispatcher |
+
+`<id>` is `<step>-<utc-timestamp>-<uuid8>` (e.g.
+`judge-20260521T101530-9f3ab12c`). The step prefix makes the inbox easy to
+scan when debugging.
+
+The wrapper cleans up its own inbox/outbox files on exit, so a successful
+run leaves `evaluation/agent-bus/` empty. The directory is gitignored.
+
+### Self-validation
+
+The dispatcher subagent is required to validate its candidate output
+against the relevant Zod schema before writing the outbox. The same
+schemas the pipeline imports are exposed via a CLI:
+
+```bash
+node evaluation/pipeline/validate.mjs <schema> <candidate.json>
+```
+
+Schemas: `blueprint` (full Blueprint V2), `solvability`, `fairness`,
+`coherence`, `character_grounding`. On success prints `OK` and exits 0;
+on failure prints `{ "ok": false, "issues": [{ path, code, message,
+expected, received }, …] }` to stdout and exits 1. The issues array is
+flat and path-keyed for easy machine consumption by the agent.
+
+This catches schema violations *before* the pipeline does, so the agent
+can self-correct and the run exercises the judges instead of bailing at
+the mechanical check.
+
+### Timeouts
+
+The wrapper exits 15s before the pipeline's configured `timeout_ms` so the
+pipeline gets a usable stderr instead of a generic SIGKILL message. Tune
+`timeout_ms` (and the matching positional arg in `args`) in `cli.json` if
+the assistant needs more time per request.
+
+### Retries
+
+`retries` semantics are identical to CLI mode: a dispatcher error
+(`<id>.error.json`) or a wrapper timeout exits non-zero, and
+`runCliWithRetries` retries up to `retries` more times. Each attempt gets
+its own request id and its own log files under the run's `logs/` directory.
+
+>>>>>>> 2f615d9 (eval: unify all run output into one external output directory)
 ## What's next
 
 - Storage and visualizer for run history.

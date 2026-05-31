@@ -1,0 +1,21 @@
+{
+  "brief": "The mountain train stops at Snow Foxes Village. The world is populated by humanoid animals including snow foxes, foxes, wolves, and bunnies, and there is simmering distrust between the different groups that complicates the case. Someone has stolen Howard Roundtail's precious briefcase.",
+  "targetAge": 7,
+  "timeBudget": 50,
+  "titleHint": "Howard Roundtail and the Snowline Briefcase",
+  "oneLinerHint": "At Snow Foxes Village, a stolen briefcase on a mountain train turns old suspicions into a knotty mystery the young detective must patiently unravel.",
+  "artStyle": "Woodland sketchbook with pencil lines, nature-note details, soft winter textures, and expressive animal characters bundled against the cold.",
+  "mustInclude": [
+    "woodland sketchbook visual language",
+    "a mountain train and a stop at Snow Foxes Village",
+    "humanoid foxes, bears, and bunnies",
+    "Howard Roundtail's briefcase is precious for a meaningful reason",
+    "the story should explore distrust between groups without becoming harsh or frightening"
+  ],
+  "culprits":1,
+  "suspects":3,
+  "witnesses":3,
+  "locations":5,
+  "redHerringTrails":2,
+  "coverUps":true
+}

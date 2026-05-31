@@ -1,0 +1,22 @@
+{
+  "_comment": "The standard evaluation battery: the dimensions run on every blueprint and their default context. Central and story-agnostic — this replaces the per-mystery outcome.spec.json dimension lists, so a spec directory now contains only input.brief.json. Per-mystery overrides are intentionally not supported at this stage.",
+  "dimensions": [
+    { "id": "solvability" },
+    { "id": "fairness" },
+    { "id": "coherence" },
+    {
+      "id": "character_grounding",
+      "context": {
+        "probe_topics": [
+          "their own background and a brief sketch of their life",
+          "their likes and dislikes",
+          "their personality, attitude, and appearance",
+          "their knowledge of the other characters",
+          "their knowledge of the locations",
+          "their knowledge of the central mystery"
+        ]
+      }
+    },
+    { "id": "path_payoff" }
+  ]
+}

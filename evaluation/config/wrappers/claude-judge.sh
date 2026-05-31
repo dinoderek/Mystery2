@@ -12,37 +12,47 @@
 #            extract_path ".result" works unchanged.
 #
 # Required env:
-#   EVAL_DIMENSION_ID      — which dimension to judge
-#                            (solvability | fairness | coherence |
-#                             character_grounding | path_payoff)
-#   EVAL_WORKSPACE_BASE_ID — the brief name; used for the evaluators folder name.
-# Optional env:
-#   EVAL_RUN_DATE          — YYYY-MM-DD bucket for this run's workspaces.
-#                            Defaults to today (date +%F) when invoked directly.
+#   EVAL_DIMENSION_ID — which dimension to judge
+#                       (solvability | fairness | coherence |
+#                        character_grounding | path_payoff)
+#   EVAL_RUN_DIR      — this run's output directory (absolute). The judge
+#                       workspace is created at
+#                       <EVAL_RUN_DIR>/evaluators/<dimension>/, alongside the
+#                       result/blueprint/logs and the generator workspace, all
+#                       inside the one self-contained run directory.
+# Optional env (standalone fallback when invoked WITHOUT the pipeline):
+#   EVAL_WORKSPACE_BASE_ID — brief name used in the fallback run dir name.
 #
-# This wrapper creates a one-shot judge workspace under
-# ~/mysteryevals/<run-date>/evaluators-<brief>/<dimension>/, invokes the claude
-# CLI inside it as an agent, and reads the resulting ./verdict.json back out.
-# All dimensions for a brief share the evaluators-<brief> parent; each folder is
-# stable, so a retry reuses (and resets) it.
+# This wrapper creates a one-shot judge workspace, invokes the claude CLI inside
+# it as an agent, and reads the resulting ./verdict.json back out. Nothing is
+# ever deleted: a workspace collision branches to a -retry sibling, so prior
+# attempts (and their claude.stderr.log diagnostics) are preserved. Sibling
+# dimensions are untouched regardless.
 
 set -euo pipefail
 
 USER_MESSAGE_FILE="${2:?missing user message file path}"
 : "${EVAL_DIMENSION_ID:?EVAL_DIMENSION_ID env var required}"
-: "${EVAL_WORKSPACE_BASE_ID:?EVAL_WORKSPACE_BASE_ID env var required}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-# All evaluators for one brief live under a single evaluators-<brief> folder
-# (inside the dated run root), one subfolder per dimension.
-EVAL_RUN_DATE="${EVAL_RUN_DATE:-$(date +%F)}"
-WORKSPACE_PARENT="$HOME/mysteryevals/${EVAL_RUN_DATE}/evaluators-${EVAL_WORKSPACE_BASE_ID}"
+# The pipeline passes EVAL_RUN_DIR (the run's output directory). When invoked
+# directly without the pipeline, fall back to a fresh standalone run dir under
+# the default output root so the wrapper is still usable on its own.
+if [[ -n "${EVAL_RUN_DIR:-}" ]]; then
+  RUN_DIR="$EVAL_RUN_DIR"
+else
+  RUN_DIR="${MYSTERYEVALS_DIR:-$HOME/mysteryevals}/$(date +%F)/$(date -u +%H-%M-%SZ)/run-${EVAL_WORKSPACE_BASE_ID:-standalone}"
+fi
+WORKSPACE_PARENT="$RUN_DIR/evaluators"
 WORKSPACE="$WORKSPACE_PARENT/${EVAL_DIMENSION_ID}"
 
 mkdir -p "$WORKSPACE_PARENT"
-# Stable name per dimension; clear any prior attempt first (per-attempt logs are
-# still captured under evaluation/runs/). Sibling dimensions are untouched.
-rm -rf "$WORKSPACE"
+# Never delete: if the dimension workspace already exists (e.g. a judge retry
+# within the same run), branch to a sibling so the prior attempt's diagnostics
+# survive. Sibling dimensions are untouched regardless.
+if [[ -e "$WORKSPACE" ]]; then
+  WORKSPACE="${WORKSPACE}-retry-$(openssl rand -hex 3)"
+fi
 "$REPO_ROOT/evaluation/judge-harness/setup-workspace.sh" \
   "$WORKSPACE" "$EVAL_DIMENSION_ID" >&2
 

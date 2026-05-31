@@ -293,17 +293,3 @@ canonical reference.
 - **Action economy / time-to-solve.** Whether the mystery is solvable in
   reasonable wall-clock time at play time is not measured. Game-runtime
   concerns belong in a different harness.
-
-## Roadmap
-
-1. ~~Drop `outcome.spec.json`; move dimension defaults into a central
-   registry.~~ **Done** — `evaluation/dimensions/registry.json`.
-2. ~~Tighten character_grounding's baseline probe coverage.~~ **Done** — a
-   six-topic generic baseline in the registry.
-3. Rename / restructure `red_herrings` with an explicit payoff contract.
-4. Migrate `generate-blueprint.mjs` verification to the new pipeline; delete
-   the old evaluator.
-5. Add Tier 2 dimensions (clue economy, red-herring quality, cover-up
-   quality, narrative economy).
-6. K-run aggregation and judge self-consistency sampling.
-7. Run storage + visualizer.

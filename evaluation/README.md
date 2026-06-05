@@ -173,11 +173,13 @@ only a judge is configured and it passes, that's a pass.
 
 ## Tier 1 dimensions (current scope)
 
-1. **Solve depth** — judge only. Supersedes the old solvability check: it
-   confirms the mystery is solvable *and* that the shortest solve route needs
-   at least `min_clues` distinct clues, so a single near-spoiler clue fails it.
-   Its floor comes from `solve_depth.context.min_clues` in
-   `dimensions/registry.json`.
+1. **Solve depth** — judge only. Supersedes the old solvability check. Confirms
+   the mystery is solvable; that the shortest route to the culprit needs at least
+   `minPathLength` distinct *necessary* clues (so a single near-spoiler clue
+   fails it); and that every suspect has an elimination path (each path's length
+   is **measured** but only the culprit path is floored). The floor is sourced
+   `story_brief.minPathLength` → `solve_depth.context.min_clues` (in
+   `dimensions/registry.json`) → 3.
 2. **Fairness / convergence** — judge only.
 3. **Timeline coherence** — judge only. Around the crime, checks that the
    culprit's `actual_actions` produce `ground_truth.what_happened` and that each

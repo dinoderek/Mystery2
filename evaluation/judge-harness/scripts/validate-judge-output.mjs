@@ -77,13 +77,28 @@ function collectClueIds(blueprint) {
 
 function semanticChecksSolveDepth(verdict, blueprint) {
   const issues = [];
-  const validIds = new Set((blueprint.solution_paths ?? []).map((p) => p.id));
+  const solutionIds = new Set(
+    (blueprint.solution_paths ?? []).map((p) => p.id),
+  );
+  const elimIds = new Set(
+    (blueprint.suspect_elimination_paths ?? []).map((p) => p.id),
+  );
   const clueIds = collectClueIds(blueprint);
+  const charIds = new Set(
+    (blueprint.world?.characters ?? []).map((c) => c.id),
+  );
+  const culpritIds = new Set(
+    (blueprint.world?.characters ?? [])
+      .filter((c) => c.is_culprit)
+      .map((c) => c.id),
+  );
+
+  // Solution paths: cover all, valid ids, real clue refs.
   const seen = new Set();
   for (const p of verdict.paths ?? []) {
-    if (!validIds.has(p.id)) {
+    if (!solutionIds.has(p.id)) {
       issues.push(
-        `paths[].id "${p.id}" does not match any blueprint.solution_paths[].id (valid: ${[...validIds].join(", ") || "(none)"})`,
+        `paths[].id "${p.id}" does not match any blueprint.solution_paths[].id (valid: ${[...solutionIds].join(", ") || "(none)"})`,
       );
     }
     if (seen.has(p.id)) issues.push(`paths[].id "${p.id}" appears more than once`);
@@ -96,19 +111,59 @@ function semanticChecksSolveDepth(verdict, blueprint) {
       }
     }
   }
-  for (const id of validIds) {
+  for (const id of solutionIds) {
     if (!seen.has(id)) {
       issues.push(`paths is missing an entry for blueprint solution_path "${id}"`);
     }
   }
-  if (
-    verdict.shortest_path_id != null &&
-    !seen.has(verdict.shortest_path_id)
-  ) {
+  if (verdict.shortest_path_id != null && !seen.has(verdict.shortest_path_id)) {
     issues.push(
       `shortest_path_id "${verdict.shortest_path_id}" is not one of the enumerated paths[].id`,
     );
   }
+
+  // Elimination paths: cover all authored, valid ids, real suspect + clue refs.
+  const seenElim = new Set();
+  for (const e of verdict.elimination_paths ?? []) {
+    if (!elimIds.has(e.id)) {
+      issues.push(
+        `elimination_paths[].id "${e.id}" does not match any blueprint.suspect_elimination_paths[].id (valid: ${[...elimIds].join(", ") || "(none)"})`,
+      );
+    }
+    if (seenElim.has(e.id)) {
+      issues.push(`elimination_paths[].id "${e.id}" appears more than once`);
+    }
+    seenElim.add(e.id);
+    if (e.suspect_id && !charIds.has(e.suspect_id)) {
+      issues.push(
+        `elimination_paths "${e.id}" suspect_id "${e.suspect_id}" is not a real character id`,
+      );
+    }
+    for (const clueId of e.necessary_clues ?? []) {
+      if (!clueIds.has(clueId)) {
+        issues.push(
+          `elimination_paths "${e.id}" necessary_clues references unknown clue id "${clueId}"`,
+        );
+      }
+    }
+  }
+  for (const id of elimIds) {
+    if (!seenElim.has(id)) {
+      issues.push(
+        `elimination_paths is missing an entry for blueprint suspect_elimination_path "${id}"`,
+      );
+    }
+  }
+
+  // uncovered_suspects: real, non-culprit character ids.
+  for (const id of verdict.uncovered_suspects ?? []) {
+    if (!charIds.has(id)) {
+      issues.push(`uncovered_suspects "${id}" is not a real character id`);
+    } else if (culpritIds.has(id)) {
+      issues.push(`uncovered_suspects "${id}" is the culprit, not a suspect`);
+    }
+  }
+
   return issues;
 }
 

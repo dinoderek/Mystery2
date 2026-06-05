@@ -146,7 +146,7 @@ Per-attempt diagnostics are written to the envelope:
   the extra attempts used.
 
 When a step has `retries > 0`, each attempt gets its own log files:
-`generate.attempt-1.stdout.log`, `judge-solvability.attempt-2.stderr.log`,
+`generate.attempt-1.stdout.log`, `judge-solve_depth.attempt-2.stderr.log`,
 etc. When `retries: 0` (the default) the original filenames are kept
 (`generate.stdout.log`).
 
@@ -173,10 +173,23 @@ only a judge is configured and it passes, that's a pass.
 
 ## Tier 1 dimensions (current scope)
 
-1. **Solvability** — judge only.
+1. **Solve depth** — judge only. Supersedes the old solvability check: it
+   confirms the mystery is solvable *and* that the shortest solve route needs
+   at least `min_clues` distinct clues, so a single near-spoiler clue fails it.
+   Its floor comes from `solve_depth.context.min_clues` in
+   `dimensions/registry.json`.
 2. **Fairness / convergence** — judge only.
-3. **Internal coherence** — judge only.
-4. **Character grounding (anti-hallucination)** — judge only. Its probe-topic
+3. **Timeline coherence** — judge only. Around the crime, checks that the
+   culprit's `actual_actions` produce `ground_truth.what_happened` and that each
+   suspect's position is consistent with the clues that clear or implicate them.
+   `actual_actions` are authoritative; the prose `ground_truth.timeline` is a
+   non-binding summary (so the judge no longer fails on its sentence ordering).
+4. **Knowledge coherence** — judge only. Observability (can each character know
+   the clues they reveal?) plus deception integrity — a falsehood is fine when
+   it's an *authored, intended* lie (false `stated_alibi` + `self_protect`,
+   `implicate_other`, etc.) and a bug when it's an accidental contradiction
+   asserted as truth.
+5. **Character grounding (anti-hallucination)** — judge only. Its probe-topic
    baseline comes from `dimensions/registry.json`.
 
 Analyzers exist only where they add signal not already encoded in
@@ -184,8 +197,9 @@ Analyzers exist only where they add signal not already encoded in
 the right home is the schema, not an evaluation analyzer.
 
 Tiers 2 and 3 (clue economy, red-herring quality, cover-up quality, narrative
-economy, resolution, path independence, challenge, interest, hook, tone)
-are not yet in scope.
+economy, resolution, path independence, interest, hook, tone) are not yet in
+scope. The minimum-path-length aspect of challenge now lives in **solve
+depth**; broader challenge tuning remains future work.
 
 ## Iterating the evaluator
 
@@ -219,7 +233,7 @@ edit it to change how the judge frames itself across dimensions.
   ],
   "dimensions": [
     {
-      "id": "solvability",
+      "id": "solve_depth",
       "analyzer": { "status": "pass", "details": { ... }, "kind": "analyzer" },
       "judge": { "status": "pass", "reasoning": "...", "raw": { ... }, "kind": "judge" },
       "overall": "pass"
@@ -243,7 +257,7 @@ edit it to change how the judge frames itself across dimensions.
     ],
     "dimensions": [
       {
-        "id": "solvability",
+        "id": "solve_depth",
         "duration_ms": 47800,
         "steps": [
           { "name": "compose_prompt", "duration_ms": 18 },

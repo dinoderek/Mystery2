@@ -13,8 +13,8 @@
 #
 # Required env:
 #   EVAL_DIMENSION_ID — which dimension to judge
-#                       (solvability | fairness | coherence |
-#                        character_grounding | path_payoff)
+#                       (solve_depth | fairness | timeline_coherence |
+#                        knowledge_coherence | character_grounding | path_payoff)
 #   EVAL_RUN_DIR      — this run's output directory (absolute). The judge
 #                       workspace is created at
 #                       <EVAL_RUN_DIR>/evaluators/<dimension>/, alongside the

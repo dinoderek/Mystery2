@@ -8,7 +8,8 @@ passes.
 ## Files in this workspace
 
 - `./dimension-id` — single-line text file naming the dimension you are
-  judging (e.g. `solvability`, `fairness`, `coherence`, `character_grounding`).
+  judging (e.g. `solve_depth`, `fairness`, `timeline_coherence`,
+  `knowledge_coherence`, `character_grounding`).
 - `./dimension.md` — the dimension definition: what's being asked, how to
   judge it, and the required output shape. **Read first.**
 - `./brief.json` — the story brief that was given to the generator.
@@ -64,8 +65,10 @@ Validator exit code 0. Nothing else counts.
   text. Cover every character in `blueprint.world.characters`.
 - **For `fairness`:** cover every non-culprit character in
   `blueprint.world.characters`. The validator rejects partial coverage.
-- **For `solvability`:** include one `paths[]` entry per
-  `blueprint.solution_paths[]` entry, with the matching `id`.
+- **For `solve_depth`:** include one `paths[]` entry per
+  `blueprint.solution_paths[]` entry, with the matching `id`. Every clue id in
+  `necessary_clues` must be a real blueprint clue, and `shortest_path_id` must
+  be one of those path ids (or `null`).
 - **Be terse in `reasoning` fields.** Bullet-equivalent prose. Long
   explanations dilute signal.
 - **No markdown code fences** in `verdict.json`. The file must be a single

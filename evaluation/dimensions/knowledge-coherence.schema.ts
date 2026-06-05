@@ -3,7 +3,7 @@ import { z } from "zod";
 export const schema = z.object({
   issues: z.array(
     z.object({
-      kind: z.enum(["timeline", "knowledge", "geography"]),
+      kind: z.enum(["observability", "false_knowledge"]),
       subject: z.string(),
       description: z.string(),
     }),

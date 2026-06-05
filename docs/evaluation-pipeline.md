@@ -68,10 +68,10 @@ Two reasons, both empirical from iterating on the old single-prompt evaluator:
 - **Parallelism.** Dimensions are independent. Running four 30s judges in
   parallel is 30s of wall-clock; running one 2-minute mega-judge is 2 minutes.
 - **Iteration isolation.** Editing the fairness prompt cannot regress
-  solvability scores. Each dimension's prompt, output schema, and analyzer
+  solve_depth scores. Each dimension's prompt, output schema, and analyzer
   evolve on their own clock.
-- **Targeted retries.** A schema-validation failure on the coherence judge
-  retries only the coherence judge, not the entire evaluation.
+- **Targeted retries.** A schema-validation failure on the knowledge_coherence
+  judge retries only that judge, not the entire evaluation.
 
 ### Combining results
 
@@ -93,11 +93,13 @@ single overall pass/fail flag — consumers decide what counts as ship-ready.
 
 ```
 load spec ──► generate blueprint ──► mechanical checks ──► dimensions
-                                                            ├─ solvability     (judge)
-                                                            ├─ fairness        (judge)
-                                                            ├─ coherence       (judge)
-                                                            └─ character_grounding (judge)
-                                                            // all four in parallel
+                                                            ├─ solve_depth         (judge)
+                                                            ├─ fairness            (judge)
+                                                            ├─ timeline_coherence  (judge)
+                                                            ├─ knowledge_coherence (judge)
+                                                            ├─ character_grounding (judge)
+                                                            └─ path_payoff         (judge)
+                                                            // all in parallel
 ```
 
 1. **Load spec.** Reads `input.brief.json`. The dimension set + context comes
@@ -212,14 +214,16 @@ systematic bug.
 
 ## Dimensions
 
-Today's set (all Tier 1):
+Today's enabled set (`evaluation/dimensions/registry.json`):
 
 | ID                  | Question                                                                                                    | Analyzer? |
 |---------------------|-------------------------------------------------------------------------------------------------------------|-----------|
-| `solvability`       | Does at least one `solution_path` entail the culprit and `ground_truth.what_happened`?                      | No        |
+| `solve_depth`       | Is the case solvable, and does the **shortest** solve route need at least `min_clues` distinct clues? (Supersedes `solvability` — also catches near-spoiler single clues.) | No        |
 | `fairness`          | Does the evidence **uniquely** point at the culprit? (No non-culprit is equally well supported.)            | No        |
-| `coherence`         | Are timeline, character knowledge, and geography internally consistent?                                     | No        |
+| `timeline_coherence`  | Around the crime, do characters' `actual_actions` produce `what_happened` and place each suspect consistently with the clues that clear/implicate them? (`actual_actions` are authoritative; the prose `ground_truth.timeline` is a non-binding summary.) | No        |
+| `knowledge_coherence` | Can each character know the clues they reveal (observability), and is every falsehood an *authored, intended* lie rather than an accidental contradiction (deception integrity)? | No        |
 | `character_grounding` | Does each character have enough authored material that the runtime narrator won't need to fabricate?      | No        |
+| `path_payoff`       | Does **every** authored path (solution, red herring, elimination) give the player a concrete payoff?        | No        |
 
 The dimensions are an active work-in-progress. Expected near-term changes:
 
@@ -235,8 +239,9 @@ The dimensions are an active work-in-progress. Expected near-term changes:
   the "reward" for solving a false lead explicit in the schema (eliminates
   suspect X / unlocks clue Y / disproves false lead Z).
 - Tier 2/3 dimensions (clue economy, red-herring quality, cover-up quality,
-  narrative economy, resolution, path independence, challenge, interest,
-  hook, tone) are intended but not yet in scope.
+  narrative economy, resolution, path independence, interest, hook, tone) are
+  intended but not yet in scope. The minimum-path-length aspect of challenge is
+  now covered by `solve_depth`; broader challenge tuning is still future work.
 
 ### Adding a dimension
 

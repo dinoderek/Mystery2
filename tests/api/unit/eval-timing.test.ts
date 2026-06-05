@@ -94,27 +94,27 @@ describe("createRunTimer dimensions", () => {
   it("records per-dimension sub-steps and sorts dimensions by id", async () => {
     const timer = createRunTimer();
 
-    const solvability = timer.dimension("solvability");
-    await solvability.step("load_definition", async () => null);
-    await solvability.step(
+    const solveDepth = timer.dimension("solve_depth");
+    await solveDepth.step("load_definition", async () => null);
+    await solveDepth.step(
       "judge",
       async () => ({ attempts: [1] }),
       (outcome: { attempts: unknown[] }) => ({
         attempts: outcome.attempts.length,
       }),
     );
-    solvability.finalize();
+    solveDepth.finalize();
 
-    const coherence = timer.dimension("coherence");
-    coherence.finalize();
+    const knowledgeCoherence = timer.dimension("knowledge_coherence");
+    knowledgeCoherence.finalize();
 
     const timing = timer.summarize();
     expect(timing.dimensions.map((d: { id: string }) => d.id)).toEqual([
-      "coherence",
-      "solvability",
+      "knowledge_coherence",
+      "solve_depth",
     ]);
     const dim = timing.dimensions.find(
-      (d: { id: string }) => d.id === "solvability",
+      (d: { id: string }) => d.id === "solve_depth",
     );
     expect(dim.steps.map((s: { name: string }) => s.name)).toEqual([
       "load_definition",
@@ -137,14 +137,14 @@ describe("formatTimingSummary", () => {
   it("includes the total, stage names, and dimension steps", async () => {
     const timer = createRunTimer();
     await timer.stage("load_spec", async () => null);
-    const dim = timer.dimension("solvability");
+    const dim = timer.dimension("solve_depth");
     await dim.step("judge", async () => null);
     dim.finalize();
 
     const summary = formatTimingSummary(timer.summarize());
     expect(summary).toContain("[eval] timing — total");
     expect(summary).toContain("load_spec");
-    expect(summary).toContain("solvability");
+    expect(summary).toContain("solve_depth");
     expect(summary).toContain("judge");
   });
 });

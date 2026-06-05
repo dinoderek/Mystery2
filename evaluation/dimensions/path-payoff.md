@@ -17,9 +17,10 @@ the investigator who pursues it: by eliminating a suspect, surfacing a
 contradiction, or disproving the lead itself. A path whose only payoff is
 "you wasted some turns" is a path that should not have been authored.
 
-This dimension is distinct from solvability and fairness:
+This dimension is distinct from solve depth and fairness:
 
-- **Solvability** asks whether at least one path reaches the truth.
+- **Solve depth** asks whether at least one path reaches the truth, and
+  whether the shortest route takes enough clues to be worth solving.
 - **Fairness** asks whether the truth is the *only* well-supported answer.
 - **Path payoff** asks whether every path is worth chasing on its own terms.
 
@@ -47,9 +48,9 @@ For each entry in `solution_paths`, `red_herrings`, and
   motive, or the decisive contradiction that finishes the case. A solution
   path can be marked `"fail"` only if the clues plus summary do not
   actually arrive at any conclusion about the culprit or the events. (This
-  overlaps with solvability; payoff is the stricter framing — solvability
-  asks "can the player reach the truth?", payoff asks "do they get
-  *something* substantive when they do?")
+  overlaps with solve depth; payoff is the stricter framing — solve depth
+  asks "can the player reach the truth, and not too cheaply?", payoff asks
+  "do they get *something* substantive when they do?")
 - `red_herring`: the payoff must be a concrete in-world result the player
   can recognise — e.g. "the apparent grudge between X and Y is shown to be
   a misunderstanding", "the locked-room trick is shown to be impossible",

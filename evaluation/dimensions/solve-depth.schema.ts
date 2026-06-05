@@ -10,6 +10,16 @@ export const schema = z.object({
       reasoning: z.string(),
     }),
   ),
+  elimination_paths: z.array(
+    z.object({
+      id: z.string(),
+      suspect_id: z.string(),
+      necessary_clues: z.array(z.string()),
+      length: z.number().int().nonnegative(),
+      reasoning: z.string(),
+    }),
+  ),
+  uncovered_suspects: z.array(z.string()),
   solvable: z.boolean(),
   shortest_path_id: z.string().nullable(),
   min_length: z.number().int().nonnegative(),

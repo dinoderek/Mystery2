@@ -218,7 +218,7 @@ Today's enabled set (`evaluation/dimensions/registry.json`):
 
 | ID                  | Question                                                                                                    | Analyzer? |
 |---------------------|-------------------------------------------------------------------------------------------------------------|-----------|
-| `solve_depth`       | Is the case solvable, and does the **shortest** solve route need at least `min_clues` distinct clues? (Supersedes `solvability` — also catches near-spoiler single clues.) | No        |
+| `solve_depth`       | Is the case solvable; does the **shortest** route to the culprit need ≥ `minPathLength` distinct clues (from `story_brief.minPathLength`, else registry `min_clues`, else 3 — enforced on the main suspect only); and does every suspect have an elimination path (lengths **measured**, not floored)? Supersedes `solvability`. | No        |
 | `fairness`          | Does the evidence **uniquely** point at the culprit? (No non-culprit is equally well supported.)            | No        |
 | `timeline_coherence`  | Around the crime, do characters' `actual_actions` produce `what_happened` and place each suspect consistently with the clues that clear/implicate them? (`actual_actions` are authoritative; the prose `ground_truth.timeline` is a non-binding summary.) | No        |
 | `knowledge_coherence` | Can each character know the clues they reveal (observability), and is every falsehood an *authored, intended* lie rather than an accidental contradiction (deception integrity)? | No        |

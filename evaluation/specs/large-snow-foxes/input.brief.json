@@ -17,5 +17,7 @@
   "witnesses":3,
   "locations":5,
   "redHerringTrails":2,
-  "coverUps":true
+  "coverUps":true,
+  "minPathLength":3,
+  "targetPathLength":4
 }

@@ -38,6 +38,26 @@ export const StoryBriefSchema = z.object({
       "Complexity of suspect elimination. simple: one clue rules them out. "
         + "moderate: cross-reference 2+ clues. complex: break through agendas or multi-step reasoning.",
     ),
+  minPathLength: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      "Hard floor on solution-path length: the shortest route to the culprit must "
+        + "require at least this many distinct, NECESSARY clues (redundant corroboration "
+        + "does not count). Enforced by the solve_depth evaluation; falls back to the "
+        + "registry default when unset.",
+    ),
+  targetPathLength: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      "Desired solution-path length the generator should aim for. A generation hint "
+        + "only — not enforced by judges. Should be >= minPathLength when both are set.",
+    ),
 });
 
 export type StoryBrief = z.infer<typeof StoryBriefSchema>;

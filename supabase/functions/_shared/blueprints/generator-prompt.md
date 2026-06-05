@@ -32,6 +32,11 @@ to guide the output:
 - `redHerringTrails`: optional number of red herring plot threads
 - `coverUps`: optional boolean — whether suspects should have cover stories
 - `eliminationComplexity`: optional `"simple"` | `"moderate"` | `"complex"`
+- `minPathLength`: optional hard floor on solution-path length — the shortest
+  route to the culprit must require at least this many *distinct, necessary*
+  clues (redundant corroboration does not count). Enforced by evaluation.
+- `targetPathLength`: optional desired solution-path length to aim for
+  (treat as `>= minPathLength`)
 
 If `story_brief.timeBudget` is present, use it directly for
 `metadata.time_budget` and scale the mystery around it.
@@ -78,6 +83,15 @@ The mystery should be meaningfully challenging but fair for the target age and
 time budget.
 
 - The player must be able to solve the case through logic, not guessing.
+- **No single clue may identify the culprit.** The shortest route to the
+  culprit must require combining at least `story_brief.minPathLength` distinct,
+  *necessary* clues (aim for `targetPathLength`; default to 3 when unset). Never
+  author a clue that alone names the culprit — e.g. an eyewitness describing a
+  trait unique to one character, the stolen item hidden in the culprit's own
+  space, or the only suspect caught in a disprovable lie.
+- **Each suspect must be ruled out by their own non-trivial elimination path**,
+  not wiped out by a single blanket trait (species, role) shared across the
+  cast. An elimination path may reuse clues from a solution path.
 - Include 1-2 innocent suspects with plausible reasons to seem suspicious when
   the brief supports it.
 - Every red herring must have a believable cause and a resolvable explanation.
@@ -214,6 +228,17 @@ Scale agendas to the cast size and brief configuration:
   `maintain_false_alibi` or `provide_false_cover` agendas.
 - When `eliminationComplexity` is `"complex"`, suspect elimination may require
   breaking through agendas.
+
+### Solution depth and per-suspect elimination
+
+- Honor `story_brief.minPathLength` (default 3 when unset): the shortest route
+  to the culprit must require that many *distinct, necessary* clues. Aim for
+  `targetPathLength`.
+- After drafting the clue network, **trace the shortest path to the culprit**.
+  If any single clue (or pair) gives the culprit away, split that clue across
+  sources or add an intermediate deduction so the player must synthesize.
+- Give every suspect their own elimination path of comparable depth. Do not let
+  one blanket trait (species, role) clear several suspects at once.
 
 ## Field Sizing Guidance
 
@@ -403,8 +428,12 @@ The final blueprint must support a solvable accusation.
 - Motive: the culprit's real reason must align with `why_it_happened`.
 - Contradiction: at least one authored clue should put pressure on the culprit's
   claimed story or suspicious appearance.
-- Elimination: the player should be able to rule out at least one innocent
-  suspect using authored clue paths.
+- Elimination: every suspect must have at least one authored elimination path
+  that rules them out (elimination paths may overlap solution paths), and no
+  suspect may be cleared by a single blanket trait shared across the cast.
+- Solution depth: no single clue may identify the culprit. The shortest route
+  to the culprit must require at least `story_brief.minPathLength` distinct,
+  necessary clues (default 3 when unset); redundant corroboration does not count.
 - Solvability with agendas: at least one `solution_path` must be completable
   without relying on narrative-condition gated clues (`clever_questioning`,
   `bluff`, `trust_established`, `pressure`). Clues gated behind

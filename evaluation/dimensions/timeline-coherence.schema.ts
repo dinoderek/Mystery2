@@ -1,11 +1,10 @@
 import { z } from "zod";
 
 export const schema = z.object({
-  paths: z.array(
+  issues: z.array(
     z.object({
-      id: z.string(),
-      works: z.boolean(),
-      reasoning: z.string(),
+      subject: z.string(),
+      description: z.string(),
     }),
   ),
   verdict: z.enum(["pass", "fail"]),

@@ -8,9 +8,12 @@
 //      by dimension id read from ./dimension-id.
 //   2. Semantic reference / coverage checks — dimension-specific rules that
 //      cannot be expressed in the Zod schema:
-//        - solvability: every paths[].id ∈ blueprint.solution_paths[].id; cover all
+//        - solve_depth: every paths[].id ∈ blueprint.solution_paths[].id; cover
+//                       all; every necessary_clues[] is a real blueprint clue id;
+//                       shortest_path_id is one of the enumerated paths (or null)
 //        - fairness:    every non_culprits[].character_id is a real non-culprit; cover all
-//        - coherence:   none (issues' `subject` is free text)
+//        - timeline_coherence:  none (issues' `subject` is free text)
+//        - knowledge_coherence: none (issues' `subject` is free text)
 //        - character_grounding: every characters[].character_id is real;
 //                               first_name matches blueprint; cover every
 //                               blueprint character; every topics[].topic is
@@ -58,9 +61,24 @@ function shapeCheck(dimId, verdictPath) {
   };
 }
 
-function semanticChecksSolvability(verdict, blueprint) {
+function collectClueIds(blueprint) {
+  const ids = new Set();
+  for (const loc of blueprint.world?.locations ?? []) {
+    for (const c of loc.clues ?? []) ids.add(c.id);
+    for (const sub of loc.sub_locations ?? []) {
+      for (const c of sub.clues ?? []) ids.add(c.id);
+    }
+  }
+  for (const ch of blueprint.world?.characters ?? []) {
+    for (const c of ch.clues ?? []) ids.add(c.id);
+  }
+  return ids;
+}
+
+function semanticChecksSolveDepth(verdict, blueprint) {
   const issues = [];
   const validIds = new Set((blueprint.solution_paths ?? []).map((p) => p.id));
+  const clueIds = collectClueIds(blueprint);
   const seen = new Set();
   for (const p of verdict.paths ?? []) {
     if (!validIds.has(p.id)) {
@@ -70,11 +88,26 @@ function semanticChecksSolvability(verdict, blueprint) {
     }
     if (seen.has(p.id)) issues.push(`paths[].id "${p.id}" appears more than once`);
     seen.add(p.id);
+    for (const clueId of p.necessary_clues ?? []) {
+      if (!clueIds.has(clueId)) {
+        issues.push(
+          `paths "${p.id}" necessary_clues references unknown clue id "${clueId}"`,
+        );
+      }
+    }
   }
   for (const id of validIds) {
     if (!seen.has(id)) {
       issues.push(`paths is missing an entry for blueprint solution_path "${id}"`);
     }
+  }
+  if (
+    verdict.shortest_path_id != null &&
+    !seen.has(verdict.shortest_path_id)
+  ) {
+    issues.push(
+      `shortest_path_id "${verdict.shortest_path_id}" is not one of the enumerated paths[].id`,
+    );
   }
   return issues;
 }
@@ -167,15 +200,17 @@ function semanticChecksCharacterGrounding(verdict, blueprint, context) {
   return issues;
 }
 
-// coherence: no mechanical reference checks (issues' `subject` is free text)
-function semanticChecksCoherence() {
+// timeline_coherence / knowledge_coherence: no mechanical reference checks
+// (issues' `subject` is free text — character id, clue id, "crime", etc.)
+function semanticChecksNoop() {
   return [];
 }
 
 const SEMANTIC = {
-  solvability: semanticChecksSolvability,
+  solve_depth: semanticChecksSolveDepth,
   fairness: semanticChecksFairness,
-  coherence: semanticChecksCoherence,
+  timeline_coherence: semanticChecksNoop,
+  knowledge_coherence: semanticChecksNoop,
   character_grounding: semanticChecksCharacterGrounding,
 };
 

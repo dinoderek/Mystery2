@@ -29,19 +29,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/template"
 
-# Map dim-id to the on-disk filename for its definition / schema.
-# (Most use the same slug, character_grounding uses character-grounding for
-# the file name.)
-case "$DIM_ID" in
-  solvability|fairness|coherence)
-    DIM_FILE_SLUG="$DIM_ID" ;;
-  character_grounding)
-    DIM_FILE_SLUG="character-grounding" ;;
-  path_payoff)
-    DIM_FILE_SLUG="path-payoff" ;;
-  *)
-    echo "unknown dimension id: $DIM_ID" >&2; exit 1 ;;
-esac
+# Map dim-id to the on-disk filename for its definition / schema. Dimension
+# ids use underscores; their files use kebab-case (e.g. character_grounding ->
+# character-grounding), matching dimensionIdToFilename() in
+# evaluation/pipeline/load.mjs. Derived generically so a new dimension needs no
+# edit here — only its <slug>.md + <slug>.schema.ts + a registry entry.
+DIM_FILE_SLUG="${DIM_ID//_/-}"
+if [[ ! -f "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.md" ]]; then
+  echo "unknown dimension id: $DIM_ID (no evaluation/dimensions/${DIM_FILE_SLUG}.md)" >&2
+  exit 1
+fi
 
 if [[ -e "$TARGET" ]]; then
   echo "refusing to overwrite existing workspace: $TARGET" >&2

@@ -1,9 +1,10 @@
 {
-  "_comment": "The standard evaluation battery: the dimensions run on every blueprint and their default context. Central and story-agnostic — this replaces the per-mystery outcome.spec.json dimension lists, so a spec directory now contains only input.brief.json. Per-mystery overrides are intentionally not supported at this stage.",
+  "_comment": "The standard evaluation battery: the dimensions run on every blueprint and their default context. Central and story-agnostic — this replaces the per-mystery outcome.spec.json dimension lists, so a spec directory now contains only input.brief.json. Per-mystery overrides are intentionally not supported at this stage. solve_depth.min_clues is the minimum solve-path-length floor (fewest clues a player must gather to identify the culprit); it is a constant here for now and is expected to move into the brief per-mystery later.",
   "dimensions": [
-    { "id": "solvability" },
+    { "id": "solve_depth", "context": { "min_clues": 3 } },
     { "id": "fairness" },
-    { "id": "coherence" },
+    { "id": "timeline_coherence" },
+    { "id": "knowledge_coherence" },
     {
       "id": "character_grounding",
       "context": {

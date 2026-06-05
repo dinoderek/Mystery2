@@ -12,9 +12,10 @@
 //
 // Schemas:
 //   blueprint              — BlueprintV2Schema (the full generated blueprint)
-//   solvability            — judge output for solvability
+//   solve_depth            — judge output for solve depth
 //   fairness               — judge output for fairness
-//   coherence              — judge output for coherence
+//   timeline_coherence     — judge output for timeline coherence
+//   knowledge_coherence    — judge output for knowledge coherence
 //   character_grounding    — judge output for character grounding
 //   path_payoff            — judge output for path payoff
 //
@@ -34,15 +35,16 @@ const [schemaName, candidatePath] = process.argv.slice(2);
 if (!schemaName || !candidatePath) {
   process.stderr.write(
     "Usage: node evaluation/pipeline/validate.mjs <schema> <candidate.json>\n" +
-      "Schemas: blueprint, solvability, fairness, coherence, character_grounding\n",
+      "Schemas: blueprint, solve_depth, fairness, timeline_coherence, knowledge_coherence, character_grounding, path_payoff\n",
   );
   process.exit(2);
 }
 
 const dimensionSchemas = new Set([
-  "solvability",
+  "solve_depth",
   "fairness",
-  "coherence",
+  "timeline_coherence",
+  "knowledge_coherence",
   "character_grounding",
   "path_payoff",
 ]);

@@ -43,20 +43,21 @@ Important version note:
 
 ## Blueprint Evaluation Reference
 
-Blueprint evaluation is currently a separate concern from gameplay runtime.
+Blueprint evaluation is a separate concern from the gameplay runtime. The
+current evaluator is the multi-dimension **evaluation pipeline** at
+`evaluation/` — see `docs/evaluation-pipeline.md` (design) and
+`evaluation/README.md` (how to run). It runs always-on mechanical checks plus
+one LLM judge per dimension (solve depth, fairness, timeline + knowledge
+coherence, character grounding, path payoff) and writes a structured
+`result.json` envelope.
 
-- Prompt source: `packages/shared/src/evaluation/prompt.ts`
-- Output schema: `packages/shared/src/evaluation/schema.ts`
-- Blueprint V2 schema source: `packages/shared/src/blueprint-schema-v2.ts`
-- Operator automation: `scripts/generate-blueprint.mjs` now runs a post-generation
-  verification pass and writes a sibling `*.verification.json` artifact for each
-  generated blueprint file
+The original single-prompt evaluator (`packages/shared/src/evaluation/`,
+`prompt.ts` + `schema.ts`) is **deprecated**. It survives only as the
+post-generation verification pass in `scripts/generate-blueprint.mjs` (which
+writes a sibling `*.verification.json` artifact) and will be removed once that
+path moves to the pipeline.
 
-The evaluator currently judges blueprint quality, solvability structure,
-dead ends, red herrings, and consistency without participating in live gameplay
-state transitions.
-
-Both the evaluator and gameplay runtime now target Blueprint V2.
+Both the evaluator and the gameplay runtime target Blueprint V2.
 
 ## Roles and Prompt Responsibilities
 

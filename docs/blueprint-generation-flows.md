@@ -93,6 +93,8 @@ the model.
 | `redHerringTrails` | `number` | No    | Number of red herring plot threads.                           |
 | `coverUps`     | `boolean`  | No       | Whether suspects should have cover stories or false alibis.   |
 | `eliminationComplexity` | `string` | No | `"simple"`, `"moderate"`, or `"complex"`.                   |
+| `minPathLength` | `number`  | No       | Hard floor on solution-path length: the shortest route to the culprit must need at least this many distinct, necessary clues. Enforced by the `solve_depth` evaluation. |
+| `targetPathLength` | `number` | No    | Desired solution-path length the generator aims for (hint only; not judged). Treat as `>= minPathLength`. |
 
 ### `user` Message Shape
 

@@ -3,7 +3,7 @@
 A walking-skeleton pipeline for evaluating Blueprint V2 generation against
 an authored input brief, using a central, story-agnostic dimension battery.
 
-**Status:** spec 001 (Lighthouse Lens), Tier 1 dimensions only.
+**Status:** six dimensions enabled (see `dimensions/registry.json`); multiple specs under `specs/`.
 
 ## What this is
 
@@ -62,7 +62,7 @@ evaluation/
 │   └── judge-system.md
 ├── checks/
 │   ├── mechanical.mjs      # always-on mechanical checks
-│   └── analyzers/          # one .mjs per dimension that has a deterministic side
+│   └── analyzers/          # optional per-dimension analyzer (.mjs); none yet
 ├── pipeline/
 │   ├── run.mjs             # entrypoint
 │   ├── cli-runner.mjs      # pluggable CLI shell-out
@@ -92,7 +92,6 @@ iterations don't churn git. Default root is `$MYSTERYEVALS_DIR` or
 Each run gets its own `<date>/<time>/` subtree, so prior runs are never
 overwritten or deleted — including each agent's `claude.stderr.log`, which makes
 failures debuggable after the fact.
-```
 
 ## Pluggable CLI
 
@@ -114,9 +113,9 @@ shape whose `extract_path` resolves to the model's output string).
 
 ## Execution graph
 
-- The four Tier 1 dimensions are evaluated **in parallel** via `Promise.all`.
+- The enabled dimensions are evaluated **in parallel** via `Promise.all`.
   Analyzer (in-process) and judge (CLI shell-out) for each dimension run
-  sequentially within the dimension, but the four dimensions overlap.
+  sequentially within the dimension, but the dimensions overlap.
 - Generation, mechanical checks, and blueprint schema validation all run
   before any dimension is dispatched.
 - A `result.json` envelope is **always written**, even when the run aborts
@@ -128,12 +127,13 @@ shape whose `extract_path` resolves to the model's output string).
 ## Retries
 
 `retries: N` on a step config gives that step up to N additional attempts
-after the first (total = 1 + N). Retries are configured per-step (generate
-and judge are independent).
+after the first (total = 1 + N), configured per-step (generate and judge are
+independent). The code default is `0` (no retries); the bundled `cli.json` sets
+`1` (up to 2 attempts).
 
 | step       | retriable conditions                                                                            |
 |------------|-------------------------------------------------------------------------------------------------|
-| `generate` | CLI non-zero exit, timeout, stdout not JSON, `extract_path` miss.                               |
+| `generate` | CLI non-zero exit, timeout, stdout not JSON, `extract_path` miss, Blueprint V2 Zod validation failure. |
 | `judge`    | All of the above, plus Zod validation failure of the model's structured output (`judge_parse`). |
 
 Per-attempt diagnostics are written to the envelope:
@@ -152,56 +152,39 @@ etc. When `retries: 0` (the default) the original filenames are kept
 
 ## Mechanical vs analyzer vs judge
 
-Three result kinds, one envelope.
+Three result kinds, one envelope (rationale in `docs/evaluation-pipeline.md`
+→ "Architecture: three tiers"):
 
-- **Mechanical** — runs on every blueprint regardless of the dimension set.
-  Failure means the artifact is broken (schema invalid, brief counts wrong,
-  orphan clues, etc.).
-- **Analyzer** — deterministic code per dimension. Cheap. Runs first, in
-  process. Catches obvious structural failures before paying for an LLM
-  judgment.
-- **Judge** — LLM call per dimension via the pluggable CLI. Each dimension
-  has a `dimensions/<id>.md` file with the judge instructions and a
-  co-located `dimensions/<id>.schema.ts` Zod schema for the judge's JSON
-  output. The pipeline serializes the Zod schema as JSON Schema, appends it
-  to the system prompt, and validates the judge's response against it. A
-  schema mismatch produces a `judge_parse` error in the envelope.
+- **Mechanical** — always-on deterministic checks (schema, brief-derived
+  counts, orphan clues). Failure means the artifact is broken.
+- **Analyzer** — optional deterministic per-dimension pre-check
+  (`checks/analyzers/<id>.mjs`). None are implemented today.
+- **Judge** — one LLM call per dimension via the pluggable CLI, using
+  `dimensions/<id>.md` (prompt) + `dimensions/<id>.schema.ts` (Zod). The
+  pipeline appends the schema as JSON Schema and validates the response; a
+  mismatch is a `judge_parse` error.
 
 A dimension's `overall` is `pass` only if every sub-result it produced is
-`pass`. If only an analyzer is defined and it passes, that's a pass. If
-only a judge is configured and it passes, that's a pass.
+`pass`; see `docs/evaluation-pipeline.md` → "Combining results" for the full
+pass / fail / error / skipped rules.
 
-## Tier 1 dimensions (current scope)
+## Enabled dimensions
 
-1. **Solve depth** — judge only. Supersedes the old solvability check. Confirms
-   the mystery is solvable; that the shortest route to the culprit needs at least
-   `minPathLength` distinct *necessary* clues (so a single near-spoiler clue
-   fails it); and that every suspect has an elimination path (each path's length
-   is **measured** but only the culprit path is floored). The floor is sourced
-   `story_brief.minPathLength` → `solve_depth.context.min_clues` (in
-   `dimensions/registry.json`) → 3.
-2. **Fairness / convergence** — judge only.
-3. **Timeline coherence** — judge only. Around the crime, checks that the
-   culprit's `actual_actions` produce `ground_truth.what_happened` and that each
-   suspect's position is consistent with the clues that clear or implicate them.
-   `actual_actions` are authoritative; the prose `ground_truth.timeline` is a
-   non-binding summary (so the judge no longer fails on its sentence ordering).
-4. **Knowledge coherence** — judge only. Observability (can each character know
-   the clues they reveal?) plus deception integrity — a falsehood is fine when
-   it's an *authored, intended* lie (false `stated_alibi` + `self_protect`,
-   `implicate_other`, etc.) and a bug when it's an accidental contradiction
-   asserted as truth.
-5. **Character grounding (anti-hallucination)** — judge only. Its probe-topic
-   baseline comes from `dimensions/registry.json`.
+Six dimensions run on every blueprint (defined in `dimensions/registry.json`).
+For what each one asks, see the dimension table in
+`docs/evaluation-pipeline.md` → "Dimensions":
 
-Analyzers exist only where they add signal not already encoded in
-`BlueprintV2Schema.superRefine`. If a structural rule should always hold,
-the right home is the schema, not an evaluation analyzer.
+- `solve_depth` — solvable, deep enough (brief `minPathLength` floor, else
+  registry `min_clues`, else 3), and every suspect has a measured elimination
+  path.
+- `fairness` — the evidence uniquely points at the culprit.
+- `timeline_coherence` — positions around the crime are consistent
+  (`actual_actions` authoritative).
+- `knowledge_coherence` — observability + deception integrity.
+- `character_grounding` — enough authored material to avoid narrator fabrication.
+- `path_payoff` — every authored path pays off.
 
-Tiers 2 and 3 (clue economy, red-herring quality, cover-up quality, narrative
-economy, resolution, path independence, interest, hook, tone) are not yet in
-scope. The minimum-path-length aspect of challenge now lives in **solve
-depth**; broader challenge tuning remains future work.
+All are judge-only; no analyzers are implemented yet.
 
 ## Iterating the evaluator
 
@@ -242,8 +225,8 @@ edit it to change how the judge frames itself across dimensions.
     }
   ],
   "summary": {
-    "mechanical": { "pass": 9, "fail": 1 },
-    "dimensions":  { "pass": 3, "fail": 1, "error": 0, "skipped": 0 },
+    "mechanical": { "pass": 7, "fail": 0 },
+    "dimensions":  { "pass": 4, "fail": 2, "error": 0, "skipped": 0 },
     "retries":     { "generate": 0, "judge_total": 0 }
   },
   "timing": {
@@ -255,7 +238,7 @@ edit it to change how the judge frames itself across dimensions.
       { "name": "generate", "duration_ms": 44100, "detail": { "attempts": 1 } },
       { "name": "mechanical", "duration_ms": 12, "detail": { "checks": 7 } },
       { "name": "blueprint_schema_validate", "duration_ms": 8 },
-      { "name": "dimensions", "duration_ms": 47800, "detail": { "count": 4, "parallel": true } }
+      { "name": "dimensions", "duration_ms": 47800, "detail": { "count": 6, "parallel": true } }
     ],
     "dimensions": [
       {
@@ -293,10 +276,9 @@ can exceed the sum of the per-attempt `duration_ms` values under
 
 ## What's next
 
-- Storage and visualizer for run history.
-- Tier 2 dimensions.
-- Multiple samples per brief (K-run aggregation).
-- Judge self-consistency sampling.
+Roadmap lives in `docs/evaluation-pipeline.md` → "Intentionally out of scope
+(for now)": run storage/visualizer, Tier 2 dimensions, K-run aggregation, and
+judge self-consistency sampling.
 
 The `npm run eval` script wraps `node evaluation/pipeline/run.mjs`; pass
 pipeline flags after `--`.

@@ -1,5 +1,13 @@
 # Blueprint Evaluation
 
+> **DEPRECATED — historical reference.** This describes the original
+> single-prompt evaluator (`packages/shared/src/evaluation/`). The current
+> evaluator is the multi-dimension pipeline at `evaluation/`; see
+> **`docs/evaluation-pipeline.md`** (design) and **`evaluation/README.md`**
+> (how to run). The single-prompt evaluator survives only as the
+> post-generation verification pass in `scripts/generate-blueprint.mjs` and
+> will be removed once that path moves to the pipeline.
+
 This document describes the evaluator assets used to judge blueprint quality as
 a mystery artifact.
 

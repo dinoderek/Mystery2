@@ -54,9 +54,9 @@ Two reasons, both empirical from iterating on the old single-prompt evaluator:
 
 - **Judge quality goes up when each judge has a narrow job.** A single
   prompt that has to assess solvability, fairness, coherence, and character
-  grounding all at once produces worse signal on each of them than four
-  focused judges. The judge stays inside its dimension's frame and its output
-  schema is small enough to be enforced.
+  grounding all at once produces worse signal on each of them than a set of
+  focused, single-purpose judges. The judge stays inside its dimension's frame
+  and its output schema is small enough to be enforced.
 - **Anything a judge can be replaced by code, should be.** LLM time is the
   bottleneck and LLM judgments drift. If a check is fully expressible as code
   (schema validity, brief-derived counts, orphan clues), it belongs in the
@@ -65,8 +65,8 @@ Two reasons, both empirical from iterating on the old single-prompt evaluator:
 
 ### Why one judge per dimension
 
-- **Parallelism.** Dimensions are independent. Running four 30s judges in
-  parallel is 30s of wall-clock; running one 2-minute mega-judge is 2 minutes.
+- **Parallelism.** Dimensions are independent. Running several 30s judges in
+  parallel is ~30s of wall-clock; running one mega-judge is their sum.
 - **Iteration isolation.** Editing the fairness prompt cannot regress
   solve_depth scores. Each dimension's prompt, output schema, and analyzer
   evolve on their own clock.
@@ -120,17 +120,16 @@ The envelope is always written, even on whole-run failure.
 
 ## Pluggable CLI
 
-The pipeline never imports an LLM SDK. Every model call is a subprocess
-spawned per `evaluation/config/cli.json`. Two modes are supported.
-
-### Subprocess mode (default)
+The pipeline never imports an LLM SDK. Every model call is a subprocess spawned
+per `evaluation/config/cli.json` (field-by-field reference in
+`evaluation/README.md` → "Pluggable CLI").
 
 `cmd` is a shell script that wraps any LLM CLI. The runner writes the system
-prompt and user message to two temp files, substitutes their paths into
-`args` (via the placeholders `{{system_prompt_file}}` and
-`{{user_message_file}}`), spawns the process, captures stdout, parses it as
-JSON, and walks `extract_path` to get the model's text. That text is then
-parsed against the dimension's Zod schema.
+prompt and user message to two temp files, substitutes their paths into `args`
+(via the placeholders `{{system_prompt_file}}` and `{{user_message_file}}`),
+spawns the process, captures stdout, parses it as JSON, and walks `extract_path`
+to get the model's text. That text is then parsed against the dimension's Zod
+schema.
 
 To bind a new LLM: write a wrapper that takes the two file paths, calls your
 CLI, and prints `{ "result": "<model-output>" }` on stdout. The bundled
@@ -168,19 +167,13 @@ This pattern matters for two reasons:
 
 ## Output envelope
 
-Every run writes one self-contained output directory outside the repo
-(default `~/mysteryevals/<date>/<time>/run-<brief>/`, override with
-`--output-root` / `$MYSTERYEVALS_DIR`):
-
-- `result.json` — the structured envelope (shape in `envelope.mjs`)
-- `blueprint.json` — the generated or supplied blueprint
-- `logs/` — per-step stdout/stderr and invocation metadata, including one
-  log triple per retry attempt when retries are configured
-- `generator/` — the generator agent workspace (preserved)
-- `evaluators/<dimension>/` — each judge agent workspace (preserved)
-
-Each run gets its own `<date>/<time>/` subtree, so prior runs — including each
-agent's `claude.stderr.log` — are never overwritten or deleted.
+Every run writes one self-contained output directory outside the repo (default
+`~/mysteryevals/<date>/<time>/run-<brief>/`, override with `--output-root` /
+`$MYSTERYEVALS_DIR`). It holds the `result.json` envelope, the `blueprint.json`,
+per-step `logs/`, and the preserved `generator/` + `evaluators/<dimension>/`
+agent workspaces — see `evaluation/README.md` → "Output directory" for the
+layout. Each run gets its own subtree, so prior runs (including each agent's
+`claude.stderr.log`) are never overwritten.
 
 The envelope shape is version-tagged (`schema_version`). Top-level fields:
 `run_id`, `started_at`, `ended_at`, `spec_dir`, `blueprint_path`,
@@ -200,17 +193,13 @@ field-by-field shape.
 
 ## Retries
 
-Configured per step (`config.generate.retries`, `config.judge.retries`).
-Default 1 (max 2 attempts).
-
-| Step       | Retriable conditions                                                                            |
-|------------|-------------------------------------------------------------------------------------------------|
-| `generate` | CLI exit, timeout, non-JSON stdout, `extract_path` miss, Blueprint V2 Zod validation failure    |
-| `judge`    | All of the above plus dimension-schema Zod validation failure (`schema_fail`)                   |
-
-Per-attempt logs and outcomes (`ok | cli_fail | schema_fail`) are recorded in
-the envelope so we can see whether retries are reducing flake or masking a
-systematic bug.
+Each step (`generate`, `judge`) retries on transient failures, configured by its
+`retries` count — covering CLI failures *and* schema validation of the model's
+output, so a retry re-exercises the model on a real failure rather than a flake.
+Per-attempt outcomes (`ok | cli_fail | schema_fail`) are recorded in the
+envelope so we can tell whether retries are reducing flake or masking a
+systematic bug. See `evaluation/README.md` → "Retries" for the per-step
+retriable conditions and the default counts.
 
 ## Dimensions
 

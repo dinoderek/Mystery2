@@ -90,9 +90,12 @@ Load additional guidance based on the area you are touching:
 - Blueprint schema/generation flow changes or narrator/AI runtime changes:
   `docs/blueprint-generation-flows.md`, `docs/ai-runtime.md`, and
   `docs/ai-configuration.md`
-- Blueprint generation or evaluation pipeline work (anything under
+- Blueprint or game-master-trace evaluation work (anything under
   `evaluation/`, `packages/shared/src/evaluation/`, or the generator/judge
-  harnesses): `docs/evaluation-pipeline.md`. Note that
+  harnesses): start with `docs/evaluation-pipeline.md` — the shared high-level
+  design, with conditional pointers onward. The runbook + in-depth reference
+  live next to the code: `evaluation/README.md` (blueprint pipeline) and
+  `evaluation/trace/README.md` (game-master trace pipeline). Note that
   `docs/blueprint-evaluation.md` describes the deprecated single-prompt
   evaluator and is historical.
 

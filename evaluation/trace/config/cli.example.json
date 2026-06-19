@@ -1,0 +1,12 @@
+{
+  "_comment": "Trace-evaluation LLM CLI bindings. Copy to cli.json and customise. The runner writes the composed judge system prompt to {{system_prompt_file}} and the user message ({ dimension_id, context, blueprint, turns }) to {{user_message_file}}, spawns cmd, parses stdout as JSON, and extract_path selects the model's text before it is JSON-parsed and validated against the dimension schema. Set retries to N for up to N additional attempts (total = 1 + N) on CLI failure or schema-validation failure. With no judge step, run.mjs runs mechanical checks only.",
+
+  "judge": {
+    "description": "Invokes an LLM CLI to judge one game-master trace dimension. The bundled wrapper passes the composed system prompt and the user message straight to `claude` and returns its JSON envelope.",
+    "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "timeout_ms": 1800000,
+    "retries": 1
+  }
+}

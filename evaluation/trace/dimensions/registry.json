@@ -1,0 +1,7 @@
+{
+  "_comment": "The trace-evaluation battery: judge dimensions run against every played trace, plus default context. Mechanical checks (clue_accounting, spoiler_leak) are always-on and live in lib/mechanical.mjs, not here. mechanical_context tunes those deterministic checks. This is the game-master analogue of evaluation/dimensions/registry.json.",
+  "mechanical_context": { "spoiler_min_run": 12 },
+  "dimensions": [
+    { "id": "gm_fabrication" }
+  ]
+}

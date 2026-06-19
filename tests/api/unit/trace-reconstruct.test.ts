@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.mjs";
-import { makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
+import { makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
+
+function moveEvent(seq: number, locationId: string): TraceEventRow {
+  return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload: { location_id: locationId }, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
+}
 
 type Turn = {
   sequence: number;
@@ -11,8 +15,10 @@ type Turn = {
   context_error: string | null;
   pre_state: { mode: string; current_location_id: string | null };
   reconstructed_context: {
+    mode?: string;
     search_context?: { location_id?: string; next_clue?: { id?: string } | null } | null;
     talk_context?: { active_character?: { id?: string } } | null;
+    move_context?: { has_visited_before?: boolean } | null;
     accusation_judge_context?: unknown | null;
   } | null;
 };
@@ -114,5 +120,26 @@ describe("reconstructTrace — accusation fidelity", () => {
     const round5 = (turnBySeq(turns, 5).reconstructed_context as JudgeCtx)?.accusation_judge_context?.round;
     expect(round4).toBe(0); // first round: no prior accuse_round events
     expect(round5).toBe(1); // resolver: exactly one prior accuse_round
+  });
+});
+
+describe("reconstructTrace — context mode & revisit fidelity", () => {
+  it("forces accusation contexts into accuse mode even when entered from explore", () => {
+    // forced_endgame and immediate-accusation both build context in accuse mode
+    // at runtime, even though the pre-state is still explore.
+    const events: TraceEventRow[] = [
+      moveEvent(1, "loc_hall"),
+      { id: "fe", sequence: 2, event_type: "forced_endgame", actor: "narrator", payload: {}, narration: "Time is up — name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
+    ];
+    const forced = turnBySeq(reconstructTrace(makeRawTrace({ events })).turns, 2);
+    expect(forced.pre_state.mode).toBe("explore");
+    expect(forced.reconstructed_context?.mode).toBe("accuse");
+  });
+
+  it("computes has_visited_before from prior location history, not a visited set", () => {
+    const events: TraceEventRow[] = [moveEvent(1, "loc_garden"), moveEvent(2, "loc_garden")];
+    const { turns } = reconstructTrace(makeRawTrace({ events }));
+    expect(turnBySeq(turns, 1).reconstructed_context?.move_context?.has_visited_before).toBe(false);
+    expect(turnBySeq(turns, 2).reconstructed_context?.move_context?.has_visited_before).toBe(true);
   });
 });

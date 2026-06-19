@@ -24,6 +24,7 @@ import {
   buildTalkEndContext,
   buildTalkStartContext,
   findLocationById,
+  selectLocationConversationHistory,
 } from "../../../supabase/functions/_shared/ai-context.ts";
 
 // Maps a persisted event_type to the AI role whose context builder applies.
@@ -130,6 +131,11 @@ function reconstructContext(roleName, ctx) {
   const { blueprint, session, locationId, characterId, playerInput, history } =
     ctx;
   const common = { game_id: ctx.gameId, session, blueprint, conversation_history: history };
+  // The runtime always builds accusation contexts with the session forced into
+  // "accuse" mode (forced-endgame.ts, and game-accuse's immediate-judge-on-entry
+  // path where the prior mode is still "explore"). Mirror that so context.mode
+  // matches what the builder saw, regardless of the folded pre-state.
+  const accuseCommon = { ...common, session: { ...session, mode: "accuse" } };
 
   switch (roleName) {
     case "talk_start":
@@ -176,17 +182,22 @@ function reconstructContext(roleName, ctx) {
       return buildMoveContext({
         ...common,
         destination_id: locationId,
-        has_visited_before: ctx.hasVisitedBefore,
+        // Match the runtime: "visited before" iff there is prior location
+        // history for the destination (game-move uses
+        // selectLocationConversationHistory(...).length > 0), not merely
+        // whether we ever stood there.
+        has_visited_before:
+          selectLocationConversationHistory(history, locationId).length > 0,
       });
     case "accusation_start":
       return buildAccusationStartContext({
-        ...common,
+        ...accuseCommon,
         forced_by_timeout: ctx.forcedByTimeout ?? false,
         player_input: playerInput ?? null,
       });
     case "accusation_judge":
       return buildAccusationJudgeContext({
-        ...common,
+        ...accuseCommon,
         player_input: playerInput ?? "",
         round: ctx.round ?? 1,
       });
@@ -211,9 +222,6 @@ export function reconstructTrace(rawTrace) {
     current_talk_character_id: null,
     time_remaining: blueprint?.metadata?.time_budget ?? null,
   };
-
-  const visitedLocations = new Set();
-  if (state.current_location_id) visitedLocations.add(state.current_location_id);
 
   const turns = [];
   const issues = [];
@@ -264,8 +272,6 @@ export function reconstructTrace(rawTrace) {
           searchQuery,
           history: priorEvents.map(toFragment),
           priorEvents,
-          hasVisitedBefore:
-            event.event_type === "move" && visitedLocations.has(destination),
           forcedByTimeout,
           round: accusationRound,
         });
@@ -297,10 +303,7 @@ export function reconstructTrace(rawTrace) {
 
     switch (event.event_type) {
       case "move":
-        if (destination) {
-          state.current_location_id = destination;
-          visitedLocations.add(destination);
-        }
+        if (destination) state.current_location_id = destination;
         state.mode = "explore";
         break;
       case "talk":

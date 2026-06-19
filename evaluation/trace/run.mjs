@@ -241,7 +241,15 @@ async function main() {
     runState.reconstruction = {
       turns: reconstructed.turns.length,
       context_errors: reconstructed.issues.length,
+      // Surface the per-turn issue detail in the envelope (not just a count) so
+      // a human reading result.json sees which turns lost fidelity and why.
+      issues: reconstructed.issues,
     };
+    if (reconstructed.issues.length > 0) {
+      process.stdout.write(
+        `[trace-eval] reconstruction: ${reconstructed.issues.length} turn(s) with context errors\n`,
+      );
+    }
     await fs.writeFile(
       path.join(runDir, "reconstruction.json"),
       JSON.stringify(reconstructed, null, 2),

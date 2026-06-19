@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.mjs";
-import { makeRawTrace } from "./trace-fixtures";
+import { makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
 
 type Turn = {
   sequence: number;
   role_name: string | null;
   character_id: string | null;
+  player_input: string | null;
   context_error: string | null;
   pre_state: { mode: string; current_location_id: string | null };
   reconstructed_context: {
@@ -23,10 +24,35 @@ function turnBySeq(turns: Turn[], seq: number): Turn {
 }
 
 describe("revealedClueIdsForEvent", () => {
-  it("reads singular, plural, and column forms", () => {
-    expect(revealedClueIdsForEvent({ payload: { revealed_clue_id: "a" }, clues_revealed: [] })).toEqual(["a"]);
-    expect(revealedClueIdsForEvent({ payload: { revealed_clue_ids: ["a", "b"] }, clues_revealed: [] })).toEqual(["a", "b"]);
-    expect(revealedClueIdsForEvent({ payload: null, clues_revealed: ["c"] })).toEqual(["c"]);
+  it("reads the per-turn find by event type", () => {
+    // search: the singular this-turn find, NOT the cumulative revealed_clue_ids.
+    expect(
+      revealedClueIdsForEvent({
+        event_type: "search",
+        payload: { revealed_clue_id: "c2", revealed_clue_ids: ["c1", "c2"] },
+        clues_revealed: [],
+      }),
+    ).toEqual(["c2"]);
+    // search with no find this turn (cumulative list still present) → nothing.
+    expect(
+      revealedClueIdsForEvent({
+        event_type: "search",
+        payload: { revealed_clue_id: null, revealed_clue_ids: ["c1"] },
+        clues_revealed: [],
+      }),
+    ).toEqual([]);
+    // ask: the plural array is the per-turn reveal.
+    expect(
+      revealedClueIdsForEvent({
+        event_type: "ask",
+        payload: { revealed_clue_ids: ["a", "b"] },
+        clues_revealed: [],
+      }),
+    ).toEqual(["a", "b"]);
+    // legacy/other events: fall back to the column.
+    expect(
+      revealedClueIdsForEvent({ event_type: "start", payload: null, clues_revealed: ["c"] }),
+    ).toEqual(["c"]);
   });
 });
 
@@ -71,5 +97,22 @@ describe("reconstructTrace", () => {
     // enforced by the real builder's assertRoleContextSafety).
     expect(turnBySeq(turns, 2).reconstructed_context?.accusation_judge_context).toBeNull();
     expect(issues).toHaveLength(0);
+  });
+});
+
+describe("reconstructTrace — accusation fidelity", () => {
+  const { turns } = reconstructTrace(makeRawTrace({ events: makeMultiStepEvents() }));
+
+  it("reads accusation player reasoning from player_reasoning (not player_input)", () => {
+    expect(turnBySeq(turns, 4).player_input).toBe("I think it was Mara.");
+    expect(turnBySeq(turns, 5).player_input).toBe("No — it was Dorn, his glove was by the case.");
+  });
+
+  it("numbers judge rounds like the runtime: prior accuse_round count, resolver not self-counted", () => {
+    type JudgeCtx = { accusation_judge_context?: { round?: number } | null };
+    const round4 = (turnBySeq(turns, 4).reconstructed_context as JudgeCtx)?.accusation_judge_context?.round;
+    const round5 = (turnBySeq(turns, 5).reconstructed_context as JudgeCtx)?.accusation_judge_context?.round;
+    expect(round4).toBe(0); // first round: no prior accuse_round events
+    expect(round5).toBe(1); // resolver: exactly one prior accuse_round
   });
 });

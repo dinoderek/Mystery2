@@ -99,14 +99,34 @@ export type TraceEventRow = {
 export function makeEvents(): TraceEventRow[] {
   return [
     { id: "e1", sequence: 1, event_type: "start", actor: "narrator", payload: { location_id: "loc_hall" }, narration: "You arrive at the grand hall as the dinner party winds down.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" },
-    { id: "e2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", diagnostics: { time_after: 19 } }, narration: "You spot a muddy footprint near the trophy case.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
+    // Real search payloads carry BOTH the per-turn find (revealed_clue_id) and
+    // the cumulative location list (revealed_clue_ids) — see game-search.
+    { id: "e2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"], diagnostics: { time_after: 19 } }, narration: "You spot a muddy footprint near the trophy case.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
     { id: "e3", sequence: 3, event_type: "talk", actor: "system", payload: { character_id: "char_mara", character_name: "Mara", location_id: "loc_hall" }, narration: "Mara wipes her hands and looks up.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:02:00Z" },
     { id: "e4", sequence: 4, event_type: "ask", actor: "char_mara", payload: { character_id: "char_mara", player_input: "Did you see anything?", revealed_clue_ids: ["clue_mara_1"], diagnostics: { time_after: 18 } }, narration: "\"I saw a shadow slip toward the garden,\" Mara says.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:03:00Z" },
     { id: "e5", sequence: 5, event_type: "end_talk", actor: "system", payload: { character_id: "char_mara" }, narration: "You thank Mara.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:04:00Z" },
     { id: "e6", sequence: 6, event_type: "move", actor: "narrator", payload: { location_id: "loc_garden", diagnostics: { time_after: 17 } }, narration: "You step out into the walled garden.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:05:00Z" },
-    { id: "e7", sequence: 7, event_type: "search", actor: "system", payload: { location_id: "loc_garden", search_query: "look by the wall", revealed_clue_id: "clue_garden_1", diagnostics: { time_after: 16 } }, narration: "By the wall, the roses are trampled.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:06:00Z" },
-    { id: "e8", sequence: 8, event_type: "accuse_start", actor: "narrator", payload: {}, narration: "It is time to name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:07:00Z" },
-    { id: "e9", sequence: 9, event_type: "accuse_resolved", actor: "narrator", payload: { player_input: "Dorn did it." }, narration: "Dorn slipped into the hall and took the medal while everyone was at dinner. You were right!", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:08:00Z" },
+    { id: "e7", sequence: 7, event_type: "search", actor: "system", payload: { location_id: "loc_garden", search_query: "look by the wall", revealed_clue_id: "clue_garden_1", revealed_clue_ids: ["clue_garden_1"], diagnostics: { time_after: 16 } }, narration: "By the wall, the roses are trampled.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:06:00Z" },
+    { id: "e8", sequence: 8, event_type: "accuse_start", actor: "player", payload: { role: "accusation_start" }, narration: "It is time to name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:07:00Z" },
+    // Accusation events store the player's text in player_reasoning (not player_input).
+    { id: "e9", sequence: 9, event_type: "accuse_resolved", actor: "system", payload: { role: "accusation_judge", player_reasoning: "Dorn did it.", judge_result: "win" }, narration: "Dorn slipped into the hall and took the medal while everyone was at dinner. You were right!", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:08:00Z" },
+  ];
+}
+
+// A two-search-in-one-location trace plus a multi-round accusation, modeling the
+// real persisted payload shapes (cumulative search revealed_clue_ids; accusation
+// player_reasoning; round = count of prior accuse_round events). Used to guard
+// against the per-turn/cumulative and round/reasoning reconstruction bugs.
+export function makeMultiStepEvents(): TraceEventRow[] {
+  return [
+    { id: "m1", sequence: 1, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"] }, narration: "A muddy footprint.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" },
+    // Second search in the SAME location: a new sub-location clue, with the
+    // cumulative list now holding both. A correct per-turn reading reveals only
+    // clue_rug_1 here and must NOT flag clue_hall_1 as re-revealed.
+    { id: "m2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", search_query: "under the rug", revealed_clue_id: "clue_rug_1", revealed_clue_ids: ["clue_hall_1", "clue_rug_1"] }, narration: "A torn cloakroom ticket under the rug.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
+    { id: "m3", sequence: 3, event_type: "accuse_start", actor: "player", payload: { role: "accusation_start" }, narration: "Name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:02:00Z" },
+    { id: "m4", sequence: 4, event_type: "accuse_round", actor: "system", payload: { role: "accusation_judge", player_reasoning: "I think it was Mara.", judge_result: "continue" }, narration: "Are you sure? What about her alibi?", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:03:00Z" },
+    { id: "m5", sequence: 5, event_type: "accuse_resolved", actor: "system", payload: { role: "accusation_judge", player_reasoning: "No — it was Dorn, his glove was by the case.", judge_result: "win" }, narration: "Correct.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:04:00Z" },
   ];
 }
 

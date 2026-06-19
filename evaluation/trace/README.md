@@ -64,6 +64,11 @@ Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
 `~/mysteryevals`): `result.json`, `reconstruction.json`, the inline-extracted
 `trace.json` (when `--session` is used), and per-judge `logs/`.
 
+The process exits non-zero only when the run itself fails (extraction error,
+etc.), matching the blueprint pipeline. A check or judge **fail** still exits 0
+— the `result.json` summary is the pass/fail signal, so a CI caller should gate
+on `summary.mechanical.fail` / `summary.dimensions.fail`, not the exit code.
+
 ## Layout
 
 ```

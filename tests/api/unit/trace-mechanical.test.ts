@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
-import { makeEvents, makeRawTrace } from "./trace-fixtures";
+import { makeEvents, makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
 
 type Violation = { reason?: string; sequence?: number; character_id?: string };
 type MechCheck = {
@@ -19,6 +19,15 @@ function checkById(checks: MechCheck[], id: string): MechCheck {
 describe("clue_accounting", () => {
   it("passes a rule-abiding trace", () => {
     const checks = runTraceMechanicalChecks({ rawTrace: makeRawTrace() });
+    expect(checkById(checks, "clue_accounting").status).toBe("pass");
+  });
+
+  it("does not false-fail a second search in the same location (cumulative revealed_clue_ids is not a re-reveal)", () => {
+    // The real runtime persists revealed_clue_ids as the cumulative location
+    // list; only revealed_clue_id is the per-turn find. A correct check reads
+    // the per-turn find, so the second search (clue_rug_1) passes even though
+    // its cumulative list still contains the earlier clue_hall_1.
+    const checks = runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events: makeMultiStepEvents() }) });
     expect(checkById(checks, "clue_accounting").status).toBe("pass");
   });
 

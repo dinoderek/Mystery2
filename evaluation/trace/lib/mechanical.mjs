@@ -217,6 +217,11 @@ function checkSpoilerLeak(rawTrace, minRun = DEFAULT_SPOILER_MIN_RUN) {
       if (action?.summary) secrets.push(action.summary);
     }
   }
+  // A secret shorter than minRun words can never produce a minRun-length
+  // contiguous match, so it is below this check's floor. This is a deliberate
+  // precision tradeoff: a verbatim leak of a very short ground-truth string is
+  // not caught here (a judge dimension is the place for paraphrase/short-leak
+  // detection). Lower minRun via registry mechanical_context to tighten it.
   const secretWordLists = secrets
     .map((s) => normalizeWords(s))
     .filter((w) => w.length >= minRun);

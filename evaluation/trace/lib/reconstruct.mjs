@@ -29,6 +29,11 @@ import {
 // Maps a persisted event_type to the AI role whose context builder applies.
 // Event types with no game-master AI role (e.g. the opening "start" block) map
 // to null and get a turn record without a reconstructed context.
+//
+// Note: "move" is an internal label for selecting buildMoveContext. The real
+// runtime stamps move narration with role_name "search" (buildMoveContext in
+// ai-context.ts), but a distinct "move" label reads more clearly in turn
+// records and judge projections; it never reaches a builder as a role string.
 const EVENT_ROLE = {
   move: "move",
   search: "search",
@@ -54,20 +59,28 @@ function readStringArray(payload, key) {
   return value.filter((v) => typeof v === "string" && v.trim().length > 0);
 }
 
-// Revealed clue ids carried by a single event's payload (search uses the
-// singular revealed_clue_id, ask uses the plural revealed_clue_ids); falls back
-// to the clues_revealed column for older rows.
+// The clue ids revealed by a single event THIS TURN. The runtime persists
+// reveals differently per event type, and conflating them double-counts:
+//   - `search` stores this turn's single find in payload.revealed_clue_id;
+//     its payload.revealed_clue_ids is the CUMULATIVE list of everything
+//     revealed in that location so far (game-search/index.ts), NOT a per-turn
+//     delta — using it as a delta makes clue-accounting false-fail.
+//   - `ask` stores this turn's reveals as the payload.revealed_clue_ids array
+//     (game-ask/index.ts).
+// The clues_revealed column is never written by the runtime; we honor it only
+// as a fallback for legacy/seeded rows on non-search/ask events.
 export function revealedClueIdsForEvent(event) {
-  const ids = new Set();
-  for (const id of readStringArray(event.payload, "revealed_clue_ids")) {
-    ids.add(id);
+  const payload = event.payload ?? null;
+  if (event.event_type === "search") {
+    const single = readField(payload, "revealed_clue_id");
+    return single ? [single] : [];
   }
-  const single = readField(event.payload, "revealed_clue_id");
-  if (single) ids.add(single);
-  for (const id of event.clues_revealed ?? []) {
-    if (typeof id === "string" && id.length > 0) ids.add(id);
+  if (event.event_type === "ask") {
+    return readStringArray(payload, "revealed_clue_ids");
   }
-  return [...ids];
+  return (event.clues_revealed ?? []).filter(
+    (id) => typeof id === "string" && id.length > 0,
+  );
 }
 
 function readDiagnosticsTimeAfter(payload) {
@@ -204,7 +217,6 @@ export function reconstructTrace(rawTrace) {
 
   const turns = [];
   const issues = [];
-  let accusationRound = 0;
 
   events.forEach((event, index) => {
     const priorEvents = events.slice(0, index);
@@ -216,8 +228,17 @@ export function reconstructTrace(rawTrace) {
     const eventCharacterId =
       readField(payload, "character_id") ?? readField(payload, "character");
     const searchQuery = readField(payload, "search_query");
-    const playerInput = readField(payload, "player_input");
+    // Accusation events store the player's text in player_reasoning; talk/ask
+    // use player_input. No event carries both, so prefer reasoning then input.
+    const playerInput =
+      readField(payload, "player_reasoning") ?? readField(payload, "player_input");
     const forcedByTimeout = event.event_type === "forced_endgame";
+    // Match the runtime: the judge round is the number of accuse_round events
+    // that already happened (0 on the first round); the resolving event is not
+    // counted (game-accuse/index.ts).
+    const accusationRound = priorEvents.filter(
+      (e) => e.event_type === "accuse_round",
+    ).length;
 
     // Resolve the scope (location/character) for this turn from the pre-state,
     // falling back to payload hints.
@@ -226,8 +247,6 @@ export function reconstructTrace(rawTrace) {
     if (event.event_type === "move") locationId = destination ?? locationId;
     if (event.event_type === "talk") characterId = eventCharacterId ?? characterId;
     if (event.event_type === "ask") characterId = characterId ?? eventCharacterId;
-
-    if (roleName === "accusation_judge") accusationRound += 1;
 
     const preState = { ...state };
     let reconstructedContext = null;

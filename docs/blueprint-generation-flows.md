@@ -134,6 +134,10 @@ The system prompt in `generator-prompt.md` tells the model to:
 - keep clue count, suspect count, red herrings, and timeline complexity within
   explicit sizing bands
 - make the mystery fair and solvable through clues and reasoning
+- before output, verify that the *shortest* solution path needs at least
+  `minPathLength` distinct, necessary clues — tracing the minimal clue subset the
+  way the `solve_depth` judge measures it (every solution path counts; the
+  shortest sets the score) — and deepen the chain if it falls short
 - enforce coherence between premise, clue placement, character facts, authored
   reasoning paths, and ground truth
 - emit structured location clues and character clues with stable ids and roles

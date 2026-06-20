@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
+import { createWriteStream } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -56,21 +57,50 @@ export async function runCli({
   let exitCode = null;
   let timedOut = false;
 
+  // Stream the child's stdout/stderr to log files as chunks arrive — not
+  // buffered until exit — so a long-running step is tailable live. We still
+  // keep the in-memory chunks for the JSON parse and error messages below.
+  let stdoutLog = null;
+  let stderrLog = null;
+  if (logDir) {
+    await fs.mkdir(logDir, { recursive: true });
+    stdoutLog = createWriteStream(path.join(logDir, `${step}.stdout.log`));
+    stderrLog = createWriteStream(path.join(logDir, `${step}.stderr.log`));
+  }
+
+  // The wrappers write claude's stream-json event stream to EVAL_STREAM_FILE
+  // (a tailable .stream.jsonl in logs/). The pipeline tails it for the live
+  // digest, so the path must be deterministic and attempt-scoped — derive it
+  // from the (attempt-scoped) step name here. Additive: caller env is preserved.
+  const childEnv = {
+    ...process.env,
+    ...(env && typeof env === "object" ? env : {}),
+  };
+  const streamFile = logDir
+    ? path.join(logDir, `${step}.stream.jsonl`)
+    : null;
+  if (streamFile) childEnv.EVAL_STREAM_FILE = streamFile;
+
   try {
     await new Promise((resolve, reject) => {
-      const spawnOptions = { stdio: ["ignore", "pipe", "pipe"] };
-      if (env && typeof env === "object") {
-        spawnOptions.env = { ...process.env, ...env };
-      }
-      const child = spawn(config.cmd, args, spawnOptions);
+      const child = spawn(config.cmd, args, {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: childEnv,
+      });
 
       const timeout = setTimeout(() => {
         timedOut = true;
         child.kill("SIGKILL");
       }, config.timeout_ms ?? 120000);
 
-      child.stdout.on("data", (chunk) => stdoutChunks.push(chunk));
-      child.stderr.on("data", (chunk) => stderrChunks.push(chunk));
+      child.stdout.on("data", (chunk) => {
+        stdoutChunks.push(chunk);
+        stdoutLog?.write(chunk);
+      });
+      child.stderr.on("data", (chunk) => {
+        stderrChunks.push(chunk);
+        stderrLog?.write(chunk);
+      });
 
       child.on("error", (err) => {
         clearTimeout(timeout);
@@ -84,16 +114,9 @@ export async function runCli({
       });
     });
   } finally {
+    if (stdoutLog) await new Promise((resolve) => stdoutLog.end(resolve));
+    if (stderrLog) await new Promise((resolve) => stderrLog.end(resolve));
     if (logDir) {
-      await fs.mkdir(logDir, { recursive: true });
-      await fs.writeFile(
-        path.join(logDir, `${step}.stdout.log`),
-        Buffer.concat(stdoutChunks),
-      );
-      await fs.writeFile(
-        path.join(logDir, `${step}.stderr.log`),
-        Buffer.concat(stderrChunks),
-      );
       await fs.writeFile(
         path.join(logDir, `${step}.invocation.json`),
         JSON.stringify(
@@ -106,6 +129,7 @@ export async function runCli({
             duration_ms: Date.now() - startedAt,
             system_prompt_file: systemPromptFile,
             user_message_file: userMessageFile,
+            stream_file: streamFile,
           },
           null,
           2,

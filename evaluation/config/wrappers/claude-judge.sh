@@ -67,12 +67,18 @@ node -e '
 ' "$USER_MESSAGE_FILE" "$WORKSPACE"
 
 cd "$WORKSPACE"
-claude --print --output-format json \
+# Run with stream-json so the pipeline can tail the live event stream from
+# $STREAM_FILE (the pipeline sets EVAL_STREAM_FILE to a tailable
+# logs/<step>.stream.jsonl). The verdict is read back from disk
+# (./verdict.json), so the output format does NOT affect the result contract.
+STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
+mkdir -p "$(dirname "$STREAM_FILE")"
+claude --print --output-format stream-json --verbose \
        --model opus \
        --effort xhigh \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./verdict.json that passes the validator." \
-       >"$WORKSPACE/claude.stdout.json" \
+       >"$STREAM_FILE" \
        2>"$WORKSPACE/claude.stderr.log"
 
 if [[ ! -f "$WORKSPACE/verdict.json" ]]; then
@@ -80,7 +86,8 @@ if [[ ! -f "$WORKSPACE/verdict.json" ]]; then
   exit 3
 fi
 
-# Pretty-print the agent's JSON artifacts in place so the workspace is readable.
+# Pretty-print the agent's verdict in place so the workspace is readable.
+# (The stream file is left as raw JSONL — that is the tailable event log.)
 node -e '
   const fs = require("fs");
   for (const f of process.argv.slice(1)) {
@@ -88,7 +95,7 @@ node -e '
       fs.writeFileSync(f, JSON.stringify(JSON.parse(fs.readFileSync(f, "utf8")), null, 2) + "\n");
     } catch {}
   }
-' "$WORKSPACE/verdict.json" "$WORKSPACE/claude.stdout.json"
+' "$WORKSPACE/verdict.json"
 
 # Re-emit the agent's final verdict in the pipeline's expected envelope shape.
 node -e '

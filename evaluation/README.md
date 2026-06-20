@@ -43,11 +43,19 @@ cp evaluation/config/cli.example.json evaluation/config/cli.json
 # 2. Run end-to-end (generation + evaluation):
 npm run eval -- --spec evaluation/specs/001-lighthouse-lens
 
+# --spec also accepts a brief JSON file directly — no enclosing directory needed:
+npm run eval -- --spec path/to/some.brief.json
+
 # Or skip generation and evaluate an existing blueprint:
 npm run eval -- \
   --spec evaluation/specs/001-lighthouse-lens \
   --blueprint path/to/blueprint.json
 ```
+
+`--spec` takes either a spec directory containing `input.brief.json` or a path
+to a brief JSON file. With a directory the run slug is the directory name; with
+a file it is the file name (minus a trailing `.brief.json`/`.json`), or the
+parent directory name when the file is itself `input.brief.json`.
 
 ## Layout
 
@@ -84,7 +92,8 @@ iterations don't churn git. Default root is `$MYSTERYEVALS_DIR` or
 <root>/<date>/<time>/run-<brief>/
 ├── result.json                 the structured envelope (always written)
 ├── blueprint.json              the generated or supplied blueprint
-├── logs/                       per-step CLI stdout/stderr/invocation
+├── logs/                       per-step CLI stdout/stderr/invocation +
+│                               <step>.stream.jsonl (live agent event stream)
 ├── generator/                  generator agent workspace (preserved)
 └── evaluators/<dimension>/     each judge agent workspace (preserved)
 ```
@@ -92,6 +101,47 @@ iterations don't churn git. Default root is `$MYSTERYEVALS_DIR` or
 Each run gets its own `<date>/<time>/` subtree, so prior runs are never
 overwritten or deleted — including each agent's `claude.stderr.log`, which makes
 failures debuggable after the fact.
+
+## Live progress
+
+The agent steps can each run for many minutes, so the pipeline reports progress
+as it goes (suppress with `--quiet` / `--no-progress` — milestone lines and the
+log-path hints stay):
+
+- The agent wrappers run `claude --output-format stream-json --verbose` and
+  write the live event stream to `logs/<step>.stream.jsonl`. `tail -f` that file
+  (the pipeline prints the path) for the raw, real-time stream. The per-step
+  `logs/<step>.{stdout,stderr}.log` are also written live (not buffered to the
+  end).
+- The pipeline tails those streams and prints a **batched tick** on a fixed
+  interval (default 20s, tune with `EVAL_HEARTBEAT_MS`). Each tick is a header
+  with elapsed time and the running estimated-thinking-token total (summed from
+  the stream's `thinking_tokens` deltas), followed by the digest messages that
+  accumulated since the last tick — capped, with `+N more` when over. A quiet
+  interval collapses to a single `· no new activity` line, where the climbing
+  token total still shows the step is alive:
+
+  ```
+  [eval] generate · 7m20s · 39.4k tok
+    > Tool: Write (blueprint.json)
+    > Tool: Bash (node validate.mjs)
+  [eval] generate · 8m40s · 52.1k tok · no new activity
+  ```
+
+- The parallel judge phase ticks with a `done/total` header, then a short
+  per-judge block (token total + up to ~3 new messages); finished judges drop
+  out, and each prints its own `[eval][<dim>] judge: pass|fail` verdict line:
+
+  ```
+  [eval] dimensions · 2m10s · 2/6 done
+    fairness · 120k tok
+      > Tool: Read (blueprint.json)
+    solve_depth · 88k tok · no new activity
+  ```
+
+`<step>.stream.jsonl` is the tailable event log; the result contract is
+unchanged — `generate`/`judge` still read their artifact (`blueprint.json` /
+`verdict.json`) from the workspace, so the output format does not affect it.
 
 ## Pluggable CLI
 
@@ -109,7 +159,9 @@ The pipeline never imports an LLM SDK. Every model call is a subprocess.
 
 To bind a different LLM CLI: write a wrapper that takes the two paths as
 args, calls your CLI, and prints `{ "result": "<model-output>" }` (or any
-shape whose `extract_path` resolves to the model's output string).
+shape whose `extract_path` resolves to the model's output string). For the live
+digest, also stream your CLI's events (newline-delimited JSON) to the path in
+`$EVAL_STREAM_FILE` when set; this is optional and never affects the result.
 
 ## Execution graph
 

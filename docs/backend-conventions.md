@@ -27,6 +27,16 @@ All secure backend logic runs in **Supabase Edge Functions** (Deno runtime).
 - All data access from the UI must happen via the Supabase Javascript Client utilizing Row Level Security (RLS).
 - Edge Functions run with a Service Role key (bypassing RLS) when they need to do privileged operations, but they MUST manually verify the user's identity based on the passed JWT before performing any sensitive actions on their behalf.
 - Database schema changes strictly go through `supabase/migrations/`.
+- **Every new table in the `public` schema must explicitly grant DML to the
+  API roles.** Recent Supabase CLI / Postgres versions no longer auto-grant
+  `public` to `anon`, `authenticated`, and `service_role`, so a table without
+  grants exposes no `SELECT/INSERT/UPDATE/DELETE` and all PostgREST access
+  (seed scripts, Edge Functions, the REST API) fails with `permission denied
+  for table ...`. Add, in the table's migration:
+  `grant select, insert, update, delete on table <name> to anon, authenticated, service_role;`
+  (grant `usage, select` on any owned sequences too). RLS still governs row
+  visibility for `anon`/`authenticated`; these grants only restore table-level
+  access. See `supabase/migrations/0012_grant_table_privileges.sql`.
 
 ## 4. Error Handling & Testing
 

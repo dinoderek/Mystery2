@@ -139,6 +139,31 @@ a different name will move it to a new slot.
 Each worktree gets its own database. After first startup, seed it from that
 worktree with `npm run seed:all`.
 
+### `permission denied for table ...` (seed:ai or API fails)
+
+This means a `public` table has no DML grants for the API roles
+(`anon`/`authenticated`/`service_role`). It survives every reset because the
+grants are missing from the migrations, not from stale state — recent Supabase
+CLI / Postgres versions no longer auto-grant the `public` schema. Fix it in the
+migration that creates the table (see the convention in
+`docs/backend-conventions.md`), not by pinning the CLI. To verify the live
+grants, find this worktree's database container, then query it:
+
+```bash
+docker ps --format '{{.Names}}' | grep supabase_db   # pick your worktree's container
+
+docker exec -i supabase_db_<your-worktree> \
+  psql -U postgres -d postgres -c "select table_name, grantee, \
+  string_agg(privilege_type, ',' order by privilege_type) \
+  from information_schema.role_table_grants \
+  where table_schema='public' \
+  and grantee in ('anon','authenticated','service_role') \
+  group by 1,2 order by 1,2;"
+```
+
+The API roles should list `SELECT/INSERT/UPDATE/DELETE`, not just
+`REFERENCES/TRIGGER/TRUNCATE`.
+
 ### You need a clean local database
 
 Use `npm run supabase:reset`, then reseed with `npm run seed:all`.

@@ -12,7 +12,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { buildGameMovePrompt } from "../_shared/ai-prompts.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
+import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
@@ -73,18 +73,10 @@ serveWithCors(async (req) => {
     });
 
     // Fetch blueprint
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
-      logError("request.error", {
-        reason: "blueprint_missing",
-        game_id: game_id,
-      });
+    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    if (!blueprint) {
       return internalError("Blueprint missing");
     }
-    const blueprintText = await fileData.text();
-    const blueprint = BlueprintV2Schema.parse(JSON.parse(blueprintText));
 
     const destLoc = blueprint.world.locations.find(
       (l) => l.id === destination,

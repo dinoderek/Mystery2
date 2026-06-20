@@ -12,7 +12,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
+import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
@@ -85,14 +85,11 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
+    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    if (!blueprint) {
       return internalError("Blueprint missing");
     }
 
-    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
     const activeCharacter = blueprint.world.characters.find(
       (character) => character.id === session.current_talk_character_id,
     );

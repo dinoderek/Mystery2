@@ -15,7 +15,7 @@ import {
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
+import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import {
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
@@ -69,17 +69,10 @@ serveWithCors(async (req) => {
       return badRequest("Game session not found");
     }
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
-      logError("request.error", {
-        reason: "blueprint_missing",
-        game_id: gameId,
-      });
+    const blueprint = await loadBlueprint(userClient, session.blueprint_id, logger);
+    if (!blueprint) {
       return internalError("Blueprint missing");
     }
-    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
 
     const { data: historyRows } = await userClient
       .from("game_events")

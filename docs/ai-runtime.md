@@ -128,6 +128,13 @@ Invalid output returns a retriable error and does not finalize turn state.
 - Output-contract failures are also returned as retriable AI failures.
 - Web UI retry logic remains the owner of retry policy.
 - `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
+- Blueprint storage reads are also resilient: the per-session turn endpoints load
+  the blueprint via the shared `loadBlueprint` helper
+  (`supabase/functions/_shared/blueprints/load.ts`), which retries transient
+  `blueprints` bucket download failures with a short backoff (3 attempts) before
+  giving up. Storage reads can blip under concurrent load even when the object
+  exists; the retry prevents a player-visible `500 Blueprint missing` mid-session.
+  JSON/schema parse failures are deterministic and are not retried.
 
 ## Structured AI and Request Logs
 
@@ -140,6 +147,10 @@ Invalid output returns a retriable error and does not finalize turn state.
   - `request.invalid` for validation and mode-transition failures
   - `request.ai_retriable` for retriable AI/provider/output failures
   - `request.unhandled_error` for unexpected failures
+- Blueprint loads emit:
+  - `blueprint.download_retry` (warn-level info) per transient retry attempt
+  - `blueprint.download_failed` once all attempts are exhausted
+  - `blueprint.parse_failed` for a malformed/invalid blueprint (not retried)
 - For local development, tail these logs via:
   - `npm run logs:edge`
 

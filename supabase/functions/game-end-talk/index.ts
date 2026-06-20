@@ -6,7 +6,7 @@ import {
   RetriableAIError,
 } from "../_shared/errors.ts";
 import { validateTransition } from "../_shared/state-machine.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
+import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
@@ -74,18 +74,10 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${session.blueprint_id}.json`);
-    if (downloadError) {
-      logError("request.error", {
-        reason: "blueprint_missing",
-        game_id: gameId,
-      });
+    const blueprint = await loadBlueprint(userClient, session.blueprint_id, logger);
+    if (!blueprint) {
       return internalError("Blueprint missing");
     }
-
-    const blueprint = BlueprintV2Schema.parse(JSON.parse(await fileData.text()));
     const activeCharacter = findCharacterById(blueprint, session.current_talk_character_id);
 
     const { data: historyRows } = await userClient

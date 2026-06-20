@@ -7,6 +7,20 @@ removal in a follow-up branch).
 This document explains **why** the evaluation pipeline at `evaluation/` is
 shaped the way it is. For how to run it, see `evaluation/README.md`.
 
+> **Two subjects, one harness.** There are two sibling pipelines built on the
+> same machinery. This document covers the **blueprint** pipeline
+> (`evaluation/`), which judges a generated Blueprint V2 at authoring time. A
+> second pipeline, **game-master trace evaluation** (`evaluation/trace/`),
+> judges how the AI game master *played* a mystery, using a played session
+> trace (already persisted in Supabase for resume) as the subject. It reuses
+> the subject-agnostic parts here — the pluggable CLI runner, the timing
+> recorder, the per-dimension `combineDimension` semantics, and the
+> `dimension = .md + .schema.ts + registry.json` convention — and adds
+> trace-specific extraction, run-time context reconstruction (via the real
+> runtime context builders), and a game-master dimension battery. See
+> `evaluation/trace/README.md` for its design and the "What's next" roadmap for
+> how the two relate.
+
 ## What this is
 
 A harness for judging the quality of a generated Blueprint V2 as a mystery

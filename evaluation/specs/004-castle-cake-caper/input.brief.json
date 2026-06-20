@@ -1,0 +1,20 @@
+{
+  "brief": "On the morning of the Honeydew Village summer fair, Baker Rosa's magnificent fairy-tale castle cake — the favorite to win the grand baking prize — is found ruined inside the baking tent: its tallest sugar tower has toppled over and its sweet strawberry filling has been swapped for something sour. Judging begins at noon by the bandstand. The investigator must find out who spoiled the castle cake, and why, before the blue ribbon is handed to someone else. The truth involves the spare key to the locked baking tent, a swapped jam jar with the wrong label, and a trail of sugary footprints that climb right up to the cake — and the person who looks guiltiest of all turns out to have been somewhere else the whole time.",
+  "targetAge": 7,
+  "timeBudget": 12,
+  "titleHint": "The Sabotaged Castle Cake",
+  "artStyle": "Cozy retro pixel art — warm and friendly, like a gentle handheld video game. Bright summer-fair colors, soft sunlight, bunting and striped tents, rounded cute characters. Nothing scary or harsh.",
+  "mustInclude": [
+    "the fairy-tale castle cake",
+    "the locked baking tent and its spare key",
+    "the swapped jam jar with the wrong label",
+    "the toppled sugar tower"
+  ],
+  "culprits": 1,
+  "suspects": 2,
+  "witnesses": 2,
+  "locations": 4,
+  "redHerringTrails": 1,
+  "coverUps": true,
+  "eliminationComplexity": "moderate"
+}

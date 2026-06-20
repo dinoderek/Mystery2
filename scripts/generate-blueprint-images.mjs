@@ -322,7 +322,7 @@ function buildImageGenerationRequest({ model, prompt, referenceImages = [] }) {
         content: contentParts.length === 1 ? prompt : contentParts,
       },
     ],
-    modalities: ["image", "text"],
+    modalities: ["image"],
     image_config: {
       aspect_ratio: "4:3",
     },

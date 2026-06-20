@@ -13,7 +13,7 @@ import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2
 import { runMechanicalChecks } from "../checks/mechanical.mjs";
 import { runCli, runCliWithRetries } from "./cli-runner.mjs";
 import { buildEnvelope, combineDimension } from "./envelope.mjs";
-import { startPhaseHeartbeat, startStepDigest } from "./progress.mjs";
+import { startJudgeDigest, startStepDigest } from "./progress.mjs";
 import {
   loadCliConfig,
   loadDimensionDefinition,
@@ -410,21 +410,16 @@ async function runPipeline({
     );
   }
 
-  // Parallel-phase progress: a single heartbeat summarising done/running counts
-  // (interleaving 6 live agent digests would be unreadable — tail the per-judge
-  // stream files above for detail), plus a tally line as each dimension lands.
-  const dimsStartedAt = performance.now();
-  const total = dimensions.length;
-  let done = 0;
-  const running = new Set(dimensions.map((d) => d.id));
-  const dimsHeartbeat = judgeStep
-    ? startPhaseHeartbeat({
+  // Parallel-phase progress: one batched tick prints elapsed + done/total, then
+  // up to a few new digest messages per still-running judge (plus its token
+  // total). Each dimension's own pass/fail line is printed by evaluateDimension.
+  const judgeDigest = judgeStep
+    ? startJudgeDigest({
+        dimIds: dimensions.map((d) => d.id),
+        logDir,
         quiet: args.quiet,
-        status: () =>
-          `[eval] dimensions: ${formatDuration(performance.now() - dimsStartedAt)} — ${done}/${total} done` +
-          (running.size ? `; running: ${[...running].join(", ")}` : ""),
       })
-    : { stop() {} };
+    : { markDone() {}, stop() {} };
 
   try {
     runState.dimensions = await timer.stage(
@@ -442,25 +437,13 @@ async function runPipeline({
               logDir,
               runDir,
               timer,
-            }).finally(() => {
-              running.delete(dimRef.id);
-              done += 1;
-              if (judgeStep && !args.quiet) {
-                process.stdout.write(
-                  `[eval] dimensions: ${done}/${total} done` +
-                    (running.size
-                      ? `; running: ${[...running].join(", ")}`
-                      : "") +
-                    `\n`,
-                );
-              }
-            }),
+            }).finally(() => judgeDigest.markDone(dimRef.id)),
           ),
         ),
       (results) => ({ count: results.length, parallel: true }),
     );
   } finally {
-    dimsHeartbeat.stop();
+    judgeDigest.stop();
   }
 }
 

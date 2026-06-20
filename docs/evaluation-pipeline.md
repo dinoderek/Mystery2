@@ -156,7 +156,9 @@ streams each step's stdout/stderr to `logs/<step>.{stdout,stderr}.log` as chunks
 arrive (not buffered to the end), and sets `EVAL_STREAM_FILE` to a per-step
 `logs/<step>.stream.jsonl`. The bundled wrappers run
 `claude --output-format stream-json --verbose` and write the event stream there;
-both `run.mjs` entry points tail it to print a compact digest plus a heartbeat
+both `run.mjs` entry points tail it and print a batched tick on an interval —
+elapsed time, the running estimated-thinking-token total (summed from
+`thinking_tokens` deltas), and the digest messages since the last tick, capped
 (`--quiet` to suppress, `EVAL_HEARTBEAT_MS` to tune). The result contract is
 unchanged — wrappers still resolve `extract_path: "result"` from their stdout
 (blueprint/judge read the artifact from disk; the trace judge recovers it from

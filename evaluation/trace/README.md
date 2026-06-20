@@ -65,8 +65,9 @@ Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
 `trace.json` (when `--session` is used), and per-judge `logs/`.
 
 While the judges run, the pipeline prints progress (a `logs:` hint, a
-`tail -f …/logs/judge-*.stream.jsonl` hint, and a heartbeat with done/running
-counts); `--quiet` suppresses it. The trace judge wrapper runs
+`tail -f …/logs/judge-*.stream.jsonl` hint, and a batched tick on an interval —
+`done/total` plus a short per-judge block of token total and recent messages);
+`--quiet` suppresses it. The trace judge wrapper runs
 `claude --output-format stream-json --verbose`, writes the live event stream to
 `logs/<step>.stream.jsonl` (tailable), and recovers the verdict from the
 stream's final result event — so the pipeline's `extract_path: "result"`

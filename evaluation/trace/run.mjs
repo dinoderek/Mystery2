@@ -9,7 +9,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import { runCli } from "../pipeline/cli-runner.mjs";
-import { startPhaseHeartbeat } from "../pipeline/progress.mjs";
+import { startJudgeDigest } from "../pipeline/progress.mjs";
 import {
   createRunTimer,
   formatDuration,
@@ -299,21 +299,18 @@ async function main() {
       );
     }
 
-    // Parallel-phase progress: a single heartbeat summarising done/running
-    // counts, plus a tally line as each dimension lands. Tail the per-judge
-    // stream files above for live agent detail.
-    const dimsStartedAt = performance.now();
-    const total = dimensions.length;
-    let done = 0;
-    const running = new Set(dimensions.map((d) => d.id));
-    const dimsHeartbeat = judgeStep
-      ? startPhaseHeartbeat({
+    // Parallel-phase progress: one batched tick prints elapsed + done/total,
+    // then up to a few new digest messages per still-running judge (plus its
+    // token total). Each dimension's pass/fail line is printed by
+    // evaluateDimension.
+    const judgeDigest = judgeStep
+      ? startJudgeDigest({
+          dimIds: dimensions.map((d) => d.id),
+          tag: "[trace-eval]",
+          logDir,
           quiet: args.quiet,
-          status: () =>
-            `[trace-eval] dimensions: ${formatDuration(performance.now() - dimsStartedAt)} — ${done}/${total} done` +
-            (running.size ? `; running: ${[...running].join(", ")}` : ""),
         })
-      : { stop() {} };
+      : { markDone() {}, stop() {} };
 
     try {
       runState.dimensions = await timer.stage(
@@ -330,25 +327,13 @@ async function main() {
                 logDir,
                 runDir,
                 timer,
-              }).finally(() => {
-                running.delete(dimRef.id);
-                done += 1;
-                if (judgeStep && !args.quiet) {
-                  process.stdout.write(
-                    `[trace-eval] dimensions: ${done}/${total} done` +
-                      (running.size
-                        ? `; running: ${[...running].join(", ")}`
-                        : "") +
-                      `\n`,
-                  );
-                }
-              }),
+              }).finally(() => judgeDigest.markDone(dimRef.id)),
             ),
           ),
         (results) => ({ count: results.length, parallel: true }),
       );
     } finally {
-      dimsHeartbeat.stop();
+      judgeDigest.stop();
     }
   } catch (err) {
     runState.runError = { stage: err.runErrorStage ?? "unknown", message: String(err.message ?? err) };

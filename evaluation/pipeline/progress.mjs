@@ -10,20 +10,26 @@ import { formatDuration } from "./timing.mjs";
 // The agent wrappers run `claude --output-format stream-json --verbose` and
 // redirect the event stream to a per-step `.stream.jsonl` file under the run's
 // logs/ directory (the pipeline picks the path via EVAL_STREAM_FILE; see
-// cli-runner.mjs). These helpers tail those files and emit a compact,
-// human-readable digest plus a heartbeat so a long-running step isn't silent.
+// cli-runner.mjs). These helpers tail those files and emit a *batched* tick on
+// a fixed interval: a one-line header with elapsed time and the running
+// estimated-thinking-token total, followed by the digest messages that
+// accumulated since the last tick (capped). When nothing new happened the tick
+// is a single "no new activity" line — the climbing token total still shows the
+// step is alive.
 //
 // Everything here is best-effort: unparseable lines and unknown event shapes
 // are ignored, and a missing stream file is fine (the wrapper creates it once
 // claude starts). Nothing here affects the result contract.
 
 const DEFAULT_POLL_MS = 700;
-// How often the heartbeat fires when a step is otherwise quiet. Overridable via
-// EVAL_HEARTBEAT_MS (e.g. lower it for tests/demos, raise it to reduce noise).
-const DEFAULT_HEARTBEAT_MS =
+// How often a tick fires. Overridable via EVAL_HEARTBEAT_MS (lower it for
+// tests/demos, raise it to reduce noise).
+const DEFAULT_TICK_MS =
   Number(process.env.EVAL_HEARTBEAT_MS) > 0
     ? Number(process.env.EVAL_HEARTBEAT_MS)
     : 20000;
+const DEFAULT_STEP_CAP = 8; // digest bullets per tick for a single step
+const DEFAULT_JUDGE_CAP = 3; // digest bullets per judge per tick
 
 function write(line) {
   process.stdout.write(`${line}\n`);
@@ -46,6 +52,25 @@ function toolHint(block) {
   return "";
 }
 
+// Compact token rendering: 39400 → "39.4k tok", 410000 → "410k tok".
+export function formatTokens(n) {
+  if (!Number.isFinite(n) || n <= 0) return "0 tok";
+  if (n < 1000) return `${n} tok`;
+  const k = n / 1000;
+  return `${k < 100 ? k.toFixed(1) : Math.round(k)}k tok`;
+}
+
+// The estimated-thinking-token delta for one event (0 if not such an event).
+// The cumulative `estimated_tokens` field resets mid-step, so summing the
+// deltas is the only correct running total.
+export function thinkingTokenDelta(ev) {
+  if (ev && ev.type === "system" && ev.subtype === "thinking_tokens") {
+    const d = Number(ev.estimated_tokens_delta);
+    return Number.isFinite(d) ? d : 0;
+  }
+  return 0;
+}
+
 // Turn one stream-json event into zero or more digest lines.
 export function formatEvents(ev) {
   const out = [];
@@ -61,20 +86,24 @@ export function formatEvents(ev) {
     }
   } else if (ev.type === "result" && ev.num_turns != null) {
     out.push(`> agent done — ${ev.num_turns} turn(s)`);
+  } else if (ev.type === "rate_limit_event") {
+    const status = ev.rate_limit_info?.status;
+    if (status && status !== "allowed") out.push(`> ⚠ rate limit: ${status}`);
   }
   return out;
 }
 
 // Incrementally read newly-appended complete JSONL lines from every file in
-// `dir` whose basename satisfies `match`, invoking onEvent for each parsed
-// object. Returns a stop() handle. Handles files that don't exist yet, files
-// that appear later (e.g. a retry attempt's stream), and partial trailing lines.
+// `dir` whose basename satisfies `match`, invoking onEvent(parsed, fileName)
+// for each parsed object. Returns a stop() handle. Handles files that don't
+// exist yet, files that appear later (e.g. a retry attempt's stream), and
+// partial trailing lines.
 export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}) {
   const state = new Map(); // file -> { offset, buf }
   let stopped = false;
   let timer = null;
 
-  const drain = (file) => {
+  const drain = (file, name) => {
     let st;
     try {
       st = fs.statSync(file);
@@ -104,7 +133,7 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
         s.buf = s.buf.slice(nl + 1);
         if (line) {
           try {
-            onEvent(JSON.parse(line));
+            onEvent(JSON.parse(line), name);
           } catch {
             // ignore non-JSON / partial lines
           }
@@ -116,8 +145,7 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
     state.set(file, s);
   };
 
-  const tick = () => {
-    if (stopped) return;
+  const sweep = () => {
     let names = [];
     try {
       names = fs.readdirSync(dir);
@@ -125,8 +153,13 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
       names = [];
     }
     for (const name of names) {
-      if (match(name)) drain(path.join(dir, name));
+      if (match(name)) drain(path.join(dir, name), name);
     }
+  };
+
+  const tick = () => {
+    if (stopped) return;
+    sweep();
     schedule();
   };
 
@@ -141,13 +174,7 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
     stop() {
       stopped = true;
       if (timer) clearTimeout(timer);
-      // Final drain so the tail of a just-finished step isn't dropped.
-      try {
-        let names = fs.readdirSync(dir);
-        for (const name of names) if (match(name)) drain(path.join(dir, name));
-      } catch {
-        // dir may be gone; nothing to flush
-      }
+      sweep(); // final drain so a just-finished step's tail isn't dropped
     },
   };
 }
@@ -159,60 +186,123 @@ export function streamMatch(stepPrefix) {
   return (name) => name.startsWith(stepPrefix) && name.endsWith(".stream.jsonl");
 }
 
-// Progress for a single, serial step (e.g. generate): an inline event digest
-// from the step's stream file plus a heartbeat that fires only when the digest
-// has been quiet, so it never spams an actively-working step. Returns stop().
+// Batched progress for a single serial step (e.g. generate). Every interval it
+// prints one header line (elapsed + running token total) and the digest
+// messages accumulated since the last tick, capped. Returns stop().
 export function startStepDigest({
   label,
+  tag = "[eval]",
   logDir,
   stepPrefix,
   quiet = false,
-  heartbeatMs = DEFAULT_HEARTBEAT_MS,
+  intervalMs = DEFAULT_TICK_MS,
+  cap = DEFAULT_STEP_CAP,
 }) {
   if (quiet) return { stop() {} };
   const startedAt = performance.now();
-  let lastActivityAt = startedAt;
+  let pending = [];
+  let tokens = 0;
 
   const follower = followDir(logDir, streamMatch(stepPrefix), (ev) => {
-    for (const line of formatEvents(ev)) {
-      lastActivityAt = performance.now();
-      write(`  ${line}`);
-    }
+    tokens += thinkingTokenDelta(ev);
+    for (const line of formatEvents(ev)) pending.push(line);
   });
 
-  const hb = setInterval(() => {
-    if (performance.now() - lastActivityAt < heartbeatMs) return;
-    write(`[eval] ${label}: running ${formatDuration(performance.now() - startedAt)}…`);
-    lastActivityAt = performance.now();
-  }, heartbeatMs);
-  if (hb.unref) hb.unref();
+  const flush = () => {
+    const elapsed = formatDuration(performance.now() - startedAt);
+    const head = `${tag} ${label} · ${elapsed} · ${formatTokens(tokens)}`;
+    if (pending.length === 0) {
+      write(`${head} · no new activity`);
+      return;
+    }
+    write(head);
+    for (const line of pending.slice(0, cap)) write(`  ${line}`);
+    if (pending.length > cap) write(`  +${pending.length - cap} more`);
+    pending = [];
+  };
+
+  const timer = setInterval(flush, intervalMs);
+  if (timer.unref) timer.unref();
 
   return {
     stop() {
       follower.stop();
-      clearInterval(hb);
+      clearInterval(timer);
+      if (pending.length) flush(); // show the tail before the step's done line
     },
   };
 }
 
-// Progress for a parallel phase (e.g. all dimensions at once): a single
-// heartbeat that prints a caller-supplied status summary. No inline per-item
-// digest — interleaving many streams is unreadable; callers print per-item tail
-// paths instead. Returns stop().
-export function startPhaseHeartbeat({
-  status,
+// Batched progress for a parallel judge phase. One tick prints a header
+// (elapsed + done/total) and, for each still-running dimension, a sub-header
+// (its token total) plus up to `capPerJudge` new digest messages. Completed
+// dimensions drop out (their pass/fail line is printed by the pipeline). The
+// pipeline calls markDone(id) as each dimension lands. Returns { markDone, stop }.
+export function startJudgeDigest({
+  dimIds,
+  total = dimIds.length,
+  tag = "[eval]",
+  label = "dimensions",
+  logDir,
   quiet = false,
-  heartbeatMs = DEFAULT_HEARTBEAT_MS,
+  intervalMs = DEFAULT_TICK_MS,
+  capPerJudge = DEFAULT_JUDGE_CAP,
 }) {
-  if (quiet) return { stop() {} };
-  const hb = setInterval(() => {
-    const line = status();
-    if (line) write(line);
-  }, heartbeatMs);
-  if (hb.unref) hb.unref();
+  if (quiet) return { markDone() {}, stop() {} };
+  const startedAt = performance.now();
+  const state = new Map(
+    dimIds.map((id) => [id, { pending: [], tokens: 0, done: false }]),
+  );
+
+  const matchJudge = (name) =>
+    name.startsWith("judge-") && name.endsWith(".stream.jsonl");
+  const dimOf = (name) => {
+    const rest = name.slice("judge-".length);
+    return dimIds.find((id) => rest.startsWith(`${id}.`));
+  };
+
+  const follower = followDir(logDir, matchJudge, (ev, name) => {
+    const id = dimOf(name);
+    if (!id) return;
+    const s = state.get(id);
+    if (!s) return;
+    s.tokens += thinkingTokenDelta(ev);
+    for (const line of formatEvents(ev)) s.pending.push(line);
+  });
+
+  const doneCount = () => [...state.values()].filter((s) => s.done).length;
+
+  const flush = () => {
+    const elapsed = formatDuration(performance.now() - startedAt);
+    write(`${tag} ${label} · ${elapsed} · ${doneCount()}/${total} done`);
+    for (const id of dimIds) {
+      const s = state.get(id);
+      if (s.done) continue;
+      const head = `  ${id} · ${formatTokens(s.tokens)}`;
+      if (s.pending.length === 0) {
+        write(`${head} · no new activity`);
+        continue;
+      }
+      write(head);
+      for (const line of s.pending.slice(0, capPerJudge)) write(`    ${line}`);
+      if (s.pending.length > capPerJudge) {
+        write(`    +${s.pending.length - capPerJudge} more`);
+      }
+      s.pending = [];
+    }
+  };
+
+  const timer = setInterval(flush, intervalMs);
+  if (timer.unref) timer.unref();
+
   return {
+    markDone(id) {
+      const s = state.get(id);
+      if (s) s.done = true;
+    },
     stop() {
-      clearInterval(hb);
+      follower.stop();
+      clearInterval(timer);
     },
   };
 }

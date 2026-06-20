@@ -108,18 +108,36 @@ The agent steps can each run for many minutes, so the pipeline reports progress
 as it goes (suppress with `--quiet` / `--no-progress` — milestone lines and the
 log-path hints stay):
 
-- An up-front `[eval] logs: <run>/logs` line, then a `generate: started →
-  tail -f …/logs/generate*.stream.jsonl` hint and a similar `tail` hint for the
-  parallel judges.
 - The agent wrappers run `claude --output-format stream-json --verbose` and
-  write the live event stream to `logs/<step>.stream.jsonl`. The pipeline tails
-  it and prints a compact digest (`> Tool: Write (blueprint.json)`, `> agent
-  done — N turn(s)`); `tail -f` that file for the raw stream. The per-step
+  write the live event stream to `logs/<step>.stream.jsonl`. `tail -f` that file
+  (the pipeline prints the path) for the raw, real-time stream. The per-step
   `logs/<step>.{stdout,stderr}.log` are also written live (not buffered to the
   end).
-- A heartbeat (`generate: running 2m10s…`, or `dimensions: 1m30s — 2/6 done;
-  running: …`) fires when a step is otherwise quiet. Tune the interval with
-  `EVAL_HEARTBEAT_MS` (default 20000).
+- The pipeline tails those streams and prints a **batched tick** on a fixed
+  interval (default 20s, tune with `EVAL_HEARTBEAT_MS`). Each tick is a header
+  with elapsed time and the running estimated-thinking-token total (summed from
+  the stream's `thinking_tokens` deltas), followed by the digest messages that
+  accumulated since the last tick — capped, with `+N more` when over. A quiet
+  interval collapses to a single `· no new activity` line, where the climbing
+  token total still shows the step is alive:
+
+  ```
+  [eval] generate · 7m20s · 39.4k tok
+    > Tool: Write (blueprint.json)
+    > Tool: Bash (node validate.mjs)
+  [eval] generate · 8m40s · 52.1k tok · no new activity
+  ```
+
+- The parallel judge phase ticks with a `done/total` header, then a short
+  per-judge block (token total + up to ~3 new messages); finished judges drop
+  out, and each prints its own `[eval][<dim>] judge: pass|fail` verdict line:
+
+  ```
+  [eval] dimensions · 2m10s · 2/6 done
+    fairness · 120k tok
+      > Tool: Read (blueprint.json)
+    solve_depth · 88k tok · no new activity
+  ```
 
 `<step>.stream.jsonl` is the tailable event log; the result contract is
 unchanged — `generate`/`judge` still read their artifact (`blueprint.json` /

@@ -116,8 +116,10 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
                                                             // all in parallel
 ```
 
-1. **Load spec.** Reads `input.brief.json`. The dimension set + context comes
-   from `evaluation/dimensions/registry.json` (see "Spec file" below).
+1. **Load spec.** Reads the brief — `--spec` accepts either a spec directory
+   containing `input.brief.json` or a path to a brief JSON file directly. The
+   dimension set + context comes from `evaluation/dimensions/registry.json`
+   (see "Spec file" below).
 2. **Generate blueprint.** Either reads `--blueprint <path>` or shells out to
    the generator CLI. Output is validated against `BlueprintV2Schema`. Failure
    here aborts the run; the envelope still gets written with
@@ -148,6 +150,17 @@ schema.
 To bind a new LLM: write a wrapper that takes the two file paths, calls your
 CLI, and prints `{ "result": "<model-output>" }` on stdout. The bundled
 wrappers in `evaluation/config/wrappers/` invoke `claude`.
+
+**Live progress.** Long agent steps would otherwise be silent, so the runner
+streams each step's stdout/stderr to `logs/<step>.{stdout,stderr}.log` as chunks
+arrive (not buffered to the end), and sets `EVAL_STREAM_FILE` to a per-step
+`logs/<step>.stream.jsonl`. The bundled wrappers run
+`claude --output-format stream-json --verbose` and write the event stream there;
+both `run.mjs` entry points tail it to print a compact digest plus a heartbeat
+(`--quiet` to suppress, `EVAL_HEARTBEAT_MS` to tune). The result contract is
+unchanged — wrappers still resolve `extract_path: "result"` from their stdout
+(blueprint/judge read the artifact from disk; the trace judge recovers it from
+the stream's final result event). See `evaluation/README.md` → "Live progress".
 
 ## Generator and judge harnesses
 
@@ -264,7 +277,9 @@ No code changes elsewhere. The loader picks them up by ID.
 ## Spec file
 
 Each `evaluation/specs/<id>/` directory holds **only** an `input.brief.json`;
-there is no per-mystery `outcome.spec.json`.
+there is no per-mystery `outcome.spec.json`. (`--spec` also accepts a brief
+JSON file path directly, so a brief living outside `specs/` needs no enclosing
+directory.)
 
 The set of dimensions to run, and all dimension context (probe-topic
 baselines, thresholds, …), lives centrally in

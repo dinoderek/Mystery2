@@ -59,15 +59,20 @@ node -e '
 ' "$USER_MESSAGE_FILE" "$WORKSPACE/brief.json"
 
 cd "$WORKSPACE"
-# Drop the user message file path mapping (the agent reads brief.json from
-# disk). The CLI prompt is the explicit kickoff message — workspace CLAUDE.md
-# provides the rest.
-claude --print --output-format json \
+# The agent reads brief.json + CLAUDE.md from the workspace; the CLI prompt is
+# just the kickoff. We run with stream-json so the pipeline can tail the live
+# event stream from $STREAM_FILE (the pipeline sets EVAL_STREAM_FILE to a
+# tailable logs/<step>.stream.jsonl). The blueprint itself is read back from
+# disk (./blueprint.json), so the output format does NOT affect the result
+# contract the pipeline extracts below.
+STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
+mkdir -p "$(dirname "$STREAM_FILE")"
+claude --print --output-format stream-json --verbose \
        --model opus \
        --effort xhigh \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./blueprint.json that passes the validator." \
-       >"$WORKSPACE/claude.stdout.json" \
+       >"$STREAM_FILE" \
        2>"$WORKSPACE/claude.stderr.log"
 
 if [[ ! -f "$WORKSPACE/blueprint.json" ]]; then
@@ -75,7 +80,8 @@ if [[ ! -f "$WORKSPACE/blueprint.json" ]]; then
   exit 3
 fi
 
-# Pretty-print the agent's JSON artifacts in place so the workspace is readable.
+# Pretty-print the agent's blueprint in place so the workspace is readable.
+# (The stream file is left as raw JSONL — that is the tailable event log.)
 node -e '
   const fs = require("fs");
   for (const f of process.argv.slice(1)) {
@@ -83,7 +89,7 @@ node -e '
       fs.writeFileSync(f, JSON.stringify(JSON.parse(fs.readFileSync(f, "utf8")), null, 2) + "\n");
     } catch {}
   }
-' "$WORKSPACE/blueprint.json" "$WORKSPACE/claude.stdout.json"
+' "$WORKSPACE/blueprint.json"
 
 # Re-emit the agent's final blueprint in the pipeline's expected envelope shape.
 # Use node to JSON-escape the blueprint string safely.

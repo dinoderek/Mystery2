@@ -64,6 +64,15 @@ Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
 `~/mysteryevals`): `result.json`, `reconstruction.json`, the inline-extracted
 `trace.json` (when `--session` is used), and per-judge `logs/`.
 
+While the judges run, the pipeline prints progress (a `logs:` hint, a
+`tail -f …/logs/judge-*.stream.jsonl` hint, and a heartbeat with done/running
+counts); `--quiet` suppresses it. The trace judge wrapper runs
+`claude --output-format stream-json --verbose`, writes the live event stream to
+`logs/<step>.stream.jsonl` (tailable), and recovers the verdict from the
+stream's final result event — so the pipeline's `extract_path: "result"`
+contract is unchanged. Same machinery as the blueprint pipeline; see
+`evaluation/README.md` (§ Live progress).
+
 The process exits non-zero only when the run itself fails (extraction error,
 etc.), matching the blueprint pipeline. A check or judge **fail** still exits 0
 — the `result.json` summary is the pass/fail signal, so a CI caller should gate

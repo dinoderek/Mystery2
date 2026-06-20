@@ -22,10 +22,43 @@ export async function readText(filePath) {
   return fs.readFile(filePath, "utf8");
 }
 
-export async function loadSpec(specDir) {
-  const absSpecDir = path.resolve(specDir);
-  const brief = await readJson(path.join(absSpecDir, "input.brief.json"));
-  return { specDir: absSpecDir, brief };
+// Resolve a --spec argument to a concrete brief path plus a slug used for run
+// ids and output directory names. The argument may be EITHER a spec directory
+// containing input.brief.json (the original convention) OR a path to a brief
+// JSON file directly — so callers no longer have to wrap a lone brief in a
+// directory just to satisfy the loader.
+export async function resolveSpec(specPath) {
+  const abs = path.resolve(specPath);
+  let stat;
+  try {
+    stat = await fs.stat(abs);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      throw new Error(`Spec path not found: ${abs}`);
+    }
+    throw err;
+  }
+  if (stat.isDirectory()) {
+    return {
+      briefPath: path.join(abs, "input.brief.json"),
+      slug: path.basename(abs),
+    };
+  }
+  // A brief file was passed directly. Derive the slug from its enclosing
+  // directory when it follows the input.brief.json convention, otherwise from
+  // the file name (dropping a trailing .brief.json or .json).
+  const base = path.basename(abs);
+  const slug =
+    base === "input.brief.json"
+      ? path.basename(path.dirname(abs))
+      : base.replace(/\.brief\.json$/i, "").replace(/\.json$/i, "");
+  return { briefPath: abs, slug };
+}
+
+export async function loadSpec(specPath) {
+  const { briefPath, slug } = await resolveSpec(specPath);
+  const brief = await readJson(briefPath);
+  return { specDir: path.dirname(briefPath), briefPath, slug, brief };
 }
 
 // The standard evaluation battery: which dimensions run on every blueprint and

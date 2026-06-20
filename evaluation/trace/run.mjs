@@ -9,6 +9,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import { runCli } from "../pipeline/cli-runner.mjs";
+import { startPhaseHeartbeat } from "../pipeline/progress.mjs";
 import {
   createRunTimer,
   formatDuration,
@@ -34,6 +35,7 @@ function parseArgs(argv) {
     config: null,
     runId: null,
     outputRoot: null,
+    quiet: false,
     help: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -43,6 +45,7 @@ function parseArgs(argv) {
     else if (arg === "--config") args.config = argv[++i];
     else if (arg === "--run-id") args.runId = argv[++i];
     else if (arg === "--output-root") args.outputRoot = argv[++i];
+    else if (arg === "--quiet" || arg === "--no-progress") args.quiet = true;
     else if (arg === "--help" || arg === "-h") args.help = true;
   }
   return args;
@@ -65,6 +68,8 @@ Options:
   --output-root <dir> Root for run output (default: $MYSTERYEVALS_DIR or
                       ~/mysteryevals). Each run writes a self-contained
                       <root>/<date>/<time>/run-trace-<session>/ directory.
+  --quiet, --no-progress  Suppress the per-step heartbeat (keeps milestone lines
+                      and log-path hints). Useful for CI.
   -h, --help          Show this help.
 `;
 }
@@ -225,6 +230,9 @@ async function main() {
 
   const runId = args.runId ?? `${startedAt.toISOString().replace(/[:.]/g, "-")}-${provisionalSlug}`;
   process.stdout.write(`[trace-eval] run_id=${runId}\n[trace-eval] output_dir=${runDir}\n`);
+  process.stdout.write(
+    `[trace-eval] logs: ${logDir}  (per-step *.stream.jsonl are tailable live)\n`,
+  );
 
   try {
     const { trace, extraction } = await loadRawTrace({ args, root, runDir, timer });
@@ -282,25 +290,66 @@ async function main() {
     const judgeSystemBase = await timer.stage("load_judge_system_prompt", () => loadTraceJudgeSystemPrompt());
     const judgeTurns = projectTurnsForJudge(reconstructed.turns);
 
-    runState.dimensions = await timer.stage(
-      "dimensions",
-      () =>
-        Promise.all(
-          dimensions.map((dimRef) =>
-            evaluateDimension({
-              dimRef,
-              blueprint: trace.blueprint,
-              judgeTurns,
-              judgeSystemBase,
-              judgeStep,
-              logDir,
-              runDir,
-              timer,
-            }),
-          ),
-        ),
-      (results) => ({ count: results.length, parallel: true }),
+    process.stdout.write(
+      `[trace-eval] dimensions: ${dimensions.length} started in parallel\n`,
     );
+    if (judgeStep && !args.quiet) {
+      process.stdout.write(
+        `[trace-eval]   tail -f ${path.join(logDir, "judge-*.stream.jsonl")}  (or judge-<dim>*.stream.jsonl for one)\n`,
+      );
+    }
+
+    // Parallel-phase progress: a single heartbeat summarising done/running
+    // counts, plus a tally line as each dimension lands. Tail the per-judge
+    // stream files above for live agent detail.
+    const dimsStartedAt = performance.now();
+    const total = dimensions.length;
+    let done = 0;
+    const running = new Set(dimensions.map((d) => d.id));
+    const dimsHeartbeat = judgeStep
+      ? startPhaseHeartbeat({
+          quiet: args.quiet,
+          status: () =>
+            `[trace-eval] dimensions: ${formatDuration(performance.now() - dimsStartedAt)} — ${done}/${total} done` +
+            (running.size ? `; running: ${[...running].join(", ")}` : ""),
+        })
+      : { stop() {} };
+
+    try {
+      runState.dimensions = await timer.stage(
+        "dimensions",
+        () =>
+          Promise.all(
+            dimensions.map((dimRef) =>
+              evaluateDimension({
+                dimRef,
+                blueprint: trace.blueprint,
+                judgeTurns,
+                judgeSystemBase,
+                judgeStep,
+                logDir,
+                runDir,
+                timer,
+              }).finally(() => {
+                running.delete(dimRef.id);
+                done += 1;
+                if (judgeStep && !args.quiet) {
+                  process.stdout.write(
+                    `[trace-eval] dimensions: ${done}/${total} done` +
+                      (running.size
+                        ? `; running: ${[...running].join(", ")}`
+                        : "") +
+                      `\n`,
+                  );
+                }
+              }),
+            ),
+          ),
+        (results) => ({ count: results.length, parallel: true }),
+      );
+    } finally {
+      dimsHeartbeat.stop();
+    }
   } catch (err) {
     runState.runError = { stage: err.runErrorStage ?? "unknown", message: String(err.message ?? err) };
     process.stderr.write(`[trace-eval] error: ${runState.runError.message}\n`);

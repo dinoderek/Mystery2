@@ -13,6 +13,7 @@ import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2
 import { runMechanicalChecks } from "../checks/mechanical.mjs";
 import { runCli, runCliWithRetries } from "./cli-runner.mjs";
 import { buildEnvelope, combineDimension } from "./envelope.mjs";
+import { startPhaseHeartbeat, startStepDigest } from "./progress.mjs";
 import {
   loadCliConfig,
   loadDimensionDefinition,
@@ -20,6 +21,7 @@ import {
   loadJudgeSystemPrompt,
   loadSpec,
   repoRoot,
+  resolveSpec,
   tryLoadAnalyzer,
 } from "./load.mjs";
 import {
@@ -35,6 +37,7 @@ function parseArgs(argv) {
     blueprint: null,
     runId: null,
     outputRoot: null,
+    quiet: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -43,16 +46,18 @@ function parseArgs(argv) {
     else if (arg === "--blueprint") args.blueprint = argv[++i];
     else if (arg === "--run-id") args.runId = argv[++i];
     else if (arg === "--output-root") args.outputRoot = argv[++i];
+    else if (arg === "--quiet" || arg === "--no-progress") args.quiet = true;
     else if (arg === "--help" || arg === "-h") args.help = true;
   }
   return args;
 }
 
 function usage() {
-  return `Usage: node evaluation/pipeline/run.mjs --spec <spec-dir> [options]
+  return `Usage: node evaluation/pipeline/run.mjs --spec <path> [options]
 
 Required:
-  --spec <dir>           Path to a spec directory containing input.brief.json.
+  --spec <path>          Either a spec directory containing input.brief.json,
+                         or a path to a brief JSON file directly.
 
 Options:
   --config <file>        Path to cli.json (default: evaluation/config/cli.json).
@@ -64,6 +69,8 @@ Options:
                          output directory <root>/<date>/<time>/run-<brief>/ that
                          holds ALL artifacts — result, blueprint, logs, and the
                          generator/judge agent workspaces.
+  --quiet, --no-progress Suppress the live agent digest and heartbeat (keeps the
+                         milestone lines and log-path hints). Useful for CI.
   -h, --help             Show this help.
 
 Output directory (<root>/<date>/<time>/run-<brief>/):
@@ -87,8 +94,15 @@ async function main() {
   const startedAt = new Date();
   const timer = createRunTimer();
   const root = repoRoot();
-  const specDir = path.resolve(args.spec);
-  const specSlug = path.basename(specDir);
+  let briefPath;
+  let specSlug;
+  try {
+    ({ briefPath, slug: specSlug } = await resolveSpec(args.spec));
+  } catch (err) {
+    process.stderr.write(`[eval] ${err.message}\n`);
+    process.exit(1);
+  }
+  const specDir = path.dirname(briefPath);
   const runId =
     args.runId ??
     `${startedAt.toISOString().replace(/[:.]/g, "-")}-${specSlug}`;
@@ -111,8 +125,11 @@ async function main() {
   await fs.mkdir(logDir, { recursive: true });
 
   process.stdout.write(`[eval] run_id=${runId}\n`);
-  process.stdout.write(`[eval] spec_dir=${path.relative(root, specDir)}\n`);
+  process.stdout.write(`[eval] brief=${path.relative(root, briefPath)}\n`);
   process.stdout.write(`[eval] output_dir=${runDir}\n`);
+  process.stdout.write(
+    `[eval] logs: ${logDir}  (per-step *.stream.jsonl are tailable live)\n`,
+  );
 
   const runState = {
     blueprintPath: null,
@@ -123,7 +140,15 @@ async function main() {
   };
 
   try {
-    await runPipeline({ args, root, specDir, runDir, logDir, runState, timer });
+    await runPipeline({
+      args,
+      root,
+      briefPath,
+      runDir,
+      logDir,
+      runState,
+      timer,
+    });
   } catch (err) {
     runState.runError = {
       stage: err.runErrorStage ?? "unknown",
@@ -175,13 +200,13 @@ async function main() {
 async function runPipeline({
   args,
   root,
-  specDir,
+  briefPath,
   runDir,
   logDir,
   runState,
   timer,
 }) {
-  const { brief } = await timer.stage("load_spec", () => loadSpec(specDir));
+  const { brief } = await timer.stage("load_spec", () => loadSpec(briefPath));
   const dimensions = await timer.stage("load_dimensions", () =>
     loadDimensions(),
   );
@@ -252,43 +277,64 @@ async function runPipeline({
         `[eval]   generate retries configured: ${generateRetries}\n`,
       );
     }
-    const generateOutcome = await timer.stage(
-      "generate",
-      () =>
-        runCliWithRetries({
-          step: "generate",
-          config: cliConfig.generate,
-          systemPrompt: chatInput.systemPrompt,
-          userMessage,
-          logDir,
-          retries: generateRetries,
-          env: { EVAL_RUN_DIR: runDir },
-          validateExtracted: (extracted) => {
-            let parsed;
-            try {
-              parsed = JSON.parse(extracted);
-            } catch (err) {
-              throw new Error(
-                `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
-              );
-            }
-            const check = BlueprintV2Schema.safeParse(parsed);
-            if (!check.success) {
-              const issues = check.error.issues
-                .slice(0, 5)
-                .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
-                .join("; ");
-              throw new Error(
-                `Generated blueprint failed BlueprintV2Schema: ${issues}` +
-                  (check.error.issues.length > 5
-                    ? ` (+${check.error.issues.length - 5} more issues)`
-                    : ""),
-              );
-            }
-          },
-        }),
-      (outcome) => ({ attempts: outcome.attempts.length }),
-    );
+    if (!args.quiet) {
+      process.stdout.write(
+        `[eval] generate: started → tail -f ${path.join(logDir, "generate*.stream.jsonl")}\n`,
+      );
+    }
+    const generateProgress = startStepDigest({
+      label: "generate",
+      logDir,
+      stepPrefix: "generate",
+      quiet: args.quiet,
+    });
+    let generateOutcome;
+    try {
+      generateOutcome = await timer.stage(
+        "generate",
+        () =>
+          runCliWithRetries({
+            step: "generate",
+            config: cliConfig.generate,
+            systemPrompt: chatInput.systemPrompt,
+            userMessage,
+            logDir,
+            retries: generateRetries,
+            env: { EVAL_RUN_DIR: runDir },
+            validateExtracted: (extracted) => {
+              let parsed;
+              try {
+                parsed = JSON.parse(extracted);
+              } catch (err) {
+                throw new Error(
+                  `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
+                );
+              }
+              const check = BlueprintV2Schema.safeParse(parsed);
+              if (!check.success) {
+                const issues = check.error.issues
+                  .slice(0, 5)
+                  .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+                  .join("; ");
+                throw new Error(
+                  `Generated blueprint failed BlueprintV2Schema: ${issues}` +
+                    (check.error.issues.length > 5
+                      ? ` (+${check.error.issues.length - 5} more issues)`
+                      : ""),
+                );
+              }
+            },
+          }),
+        (outcome) => ({ attempts: outcome.attempts.length }),
+      );
+    } finally {
+      generateProgress.stop();
+    }
+    if (!args.quiet && generateOutcome.ok) {
+      process.stdout.write(
+        `[eval] generate: ok (${formatDuration(timer.lastStageMs())})\n`,
+      );
+    }
     const totalDurationMs = generateOutcome.attempts.reduce(
       (sum, a) => sum + a.duration_ms,
       0,
@@ -356,29 +402,66 @@ async function runPipeline({
   const judgeStep = cliConfig?.judge ?? null;
 
   process.stdout.write(
-    `[eval] evaluating ${dimensions.length} dimension(s) in parallel\n`,
+    `[eval] dimensions: ${dimensions.length} started in parallel\n`,
   );
+  if (judgeStep && !args.quiet) {
+    process.stdout.write(
+      `[eval]   tail -f ${path.join(logDir, "judge-*.stream.jsonl")}  (or judge-<dim>*.stream.jsonl for one)\n`,
+    );
+  }
 
-  runState.dimensions = await timer.stage(
-    "dimensions",
-    () =>
-      Promise.all(
-        dimensions.map((dimRef) =>
-          evaluateDimension({
-            dimRef,
-            brief,
-            parsedBlueprint,
-            blueprintJson,
-            judgeSystemBase,
-            judgeStep,
-            logDir,
-            runDir,
-            timer,
-          }),
+  // Parallel-phase progress: a single heartbeat summarising done/running counts
+  // (interleaving 6 live agent digests would be unreadable — tail the per-judge
+  // stream files above for detail), plus a tally line as each dimension lands.
+  const dimsStartedAt = performance.now();
+  const total = dimensions.length;
+  let done = 0;
+  const running = new Set(dimensions.map((d) => d.id));
+  const dimsHeartbeat = judgeStep
+    ? startPhaseHeartbeat({
+        quiet: args.quiet,
+        status: () =>
+          `[eval] dimensions: ${formatDuration(performance.now() - dimsStartedAt)} — ${done}/${total} done` +
+          (running.size ? `; running: ${[...running].join(", ")}` : ""),
+      })
+    : { stop() {} };
+
+  try {
+    runState.dimensions = await timer.stage(
+      "dimensions",
+      () =>
+        Promise.all(
+          dimensions.map((dimRef) =>
+            evaluateDimension({
+              dimRef,
+              brief,
+              parsedBlueprint,
+              blueprintJson,
+              judgeSystemBase,
+              judgeStep,
+              logDir,
+              runDir,
+              timer,
+            }).finally(() => {
+              running.delete(dimRef.id);
+              done += 1;
+              if (judgeStep && !args.quiet) {
+                process.stdout.write(
+                  `[eval] dimensions: ${done}/${total} done` +
+                    (running.size
+                      ? `; running: ${[...running].join(", ")}`
+                      : "") +
+                    `\n`,
+                );
+              }
+            }),
+          ),
         ),
-      ),
-    (results) => ({ count: results.length, parallel: true }),
-  );
+      (results) => ({ count: results.length, parallel: true }),
+    );
+  } finally {
+    dimsHeartbeat.stop();
+  }
 }
 
 async function evaluateDimension({

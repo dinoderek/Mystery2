@@ -196,9 +196,8 @@ function guardrailBlock() {
   ].join(" ");
 }
 
-function outputBlock(blueprint, target) {
-  const stableSeed = `${blueprint.id}:${target.targetType}:${target.targetKey ?? "blueprint"}`;
-  return `Output: one static image, 4:3 framing, consistent visual style, seed phrase "${stableSeed}".`;
+function outputBlock() {
+  return "Output: one static image, 4:3 framing, consistent visual style.";
 }
 
 export function buildReferenceLegend(referenceImages) {
@@ -222,7 +221,7 @@ export function buildImagePrompt(blueprint, target, options = {}) {
     targetBlock(blueprint, target, options),
     legend,
     guardrailBlock(),
-    outputBlock(blueprint, target),
+    outputBlock(),
   ]
     .filter(Boolean)
     .join("\n\n");

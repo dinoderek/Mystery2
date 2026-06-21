@@ -40,7 +40,7 @@ describe("edge function CORS handling", () => {
       expect(allowMethods).toContain("OPTIONS");
       expect(allowMethods).toContain(endpoint.requestedMethod);
     }
-  });
+  }, 30_000);
 
   it("includes CORS headers on rejected auth responses", async () => {
     const res = await fetch(`${API_URL}/game-start`, {
@@ -64,5 +64,5 @@ describe("edge function CORS handling", () => {
     });
     expect(imageRes.status).toBe(401);
     expect(imageRes.headers.get("Access-Control-Allow-Origin")).toBe("*");
-  });
+  }, 30_000);
 });

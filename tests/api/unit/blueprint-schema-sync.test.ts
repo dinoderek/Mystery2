@@ -22,4 +22,15 @@ describe("blueprint schema sync", () => {
 
     expect(() => BlueprintV2Schema.parse(raw)).not.toThrow();
   });
+
+  it("Deno age-profile copy is byte-identical to the shared source", async () => {
+    const [shared, deno] = await Promise.all([
+      readFile("packages/shared/src/age-profile.ts", "utf-8"),
+      readFile("supabase/functions/_shared/age-profile.ts", "utf-8"),
+    ]);
+
+    // age-profile.ts has no imports, so the edge (Deno) copy must match exactly.
+    // Keep them in sync — edit the shared source and copy it across.
+    expect(deno).toBe(shared);
+  });
 });

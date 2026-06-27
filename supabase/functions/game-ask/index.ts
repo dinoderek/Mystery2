@@ -15,7 +15,11 @@ import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  buildAgeGuidance,
+  loadPromptTemplate,
+  renderPrompt,
+} from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -116,6 +120,10 @@ serveWithCors(async (req) => {
 
     const promptTemplate = await loadPromptTemplate("talk_conversation");
     const prompt = renderPrompt(promptTemplate, {
+      age_guidance: buildAgeGuidance(
+        "talk_conversation",
+        blueprint.metadata.target_age,
+      ),
       character_name: activeCharacter.first_name,
       player_input: playerInput,
       target_age: blueprint.metadata.target_age,

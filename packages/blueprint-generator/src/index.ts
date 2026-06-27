@@ -1,5 +1,6 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+import { renderGenerationGuidance } from "../../shared/src/age-profile.ts";
 import {
   BlueprintV2Schema,
   type BlueprintV2,
@@ -306,7 +307,7 @@ export async function buildBlueprintGenerationChatInput(
   }
 
   return {
-    systemPrompt: await loadBlueprintGeneratorPrompt(),
+    systemPrompt: `${await loadBlueprintGeneratorPrompt()}\n\n${renderGenerationGuidance(parsedBrief.data.targetAge)}`,
     userMessageContent: JSON.stringify({
       story_brief: parsedBrief.data,
       instructions: BLUEPRINT_GENERATION_INSTRUCTIONS,

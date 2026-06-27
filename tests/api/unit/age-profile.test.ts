@@ -9,6 +9,7 @@ import {
   getInteraction,
   MAX_TARGET_AGE,
   MIN_TARGET_AGE,
+  renderGenerationGuidance,
   renderGuidance,
   renderLengthGuidance,
 } from "../../../packages/shared/src/age-profile.ts";
@@ -106,5 +107,12 @@ describe("guidance rendering", () => {
   it("renders for clamped ages without throwing", () => {
     expect(() => renderGuidance("intro", 2)).not.toThrow();
     expect(() => renderGuidance("accusation_verdict", 50)).not.toThrow();
+  });
+
+  it("generation guidance carries the age and a brevity reminder", () => {
+    const g = renderGenerationGuidance(8);
+    expect(g).toContain("8 years old");
+    expect(g.toLowerCase()).toContain("wall of text");
+    expect(g.toLowerCase()).toContain("player-facing");
   });
 });

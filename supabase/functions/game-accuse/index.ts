@@ -24,7 +24,11 @@ import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
 } from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  buildAgeGuidance,
+  loadPromptTemplate,
+  renderPrompt,
+} from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -117,6 +121,10 @@ serveWithCors(async (req) => {
 
       const promptTemplate = await loadPromptTemplate("accusation_judge");
       const prompt = renderPrompt(promptTemplate, {
+        age_guidance: buildAgeGuidance(
+          "accusation_judge",
+          blueprint.metadata.target_age,
+        ),
         forced_context: "",
         target_age: blueprint.metadata.target_age,
       });
@@ -316,6 +324,10 @@ serveWithCors(async (req) => {
 
         const promptTemplate = await loadPromptTemplate("accusation_start");
         const prompt = renderPrompt(promptTemplate, {
+          age_guidance: buildAgeGuidance(
+            "accusation_start",
+            blueprint.metadata.target_age,
+          ),
           forced_context: "",
           target_age: blueprint.metadata.target_age,
         });

@@ -20,7 +20,11 @@ import {
   type BlueprintClue,
 } from "../_shared/ai-context.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  buildAgeGuidance,
+  loadPromptTemplate,
+  renderPrompt,
+} from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -224,6 +228,7 @@ serveWithCors(async (req) => {
 
     const promptTemplate = await loadPromptTemplate(promptKey);
     const prompt = renderPrompt(promptTemplate, {
+      age_guidance: buildAgeGuidance(promptKey, blueprint.metadata.target_age),
       location_name: currentLocation.name,
       target_age: blueprint.metadata.target_age,
       search_query: searchQuery ?? "",

@@ -15,7 +15,11 @@ import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkEndContext, findCharacterById } from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import {
+  buildAgeGuidance,
+  loadPromptTemplate,
+  renderPrompt,
+} from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -98,6 +102,7 @@ serveWithCors(async (req) => {
     const characterName = activeCharacter?.first_name ?? session.current_talk_character_id;
     const promptTemplate = await loadPromptTemplate("talk_end");
     const prompt = renderPrompt(promptTemplate, {
+      age_guidance: buildAgeGuidance("talk_end", blueprint.metadata.target_age),
       character_name: characterName,
       target_age: blueprint.metadata.target_age,
     });

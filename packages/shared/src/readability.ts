@@ -2,19 +2,29 @@
  * Deterministic readability scorer for age-appropriate text.
  *
  * Built entirely on the Flesch–Kincaid family of formulas (sentence length and
- * syllables per word). These are mathematical readability formulas — there is
- * no third-party text, word list, or copyrightable material embedded here.
+ * syllables per word) — mathematical readability formulas, with no third-party
+ * text, word list, or copyrightable material embedded here.
  *
  *   Flesch–Kincaid grade = 0.39·(words/sentence) + 11.8·(syllables/word) − 15.59
  *   Flesch reading ease  = 206.835 − 1.015·(words/sentence) − 84.6·(syllables/word)
  *
- * The vocabulary axis is intentionally pluggable: callers may pass a Set of
- * "known" words (loaded from their own external data file). Nothing is bundled.
- * With no list supplied, the vocabulary check is advisory and reports candidate
- * "stretch" words heuristically (uncommon multi-syllable words).
+ * Two dials, matching `age-profile.ts`:
+ *   - COMPLEXITY (age): the Flesch–Kincaid grade band is the firm signal —
+ *     above the age's soft-max grade is a `fail` (genuinely too hard to read).
+ *     Sentence-length and vocabulary are advisory `warn`s.
+ *   - LENGTH (interaction × age): advisory only. Over the interaction's soft-max
+ *     is a `warn`, never a fail — length is guidance the narrator may exceed.
+ *
+ * The vocabulary axis is pluggable: callers may pass a Set of "known" words
+ * (from their own external data file). Nothing is bundled.
  */
 
-import { getAgeProfile, type AgeProfile } from "./age-profile.ts";
+import {
+  effectiveLength,
+  getAgeProfile,
+  type AgeProfile,
+  type InteractionId,
+} from "./age-profile.ts";
 
 /** Raw, age-independent measurements of a piece of text. */
 export interface ReadabilityMetrics {
@@ -32,17 +42,18 @@ export interface ReadabilityMetrics {
   longestSentence: string;
 }
 
-/** A single failed expectation, with a human-readable explanation. */
+/** A single flagged expectation, with a human-readable explanation. */
 export interface AgeFlag {
   axis: "length" | "sentence_length" | "complexity" | "vocabulary";
   severity: "warn" | "fail";
   message: string;
 }
 
-/** Result of scoring text against a specific target age. */
+/** Result of scoring text against a specific target age (and optional interaction). */
 export interface AgeScore {
   age: number;
   profile: AgeProfile;
+  interaction: InteractionId | null;
   metrics: ReadabilityMetrics;
   /** Words not found in the supplied known-word set (or heuristic stretch words). */
   stretchWords: string[];
@@ -52,6 +63,11 @@ export interface AgeScore {
 }
 
 export interface ScoreOptions {
+  /**
+   * Which interaction the text is for. Determines the (advisory) length budget.
+   * Omit to skip the length check entirely (e.g. when length is not meaningful).
+   */
+  interaction?: InteractionId;
   /**
    * Optional set of lower-cased "known" words for the target age, supplied by
    * the caller from their own data file. When present, vocabulary grading is
@@ -142,40 +158,37 @@ export function scoreForAge(
   const metrics = measure(text);
   const flags: AgeFlag[] = [];
 
-  // --- Length (biased short: over budget fails, well under budget warns) ---
-  if (metrics.words > profile.wordsPerTurn.max) {
-    flags.push({
-      axis: "length",
-      severity: "fail",
-      message: `Too long: ${metrics.words} words (target up to ${profile.wordsPerTurn.max}). Trim toward a shorter passage.`,
-    });
-  } else if (metrics.words > 0 && metrics.words < profile.wordsPerTurn.min) {
-    flags.push({
-      axis: "length",
-      severity: "warn",
-      message: `Quite short: ${metrics.words} words (target from ${profile.wordsPerTurn.min}). Fine if intentional.`,
-    });
+  // --- Length (advisory; interaction-aware; biased short, no minimum) ---
+  if (options.interaction && metrics.words > 0) {
+    const budget = effectiveLength(options.interaction, age);
+    if (metrics.words > budget.softMax) {
+      flags.push({
+        axis: "length",
+        severity: "warn",
+        message: `Longer than usual for this moment: ${metrics.words} words (aim ~${budget.target}, soft cap ~${budget.softMax}). Trim unless it earns its length.`,
+      });
+    }
   }
 
-  // --- Sentence length ---
-  if (metrics.maxSentenceWords > profile.maxSentenceWords) {
+  // --- Sentence length (advisory guidance) ---
+  if (metrics.maxSentenceWords > profile.softSentenceWords) {
     flags.push({
       axis: "sentence_length",
-      severity: "fail",
-      message: `Longest sentence is ${metrics.maxSentenceWords} words (max ~${profile.maxSentenceWords}). Break it up: "${metrics.longestSentence}"`,
+      severity: "warn",
+      message: `Longest sentence is ${metrics.maxSentenceWords} words (aim under ~${profile.softSentenceWords}). Consider breaking it up: "${metrics.longestSentence}"`,
     });
   }
 
-  // --- Complexity (Flesch–Kincaid grade above the band reads as too hard) ---
-  if (metrics.fleschKincaidGrade > profile.fkGradeTarget.max) {
+  // --- Complexity (the firm signal: FK grade above the band is too hard) ---
+  if (metrics.fleschKincaidGrade > profile.fkGrade.softMax) {
     flags.push({
       axis: "complexity",
       severity: "fail",
-      message: `Reading level grade ${metrics.fleschKincaidGrade} is above the target (up to ${profile.fkGradeTarget.max}) for age ${profile.age}. Use shorter sentences and simpler words.`,
+      message: `Reading level grade ${metrics.fleschKincaidGrade} is above the target (up to ${profile.fkGrade.softMax}) for age ${profile.age}. Use shorter sentences and simpler words.`,
     });
   }
 
-  // --- Vocabulary (exact when a known-word set is supplied, else heuristic) ---
+  // --- Vocabulary (exact when a known-word set is supplied, else advisory) ---
   const stretchWords = findStretchWords(text, options.knownWords);
   if (stretchWords.length > profile.newWordAllowance) {
     flags.push({
@@ -188,6 +201,7 @@ export function scoreForAge(
   return {
     age: profile.age,
     profile,
+    interaction: options.interaction ?? null,
     metrics,
     stretchWords,
     flags,

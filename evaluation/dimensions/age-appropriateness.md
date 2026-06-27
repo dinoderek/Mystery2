@@ -17,25 +17,37 @@ status: proposed
 ## What this dimension asks
 
 Is every player-facing piece of text written at a reading level a UK child of
-`metadata.target_age` could read comfortably and unaided — short enough to keep
-them engaged, with sentences and words at the right level?
+`metadata.target_age` could read comfortably and unaided — and is it short
+enough, for the kind of moment it is, to keep them engaged?
+
+Two dials (see `packages/shared/src/age-profile.ts`):
+- **Complexity** depends on age only (Flesch–Kincaid grade band, soft
+  sentence-length and vocabulary guidance). The FK grade band is the **firm**
+  signal — text above it is genuinely too hard.
+- **Length** depends on the *interaction* (intro, ambience, search, talk round,
+  verdict, …) and is trimmed for younger readers. It is **advisory**: long is a
+  warning, never a hard failure — the narrator may run longer when the character
+  or moment needs it.
 
 ## Deterministic pre-pass (no LLM)
 
 Before the judge runs, the harness scores each player-facing text field with the
-shared scorer (`packages/shared/src/readability.ts`, `scoreForAge`), which is
-built on the Flesch–Kincaid grade formula and the per-age targets in
-`packages/shared/src/age-profile.ts`. Fields scored: `metadata.title`,
-`metadata.one_liner`, `narrative.premise`,
+shared scorer (`packages/shared/src/readability.ts`, `scoreForAge`), built on the
+Flesch–Kincaid grade formula and the per-age targets in `age-profile.ts`. Fields
+scored: `metadata.title`, `metadata.one_liner`, `narrative.premise`,
 `narrative.starting_knowledge.mystery_summary`, every
 `world.locations[].description`, every `*.clues[].text`, and the
-starting-knowledge `summary` strings. Narrator-only fields (sub-location
-`hint`, agenda `details`, ground truth) are excluded — the player never reads
-them.
+starting-knowledge `summary` strings. Narrator-only fields (sub-location `hint`,
+agenda `details`, ground truth) are excluded — the player never reads them.
+
+For the length check, each static field is mapped to the closest interaction
+budget (e.g. `premise` → `intro`, location `description` → `ambience`,
+`one_liner` → `talk_farewell`-short, clue `text` → `search_find`). On the trace
+pipeline, the actual runtime role gives the interaction directly.
 
 The pre-pass produces, per field, the Flesch–Kincaid grade, word count, longest
-sentence, and any threshold breaches. These objective numbers are handed to the
-judge as evidence — the judge does not re-estimate them.
+sentence, and any (firm complexity / advisory length) flags. These objective
+numbers are handed to the judge as evidence — the judge does not re-estimate them.
 
 ## Judge instructions
 

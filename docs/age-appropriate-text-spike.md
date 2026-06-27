@@ -55,58 +55,91 @@ its US grade maps cleanly to UK schooling — **grade + 1 = UK year**, and
 **reading age ≈ grade + 5** — so the target grade for a given age is about
 `age − 5`. That makes it usable as both a prompt target and an automated gate.
 
-## The standard — one per-age profile
+## The standard — two dials
 
-Single source of truth: `packages/shared/src/age-profile.ts`. One row per age,
-read by the scorer, the prompts, and the evaluation dimension, so the standard
-lives in exactly one place. Values are biased short and are starting points to
-calibrate against real samples — not third-party data.
+Single source of truth: `packages/shared/src/age-profile.ts`, read by the
+scorer, the prompts, and the evaluation dimension. There is **no minimum length
+anywhere** — a minimum just forces padding, the exact wall-of-text failure we
+want to avoid. Length is **target + soft-max guidance** in words, which the
+narrator may exceed when the content or character needs it.
 
-| Age | UK year | FK grade target | Sentences/turn | ~Words/turn | Max sentence (words) | New-word allowance |
-|-----|---------|-----------------|----------------|-------------|----------------------|--------------------|
-| 6 | Y1–2 | 0.5–1.5 | 1–2 | 10–30 | 8 | 0 |
-| 7 | Y2–3 | 1–2 | 1–2 | 20–40 | 10 | 1 |
-| 8 | Y3 | 2–3 | 2–3 | 25–50 | 12 | 1 |
-| 9 | Y4 | 3–4 | 2–3 | 35–55 | 14 | 2 |
-| 10 | Y5 | 4–5 | 3–4 | 40–65 | 16 | 3 |
-| 11 | Y6 | 4.5–6 | 3–4 | 45–75 | 18 | 4 |
+**Dial 1 — Complexity (depends on age only).** Same regardless of interaction.
+
+| Age | UK year | FK grade (target–softMax) | Soft sentence length | New-word allowance | Brevity bias |
+|-----|---------|---------------------------|----------------------|--------------------|--------------|
+| 6 | Y1–2 | 1 – 1.5 | ~8 words | 0 | 0.55 |
+| 7 | Y2–3 | 1.5 – 2 | ~10 | 1 | 0.70 |
+| 8 | Y3 | 2.5 – 3 | ~12 | 1 | 0.85 |
+| 9 | Y4 | 3.5 – 4 | ~14 | 2 | 0.95 |
+| 10 | Y5 | 4.5 – 5 | ~16 | 3 | 1.00 |
+| 11 | Y6 | 5 – 6 | ~18 | 4 | 1.00 |
+
+The **FK grade band is the firm signal** (text above it is too hard to read);
+sentence length and vocabulary are advisory. The **brevity bias** is a one-way
+multiplier (≤ 1.0) that *trims* length for younger readers — it never lengthens
+text for older readers, and plateaus at 1.0 for ages 10–11.
+
+**Dial 2 — Length (depends on interaction × age).** Each of the nine runtime
+interactions has one natural length for a fluent reader; the brevity bias trims
+it for younger ages. All values are soft guidance, no minimum.
+
+| Interaction | Runtime role | Target / soft-max words (fluent reader) |
+|-------------|--------------|------------------------------------------|
+| Intro | `buildGameStartPrompt` | 45 / 70 |
+| Ambience | `buildGameMovePrompt` | 30 / 50 |
+| Search — nothing found | `search_bare` | 20 / 35 |
+| Search — clue found | `search_targeted` | 30 / 50 |
+| Talk — greeting | `talk_start` | 15 / 30 |
+| Talk — interrogation round | `talk_conversation` | 35 / 60 |
+| Talk — farewell | `talk_end` | 12 / 25 |
+| Accusation — opening | `accusation_start` | 30 / 50 |
+| Accusation — verdict / payoff | `accusation_judge` | 50 / 80 |
+
+Effective length = base × brevity bias. E.g. an interrogation round is ~19/33
+words for a 6-year-old and the full 35/60 for an 11-year-old.
 
 **Answers to the spike's framing questions:**
-- *Clear standard for 6–11?* Yes — the table above, one source of truth.
-- *Differentiate length per age?* Yes — words/sentences-per-turn and a max
-  sentence length per row, enforced by the scorer and injected into prompts.
-- *Differentiate complexity per age?* Yes — a Flesch–Kincaid grade band plus an
-  optional vocabulary tier (pluggable word set), both measurable.
+- *Clear standard for 6–11?* Yes — the two tables above, one source of truth.
+- *Differentiate length per age?* Yes — per-interaction target/soft-max trimmed
+  by the per-age brevity bias. No minimum.
+- *Differentiate complexity per age?* Yes — a Flesch–Kincaid grade band (firm)
+  plus soft sentence-length and an optional vocabulary tier (pluggable word set).
 
 ## What this branch contains
 
 ### 1. Age-profile module — `packages/shared/src/age-profile.ts`
-The table above as typed data, with `getAgeProfile(age)` (clamped to 6–11) and
-`renderAgeGuidance(age)`, which emits a prompt-ready block from the profile so
-the numbers are never hand-copied into prompt strings.
+The two tables above as typed data. Complexity: `getAgeProfile(age)` (clamped to
+6–11). Length: `getInteraction(id)` and `effectiveLength(id, age)` (base length
+trimmed by the age's brevity bias). Prompt rendering: `renderComplexityGuidance`,
+`renderLengthGuidance`, and `renderGuidance(interaction, age)` emit prompt-ready
+blocks from the profile so the numbers are never hand-copied into prompt strings.
 
 ### 2. Deterministic scorer — `packages/shared/src/readability.ts`
 Pure functions, no third-party content. `measure(text)` returns Flesch–Kincaid
 grade, reading ease, word/sentence counts, and the longest sentence.
-`scoreForAge(text, age, { knownWords? })` compares against the profile and
-returns per-axis flags (length / sentence length / complexity / vocabulary) and
-a `withinTarget` verdict. The vocabulary axis is **exact** when a `knownWords`
-set is supplied, **advisory** (syllable heuristic) otherwise. Covered by
-`tests/api/unit/readability.test.ts` and `age-profile.test.ts` (19 tests),
-including a differentiation test: the same passage fails for age 6 and passes
-for age 11.
+`scoreForAge(text, age, { interaction?, knownWords? })` compares against the
+profile and returns per-axis flags and a `withinTarget` verdict. Severity matches
+the dials: **complexity** (FK grade above the band) is a `fail`; **length** (over
+the interaction soft-max) and **sentence length** are advisory `warn`s; the
+**vocabulary** axis is a `fail` when a `knownWords` set is supplied, else an
+advisory `warn`. Covered by `tests/api/unit/readability.test.ts` and
+`age-profile.test.ts` (28 tests), including: same passage fails for age 6 and
+passes for age 11; younger readers get a trimmed length budget; length never
+fails the verdict.
 
 ### 3. Generation-prompt proposal
-Replace the vague "appropriate for target age" lines in `ai-prompts.ts` (7 roles
-+ `buildGameStart`/`buildGameMove`) and `generator-prompt.md` with the output of
-`renderAgeGuidance(target_age)`. Example rendered block for **age 6**:
+Replace the vague "appropriate for target age" lines in `ai-prompts.ts` (the 9
+roles + `buildGameStart`/`buildGameMove`) and `generator-prompt.md` with the
+output of `renderGuidance(interaction, target_age)` for the matching interaction.
+Example rendered block for the **intro at age 6**:
 
 ```
-The reader is 6 years old (about UK Year 1–2). Write for that reading level:
-- Length: keep this passage to roughly 10–30 words across 1–2 sentences. Prefer shorter. Never write a wall of text.
-- Sentences: keep them short and clear. No single sentence should run past about 8 words.
+The reader is 6 years old (about UK Year 1–2). Match this reading level:
+- Sentences: keep them short and clear. Aim to keep most sentences under about 8 words.
 - Words: Use only the most common, everyday words. Almost every word should be one or two syllables. Do not introduce new or unusual words.
-- Aim for writing a 6-year-old can read comfortably and unaided.
+- The writing should be comfortable for a 6-year-old to read unaided.
+Length (guidance, not a hard limit): aim for around 25 words; try to stay under about 39.
+Prefer shorter. Cut anything that does not earn its place — never write a wall of text. Go longer only if the character or the moment truly needs it.
 ```
 
 These edits are **proposed, not yet applied** to the live prompt files, to keep

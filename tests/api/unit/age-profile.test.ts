@@ -2,17 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import {
   allAgeProfiles,
+  allInteractions,
   clampTargetAge,
+  effectiveLength,
   getAgeProfile,
+  getInteraction,
   MAX_TARGET_AGE,
   MIN_TARGET_AGE,
-  renderAgeGuidance,
+  renderGuidance,
+  renderLengthGuidance,
 } from "../../../packages/shared/src/age-profile.ts";
 
-describe("age profile", () => {
+describe("age profile (complexity dial)", () => {
   it("covers every age from 6 to 11", () => {
-    const ages = allAgeProfiles().map((p) => p.age);
-    expect(ages).toEqual([6, 7, 8, 9, 10, 11]);
+    expect(allAgeProfiles().map((p) => p.age)).toEqual([6, 7, 8, 9, 10, 11]);
   });
 
   it("clamps out-of-range and non-finite ages into 6–11", () => {
@@ -22,14 +25,13 @@ describe("age profile", () => {
     expect(clampTargetAge(Number.NaN)).toBe(MIN_TARGET_AGE);
   });
 
-  it("increases length and complexity targets monotonically with age", () => {
+  it("increases complexity targets monotonically with age", () => {
     const profiles = allAgeProfiles();
     for (let i = 1; i < profiles.length; i++) {
       const prev = profiles[i - 1];
       const cur = profiles[i];
-      expect(cur.wordsPerTurn.max).toBeGreaterThanOrEqual(prev.wordsPerTurn.max);
-      expect(cur.maxSentenceWords).toBeGreaterThanOrEqual(prev.maxSentenceWords);
-      expect(cur.fkGradeTarget.max).toBeGreaterThanOrEqual(prev.fkGradeTarget.max);
+      expect(cur.softSentenceWords).toBeGreaterThanOrEqual(prev.softSentenceWords);
+      expect(cur.fkGrade.softMax).toBeGreaterThanOrEqual(prev.fkGrade.softMax);
       expect(cur.newWordAllowance).toBeGreaterThanOrEqual(prev.newWordAllowance);
     }
   });
@@ -37,25 +39,72 @@ describe("age profile", () => {
   it("keeps Flesch–Kincaid grade targets near (age − 5)", () => {
     for (const p of allAgeProfiles()) {
       const expectedGrade = p.age - 5;
-      expect(expectedGrade).toBeGreaterThanOrEqual(p.fkGradeTarget.min);
-      expect(expectedGrade).toBeLessThanOrEqual(p.fkGradeTarget.max);
+      expect(expectedGrade).toBeGreaterThanOrEqual(p.fkGrade.target - 1);
+      expect(expectedGrade).toBeLessThanOrEqual(p.fkGrade.softMax);
     }
   });
 
-  it("renders prompt guidance that mentions the age and its limits", () => {
-    const guidance = renderAgeGuidance(7);
-    expect(guidance).toContain("7 years old");
-    expect(guidance).toContain("40 words"); // age 7 upper word budget
-    expect(guidance.toLowerCase()).toContain("sentence");
+  it("has no minimum length anywhere in the profile", () => {
+    for (const p of allAgeProfiles()) {
+      expect(p).not.toHaveProperty("wordsPerTurn");
+      expect(p).not.toHaveProperty("sentencesPerTurn");
+    }
   });
 
-  it("renders guidance for clamped ages without throwing", () => {
-    expect(() => renderAgeGuidance(2)).not.toThrow();
-    expect(() => renderAgeGuidance(50)).not.toThrow();
+  it("brevity bias is one-way: in (0,1], and plateaus at 1.0 for older ages", () => {
+    for (const p of allAgeProfiles()) {
+      expect(p.brevityBias).toBeGreaterThan(0);
+      expect(p.brevityBias).toBeLessThanOrEqual(1);
+    }
+    expect(getAgeProfile(6).brevityBias).toBeLessThan(getAgeProfile(11).brevityBias);
+    expect(getAgeProfile(10).brevityBias).toBe(1.0);
+    expect(getAgeProfile(11).brevityBias).toBe(1.0);
+  });
+});
+
+describe("interactions (length dial)", () => {
+  it("defines all nine runtime interactions", () => {
+    expect(allInteractions()).toHaveLength(9);
   });
 
-  it("getAgeProfile returns the matching age record", () => {
-    expect(getAgeProfile(10).age).toBe(10);
-    expect(getAgeProfile(10).ukYear).toMatch(/Year/);
+  it("every interaction has a target no greater than its soft-max, and no minimum", () => {
+    for (const i of allInteractions()) {
+      expect(i.length.target).toBeLessThanOrEqual(i.length.softMax);
+      expect(i.length).not.toHaveProperty("min");
+    }
+  });
+
+  it("trims length down for younger readers but never pads up for older ones", () => {
+    const young = effectiveLength("talk_round", 6);
+    const old = effectiveLength("talk_round", 11);
+    const base = getInteraction("talk_round").length;
+    expect(young.target).toBeLessThan(old.target);
+    expect(old.target).toBe(base.target); // age 11 uses the full natural length
+    expect(old.softMax).toBe(base.softMax);
+  });
+
+  it("the verdict is the longest interaction; the farewell is the shortest", () => {
+    const lengths = allInteractions().map((i) => i.length.target);
+    expect(getInteraction("accusation_verdict").length.target).toBe(Math.max(...lengths));
+    expect(getInteraction("talk_farewell").length.target).toBe(Math.min(...lengths));
+  });
+});
+
+describe("guidance rendering", () => {
+  it("complexity guidance mentions the age but not a fixed word budget", () => {
+    const g = renderGuidance("ambience", 7);
+    expect(g).toContain("7 years old");
+    expect(g.toLowerCase()).toContain("sentence");
+  });
+
+  it("length guidance is framed as soft, not a hard cap", () => {
+    const g = renderLengthGuidance("intro", 6);
+    expect(g.toLowerCase()).toContain("guidance");
+    expect(g.toLowerCase()).toContain("wall of text");
+  });
+
+  it("renders for clamped ages without throwing", () => {
+    expect(() => renderGuidance("intro", 2)).not.toThrow();
+    expect(() => renderGuidance("accusation_verdict", 50)).not.toThrow();
   });
 });

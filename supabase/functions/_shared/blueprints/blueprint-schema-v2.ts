@@ -42,6 +42,24 @@ const BlueprintV2AgendaSchema = z.object({
   yields_to_clue_ids: z.array(z.string()).optional(),
 });
 
+const BlueprintV2TellTriggerSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("always") }),
+  z.object({
+    kind: z.literal("condition"),
+    condition: z.string().trim().min(1),
+  }),
+  z.object({
+    kind: z.literal("clue"),
+    clue_ids: z.array(BlueprintV2IdSchema).min(1),
+  }),
+]);
+
+const BlueprintV2CharacterTellSchema = z.object({
+  id: BlueprintV2IdSchema,
+  text: z.string().trim().min(1),
+  trigger: BlueprintV2TellTriggerSchema,
+});
+
 const BlueprintV2LocationSchema = z.object({
   id: BlueprintV2IdSchema,
   name: z.string().trim().min(1),
@@ -73,6 +91,7 @@ const BlueprintV2CharacterSchema = z.object({
     }),
   ),
   agendas: z.array(BlueprintV2AgendaSchema).default([]),
+  tells: z.array(BlueprintV2CharacterTellSchema).default([]),
 });
 
 const BlueprintV2CoverImageSchema = z.object({

@@ -117,26 +117,29 @@ asked. Share a clue when it is relevant to that question.
 A tell is a REACTION to the player's latest message, not a default every
 turn. Stay in control of yourself unless something earns the slip.
 
-Show a behavioral cue ONLY when the player's latest message actually
-touches a sensitive subject for this character — an active agenda's topic,
-a yields_to clue, or a person/place the character is protecting. If the
-latest message is small talk, an unrelated question, or a topic the
-character is comfortable with, answer plainly with NO tell.
+The character context includes a "tells" array. Each tell has "text" (the
+visible cue, e.g. "glances at the back door") and a "trigger" object that
+decides WHEN it surfaces:
+- trigger.kind = "always": this cue is part of the character; it may surface
+  naturally, but still don't spam it every turn.
+- trigger.kind = "condition": surface the tell ONLY once the free-text
+  "condition" is met by the conversation (e.g. once the player accuses the
+  character of lying). Judge this from the latest message and the history.
+- trigger.kind = "clue": surface the tell ONLY when the player brings up the
+  substance of a referenced clue (see trigger.clue_ids) AND the character
+  believes them. The character believes the player when EITHER the player
+  actually holds that clue (semantic match against player_known_clues) OR the
+  player makes a convincing, plausible bluff about it. If the player neither
+  holds the clue nor bluffs convincingly, the character does NOT believe them
+  and this tell stays hidden.
 
-Each agenda may specify its activation with a "trigger" field:
-- "always": the tell may surface whenever this agenda is relevant.
-- "topic_mentioned": surface the tell ONLY when the player's message
-  references one of the agenda's "trigger_topics" (semantic match).
-- "pressed": surface the tell ONLY under sustained, direct questioning,
-  not on a first, casual mention.
-- (no trigger given): stay reactive — surface a tell only when the
-  player's message genuinely touches the agenda's sensitive subject.
-
-When a tell does fire and the agenda provides a "tell" string, express
-that specific cue. Otherwise improvise a fitting one (hesitation, a glance,
-an over-emphatic denial, visible discomfort). Vary it and escalate with
-pressure — do NOT repeat a tell you already showed earlier in this
-conversation.
+When a tell fires, express its "text" cue. If no authored tell applies but the
+player's message genuinely lands on something sensitive (an agenda's subject, a
+person/place the character protects), you may improvise a fitting reaction
+(hesitation, a glance, an over-emphatic denial, visible discomfort). If the
+latest message is small talk, unrelated, or comfortable ground, answer plainly
+with NO tell. Vary tells and escalate with pressure — do NOT repeat a tell you
+already showed earlier in this conversation.
 
 ### Cross-Character Knowledge
 When a character has clues with about_character_id or

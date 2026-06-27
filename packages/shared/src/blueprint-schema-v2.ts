@@ -177,13 +177,65 @@ export type BlueprintV2AgendaCondition = z.infer<
   typeof BlueprintV2AgendaConditionSchema
 >;
 
-export const BlueprintV2AgendaTriggerSchema = z.enum([
-  "always",
-  "topic_mentioned",
-  "pressed",
+/**
+ * When a character's behavioral tell surfaces. Three kinds:
+ * - `always`: the tell is always present (ambient).
+ * - `condition`: the tell surfaces once a free-text narrative condition is met,
+ *   judged by the narrator (e.g. "the investigator accuses her of lying").
+ * - `clue`: the tell surfaces once the investigator brings up the referenced
+ *   clue(s) AND the character believes them — which happens when the
+ *   investigator actually possesses the clue, or pulls off a convincing bluff.
+ *   If the investigator neither has the clue nor bluffs convincingly, the
+ *   character does not believe them and the tell stays hidden.
+ */
+export const BlueprintV2TellTriggerSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("always"),
+  }),
+  z.object({
+    kind: z.literal("condition"),
+    condition: z
+      .string()
+      .trim()
+      .min(1)
+      .describe(
+        "Free-text narrative condition the narrator judges (e.g. 'the "
+          + "investigator brings up the missing key').",
+      ),
+  }),
+  z.object({
+    kind: z.literal("clue"),
+    clue_ids: z
+      .array(BlueprintV2IdSchema)
+      .min(1)
+      .describe(
+        "Clue IDs (location or character) the investigator must bring up — and "
+          + "be believed about (possession or a convincing bluff) — to surface "
+          + "the tell. Validated to reference existing clues.",
+      ),
+  }),
 ]);
-export type BlueprintV2AgendaTrigger = z.infer<
-  typeof BlueprintV2AgendaTriggerSchema
+export type BlueprintV2TellTrigger = z.infer<typeof BlueprintV2TellTriggerSchema>;
+
+export const BlueprintV2CharacterTellSchema = z.object({
+  id: BlueprintV2IdSchema.describe(
+    "Stable identifier for this tell.",
+  ),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "The visible behavioral cue the character leaks when this tell fires "
+        + "(e.g. 'glances at the back door', 'voice tightens'). Authored so tells "
+        + "are specific and intentional rather than improvised every turn.",
+    ),
+  trigger: BlueprintV2TellTriggerSchema.describe(
+    "When this tell surfaces.",
+  ),
+});
+export type BlueprintV2CharacterTell = z.infer<
+  typeof BlueprintV2CharacterTellSchema
 >;
 
 export const BlueprintV2AgendaSchema = z.object({
@@ -230,32 +282,6 @@ export const BlueprintV2AgendaSchema = z.object({
     .describe(
       "For confronted_with_evidence: specific clue IDs whose content the player "
         + "must reference in conversation to break through.",
-    ),
-  tell: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe(
-      "Optional. The visible behavioral cue this character leaks when this agenda "
-        + "is active (e.g. 'glances at the back door', 'voice tightens'). Authored "
-        + "so tells are specific and intentional rather than improvised every turn. "
-        + "When omitted the narrator infers a fitting reaction from strategy/details.",
-    ),
-  trigger: BlueprintV2AgendaTriggerSchema.optional().describe(
-    "Optional. Governs WHEN this agenda's behavior and tell surface, mirroring how "
-      + "clues stay hidden until found. 'always' = unconditional (may surface every "
-      + "turn). 'topic_mentioned' = only when the player references trigger_topics. "
-      + "'pressed' = only under sustained, direct questioning. When omitted the "
-      + "narrator stays reactive and surfaces the tell only when the player's message "
-      + "actually touches the agenda's sensitive subject.",
-  ),
-  trigger_topics: z
-    .array(z.string().trim().min(1))
-    .optional()
-    .describe(
-      "For trigger 'topic_mentioned': the subjects/keywords in the player's message "
-        + "that activate this agenda (semantic match, exact wording not required).",
     ),
 });
 export type BlueprintV2Agenda = z.infer<typeof BlueprintV2AgendaSchema>;
@@ -334,6 +360,15 @@ export const BlueprintV2CharacterSchema = z.object({
     .default([])
     .describe(
       "Behavioral directives that shape how this character responds in conversation.",
+    ),
+  tells: z
+    .array(BlueprintV2CharacterTellSchema)
+    .default([])
+    .describe(
+      "Behavioral cues this character leaks, each gated by a trigger so they "
+        + "surface reactively (when their condition/clue fires) rather than every "
+        + "turn. Defaults to [] — a character with no authored tells simply reacts "
+        + "organically.",
     ),
 });
 
@@ -519,6 +554,7 @@ export const BlueprintV2Schema = z
     const characterIds = new Set<string>();
     const locationClueIds = new Set<string>();
     const characterClueIds = new Set<string>();
+    const tellIds = new Set<string>();
     const pathIds = new Set<string>();
     const referencedClueIds = new Set<string>();
 
@@ -658,18 +694,6 @@ export const BlueprintV2Schema = z
           });
         }
 
-        if (
-          agenda.trigger === "topic_mentioned" &&
-          (!agenda.trigger_topics || agenda.trigger_topics.length === 0)
-        ) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: [...agendaPath, "trigger_topics"],
-            message:
-              'Agenda trigger "topic_mentioned" requires a non-empty trigger_topics array.',
-          });
-        }
-
         if (agenda.type === "conditional_reveal") {
           if (!agenda.gated_clue_id) {
             context.addIssue({
@@ -763,6 +787,33 @@ export const BlueprintV2Schema = z
                 code: z.ZodIssueCode.custom,
                 path: [...agendaPath, "yields_to_clue_ids", yieldIndex],
                 message: `yields_to_clue_ids must not reference clues from the same character.`,
+              });
+            }
+          }
+        }
+      }
+
+      // --- Tell validations ---
+      for (const [tellIndex, tell] of character.tells.entries()) {
+        const tellPath = ["world", "characters", characterIndex, "tells", tellIndex];
+
+        if (
+          tellIds.has(tell.id) ||
+          allClueIds.has(tell.id) ||
+          characterIds.has(tell.id) ||
+          locationIds.has(tell.id)
+        ) {
+          addDuplicateIssue(context, [...tellPath, "id"], tell.id);
+        }
+        tellIds.add(tell.id);
+
+        if (tell.trigger.kind === "clue") {
+          for (const [clueIndex, clueId] of tell.trigger.clue_ids.entries()) {
+            if (!allClueIds.has(clueId)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [...tellPath, "trigger", "clue_ids", clueIndex],
+                message: `tell trigger clue_ids references unknown clue id "${clueId}".`,
               });
             }
           }

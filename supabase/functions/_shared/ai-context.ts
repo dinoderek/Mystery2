@@ -16,9 +16,17 @@ export interface BlueprintAgenda {
   gated_clue_id?: string;
   condition?: string;
   yields_to_clue_ids?: string[];
-  tell?: string;
-  trigger?: string;
-  trigger_topics?: string[];
+}
+
+export type BlueprintTellTrigger =
+  | { kind: "always" }
+  | { kind: "condition"; condition: string }
+  | { kind: "clue"; clue_ids: string[] };
+
+export interface BlueprintTell {
+  id: string;
+  text: string;
+  trigger: BlueprintTellTrigger;
 }
 
 export interface BlueprintActualAction {
@@ -83,6 +91,7 @@ export interface BlueprintContext {
       flavor_knowledge: string[];
       actual_actions: BlueprintActualAction[];
       agendas?: BlueprintAgenda[];
+      tells?: BlueprintTell[];
     }>;
   };
   ground_truth: {
@@ -169,6 +178,7 @@ export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary 
   flavor_knowledge: string[];
   actual_actions: BlueprintActualAction[];
   agendas: BlueprintAgenda[];
+  tells: BlueprintTell[];
   player_known_clues: Array<{ id: string; text: string }>;
 }
 
@@ -473,6 +483,7 @@ function buildTalkCharacterPrivateContext(
     flavor_knowledge: character.flavor_knowledge,
     actual_actions: character.actual_actions,
     agendas: character.agendas ?? [],
+    tells: character.tells ?? [],
     player_known_clues: playerKnownClues,
   };
 }

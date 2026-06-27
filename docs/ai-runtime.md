@@ -83,14 +83,17 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
 - Role inputs are passed as direct top-level context fields (no separate `role_input` envelope).
 - Role-specific grounding lives outside the shared context:
   - talk roles get grounded location summaries, public character summaries,
-    and active-character roleplay context (including `agendas` and
-    `player_known_clues` when present). Agendas may carry an authored `tell`
-    (the visible behavioral cue) plus a `trigger` (`always` | `topic_mentioned`
-    | `pressed`) and `trigger_topics`. The `talk_conversation` prompt treats
-    tells as reactions, not defaults: a cue surfaces only when the player's
-    latest message touches the agenda's sensitive subject (or its trigger
-    fires), so characters no longer leak the same tells and volunteer the same
-    state every turn regardless of input.
+    and active-character roleplay context (including `agendas`, `tells`, and
+    `player_known_clues` when present). `tells` is a first-class array on the
+    character (separate from agendas); each tell has `text` (the visible cue)
+    and a `trigger` whose `kind` is `always`, `condition` (free-text narrative
+    condition), or `clue` (fires only when the player brings up the referenced
+    `clue_ids` and the character believes them — i.e. the player holds the clue
+    or bluffs convincingly). The `talk_conversation` prompt treats tells as
+    reactions, not defaults: a cue surfaces only when its trigger fires (or, with
+    no authored tell, when the player's message genuinely touches something
+    sensitive), so characters no longer leak the same tells and volunteer the
+    same state every turn regardless of input.
   - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint

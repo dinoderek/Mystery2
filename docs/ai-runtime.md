@@ -84,7 +84,13 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
 - Role-specific grounding lives outside the shared context:
   - talk roles get grounded location summaries, public character summaries,
     and active-character roleplay context (including `agendas` and
-    `player_known_clues` when present)
+    `player_known_clues` when present). Agendas may carry an authored `tell`
+    (the visible behavioral cue) plus a `trigger` (`always` | `topic_mentioned`
+    | `pressed`) and `trigger_topics`. The `talk_conversation` prompt treats
+    tells as reactions, not defaults: a cue surfaces only when the player's
+    latest message touches the agenda's sensitive subject (or its trigger
+    fires), so characters no longer leak the same tells and volunteer the same
+    state every turn regardless of input.
   - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint
@@ -104,8 +110,8 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
 All AI role outputs are validated before any session/event writes:
 
 - Talk start/end roles: require non-empty `narration`.
-- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting.
-- Search role: requires non-empty `narration`, plus `revealed_clue_id` (string or null) and `costs_turn` (boolean). Backend validates the AI's clue choice before persisting.
+- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty) and `input_understood` (boolean, defaults to `true` when omitted). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces `revealed_clue_ids` empty so a confused turn can never leak a clue.
+- Search role: requires non-empty `narration`, plus `revealed_clue_id` (string or null), `costs_turn` (boolean), and `input_understood` (boolean, defaults to `true`). Backend validates the AI's clue choice before persisting. Only `search_targeted` can set `input_understood: false` (bare searches have no free text); the parser then forces `revealed_clue_id` null and `costs_turn` false so unintelligible searches reveal nothing and cost no turn.
 - `accusation_start`: requires `narration` + `follow_up_prompt`.
 - `accusation_judge`: requires:
   - `narration`

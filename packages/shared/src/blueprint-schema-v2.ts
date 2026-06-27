@@ -177,6 +177,15 @@ export type BlueprintV2AgendaCondition = z.infer<
   typeof BlueprintV2AgendaConditionSchema
 >;
 
+export const BlueprintV2AgendaTriggerSchema = z.enum([
+  "always",
+  "topic_mentioned",
+  "pressed",
+]);
+export type BlueprintV2AgendaTrigger = z.infer<
+  typeof BlueprintV2AgendaTriggerSchema
+>;
+
 export const BlueprintV2AgendaSchema = z.object({
   type: z.enum([
     "self_protect",
@@ -221,6 +230,32 @@ export const BlueprintV2AgendaSchema = z.object({
     .describe(
       "For confronted_with_evidence: specific clue IDs whose content the player "
         + "must reference in conversation to break through.",
+    ),
+  tell: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional. The visible behavioral cue this character leaks when this agenda "
+        + "is active (e.g. 'glances at the back door', 'voice tightens'). Authored "
+        + "so tells are specific and intentional rather than improvised every turn. "
+        + "When omitted the narrator infers a fitting reaction from strategy/details.",
+    ),
+  trigger: BlueprintV2AgendaTriggerSchema.optional().describe(
+    "Optional. Governs WHEN this agenda's behavior and tell surface, mirroring how "
+      + "clues stay hidden until found. 'always' = unconditional (may surface every "
+      + "turn). 'topic_mentioned' = only when the player references trigger_topics. "
+      + "'pressed' = only under sustained, direct questioning. When omitted the "
+      + "narrator stays reactive and surfaces the tell only when the player's message "
+      + "actually touches the agenda's sensitive subject.",
+  ),
+  trigger_topics: z
+    .array(z.string().trim().min(1))
+    .optional()
+    .describe(
+      "For trigger 'topic_mentioned': the subjects/keywords in the player's message "
+        + "that activate this agenda (semantic match, exact wording not required).",
     ),
 });
 export type BlueprintV2Agenda = z.infer<typeof BlueprintV2AgendaSchema>;
@@ -620,6 +655,18 @@ export const BlueprintV2Schema = z
             code: z.ZodIssueCode.custom,
             path: [...agendaPath, "target_character_id"],
             message: `Agenda type "${agenda.type}" requires target_character_id.`,
+          });
+        }
+
+        if (
+          agenda.trigger === "topic_mentioned" &&
+          (!agenda.trigger_topics || agenda.trigger_topics.length === 0)
+        ) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...agendaPath, "trigger_topics"],
+            message:
+              'Agenda trigger "topic_mentioned" requires a non-empty trigger_topics array.',
           });
         }
 

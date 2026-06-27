@@ -16,6 +16,9 @@ export interface BlueprintAgenda {
   gated_clue_id?: string;
   condition?: string;
   yields_to_clue_ids?: string[];
+  tell?: string;
+  trigger?: string;
+  trigger_topics?: string[];
 }
 
 export interface BlueprintActualAction {

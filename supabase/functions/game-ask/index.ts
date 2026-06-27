@@ -194,6 +194,7 @@ serveWithCors(async (req) => {
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: characterSpeaker,
         revealed_clue_ids: validatedRevealedClueIds,
+        input_understood: talkOutput.input_understood,
       },
       narration_parts: narrationParts,
       diagnostics: createNarrationDiagnostics({

@@ -1,150 +1,136 @@
-# Age-Appropriate Text — Research & Plan (Spike)
+# Age-Appropriate Text — Research, Plan & Spike
 
-**Status:** Spike / research. No production code changed yet. This document
-captures the problem, the references we will anchor on, and a staged
-implementation plan for making generated text — in both the blueprint and at
-runtime — verifiably age-appropriate for children aged **6–11**.
+**Status:** Spike. This document captures the problem, the verified-open
+references we build on, the per-age standard, and a staged plan. A working
+deterministic scorer, the age-profile source of truth, and proposal artifacts
+for generation and evaluation prompts are included in this branch.
 
-"Age-appropriate" here means two measurable things:
+"Age-appropriate" here means two **measurable** things, for children aged
+**6–11**:
 
-1. **Length** — not too long, not too short for the age. Bias toward *short*
+1. **Length** — not too long, not too short for the age. Biased toward *short*
    and toward *long-term engagement*, away from walls of text.
 2. **Complexity** — sentence structure and word choice at the level a UK child
    of the target age can comfortably read.
 
-## Why this spike exists — current state
+> **Scope boundary — reading level, not content safety.** This work judges
+> *how hard the text is to read*. It does **not** filter *content suitability*
+> (violence, scariness, distressing themes). There is currently **no dedicated
+> content-moderation layer** in the codebase — the only safeguards are the
+> generator prompt's "keep everything child-friendly" line and the LLM
+> provider's own safety. Content safety is a separate, larger workstream
+> (a classifier/moderation layer, not a readability scorer) and is out of scope
+> here. Flagged so it is not mistaken for done.
 
-`target_age` is the only age signal in the system, and nothing measures
-whether output actually lands at that level.
+## Current state — the gap
 
-- **Captured once, threaded everywhere.** The brief form validates
-  `target_age` to **6–11** (`web/src/lib/components/BriefForm.svelte:75`); it is
-  copied to `blueprint.metadata.target_age`
-  (`packages/shared/src/blueprint-schema-v2.ts:332`) and passed into every
-  runtime narrator role as the sole shared context
-  (`supabase/functions/_shared/ai-context.ts`, `SharedMysteryContext.target_age`).
-- **Prompts gesture at age but set no standard.** The generator prompt
+`target_age` (validated **6–11** in `web/.../BriefForm.svelte:75`) is the only
+age signal. It is copied to `blueprint.metadata.target_age`
+(`blueprint-schema-v2.ts:332`) and threaded into every runtime narrator role
+(`ai-context.ts`). But:
+
+- **Prompts gesture at age with no standard.** The generator
   (`supabase/functions/_shared/blueprints/generator-prompt.md`) and all seven
   runtime roles (`supabase/functions/_shared/ai-prompts.ts`) say things like
-  *"Keep language and readability appropriate for target age {{target_age}}"*
-  and *"Shorter sentences for younger readers."* There are **no numbers** — no
-  sentence-length cap, no word budget, no vocabulary tier, no readability
-  target. A 6-year-old and an 11-year-old get the same vague instruction with a
-  different number substituted in.
-- **No measurement anywhere.** Blueprint text fields are `min(1)` with **no max
-  length** (`blueprint-schema-v2.ts`). The evaluation pipeline
-  (`evaluation/dimensions/`) judges solvability, fairness, and coherence but has
-  **no age-appropriateness or readability dimension**. Two dimensions reference
-  `metadata.target_age` for *reasoning* difficulty (`solve-depth.md:54`,
-  `fairness.md:23`) — none for *reading* difficulty.
+  *"Keep language and readability appropriate for target age {{target_age}}"* —
+  **no numbers**: no sentence cap, word budget, or readability target. Age 6 and
+  age 11 get the same sentence with a different number.
+- **Nothing measures output.** Text fields are `min(1)` with no max length. The
+  evaluation battery (`evaluation/dimensions/`) has no readability dimension.
 
-The gap is precise: we have an age number and vague prose, but **no definition
-of "age-appropriate," no per-age differentiation, and no verification.**
+## References — only verified-open sources
 
-## References we will anchor on
+| Source | Verified status | How we use it |
+|--------|-----------------|---------------|
+| **Flesch–Kincaid grade & reading ease** | Free to implement — a mathematical formula (not copyrightable); also US-government origin (1975 Navy contract). | The computed standard. Built into the scorer. |
+| **UK National Curriculum — English, KS1/KS2** | © Crown copyright, reused under the **Open Government Licence v3.0** (copy/adapt with attribution). | Cited as the "expected at age" framing. Not bundled. |
+| **High-frequency word lists (e.g. Dolch, 1936/48)** | The classic lists are out of copyright; short word lists are factual and freely reusable. | **Not bundled.** The vocabulary axis is a *pluggable hook* that accepts an external word set the team supplies. |
 
-| Reference | What it gives us | Role in our system |
-|-----------|------------------|--------------------|
-| **UK National Curriculum — English, KS1 (Y1–2, ages 5–7) & KS2 (Y3–6, ages 7–11)** | The statutory "what's expected at age" for word reading and comprehension. | The authority we cite for *what* a target age means. Qualitative. |
-| **Oxford Reading Tree / Read with Oxford Book Bands** | Concrete progression of sentences-per-page, text length, and vocabulary sophistication from early reader to Year 6. | Anchors our per-age **length** budgets. |
-| **Flesch–Kincaid Grade Level + Flesch Reading Ease** | Computable readability from sentence length & syllables/word. `Grade = 0.39·(words/sentence) + 11.8·(syllables/word) − 15.59`. **US grade + 1 = UK year; reading age ≈ grade + 5.** | The deterministic **complexity** metric — usable as both a prompt target and an automated gate. |
-| **Dolch (220 words, pre-K–Y3), Fry 1000 (Y1–Y9), age-of-acquisition norms** | High-frequency word cores and a per-word "how advanced" signal. Fry-1000 covers ~90% of words in a typical book. | Anchors our per-age **vocabulary** tier and rare-word flagging. |
+**Oxford Reading Tree / Book Bands were considered and dropped** — the specific
+level→age mappings are proprietary OUP material, so they are neither bundled nor
+used as a computed standard.
 
-The pairing matters: the National Curriculum tells us *what* "age 8" should
-mean, and Flesch–Kincaid + word lists let us *measure* whether a given sentence
-hits it. Curriculum alone is unenforceable; readability alone lacks the
-"expected at age" framing. We use both.
+Why Flesch–Kincaid is the right computed anchor: it is deterministic, cheap, and
+its US grade maps cleanly to UK schooling — **grade + 1 = UK year**, and
+**reading age ≈ grade + 5** — so the target grade for a given age is about
+`age − 5`. That makes it usable as both a prompt target and an automated gate.
 
-## Proposed standard — the age profile
+## The standard — one per-age profile
 
-A single source of truth: a per-age table (ages 6–11) mapping each axis to a
-target. Everything else — prompts, validators, evaluation — reads from this one
-table so the standard lives in exactly one place.
+Single source of truth: `packages/shared/src/age-profile.ts`. One row per age,
+read by the scorer, the prompts, and the evaluation dimension, so the standard
+lives in exactly one place. Values are biased short and are starting points to
+calibrate against real samples — not third-party data.
 
-| Age | UK year | FK grade target | Sentences / narration turn | ~Words / turn | Max sentence (words) | Vocabulary guidance |
-|-----|---------|-----------------|----------------------------|---------------|----------------------|---------------------|
-| 6 | Y1–2 | ~1 | 1–2 | 15–30 | ~8 | Dolch core; almost all 1-syllable; introduce no rare words |
-| 7 | Y2–3 | ~2 | 2 | 25–40 | ~10 | Dolch + early Fry; rare words only with context |
-| 8 | Y3 | ~3 | 2–3 | 30–50 | ~12 | Fry 1000; occasional new word, explained in-line |
-| 9 | Y4 | ~4 | 3 | 40–55 | ~14 | Fry 1000+; 1–2 "stretch" words per passage |
-| 10 | Y5 | ~5 | 3–4 | 45–65 | ~16 | Broader vocab; context-inferrable unfamiliar words OK |
-| 11 | Y6 | ~5–6 | 3–4 | 50–75 | ~18 | Richer/figurative language; still concrete and clear |
-
-Targets are intentionally biased **short** (engagement over completeness) and
-expressed as the FK grade ≈ `age − 5` rule, the Book Band length progression,
-and a vocabulary tier. These are starting values to be calibrated against real
-generated samples in the measurement step below — not final constants.
+| Age | UK year | FK grade target | Sentences/turn | ~Words/turn | Max sentence (words) | New-word allowance |
+|-----|---------|-----------------|----------------|-------------|----------------------|--------------------|
+| 6 | Y1–2 | 0.5–1.5 | 1–2 | 10–30 | 8 | 0 |
+| 7 | Y2–3 | 1–2 | 1–2 | 20–40 | 10 | 1 |
+| 8 | Y3 | 2–3 | 2–3 | 25–50 | 12 | 1 |
+| 9 | Y4 | 3–4 | 2–3 | 35–55 | 14 | 2 |
+| 10 | Y5 | 4–5 | 3–4 | 40–65 | 16 | 3 |
+| 11 | Y6 | 4.5–6 | 3–4 | 45–75 | 18 | 4 |
 
 **Answers to the spike's framing questions:**
-
-- *Clear standard for all ages 6–11?* Yes — the table above, one row per age,
-  one source of truth.
-- *Differentiate length per age?* Yes — sentences/turn, word budget, and max
+- *Clear standard for 6–11?* Yes — the table above, one source of truth.
+- *Differentiate length per age?* Yes — words/sentences-per-turn and a max
   sentence length per row, enforced by the scorer and injected into prompts.
-- *Differentiate complexity per age?* Yes — FK grade target (sentence structure
-  + syllable load) plus a vocabulary tier (Dolch/Fry coverage, rare-word
-  ceiling), both measurable.
+- *Differentiate complexity per age?* Yes — a Flesch–Kincaid grade band plus an
+  optional vocabulary tier (pluggable word set), both measurable.
 
-## Implementation plan (staged)
+## What this branch contains
 
-Each stage is independently reviewable. Stages 1–2 are pure and testable with
-no backend dependency; later stages touch prompts and the evaluation harness.
+### 1. Age-profile module — `packages/shared/src/age-profile.ts`
+The table above as typed data, with `getAgeProfile(age)` (clamped to 6–11) and
+`renderAgeGuidance(age)`, which emits a prompt-ready block from the profile so
+the numbers are never hand-copied into prompt strings.
 
-### Stage 1 — Age-profile module (single source of truth)
-- New module in `packages/shared/src/` (e.g. `age-profile.ts`) exporting the
-  table above as typed data, keyed by age 6–11, with a `getAgeProfile(age)`
-  accessor that clamps/validates against the same 6–11 range the brief form
-  enforces.
-- Unit tests covering every age and out-of-range handling.
+### 2. Deterministic scorer — `packages/shared/src/readability.ts`
+Pure functions, no third-party content. `measure(text)` returns Flesch–Kincaid
+grade, reading ease, word/sentence counts, and the longest sentence.
+`scoreForAge(text, age, { knownWords? })` compares against the profile and
+returns per-axis flags (length / sentence length / complexity / vocabulary) and
+a `withinTarget` verdict. The vocabulary axis is **exact** when a `knownWords`
+set is supplied, **advisory** (syllable heuristic) otherwise. Covered by
+`tests/api/unit/readability.test.ts` and `age-profile.test.ts` (19 tests),
+including a differentiation test: the same passage fails for age 6 and passes
+for age 11.
 
-### Stage 2 — Deterministic readability scorer
-- Pure function in `packages/shared/src/` (e.g. `readability.ts`): given text +
-  age, return Flesch–Kincaid grade, Flesch Reading Ease, avg & max sentence
-  length, word/sentence counts, and rare-word flags (words outside the age's
-  Dolch/Fry tier). Include a small bundled syllable counter and word lists.
-- Returns a structured verdict (`withinTarget`, per-axis deltas) by comparing
-  against `getAgeProfile(age)`.
-- Heavily unit-tested with hand-picked passages at known levels. This is the
-  workhorse reused by both runtime and evaluation.
+### 3. Generation-prompt proposal
+Replace the vague "appropriate for target age" lines in `ai-prompts.ts` (7 roles
++ `buildGameStart`/`buildGameMove`) and `generator-prompt.md` with the output of
+`renderAgeGuidance(target_age)`. Example rendered block for **age 6**:
 
-### Stage 3 — Prompt upgrades
-- Replace the vague "appropriate for target age" lines in
-  `supabase/functions/_shared/ai-prompts.ts` (all 7 roles + `buildGameStart`/
-  `buildGameMove`) and `generator-prompt.md` with **concrete per-age
-  constraints** rendered from the age profile: sentence cap, word budget, FK
-  target, vocabulary guidance, plus 1–2 short worked examples for the band and
-  a self-check instruction.
-- Keep the profile values out of the hand-written prompt strings — render them
-  from the Stage 1 module so the standard stays single-sourced.
-- Update `docs/ai-runtime.md` and `docs/blueprint-generation-flows.md` per
-  CLAUDE.md's AI-runtime maintenance rules.
+```
+The reader is 6 years old (about UK Year 1–2). Write for that reading level:
+- Length: keep this passage to roughly 10–30 words across 1–2 sentences. Prefer shorter. Never write a wall of text.
+- Sentences: keep them short and clear. No single sentence should run past about 8 words.
+- Words: Use only the most common, everyday words. Almost every word should be one or two syllables. Do not introduce new or unusual words.
+- Aim for writing a 6-year-old can read comfortably and unaided.
+```
 
-### Stage 4 — `age-appropriateness` evaluation dimension
-- Add a dimension following the existing
-  `.md + .schema.ts + registry.json` convention in `evaluation/dimensions/`.
-- It combines the **deterministic scorer** (Stage 2, run over every
-  player-facing text field: `one_liner`, `premise`, `mystery_summary`, location
-  descriptions, clue text, starting-knowledge summaries) with an **LLM lens**
-  for things metrics miss (tone, scariness, idioms a young child wouldn't get).
-- Mirror it for the trace pipeline (`evaluation/trace/`) so we also score what
-  the narrator *actually produced at runtime*, not just the blueprint.
+These edits are **proposed, not yet applied** to the live prompt files, to keep
+the spike from changing runtime narration before sign-off. Wiring them in is a
+follow-up (and must keep the shared/supabase prompt copies in sync).
 
-### Stage 5 — Measurement harness (prove it works)
-- A script that generates sample narration at ages **6 / 8 / 11** for a fixed
-  scenario, runs the scorer, and reports before/after the Stage 3 prompt
-  changes — demonstrating the differentiation is real and the bias-toward-short
-  goal holds. Calibrate the Stage 1 targets against these results.
+### 4. Evaluation-dimension proposal — `evaluation/dimensions/age-appropriateness.{md,schema.ts}`
+A new `age_appropriateness` dimension following the existing
+`.md + .schema.ts + registry.json` convention. It runs the deterministic scorer
+over every player-facing text field as an evidence pre-pass, then an LLM lens
+judges what metrics miss (idioms, abstraction). **Not yet added to
+`registry.json`** — activation is a follow-up, so the live battery is unchanged.
 
-### Out of scope for this spike (note, don't build)
-- Content-theme / scariness modelling beyond the readability lens.
-- A per-player (vs per-blueprint) age profile or parental-controls UI.
-- Runtime regenerate-on-fail loop (the scorer makes it *possible*; whether to
-  gate live narration on it is a separate product decision).
+## No runtime strictness
+By decision, the scorer is **advisory / evaluation-time only**. We are **not**
+adding a regenerate-on-fail guard to live narration in this spike. The scorer
+makes such a guard *possible* later, but whether to gate live output is a
+separate product decision.
 
-## Open decisions for sign-off
-1. **Scope of the first build** — stop after the doc, or proceed through the
-   scorer (Stages 1–2), or take the full vertical slice (Stages 1–5)?
-2. **Strictness of the runtime path** — is the scorer advisory (eval-only) for
-   now, or do we want a regenerate-on-fail guard in the runtime later?
-3. **Word-list sourcing** — bundle Dolch + Fry (small, public, sufficient) for
-   v1, with age-of-acquisition norms as a later refinement? Recommended: yes.
+## Follow-ups (not in this spike)
+- Wire `renderAgeGuidance` into the live generation prompts (with prompt-sync).
+- Add `age_appropriateness` to the evaluation `registry.json` and mirror it in
+  the trace pipeline to score what the narrator actually produced at runtime.
+- Supply an external high-frequency word file to switch the vocabulary axis from
+  advisory to exact.
+- Calibrate the per-age numbers against generated samples.
+- Separately: scope a content-safety / moderation layer (out of scope here).

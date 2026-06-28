@@ -1,11 +1,38 @@
 import type { AIPromptKey } from "./ai-contracts.ts";
+import {
+  type InteractionId,
+  renderComplexityGuidance,
+  renderGuidance,
+  renderLengthGuidance,
+} from "./age-profile.ts";
+
+// Each runtime role maps to one interaction, which sets its length guidance.
+const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
+  talk_start: "talk_greeting",
+  talk_conversation: "talk_round",
+  talk_end: "talk_farewell",
+  search: "search_empty",
+  search_bare: "search_empty",
+  search_targeted: "search_find",
+  accusation_start: "accusation_open",
+  accusation_judge: "accusation_verdict",
+};
+
+/**
+ * Age-band guidance (complexity + length) for a runtime role, ready to drop
+ * into a prompt via the `{{age_guidance}}` placeholder. Single source of truth
+ * is `age-profile.ts`.
+ */
+export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
+  return renderGuidance(INTERACTION_BY_ROLE[role], targetAge);
+}
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
-// behavior inside the edge bundler.
+// behavior inside the edge bundler. The `{{age_guidance}}` placeholder is filled
+// per role + target age from `age-profile.ts` (see buildAgeGuidance).
 const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
   talk_start: `You are the in-character narrator for a children's mystery game.
-The investigator is {{target_age}} years old. Use language, vocabulary,
-and sentence complexity appropriate for that reading level.
+{{age_guidance}}
 
 Task:
 - Start a new conversation with {{character_name}} in {{location_name}}.
@@ -14,7 +41,6 @@ Task:
   own voice using direct dialogue.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
-- Keep response concise (1-3 sentences).
 - Do not reveal hidden solution facts.
 - Use the provided character sex to choose pronouns. Never guess pronouns.
 - If the character has agendas, their opening attitude should reflect them.
@@ -30,16 +56,13 @@ Return JSON:
   "narration": "..."
 }`,
   talk_conversation: `You are roleplaying {{character_name}} in a children's mystery game.
-The investigator is {{target_age}} years old. Use language, vocabulary,
-and sentence complexity that a {{target_age}}-year-old can comfortably
-read and understand.
+{{age_guidance}}
 
 Task:
 - Reply to the investigator's latest question: {{player_input}}.
 - Maintain continuity with previous conversation turns.
 - Stay consistent with known world facts and the character's perspective.
 - Never reveal full solution ground truth.
-- Keep response concise (2-5 sentences).
 - Use the provided character sex to choose pronouns. Never guess pronouns.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
@@ -173,9 +196,8 @@ confusion and set "input_understood" to false. Vary the reaction:
 For any normal, understandable message set "input_understood" to true.
 
 ### Language
-Remember: the reader is {{target_age}} years old. Every word of
-your response must be readable at that level. Shorter sentences for
-younger readers. Simpler vocabulary. But still in character.
+Follow the age-appropriate reading-level and length guidance given above —
+every word must be readable at that age, while staying in character.
 
 Return JSON:
 {
@@ -184,14 +206,14 @@ Return JSON:
   "input_understood": true
 }`,
   talk_end: `You are the narrator for a children's mystery game.
+{{age_guidance}}
 
 Task:
 - Close the active conversation with {{character_name}}.
 - Confirm that the player returns to exploration.
-- Keep language and readability appropriate for target age {{target_age}}.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
-- Keep tone natural and brief (1-3 sentences).
+- Keep the tone natural.
 - Do not reveal hidden solution facts.
 - Use the provided character sex to choose pronouns. Never guess pronouns.
 
@@ -200,15 +222,14 @@ Return JSON:
   "narration": "..."
 }`,
   search: `You are the Game Master narrator for a children's mystery game.
+{{age_guidance}}
 
 Task:
 - The player is doing a general search of {{location_name}} (no specific target).
-- Keep language and readability appropriate for target age {{target_age}}.
 - Use the provided location description and search context only.
 - If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
 - If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
-- Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
 - costs_turn is always true for general searches.
 
@@ -220,16 +241,15 @@ Return JSON:
   "input_understood": true
 }`,
   search_bare: `You are the Game Master narrator for a children's mystery game.
+{{age_guidance}}
 
 Task:
 - The player is doing a general search of {{location_name}} (no specific target).
-- Keep language and readability appropriate for target age {{target_age}}.
 - Use the provided location description and search context only.
 - If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
 - If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
 - If sub-locations with unrevealed clues exist, mention interesting areas that could be searched more specifically.
-- Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
 - costs_turn is always true for general searches.
 
@@ -241,6 +261,7 @@ Return JSON:
   "input_understood": true
 }`,
   search_targeted: `You are the Game Master narrator for a children's mystery game. You act like a tabletop RPG Game Master, adjudicating the player's search attempt.
+{{age_guidance}}
 
 Task:
 - The player is searching {{location_name}} with this description: "{{search_query}}"
@@ -249,8 +270,6 @@ Task:
 - If you judge a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
 - If no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and drop hints toward promising sub-locations that still have undiscovered clues.
 - Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
-- Keep language and readability appropriate for target age {{target_age}}.
-- Keep response concise (2-4 sentences).
 - Do not leak full solution ground truth.
 - Unintelligible input: if the search description is gibberish or has no
   parseable meaning, do not invent a result. Give a brief in-character "huh?"
@@ -267,13 +286,12 @@ Return JSON:
   "input_understood": true
 }`,
   accusation_start: `You are the narrator starting the accusation phase of a children's mystery game.
+{{age_guidance}}
 
 Task:
 - Frame a dramatic accusation scene and ask for the player's accusation.
 - If the accusation is forced by time pressure, make that urgency explicit.
 - Ask the player to clearly name who they accuse and explain evidence.
-- Keep language and readability appropriate for target age {{target_age}}.
-- Keep text concise and clear.
 - Context to incorporate when relevant: {{forced_context}}
 - Use the provided character sex to choose pronouns. Never guess pronouns.
 
@@ -283,13 +301,13 @@ Return JSON:
   "follow_up_prompt": "..."
 }`,
   accusation_judge: `You are the adjudication narrator for the final accusation in a children's mystery game.
+{{age_guidance}}
 
 Task:
 - Evaluate the player's reasoning against the mystery's hidden truth.
 - Use the provided solution_paths to check if the player's deduction follows a valid reasoning chain.
 - Use suspect_elimination_paths to verify the player correctly ruled out innocent suspects.
 - Consider red_herrings to assess whether the player was misled by false leads.
-- Keep language and readability appropriate for target age {{target_age}}.
 - If the reasoning is incomplete, return "continue" with one targeted follow-up question.
 - If reasoning is sufficient, decide "win" or "lose".
 - Use the provided character sex to choose pronouns. Never guess pronouns.
@@ -302,8 +320,21 @@ Return JSON:
 }`,
 };
 
-export async function loadPromptTemplate(role: AIPromptKey): Promise<string> {
-  return PROMPT_TEMPLATE_BY_ROLE[role];
+/**
+ * Load a role template with its age-band guidance already injected.
+ *
+ * `targetAge` is REQUIRED: the guidance is filled here, not by the caller, so a
+ * handler cannot accidentally ship a prompt with blank `{{age_guidance}}` — a
+ * missing age is a compile error, not a silent empty substitution.
+ */
+export async function loadPromptTemplate(
+  role: AIPromptKey,
+  targetAge: number,
+): Promise<string> {
+  return PROMPT_TEMPLATE_BY_ROLE[role].replace(
+    "{{age_guidance}}",
+    buildAgeGuidance(role, targetAge),
+  );
 }
 
 export function renderPrompt(
@@ -329,10 +360,9 @@ export function buildGameStartPrompt(input: {
 }): string {
   return [
     "You are the narrator for a children's mystery game.",
-    `Write an opening narration suitable for target age ${input.target_age}.`,
-    "Keep the language clear, vivid, and easy to read for that child age.",
+    renderComplexityGuidance(input.target_age),
+    renderLengthGuidance("intro", input.target_age),
     "Open the case with the given premise and invite investigation.",
-    "Keep the response concise.",
     `Premise: ${input.premise}`,
   ].join("\n");
 }
@@ -353,13 +383,13 @@ export function buildGameMovePrompt(input: {
   return [
     "You are the narrator for a children's mystery game.",
     `Describe the player arriving at ${input.destination_name}.`,
-    `Keep the language and readability appropriate for target age ${input.target_age}.`,
+    renderComplexityGuidance(input.target_age),
+    renderLengthGuidance("ambience", input.target_age),
     revisitInstruction,
     "Base the description on the provided destination description, destination-specific history, and the public summaries of characters currently present.",
     "If characters are present, mention who is visibly here using only the provided names and descriptions.",
     "Use each character's sex field to choose pronouns. Never guess pronouns.",
     "Do not invent extra characters or character details.",
-    "Keep the narration concise and coherent.",
     ...(input.destination_sub_locations_json
       ? [
           "When describing the location, prominently mention the searchable areas so the player knows what they can investigate. Weave them naturally into the description.",

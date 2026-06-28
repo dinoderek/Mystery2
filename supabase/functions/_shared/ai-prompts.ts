@@ -281,8 +281,21 @@ Return JSON:
 }`,
 };
 
-export async function loadPromptTemplate(role: AIPromptKey): Promise<string> {
-  return PROMPT_TEMPLATE_BY_ROLE[role];
+/**
+ * Load a role template with its age-band guidance already injected.
+ *
+ * `targetAge` is REQUIRED: the guidance is filled here, not by the caller, so a
+ * handler cannot accidentally ship a prompt with blank `{{age_guidance}}` — a
+ * missing age is a compile error, not a silent empty substitution.
+ */
+export async function loadPromptTemplate(
+  role: AIPromptKey,
+  targetAge: number,
+): Promise<string> {
+  return PROMPT_TEMPLATE_BY_ROLE[role].replace(
+    "{{age_guidance}}",
+    buildAgeGuidance(role, targetAge),
+  );
 }
 
 export function renderPrompt(

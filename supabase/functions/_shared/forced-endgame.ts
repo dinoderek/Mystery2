@@ -8,7 +8,7 @@ import {
   type ConversationFragment,
   type SessionSnapshot,
 } from "./ai-context.ts";
-import { buildAgeGuidance, loadPromptTemplate, renderPrompt } from "./ai-prompts.ts";
+import { loadPromptTemplate, renderPrompt } from "./ai-prompts.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -45,12 +45,8 @@ export async function generateForcedAccusationStartNarration(input: {
     conversation_history: input.conversation_history,
   });
 
-  const promptTemplate = await loadPromptTemplate("accusation_start");
+  const promptTemplate = await loadPromptTemplate("accusation_start", input.blueprint.metadata.target_age);
   const prompt = renderPrompt(promptTemplate, {
-    age_guidance: buildAgeGuidance(
-      "accusation_start",
-      input.blueprint.metadata.target_age,
-    ),
     forced_context: input.scene_summary,
     target_age: input.blueprint.metadata.target_age,
   });

@@ -149,7 +149,10 @@ Invalid output returns a retriable error and does not finalize turn state.
 
 - AI calls emit JSON logs to edge runtime stdout with:
   - `request_id`, `endpoint`, `action`, optional `game_id`
-  - `role`, `provider`, `model`
+  - `role`, `provider`, `model` (the requested model)
+  - `responded_model` on success — the model the provider reported serving the
+    request, which can differ from the requested `model` under OpenRouter
+    routing/fallback
   - `attempt`, `latency_ms`, `outcome` (`success|retry|failure`)
   - retriable diagnostics (`retriable_code`, `retriable_status`) when applicable
 - AI endpoints also emit structured request logs for invalid/unhandled paths:
@@ -222,6 +225,28 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 2. `game-accuse` from `accuse` with reasoning:
    - emits `accuse_round` when resolution is `continue`
    - emits `accuse_resolved` and transitions to `ended` on `win|lose`
+
+## Per-Event Model Attribution
+
+Every AI-narrated event records the model that produced it in the
+`game_events.model` column (migration `0013_game_events_model.sql`):
+
+- Providers expose `resolvedModel` (`supabase/functions/_shared/ai-provider.ts`).
+  For OpenRouter it is the model reported in the API response (`payload.model`),
+  which can differ from the requested `profile.model`; for the mock provider it
+  is the configured `profile.model`.
+- Endpoints capture `resolvedModel` immediately after each generate call and
+  pass it to `insertNarrationEvent`. In the forced-endgame path
+  (`game-move`, `game-talk`, `game-search`) the action narration and the
+  `forced_endgame` narration are separate AI calls, so each event is tagged with
+  the model captured right after its own call rather than re-reading the
+  provider at insert time.
+- The column is nullable: non-AI events and rows created before migration 0013
+  carry `null`.
+- The trace pipeline surfaces it as `events[].model`
+  (`evaluation/trace/lib/normalize.mjs`); this is per-call ground truth and is
+  more reliable than inferring the model from the session's `ai_profile`, which
+  only reflects the configured model at extraction time.
 
 ## Runtime Model Selection and Live Suites
 

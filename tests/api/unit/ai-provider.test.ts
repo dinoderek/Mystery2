@@ -123,6 +123,60 @@ describe("ai-provider openrouter retry behavior", () => {
   });
 });
 
+describe("ai-provider resolved model", () => {
+  it("mock provider resolves to the configured profile model", () => {
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/runtime-default",
+    });
+    expect(provider.resolvedModel).toBe("mock/runtime-default");
+  });
+
+  it("openrouter provider reports the model returned by the API", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          model: "anthropic/claude-actual",
+          choices: [{ message: { content: "Narrated" } }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const provider = createAIProviderFromProfile(
+      { provider: "openrouter", model: "anthropic/claude-requested" },
+      { openrouterApiKey: "test-key", env: { AI_OPENROUTER_MAX_ATTEMPTS: "1" } },
+    );
+
+    // Before any call, falls back to the configured model.
+    expect(provider.resolvedModel).toBe("anthropic/claude-requested");
+
+    await provider.generateNarration("Hello narrator");
+
+    // After a successful call, reflects the model the API actually served.
+    expect(provider.resolvedModel).toBe("anthropic/claude-actual");
+  });
+
+  it("openrouter provider keeps the configured model when the response omits one", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: "Narrated" } }] }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const provider = createAIProviderFromProfile(
+      { provider: "openrouter", model: "anthropic/claude-requested" },
+      { openrouterApiKey: "test-key", env: { AI_OPENROUTER_MAX_ATTEMPTS: "1" } },
+    );
+
+    await provider.generateNarration("Hello narrator");
+    expect(provider.resolvedModel).toBe("anthropic/claude-requested");
+  });
+});
+
 describe("ai-provider request metadata", () => {
   it("preserves incoming request ids", () => {
     const req = new Request("http://localhost/test", {

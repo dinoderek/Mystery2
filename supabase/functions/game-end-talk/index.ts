@@ -168,6 +168,7 @@ serveWithCors(async (req) => {
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: narrationParts,
+      model: aiProvider.resolvedModel,
       diagnostics: createNarrationDiagnostics({
         action: "end_talk",
         event_category: "end_talk",

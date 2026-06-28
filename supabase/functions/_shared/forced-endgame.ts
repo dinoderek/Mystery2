@@ -32,6 +32,7 @@ export async function generateForcedAccusationStartNarration(input: {
   narration: string;
   narration_parts: NarrationPart[];
   follow_up_prompt: string;
+  model: string;
 }> {
   const aiContext = buildAccusationStartContext({
     game_id: input.game_id,
@@ -68,6 +69,9 @@ export async function generateForcedAccusationStartNarration(input: {
   return {
     ...output,
     narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],
+    // Read immediately after the generate call so it reflects the model that
+    // produced this forced-endgame narration, not a later call on the provider.
+    model: input.aiProvider.resolvedModel,
   };
 }
 
@@ -87,7 +91,12 @@ export async function tryGenerateForcedEndgame(input: {
   scene_summary: string;
   log: LogWriter["log"];
 }): Promise<
-  | { ok: true; follow_up_prompt: string; narration_parts: NarrationPart[] }
+  | {
+    ok: true;
+    follow_up_prompt: string;
+    narration_parts: NarrationPart[];
+    model: string;
+  }
   | { ok: false; response: Response }
 > {
   try {
@@ -106,6 +115,7 @@ export async function tryGenerateForcedEndgame(input: {
       ok: true,
       follow_up_prompt: output.follow_up_prompt,
       narration_parts: output.narration_parts,
+      model: output.model,
     };
   } catch (error) {
     if (error instanceof RetriableAIError) {
@@ -164,6 +174,7 @@ export async function insertForcedEndgameEvent(
     payload: Record<string, unknown>;
     narration_parts: NarrationPart[];
     follow_up_prompt: string | null;
+    model?: string | null;
     time_before: number;
     time_after: number;
     resulting_mode: string;
@@ -182,6 +193,7 @@ export async function insertForcedEndgameEvent(
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: input.narration_parts,
+    model: input.model ?? null,
     diagnostics: createNarrationDiagnostics({
       action: input.action,
       event_category: "forced_endgame",

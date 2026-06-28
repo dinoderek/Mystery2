@@ -197,6 +197,7 @@ serveWithCors(async (req) => {
         input_understood: talkOutput.input_understood,
       },
       narration_parts: narrationParts,
+      model: aiProvider.resolvedModel,
       diagnostics: createNarrationDiagnostics({
         action: "ask",
         event_category: "ask",

@@ -26,6 +26,20 @@ describe("buildRawTrace", () => {
     expect(JSON.stringify(trace)).not.toContain("sk-secret");
   });
 
+  it("carries the per-event model through, defaulting to null when absent", () => {
+    const trace = buildRawTrace({
+      session: makeSession(),
+      events: makeEvents(),
+      blueprint: makeBlueprint(),
+      source: { kind: "supabase", api_url: "http://h" },
+    });
+    const bySequence = (seq: number) =>
+      trace.events.find((e: { sequence: number }) => e.sequence === seq);
+    // Event 2 carries an AI-served model; event 1 (start) has none.
+    expect(bySequence(2).model).toBe("anthropic/claude-actual");
+    expect(bySequence(1).model).toBeNull();
+  });
+
   it("rejects missing required inputs", () => {
     expect(() => buildRawTrace({ session: null, events: [], blueprint: {} })).toThrow(/session/);
     expect(() => buildRawTrace({ session: {}, events: {}, blueprint: {} })).toThrow(/events/);

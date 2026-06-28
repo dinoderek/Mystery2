@@ -132,7 +132,7 @@ describe("game-move endpoint", () => {
 
     const { data: events, error } = await admin
       .from("game_events")
-      .select("sequence,event_type,payload,narration_parts")
+      .select("sequence,event_type,payload,narration_parts,model")
       .eq("session_id", game_id)
       .order("sequence", { ascending: true });
     expect(error).toBeNull();
@@ -141,6 +141,10 @@ describe("game-move endpoint", () => {
     const forcedEvent = events?.find((entry) => entry.event_type === "forced_endgame");
     expect(moveEvent).toBeDefined();
     expect(forcedEvent).toBeDefined();
+    // Each AI-narrated event records the model that produced it (the seeded
+    // mock profile model for these tests).
+    expect(moveEvent?.model).toBe("mock/runtime-default");
+    expect(forcedEvent?.model).toBe("mock/runtime-default");
     expect(forcedEvent?.sequence).toBeGreaterThan(moveEvent?.sequence ?? 0);
     expect(forcedEvent?.payload?.trigger).toBe("timeout");
     expect(moveEvent?.narration_parts).toHaveLength(1);

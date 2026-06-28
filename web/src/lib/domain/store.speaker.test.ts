@@ -19,6 +19,8 @@ function createStore() {
   const store = new GameSessionStore();
   store.game_id = 'game-1';
   store.state = {
+    mystery_summary: null,
+    premise: null,
     locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }],
     characters: [{
       id: 'char-alice',
@@ -27,6 +29,7 @@ function createStore() {
       location_name: 'Kitchen',
       sex: 'female',
     }],
+    discovered_clues: [],
     time_remaining: 10,
     location: 'Kitchen',
     mode: 'explore',
@@ -117,5 +120,42 @@ describe('store speaker behavior', () => {
     expect(options.body).toEqual({ game_id: 'game-1', search_query: null });
     expect(options.body).not.toHaveProperty('history');
     expect(options.body).not.toHaveProperty('system_feedback');
+  });
+
+  it('opens the notebook on the "notebook" command without a backend call', async () => {
+    const store = createStore();
+    expect(store.showNotebook).toBe(false);
+
+    await store.submitInput('notebook');
+
+    expect(store.showNotebook).toBe(true);
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it('merges revealed_clues from a search response into discovered_clues', async () => {
+    const store = createStore();
+
+    invokeMock.mockResolvedValue({
+      data: {
+        narration_parts: [{ text: 'You find crumbs.', speaker: NARRATOR_SPEAKER }],
+        mode: 'explore',
+        time_remaining: 9,
+        revealed_clues: [{ id: 'clue-crumbs', text: 'Crumbs on the floor.' }],
+      },
+      error: null,
+    });
+
+    expect(store.state?.discovered_clues).toEqual([]);
+    await store.submitInput('search');
+
+    expect(store.state?.discovered_clues).toEqual([
+      { id: 'clue-crumbs', text: 'Crumbs on the floor.' },
+    ]);
+
+    // A second search revealing the same clue does not duplicate it.
+    await store.submitInput('search');
+    expect(store.state?.discovered_clues).toEqual([
+      { id: 'clue-crumbs', text: 'Crumbs on the floor.' },
+    ]);
   });
 });

@@ -1,6 +1,7 @@
 import { supabase } from '../api/supabase';
 import type {
   Blueprint,
+  DiscoveredClue,
   GameState,
   HistoryEntry,
   NarrationEvent,
@@ -210,6 +211,7 @@ export class GameSessionStore {
   activeStoryImage = $state<StoryImageState | null>(null);
   showHelp = $state(false);
   showZoomModal = $state(false);
+  showNotebook = $state(false);
   isRetrying = $state(false);
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
@@ -367,6 +369,7 @@ export class GameSessionStore {
       this.isRetrying = false;
       this.retryCount = 0;
       this.showHelp = false;
+      this.showNotebook = false;
       this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
@@ -434,6 +437,11 @@ export class GameSessionStore {
       } else {
         this.appendSystemFeedback('No image to zoom into.');
       }
+      return;
+    }
+
+    if (parsed.type === 'notebook') {
+      this.showNotebook = true;
       return;
     }
 
@@ -526,15 +534,60 @@ export class GameSessionStore {
     );
   }
 
+  private normalizeDiscoveredClues(raw: unknown): DiscoveredClue[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    const clues: DiscoveredClue[] = [];
+    for (const entry of raw) {
+      if (!isRecord(entry)) {
+        continue;
+      }
+      const id = readString(entry.id);
+      const text = readString(entry.text);
+      if (id.length === 0 || text.length === 0 || seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      clues.push({ id, text });
+    }
+    return clues;
+  }
+
+  private mergeDiscoveredClues(raw: unknown) {
+    if (!this.state) {
+      return;
+    }
+    const incoming = this.normalizeDiscoveredClues(raw);
+    if (incoming.length === 0) {
+      return;
+    }
+    const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
+    for (const clue of incoming) {
+      if (!known.has(clue.id)) {
+        known.add(clue.id);
+        this.state.discovered_clues.push(clue);
+      }
+    }
+  }
+
   private normalizeState(rawState: unknown, rawNarrationEvents: unknown = []): GameState {
     const source = isRecord(rawState) ? rawState : {};
     const narrationEvents = this.normalizeNarrationEvents(rawNarrationEvents);
 
     return {
+      mystery_summary: readNullableString(source.mystery_summary),
+      premise: readNullableString(source.premise),
       locations: Array.isArray(source.locations)
         ? source.locations
             .filter((location): location is Record<string, unknown> => isRecord(location))
-            .map((location) => ({ id: readString(location.id), name: readString(location.name) }))
+            .map((location) => ({
+              id: readString(location.id),
+              name: readString(location.name),
+              summary: readNullableString(location.summary),
+            }))
             .filter((location) => location.name.length > 0)
         : [],
       characters: Array.isArray(source.characters)
@@ -546,9 +599,11 @@ export class GameSessionStore {
               last_name: readString(character.last_name),
               location_name: readString(character.location_name) || readString(character.location_id),
               sex: readCharacterSex(character.sex),
+              summary: readNullableString(character.summary),
             }))
             .filter((character) => character.first_name.length > 0)
         : [],
+      discovered_clues: this.normalizeDiscoveredClues(source.discovered_clues),
       time_remaining: readInt(source.time_remaining),
       location: readString(source.location),
       mode: readMode(source.mode, 'explore'),
@@ -683,6 +738,7 @@ export class GameSessionStore {
     this.error = null;
     this.showHelp = false;
     this.showZoomModal = false;
+    this.showNotebook = false;
     this.isRetrying = false;
     this.retryCount = 0;
     this.lastFailedInput = null;
@@ -815,6 +871,8 @@ export class GameSessionStore {
     if (typeof payload.current_talk_character === 'string' || payload.current_talk_character === null) {
       this.state.current_talk_character = payload.current_talk_character;
     }
+
+    this.mergeDiscoveredClues(payload.revealed_clues);
 
     const outcome = payload.result;
     const isAccuseEnded = endpoint === 'game-accuse' && payload.mode === 'ended';

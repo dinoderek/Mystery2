@@ -3,6 +3,7 @@ import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { readNarrationEvent } from "../_shared/narration.ts";
+import { buildPlayerKnownClues } from "../_shared/ai-context.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 serveWithCors(async (req) => {
@@ -105,10 +106,31 @@ serveWithCors(async (req) => {
       });
     }
 
+    const startingKnowledge = blueprint.narrative.starting_knowledge;
+    const locationSummaries = new Map(
+      (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
+    );
+    const characterSummaries = new Map(
+      (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
+    );
+    const discoveredClues = buildPlayerKnownClues(
+      blueprint,
+      (events ?? []).map((event) => ({
+        sequence: event.sequence,
+        event_type: event.event_type,
+        actor: event.actor,
+        narration: event.narration ?? "",
+        payload: event.payload ?? null,
+      })),
+    );
+
     const gameState = {
+      mystery_summary: startingKnowledge?.mystery_summary ?? null,
+      premise: blueprint.narrative.premise,
       locations: blueprint.world.locations.map((l) => ({
         id: l.id,
         name: l.name,
+        summary: locationSummaries.get(l.id) ?? null,
       })),
       characters: blueprint.world.characters.map((c) => ({
         id: c.id,
@@ -116,7 +138,9 @@ serveWithCors(async (req) => {
         last_name: c.last_name,
         location_id: c.location_id,
         sex: c.sex,
+        summary: characterSummaries.get(c.id) ?? null,
       })),
+      discovered_clues: discoveredClues,
       time_remaining: session.time_remaining,
       location: session.current_location_id,
       mode: session.mode,

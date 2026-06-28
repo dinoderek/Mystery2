@@ -15,6 +15,7 @@ import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
+import { mapClueIdsToClues } from "../_shared/clues.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -218,6 +219,8 @@ serveWithCors(async (req) => {
         time_remaining: session.time_remaining,
         mode: "talk",
         current_talk_character: activeCharacter.id,
+        // Clue(s) revealed by this action, for the in-game notebook to merge.
+        revealed_clues: mapClueIdsToClues(blueprint, validatedRevealedClueIds),
       }),
       { headers: { "Content-Type": "application/json" } },
     );

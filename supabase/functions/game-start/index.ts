@@ -25,65 +25,13 @@ import {
 } from "../_shared/narration.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-interface StartingKnowledge {
-  mystery_summary: string;
-  locations: Array<{ location_id: string; summary: string }>;
-  characters: Array<{ character_id: string; summary: string }>;
-}
-
-interface WorldData {
-  locations: Array<{ id: string; name: string }>;
-  characters: Array<{
-    id: string;
-    first_name: string;
-    last_name: string;
-    location_id: string;
-  }>;
-}
-
-function formatStartingKnowledgeBlock(
-  sk: StartingKnowledge | undefined,
-  world: WorldData,
-): string | null {
-  if (!sk) return null;
-
-  const locationMap = new Map(world.locations.map((l) => [l.id, l.name]));
-  const charsByLocation = new Map<string, string[]>();
-  for (const c of world.characters) {
-    const list = charsByLocation.get(c.location_id) ?? [];
-    list.push(`${c.first_name} ${c.last_name}`);
-    charsByLocation.set(c.location_id, list);
-  }
-
-  const lines: string[] = ["You already know:"];
-  lines.push("");
-  lines.push(`The mystery: ${sk.mystery_summary}`);
-
-  if (sk.locations.length > 0) {
-    lines.push("");
-    lines.push("Locations:");
-    for (const loc of sk.locations) {
-      const name = locationMap.get(loc.location_id) ?? loc.location_id;
-      const people = charsByLocation.get(loc.location_id);
-      const peopleSuffix = people ? ` (${people.join(", ")})` : "";
-      lines.push(`- ${name}: ${loc.summary}${peopleSuffix}`);
-    }
-  }
-
-  if (sk.characters.length > 0) {
-    lines.push("");
-    lines.push("People:");
-    for (const ch of sk.characters) {
-      const character = world.characters.find((c) => c.id === ch.character_id);
-      const name = character
-        ? `${character.first_name} ${character.last_name}`
-        : ch.character_id;
-      lines.push(`- ${name}: ${ch.summary}`);
-    }
-  }
-
-  return lines.join("\n");
-}
+// Shown once at the start of every case. The mystery facts, people, places, and
+// discovered clues that used to be dumped here now live in the in-game notebook
+// (see the `state` payload below), so the opening only needs to point there.
+const NOTEBOOK_GUIDANCE =
+  'Tip: type "notebook" (or "n") at any time to open your case notebook — ' +
+  "the facts of the mystery, the people and places, and the clues you've " +
+  'gathered so far. Type "help" to see every command.';
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {
@@ -231,16 +179,8 @@ serveWithCors(async (req) => {
         NARRATOR_SPEAKER,
         blueprint.metadata.image_id ?? null,
       ),
+      createNarrationPart(NOTEBOOK_GUIDANCE, NARRATOR_SPEAKER),
     ];
-    const startingKnowledgeBlock = formatStartingKnowledgeBlock(
-      blueprint.narrative.starting_knowledge,
-      blueprint.world,
-    );
-    if (startingKnowledgeBlock) {
-      narrationParts.push(
-        createNarrationPart(startingKnowledgeBlock, NARRATOR_SPEAKER),
-      );
-    }
 
     // Insert start event
     try {
@@ -277,10 +217,21 @@ serveWithCors(async (req) => {
       return internalError("Failed to record start event");
     }
 
+    const startingKnowledge = blueprint.narrative.starting_knowledge;
+    const locationSummaries = new Map(
+      (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
+    );
+    const characterSummaries = new Map(
+      (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
+    );
+
     const gameState = {
+      mystery_summary: startingKnowledge?.mystery_summary ?? null,
+      premise: blueprint.narrative.premise,
       locations: blueprint.world.locations.map((l) => ({
         id: l.id,
         name: l.name,
+        summary: locationSummaries.get(l.id) ?? null,
       })),
       characters: blueprint.world.characters.map((c) => ({
         id: c.id,
@@ -288,7 +239,9 @@ serveWithCors(async (req) => {
         last_name: c.last_name,
         location_id: c.location_id,
         sex: c.sex,
+        summary: characterSummaries.get(c.id) ?? null,
       })),
+      discovered_clues: [],
       time_remaining: blueprint.metadata.time_budget,
       location: startLocId,
       mode: "explore",

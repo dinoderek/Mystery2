@@ -195,7 +195,7 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(
-      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse \[statement\], locations, characters, help, quit/),
+      page.getByText(/Commands: move to\/go to <location>, talk to <character>, search, accuse \[statement\], locations, characters, notebook, help, quit/),
     ).toBeVisible();
     await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
   });

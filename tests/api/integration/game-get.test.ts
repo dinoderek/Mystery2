@@ -80,7 +80,11 @@ describe("game-get endpoint", () => {
       last_name: "Smith",
       location_id: "loc-kitchen",
       sex: "female",
+      summary: "The resident baker; she baked the missing cookies.",
     });
+    expect(getData.state.premise).toBe("Someone stole the cookies.");
+    expect(getData.state.mystery_summary).toContain("The cookies vanished");
+    expect(Array.isArray(getData.state.discovered_clues)).toBe(true);
     expect(getData.narration_events.length).toBeGreaterThanOrEqual(3);
     expect(getData.narration_events[0].event_type).toBe("start");
     expect(getData.narration_events[0].narration_parts[0].speaker).toMatchObject(
@@ -89,7 +93,7 @@ describe("game-get endpoint", () => {
     expect(getData.narration_events[0].narration_parts[1]).toMatchObject({
       speaker: NARRATOR_SPEAKER,
     });
-    expect(getData.narration_events[0].narration_parts[1].text).toContain("You already know:");
+    expect(getData.narration_events[0].narration_parts[1].text).toContain("notebook");
 
     const askEvent = getData.narration_events.find(
       (entry: { event_type: string }) => entry.event_type === "ask",

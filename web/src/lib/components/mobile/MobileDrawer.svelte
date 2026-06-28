@@ -14,6 +14,11 @@
     open = false;
   }
 
+  function handleNotebook() {
+    drawer.openNotebook();
+    close();
+  }
+
   function handleHelp() {
     drawer.openHelp();
     close();
@@ -96,6 +101,14 @@
     <section class="px-4 py-3 border-b border-t-muted/20" data-testid="mobile-drawer-actions">
       <h3 class="text-t-primary text-xs font-bold mb-2 uppercase">Actions</h3>
       <div class="flex flex-col gap-2">
+        <button
+          type="button"
+          onclick={handleNotebook}
+          data-testid="mobile-drawer-notebook"
+          class="text-left text-sm text-t-bright py-2 px-3 border border-t-muted/30 active:bg-t-primary/10"
+        >
+          Notebook
+        </button>
         <button
           type="button"
           onclick={handleHelp}

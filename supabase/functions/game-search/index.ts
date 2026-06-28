@@ -412,6 +412,10 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character: null,
         follow_up_prompt: followUpPrompt,
+        // Clue(s) revealed by this action, for the in-game notebook to merge.
+        revealed_clues: validatedClueId && validatedClue
+          ? [{ id: validatedClueId, text: validatedClue.text }]
+          : [],
       }),
       { headers: { "Content-Type": "application/json" } },
     );

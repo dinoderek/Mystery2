@@ -50,6 +50,19 @@ _(Add components here as they are built. Example format below)_
 - **Purpose**: Modal overlay displaying available commands in different modes.
 - **Props**: None (reads from store)
 
+### `NotebookPanel.svelte`
+
+- **Purpose**: Modal overlay ("case notebook") showing the mystery's case facts
+  (`premise` + `mystery_summary`), people and places (with their `summary`
+  blurbs), and the clues discovered so far (`discovered_clues`). Reads
+  everything from `gameSessionStore.state`. Opened by the `notebook` / `n`
+  command (`showNotebook` store flag) on desktop and the Notebook action in
+  `MobileDrawer` on mobile. Closes on backdrop click, the close button, or
+  Escape. Degrades gracefully when summaries are absent.
+- **Props**: None (reads from store)
+- **Used by**: `routes/session/+page.svelte` (desktop) and
+  `mobile/MobileSession.svelte` (mobile) — shared, not duplicated.
+
 ### `TerminalSpinner.svelte`
 
 - **Purpose**: Terminal-style ASCII spinner for loading/wait states in narration and startup flows.
@@ -145,7 +158,7 @@ the desktop components.
 
 ### `MobileDrawer.svelte`
 
-- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Help, Zoom), appearance settings (theme picker, text size), and quit button.
+- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Notebook, Help, Zoom), appearance settings (theme picker, text size), and quit button. The Notebook action opens the shared `NotebookPanel` (mobile's entry point for it, since mobile has no command line).
 - **Props**:
   - `open`: `boolean` (bindable, controls visibility)
 

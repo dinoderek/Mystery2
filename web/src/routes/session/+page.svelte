@@ -8,6 +8,7 @@
   import InputBox from '$lib/components/InputBox.svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
   import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
+  import NotebookPanel from '$lib/components/NotebookPanel.svelte';
   import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
   import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
   import MobileSession from '$lib/components/mobile/MobileSession.svelte';
@@ -49,6 +50,7 @@
   <InputBox />
   <HelpModal />
   <SceneZoomModal />
+  <NotebookPanel />
 </main>
 {:else}
 <MobileSession />

@@ -39,6 +39,10 @@ export class MobileDrawerState {
     return mobilePrefs.textSize;
   }
 
+  openNotebook(): void {
+    gameSessionStore.showNotebook = true;
+  }
+
   openHelp(): void {
     gameSessionStore.showHelp = true;
   }

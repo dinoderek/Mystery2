@@ -14,6 +14,7 @@ export {
   detectWorktreeName,
   resolveWorktreePorts,
   resolveApiUrl,
+  worktreeProjectId,
 } from "../lib/worktree-ports.mjs";
 
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";

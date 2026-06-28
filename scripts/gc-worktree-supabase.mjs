@@ -16,7 +16,7 @@
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { listWorktrees } from "./worktree-ports.mjs";
+import { listWorktrees, worktreeProjectId } from "./worktree-ports.mjs";
 
 const WORKTREE_PROJECT_PREFIX = "mystery-wt-";
 
@@ -70,9 +70,9 @@ function activeWorktreeProjectIds(cwd) {
   const active = new Set();
 
   for (const wtPath of worktreePaths) {
-    // Each worktree directory name becomes the suffix in the project_id.
-    const leafName = path.basename(wtPath);
-    active.add(`${WORKTREE_PROJECT_PREFIX}${leafName.slice(0, 16)}`);
+    // Derive the project_id with the SAME helper that writes config.toml, so a
+    // live stack's container label always matches its active-set entry.
+    active.add(worktreeProjectId(path.basename(wtPath)));
   }
 
   return active;

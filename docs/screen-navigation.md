@@ -79,6 +79,9 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Reads the active in-memory session from the game store.
   - Maintains narration/event history, mode, and remaining time.
 - **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
+- **Overlays**: `HelpModal`, `SceneZoomModal`, and `NotebookPanel` (the case
+  notebook, opened by the `notebook` / `n` command via the `showNotebook` store
+  flag).
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
   - Optional side image panel renders location/character imagery from move/talk payload image IDs.
@@ -141,8 +144,9 @@ Orchestrates the full gameplay experience with two internal modes:
 - **Input mode**: Last interaction context + `MobileInputBar` with
   auto-focused text input. Draft preserved between mode switches.
 
-Overlays: `MobileDrawer` (status, help, zoom, themes, text size, quit),
-`MobileImageViewer` (fullscreen image on tap), `HelpModal`.
+Overlays: `MobileDrawer` (status, notebook, help, zoom, themes, text size,
+quit), `MobileImageViewer` (fullscreen image on tap), `HelpModal`,
+`NotebookPanel` (opened from the drawer's Notebook action).
 
 Journeys: J4 (read), J5 (write), J6 (quick actions), J7 (image viewer),
 J8 (help), J9 (status), J10 (exit), J11 (text size).

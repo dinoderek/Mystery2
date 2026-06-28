@@ -33,7 +33,8 @@ export type ParseResult =
   | { type: 'quit' }
   | { type: 'theme-list' }
   | { type: 'theme-set'; themeName: string }
-  | { type: 'zoom' };
+  | { type: 'zoom' }
+  | { type: 'notebook' };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
 const TALK_ALIASES = ['speak with', 'speak to', 'talk to'] as const;
@@ -47,13 +48,14 @@ const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
 const THEME_LIST_ALIASES = ['themes'] as const;
 const THEME_SET_PREFIX = 'theme' as const;
 const ZOOM_ALIASES = ['zoom'] as const;
+const NOTEBOOK_ALIASES = ['notebook', 'n'] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
-    "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, help, quit. Type 'help' for details.",
-  talk: "Commands: <question>, bye, help, quit. Type 'help' for details.",
-  accuse: "Commands: <reasoning>, help, quit. Type 'help' for details.",
-  ended: "Commands: help, quit. Type 'help' for details.",
+    "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.",
+  talk: "Commands: <question>, bye, notebook, help, quit. Type 'help' for details.",
+  accuse: "Commands: <reasoning>, notebook, help, quit. Type 'help' for details.",
+  ended: "Commands: notebook, help, quit. Type 'help' for details.",
 };
 
 const TRAILING_PUNCTUATION = /[!?.,]+$/g;
@@ -385,6 +387,10 @@ function parseGlobalCommand(text: string): ParseResult | null {
 
   if (isAliasExact(text, ZOOM_ALIASES)) {
     return { type: 'zoom' };
+  }
+
+  if (isAliasExact(text, NOTEBOOK_ALIASES)) {
+    return { type: 'notebook' };
   }
 
   return null;

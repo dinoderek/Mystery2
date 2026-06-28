@@ -60,6 +60,16 @@ describe("game-start endpoint", () => {
       last_name: "Smith",
       location_id: "loc-kitchen",
       sex: "female",
+      summary: "The resident baker; she baked the missing cookies.",
+    });
+    // Notebook reference data is surfaced on the state, not dumped into narration.
+    expect(data.state.premise).toBe("Someone stole the cookies.");
+    expect(data.state.mystery_summary).toContain("The cookies vanished");
+    expect(data.state.discovered_clues).toEqual([]);
+    expect(data.state.locations).toContainEqual({
+      id: "loc-kitchen",
+      name: expect.any(String),
+      summary: "Where the cookies were baked and last seen.",
     });
     expect(data.narration_events).toHaveLength(1);
     expect(data.narration_events[0]).toMatchObject({
@@ -76,9 +86,10 @@ describe("game-start endpoint", () => {
     });
     expect(data.narration_events[0].narration_parts).toHaveLength(2);
     expect(data.narration_events[0].narration_parts[0].text).toContain("[Mock]");
-    expect(data.narration_events[0].narration_parts[1].text).toContain("You already know:");
-    expect(data.narration_events[0].narration_parts[1].text).toContain(
-      "The mystery:",
+    // The opening now points at the notebook instead of dumping facts inline.
+    expect(data.narration_events[0].narration_parts[1].text).toContain("notebook");
+    expect(data.narration_events[0].narration_parts[1].text).not.toContain(
+      "You already know:",
     );
     expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
   });

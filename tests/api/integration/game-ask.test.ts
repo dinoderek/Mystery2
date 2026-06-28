@@ -91,6 +91,7 @@ describe("game-ask endpoint", () => {
     expect(data.current_talk_character).toBe("char-alice");
     expect(data.time_remaining).toBe(9);
     expect(data.discovered_clue_id).toBeUndefined();
+    expect(Array.isArray(data.revealed_clues)).toBe(true);
     expect(data.narration_parts[0].text).toContain("[Mock]");
     expect(data.narration_parts[0].image_id).toBeUndefined();
     expect(data.narration_parts[0]).toMatchObject({

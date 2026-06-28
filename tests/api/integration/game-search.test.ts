@@ -60,6 +60,10 @@ describe("game-search endpoint", () => {
     expect(firstData.narration_parts[0].text).toContain("A wrapper on the sofa.");
     expect(firstData.mode).toBe("explore");
     expect(firstData.narration_parts[0].speaker).toMatchObject(NARRATOR_SPEAKER);
+    // The notebook merges the clue revealed by this action.
+    expect(firstData.revealed_clues).toEqual([
+      { id: "clue-wrapper", text: "A wrapper on the sofa." },
+    ]);
 
     const secondSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
@@ -81,6 +85,7 @@ describe("game-search endpoint", () => {
     const thirdData = await thirdSearchRes.json();
     expect(thirdData.time_remaining).toBe(6);
     expect(thirdData.narration_parts[0].text).toContain("discover no new clue");
+    expect(thirdData.revealed_clues).toEqual([]);
 
     const { data: searchEvents, error } = await admin
       .from("game_events")

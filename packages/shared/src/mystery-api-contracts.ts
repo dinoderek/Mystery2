@@ -63,6 +63,11 @@ export const NarrationEventSchema = z.object({
   created_at: z.string().datetime().optional(),
 });
 
+export const DiscoveredClueSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1),
+});
+
 export const TurnResponseBaseSchema = z.object({
   narration_parts: z.array(NarrationPartSchema).min(1),
   time_remaining: z.number().int().nonnegative(),
@@ -70,6 +75,9 @@ export const TurnResponseBaseSchema = z.object({
   current_talk_character: z.string().nullable().optional(),
   follow_up_prompt: z.string().nullable().optional(),
   result: OutcomeSchema.nullable().optional(),
+  // Clue(s) revealed by this action, for the in-game notebook to merge. Only
+  // search/ask actions populate this; other turns omit it.
+  revealed_clues: z.array(DiscoveredClueSchema).optional(),
 });
 
 export const TalkStartResponseSchema = TurnResponseBaseSchema.extend({
@@ -112,6 +120,8 @@ export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
 export const LocationSummarySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
+  // Player-facing one-liner for the notebook; null when not authored.
+  summary: z.string().nullable().optional(),
 });
 
 export const CharacterSummarySchema = z.object({
@@ -120,11 +130,18 @@ export const CharacterSummarySchema = z.object({
   last_name: z.string(),
   location_id: z.string(),
   sex: CharacterSexSchema,
+  // Player-facing one-liner for the notebook; null when not authored.
+  summary: z.string().nullable().optional(),
 });
 
 export const GameStateSchema = z.object({
+  // Notebook reference data. Present from game-start/game-get; nullable when the
+  // blueprint has no authored starting knowledge.
+  mystery_summary: z.string().nullable().optional(),
+  premise: z.string().nullable().optional(),
   locations: z.array(LocationSummarySchema),
   characters: z.array(CharacterSummarySchema),
+  discovered_clues: z.array(DiscoveredClueSchema).optional(),
   time_remaining: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,

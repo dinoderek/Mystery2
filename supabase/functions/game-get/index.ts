@@ -106,14 +106,24 @@ serveWithCors(async (req) => {
       });
     }
 
+    const startingKnowledge = blueprint.narrative.starting_knowledge;
+    const locationSummaries = new Map(
+      (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
+    );
+    const characterSummaries = new Map(
+      (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
+    );
     // The notebook: discovered clues grouped by mini-mystery thread. Built from
     // event history (the source of truth) and joined against the blueprint.
     const discoveredClues = buildDiscoveryRecords(blueprint, events ?? []);
 
     const gameState = {
+      mystery_summary: startingKnowledge?.mystery_summary ?? null,
+      premise: blueprint.narrative.premise,
       locations: blueprint.world.locations.map((l) => ({
         id: l.id,
         name: l.name,
+        summary: locationSummaries.get(l.id) ?? null,
       })),
       characters: blueprint.world.characters.map((c) => ({
         id: c.id,
@@ -121,12 +131,13 @@ serveWithCors(async (req) => {
         last_name: c.last_name,
         location_id: c.location_id,
         sex: c.sex,
+        summary: characterSummaries.get(c.id) ?? null,
       })),
+      discovered_clues: discoveredClues,
       time_remaining: session.time_remaining,
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
-      discovered_clues: discoveredClues,
     };
 
     return new Response(JSON.stringify({

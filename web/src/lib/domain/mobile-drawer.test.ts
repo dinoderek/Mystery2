@@ -5,6 +5,7 @@ const storeMock = vi.hoisted(() => ({
   state: null as GameState | null,
   showHelp: false,
   showZoomModal: false,
+  showNotebook: false,
   activeStoryImage: null as { image_id: string } | null,
   submitInput: vi.fn(),
   setTheme: vi.fn(),
@@ -12,14 +13,16 @@ const storeMock = vi.hoisted(() => ({
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
+    mystery_summary: null,
+    premise: null,
     locations: [{ id: 'loc-1', name: 'Library' }],
     characters: [],
+    discovered_clues: [],
     time_remaining: 10,
     location: 'loc-1',
     mode: 'explore',
     current_talk_character: null,
     history: [],
-    discovered_clues: [],
     ...overrides,
   };
 }
@@ -64,6 +67,7 @@ describe('MobileDrawerState', () => {
     storeMock.state = null;
     storeMock.showHelp = false;
     storeMock.showZoomModal = false;
+    storeMock.showNotebook = false;
     storeMock.activeStoryImage = null;
     storeMock.submitInput.mockReset();
     storeMock.setTheme.mockReset();
@@ -173,6 +177,13 @@ describe('MobileDrawerState', () => {
   it('returns textSize from mobilePrefs', () => {
     prefsMock.textSize = 'lg';
     expect(drawer.textSize).toBe('lg');
+  });
+
+  // --- openNotebook ---
+
+  it('sets showNotebook on game session store', () => {
+    drawer.openNotebook();
+    expect(storeMock.showNotebook).toBe(true);
   });
 
   // --- openHelp ---

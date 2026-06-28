@@ -466,7 +466,9 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character: null,
         follow_up_prompt: followUpPrompt,
-        discovered_clues: discoveredThisTurn,
+        // Clue(s) revealed by this action, for the in-game notebook to merge
+        // (rich records: thread membership, origin, off-script flag).
+        revealed_clues: discoveredThisTurn,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

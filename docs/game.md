@@ -51,7 +51,9 @@ A text-based mystery adventure for kids that makes reading and writing feel like
 ### Game Start Sequence
 
 - Display premise (short hook).
-- Display starting knowledge as an additional narrator block in the opening transcript.
+- Display a short guidance line pointing the investigator to the **notebook**
+  (the case facts, people, places, and clues now live there, not in a wall of
+  opening text).
 - Execute initial “move” to the starting location (arrive + description).
 - Show initial status (time, location, visible characters).
 
@@ -70,6 +72,7 @@ The investigator repeatedly chooses actions until:
 - **Move** (go to a location)
 - **Search** (look for clues)
 - **Accuse** (endgame)
+- **Notebook** (review the case)
 - **Help**
 - **Quit**
 
@@ -209,6 +212,30 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
 - Location has a general description (move)
 - Search focuses on discoverable details (search)
 - Keep these separate to preserve the loop: move ≠ search.
+
+---
+
+## Notebook
+
+**Command:** `notebook` or `n`
+
+### Notebook Behavior
+
+- Opens the **case notebook**, an overlay the investigator can consult at any
+  time (works in every mode and costs 0 turns).
+- Shows four sections:
+  - **The case** — the premise hook and a one-line summary of what happened and
+    roughly when (the "what / where / when").
+  - **People** — the characters with brief descriptions.
+  - **Places** — the locations with brief descriptions.
+  - **Clues** — the clues discovered so far (from searching and asking),
+    accumulating live as the investigator finds them.
+- The case facts, people, and places come from the blueprint's
+  `narrative.starting_knowledge`; clues are the player's discovered set. The
+  notebook replaces the old wall-of-text opening — the game start now points the
+  investigator here instead.
+- On mobile (no command line), the notebook is opened from the drawer's
+  **Notebook** action.
 
 ---
 

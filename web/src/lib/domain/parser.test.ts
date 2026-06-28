@@ -277,3 +277,22 @@ describe('parseCommand - zoom command', () => {
     expect(parseCommand('ZOOM', 'talk', context)).toEqual({ type: 'zoom' });
   });
 });
+
+describe('parseCommand - notebook command', () => {
+  it('parses "notebook" as notebook in all modes', () => {
+    expect(parseCommand('notebook', 'explore', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('notebook', 'talk', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('notebook', 'accuse', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('notebook', 'ended', context)).toEqual({ type: 'notebook' });
+  });
+
+  it('parses the "n" alias as notebook in all modes', () => {
+    expect(parseCommand('n', 'explore', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('n', 'talk', context)).toEqual({ type: 'notebook' });
+  });
+
+  it('normalizes casing for notebook command', () => {
+    expect(parseCommand('Notebook', 'explore', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('N', 'talk', context)).toEqual({ type: 'notebook' });
+  });
+});

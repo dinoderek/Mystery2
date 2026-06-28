@@ -28,6 +28,9 @@ import { MobileSessionState } from './mobile-session.svelte';
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
+    mystery_summary: null,
+    premise: null,
+    discovered_clues: [],
     locations: [
       { id: 'library', name: 'Library' },
       { id: 'kitchen', name: 'Kitchen' },
@@ -46,7 +49,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     mode: 'explore',
     current_talk_character: null,
     history: [],
-    discovered_clues: [],
     ...overrides,
   };
 }

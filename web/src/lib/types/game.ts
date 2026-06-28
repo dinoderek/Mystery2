@@ -48,20 +48,23 @@ export interface DiscoveredClue {
 }
 
 export interface GameState {
-  locations: { id: string; name: string }[];
+  mystery_summary: string | null;
+  premise: string | null;
+  locations: { id: string; name: string; summary?: string | null }[];
   characters: {
     id: string;
     first_name: string;
     last_name: string;
     location_name: string;
     sex: 'male' | 'female' | null;
+    summary?: string | null;
   }[];
+  discovered_clues: DiscoveredClue[];
   time_remaining: number;
   location: string;
   mode: 'explore' | 'talk' | 'accuse' | 'ended';
   current_talk_character: string | null;
   history: HistoryEntry[];
-  discovered_clues: DiscoveredClue[];
 }
 
 export interface Blueprint {

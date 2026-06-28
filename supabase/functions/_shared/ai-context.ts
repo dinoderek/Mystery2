@@ -4,6 +4,7 @@ import {
   type ClueRequires,
   isClueUnlocked,
 } from "./clue-discovery.ts";
+import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 
 export interface BlueprintClue {
   id: string;
@@ -425,37 +426,15 @@ function buildTalkCharacterPublicSummaries(
   }));
 }
 
-function buildPlayerKnownClues(
-  blueprint: BlueprintContext,
+export function buildPlayerKnownClues(
+  blueprint: ClueWorld,
   conversationHistory: ConversationFragment[],
-): Array<{ id: string; text: string }> {
+): ClueRef[] {
   const clueIds = buildDiscoveredClueIdSet(conversationHistory);
 
   if (clueIds.size === 0) return [];
 
-  const clueMap = new Map<string, { id: string; text: string }>();
-  for (const location of blueprint.world.locations) {
-    for (const clue of location.clues) {
-      clueMap.set(clue.id, { id: clue.id, text: clue.text });
-    }
-    for (const subLoc of location.sub_locations ?? []) {
-      for (const clue of subLoc.clues) {
-        clueMap.set(clue.id, { id: clue.id, text: clue.text });
-      }
-    }
-  }
-  for (const character of blueprint.world.characters) {
-    for (const clue of character.clues) {
-      clueMap.set(clue.id, { id: clue.id, text: clue.text });
-    }
-  }
-
-  const result: Array<{ id: string; text: string }> = [];
-  for (const id of clueIds) {
-    const clue = clueMap.get(id);
-    if (clue) result.push(clue);
-  }
-  return result;
+  return mapClueIdsToClues(blueprint, clueIds);
 }
 
 function buildTalkCharacterPrivateContext(

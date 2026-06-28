@@ -211,6 +211,7 @@ export class GameSessionStore {
   activeStoryImage = $state<StoryImageState | null>(null);
   showHelp = $state(false);
   showZoomModal = $state(false);
+  showNotebook = $state(false);
   isRetrying = $state(false);
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
@@ -221,7 +222,6 @@ export class GameSessionStore {
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   sessionCatalogError = $state<string | null>(null);
   viewerMode = $state<SessionViewerMode>('interactive');
-  showNotebook = $state(false);
   // Clues discovered on the most recent turn — drives the discovery celebration.
   recentlyDiscovered = $state<DiscoveredClue[]>([]);
 
@@ -375,6 +375,7 @@ export class GameSessionStore {
       this.isRetrying = false;
       this.retryCount = 0;
       this.showHelp = false;
+      this.showNotebook = false;
       this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
@@ -442,6 +443,11 @@ export class GameSessionStore {
       } else {
         this.appendSystemFeedback('No image to zoom into.');
       }
+      return;
+    }
+
+    if (parsed.type === 'notebook') {
+      this.showNotebook = true;
       return;
     }
 
@@ -534,15 +540,44 @@ export class GameSessionStore {
     );
   }
 
+  private mergeDiscoveredClues(raw: unknown) {
+    if (!this.state) {
+      return;
+    }
+    const incoming = this.normalizeDiscoveredClues(raw);
+    if (incoming.length === 0) {
+      return;
+    }
+    const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
+    const fresh: DiscoveredClue[] = [];
+    for (const clue of incoming) {
+      if (!known.has(clue.id)) {
+        known.add(clue.id);
+        this.state.discovered_clues.push(clue);
+        fresh.push(clue);
+      }
+    }
+    // Surface only the genuinely new clues for the discovery celebration.
+    if (fresh.length > 0) {
+      this.recentlyDiscovered = fresh;
+    }
+  }
+
   private normalizeState(rawState: unknown, rawNarrationEvents: unknown = []): GameState {
     const source = isRecord(rawState) ? rawState : {};
     const narrationEvents = this.normalizeNarrationEvents(rawNarrationEvents);
 
     return {
+      mystery_summary: readNullableString(source.mystery_summary),
+      premise: readNullableString(source.premise),
       locations: Array.isArray(source.locations)
         ? source.locations
             .filter((location): location is Record<string, unknown> => isRecord(location))
-            .map((location) => ({ id: readString(location.id), name: readString(location.name) }))
+            .map((location) => ({
+              id: readString(location.id),
+              name: readString(location.name),
+              summary: readNullableString(location.summary),
+            }))
             .filter((location) => location.name.length > 0)
         : [],
       characters: Array.isArray(source.characters)
@@ -554,16 +589,17 @@ export class GameSessionStore {
               last_name: readString(character.last_name),
               location_name: readString(character.location_name) || readString(character.location_id),
               sex: readCharacterSex(character.sex),
+              summary: readNullableString(character.summary),
             }))
             .filter((character) => character.first_name.length > 0)
         : [],
+      discovered_clues: this.normalizeDiscoveredClues(source.discovered_clues),
       time_remaining: readInt(source.time_remaining),
       location: readString(source.location),
       mode: readMode(source.mode, 'explore'),
       current_talk_character:
         typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
       history: this.flattenNarrationEvents(narrationEvents),
-      discovered_clues: this.normalizeDiscoveredClues(source.discovered_clues),
     };
   }
 
@@ -731,6 +767,7 @@ export class GameSessionStore {
     this.error = null;
     this.showHelp = false;
     this.showZoomModal = false;
+    this.showNotebook = false;
     this.isRetrying = false;
     this.retryCount = 0;
     this.lastFailedInput = null;
@@ -864,17 +901,9 @@ export class GameSessionStore {
       this.state.current_talk_character = payload.current_talk_character;
     }
 
-    // Newly discovered clues from a search/ask turn: append the unseen ones to
+    // Newly discovered clues from a search/ask turn: merge the unseen ones into
     // the notebook and surface them for the discovery celebration.
-    if (Array.isArray(payload.discovered_clues)) {
-      const incoming = this.normalizeDiscoveredClues(payload.discovered_clues);
-      const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
-      const fresh = incoming.filter((clue) => !known.has(clue.id));
-      if (fresh.length > 0) {
-        this.state.discovered_clues = [...this.state.discovered_clues, ...fresh];
-        this.recentlyDiscovered = fresh;
-      }
-    }
+    this.mergeDiscoveredClues(payload.revealed_clues);
 
     const outcome = payload.result;
     const isAccuseEnded = endpoint === 'game-accuse' && payload.mode === 'ended';

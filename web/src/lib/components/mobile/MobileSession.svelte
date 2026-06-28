@@ -14,7 +14,7 @@
   import TerminalMessage from '$lib/components/TerminalMessage.svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
   import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
-  import Notebook from '$lib/components/Notebook.svelte';
+  import NotebookPanel from '$lib/components/NotebookPanel.svelte';
   import ClueDiscoveredToast from '$lib/components/ClueDiscoveredToast.svelte';
 
   const state = new MobileSessionState();
@@ -176,6 +176,6 @@
 
   <HelpModal />
   <SceneZoomModal />
-  <Notebook />
+  <NotebookPanel />
   <ClueDiscoveredToast />
 </main>

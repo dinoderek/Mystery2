@@ -33,8 +33,10 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 - `metadata.target_age` → tone calibration in every AI prompt
 - `metadata.time_budget` → initial turn budget
 - `narrative.premise` → opening narration (the hook)
-- `narrative.starting_knowledge` → formatted into a "You already know:" block
-  appended to the opening narration
+- `narrative.starting_knowledge` → surfaced (not generated) as the player's
+  in-game **notebook**: `mystery_summary` plus the per-location and
+  per-character `summary` lines are shown verbatim as the case facts, people,
+  and places. Write them as clear, player-facing one-liners.
 - `world.starting_location_id` → the player's first scene
 - `world.locations[].description` → narrator's room-entry text on every visit
 - `world.locations[].clues[]` → revealed by **bare** search (at most 1 per

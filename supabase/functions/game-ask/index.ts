@@ -251,7 +251,9 @@ serveWithCors(async (req) => {
         time_remaining: session.time_remaining,
         mode: "talk",
         current_talk_character: activeCharacter.id,
-        discovered_clues: discoveredThisTurn,
+        // Clue(s) revealed by this action, for the in-game notebook to merge
+        // (rich records: thread membership, origin, off-script flag).
+        revealed_clues: discoveredThisTurn,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

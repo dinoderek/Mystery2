@@ -219,7 +219,13 @@ For `game-start`:
 
 1. Load the selected blueprint and resolve the session AI profile.
 2. Generate the opening narration from `premise` plus `target_age`.
-3. Format `starting_knowledge` (a structured object with `mystery_summary`, per-location summaries, and per-character summaries) into a "You already know:" block and append it as an additional narrator part in the persisted `start` event.
+3. Append a short, static notebook-guidance narrator part to the persisted
+   `start` event (pointing the player at the `notebook` command). The
+   `starting_knowledge` reference material (mystery summary, per-location and
+   per-character summaries) is **not** dumped into narration anymore — it is
+   surfaced as structured data on the session `state` (`mystery_summary`,
+   `premise`, and a `summary` on each location/character) so the in-game
+   notebook can render it. See [game.md](game.md) (Notebook).
 
 For `game-move`:
 
@@ -248,6 +254,22 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 - `game-start` and `game-get` also expose `sex` on player-visible character
   summaries so the API boundary stays aligned with the narrator-facing data
   model.
+
+### Notebook data on the session boundary
+
+The in-game notebook is fed entirely by structured fields on the API boundary,
+not by parsing narration:
+
+- `game-start` and `game-get` return `state.mystery_summary`, `state.premise`,
+  and a `summary` on each `state.locations[]` / `state.characters[]` entry
+  (sourced from `narrative.starting_knowledge`; `null` when unauthored).
+- `game-get` returns the full `state.discovered_clues` snapshot, rebuilt from
+  the event transcript via `buildPlayerKnownClues`
+  (`supabase/functions/_shared/ai-context.ts`).
+- `game-search` and `game-ask` return `revealed_clues` — the clue(s) revealed by
+  that single action — which the client merges into its discovered-clue list so
+  the notebook updates live. Clue ids are mapped to text via the shared
+  `mapClueIdsToClues` helper (`supabase/functions/_shared/clues.ts`).
 
 ## Accusation Round Lifecycle
 

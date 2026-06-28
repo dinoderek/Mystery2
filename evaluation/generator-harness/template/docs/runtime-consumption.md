@@ -16,7 +16,7 @@ except the accusation judge.
 
 | Role | What it does | Blueprint slice it receives |
 |---|---|---|
-| `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is appended verbatim (not generated). |
+| `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is not used for narration — it is surfaced verbatim (not generated) as the player's in-game notebook (case facts, people, places). |
 | `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus public summaries of characters currently at that location (`first_name`, `last_name`, `sex`, `appearance`, `background`). Plus prior history at that location. |
 | `game-search` (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. |
 | `game-search` (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |

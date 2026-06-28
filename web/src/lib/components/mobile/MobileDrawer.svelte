@@ -15,6 +15,11 @@
     open = false;
   }
 
+  function handleNotebook() {
+    drawer.openNotebook();
+    close();
+  }
+
   function handleHelp() {
     drawer.openHelp();
     close();
@@ -35,11 +40,6 @@
 
   function handleQuit() {
     drawer.quit();
-    close();
-  }
-
-  function handleNotebook() {
-    gameSessionStore.showNotebook = true;
     close();
   }
 </script>

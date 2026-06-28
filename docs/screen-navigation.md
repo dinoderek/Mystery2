@@ -155,11 +155,6 @@ quit), `MobileImageViewer` (fullscreen image on tap), `HelpModal`,
 Journeys: J4 (read), J5 (write), J6 (quick actions), J7 (image viewer),
 J8 (help), J9 (status), J10 (exit), J11 (text size).
 
-#### `/briefs/*` — Gated on Mobile
-
-All briefs routes (`/briefs`, `/briefs/new`, `/briefs/[id]`) redirect to
-`/` on mobile via an `onMount` guard. The brief creator is desktop-only.
-
 ### Mobile Navigation Patterns
 
 - **Back arrow** in `MobileTopBar` uses `goto('/')` or parent-provided callback.

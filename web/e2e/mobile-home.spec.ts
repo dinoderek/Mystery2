@@ -13,7 +13,7 @@ import {
 
 /**
  * Extended mobile E2E coverage for the home screen, blueprint carousel,
- * session list routes, and briefs gating (T07).
+ * and session list routes (T07).
  *
  * Runs under the `mobile-safari` Playwright project (iPhone 13 / WebKit).
  * Basic home-screen and in-progress carousel tests live in mobile.spec.ts;
@@ -165,22 +165,10 @@ async function mockResumeSession(page: Page) {
 }
 
 // ---------------------------------------------------------------------------
-// Home screen — briefs gating & logout
+// Home screen — logout
 // ---------------------------------------------------------------------------
 
 test.describe('mobile home screen — extended', () => {
-  test('no Manage Briefs button visible on mobile', async ({ page }) => {
-    await enableAuthBypass(page);
-    await mockEmptyCatalog(page);
-
-    await page.goto('/');
-    await expect(page.getByTestId('mobile-home-new-game')).toBeVisible();
-
-    // Desktop "Manage briefs" option must not appear on mobile
-    await expect(page.getByText('Manage briefs', { exact: false })).not.toBeVisible();
-    await expect(page.getByText('4.')).not.toBeVisible();
-  });
-
   test('logout button is visible', async ({ page }) => {
     await enableAuthBypass(page);
     await mockEmptyCatalog(page);
@@ -309,21 +297,5 @@ test.describe('mobile session lists', () => {
 
     await page.goto('/sessions/completed');
     await expect(page.getByText('No completed cases')).toBeVisible();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Briefs gating — mobile redirect
-// ---------------------------------------------------------------------------
-
-test.describe('mobile briefs gating', () => {
-  test('/briefs redirects to / on mobile', async ({ page }) => {
-    await enableAuthBypass(page);
-    await mockEmptyCatalog(page);
-
-    await page.goto('/briefs');
-    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
-    // Should land on mobile home
-    await expect(page.getByTestId('mobile-home-new-game')).toBeVisible();
   });
 });

@@ -17,6 +17,10 @@ export interface TalkStartOutput {
 export interface TalkConversationOutput {
   narration: string;
   revealed_clue_ids: string[];
+  // False when the player's message was gibberish / unintelligible. The
+  // narration is then an in-character "what?" beat and the backend suppresses
+  // any clue reveal. Defaults to true when the model omits it.
+  input_understood: boolean;
 }
 
 export interface TalkEndOutput {
@@ -27,6 +31,10 @@ export interface SearchOutput {
   narration: string;
   revealed_clue_id: string | null;
   costs_turn: boolean;
+  // False when a targeted search query was gibberish / unintelligible. The
+  // narration is then an in-character "what?" beat; the backend reveals no clue
+  // and charges no turn. Defaults to true when the model omits it.
+  input_understood: boolean;
 }
 
 export interface AccusationStartOutput {
@@ -86,6 +94,15 @@ function requireOptionalNullableString(
   return parsed.trim();
 }
 
+function readOptionalBoolean(
+  value: Record<string, unknown>,
+  field: string,
+  fallback: boolean,
+): boolean {
+  const parsed = value[field];
+  return typeof parsed === "boolean" ? parsed : fallback;
+}
+
 function requireRoleObject(value: unknown, role: AIRoleName): Record<string, unknown> {
   if (!isRecord(value)) {
     throw new Error(`Invalid AI ${role} output: expected object`);
@@ -103,14 +120,18 @@ export function parseTalkConversationOutput(
   value: unknown,
 ): TalkConversationOutput {
   const parsed = requireRoleObject(value, "talk_conversation");
+  const inputUnderstood = readOptionalBoolean(parsed, "input_understood", true);
   const rawIds = parsed.revealed_clue_ids;
+  // An unintelligible turn never reveals clues, regardless of what the model put
+  // in revealed_clue_ids.
   const revealedClueIds: string[] =
-    Array.isArray(rawIds)
+    inputUnderstood && Array.isArray(rawIds)
       ? rawIds.filter((id): id is string => typeof id === "string" && id.length > 0)
       : [];
   return {
     narration: requireString(parsed, "narration", "talk_conversation"),
     revealed_clue_ids: revealedClueIds,
+    input_understood: inputUnderstood,
   };
 }
 
@@ -121,16 +142,21 @@ export function parseTalkEndOutput(value: unknown): TalkEndOutput {
 
 export function parseSearchOutput(value: unknown): SearchOutput {
   const parsed = requireRoleObject(value, "search");
-  const revealedClueId = requireOptionalNullableString(
-    parsed,
-    "revealed_clue_id",
-    "search",
-  );
+  const inputUnderstood = readOptionalBoolean(parsed, "input_understood", true);
+  const revealedClueId = inputUnderstood
+    ? requireOptionalNullableString(parsed, "revealed_clue_id", "search")
+    : null;
   const costsTurn = parsed.costs_turn;
   return {
     narration: requireString(parsed, "narration", "search"),
     revealed_clue_id: revealedClueId,
-    costs_turn: typeof costsTurn === "boolean" ? costsTurn : true,
+    // An unintelligible search never charges a turn.
+    costs_turn: !inputUnderstood
+      ? false
+      : typeof costsTurn === "boolean"
+      ? costsTurn
+      : true,
+    input_understood: inputUnderstood,
   };
 }
 

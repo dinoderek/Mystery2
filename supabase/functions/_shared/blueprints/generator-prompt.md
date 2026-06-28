@@ -113,6 +113,21 @@ Plan with these steps; do not output them.
    - No circular gating (A needs B needs A). At least one `solution_path` must be
      completable without any narrative-condition reveal (`confronted_with_evidence`
      on the critical path is fine — its unlock is deterministic).
+   - Author `tells` for characters who would visibly leak something — a separate
+     array from agendas. Each tell has `id`, `text` (the cue the player can
+     notice, e.g. "glances at the back door", "voice tightens"), and a `trigger`
+     object that keeps it reactive instead of ambient. Pick the trigger kind:
+     - `{ "kind": "clue", "clue_ids": [...] }`: the cue shows once the player
+       brings up those clues and the character believes them (the player holds
+       the clue, or bluffs convincingly). Reference real, obtainable clue IDs.
+     - `{ "kind": "condition", "condition": "free text" }`: the cue shows once a
+       narrative condition is met (e.g. "the investigator accuses her of lying").
+       Write the condition concretely enough for the narrator to judge.
+     - `{ "kind": "always" }`: reserve for a cue the character carries from the
+       first exchange; use sparingly.
+     Prefer `clue`/`condition` triggers so tells reward investigation. Leaving
+     `tells` empty is fine for minor characters — the narrator still reacts
+     organically — but a memorable suspect deserves an authored, consistent tell.
 7. Author clues — location and character. Where it helps, give characters
    cross-character clues that confirm/deny another's alibi, report what they saw
    another do, reveal a motive, or point at a location; set `about_character_id` /
@@ -183,7 +198,9 @@ sub-location needs a clue — some are atmospheric.
 `flavor_knowledge[]`, ordered `world.characters[].actual_actions[]`, and
 `agendas[]` (`type`, `strategy`, `priority`, `details`, plus optional
 `target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`;
-default `[]`).
+default `[]`), and `tells[]` (each `id`, `text`, and a `trigger` object whose
+`kind` is `always`, `condition` (with free-text `condition`), or `clue` (with
+`clue_ids` referencing real clues); default `[]`).
 
 **Reasoning paths.** `solution_paths[]`, `red_herrings[]`, and
 `suspect_elimination_paths[]` share one shape: `id`, `summary`, optional

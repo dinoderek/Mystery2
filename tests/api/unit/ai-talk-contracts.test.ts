@@ -22,6 +22,7 @@ describe("talk AI output contracts", () => {
     ).toEqual({
       narration: "I was in the kitchen when the cookie jar opened.",
       revealed_clue_ids: [],
+      input_understood: true,
     });
   });
 
@@ -34,6 +35,7 @@ describe("talk AI output contracts", () => {
     ).toEqual({
       narration: "Fine, I saw her leave at nine.",
       revealed_clue_ids: ["clue-alibi-witness"],
+      input_understood: true,
     });
   });
 
@@ -43,6 +45,19 @@ describe("talk AI output contracts", () => {
       revealed_clue_ids: ["valid-id", "", 42, null, "another-valid"],
     });
     expect(result.revealed_clue_ids).toEqual(["valid-id", "another-valid"]);
+  });
+
+  it("suppresses revealed clues when input is not understood", () => {
+    const result = parseTalkConversationOutput({
+      narration: "Sorry — what?",
+      revealed_clue_ids: ["clue-alibi-witness"],
+      input_understood: false,
+    });
+    expect(result).toEqual({
+      narration: "Sorry — what?",
+      revealed_clue_ids: [],
+      input_understood: false,
+    });
   });
 
   it("accepts valid talk-end output", () => {

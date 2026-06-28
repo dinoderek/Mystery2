@@ -361,6 +361,7 @@ serveWithCors(async (req) => {
         revealed_clue_text: validatedClue?.text ?? null,
         revealed_clue_ids: updatedRevealedClueIds,
         costs_turn: costsTurn,
+        input_understood: searchOutput.input_understood,
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: searchParts,

@@ -129,6 +129,20 @@ function pronounForSex(sex: "male" | "female" | null): string {
   return sex === "male" ? "he" : sex === "female" ? "she" : "they";
 }
 
+/**
+ * Deterministic gibberish heuristic for the mock runtime so tests can exercise
+ * the unintelligible-input path. A word made only of consonants (keyboard mash
+ * like "asdfgh") reads as nonsense; anything with a vowel is treated as
+ * understood. The live provider judges this via the prompt instead.
+ */
+function looksUnintelligible(text: string): boolean {
+  const letters = text.toLowerCase().replace(/[^a-z]/g, "");
+  if (letters.length < 2) {
+    return false;
+  }
+  return !/[aeiouy]/.test(letters);
+}
+
 function inferMentionedCharacter(
   context: Record<string, unknown>,
 ): string | null {
@@ -322,8 +336,16 @@ class MockAIProvider implements AIProvider {
           talkCtx?.active_character?.first_name ??
           requireContextString(role, context, "character_name");
         const playerInput = requireContextString(role, context, "player_input");
+        if (looksUnintelligible(playerInput)) {
+          return {
+            narration: `[Mock] ${characterName} blinked. "Sorry — what?"`,
+            revealed_clue_ids: [],
+            input_understood: false,
+          };
+        }
         return {
           narration: `[Mock] ${characterName} responds thoughtfully to: "${playerInput}".`,
+          input_understood: true,
         };
       }
       case "talk_end": {
@@ -371,6 +393,14 @@ class MockAIProvider implements AIProvider {
 
         // For targeted search, try to match the first sub-location with unrevealed clues
         if (searchQuery && searchContext?.sub_locations) {
+          if (looksUnintelligible(searchQuery)) {
+            return {
+              narration: `[Mock] You poke around ${locationName}, but you're not sure what you're even looking for.`,
+              revealed_clue_id: null,
+              costs_turn: false,
+              input_understood: false,
+            };
+          }
           const matchedSub = searchContext.sub_locations.find(
             (sl) => sl.has_unrevealed_clues,
           );
@@ -380,12 +410,14 @@ class MockAIProvider implements AIProvider {
               narration: `[Mock] You search ${matchedSub.name} in ${locationName} and uncover a clue: ${clue.text}`,
               revealed_clue_id: clue.id ?? null,
               costs_turn: true,
+              input_understood: true,
             };
           }
           return {
             narration: `[Mock] You search ${locationName} for "${searchQuery}", but find nothing of interest.`,
             revealed_clue_id: null,
             costs_turn: false,
+            input_understood: true,
           };
         }
 
@@ -395,6 +427,7 @@ class MockAIProvider implements AIProvider {
             : `[Mock] You search ${locationName} again, but discover no new clue.`,
           revealed_clue_id: nextClueId ?? null,
           costs_turn: true,
+          input_understood: true,
         };
       }
       case "accusation_start": {

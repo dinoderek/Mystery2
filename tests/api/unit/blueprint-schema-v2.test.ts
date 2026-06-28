@@ -352,4 +352,84 @@ describe("Blueprint V2 schema", () => {
       );
     });
   });
+
+  describe("character tells", () => {
+    function withAliceTells(tells: Array<Record<string, unknown>>) {
+      return {
+        ...validBlueprintV2,
+        world: {
+          ...validBlueprintV2.world,
+          characters: validBlueprintV2.world.characters.map((c) =>
+            c.id === "alice" ? { ...c, tells } : c,
+          ),
+        },
+      };
+    }
+
+    it("defaults tells to an empty array when omitted (backwards compatible)", () => {
+      const parsed = BlueprintV2Schema.parse(validBlueprintV2);
+      for (const character of parsed.world.characters) {
+        expect(character.tells).toEqual([]);
+      }
+    });
+
+    it("accepts always, condition, and clue triggers", () => {
+      const bp = withAliceTells([
+        {
+          id: "tell-alice-fidget",
+          text: "fidgets with her apron",
+          trigger: { kind: "always" },
+        },
+        {
+          id: "tell-alice-flinch",
+          text: "her voice tightens",
+          trigger: {
+            kind: "condition",
+            condition: "the investigator accuses her of lying",
+          },
+        },
+        {
+          id: "tell-alice-bag",
+          text: "glances at the back door",
+          trigger: { kind: "clue", clue_ids: ["loc-bag"] },
+        },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
+    it("rejects a clue trigger referencing an unknown clue id", () => {
+      const bp = withAliceTells([
+        {
+          id: "tell-alice-bad",
+          text: "looks away",
+          trigger: { kind: "clue", clue_ids: ["loc-does-not-exist"] },
+        },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(
+        /tell trigger clue_ids references unknown clue id/,
+      );
+    });
+
+    it("rejects a clue trigger with an empty clue_ids array", () => {
+      const bp = withAliceTells([
+        {
+          id: "tell-alice-empty",
+          text: "looks away",
+          trigger: { kind: "clue", clue_ids: [] },
+        },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow();
+    });
+
+    it("rejects a tell id that collides with a clue id", () => {
+      const bp = withAliceTells([
+        {
+          id: "loc-bag",
+          text: "looks away",
+          trigger: { kind: "always" },
+        },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/Duplicate id/);
+    });
+  });
 });

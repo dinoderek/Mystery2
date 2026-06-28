@@ -8,8 +8,29 @@ import {
 describe("search and accusation AI output contracts", () => {
   it("accepts valid search output", () => {
     expect(parseSearchOutput({ narration: "You find dusty footprints." })).toEqual(
-      { narration: "You find dusty footprints.", revealed_clue_id: null, costs_turn: true },
+      {
+        narration: "You find dusty footprints.",
+        revealed_clue_id: null,
+        costs_turn: true,
+        input_understood: true,
+      },
     );
+  });
+
+  it("suppresses clue reveal and turn cost when search input is not understood", () => {
+    expect(
+      parseSearchOutput({
+        narration: "You poke around, unsure what you're looking for.",
+        revealed_clue_id: "clue-attic-letter",
+        costs_turn: true,
+        input_understood: false,
+      }),
+    ).toEqual({
+      narration: "You poke around, unsure what you're looking for.",
+      revealed_clue_id: null,
+      costs_turn: false,
+      input_understood: false,
+    });
   });
 
   it("accepts valid accusation start output", () => {

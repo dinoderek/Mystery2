@@ -31,6 +31,7 @@ function createStore() {
     location: 'Kitchen',
     mode: 'explore',
     current_talk_character: null,
+    discovered_clues: [],
     history: [
       {
         sequence: 1,

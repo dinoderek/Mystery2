@@ -1,10 +1,16 @@
 import type { AIRoleName } from "./ai-contracts.ts";
+import {
+  buildDiscoveredClueIdSet,
+  type ClueRequires,
+  isClueUnlocked,
+} from "./clue-discovery.ts";
 
 export interface BlueprintClue {
   id: string;
   text: string;
   about_character_id?: string;
   hint_location_id?: string;
+  requires?: ClueRequires | null;
 }
 
 export interface BlueprintAgenda {
@@ -169,12 +175,26 @@ export interface TalkCharacterPublicSummary {
   background: string;
 }
 
+// A character clue as presented to the narrator during conversation. Carries the
+// gate's `requires_rationale` (the in-fiction reason it is withheld) and a
+// precomputed `prereqs_met` flag so the model does not have to do set math. Clue
+// ids of prerequisites are intentionally NOT sent — the rationale + flag are
+// enough for the narrator to gate (and to judge an off-script unlock).
+export interface TalkClueContext {
+  id: string;
+  text: string;
+  about_character_id?: string;
+  hint_location_id?: string;
+  requires_rationale: string | null;
+  prereqs_met: boolean;
+}
+
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
   personality: string;
   initial_attitude_towards_investigator: string;
   stated_alibi: string | null;
   motive: string | null;
-  clues: BlueprintClue[];
+  clues: TalkClueContext[];
   flavor_knowledge: string[];
   actual_actions: BlueprintActualAction[];
   agendas: BlueprintAgenda[];
@@ -409,23 +429,7 @@ function buildPlayerKnownClues(
   blueprint: BlueprintContext,
   conversationHistory: ConversationFragment[],
 ): Array<{ id: string; text: string }> {
-  const clueIds = new Set<string>();
-
-  for (const entry of conversationHistory) {
-    const payload = entry.payload;
-    if (!payload || typeof payload !== "object") continue;
-
-    if (entry.event_type === "search" || entry.event_type === "ask") {
-      const ids = readPayloadStringArray(payload, "revealed_clue_ids");
-      for (const id of ids) {
-        clueIds.add(id);
-      }
-      const singleId = readPayloadField(payload, "revealed_clue_id");
-      if (typeof singleId === "string" && singleId.length > 0) {
-        clueIds.add(singleId);
-      }
-    }
-  }
+  const clueIds = buildDiscoveredClueIdSet(conversationHistory);
 
   if (clueIds.size === 0) return [];
 
@@ -466,6 +470,16 @@ function buildTalkCharacterPrivateContext(
     throw new Error(`Character ${characterId} not found in blueprint`);
   }
 
+  const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
+  const clues: TalkClueContext[] = character.clues.map((clue) => ({
+    id: clue.id,
+    text: clue.text,
+    about_character_id: clue.about_character_id,
+    hint_location_id: clue.hint_location_id,
+    requires_rationale: clue.requires?.rationale ?? null,
+    prereqs_met: isClueUnlocked(clue, discoveredSet),
+  }));
+
   return {
     id: character.id,
     first_name: character.first_name,
@@ -479,7 +493,7 @@ function buildTalkCharacterPrivateContext(
       character.initial_attitude_towards_investigator,
     stated_alibi: character.stated_alibi,
     motive: character.motive,
-    clues: character.clues,
+    clues,
     flavor_knowledge: character.flavor_knowledge,
     actual_actions: character.actual_actions,
     agendas: character.agendas ?? [],
@@ -696,6 +710,10 @@ export function buildSearchContext(input: {
   blueprint: BlueprintContext;
   location_id: string;
   revealed_clue_ids: string[];
+  // Session-global set of discovered clue ids, used to gate locked clues. A clue
+  // whose `requires` prerequisites are not all discovered is filtered out of the
+  // prompt context so the narrator never weaves a locked clue's text in.
+  discovered_clue_ids?: string[];
   next_clue: BlueprintClue | null;
   search_query?: string | null;
   conversation_history?: ConversationFragment[];
@@ -706,14 +724,24 @@ export function buildSearchContext(input: {
   }
 
   const revealedSet = new Set(input.revealed_clue_ids);
+  const discoveredSet = new Set(
+    input.discovered_clue_ids ?? input.revealed_clue_ids,
+  );
+  // A clue is visible to the narrator only if it has already been revealed or is
+  // currently unlocked. Locked clues are stripped from EVERY clue list in the
+  // context (not just `unrevealed_clues`) so their text can never be woven into
+  // narration before the player has earned them.
+  const isVisible = (c: BlueprintClue) =>
+    revealedSet.has(c.id) || isClueUnlocked(c, discoveredSet);
   const subLocations: SubLocationContext[] = (location.sub_locations ?? []).map(
     (sl) => {
-      const unrevealed = sl.clues.filter((c) => !revealedSet.has(c.id));
+      const visibleClues = sl.clues.filter(isVisible);
+      const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
       return {
         id: sl.id,
         name: sl.name,
         hint: sl.hint,
-        clues: sl.clues,
+        clues: visibleClues,
         unrevealed_clues: unrevealed,
         has_unrevealed_clues: unrevealed.length > 0,
       };
@@ -731,7 +759,7 @@ export function buildSearchContext(input: {
       location_id: location.id,
       location_name: location.name,
       location_description: location.description,
-      clues: location.clues,
+      clues: location.clues.filter(isVisible),
       revealed_clue_ids: input.revealed_clue_ids,
       next_clue: input.next_clue,
       has_more_clues: input.next_clue !== null,

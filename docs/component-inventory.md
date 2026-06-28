@@ -28,7 +28,22 @@ _(Add components here as they are built. Example format below)_
 
 ### `StatusBar.svelte`
 
-- **Purpose**: Shows current location, time, hints, and visible characters.
+- **Purpose**: Shows current location, time, hints, and visible characters, plus a
+  notebook count/toggle button that opens `Notebook.svelte`.
+- **Props**: None (reads from store)
+
+### `Notebook.svelte`
+
+- **Purpose**: Modal overlay listing discovered clues grouped by mini-mystery
+  thread (main solution / red herring / ruling out a suspect / other). Reads
+  `state.discovered_clues`. Toggled via `gameSessionStore.showNotebook`.
+- **Props**: None (reads from store)
+
+### `ClueDiscoveredToast.svelte`
+
+- **Purpose**: Transient "new clue discovered" celebration shown when a search/ask
+  turn surfaces clues (`gameSessionStore.recentlyDiscovered`); tapping opens the
+  notebook. Auto-dismisses.
 - **Props**: None (reads from store)
 
 ### `NarrationBox.svelte`
@@ -114,7 +129,7 @@ the desktop components.
 
 ### `MobileSession.svelte`
 
-- **Purpose**: Main mobile session orchestrator composing all sub-components into reading/input mode gameplay. Manages session mode, drawer, image viewer, input draft, and end-state display.
+- **Purpose**: Main mobile session orchestrator composing all sub-components into reading/input mode gameplay. Manages session mode, drawer, image viewer, input draft, and end-state display. Also mounts the shared `Notebook.svelte` and `ClueDiscoveredToast.svelte` overlays (store-driven, so the same components serve desktop and mobile).
 - **Props**: None (reads from `gameSessionStore`, `mobilePrefs`).
 
 ### `MobileInputBar.svelte`
@@ -145,7 +160,7 @@ the desktop components.
 
 ### `MobileDrawer.svelte`
 
-- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Help, Zoom), appearance settings (theme picker, text size), and quit button.
+- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Notebook, Help, Zoom), appearance settings (theme picker, text size), and quit button. The Notebook action (with discovered-clue count) opens the shared `Notebook.svelte` overlay.
 - **Props**:
   - `open`: `boolean` (bindable, controls visibility)
 

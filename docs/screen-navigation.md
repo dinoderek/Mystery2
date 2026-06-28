@@ -78,9 +78,14 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **State Dependencies**:
   - Reads the active in-memory session from the game store.
   - Maintains narration/event history, mode, and remaining time.
-- **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
+- **Sub-views**: Contains the Narration Window, Status Bar, and Input Area, plus
+  the Notebook overlay (`Notebook.svelte`, opened from the Status Bar count) and
+  the clue-discovery toast (`ClueDiscoveredToast.svelte`).
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
+  - The notebook lists discovered clues grouped by mini-mystery thread; a toast
+    celebrates new discoveries. On mobile the same overlays mount in
+    `MobileSession` and the notebook opens from `MobileDrawer`.
   - Optional side image panel renders location/character imagery from move/talk payload image IDs.
   - Side panel falls back to placeholder text if image link issuance fails or asset is missing.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt and any key returns to `/`.

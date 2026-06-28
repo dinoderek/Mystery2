@@ -19,6 +19,11 @@ import {
   findLocationById,
   type BlueprintClue,
 } from "../_shared/ai-context.ts";
+import {
+  buildDiscoveredClueIdSet,
+  isClueUnlocked,
+  mapClueToThreads,
+} from "../_shared/clue-discovery.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
@@ -200,12 +205,20 @@ serveWithCors(async (req) => {
       allCanonicalClueIds,
     );
 
-    // For bare search: next location-level clue in sequence
-    const locationLevelRevealed = revealedClueIds.filter((id) =>
-      currentLocation.clues.some((c) => c.id === id),
-    );
+    // Session-global discovered set, used to gate locked clues. A clue's
+    // prerequisites may live in another location or character, so gating cannot
+    // use the location-scoped revealed set.
+    const discoveredGlobal = buildDiscoveredClueIdSet(historyRows ?? []);
+
+    // For bare search: the next location-level clue that is both unrevealed AND
+    // unlocked. Skipping locked clues prevents dead-ending (if clue[0] is gated
+    // but clue[1] is open, bare search surfaces clue[1]).
     const nextClue = searchQuery === null
-      ? (currentLocation.clues[locationLevelRevealed.length] ?? null)
+      ? (currentLocation.clues.find(
+          (c) =>
+            !revealedClueIds.includes(c.id) &&
+            isClueUnlocked(c, discoveredGlobal),
+        ) ?? null)
       : null;
 
     // Choose prompt based on search type
@@ -217,6 +230,7 @@ serveWithCors(async (req) => {
       blueprint,
       location_id: currentLocation.id,
       revealed_clue_ids: revealedClueIds,
+      discovered_clue_ids: [...discoveredGlobal],
       next_clue: nextClue,
       search_query: searchQuery,
       conversation_history: historyRows ?? [],
@@ -277,8 +291,19 @@ serveWithCors(async (req) => {
     if (aiClueId !== null) {
       const clue = allClueMap.get(aiClueId);
       if (clue && !revealedClueIds.includes(aiClueId)) {
-        validatedClueId = aiClueId;
-        validatedClue = clue;
+        // Deterministic backstop: a clue whose prerequisites are not all
+        // discovered cannot be revealed by search (search gates are hard — there
+        // is no brilliance override here, unlike conversation).
+        if (isClueUnlocked(clue, discoveredGlobal)) {
+          validatedClueId = aiClueId;
+          validatedClue = clue;
+        } else {
+          log("search.clue_locked", {
+            game_id: gameId,
+            ai_clue_id: aiClueId,
+            requires: clue.requires?.clue_ids ?? [],
+          });
+        }
       } else {
         log("search.clue_validation_failed", {
           game_id: gameId,
@@ -327,12 +352,23 @@ serveWithCors(async (req) => {
       combinedParts = [...searchParts, ...forcedParts];
     }
 
+    // Materialize the discovered-clues cache: union the existing set with any
+    // newly revealed clue. Events remain the source of truth; this denormalized
+    // column powers the notebook read path and fast gating reads.
+    const existingDiscovered: string[] = Array.isArray(session.discovered_clues)
+      ? session.discovered_clues
+      : [];
+    const discoveredClues = validatedClueId === null
+      ? existingDiscovered
+      : [...new Set([...existingDiscovered, validatedClueId])];
+
     const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character_id: null,
+        discovered_clues: discoveredClues,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -397,6 +433,24 @@ serveWithCors(async (req) => {
       });
     }
 
+    // Notebook record(s) for any clue found this turn (search clues are never
+    // off-script — search gating is hard).
+    const discoveredThisTurn = validatedClue && validatedClueId
+      ? [{
+        id: validatedClueId,
+        text: validatedClue.text,
+        source: "search" as const,
+        origin: {
+          kind: "location" as const,
+          location_id: currentLocation.id,
+          location_name: currentLocation.name,
+        },
+        discovered_at: new Date().toISOString(),
+        off_script: false,
+        threads: mapClueToThreads(blueprint, validatedClueId),
+      }]
+      : [];
+
     return new Response(
       JSON.stringify({
         narration_parts: combinedParts,
@@ -404,6 +458,7 @@ serveWithCors(async (req) => {
         mode: nextMode,
         current_talk_character: null,
         follow_up_prompt: followUpPrompt,
+        discovered_clues: discoveredThisTurn,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

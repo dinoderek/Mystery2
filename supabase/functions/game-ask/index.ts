@@ -15,6 +15,7 @@ import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
+import { mapClueToThreads } from "../_shared/clue-discovery.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -162,6 +163,12 @@ serveWithCors(async (req) => {
     const validatedRevealedClueIds = talkOutput.revealed_clue_ids.filter(
       (id) => validCharacterClueIds.has(id),
     );
+    // Off-script grants are still real discoveries; only kept ids that actually
+    // survived validation are flagged for the notebook badge.
+    const validatedRevealedSet = new Set(validatedRevealedClueIds);
+    const validatedOffScript = talkOutput.revealed_off_script.filter((id) =>
+      validatedRevealedSet.has(id),
+    );
 
     const narrationParts = [
       createNarrationPart(
@@ -171,9 +178,18 @@ serveWithCors(async (req) => {
       ),
     ];
 
+    // Materialize the discovered-clues cache (events stay the source of truth).
+    const existingDiscovered: string[] = Array.isArray(session.discovered_clues)
+      ? session.discovered_clues
+      : [];
+    const discoveredClues = validatedRevealedClueIds.length === 0
+      ? existingDiscovered
+      : [...new Set([...existingDiscovered, ...validatedRevealedClueIds])];
+
     const { error: updateError } = await userClient
       .from("game_sessions")
       .update({
+        discovered_clues: discoveredClues,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -194,6 +210,7 @@ serveWithCors(async (req) => {
         character_portrait_image_id: activeCharacter.portrait_image_id ?? null,
         speaker: characterSpeaker,
         revealed_clue_ids: validatedRevealedClueIds,
+        revealed_off_script: validatedOffScript,
         input_understood: talkOutput.input_understood,
       },
       narration_parts: narrationParts,
@@ -211,12 +228,29 @@ serveWithCors(async (req) => {
       logger: narrationLogger,
     });
 
+    const characterName =
+      `${activeCharacter.first_name} ${activeCharacter.last_name}`.trim();
+    const discoveredThisTurn = validatedRevealedClueIds.map((id) => ({
+      id,
+      text: activeCharacter.clues.find((c) => c.id === id)?.text ?? "",
+      source: "talk" as const,
+      origin: {
+        kind: "character" as const,
+        character_id: activeCharacter.id,
+        character_name: characterName,
+      },
+      discovered_at: new Date().toISOString(),
+      off_script: validatedOffScript.includes(id),
+      threads: mapClueToThreads(blueprint, id),
+    }));
+
     return new Response(
       JSON.stringify({
         narration_parts: narrationParts,
         time_remaining: session.time_remaining,
         mode: "talk",
         current_talk_character: activeCharacter.id,
+        discovered_clues: discoveredThisTurn,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

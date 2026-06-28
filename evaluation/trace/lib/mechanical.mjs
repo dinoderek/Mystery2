@@ -17,6 +17,8 @@
 //                     leakage is a judge's job.
 
 import { findCharacterById, findLocationById } from "../../../supabase/functions/_shared/ai-context.ts";
+import { collectClues } from "../../checks/lib/clue-graph.mjs";
+import { isClueUnlocked } from "../../../supabase/functions/_shared/clue-discovery.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.mjs";
 
 const DEFAULT_SPOILER_MIN_RUN = 12;
@@ -114,7 +116,14 @@ function checkClueAccounting(rawTrace) {
           continue;
         }
         if (isBare && locationLevelIds.has(clueId)) {
-          const expected = (location.clues ?? [])[order.length]?.id ?? null;
+          // Bare search reveals the first not-yet-revealed location-level clue
+          // that is also UNLOCKED (its `requires` prerequisites are all already
+          // revealed). Locked clues are skipped, so the reveal order is the
+          // unlocked subsequence, not a strict array-index prefix.
+          const expected =
+            (location.clues ?? []).find(
+              (c) => !everRevealed.has(c.id) && isClueUnlocked(c, everRevealed),
+            )?.id ?? null;
           if (expected !== clueId) {
             violations.push({
               sequence: event.sequence,
@@ -261,12 +270,62 @@ function checkSpoilerLeak(rawTrace, minRun = DEFAULT_SPOILER_MIN_RUN) {
   );
 }
 
+// clue_requires_violation: a clue gated by `requires` must not be revealed until
+// every prerequisite clue has already been revealed earlier in the trace. Reveals
+// the game master granted off-script (listed in the event payload's
+// `revealed_off_script`) are intentional brilliance bypasses and are exempt.
+//
+// This proves the runtime actually HONORS the discovery graph, so it is opt-in via
+// context.enforce_requires (default off): until the runtime gating lands, the
+// engine reveals gated clues freely and this check would fail real traces.
+function checkClueRequiresViolation(rawTrace) {
+  const blueprint = rawTrace.blueprint;
+  const clues = collectClues(blueprint);
+  const events = [...rawTrace.events].sort((a, b) => a.sequence - b.sequence);
+  const everRevealed = new Set();
+  const violations = [];
+
+  for (const event of events) {
+    const revealed = revealedClueIdsForEvent(event);
+    if (revealed.length === 0) continue;
+    const offScript = new Set(
+      Array.isArray(event.payload?.revealed_off_script)
+        ? event.payload.revealed_off_script
+        : [],
+    );
+    for (const clueId of revealed) {
+      const requires = clues.get(clueId)?.requires ?? [];
+      if (requires.length > 0 && !offScript.has(clueId)) {
+        const missing = requires.filter((dep) => !everRevealed.has(dep));
+        if (missing.length > 0) {
+          violations.push({
+            sequence: event.sequence,
+            clue_id: clueId,
+            missing_prerequisites: missing,
+          });
+        }
+      }
+      everRevealed.add(clueId);
+    }
+  }
+
+  return mkCheck(
+    "clue_requires_violation",
+    violations.length === 0,
+    violations.length === 0 ? null : { violations },
+  );
+}
+
 // runTraceMechanicalChecks({ rawTrace, context }) -> check[]
-// context is optional and may carry { spoiler_min_run }.
+// context is optional and may carry { spoiler_min_run, enforce_requires }.
 export function runTraceMechanicalChecks({ rawTrace, context = null }) {
   const minRun =
     context && Number.isInteger(context.spoiler_min_run)
       ? context.spoiler_min_run
       : DEFAULT_SPOILER_MIN_RUN;
-  return [checkClueAccounting(rawTrace), checkSpoilerLeak(rawTrace, minRun)];
+  const checks = [checkClueAccounting(rawTrace), checkSpoilerLeak(rawTrace, minRun)];
+  if (context?.enforce_requires) {
+    checks.push(checkClueRequiresViolation(rawTrace));
+  }
+  return checks;
 }

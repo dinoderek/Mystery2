@@ -25,7 +25,16 @@
   class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm"
 >
   <span><span class="text-t-muted/70 font-bold">LOCATION:</span> {currentLocationName}</span>
-  <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
+  <div class="flex items-center gap-4">
+    <button
+      class="text-t-primary hover:text-t-bright transition-colors cursor-pointer"
+      onclick={() => (gameSessionStore.showNotebook = true)}
+    >
+      <span class="text-t-muted/70 font-bold">NOTEBOOK:</span>
+      {gameSessionStore.state?.discovered_clues.length ?? 0}
+    </button>
+    <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
+  </div>
 </div>
 <div
   class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm"

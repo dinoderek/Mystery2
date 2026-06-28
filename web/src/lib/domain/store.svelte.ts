@@ -1,6 +1,7 @@
 import { supabase } from '../api/supabase';
 import type {
   Blueprint,
+  DiscoveredClue,
   GameState,
   HistoryEntry,
   NarrationEvent,
@@ -220,6 +221,13 @@ export class GameSessionStore {
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   sessionCatalogError = $state<string | null>(null);
   viewerMode = $state<SessionViewerMode>('interactive');
+  showNotebook = $state(false);
+  // Clues discovered on the most recent turn — drives the discovery celebration.
+  recentlyDiscovered = $state<DiscoveredClue[]>([]);
+
+  dismissRecentlyDiscovered() {
+    this.recentlyDiscovered = [];
+  }
 
   initializeTheme() {
     if (typeof window === 'undefined') {
@@ -555,7 +563,47 @@ export class GameSessionStore {
       current_talk_character:
         typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
       history: this.flattenNarrationEvents(narrationEvents),
+      discovered_clues: this.normalizeDiscoveredClues(source.discovered_clues),
     };
+  }
+
+  private normalizeDiscoveredClues(raw: unknown): DiscoveredClue[] {
+    if (!Array.isArray(raw)) return [];
+    const clues: DiscoveredClue[] = [];
+    for (const entry of raw) {
+      if (!isRecord(entry)) continue;
+      const id = readString(entry.id);
+      const text = readString(entry.text);
+      if (id.length === 0 || text.length === 0) continue;
+      const origin = isRecord(entry.origin) ? entry.origin : {};
+      const threads = Array.isArray(entry.threads)
+        ? entry.threads
+            .filter((t): t is Record<string, unknown> => isRecord(t))
+            .map((t) => ({ kind: readString(t.kind), label: readString(t.label) }))
+            .filter((t) => t.label.length > 0)
+        : [];
+      clues.push({
+        id,
+        text,
+        source: entry.source === 'talk' ? 'talk' : 'search',
+        origin:
+          origin.kind === 'character'
+            ? {
+                kind: 'character',
+                character_id: readString(origin.character_id),
+                character_name: readString(origin.character_name),
+              }
+            : {
+                kind: 'location',
+                location_id: readString(origin.location_id),
+                location_name: readString(origin.location_name),
+              },
+        discovered_at: typeof entry.discovered_at === 'string' ? entry.discovered_at : null,
+        off_script: entry.off_script === true,
+        threads: threads as DiscoveredClue['threads'],
+      });
+    }
+    return clues;
   }
 
   private getParseContext(): ParseContext {
@@ -814,6 +862,18 @@ export class GameSessionStore {
 
     if (typeof payload.current_talk_character === 'string' || payload.current_talk_character === null) {
       this.state.current_talk_character = payload.current_talk_character;
+    }
+
+    // Newly discovered clues from a search/ask turn: append the unseen ones to
+    // the notebook and surface them for the discovery celebration.
+    if (Array.isArray(payload.discovered_clues)) {
+      const incoming = this.normalizeDiscoveredClues(payload.discovered_clues);
+      const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
+      const fresh = incoming.filter((clue) => !known.has(clue.id));
+      if (fresh.length > 0) {
+        this.state.discovered_clues = [...this.state.discovered_clues, ...fresh];
+        this.recentlyDiscovered = fresh;
+      }
     }
 
     const outcome = payload.result;

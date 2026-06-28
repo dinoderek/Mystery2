@@ -28,6 +28,25 @@ export interface HistoryEntry {
   image_id?: string | null;
 }
 
+export type DiscoveryThread =
+  | { kind: 'solution'; label: string }
+  | { kind: 'red_herring'; label: string }
+  | { kind: 'eliminate'; label: string };
+
+export type DiscoveryOrigin =
+  | { kind: 'location'; location_id: string; location_name: string }
+  | { kind: 'character'; character_id: string; character_name: string };
+
+export interface DiscoveredClue {
+  id: string;
+  text: string;
+  source: 'search' | 'talk';
+  origin: DiscoveryOrigin;
+  discovered_at: string | null;
+  off_script: boolean;
+  threads: DiscoveryThread[];
+}
+
 export interface GameState {
   locations: { id: string; name: string }[];
   characters: {
@@ -42,6 +61,7 @@ export interface GameState {
   mode: 'explore' | 'talk' | 'accuse' | 'ended';
   current_talk_character: string | null;
   history: HistoryEntry[];
+  discovered_clues: DiscoveredClue[];
 }
 
 export interface Blueprint {

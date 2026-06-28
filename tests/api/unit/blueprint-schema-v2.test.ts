@@ -353,6 +353,111 @@ describe("Blueprint V2 schema", () => {
     });
   });
 
+  describe("clue discovery graph (requires)", () => {
+    // Set a `requires` gate on a location clue by id.
+    function withLocationClueRequires(
+      clueId: string,
+      requires: Record<string, unknown> | null,
+    ) {
+      return {
+        ...validBlueprintV2,
+        world: {
+          ...validBlueprintV2.world,
+          locations: validBlueprintV2.world.locations.map((location) => ({
+            ...location,
+            clues: location.clues.map((clue) =>
+              clue.id === clueId ? { ...clue, requires } : clue,
+            ),
+          })),
+        },
+      };
+    }
+
+    it("accepts a clue gated behind an ungated clue", () => {
+      const bp = withLocationClueRequires("loc-bag", {
+        clue_ids: ["loc-crumbs"],
+        rationale: "The bag only stands out once you have followed the crumbs.",
+      });
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
+    it("treats absent/null requires as ungated (backwards compatible)", () => {
+      const parsed = BlueprintV2Schema.parse(validBlueprintV2);
+      for (const location of parsed.world.locations) {
+        for (const clue of location.clues) {
+          expect(clue.requires ?? null).toBeNull();
+        }
+      }
+      expect(() =>
+        BlueprintV2Schema.parse(withLocationClueRequires("loc-bag", null)),
+      ).not.toThrow();
+    });
+
+    it("rejects a clue that requires itself", () => {
+      const bp = withLocationClueRequires("loc-crumbs", {
+        clue_ids: ["loc-crumbs"],
+        rationale: "Impossible self-gate.",
+      });
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/cannot require itself/);
+    });
+
+    it("rejects requires referencing an unknown clue id", () => {
+      const bp = withLocationClueRequires("loc-bag", {
+        clue_ids: ["loc-nope"],
+        rationale: "Gated behind a clue that does not exist.",
+      });
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(
+        /requires references unknown clue id/,
+      );
+    });
+
+    it("rejects a dependency cycle between two clues", () => {
+      const bp = {
+        ...validBlueprintV2,
+        world: {
+          ...validBlueprintV2.world,
+          locations: validBlueprintV2.world.locations.map((location) => ({
+            ...location,
+            clues: location.clues.map((clue) => {
+              if (clue.id === "loc-crumbs") {
+                return {
+                  ...clue,
+                  requires: { clue_ids: ["loc-bag"], rationale: "A needs B." },
+                };
+              }
+              if (clue.id === "loc-bag") {
+                return {
+                  ...clue,
+                  requires: { clue_ids: ["loc-crumbs"], rationale: "B needs A." },
+                };
+              }
+              return clue;
+            }),
+          })),
+        },
+      };
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(
+        /Clue dependency cycle detected/,
+      );
+    });
+
+    it("rejects a requires gate with an empty rationale", () => {
+      const bp = withLocationClueRequires("loc-bag", {
+        clue_ids: ["loc-crumbs"],
+        rationale: "",
+      });
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow();
+    });
+
+    it("rejects a requires gate with no prerequisite clue_ids", () => {
+      const bp = withLocationClueRequires("loc-bag", {
+        clue_ids: [],
+        rationale: "A no-op gate should not be allowed.",
+      });
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow();
+    });
+  });
+
   describe("character tells", () => {
     function withAliceTells(tells: Array<Record<string, unknown>>) {
       return {

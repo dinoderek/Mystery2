@@ -94,7 +94,10 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
     no authored tell, when the player's message genuinely touches something
     sensitive), so characters no longer leak the same tells and volunteer the
     same state every turn regardless of input.
-  - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches
+  - talk character clues carry, per clue, the gate's `requires_rationale` (the
+    in-fiction reason it is withheld) and a precomputed `prereqs_met` flag (see
+    Clue discovery and gating). Prerequisite clue ids themselves are not sent.
+  - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches. Locked clues (unmet `requires`) are filtered out of the sub-location `unrevealed_clues` so the narrator never weaves a locked clue's text in.
   - accusation start gets spoiler-safe current-state context
   - accusation judge gets the full blueprint
 - Character `sex` is included anywhere runtime AI receives character summaries
@@ -113,7 +116,7 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
 All AI role outputs are validated before any session/event writes:
 
 - Talk start/end roles: require non-empty `narration`.
-- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty) and `input_understood` (boolean, defaults to `true` when omitted). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces `revealed_clue_ids` empty so a confused turn can never leak a clue.
+- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty), `revealed_off_script` (string array, a subset of `revealed_clue_ids` — clues granted off-script via the brilliance override), and `input_understood` (boolean, defaults to `true` when omitted). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting, and intersects `revealed_off_script` with the validated reveals. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces both arrays empty so a confused turn can never leak a clue.
 - Search role: requires non-empty `narration`, plus `revealed_clue_id` (string or null), `costs_turn` (boolean), and `input_understood` (boolean, defaults to `true`). Backend validates the AI's clue choice before persisting. Only `search_targeted` can set `input_understood: false` (bare searches have no free text); the parser then forces `revealed_clue_id` null and `costs_turn` false so unintelligible searches reveal nothing and cost no turn.
 - `accusation_start`: requires `narration` + `follow_up_prompt`.
 - `accusation_judge`: requires:
@@ -122,6 +125,35 @@ All AI role outputs are validated before any session/event writes:
   - `follow_up_prompt` required when resolution is `continue`
 
 Invalid output returns a retriable error and does not finalize turn state.
+
+## Clue discovery and gating
+
+Discovery is event-sourced. A clue is "discovered" once a `search` or `ask` event
+records its id; `supabase/functions/_shared/clue-discovery.ts` is the single place
+that knows how reveals are encoded (`buildDiscoveredClueIdSet`,
+`eventRevealedClueIds`) and whether a gate is satisfied (`isClueUnlocked`).
+`game_sessions.discovered_clues` is a denormalized cache the search/ask handlers
+keep in sync; event history remains the source of truth, so `game-get` reconciles
+the notebook from history.
+
+Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
+
+- **Search (hard).** Bare search reveals the first unrevealed AND unlocked
+  location-level clue (skipping locked ones); targeted search filters locked clues
+  out of context and a backend backstop rejects a locked reveal (logged
+  `search.clue_locked`).
+- **Conversation (soft + brilliance override).** Each character clue is presented
+  with `requires_rationale` and a computed `prereqs_met` flag. The narrator
+  normally withholds a clue when `prereqs_met` is false, but MAY grant an
+  off-script reveal for a clever question/convincing bluff when the rationale
+  implies a bypassable social/knowledge gate; such reveals are listed in
+  `revealed_off_script` and recorded as real discoveries.
+- **Mock runtime.** The mock `talk_conversation` reveals the first `prereqs_met`
+  clue, and on a sentinel in the player input ("aha"/"i bet") grants the first
+  locked clue off-script — so tests exercise both paths deterministically.
+
+The notebook (`game-get` `state.discovered_clues`) groups discovered clues by
+mini-mystery thread via `mapClueToThreads` / `buildDiscoveryRecords`.
 
 ## Failure and Retry Model
 

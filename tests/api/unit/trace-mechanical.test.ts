@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
-import { makeEvents, makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
+import {
+  makeBlueprint,
+  makeEvents,
+  makeMultiStepEvents,
+  makeRawTrace,
+  type TraceEventRow,
+} from "./trace-fixtures";
 
 type Violation = { reason?: string; sequence?: number; character_id?: string };
 type MechCheck = {
@@ -49,6 +55,38 @@ describe("clue_accounting", () => {
     expect(acc.details?.violations?.[0]).toMatchObject({ sequence: 4, reason: "clue_not_for_character" });
   });
 
+  it("does not flag bare search for skipping a locked location clue", () => {
+    // loc_hall has a locked clue at index 0 (gated behind clue_garden_1) and an
+    // open clue at index 1. Bare search reveals the open one first — the runtime
+    // skips the locked clue, so this must NOT read as out-of-order.
+    const bp = makeBlueprint();
+    const gated = {
+      id: "clue_hall_locked",
+      text: "A locked drawer.",
+      requires: { clue_ids: ["clue_garden_1"], rationale: "needs the garden lead" },
+    };
+    const blueprint = {
+      ...bp,
+      world: {
+        ...bp.world,
+        locations: bp.world.locations.map((l) =>
+          l.id === "loc_hall"
+            ? { ...l, clues: [gated, { id: "clue_hall_open", text: "An open ledger." }] }
+            : l,
+        ),
+      },
+    };
+    const events: TraceEventRow[] = [
+      {
+        id: "b1", sequence: 1, event_type: "search", actor: "system",
+        payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_open", revealed_clue_ids: ["clue_hall_open"] },
+        narration: "An open ledger.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z",
+      },
+    ];
+    const checks = runTraceMechanicalChecks({ rawTrace: makeRawTrace({ blueprint, events }) });
+    expect(checkById(checks, "clue_accounting").status).toBe("pass");
+  });
+
   it("flags a re-revealed clue", () => {
     const events = makeEvents();
     // A second hall search re-reveals the already-found hall clue (same scope).
@@ -83,5 +121,84 @@ describe("spoiler_leak", () => {
     // accusation events are exempt.
     const checks = runTraceMechanicalChecks({ rawTrace: makeRawTrace() });
     expect(checkById(checks, "spoiler_leak").status).toBe("pass");
+  });
+});
+
+describe("clue_requires_violation", () => {
+  // Gate Dorn's glove clue behind the hall footprint.
+  function gatedBlueprint() {
+    const bp = makeBlueprint();
+    return {
+      ...bp,
+      world: {
+        ...bp.world,
+        characters: bp.world.characters.map((c) =>
+          c.id === "char_dorn"
+            ? {
+                ...c,
+                clues: c.clues.map((clue) => ({
+                  ...clue,
+                  requires: {
+                    clue_ids: ["clue_hall_1"],
+                    rationale: "Dorn only admits the glove is his once you show the footprint.",
+                  },
+                })),
+              }
+            : c,
+        ),
+      },
+    };
+  }
+
+  const talkDorn = (seq: number): TraceEventRow => ({
+    id: `t${seq}`, sequence: seq, event_type: "talk", actor: "system",
+    payload: { character_id: "char_dorn", location_id: "loc_garden" },
+    narration: "Dorn glares.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z",
+  });
+  const askDorn = (seq: number, extra: Record<string, unknown> = {}): TraceEventRow => ({
+    id: `a${seq}`, sequence: seq, event_type: "ask", actor: "char_dorn",
+    payload: { character_id: "char_dorn", player_input: "Whose glove?", revealed_clue_ids: ["clue_dorn_1"], ...extra },
+    narration: "\"Fine, it's mine.\"", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z",
+  });
+  const searchHall = (seq: number): TraceEventRow => ({
+    id: `s${seq}`, sequence: seq, event_type: "search", actor: "system",
+    payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"] },
+    narration: "A muddy footprint.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z",
+  });
+
+  it("is absent unless enforce_requires is set", () => {
+    const checks = runTraceMechanicalChecks({
+      rawTrace: makeRawTrace({ blueprint: gatedBlueprint(), events: [talkDorn(1), askDorn(2)] }),
+    });
+    expect(checks.find((c: { id: string }) => c.id === "clue_requires_violation")).toBeUndefined();
+  });
+
+  it("flags a gated clue revealed before its prerequisite", () => {
+    const checks = runTraceMechanicalChecks({
+      rawTrace: makeRawTrace({ blueprint: gatedBlueprint(), events: [talkDorn(1), askDorn(2)] }),
+      context: { enforce_requires: true },
+    });
+    const check = checkById(checks, "clue_requires_violation");
+    expect(check.status).toBe("fail");
+    expect(check.details?.violations?.[0]).toMatchObject({ sequence: 2, clue_id: "clue_dorn_1" });
+  });
+
+  it("passes when the prerequisite was revealed earlier", () => {
+    const checks = runTraceMechanicalChecks({
+      rawTrace: makeRawTrace({ blueprint: gatedBlueprint(), events: [searchHall(1), talkDorn(2), askDorn(3)] }),
+      context: { enforce_requires: true },
+    });
+    expect(checkById(checks, "clue_requires_violation").status).toBe("pass");
+  });
+
+  it("exempts an off-script brilliance grant", () => {
+    const checks = runTraceMechanicalChecks({
+      rawTrace: makeRawTrace({
+        blueprint: gatedBlueprint(),
+        events: [talkDorn(1), askDorn(2, { revealed_off_script: ["clue_dorn_1"] })],
+      }),
+      context: { enforce_requires: true },
+    });
+    expect(checkById(checks, "clue_requires_violation").status).toBe("pass");
   });
 });

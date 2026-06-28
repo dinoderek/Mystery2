@@ -3,6 +3,7 @@ import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { readNarrationEvent } from "../_shared/narration.ts";
+import { buildDiscoveryRecords } from "../_shared/clue-discovery.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 serveWithCors(async (req) => {
@@ -105,6 +106,10 @@ serveWithCors(async (req) => {
       });
     }
 
+    // The notebook: discovered clues grouped by mini-mystery thread. Built from
+    // event history (the source of truth) and joined against the blueprint.
+    const discoveredClues = buildDiscoveryRecords(blueprint, events ?? []);
+
     const gameState = {
       locations: blueprint.world.locations.map((l) => ({
         id: l.id,
@@ -121,6 +126,7 @@ serveWithCors(async (req) => {
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
+      discovered_clues: discoveredClues,
     };
 
     return new Response(JSON.stringify({

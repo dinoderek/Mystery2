@@ -141,6 +141,21 @@ describe("blueprint generator", () => {
       body.response_format.json_schema.schema.properties.world.properties
         .characters.items.properties.portrait_image_id,
     ).toBeUndefined();
+    // The clue `requires` gate survives the strict-output round-trip as a
+    // nullable object carrying clue_ids + rationale (optional+nullable nests as
+    // anyOf with a {type:"null"} variant). Assert the gate is present, carries
+    // both fields, and remains nullable on both location and character clues.
+    for (const owner of ["locations", "characters"] as const) {
+      const requiresNode =
+        body.response_format.json_schema.schema.properties.world.properties[
+          owner
+        ].items.properties.clues.items.properties.requires;
+      expect(requiresNode).toBeDefined();
+      const serialized = JSON.stringify(requiresNode);
+      expect(serialized).toContain('"clue_ids"');
+      expect(serialized).toContain('"rationale"');
+      expect(serialized).toContain('{"type":"null"}');
+    }
     expect(body.messages[1].content).toContain("story_brief");
     expect(body.messages[0].content).toContain("## Internal Workflow");
     expect(body.messages[0].content).toContain("## Challenge Calibration");

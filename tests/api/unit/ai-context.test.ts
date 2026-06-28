@@ -283,6 +283,116 @@ describe("ai-context guardrails", () => {
     });
   });
 
+  it("filters locked sub-location clues out of the search context", () => {
+    const gatedBlueprint: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        locations: [
+          {
+            ...blueprint.world.locations[0],
+            sub_locations: [
+              {
+                id: "sub-drawer",
+                name: "the drawer",
+                hint: "look in the drawer",
+                clues: [
+                  {
+                    id: "clue-locked",
+                    text: "a hidden note",
+                    requires: { clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" },
+                  },
+                ],
+              },
+            ],
+          },
+          blueprint.world.locations[1],
+        ],
+      },
+    };
+
+    const locked = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: [],
+      discovered_clue_ids: [],
+      next_clue: null,
+    });
+    expect(locked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([]);
+    expect(locked.search_context?.sub_locations[0]?.has_unrevealed_clues).toBe(false);
+
+    const unlocked = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: [],
+      discovered_clue_ids: ["clue-crumbs"],
+      next_clue: null,
+    });
+    expect(unlocked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([
+      { id: "clue-locked", text: "a hidden note", requires: { clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" } },
+    ]);
+  });
+
+  it("computes prereqs_met for character clues in talk context", () => {
+    const gatedBlueprint: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        characters: [
+          {
+            ...blueprint.world.characters[0],
+            clues: [
+              {
+                id: "clue-alice-secret",
+                text: "I took it.",
+                requires: { clue_ids: ["clue-crumbs"], rationale: "she only confesses once shown the crumbs" },
+              },
+            ],
+          },
+          blueprint.world.characters[1],
+        ],
+      },
+    };
+
+    const before = buildTalkConversationContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      character_id: "char-alice",
+      player_input: "Did you take it?",
+      location_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    expect(before.talk_context?.active_character.clues[0]).toMatchObject({
+      id: "clue-alice-secret",
+      prereqs_met: false,
+      requires_rationale: "she only confesses once shown the crumbs",
+    });
+
+    const after = buildTalkConversationContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      character_id: "char-alice",
+      player_input: "Did you take it?",
+      location_id: "loc-kitchen",
+      conversation_history: [
+        {
+          sequence: 1,
+          event_type: "search",
+          actor: "system",
+          narration: "crumbs",
+          payload: { location_id: "loc-kitchen", revealed_clue_ids: ["clue-crumbs"] },
+        },
+      ],
+    });
+    expect(after.talk_context?.active_character.clues[0]?.prereqs_met).toBe(true);
+  });
+
   it("builds move context with public summaries for destination characters", () => {
     const history: ConversationFragment[] = [
       {

@@ -17,6 +17,11 @@ export interface TalkStartOutput {
 export interface TalkConversationOutput {
   narration: string;
   revealed_clue_ids: string[];
+  // Subset of revealed_clue_ids the narrator granted off-script — for a clever
+  // question or convincing bluff — even though the clue's prerequisites were not
+  // met. Recorded as a real discovery, flagged for the notebook. Always a subset
+  // of revealed_clue_ids.
+  revealed_off_script: string[];
   // False when the player's message was gibberish / unintelligible. The
   // narration is then an in-character "what?" beat and the backend suppresses
   // any clue reveal. Defaults to true when the model omits it.
@@ -128,9 +133,18 @@ export function parseTalkConversationOutput(
     inputUnderstood && Array.isArray(rawIds)
       ? rawIds.filter((id): id is string => typeof id === "string" && id.length > 0)
       : [];
+  const revealedSet = new Set(revealedClueIds);
+  const rawOffScript = parsed.revealed_off_script;
+  // Off-script ids must be a subset of what was actually revealed this turn.
+  const revealedOffScript: string[] = Array.isArray(rawOffScript)
+    ? rawOffScript.filter(
+        (id): id is string => typeof id === "string" && revealedSet.has(id),
+      )
+    : [];
   return {
     narration: requireString(parsed, "narration", "talk_conversation"),
     revealed_clue_ids: revealedClueIds,
+    revealed_off_script: revealedOffScript,
     input_understood: inputUnderstood,
   };
 }

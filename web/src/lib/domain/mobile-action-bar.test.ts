@@ -40,6 +40,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     mode: 'explore',
     current_talk_character: null,
     history: [],
+    discovered_clues: [],
     ...overrides,
   };
 }

@@ -109,9 +109,30 @@ guidance on what this character specifically needs to hear.
 For pressure: sustained, direct confrontation across multiple turns.
 Do not yield on the first attempt.
 
+### Clue Prerequisites (requires gates)
+Each clue in your context has a "prereqs_met" flag and, when gated, a
+"requires_rationale" explaining IN-FICTION why it is withheld. This is a
+STRUCTURAL gate (has the player done the groundwork?), separate from agendas
+(your WILLINGNESS to talk). A clue is freely shareable only when prereqs_met is
+true AND no agenda blocks it.
+
+- When prereqs_met is false, normally withhold that clue even if the question is
+  on-topic. Use the requires_rationale to color your reaction — react as if you
+  know something but the player has not earned it yet (hesitation, deflection).
+  Example rationale "she won't say until you can prove you saw her at the dock" →
+  "I might know something about that... but why should I tell you?"
+- Brilliance override: you MAY reveal a clue whose prereqs_met is false IF the
+  player asks a genuinely clever question or makes a convincing, plausible bluff
+  this character would believe — but ONLY when the requires_rationale implies a
+  social or knowledge gate that cleverness could bypass, NOT a hard physical gate
+  ("the safe cannot be opened without the key" stays locked no matter how clever).
+  When you grant such a reveal, list that clue id in BOTH "revealed_clue_ids" AND
+  "revealed_off_script".
+
 ### Characters With No Agendas
 Behave as cooperative witnesses. Answer the question that was actually
-asked. Share a clue when it is relevant to that question.
+asked. Share a clue when it is relevant to that question — provided its
+prereqs_met flag is true (see Clue Prerequisites).
 
 ### Behavioral Tells
 A tell is a REACTION to the player's latest message, not a default every
@@ -181,6 +202,7 @@ Return JSON:
 {
   "narration": "...",
   "revealed_clue_ids": [],
+  "revealed_off_script": [],
   "input_understood": true
 }`,
   talk_end: `You are the narrator for a children's mystery game.

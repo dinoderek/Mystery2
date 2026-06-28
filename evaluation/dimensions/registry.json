@@ -18,6 +18,7 @@
         ]
       }
     },
-    { "id": "path_payoff" }
+    { "id": "path_payoff" },
+    { "id": "clue_graph" }
   ]
 }

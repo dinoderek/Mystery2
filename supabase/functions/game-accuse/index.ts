@@ -115,7 +115,7 @@ serveWithCors(async (req) => {
         history_mode: accusationHistoryMode,
       });
 
-      const promptTemplate = await loadPromptTemplate("accusation_judge");
+      const promptTemplate = await loadPromptTemplate("accusation_judge", blueprint.metadata.target_age);
       const prompt = renderPrompt(promptTemplate, {
         forced_context: "",
         target_age: blueprint.metadata.target_age,
@@ -195,6 +195,7 @@ serveWithCors(async (req) => {
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
+          model: aiProvider.resolvedModel,
           diagnostics: createNarrationDiagnostics({
             action: "accuse_reasoning",
             event_category: "accuse_round",
@@ -270,6 +271,7 @@ serveWithCors(async (req) => {
           speaker: NARRATOR_SPEAKER,
         },
         narration_parts: narrationParts,
+        model: aiProvider.resolvedModel,
         diagnostics: createNarrationDiagnostics({
           action: "accuse_reasoning",
           event_category: "accuse_resolved",
@@ -314,7 +316,7 @@ serveWithCors(async (req) => {
           history_mode: accusationHistoryMode,
         });
 
-        const promptTemplate = await loadPromptTemplate("accusation_start");
+        const promptTemplate = await loadPromptTemplate("accusation_start", blueprint.metadata.target_age);
         const prompt = renderPrompt(promptTemplate, {
           forced_context: "",
           target_age: blueprint.metadata.target_age,
@@ -388,6 +390,7 @@ serveWithCors(async (req) => {
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
+          model: aiProvider.resolvedModel,
           diagnostics: createNarrationDiagnostics({
             action: "accuse_start",
             event_category: "accuse_start",

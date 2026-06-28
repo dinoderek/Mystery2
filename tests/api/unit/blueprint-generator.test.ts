@@ -10,6 +10,7 @@ import {
 } from "../../../packages/blueprint-generator/src/chat-packet.ts";
 import {
   BlueprintGenerationError,
+  buildBlueprintGenerationChatInput,
   generateBlueprint,
 } from "../../../packages/blueprint-generator/src/index.ts";
 import {
@@ -72,6 +73,18 @@ const passingVerification = {
 };
 
 describe("blueprint generator", () => {
+  it("threads age-band guidance into the generation system prompt", async () => {
+    const chatInput = await buildBlueprintGenerationChatInput({
+      brief: "A child-friendly cookie mystery.",
+      targetAge: 7,
+      timeBudget: 12,
+    });
+
+    expect(chatInput.systemPrompt).toContain("Age-appropriate writing");
+    expect(chatInput.systemPrompt).toContain("7 years old");
+    expect(chatInput.systemPrompt.toLowerCase()).toContain("wall of text");
+  });
+
   it("sends structured-output requirements to OpenRouter", async () => {
     const fetchMock = vi.fn().mockResolvedValue(createSuccessResponse());
 

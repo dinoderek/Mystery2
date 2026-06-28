@@ -115,7 +115,7 @@ serveWithCors(async (req) => {
       conversation_history: historyRows ?? [],
     });
 
-    const promptTemplate = await loadPromptTemplate("talk_conversation");
+    const promptTemplate = await loadPromptTemplate("talk_conversation", blueprint.metadata.target_age);
     const prompt = renderPrompt(promptTemplate, {
       character_name: activeCharacter.first_name,
       player_input: playerInput,
@@ -214,6 +214,7 @@ serveWithCors(async (req) => {
         input_understood: talkOutput.input_understood,
       },
       narration_parts: narrationParts,
+      model: aiProvider.resolvedModel,
       diagnostics: createNarrationDiagnostics({
         action: "ask",
         event_category: "ask",

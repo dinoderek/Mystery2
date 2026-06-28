@@ -236,7 +236,7 @@ serveWithCors(async (req) => {
       conversation_history: historyRows ?? [],
     });
 
-    const promptTemplate = await loadPromptTemplate(promptKey);
+    const promptTemplate = await loadPromptTemplate(promptKey, blueprint.metadata.target_age);
     const prompt = renderPrompt(promptTemplate, {
       location_name: currentLocation.name,
       target_age: blueprint.metadata.target_age,
@@ -277,6 +277,10 @@ serveWithCors(async (req) => {
         code: "AI_INVALID_OUTPUT",
       });
     }
+
+    // Capture the model now: a later forced-endgame generation would otherwise
+    // overwrite the provider's resolvedModel before this event is persisted.
+    const searchModel = aiProvider.resolvedModel;
 
     // Validate AI's revealed_clue_id
     const allClueMap = new Map<string, BlueprintClue>();
@@ -329,6 +333,7 @@ serveWithCors(async (req) => {
     let combinedParts = [...searchParts];
     let followUpPrompt: string | null = null;
     let forcedParts: typeof searchParts = [];
+    let forcedModel: string | null = null;
 
     if (isForcedEndgame) {
       const result = await tryGenerateForcedEndgame({
@@ -349,6 +354,7 @@ serveWithCors(async (req) => {
       if (!result.ok) return result.response;
       followUpPrompt = result.follow_up_prompt;
       forcedParts = result.narration_parts;
+      forcedModel = result.model;
       combinedParts = [...searchParts, ...forcedParts];
     }
 
@@ -401,6 +407,7 @@ serveWithCors(async (req) => {
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: searchParts,
+      model: searchModel,
       diagnostics: createNarrationDiagnostics({
         action: "search",
         event_category: "search",
@@ -426,6 +433,7 @@ serveWithCors(async (req) => {
         },
         narration_parts: forcedParts,
         follow_up_prompt: followUpPrompt,
+        model: forcedModel,
         time_before: session.time_remaining,
         time_after: newTime,
         resulting_mode: nextMode,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildAgeGuidance,
   buildGameMovePrompt,
   buildGameStartPrompt,
   loadPromptTemplate,
@@ -7,33 +8,49 @@ import {
 } from "../../../supabase/functions/_shared/ai-prompts.ts";
 
 describe("ai-prompts", () => {
-  it("includes target age guidance in all role prompts", async () => {
+  it("loadPromptTemplate injects age-band guidance for every role (cannot be forgotten)", async () => {
     const roles = [
       "talk_start",
       "talk_conversation",
       "talk_end",
       "search",
+      "search_bare",
+      "search_targeted",
       "accusation_start",
       "accusation_judge",
     ] as const;
 
     for (const role of roles) {
-      const template = await loadPromptTemplate(role);
+      // The loader fills {{age_guidance}} itself — callers never pass it.
+      const template = await loadPromptTemplate(role, 10);
+      expect(template).toContain("10 years old");
+      expect(template.toLowerCase()).toContain("guidance");
+      expect(template).not.toContain("{{age_guidance}}");
+
+      // Rendering the remaining variables must not reintroduce a blank slot.
       const rendered = renderPrompt(template, {
         character_name: "Alice",
         location_name: "Kitchen",
         player_input: "Where were you?",
+        search_query: "under the bed",
         forced_context: "",
-        target_age: 10,
       });
-      expect(rendered).toContain("10");
+      expect(rendered).toContain("10 years old");
     }
   });
 
+  it("differentiates length guidance by interaction (verdict longer than farewell)", () => {
+    const verdict = buildAgeGuidance("accusation_judge", 10);
+    const farewell = buildAgeGuidance("talk_end", 10);
+    const wordTarget = (s: string) =>
+      Number(s.match(/aim for about (\d+) words/)?.[1] ?? 0);
+    expect(wordTarget(verdict)).toBeGreaterThan(wordTarget(farewell));
+  });
+
   it("reinforces anti-hallucination guidance in talk prompts", async () => {
-    const talkStart = await loadPromptTemplate("talk_start");
-    const talkConversation = await loadPromptTemplate("talk_conversation");
-    const talkEnd = await loadPromptTemplate("talk_end");
+    const talkStart = await loadPromptTemplate("talk_start", 10);
+    const talkConversation = await loadPromptTemplate("talk_conversation", 10);
+    const talkEnd = await loadPromptTemplate("talk_end", 10);
 
     expect(talkStart).toContain("Do not invent extra people, places, or world facts.");
     expect(talkConversation).toContain("Do not invent extra people, places, or world facts.");
@@ -46,7 +63,7 @@ describe("ai-prompts", () => {
       premise: "Someone stole the cake.",
     });
 
-    expect(prompt).toContain("target age 8");
+    expect(prompt).toContain("8 years old");
     expect(prompt).toContain("Someone stole the cake.");
   });
 
@@ -61,7 +78,7 @@ describe("ai-prompts", () => {
         '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","background":"the baker"}]',
     });
 
-    expect(prompt).toContain("target age 9");
+    expect(prompt).toContain("9 years old");
     expect(prompt).toContain("acknowledge the return visit");
     expect(prompt).toContain("A messy kitchen.");
     expect(prompt).toContain("Characters at destination");

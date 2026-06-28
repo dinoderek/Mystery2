@@ -17,8 +17,20 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > recorder, the per-dimension `combineDimension` semantics, and the
 > `dimension = .md + .schema.ts + registry.json` convention — and adds
 > trace-specific extraction, run-time context reconstruction (via the real
-> runtime context builders), and a game-master dimension battery. See
-> `evaluation/trace/README.md` for its design and the "What's next" roadmap for
+> runtime context builders), and a game-master dimension battery.
+>
+> **A third, runtime harness.** `evaluation/runtime/` evaluates the **runtime
+> narrator live** rather than an artifact. A case is one deterministic
+> interaction event — a single `game-*` action against a fully-specified prior
+> state (including the complete fixed history) — so the model input is identical
+> across runs and across models. It collects the narration (from the real
+> endpoint, which seeds the fixed session/history into the DB, or by replaying
+> the real runtime prompt through a local `claude`/`openai` CLI) and scores it
+> with pluggable judges (first: a deterministic Flesch–Kincaid age-readability
+> check). Like the others it persists a re-judgeable capture and uses pluggable
+> backends/judges. See `evaluation/runtime/README.md`.
+>
+> See `evaluation/trace/README.md` for its design and the "What's next" roadmap for
 > how the two relate.
 
 ## What this is

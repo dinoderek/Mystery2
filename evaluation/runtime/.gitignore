@@ -1,0 +1,6 @@
+# Harness run artifacts (interaction.json / result.json live here)
+runs/
+# Local CLI backend bindings (copy from config/cli.example.json)
+config/cli.json
+# Cases generated from local traces (regenerate with cases-from-trace.mjs)
+cases/from-traces/

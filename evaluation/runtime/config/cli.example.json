@@ -1,0 +1,32 @@
+{
+  "_comment": "CLI backend bindings for the runtime eval harness. Copy to cli.json to customise (cli.json is gitignored). Each variant is selected with `--backend cli:<variant>`. The runner writes the role system prompt to {{system_prompt_file}} and the user message (JSON.stringify({prompt, context})) to {{user_message_file}}, spawns cmd, captures stdout, parses it as JSON, and extract_path (dotted, or null for raw JSON on stdout) selects the model's role-output JSON string. The backend then parses that string as the role contract and reads .narration.",
+
+  "claude": {
+    "description": "One-shot Claude CLI call. Outputs the Claude Code JSON envelope; extract_path 'result' selects the model text, which must be the role JSON.",
+    "cmd": "evaluation/runtime/config/wrappers/claude-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "sonnet",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "openai": {
+    "description": "One-shot OpenAI CLI call. Wrapper must emit the role JSON directly on stdout (extract_path null). Requires the `openai` CLI on PATH and OPENAI_API_KEY.",
+    "cmd": "evaluation/runtime/config/wrappers/openai-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": null,
+    "model": "gpt-4o-mini",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "stub": {
+    "description": "Deterministic local stub — no model call. Emits a fixed, age-appropriate role JSON so the prompt-build -> CLI -> parse -> transcript wiring can be tested offline.",
+    "cmd": "evaluation/runtime/config/wrappers/stub-runtime.sh",
+    "args": ["{{user_message_file}}"],
+    "extract_path": null,
+    "timeout_ms": 30000,
+    "retries": 0
+  }
+}

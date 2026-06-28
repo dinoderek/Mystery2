@@ -254,6 +254,7 @@ serveWithCors(async (req) => {
           starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
         },
         narration_parts: narrationParts,
+        model: aiProvider.resolvedModel,
         diagnostics: createNarrationDiagnostics({
           action: "start",
           event_category: "start",

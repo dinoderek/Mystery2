@@ -55,6 +55,14 @@ export interface ReasoningEvaluation {
 
 export interface AIProvider {
   profile: AIRuntimeProfile;
+  /**
+   * Model id that produced the most recent response. For OpenRouter this is the
+   * model the API reports serving the request, which can differ from the
+   * requested `profile.model` under routing or fallback; for the mock provider
+   * it is the configured `profile.model`. Reads the configured model until the
+   * first successful call updates it.
+   */
+  readonly resolvedModel: string;
   generateNarration(
     prompt: string,
     metadata?: AIRequestMetadata,
@@ -254,6 +262,10 @@ class MockAIProvider implements AIProvider {
 
   constructor(profile: AIRuntimeProfile) {
     this.profile = profile;
+  }
+
+  get resolvedModel(): string {
+    return this.profile.model;
   }
 
   async generateNarration(
@@ -497,6 +509,7 @@ class OpenRouterProvider implements AIProvider {
   readonly #apiKey: string;
   readonly #baseUrl: string;
   readonly #runtimeConfig: OpenRouterRuntimeConfig;
+  #resolvedModel: string;
 
   constructor(
     profile: AIRuntimeProfile,
@@ -512,6 +525,11 @@ class OpenRouterProvider implements AIProvider {
     this.#apiKey = apiKey;
     this.#runtimeConfig = runtimeConfig;
     this.#baseUrl = baseUrl ?? "https://openrouter.ai/api/v1/chat/completions";
+    this.#resolvedModel = profile.model;
+  }
+
+  get resolvedModel(): string {
+    return this.#resolvedModel;
   }
 
   async generateNarration(
@@ -609,6 +627,7 @@ class OpenRouterProvider implements AIProvider {
           outcome: "success",
           attempt,
           latency_ms: Date.now() - startedAt,
+          responded_model: this.#resolvedModel,
         });
         return content;
       } catch (error) {
@@ -691,6 +710,16 @@ class OpenRouterProvider implements AIProvider {
       }
 
       const payload = await response.json();
+
+      // OpenRouter reports the model that actually served the request, which can
+      // differ from the requested model under routing/fallback. Capture it so
+      // callers can persist the true model on the resulting event.
+      const respondedModel =
+        typeof payload?.model === "string" ? payload.model.trim() : "";
+      if (respondedModel) {
+        this.#resolvedModel = respondedModel;
+      }
+
       const content = payload?.choices?.[0]?.message?.content;
 
       if (typeof content === "string") {

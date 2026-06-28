@@ -91,6 +91,7 @@ export type TraceEventRow = {
   narration: string;
   narration_parts: unknown[];
   clues_revealed: string[];
+  model?: string | null;
   created_at: string;
 };
 
@@ -101,7 +102,7 @@ export function makeEvents(): TraceEventRow[] {
     { id: "e1", sequence: 1, event_type: "start", actor: "narrator", payload: { location_id: "loc_hall" }, narration: "You arrive at the grand hall as the dinner party winds down.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" },
     // Real search payloads carry BOTH the per-turn find (revealed_clue_id) and
     // the cumulative location list (revealed_clue_ids) — see game-search.
-    { id: "e2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"], diagnostics: { time_after: 19 } }, narration: "You spot a muddy footprint near the trophy case.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
+    { id: "e2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"], diagnostics: { time_after: 19 } }, narration: "You spot a muddy footprint near the trophy case.", narration_parts: [], clues_revealed: [], model: "anthropic/claude-actual", created_at: "2026-06-01T10:01:00Z" },
     { id: "e3", sequence: 3, event_type: "talk", actor: "system", payload: { character_id: "char_mara", character_name: "Mara", location_id: "loc_hall" }, narration: "Mara wipes her hands and looks up.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:02:00Z" },
     { id: "e4", sequence: 4, event_type: "ask", actor: "char_mara", payload: { character_id: "char_mara", player_input: "Did you see anything?", revealed_clue_ids: ["clue_mara_1"], diagnostics: { time_after: 18 } }, narration: "\"I saw a shadow slip toward the garden,\" Mara says.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:03:00Z" },
     { id: "e5", sequence: 5, event_type: "end_talk", actor: "system", payload: { character_id: "char_mara" }, narration: "You thank Mara.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:04:00Z" },

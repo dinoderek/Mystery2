@@ -138,6 +138,9 @@ serveWithCors(async (req) => {
       game_id: game_id,
     });
     const narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
+    // Capture the model now: a later forced-endgame generation would otherwise
+    // overwrite the provider's resolvedModel before this event is persisted.
+    const moveModel = aiProvider.resolvedModel;
     const moveParts = [
       createNarrationPart(
         narration,
@@ -149,6 +152,7 @@ serveWithCors(async (req) => {
     let combinedParts = [...moveParts];
     let followUpPrompt: string | null = null;
     let forcedParts: typeof moveParts = [];
+    let forcedModel: string | null = null;
 
     if (isForcedEndgame) {
       const result = await tryGenerateForcedEndgame({
@@ -171,6 +175,7 @@ serveWithCors(async (req) => {
       if (!result.ok) return result.response;
       followUpPrompt = result.follow_up_prompt;
       forcedParts = result.narration_parts;
+      forcedModel = result.model;
       combinedParts = [...moveParts, ...forcedParts];
     }
 
@@ -206,6 +211,7 @@ serveWithCors(async (req) => {
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: moveParts,
+      model: moveModel,
       diagnostics: createNarrationDiagnostics({
         action: "move",
         event_category: "move",
@@ -232,6 +238,7 @@ serveWithCors(async (req) => {
         },
         narration_parts: forcedParts,
         follow_up_prompt: followUpPrompt,
+        model: forcedModel,
         time_before: session.time_remaining,
         time_after: newTime,
         resulting_mode: nextMode,

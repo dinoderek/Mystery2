@@ -38,7 +38,7 @@ export function createSupabaseTraceSource({ url = null, serviceRoleKey = null } 
     async fetchEvents(sessionId) {
       const { data, error } = await client
         .from("game_events")
-        .select("id,sequence,event_type,actor,payload,narration,narration_parts,clues_revealed,created_at")
+        .select("id,sequence,event_type,actor,payload,narration,narration_parts,clues_revealed,model,created_at")
         .eq("session_id", sessionId)
         .order("sequence", { ascending: true });
       if (error) {

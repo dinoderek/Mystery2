@@ -44,6 +44,11 @@ interface InsertNarrationEventInput {
   actor: string;
   narration_parts: NarrationPart[];
   payload?: Record<string, unknown> | null;
+  /**
+   * Model that produced this event's narration (from the provider's
+   * `resolvedModel`). Null/omitted for events with no associated AI call.
+   */
+  model?: string | null;
   diagnostics?: NarrationDiagnostics;
   logger?: LogWriter;
 }
@@ -288,6 +293,7 @@ export async function insertNarrationEvent(
     payload: Object.keys(payload).length > 0 ? payload : null,
     narration,
     narration_parts: input.narration_parts,
+    model: input.model ?? null,
   });
 
   if (error) {

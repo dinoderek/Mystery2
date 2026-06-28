@@ -195,6 +195,7 @@ serveWithCors(async (req) => {
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
+          model: aiProvider.resolvedModel,
           diagnostics: createNarrationDiagnostics({
             action: "accuse_reasoning",
             event_category: "accuse_round",
@@ -270,6 +271,7 @@ serveWithCors(async (req) => {
           speaker: NARRATOR_SPEAKER,
         },
         narration_parts: narrationParts,
+        model: aiProvider.resolvedModel,
         diagnostics: createNarrationDiagnostics({
           action: "accuse_reasoning",
           event_category: "accuse_resolved",
@@ -388,6 +390,7 @@ serveWithCors(async (req) => {
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
+          model: aiProvider.resolvedModel,
           diagnostics: createNarrationDiagnostics({
             action: "accuse_start",
             event_category: "accuse_start",

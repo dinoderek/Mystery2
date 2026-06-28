@@ -45,6 +45,9 @@ function normalizeEvent(row) {
     // revealed_clue_ids), not the clues_revealed column, but we preserve the
     // column too when present so older/seeded rows are not lost.
     clues_revealed: Array.isArray(row.clues_revealed) ? row.clues_revealed : [],
+    // Model that produced this event's narration; null for non-AI or pre-0013
+    // events.
+    model: typeof row.model === "string" ? row.model : null,
     created_at: row.created_at ?? null,
   };
 }

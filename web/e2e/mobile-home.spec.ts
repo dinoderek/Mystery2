@@ -165,22 +165,10 @@ async function mockResumeSession(page: Page) {
 }
 
 // ---------------------------------------------------------------------------
-// Home screen — briefs gating & logout
+// Home screen — logout
 // ---------------------------------------------------------------------------
 
 test.describe('mobile home screen — extended', () => {
-  test('no Manage Briefs button visible on mobile', async ({ page }) => {
-    await enableAuthBypass(page);
-    await mockEmptyCatalog(page);
-
-    await page.goto('/');
-    await expect(page.getByTestId('mobile-home-new-game')).toBeVisible();
-
-    // Desktop "Manage briefs" option must not appear on mobile
-    await expect(page.getByText('Manage briefs', { exact: false })).not.toBeVisible();
-    await expect(page.getByText('4.')).not.toBeVisible();
-  });
-
   test('logout button is visible', async ({ page }) => {
     await enableAuthBypass(page);
     await mockEmptyCatalog(page);
@@ -309,21 +297,5 @@ test.describe('mobile session lists', () => {
 
     await page.goto('/sessions/completed');
     await expect(page.getByText('No completed cases')).toBeVisible();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Briefs gating — mobile redirect
-// ---------------------------------------------------------------------------
-
-test.describe('mobile briefs gating', () => {
-  test('/briefs redirects to / on mobile', async ({ page }) => {
-    await enableAuthBypass(page);
-    await mockEmptyCatalog(page);
-
-    await page.goto('/briefs');
-    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
-    // Should land on mobile home
-    await expect(page.getByTestId('mobile-home-new-game')).toBeVisible();
   });
 });

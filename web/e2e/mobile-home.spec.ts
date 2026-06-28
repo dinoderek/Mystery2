@@ -13,7 +13,7 @@ import {
 
 /**
  * Extended mobile E2E coverage for the home screen, blueprint carousel,
- * session list routes, and briefs gating (T07).
+ * and session list routes (T07).
  *
  * Runs under the `mobile-safari` Playwright project (iPhone 13 / WebKit).
  * Basic home-screen and in-progress carousel tests live in mobile.spec.ts;

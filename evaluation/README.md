@@ -3,7 +3,7 @@
 A walking-skeleton pipeline for evaluating Blueprint V2 generation against
 an authored input brief, using a central, story-agnostic dimension battery.
 
-**Status:** six dimensions enabled (see `dimensions/registry.json`); multiple specs under `specs/`.
+**Status:** seven dimensions enabled (see `dimensions/registry.json`); multiple specs under `specs/`.
 
 ## What this is
 
@@ -23,7 +23,9 @@ The pipeline:
    (`config/cli.json` → `generate` step). Or skips generation if you pass
    `--blueprint <path>`.
 2. Runs always-on **mechanical** checks (schema, brief-derived counts,
-   `mustInclude`, cover-ups, orphan clues).
+   `mustInclude`, cover-ups, orphan clues, and `requires_satisfiable` — the
+   clue discovery graph references real clues, is acyclic, and keeps every
+   solution clue reachable from ungated roots).
 3. For each dimension in the registry, runs the **analyzer** (cheap
    deterministic code) and then the **judge** (shells out to the LLM CLI's
    `judge` step) and combines them into a per-dimension verdict.
@@ -70,7 +72,8 @@ evaluation/
 │   └── judge-system.md
 ├── checks/
 │   ├── mechanical.mjs      # always-on mechanical checks
-│   └── analyzers/          # optional per-dimension analyzer (.mjs); none yet
+│   ├── lib/clue-graph.mjs  # shared clue discovery-graph analysis
+│   └── analyzers/          # optional per-dimension analyzer (.mjs); clue-graph.mjs
 ├── pipeline/
 │   ├── run.mjs             # entrypoint
 │   ├── cli-runner.mjs      # pluggable CLI shell-out

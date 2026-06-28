@@ -8,6 +8,37 @@ const BlueprintV2IdSchema = z
 
 export const BlueprintV2CharacterSexSchema = z.enum(["male", "female"]);
 
+export const BlueprintV2ClueRequiresSchema = z
+  .object({
+    clue_ids: z
+      .array(BlueprintV2IdSchema)
+      .min(1)
+      .describe(
+        "Ids of OTHER clues (location or character) that must already be DISCOVERED "
+          + "before this clue can be revealed. At least one — omit the whole `requires` "
+          + "object for an ungated clue. Validated to reference existing clues, to "
+          + "exclude this clue itself, and to keep the discovery graph acyclic.",
+      ),
+    rationale: z
+      .string()
+      .trim()
+      .min(1)
+      .describe(
+        "WHY this clue is gated, in-fiction. The narrator uses it both for flavor and "
+          + "to judge whether a clever question or lucky bluff can unlock it off-script. "
+          + "Make it signal whether cleverness may substitute — e.g. 'she only opens up "
+          + "once you can prove you saw her at the dock' (a social gate cleverness could "
+          + "bypass) vs. 'the safe physically cannot be opened without the key' (a hard "
+          + "gate with no substitute).",
+      ),
+  })
+  .describe(
+    "Optional discovery gate. Absent/null means the clue is ungated and available from "
+      + "the start. Gates define an implicit acyclic discovery graph whose edges point "
+      + "from a clue to its prerequisites. Keep most clues ungated; gating should create "
+      + "momentum, never dead-ends.",
+  );
+
 export const BlueprintV2LocationClueSchema = z.object({
   id: BlueprintV2IdSchema.describe(
     "Stable identifier for a location clue. Referenced by reasoning paths.",
@@ -17,6 +48,7 @@ export const BlueprintV2LocationClueSchema = z.object({
     .trim()
     .min(1)
     .describe("Concrete clue text discovered by searching a location."),
+  requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
 export const BlueprintV2CharacterClueSchema = z.object({
@@ -40,6 +72,7 @@ export const BlueprintV2CharacterClueSchema = z.object({
     .describe(
       "Optional. If this clue points the investigator at a specific location, the id of that location. Validated to reference an existing location.",
     ),
+  requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
 export const BlueprintV2ReasoningPathSchema = z.object({
@@ -557,6 +590,12 @@ export const BlueprintV2Schema = z
     const tellIds = new Set<string>();
     const pathIds = new Set<string>();
     const referencedClueIds = new Set<string>();
+    // Discovery graph: clue id -> its prerequisite clue ids + the path to its
+    // `requires` field, collected here and validated once all clue ids are known.
+    const clueRequiresMap = new Map<
+      string,
+      { requires: string[]; path: (string | number)[] }
+    >();
 
     for (const [locationIndex, location] of value.world.locations.entries()) {
       if (locationIds.has(location.id)) {
@@ -573,6 +612,12 @@ export const BlueprintV2Schema = z
           );
         }
         locationClueIds.add(clue.id);
+        if (clue.requires) {
+          clueRequiresMap.set(clue.id, {
+            requires: clue.requires.clue_ids,
+            path: ["world", "locations", locationIndex, "clues", clueIndex, "requires", "clue_ids"],
+          });
+        }
       }
 
       for (const [subLocIndex, subLoc] of (location.sub_locations ?? []).entries()) {
@@ -594,6 +639,15 @@ export const BlueprintV2Schema = z
             );
           }
           locationClueIds.add(clue.id);
+          if (clue.requires) {
+            clueRequiresMap.set(clue.id, {
+              requires: clue.requires.clue_ids,
+              path: [
+                "world", "locations", locationIndex, "sub_locations", subLocIndex,
+                "clues", clueIndex, "requires", "clue_ids",
+              ],
+            });
+          }
         }
       }
     }
@@ -677,6 +731,12 @@ export const BlueprintV2Schema = z
         }
         characterClueIds.add(clue.id);
         thisCharacterClueIds.add(clue.id);
+        if (clue.requires) {
+          clueRequiresMap.set(clue.id, {
+            requires: clue.requires.clue_ids,
+            path: ["world", "characters", characterIndex, "clues", clueIndex, "requires", "clue_ids"],
+          });
+        }
       }
 
       // --- Agenda validations ---
@@ -732,6 +792,103 @@ export const BlueprintV2Schema = z
 
     // --- Deferred agenda reference validations (need all IDs collected) ---
     const allClueIds = new Set([...locationClueIds, ...characterClueIds]);
+
+    // --- Clue discovery graph validations (need all clue ids collected) ---
+    // (a) Each `requires` entry must reference an existing clue and not the clue
+    //     itself. (b) The discovery graph must be acyclic. (c) Every clue used by
+    //     a solution_path must be reachable from ungated roots (no locked critical
+    //     path). There is no temporal ordering field, so "a clue requires a clue
+    //     obtainable only after it" can only mean a cycle, caught by (b).
+    for (const [clueId, { requires, path }] of clueRequiresMap) {
+      for (const [depIndex, dep] of requires.entries()) {
+        if (dep === clueId) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...path, depIndex],
+            message: `Clue "${clueId}" cannot require itself.`,
+          });
+        } else if (!allClueIds.has(dep)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...path, depIndex],
+            message: `requires references unknown clue id "${dep}".`,
+          });
+        }
+      }
+    }
+
+    // (b) Acyclicity via DFS coloring (0=unvisited, 1=in-stack, 2=done). Only
+    //     known deps are followed so unknown-ref issues above aren't double-reported.
+    const requiresOf = (id: string): string[] =>
+      (clueRequiresMap.get(id)?.requires ?? []).filter(
+        (dep) => dep !== id && allClueIds.has(dep),
+      );
+    const color = new Map<string, number>();
+    const reportedCycle = new Set<string>();
+    const visit = (id: string): void => {
+      color.set(id, 1);
+      for (const dep of requiresOf(id)) {
+        const depColor = color.get(dep) ?? 0;
+        if (depColor === 1) {
+          if (!reportedCycle.has(dep)) {
+            reportedCycle.add(dep);
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: clueRequiresMap.get(dep)?.path ?? ["world"],
+              message: `Clue dependency cycle detected involving "${dep}".`,
+            });
+          }
+        } else if (depColor === 0) {
+          visit(dep);
+        }
+      }
+      color.set(id, 2);
+    };
+    for (const clueId of clueRequiresMap.keys()) {
+      if ((color.get(clueId) ?? 0) === 0) {
+        visit(clueId);
+      }
+    }
+
+    // (c) Reachability: a clue is discoverable when all its prerequisites are
+    //     discoverable (fixpoint from ungated roots). Every solution_path clue
+    //     must be discoverable.
+    const discoverable = new Set<string>();
+    for (const clueId of allClueIds) {
+      if (requiresOf(clueId).length === 0) {
+        discoverable.add(clueId);
+      }
+    }
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const clueId of allClueIds) {
+        if (discoverable.has(clueId)) {
+          continue;
+        }
+        if (requiresOf(clueId).every((dep) => discoverable.has(dep))) {
+          discoverable.add(clueId);
+          grew = true;
+        }
+      }
+    }
+    for (const [pathIndex, solutionPath] of value.solution_paths.entries()) {
+      const solutionClueIds = [
+        ...solutionPath.location_clue_ids,
+        ...solutionPath.character_clue_ids,
+      ];
+      for (const clueId of solutionClueIds) {
+        if (allClueIds.has(clueId) && !discoverable.has(clueId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["solution_paths", pathIndex],
+            message:
+              `Solution-path clue "${clueId}" is not discoverable: its requires `
+              + "chain is never satisfiable from ungated clues (locked critical path).",
+          });
+        }
+      }
+    }
     for (const [characterIndex, character] of value.world.characters.entries()) {
       const thisClueIds = new Set(character.clues.map((c) => c.id));
 
@@ -999,4 +1156,7 @@ export type BlueprintV2SubLocation = z.infer<typeof BlueprintV2SubLocationSchema
 export type BlueprintV2CoverImage = z.infer<typeof BlueprintV2CoverImageSchema>;
 export type BlueprintV2ReasoningPath = z.infer<
   typeof BlueprintV2ReasoningPathSchema
+>;
+export type BlueprintV2ClueRequires = z.infer<
+  typeof BlueprintV2ClueRequiresSchema
 >;

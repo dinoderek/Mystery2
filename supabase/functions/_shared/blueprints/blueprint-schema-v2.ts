@@ -6,9 +6,18 @@ import { z } from "npm:zod";
 
 const BlueprintV2IdSchema = z.string().trim().min(1);
 
+// The clue discovery graph (acyclicity / reachability / self-reference) is
+// validated only in the canonical copy at
+// packages/shared/src/blueprint-schema-v2.ts. This copy only needs to parse.
+const BlueprintV2ClueRequiresSchema = z.object({
+  clue_ids: z.array(BlueprintV2IdSchema).min(1),
+  rationale: z.string().trim().min(1),
+});
+
 const BlueprintV2LocationClueSchema = z.object({
   id: BlueprintV2IdSchema,
   text: z.string().trim().min(1),
+  requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
 const BlueprintV2CharacterClueSchema = z.object({
@@ -16,6 +25,7 @@ const BlueprintV2CharacterClueSchema = z.object({
   text: z.string().trim().min(1),
   about_character_id: z.string().optional(),
   hint_location_id: z.string().optional(),
+  requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
 const BlueprintV2AgendaSchema = z.object({

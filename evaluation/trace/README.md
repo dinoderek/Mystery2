@@ -123,6 +123,7 @@ schema, picked up by id from `registry.json`.
 |-------------------|------------|------|
 | `clue_accounting` | mechanical | Every revealed clue id is real and in scope; bare-search reveals stay an ordered, non-repeating prefix of the location's clues. |
 | `spoiler_leak`    | mechanical | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only (high contiguous-word threshold); paraphrase leakage is a judge's job. |
+| `clue_requires_violation` | mechanical (opt-in) | A clue gated by `requires` was not revealed until its prerequisites were already revealed earlier in the trace (off-script grants, listed in the event's `revealed_off_script`, are exempt). **Off by default** — set `enforce_requires: true` in the registry mechanical context to enable. It proves the runtime honors the discovery graph; until the runtime gating is in place a real trace would fail it. |
 | `gm_fabrication`  | judge      | Did the game master invent material facts the blueprint does not support? |
 
 ## Tests

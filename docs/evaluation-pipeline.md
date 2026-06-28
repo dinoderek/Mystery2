@@ -124,7 +124,8 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
                                                             ├─ timeline_coherence  (judge)
                                                             ├─ knowledge_coherence (judge)
                                                             ├─ character_grounding (judge)
-                                                            └─ path_payoff         (judge)
+                                                            ├─ path_payoff         (judge)
+                                                            └─ clue_graph          (analyzer + judge)
                                                             // all in parallel
 ```
 
@@ -137,12 +138,18 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
    here aborts the run; the envelope still gets written with
    `run_error: { stage: "generate", message }`.
 3. **Mechanical checks.** Cheap structural checks against the brief and
-   blueprint. Failures here do **not** block dimension evaluation — we still
+   blueprint (including `requires_satisfiable` — the clue discovery graph is
+   acyclic, references real clues, and keeps every solution clue reachable from
+   ungated roots). Failures here do **not** block dimension evaluation — we still
    want LLM judgments on a partially-broken blueprint, because they often
    surface the same problem from a different angle.
 4. **Dimensions.** All enabled dimensions evaluate in parallel via
    `Promise.all`. Inside a dimension, analyzer runs before judge; analyzer
-   error skips the judge for that dimension only.
+   error skips the judge for that dimension only. `clue_graph` is the first
+   dimension with both: a deterministic analyzer
+   (`evaluation/checks/analyzers/clue-graph.mjs`, sharing
+   `evaluation/checks/lib/clue-graph.mjs`) asserts the graph is sound, and the
+   judge assesses whether the gating is fun and fair.
 
 The envelope is always written, even on whole-run failure.
 

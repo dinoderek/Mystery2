@@ -9,6 +9,7 @@
   import HelpModal from '$lib/components/HelpModal.svelte';
   import SceneZoomModal from '$lib/components/SceneZoomModal.svelte';
   import NotebookPanel from '$lib/components/NotebookPanel.svelte';
+  import ClueDiscoveredToast from '$lib/components/ClueDiscoveredToast.svelte';
   import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
   import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
   import MobileSession from '$lib/components/mobile/MobileSession.svelte';
@@ -51,6 +52,7 @@
   <HelpModal />
   <SceneZoomModal />
   <NotebookPanel />
+  <ClueDiscoveredToast />
 </main>
 {:else}
 <MobileSession />

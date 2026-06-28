@@ -1,5 +1,6 @@
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import { StoryBriefSchema } from "../../packages/blueprint-generator/src/story-brief.ts";
+import { analyzeClueGraph } from "./lib/clue-graph.mjs";
 
 export function runMechanicalChecks({ brief, blueprintCandidate }) {
   const checks = [];
@@ -76,6 +77,20 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
   const orphanCount = orphans.location.length + orphans.character.length;
   checks.push(
     mkCheck("no_orphan_clues", orphanCount === 0, orphanCount === 0 ? null : orphans),
+  );
+
+  // requires_satisfiable: the clue discovery graph must reference real clues, be
+  // acyclic, and keep every solution clue reachable from ungated roots. Defense
+  // in depth alongside the schema's superRefine — surfaces the specifics in the
+  // envelope summary even though a malformed graph already fails schema parse.
+  const graph = analyzeClueGraph(blueprint);
+  checks.push(
+    mkCheck("requires_satisfiable", graph.ok, graph.ok ? null : {
+      unknown_requires: graph.unknown_requires,
+      self_references: graph.self_references,
+      cycles: graph.cycles,
+      locked_solution_clues: graph.locked_solution_clues,
+    }),
   );
 
   return checks;

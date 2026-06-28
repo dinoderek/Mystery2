@@ -342,7 +342,16 @@ class MockAIProvider implements AIProvider {
       }
       case "talk_conversation": {
         const talkCtx = context.talk_context as
-          | { active_character?: { first_name?: string | null } }
+          | {
+            active_character?: {
+              first_name?: string | null;
+              clues?: Array<{
+                id?: string;
+                text?: string;
+                prereqs_met?: boolean;
+              }>;
+            };
+          }
           | undefined;
         const characterName =
           talkCtx?.active_character?.first_name ??
@@ -352,11 +361,40 @@ class MockAIProvider implements AIProvider {
           return {
             narration: `[Mock] ${characterName} blinked. "Sorry — what?"`,
             revealed_clue_ids: [],
+            revealed_off_script: [],
             input_understood: false,
+          };
+        }
+        const clues = talkCtx?.active_character?.clues ?? [];
+        // Deterministic brilliance trigger: a whole-word sentinel in the player's
+        // input ("aha"/"i bet") unlocks the first gated clue off-script. Word
+        // boundaries avoid matching inside ordinary words (e.g. "Sahara").
+        const isBrilliant = /\b(aha|i bet)\b/i.test(playerInput);
+        if (isBrilliant) {
+          const locked = clues.find((c) => c.prereqs_met === false && c.id);
+          if (locked?.id) {
+            return {
+              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}`,
+              revealed_clue_ids: [locked.id],
+              revealed_off_script: [locked.id],
+              input_understood: true,
+            };
+          }
+        }
+        // Otherwise reveal the first unlocked clue.
+        const unlocked = clues.find((c) => c.prereqs_met !== false && c.id);
+        if (unlocked?.id) {
+          return {
+            narration: `[Mock] ${characterName} responds thoughtfully and shares: ${unlocked.text}`,
+            revealed_clue_ids: [unlocked.id],
+            revealed_off_script: [],
+            input_understood: true,
           };
         }
         return {
           narration: `[Mock] ${characterName} responds thoughtfully to: "${playerInput}".`,
+          revealed_clue_ids: [],
+          revealed_off_script: [],
           input_understood: true,
         };
       }

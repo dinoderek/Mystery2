@@ -69,7 +69,11 @@
           },
           {
             "id": "clue-half-eaten",
-            "text": "A half-eaten cookie."
+            "text": "A half-eaten cookie.",
+            "requires": {
+              "clue_ids": ["clue-wrapper"],
+              "rationale": "The half-eaten cookie only stands out once you have spotted the wrapper it came from."
+            }
           }
         ],
         "sub_locations": [

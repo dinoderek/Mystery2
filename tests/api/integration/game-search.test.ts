@@ -60,10 +60,16 @@ describe("game-search endpoint", () => {
     expect(firstData.narration_parts[0].text).toContain("A wrapper on the sofa.");
     expect(firstData.mode).toBe("explore");
     expect(firstData.narration_parts[0].speaker).toMatchObject(NARRATOR_SPEAKER);
-    // The notebook merges the clue revealed by this action.
-    expect(firstData.revealed_clues).toEqual([
-      { id: "clue-wrapper", text: "A wrapper on the sofa." },
-    ]);
+    // The notebook merges the (rich) clue record revealed by this action.
+    expect(firstData.revealed_clues).toHaveLength(1);
+    expect(firstData.revealed_clues[0]).toMatchObject({
+      id: "clue-wrapper",
+      text: "A wrapper on the sofa.",
+      source: "search",
+      origin: { kind: "location" },
+      off_script: false,
+    });
+    expect(Array.isArray(firstData.revealed_clues[0].threads)).toBe(true);
 
     const secondSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",

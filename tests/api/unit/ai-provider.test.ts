@@ -7,6 +7,7 @@ import {
 import {
   parseSearchOutput,
   parseAccusationJudgeOutput,
+  parseTalkConversationOutput,
   parseTalkStartOutput,
 } from "../../../supabase/functions/_shared/ai-contracts.ts";
 
@@ -345,5 +346,48 @@ describe("ai-provider mock role output", () => {
         parse: parseTalkStartOutput,
       }),
     ).rejects.toThrow("talk_start");
+  });
+});
+
+describe("mock talk_conversation clue gating", () => {
+  const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+  const askWith = (clues: unknown[], playerInput: string) =>
+    provider.generateRoleOutput({
+      role: "talk_conversation",
+      prompt: "prompt",
+      context: {
+        player_input: playerInput,
+        talk_context: { active_character: { first_name: "Alice", clues } },
+      },
+      parse: parseTalkConversationOutput,
+    });
+
+  it("reveals the first unlocked clue", async () => {
+    const out = await askWith(
+      [
+        { id: "locked", text: "secret", prereqs_met: false },
+        { id: "open", text: "open clue", prereqs_met: true },
+      ],
+      "What did you see?",
+    );
+    expect(out.revealed_clue_ids).toEqual(["open"]);
+    expect(out.revealed_off_script).toEqual([]);
+  });
+
+  it("withholds clues whose prerequisites are not met", async () => {
+    const out = await askWith(
+      [{ id: "locked", text: "secret", prereqs_met: false }],
+      "What did you see?",
+    );
+    expect(out.revealed_clue_ids).toEqual([]);
+  });
+
+  it("grants a locked clue off-script on a brilliance sentinel", async () => {
+    const out = await askWith(
+      [{ id: "locked", text: "secret", prereqs_met: false }],
+      "Aha — I bet you were at the dock!",
+    );
+    expect(out.revealed_clue_ids).toEqual(["locked"]);
+    expect(out.revealed_off_script).toEqual(["locked"]);
   });
 });

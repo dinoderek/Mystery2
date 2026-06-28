@@ -84,6 +84,31 @@ Anti-pattern (length 2, fails a floor of 3): "glow-wax found only on a
 lantern-keeper" + "an eyewitness places that keeper at the vault" — two clues name
 the culprit, so a narrowing step is missing.
 
+## Discovery graph
+
+Clues can gate other clues. Any clue may carry an optional `requires` object —
+`{ "clue_ids": [...], "rationale": "..." }` — meaning it cannot be discovered until
+every listed clue has already been discovered. This turns each reasoning path into a
+small **mini-mystery graph**: a few ungated entry clues that unlock follow-on clues
+leading to the path's payoff.
+
+- **Shape, not chains.** Aim for shallow, branchy graphs (depth 2–3, several roots),
+  never one long brittle chain. Every path — solution, red herring, elimination —
+  needs at least one **ungated entry clue** so the thread is always startable.
+- **Gate about a third.** Leave the majority of clues ungated; gating should create
+  momentum, never busywork or dead-ends. Prefer leaving a clue ungated when a sharp
+  player could plausibly deduce it early.
+- **`rationale` is load-bearing.** Write a concrete in-fiction reason the clue is
+  gated, and make it signal whether cleverness can substitute: a social/knowledge
+  gate a clever question could bypass ("she only opens up once you can prove you saw
+  her at the dock") vs. a hard physical gate with no substitute ("the safe cannot be
+  opened without the key"). The narrator uses this both for flavor and to judge
+  off-script unlocks.
+- **Stay solvable.** The graph must be acyclic (no clue may, directly or through a
+  chain, require itself). Never gate a clue the main solution needs behind something
+  unreachable — at least one `solution_path` must be completable through ungated and
+  shallowly-gated clues only.
+
 ## Internal Workflow
 
 Plan with these steps; do not output them.
@@ -95,7 +120,9 @@ Plan with these steps; do not output them.
    `actual_actions`.
 5. Design the reasoning structure: `solution_paths`, `red_herrings`,
    `suspect_elimination_paths`. Give every suspect an elimination path of
-   comparable depth.
+   comparable depth. Treat each path as a small mini-mystery graph (see
+   **Discovery graph**): pick which clues are ungated entry points and which are
+   follow-ons unlocked by earlier discoveries.
 6. Author agendas (behavioral directives shaping conversation):
    - The culprit MUST have ≥1 self-protection agenda (`maintain_false_alibi`,
      `deny_motive`, or `minimize_presence`) at `priority: "high"`.
@@ -132,6 +159,9 @@ Plan with these steps; do not output them.
    cross-character clues that confirm/deny another's alibi, report what they saw
    another do, reveal a motive, or point at a location; set `about_character_id` /
    `hint_location_id` accordingly. Every clue must belong to ≥1 reasoning path.
+   Set `requires` on a clue that should be earned (confront-then-reveal,
+   hint-then-search), always with a concrete `rationale`; follow the **Discovery
+   graph** rules (mostly ungated, acyclic, solution reachable).
 8. Place clues: at most one clue at a location's top level and at most one per
    sub-location; spread them so the player must explore.
 9. Add `flavor_knowledge` for texture, separate from clues.
@@ -147,6 +177,9 @@ Plan with these steps; do not output them.
       combinations *outside* your intended path. Patch any sub-floor shortcut.
     - Confirm the brief's counts (culprits/suspects/witnesses/locations/
       redHerringTrails) and that every suspect has an elimination path.
+    - Trace the discovery graph: every `requires` references a real clue (not
+      itself), the graph is acyclic, and every clue the solution needs is reachable
+      from ungated clues. Each path keeps at least one ungated entry clue.
 11. Final flavor pass: sharpen descriptions, backgrounds, and personalities;
     compose `metadata.visual_direction` and `cover_image`; keep every addition
     consistent with the locked facts.
@@ -156,13 +189,17 @@ Plan with these steps; do not output them.
 Use these bands unless the brief justifies otherwise; prefer the smaller end for
 younger ages or tighter budgets.
 
+The game is meant to feel clue-rich and discovery-driven — clues can now be gated
+behind one another (see **Discovery graph**), so prefer more small, specific clues
+over fewer dense ones.
+
 - **Cast & locations:** 3–5 characters (exactly 1 culprit) and 3–5 locations.
   Include 1–2 innocent suspects with plausible reasons to seem suspicious.
-- **Clues & timeline:** 4–8 authored clues; 4–7 `ground_truth.timeline` steps;
+- **Clues & timeline:** 8–14 authored clues; 4–7 `ground_truth.timeline` steps;
   1–2 strong red herrings.
-- **Budget fit:** short (~6–8 turns) → 3 locations, 3 characters, 4–5 clues,
-  1 red herring. Medium (~9–12) → 3–4 / 3–4 / 5–7 / 1–2. Large (13+) →
-  4–5 / 4–5 / 6–8 / up to 2.
+- **Budget fit:** short (~6–8 turns) → 3 locations, 3 characters, 6–8 clues,
+  1 red herring. Medium (~9–12) → 3–4 / 3–4 / 9–12 / 1–2. Large (13+) →
+  4–5 / 4–5 / 12–16 / up to 2.
 - **Depth wins ties.** If these bands can't fund a solution chain of
   `minPathLength` necessary clues *plus* each suspect's elimination path, expand
   the clue budget — the depth floor takes priority over staying compact.
@@ -194,7 +231,9 @@ sub-location needs a clue — some are atmospheric.
 **Characters.** `id`, `first_name`/`last_name` (age-appropriate), `location_id`
 (real), `appearance`, `background`, `personality`,
 `initial_attitude_towards_investigator`, `stated_alibi` (may be false), `motive`
-(innocents may have one too, for fair suspicion), `clues[]`, optional
+(innocents may have one too, for fair suspicion), `clues[]` (each clue may carry an
+optional `requires` gate — `{ clue_ids[], rationale }`; omit/null for ungated clues,
+which should be the majority), optional
 `flavor_knowledge[]`, ordered `world.characters[].actual_actions[]`, and
 `agendas[]` (`type`, `strategy`, `priority`, `details`, plus optional
 `target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`;
@@ -224,6 +263,10 @@ alibis, actions, and the final reasoning).
 - At most one clue per location top level and per sub-location; 2–4 sub-locations
   per location; sub-location ids unique across the whole blueprint.
 - Every location clue and character clue is referenced by ≥1 reasoning path.
+- Clue `requires` references existing clue ids only (never itself); the discovery
+  graph is acyclic and every solution clue is reachable from ungated clues. Most
+  clues stay ungated; every reasoning path has ≥1 ungated entry clue. Each
+  `requires` gate carries a concrete `rationale`.
 - The shortest solution path needs ≥ `minPathLength` necessary clues; no
   sub-floor subset of clues identifies the culprit.
 - Every suspect has an elimination path; none cleared by a blanket shared trait.

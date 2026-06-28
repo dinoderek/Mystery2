@@ -222,6 +222,12 @@ export class GameSessionStore {
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   sessionCatalogError = $state<string | null>(null);
   viewerMode = $state<SessionViewerMode>('interactive');
+  // Clues discovered on the most recent turn — drives the discovery celebration.
+  recentlyDiscovered = $state<DiscoveredClue[]>([]);
+
+  dismissRecentlyDiscovered() {
+    this.recentlyDiscovered = [];
+  }
 
   initializeTheme() {
     if (typeof window === 'undefined') {
@@ -534,28 +540,6 @@ export class GameSessionStore {
     );
   }
 
-  private normalizeDiscoveredClues(raw: unknown): DiscoveredClue[] {
-    if (!Array.isArray(raw)) {
-      return [];
-    }
-
-    const seen = new Set<string>();
-    const clues: DiscoveredClue[] = [];
-    for (const entry of raw) {
-      if (!isRecord(entry)) {
-        continue;
-      }
-      const id = readString(entry.id);
-      const text = readString(entry.text);
-      if (id.length === 0 || text.length === 0 || seen.has(id)) {
-        continue;
-      }
-      seen.add(id);
-      clues.push({ id, text });
-    }
-    return clues;
-  }
-
   private mergeDiscoveredClues(raw: unknown) {
     if (!this.state) {
       return;
@@ -565,11 +549,17 @@ export class GameSessionStore {
       return;
     }
     const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
+    const fresh: DiscoveredClue[] = [];
     for (const clue of incoming) {
       if (!known.has(clue.id)) {
         known.add(clue.id);
         this.state.discovered_clues.push(clue);
+        fresh.push(clue);
       }
+    }
+    // Surface only the genuinely new clues for the discovery celebration.
+    if (fresh.length > 0) {
+      this.recentlyDiscovered = fresh;
     }
   }
 
@@ -611,6 +601,45 @@ export class GameSessionStore {
         typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
       history: this.flattenNarrationEvents(narrationEvents),
     };
+  }
+
+  private normalizeDiscoveredClues(raw: unknown): DiscoveredClue[] {
+    if (!Array.isArray(raw)) return [];
+    const clues: DiscoveredClue[] = [];
+    for (const entry of raw) {
+      if (!isRecord(entry)) continue;
+      const id = readString(entry.id);
+      const text = readString(entry.text);
+      if (id.length === 0 || text.length === 0) continue;
+      const origin = isRecord(entry.origin) ? entry.origin : {};
+      const threads = Array.isArray(entry.threads)
+        ? entry.threads
+            .filter((t): t is Record<string, unknown> => isRecord(t))
+            .map((t) => ({ kind: readString(t.kind), label: readString(t.label) }))
+            .filter((t) => t.label.length > 0)
+        : [];
+      clues.push({
+        id,
+        text,
+        source: entry.source === 'talk' ? 'talk' : 'search',
+        origin:
+          origin.kind === 'character'
+            ? {
+                kind: 'character',
+                character_id: readString(origin.character_id),
+                character_name: readString(origin.character_name),
+              }
+            : {
+                kind: 'location',
+                location_id: readString(origin.location_id),
+                location_name: readString(origin.location_name),
+              },
+        discovered_at: typeof entry.discovered_at === 'string' ? entry.discovered_at : null,
+        off_script: entry.off_script === true,
+        threads: threads as DiscoveredClue['threads'],
+      });
+    }
+    return clues;
   }
 
   private getParseContext(): ParseContext {
@@ -872,6 +901,8 @@ export class GameSessionStore {
       this.state.current_talk_character = payload.current_talk_character;
     }
 
+    // Newly discovered clues from a search/ask turn: merge the unseen ones into
+    // the notebook and surface them for the discovery celebration.
     this.mergeDiscoveredClues(payload.revealed_clues);
 
     const outcome = payload.result;

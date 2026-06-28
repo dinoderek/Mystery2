@@ -22,6 +22,7 @@ describe("talk AI output contracts", () => {
     ).toEqual({
       narration: "I was in the kitchen when the cookie jar opened.",
       revealed_clue_ids: [],
+      revealed_off_script: [],
       input_understood: true,
     });
   });
@@ -35,8 +36,18 @@ describe("talk AI output contracts", () => {
     ).toEqual({
       narration: "Fine, I saw her leave at nine.",
       revealed_clue_ids: ["clue-alibi-witness"],
+      revealed_off_script: [],
       input_understood: true,
     });
+  });
+
+  it("keeps off-script ids that are a subset of revealed, drops the rest", () => {
+    const result = parseTalkConversationOutput({
+      narration: "Alright, you got me — she left at nine.",
+      revealed_clue_ids: ["clue-alibi-witness"],
+      revealed_off_script: ["clue-alibi-witness", "not-revealed"],
+    });
+    expect(result.revealed_off_script).toEqual(["clue-alibi-witness"]);
   });
 
   it("filters invalid revealed_clue_ids entries", () => {
@@ -56,6 +67,7 @@ describe("talk AI output contracts", () => {
     expect(result).toEqual({
       narration: "Sorry — what?",
       revealed_clue_ids: [],
+      revealed_off_script: [],
       input_understood: false,
     });
   });

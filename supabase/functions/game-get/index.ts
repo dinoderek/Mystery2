@@ -3,7 +3,7 @@ import { badRequest, notFound, internalError } from "../_shared/errors.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { readNarrationEvent } from "../_shared/narration.ts";
-import { buildPlayerKnownClues } from "../_shared/ai-context.ts";
+import { buildDiscoveryRecords } from "../_shared/clue-discovery.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 serveWithCors(async (req) => {
@@ -113,16 +113,9 @@ serveWithCors(async (req) => {
     const characterSummaries = new Map(
       (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
     );
-    const discoveredClues = buildPlayerKnownClues(
-      blueprint,
-      (events ?? []).map((event) => ({
-        sequence: event.sequence,
-        event_type: event.event_type,
-        actor: event.actor,
-        narration: event.narration ?? "",
-        payload: event.payload ?? null,
-      })),
-    );
+    // The notebook: discovered clues grouped by mini-mystery thread. Built from
+    // event history (the source of truth) and joined against the blueprint.
+    const discoveredClues = buildDiscoveryRecords(blueprint, events ?? []);
 
     const gameState = {
       mystery_summary: startingKnowledge?.mystery_summary ?? null,

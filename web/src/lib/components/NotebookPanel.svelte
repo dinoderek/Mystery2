@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gameSessionStore } from '$lib/domain/store.svelte';
+  import type { DiscoveredClue } from '$lib/types/game';
 
   function close() {
     gameSessionStore.showNotebook = false;
@@ -21,6 +22,23 @@
   const characters = $derived(state?.characters ?? []);
   const locations = $derived(state?.locations ?? []);
   const clues = $derived(state?.discovered_clues ?? []);
+
+  const OTHER_GROUP = 'Other clues';
+
+  // Group discovered clues by mini-mystery thread. A clue serving several threads
+  // appears under each; a clue with none falls into "Other clues".
+  const clueGroups = $derived.by(() => {
+    const byLabel = new Map<string, DiscoveredClue[]>();
+    for (const clue of clues) {
+      const labels = clue.threads.length > 0 ? clue.threads.map((t) => t.label) : [OTHER_GROUP];
+      for (const label of labels) {
+        const list = byLabel.get(label) ?? [];
+        list.push(clue);
+        byLabel.set(label, list);
+      }
+    }
+    return [...byLabel.entries()].map(([label, items]) => ({ label, items }));
+  });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -91,11 +109,20 @@
         <section>
           <h3 class="text-t-primary font-bold mb-1">CLUES</h3>
           {#if clues.length > 0}
-            <ul class="list-disc list-inside pl-1 space-y-1">
-              {#each clues as clue (clue.id)}
-                <li class="text-t-muted/90">{clue.text}</li>
+            <div class="space-y-3">
+              {#each clueGroups as group (group.label)}
+                <div>
+                  <h4 class="text-t-muted/70 font-bold text-xs uppercase mb-1">{group.label}</h4>
+                  <ul class="list-disc list-inside pl-1 space-y-1">
+                    {#each group.items as clue (clue.id)}
+                      <li class="text-t-muted/90">
+                        {clue.text}{#if clue.off_script}<span class="text-t-muted/60"> (a lucky break!)</span>{/if}
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
               {/each}
-            </ul>
+            </div>
           {:else}
             <p class="italic text-t-muted/60">No clues discovered yet. Search locations and talk to people to find them.</p>
           {/if}

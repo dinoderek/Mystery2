@@ -122,6 +122,18 @@ When time is exhausted:
 - Each follow-up question in talk mode consumes 1 turn.
 - Ending talk mode is free.
 
+**Clue gating in conversation (soft, with a brilliance override)**
+
+- A character clue gated by `requires` is normally withheld until the player has
+  discovered its prerequisites; the narrator uses the gate's `rationale` to color
+  the deflection.
+- The narrator MAY grant an off-script reveal for a genuinely clever question or
+  convincing bluff — but only when the rationale implies a social/knowledge gate
+  cleverness could bypass, never a hard physical gate. Off-script reveals are
+  recorded as real discoveries (flagged in the notebook), so a clever player is
+  never hard-stuck on the critical path. This is separate from, and composes with,
+  character agendas (willingness) and tells.
+
 ---
 
 ## Search
@@ -160,6 +172,20 @@ Not every sub-location has a clue — some are atmospheric dead ends that add fl
 - At most 1 clue per location's top-level `clues[]` array (revealed by bare search).
 - At most 1 clue per sub-location (revealed by targeted search).
 - Clues are distributed across locations and sub-locations to encourage broad exploration.
+
+### Clue Gating (discovery graph)
+
+Clues can be gated behind discovering other clues. Each clue may carry an optional
+`requires` object (`{ clue_ids, rationale }`); it cannot be revealed until every
+prerequisite clue has been discovered. This makes the game clue-rich and
+discovery-driven (see `docs/blueprint-generation-flows.md`).
+
+- **Search gates are hard.** Bare search reveals the next location-level clue that
+  is both unrevealed and unlocked, skipping locked ones so the player is never
+  dead-ended. Targeted search will not reveal a clue whose prerequisites are unmet
+  — locked clues are filtered out of the narrator's context and a backend backstop
+  rejects any locked reveal.
+- Discovered clues are recorded permanently (see **Notebook**).
 
 ### Repeated Searches
 
@@ -267,6 +293,21 @@ For the current implementation map of which blueprint fields actually flow into
 generated images and narration, see `docs/blueprint-generation-flows.md`.
 
 ---
+
+## Notebook
+
+A persistent, celebrated record of every clue the investigator discovers.
+
+- Discovered clues are recorded forever and surfaced via `game-get`
+  (`state.discovered_clues`), each annotated with where/when it was found, whether
+  it was an off-script grant, and which mini-mystery thread(s) it serves (main
+  solution, a specific red herring, ruling out a suspect — derived from
+  reasoning-path membership).
+- The notebook panel groups clues by thread. A "new clue discovered" celebration
+  fires when a search/ask turn surfaces a clue.
+- Implemented on desktop (`Notebook.svelte`, `ClueDiscoveredToast.svelte`, a
+  count/toggle in `StatusBar`) and mobile (mounted in `MobileSession`, opened from
+  `MobileDrawer`). See `docs/component-inventory.md`.
 
 ## UX / UI Concept
 

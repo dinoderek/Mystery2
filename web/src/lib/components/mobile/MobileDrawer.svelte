@@ -1,6 +1,7 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { MobileDrawerState } from '$lib/domain/mobile-drawer.svelte';
+  import { gameSessionStore } from '$lib/domain/store.svelte';
 
   let {
     open = $bindable(false),
@@ -107,7 +108,7 @@
           data-testid="mobile-drawer-notebook"
           class="text-left text-sm text-t-bright py-2 px-3 border border-t-muted/30 active:bg-t-primary/10"
         >
-          Notebook
+          Notebook ({gameSessionStore.state?.discovered_clues.length ?? 0})
         </button>
         <button
           type="button"

@@ -135,12 +135,22 @@ describe('store speaker behavior', () => {
   it('merges revealed_clues from a search response into discovered_clues', async () => {
     const store = createStore();
 
+    const crumbClue = {
+      id: 'clue-crumbs',
+      text: 'Crumbs on the floor.',
+      source: 'search',
+      origin: { kind: 'location', location_id: 'loc-kitchen', location_name: 'Kitchen' },
+      discovered_at: '2026-06-01T10:00:00Z',
+      off_script: false,
+      threads: [{ kind: 'solution', label: 'Main solution' }],
+    };
+
     invokeMock.mockResolvedValue({
       data: {
         narration_parts: [{ text: 'You find crumbs.', speaker: NARRATOR_SPEAKER }],
         mode: 'explore',
         time_remaining: 9,
-        revealed_clues: [{ id: 'clue-crumbs', text: 'Crumbs on the floor.' }],
+        revealed_clues: [crumbClue],
       },
       error: null,
     });
@@ -148,14 +158,10 @@ describe('store speaker behavior', () => {
     expect(store.state?.discovered_clues).toEqual([]);
     await store.submitInput('search');
 
-    expect(store.state?.discovered_clues).toEqual([
-      { id: 'clue-crumbs', text: 'Crumbs on the floor.' },
-    ]);
+    expect(store.state?.discovered_clues).toEqual([crumbClue]);
 
     // A second search revealing the same clue does not duplicate it.
     await store.submitInput('search');
-    expect(store.state?.discovered_clues).toEqual([
-      { id: 'clue-crumbs', text: 'Crumbs on the floor.' },
-    ]);
+    expect(store.state?.discovered_clues).toEqual([crumbClue]);
   });
 });

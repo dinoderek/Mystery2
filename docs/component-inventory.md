@@ -28,7 +28,16 @@ _(Add components here as they are built. Example format below)_
 
 ### `StatusBar.svelte`
 
-- **Purpose**: Shows current location, time, hints, and visible characters.
+- **Purpose**: Shows current location, time, hints, and visible characters, plus a
+  notebook count/toggle button that opens `NotebookPanel` (via the
+  `gameSessionStore.showNotebook` flag).
+- **Props**: None (reads from store)
+
+### `ClueDiscoveredToast.svelte`
+
+- **Purpose**: Transient "new clue discovered" celebration shown when a search/ask
+  turn surfaces clues (`gameSessionStore.recentlyDiscovered`); tapping opens the
+  notebook. Auto-dismisses.
 - **Props**: None (reads from store)
 
 ### `NarrationBox.svelte`
@@ -54,7 +63,9 @@ _(Add components here as they are built. Example format below)_
 
 - **Purpose**: Modal overlay ("case notebook") showing the mystery's case facts
   (`premise` + `mystery_summary`), people and places (with their `summary`
-  blurbs), and the clues discovered so far (`discovered_clues`). Reads
+  blurbs), and the clues discovered so far (`discovered_clues`), grouped by
+  mini-mystery thread (main solution / red herring / ruling out a suspect /
+  other) with off-script grants flagged as a "lucky break". Reads
   everything from `gameSessionStore.state`. Opened by the `notebook` / `n`
   command (`showNotebook` store flag) on desktop and the Notebook action in
   `MobileDrawer` on mobile. Closes on backdrop click, the close button, or
@@ -127,7 +138,7 @@ the desktop components.
 
 ### `MobileSession.svelte`
 
-- **Purpose**: Main mobile session orchestrator composing all sub-components into reading/input mode gameplay. Manages session mode, drawer, image viewer, input draft, and end-state display.
+- **Purpose**: Main mobile session orchestrator composing all sub-components into reading/input mode gameplay. Manages session mode, drawer, image viewer, input draft, and end-state display. Also mounts the shared `NotebookPanel` and `ClueDiscoveredToast` overlays (store-driven, so the same components serve desktop and mobile).
 - **Props**: None (reads from `gameSessionStore`, `mobilePrefs`).
 
 ### `MobileInputBar.svelte`
@@ -158,7 +169,7 @@ the desktop components.
 
 ### `MobileDrawer.svelte`
 
-- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Notebook, Help, Zoom), appearance settings (theme picker, text size), and quit button. The Notebook action opens the shared `NotebookPanel` (mobile's entry point for it, since mobile has no command line).
+- **Purpose**: Slide-down drawer from below the top bar with status info, actions (Notebook, Help, Zoom), appearance settings (theme picker, text size), and quit button. The Notebook action (with discovered-clue count) opens the shared `NotebookPanel` (mobile's entry point for it, since mobile has no command line).
 - **Props**:
   - `open`: `boolean` (bindable, controls visibility)
 

@@ -136,7 +136,10 @@ LLM and run in the standard unit gate.
 ## Roadmap
 
 - More judges: character consistency, search adjudication, accusation
-  correctness, tone / age-appropriateness.
+  correctness, tone. (Per-event age-appropriateness is already judgeable by
+  converting trace events into runtime-harness cases with
+  `evaluation/runtime/cases-from-trace.mjs` and running the `flesch` +
+  `age_appropriate` judges there.)
 - Failure → fixture: freeze a flagged turn's reconstructed context as a golden
   fixture and replay it against a different model/prompt to confirm a fix — the
   "switch the model or iterate on the prompt" loop.

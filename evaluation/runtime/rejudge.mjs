@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-// Re-run judges over a stored interaction.json — NO endpoint or model calls.
-// This is the inner loop while iterating on judges.
+// Re-run judges over a stored interaction.json — the narrator is NEVER re-run.
+// Deterministic judges (flesch) cost nothing; LLM judges (age_appropriate) do
+// call their judge model unless pointed at the judge-stub CLI variant. This is
+// the inner loop while iterating on judges.
 //
 // Usage:
 //   node evaluation/runtime/rejudge.mjs <interaction.json> [options]
@@ -64,7 +66,7 @@ async function main() {
     judgeConfig = (mod.default ?? mod.case)?.judgeConfig ?? {};
   }
 
-  const judgeResults = runJudges(judgeIds, interaction, judgeConfig);
+  const judgeResults = await runJudges(judgeIds, interaction, judgeConfig);
   const result = buildResult({ interaction, judgeResults });
 
   const outPath = args.out
@@ -73,7 +75,8 @@ async function main() {
   await fs.writeFile(outPath, JSON.stringify(result, null, 2) + "\n");
 
   for (const j of judgeResults) {
-    const extra = j.id === "flesch" && j.score !== null ? ` (worst grade ${j.score})` : "";
+    // score: FK grade for flesch, estimated reading age for age_appropriate.
+    const extra = j.score !== null && j.score !== undefined ? ` (${j.score})` : "";
     console.log(`[rejudge] ${j.id}: ${j.status.toUpperCase()}${extra}`);
   }
   console.log(`[rejudge] wrote ${path.relative(process.cwd(), outPath)}`);

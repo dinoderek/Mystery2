@@ -3,7 +3,7 @@
 A walking-skeleton pipeline for evaluating Blueprint V2 generation against
 an authored input brief, using a central, story-agnostic dimension battery.
 
-**Status:** seven dimensions enabled (see `dimensions/registry.json`); multiple specs under `specs/`.
+**Status:** eight dimensions enabled (see `dimensions/registry.json`); multiple specs under `specs/`.
 
 ## What this is
 
@@ -225,7 +225,7 @@ pass / fail / error / skipped rules.
 
 ## Enabled dimensions
 
-Six dimensions run on every blueprint (defined in `dimensions/registry.json`).
+Eight dimensions run on every blueprint (defined in `dimensions/registry.json`).
 For what each one asks, see the dimension table in
 `docs/evaluation-pipeline.md` → "Dimensions":
 
@@ -238,8 +238,15 @@ For what each one asks, see the dimension table in
 - `knowledge_coherence` — observability + deception integrity.
 - `character_grounding` — enough authored material to avoid narrator fabrication.
 - `path_payoff` — every authored path pays off.
+- `clue_graph` — analyzer asserts the discovery graph is sound; judge asks
+  whether the gating is fun and fair.
+- `age_appropriate` — analyzer screens every player-facing string with the
+  Flesch–Kincaid grade implied by `metadata.target_age`; judge assesses what
+  the formula can't see (vocabulary, figurative language, clarity) against
+  the per-age complexity profile in `packages/shared/src/age-profile.ts`.
 
-All are judge-only; no analyzers are implemented yet.
+`clue_graph` and `age_appropriate` have deterministic analyzers
+(`checks/analyzers/`); the rest are judge-only.
 
 ## Iterating the evaluator
 

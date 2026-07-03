@@ -26,8 +26,11 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > across runs and across models. It collects the narration (from the real
 > endpoint, which seeds the fixed session/history into the DB, or by replaying
 > the real runtime prompt through a local `claude`/`openai` CLI) and scores it
-> with pluggable judges (first: a deterministic Flesch–Kincaid age-readability
-> check). Like the others it persists a re-judgeable capture and uses pluggable
+> with pluggable judges: `flesch`, a deterministic Flesch–Kincaid
+> age-readability check, and `age_appropriate`, an LLM judge for what the
+> formula can't see (vocabulary, figurative language, clarity), rendered from
+> the same per-age complexity profile the narrator prompt is built from. Like
+> the others it persists a re-judgeable capture and uses pluggable
 > backends/judges. See `evaluation/runtime/README.md`.
 >
 > See `evaluation/trace/README.md` for its design and the "What's next" roadmap for
@@ -125,7 +128,8 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
                                                             ├─ knowledge_coherence (judge)
                                                             ├─ character_grounding (judge)
                                                             ├─ path_payoff         (judge)
-                                                            └─ clue_graph          (analyzer + judge)
+                                                            ├─ clue_graph          (analyzer + judge)
+                                                            └─ age_appropriate     (analyzer + judge)
                                                             // all in parallel
 ```
 
@@ -145,11 +149,13 @@ load spec ──► generate blueprint ──► mechanical checks ──► dim
    surface the same problem from a different angle.
 4. **Dimensions.** All enabled dimensions evaluate in parallel via
    `Promise.all`. Inside a dimension, analyzer runs before judge; analyzer
-   error skips the judge for that dimension only. `clue_graph` is the first
-   dimension with both: a deterministic analyzer
-   (`evaluation/checks/analyzers/clue-graph.mjs`, sharing
-   `evaluation/checks/lib/clue-graph.mjs`) asserts the graph is sound, and the
-   judge assesses whether the gating is fun and fair.
+   error skips the judge for that dimension only. Two dimensions have both
+   halves: `clue_graph` (analyzer asserts the discovery graph is sound; judge
+   assesses whether the gating is fun and fair) and `age_appropriate`
+   (analyzer screens every player-facing string with Flesch–Kincaid — sharing
+   `evaluation/lib/readability.mjs` with the runtime harness's `flesch` judge
+   and `evaluation/checks/lib/player-text.mjs` for extraction; judge assesses
+   vocabulary, figurative language, and clarity the formula can't see).
 
 The envelope is always written, even on whole-run failure.
 
@@ -261,6 +267,7 @@ Today's enabled set (`evaluation/dimensions/registry.json`):
 | `knowledge_coherence` | Can each character know the clues they reveal (observability), and is every falsehood an *authored, intended* lie rather than an accidental contradiction (deception integrity)? | No        |
 | `character_grounding` | Does each character have enough authored material that the runtime narrator won't need to fabricate?      | No        |
 | `path_payoff`       | Does **every** authored path (solution, red herring, elimination) give the player a concrete payoff?        | No        |
+| `age_appropriate`   | Is every **player-facing** string (title, one-liner, premise, notebook summaries, location descriptions, clue text) readable by a `metadata.target_age`-year-old? Analyzer screens with Flesch–Kincaid vs `age − 5`; judge assesses vocabulary, figurative language, and clarity against the per-age profile in `packages/shared/src/age-profile.ts` (a unit test keeps the brief's table in sync). | Yes       |
 
 The dimensions are an active work-in-progress. Expected near-term changes:
 
@@ -279,6 +286,8 @@ The dimensions are an active work-in-progress. Expected near-term changes:
   narrative economy, resolution, path independence, interest, hook, tone) are
   intended but not yet in scope. The minimum-path-length aspect of challenge is
   now covered by `solve_depth`; broader challenge tuning is still future work.
+  Language complexity for the target age is covered by `age_appropriate`;
+  "tone" here means narrative mood/register, which remains future work.
 
 ### Adding a dimension
 

@@ -261,12 +261,52 @@ function semanticChecksNoop() {
   return [];
 }
 
+// age_appropriate: target_age must match the blueprint, and every finding's
+// dotted path must resolve to a real string in blueprint.json.
+function semanticChecksAgeAppropriate(verdict, blueprint) {
+  const issues = [];
+  const blueprintAge = blueprint.metadata?.target_age;
+  if (verdict.target_age !== blueprintAge) {
+    issues.push(
+      `target_age ${verdict.target_age} does not match blueprint.metadata.target_age (${blueprintAge})`,
+    );
+  }
+  for (const f of verdict.findings ?? []) {
+    if (typeof resolveDottedPath(blueprint, f.path) !== "string") {
+      issues.push(
+        `findings[].path "${f.path}" does not resolve to a string in blueprint.json`,
+      );
+    }
+  }
+  return issues;
+}
+
+// Resolve "world.locations[2].clues[0].text"-style paths.
+function resolveDottedPath(root, dottedPath) {
+  if (typeof dottedPath !== "string" || dottedPath.length === 0) return undefined;
+  const segments = dottedPath.split(".").flatMap((seg) => {
+    const parts = [];
+    const name = seg.replace(/\[(\d+)\]/g, (_, idx) => {
+      parts.push(Number(idx));
+      return "";
+    });
+    return name.length > 0 ? [name, ...parts] : parts;
+  });
+  let cursor = root;
+  for (const seg of segments) {
+    if (cursor === null || typeof cursor !== "object") return undefined;
+    cursor = cursor[seg];
+  }
+  return cursor;
+}
+
 const SEMANTIC = {
   solve_depth: semanticChecksSolveDepth,
   fairness: semanticChecksFairness,
   timeline_coherence: semanticChecksNoop,
   knowledge_coherence: semanticChecksNoop,
   character_grounding: semanticChecksCharacterGrounding,
+  age_appropriate: semanticChecksAgeAppropriate,
 };
 
 async function main() {

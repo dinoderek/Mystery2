@@ -94,8 +94,9 @@ Load additional guidance based on the area you are touching:
   `evaluation/`, `packages/shared/src/evaluation/`, or the generator/judge
   harnesses): start with `docs/evaluation-pipeline.md` — the shared high-level
   design, with conditional pointers onward. The runbook + in-depth reference
-  live next to the code: `evaluation/README.md` (blueprint pipeline) and
-  `evaluation/trace/README.md` (game-master trace pipeline). Note that
+  live next to the code, one per pipeline: `evaluation/README.md` (blueprint
+  pipeline), `evaluation/trace/README.md` (game-master trace pipeline), and
+  `evaluation/runtime/README.md` (runtime narrator harness). Note that
   `docs/blueprint-evaluation.md` describes the deprecated single-prompt
   evaluator and is historical.
 

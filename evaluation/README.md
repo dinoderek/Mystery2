@@ -22,10 +22,13 @@ The pipeline:
 1. Generates a Blueprint V2 by shelling out to a pluggable LLM CLI
    (`config/cli.json` → `generate` step). Or skips generation if you pass
    `--blueprint <path>`.
-2. Runs always-on **mechanical** checks (schema, brief-derived counts,
-   `mustInclude`, cover-ups, orphan clues, and `requires_satisfiable` — the
-   clue discovery graph references real clues, is acyclic, and keeps every
-   solution clue reachable from ungated roots).
+2. Runs always-on **mechanical** checks — brief and blueprint schema validity
+   (`brief_schema_valid`, `blueprint_schema_valid`), the brief-derived counts
+   (`culprit_count_matches_brief`, `location_count_matches_brief`,
+   `character_count_matches_brief`, `red_herring_count_matches_brief`),
+   `no_orphan_clues`, and `requires_satisfiable` — the clue discovery graph
+   references real clues, is acyclic, and keeps every solution clue reachable
+   from ungated roots.
 3. For each dimension in the registry, runs the **analyzer** (cheap
    deterministic code) and then the **judge** (shells out to the LLM CLI's
    `judge` step) and combines them into a per-dimension verdict.
@@ -72,13 +75,22 @@ evaluation/
 │   └── judge-system.md
 ├── checks/
 │   ├── mechanical.mjs      # always-on mechanical checks
-│   ├── lib/clue-graph.mjs  # shared clue discovery-graph analysis
-│   └── analyzers/          # optional per-dimension analyzer (.mjs); clue-graph.mjs
+│   ├── lib/
+│   │   ├── clue-graph.mjs  # shared clue discovery-graph analysis
+│   │   └── player-text.mjs # extract player-facing text from a blueprint
+│   └── analyzers/          # optional per-dimension analyzer (.mjs)
+│       ├── clue-graph.mjs
+│       └── age-appropriate.mjs
 ├── pipeline/
 │   ├── run.mjs             # entrypoint
-│   ├── cli-runner.mjs      # pluggable CLI shell-out
+│   ├── cli-runner.mjs      # pluggable CLI shell-out (+ retries)
 │   ├── load.mjs            # spec / dimension / analyzer loaders
-│   └── envelope.mjs        # result envelope shape
+│   ├── envelope.mjs        # result envelope shape
+│   ├── progress.mjs        # live progress ticks over the agent event streams
+│   ├── timing.mjs          # monotonic-clock stage/dimension timing
+│   └── validate.mjs        # schema-validator CLI for candidate JSON files
+├── lib/
+│   └── readability.mjs     # deterministic readability metrics (shared)
 ├── config/
 │   ├── cli.example.json    # template — copy to cli.json
 │   └── wrappers/           # bundled default CLI wrappers
@@ -193,7 +205,7 @@ independent). The code default is `0` (no retries); the bundled `cli.json` sets
 
 Per-attempt diagnostics are written to the envelope:
 
-- `generation.attempts: [{ attempt, outcome: "ok"|"cli_fail", duration_ms, error? }]`
+- `generation.attempts: [{ attempt, outcome: "ok"|"cli_fail"|"parse_fail", duration_ms, error? }]`
 - `dimensions[].judge.attempts: [...]` on success, or
   `dimensions[].error.attempts: [...]` on final failure, with outcomes
   `"ok" | "cli_fail" | "schema_fail"`.
@@ -213,7 +225,8 @@ Three result kinds, one envelope (rationale in `docs/evaluation-pipeline.md`
 - **Mechanical** — always-on deterministic checks (schema, brief-derived
   counts, orphan clues). Failure means the artifact is broken.
 - **Analyzer** — optional deterministic per-dimension pre-check
-  (`checks/analyzers/<id>.mjs`). None are implemented today.
+  (`checks/analyzers/<id>.mjs`). Two are implemented: `clue_graph` and
+  `age_appropriate`; the other dimensions are judge-only.
 - **Judge** — one LLM call per dimension via the pluggable CLI, using
   `dimensions/<id>.md` (prompt) + `dimensions/<id>.schema.ts` (Zod). The
   pipeline appends the schema as JSON Schema and validates the response; a

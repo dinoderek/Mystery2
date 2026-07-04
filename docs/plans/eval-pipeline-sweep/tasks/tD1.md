@@ -10,8 +10,9 @@ is migrated off the old evaluator. This card lands the deletion + migration per
 the design decision.
 
 **Inputs:** tDESIGN merged. Binding contract: `designs/tDESIGN.md ## Decision`
-(what `generate-blueprint.mjs`'s post-generation verification does after the old
-evaluator is removed).
+(the decided post-deprecation verification behavior for
+`generate-blueprint.mjs`). Read that section — do not re-derive it from this
+card.
 
 > Updated from tDESIGN: see `designs/tDESIGN.md ## Decision` — implement that
 > verification behavior; do not re-decide it. Log any disagreement in the PR's

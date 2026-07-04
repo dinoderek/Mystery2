@@ -70,9 +70,11 @@ Validator exit code 0. Nothing else counts.
   `necessary_clues` must be a real blueprint clue, and `shortest_path_id` must
   be one of those path ids (or `null`).
 - **For `age_appropriate`:** `target_age` must equal
-  `blueprint.metadata.target_age`, and every `findings[].path` must be a real
-  dotted path that resolves to a string in `blueprint.json` (e.g.
-  `world.locations[2].clues[0].text`). The validator checks both.
+  `blueprint.metadata.target_age`, and every `findings[].path` must be one of
+  the blueprint's **player-facing** string paths (the dimension definition
+  lists the fields; spell paths exactly, e.g.
+  `world.locations[2].clues[0].text`). Findings on narrator-only fields are
+  rejected. The validator checks both.
 - **Be terse in `reasoning` fields.** Bullet-equivalent prose. Long
   explanations dilute signal.
 - **No markdown code fences** in `verdict.json`. The file must be a single

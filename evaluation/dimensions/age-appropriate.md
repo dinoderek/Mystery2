@@ -33,6 +33,8 @@ child of the target age would not know and cannot work out from context.
 - `narrative.starting_knowledge.mystery_summary`
 - `narrative.starting_knowledge.locations[].summary`
 - `narrative.starting_knowledge.characters[].summary`
+- `world.locations[].name` and `world.locations[].sub_locations[].name`
+  (shown in the notebook and movement/search narration)
 - `world.locations[].description`
 - all clue text: `world.locations[].clues[].text`,
   `world.locations[].sub_locations[].clues[].text`,
@@ -41,7 +43,12 @@ child of the target age would not know and cannot work out from context.
 Everything else — sub-location hints, character backgrounds, personalities,
 alibis, tells, flavor knowledge, actual actions, ground truth, image
 descriptions — is narrator-only or operator-only material that the runtime
-model rewrites under its own age guidance. Do **not** flag it.
+model rewrites under its own age guidance. Do **not** flag it. Character
+names are also out of scope: proper nouns are learned, not read for meaning.
+
+Every `findings[].path` must be spelled exactly as listed above with concrete
+indices (e.g. `world.locations[0].clues[1].text`) — the validator rejects
+paths outside this set.
 
 ## Complexity targets per age
 

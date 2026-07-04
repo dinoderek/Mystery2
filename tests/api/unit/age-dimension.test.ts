@@ -27,11 +27,13 @@ function makeBlueprint(overrides: Record<string, unknown> = {}) {
       locations: [
         {
           id: "loc-1",
+          name: "The Kitchen",
           description: SIMPLE,
           clues: [{ id: "clue-1", text: SIMPLE }],
           sub_locations: [
             {
               id: "sub-1",
+              name: "The Cookie Jar",
               hint: "Narrator-only steering hint, never shown to the player.",
               clues: [{ id: "clue-2", text: SIMPLE }],
             },
@@ -62,8 +64,10 @@ describe("extractPlayerFacingText", () => {
       "narrative.starting_knowledge.mystery_summary",
       "narrative.starting_knowledge.locations[0].summary",
       "narrative.starting_knowledge.characters[0].summary",
+      "world.locations[0].name",
       "world.locations[0].description",
       "world.locations[0].clues[0].text",
+      "world.locations[0].sub_locations[0].name",
       "world.locations[0].sub_locations[0].clues[0].text",
       "world.characters[0].clues[0].text",
     ]);
@@ -89,7 +93,7 @@ describe("age_appropriate analyzer", () => {
     const result = analyze({ blueprint: makeBlueprint(), context: {} });
     expect(result.status).toBe("pass");
     expect(result.details.violations).toEqual([]);
-    expect(result.details.strings_total).toBe(10);
+    expect(result.details.strings_total).toBe(12);
   });
 
   it("fails prose far above the target age", () => {
@@ -189,5 +193,8 @@ describe("dimension brief stays in sync with age-profile.ts", () => {
       const row = `| ${p.age} | ${p.ukYear} | ${p.softSentenceWords} | ${p.newWordAllowance} | ${p.vocabGuidance} |`;
       expect(brief, `missing/stale table row for age ${p.age}`).toContain(row);
     }
+    // ... and no stale extra rows for ages that no longer exist.
+    const dataRows = brief.match(/^\| \d+ \|/gm) ?? [];
+    expect(dataRows).toHaveLength(allAgeProfiles().length);
   });
 });

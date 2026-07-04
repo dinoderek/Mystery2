@@ -2,11 +2,12 @@
 //
 // "Player-facing" here means text that reaches the player either verbatim
 // (title and one-liner in the mystery list, premise and starting-knowledge
-// summaries in the in-game notebook, clue text once discovered) or
-// near-verbatim as the material the narrator is told to stay close to
-// (location descriptions). This matches the field list that
-// renderGenerationGuidance() in packages/shared/src/age-profile.ts tells the
-// generator to keep age-appropriate.
+// summaries in the in-game notebook, clue text once discovered, location and
+// sub-location names in the notebook/move narration) or near-verbatim as the
+// material the narrator is told to stay close to (location descriptions).
+// This matches the field list that renderGenerationGuidance() in
+// packages/shared/src/age-profile.ts tells the generator to keep
+// age-appropriate, plus the names.
 //
 // Deliberately excluded: narrator-only material the model paraphrases under
 // its own runtime age guidance — sub-location hints ("never shown directly to
@@ -52,6 +53,7 @@ export function extractPlayerFacingText(blueprint) {
   });
 
   (blueprint.world?.locations ?? []).forEach((loc, i) => {
+    push(`world.locations[${i}].name`, "location_name", loc?.name);
     push(
       `world.locations[${i}].description`,
       "location_description",
@@ -61,6 +63,11 @@ export function extractPlayerFacingText(blueprint) {
       push(`world.locations[${i}].clues[${j}].text`, "clue_text", clue?.text);
     });
     (loc?.sub_locations ?? []).forEach((sub, j) => {
+      push(
+        `world.locations[${i}].sub_locations[${j}].name`,
+        "location_name",
+        sub?.name,
+      );
       (sub?.clues ?? []).forEach((clue, k) => {
         push(
           `world.locations[${i}].sub_locations[${j}].clues[${k}].text`,

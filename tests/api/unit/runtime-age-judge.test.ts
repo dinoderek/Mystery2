@@ -162,14 +162,16 @@ describe("validateVerdict", () => {
     ).toThrow(/kind/);
   });
 
-  it("rejects a non-numeric reading age", () => {
-    expect(() =>
-      validateVerdict({
-        estimated_reading_age: "eight",
-        findings: [],
-        verdict: "pass",
-        reasoning: "r",
-      }),
-    ).toThrow(/estimated_reading_age/);
+  it("rejects a non-integer reading age", () => {
+    for (const bad of ["eight", 8.5, Number.NaN]) {
+      expect(() =>
+        validateVerdict({
+          estimated_reading_age: bad,
+          findings: [],
+          verdict: "pass",
+          reasoning: "r",
+        }),
+      ).toThrow(/estimated_reading_age/);
+    }
   });
 });

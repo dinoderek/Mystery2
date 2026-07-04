@@ -91,8 +91,8 @@ export function validateVerdict(parsed) {
   if (parsed.verdict !== "pass" && parsed.verdict !== "fail") {
     throw new Error(`judge output verdict must be "pass" or "fail", got ${JSON.stringify(parsed.verdict)}`);
   }
-  if (!Number.isFinite(parsed.estimated_reading_age)) {
-    throw new Error("judge output estimated_reading_age must be a number");
+  if (!Number.isInteger(parsed.estimated_reading_age)) {
+    throw new Error("judge output estimated_reading_age must be an integer");
   }
   if (!Array.isArray(parsed.findings)) {
     throw new Error("judge output findings must be an array");

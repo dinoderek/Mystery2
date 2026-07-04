@@ -302,7 +302,13 @@ Three files:
 - `evaluation/checks/analyzers/<id>.mjs` — optional. A deterministic
   pre-check that runs before the judge.
 
-No code changes elsewhere. The loader picks them up by ID.
+No code changes elsewhere: the pipeline loader, the schema validator CLI
+(`evaluation/pipeline/validate.mjs`), and the judge-workspace validator all
+resolve a dimension's files by ID from disk. One optional extra: if the
+dimension's verdict cites blueprint ids/paths that can be checked
+mechanically, register a semantic check in
+`evaluation/judge-harness/scripts/validate-judge-output.mjs` (dimensions
+without one get the shape check only).
 
 ## Spec file
 

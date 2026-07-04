@@ -21,6 +21,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -33,7 +34,7 @@ function parseArgs(argv) {
 
 // Trim a trace event's payload to the fields the runtime context builder reads
 // for history (keeps generated cases readable without losing fidelity).
-function historyPayload(payload) {
+export function historyPayload(payload) {
   const keep = {};
   for (const k of [
     "player_input", "character_id", "character_name", "location_id",
@@ -55,7 +56,7 @@ function toFragment(event) {
 }
 
 // Build the `action` for a target event, or null if the type isn't supported.
-function actionForEvent(event) {
+export function actionForEvent(event) {
   const p = event.payload ?? {};
   switch (event.event_type) {
     case "ask": return { type: "ask", player_input: p.player_input ?? "" };
@@ -67,7 +68,7 @@ function actionForEvent(event) {
 }
 
 // Pick up to `max` items, evenly spaced across the array (first..last).
-function sampleEvenly(items, max) {
+export function sampleEvenly(items, max) {
   if (items.length <= max) return items;
   const out = [];
   for (let i = 0; i < max; i += 1) {
@@ -76,7 +77,7 @@ function sampleEvenly(items, max) {
   return [...new Set(out)];
 }
 
-function buildCase(event, priorEvents, blueprintPath, judges) {
+export function buildCase(event, priorEvents, blueprintPath, judges) {
   const p = event.payload ?? {};
   const diag = p.diagnostics ?? {};
   const given = {
@@ -153,7 +154,10 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(`[cases-from-trace] error: ${err instanceof Error ? err.stack : err}`);
-  process.exit(1);
-});
+const isMain = import.meta.url === pathToFileURL(process.argv[1] ?? "").href;
+if (isMain) {
+  main().catch((err) => {
+    console.error(`[cases-from-trace] error: ${err instanceof Error ? err.stack : err}`);
+    process.exit(1);
+  });
+}

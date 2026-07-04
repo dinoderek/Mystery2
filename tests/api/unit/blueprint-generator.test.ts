@@ -39,37 +39,22 @@ function createSuccessResponse(contentObject: unknown = validBlueprint) {
   );
 }
 
+// Post-generation verification now returns a mechanical structural report
+// (the shared deterministic check array) rather than an LLM judgement.
+function mechanicalCheck(id: string, status: "pass" | "fail" = "pass") {
+  return { id, kind: "mechanical", status, details: null };
+}
+
 const passingVerification = {
-  overall_pass: true,
-  dimensions: {
-    brief_alignment: { yes: true, reasoning: "Aligned", issues: [] },
-    ground_truth_quality: { yes: true, reasoning: "Grounded", issues: [] },
-    solvable_paths_exist: { yes: true, reasoning: "Solvable", issues: [] },
-    location_clues_have_role: { yes: true, reasoning: "Clear", issues: [] },
-    character_clues_have_role: { yes: true, reasoning: "Clear", issues: [] },
-    red_herrings_are_fair: { yes: true, reasoning: "Fair", issues: [] },
-    no_dead_ends: { yes: true, reasoning: "No dead ends", issues: [] },
-    consistent_facts: { yes: true, reasoning: "Consistent", issues: [] },
-    no_redundant_clues: { yes: true, reasoning: "Distinct", issues: [] },
-    agenda_consistency: { yes: true, reasoning: "Consistent agendas", issues: [] },
-  },
-  solution_paths: [
-    {
-      name: "main path",
-      conclusion: "The culprit is identified.",
-      reasoning_steps: [
-        {
-          claim: "A valid clue chain exists.",
-          evidence_paths: ["solution_paths[0]"],
-        },
-      ],
-    },
+  passed: true,
+  checks: [
+    mechanicalCheck("brief_schema_valid"),
+    mechanicalCheck("blueprint_schema_valid"),
+    mechanicalCheck("culprit_count_matches_brief"),
+    mechanicalCheck("no_orphan_clues"),
+    mechanicalCheck("requires_satisfiable"),
   ],
-  location_clue_audit: [],
-  character_clue_audit: [],
-  red_herrings: [],
-  dead_ends: [],
-  redundant_clues: [],
+  failedChecks: [],
 };
 
 describe("blueprint generator", () => {
@@ -407,11 +392,11 @@ describe("generate-blueprint CLI", () => {
       briefFiles: ["/tmp/story.json"],
       output: "",
       models: ["openai/gpt-4.1-mini"],
-      verificationModel: "google/gemini-3-flash-preview",
       openRouterApiKey: "env-key",
       timeoutMs: 90000,
       parallelism: 1,
     });
+    expect(parsed).not.toHaveProperty("verificationModel");
     expect(parsed.outputFile).toMatch(/blueprints[/\\]blueprint$/);
   });
 
@@ -440,29 +425,28 @@ describe("generate-blueprint CLI", () => {
       output: "",
       outputFile: "/tmp/generated/blueprint",
       models: ["openai/gpt-4.1-mini", "google/gemini-2.5-flash"],
-      verificationModel: "google/gemini-3-flash-preview",
       openRouterApiKey: "env-key",
       timeoutMs: 120000,
       parallelism: 3,
     });
   });
 
-  it("parses an explicit verification model override", () => {
-    const parsed = parseGenerateBlueprintArgs(
-      [
-        "--brief-file",
-        "/tmp/story.json",
-        "--model",
-        "openai/gpt-4.1-mini",
-        "--verification-model",
-        "openai/gpt-4.1-mini",
-      ],
-      {
-        OPENROUTER_API_KEY: "env-key",
-      },
-    );
-
-    expect(parsed.verificationModel).toBe("openai/gpt-4.1-mini");
+  it("rejects the removed verification-model flag", () => {
+    expect(() =>
+      parseGenerateBlueprintArgs(
+        [
+          "--brief-file",
+          "/tmp/story.json",
+          "--model",
+          "openai/gpt-4.1-mini",
+          "--verification-model",
+          "openai/gpt-4.1-mini",
+        ],
+        {
+          OPENROUTER_API_KEY: "env-key",
+        },
+      ),
+    ).toThrow(/Unknown option: --verification-model/);
   });
 
   it("defaults output-file for multiple jobs when not specified", () => {
@@ -502,7 +486,6 @@ describe("generate-blueprint CLI", () => {
         output: outputPath,
         outputFile: "",
         models: ["openai/gpt-4.1-mini"],
-        verificationModel: "google/gemini-3-flash-preview",
         openRouterApiKey: "test-key",
         parallelism: 1,
       },
@@ -519,10 +502,66 @@ describe("generate-blueprint CLI", () => {
       await readFile(path.join(tmpDir, "blueprint.verification.json"), "utf-8"),
     );
     expect(verification.status).toBe("passed");
-    expect(verification.overall_pass).toBe(true);
-    expect(verification.verification_model).toBe(
-      "google/gemini-3-flash-preview",
+    expect(verification.passed).toBe(true);
+    expect(verification.failed_checks).toEqual([]);
+    expect(verification.checks.map((c: { id: string }) => c.id)).toContain(
+      "no_orphan_clues",
     );
+    expect(verification).not.toHaveProperty("verification_model");
+    expect(verification).not.toHaveProperty("evaluation");
+  });
+
+  it("runs the in-process mechanical verification when no verifier is injected", async () => {
+    const tmpDir = await mkdtemp(
+      path.join(os.tmpdir(), "blueprint-cli-mechanical-"),
+    );
+    const briefPath = path.join(tmpDir, "brief.json");
+    const outputPath = path.join(tmpDir, "blueprint.json");
+
+    await writeFile(
+      briefPath,
+      JSON.stringify({
+        brief: "A library mystery for kids.",
+        targetAge: 8,
+      }),
+      "utf-8",
+    );
+
+    // Only the generator is stubbed; verification runs the real shared
+    // deterministic checks against the written blueprint — no network, no model.
+    await runBlueprintGenerationCli(
+      {
+        briefFiles: [briefPath],
+        output: outputPath,
+        outputFile: "",
+        models: ["openai/gpt-4.1-mini"],
+        openRouterApiKey: "test-key",
+        parallelism: 1,
+      },
+      {
+        generateBlueprintImpl: vi.fn().mockResolvedValue(validBlueprint),
+      },
+    );
+
+    const verification = JSON.parse(
+      await readFile(path.join(tmpDir, "blueprint.verification.json"), "utf-8"),
+    );
+    expect(verification.status).toBe("passed");
+    expect(verification.passed).toBe(true);
+    expect(verification.failed_checks).toEqual([]);
+    const checkIds = verification.checks.map((c: { id: string }) => c.id);
+    expect(checkIds).toEqual(
+      expect.arrayContaining([
+        "brief_schema_valid",
+        "blueprint_schema_valid",
+        "no_orphan_clues",
+        "requires_satisfiable",
+      ]),
+    );
+    for (const check of verification.checks) {
+      expect(check.kind).toBe("mechanical");
+      expect(check.status).toBe("pass");
+    }
   });
 
   it("writes one composed output file per brief/model combination", async () => {
@@ -567,7 +606,6 @@ describe("generate-blueprint CLI", () => {
         output: "",
         outputFile: outputBase,
         models: ["openai/gpt-4.1-mini", "google/gemini-2.5-flash"],
-        verificationModel: "google/gemini-3-flash-preview",
         openRouterApiKey: "test-key",
         parallelism: 1,
       },
@@ -636,7 +674,6 @@ describe("generate-blueprint CLI", () => {
         output: "",
         outputFile: "",
         models: ["openai/gpt-4.1-mini"],
-        verificationModel: "google/gemini-3-flash-preview",
         openRouterApiKey: "test-key",
         parallelism: 1,
       },
@@ -674,7 +711,6 @@ describe("generate-blueprint CLI", () => {
         output: "",
         outputFile: outputBase,
         models: ["openai/gpt-4.1-mini"],
-        verificationModel: "google/gemini-3-flash-preview",
         openRouterApiKey: "",
         parallelism: 1,
       },
@@ -722,8 +758,7 @@ describe("generate-blueprint CLI", () => {
           output: "",
           outputFile: "",
           models: ["openai/gpt-4.1-mini"],
-          verificationModel: "google/gemini-3-flash-preview",
-          openRouterApiKey: "test-key",
+            openRouterApiKey: "test-key",
           parallelism: 1,
         },
         {
@@ -766,37 +801,19 @@ describe("generate-blueprint CLI", () => {
           output: outputPath,
           outputFile: "",
           models: ["openai/gpt-4.1-mini"],
-          verificationModel: "openai/gpt-4.1-mini",
           openRouterApiKey: "test-key",
           parallelism: 1,
         },
         {
           generateBlueprintImpl: vi.fn().mockResolvedValue(validBlueprint),
           verifyBlueprintImpl: vi.fn().mockResolvedValue({
-            ...passingVerification,
-            overall_pass: false,
-            dimensions: {
-              ...passingVerification.dimensions,
-              no_dead_ends: {
-                yes: false,
-                reasoning: "",
-                issues: [
-                  {
-                    title: "Dead end",
-                    details: "One clue chain cannot be resolved.",
-                    evidence_paths: ["world.locations[0].clues[0]"],
-                  },
-                ],
-              },
-            },
-            dead_ends: [
-              {
-                description: "An unresolved clue path.",
-                why_it_is_a_dead_end: "It has no supporting resolution.",
-                evidence_paths: ["world.locations[0].clues[0]"],
-              },
+            passed: false,
+            checks: [
+              mechanicalCheck("brief_schema_valid"),
+              mechanicalCheck("blueprint_schema_valid"),
+              mechanicalCheck("no_orphan_clues", "fail"),
             ],
-            solution_paths: [],
+            failedChecks: ["no_orphan_clues"],
           }),
         },
       ),
@@ -811,9 +828,14 @@ describe("generate-blueprint CLI", () => {
       await readFile(path.join(tmpDir, "blueprint.verification.json"), "utf-8"),
     );
     expect(verification.status).toBe("failed");
-    expect(verification.overall_pass).toBe(false);
-    expect(verification.evaluation.dimensions.no_dead_ends.yes).toBe(false);
-    expect(verification.verification_model).toBe("openai/gpt-4.1-mini");
+    expect(verification.passed).toBe(false);
+    expect(verification.failed_checks).toEqual(["no_orphan_clues"]);
+    expect(
+      verification.checks.find(
+        (c: { id: string }) => c.id === "no_orphan_clues",
+      ).status,
+    ).toBe("fail");
+    expect(verification).not.toHaveProperty("verification_model");
   });
 
   it("writes invalid generated JSON and a verification file on generator schema-validation failure", async () => {
@@ -848,8 +870,7 @@ describe("generate-blueprint CLI", () => {
           output: outputPath,
           outputFile: "",
           models: ["openai/gpt-4.1-mini"],
-          verificationModel: "google/gemini-3-flash-preview",
-          openRouterApiKey: "test-key",
+            openRouterApiKey: "test-key",
           parallelism: 1,
         },
         {
@@ -880,9 +901,7 @@ describe("generate-blueprint CLI", () => {
     );
     expect(verification.status).toBe("error");
     expect(verification.error.code).toBe("SCHEMA_VALIDATION_FAILED");
-    expect(verification.verification_model).toBe(
-      "google/gemini-3-flash-preview",
-    );
+    expect(verification).not.toHaveProperty("verification_model");
   });
 
   it("logs progress and can run jobs in parallel", async () => {
@@ -921,7 +940,6 @@ describe("generate-blueprint CLI", () => {
         output: "",
         outputFile: path.join(tmpDir, "generated", "blueprint"),
         models: ["openai/gpt-4.1-mini"],
-        verificationModel: "google/gemini-3-flash-preview",
         openRouterApiKey: "test-key",
         parallelism: 2,
       },

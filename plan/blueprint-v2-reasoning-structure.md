@@ -265,7 +265,7 @@ Do not broaden the change to all narration roles unless needed later.
 - Documentation checks:
   - `docs/blueprint-generation-flows.md`
   - `docs/ai-runtime.md`
-  - `docs/blueprint-evaluation.md`
+  - `docs/evaluation-pipeline.md`
 
 ## Assumptions
 

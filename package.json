@@ -22,7 +22,6 @@
         "users:update-passwords": "node scripts/update-bootstrap-passwords.mjs",
         "validate:blueprint": "node scripts/validate-blueprint.mjs",
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
-        "build:evaluation-markdown": "node scripts/build-blueprint-evaluation-markdown.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
         "eval": "node evaluation/pipeline/run.mjs",
         "eval:trace": "node evaluation/trace/run.mjs",

@@ -18,16 +18,16 @@ Orchestrator running log. One entry per iteration. Newest at bottom.
 ## Task state (pending | open | approved | merged)
 - tDESIGN — approved (PR #109, awaiting human merge)
 - tA1 — approved (PR #110, awaiting human merge)
-- tA2 — open (PR #113, reviewer dispatched)
+- tA2 — approved (PR #113, awaiting human merge)
 - tA3 — pending (blocked ← tA1 merge)
-- tB1 — open (PR #112, reviewer dispatched)
+- tB1 — approved (PR #112, awaiting human merge)
 - tB2 — pending (blocked ← tB1 + tA3)
 - tB3 — pending (blocked ← tDESIGN + tD1)
-- tC1 — open (PR #111, reviewer dispatched)
-- tC2 — open (PR TBD, builder in flight)
-- tC3 — open (PR TBD, builder in flight)
-- tC4 — open (PR TBD, builder in flight)
-- tC5 — open (PR TBD, builder in flight)
+- tC1 — approved (PR #111, awaiting human merge)
+- tC2 — approved (PR #114, awaiting human merge)
+- tC3 — open (PR #117, reviewer dispatched)
+- tC4 — open (PR #116, reviewer dispatched)
+- tC5 — open (PR #115, reviewer dispatched)
 - tD1 — pending (blocked ← tDESIGN merge)
 - tFINAL — pending (blocked ← all)
 
@@ -104,3 +104,22 @@ Orchestrator running log. One entry per iteration. Newest at bottom.
   - After #109 merges: verify `designs/tDESIGN.md` + pointer Inputs edits to
     tD1/tB3 are on main before dispatching tD1/tB3.
   - After #110 merges: tA3 operates on the corrected README content.
+
+### Iteration 7 (batched — several completions)
+- Reviewers APPROVED: tC1 #111, tB1 #112, tA2 #113, tC2 #114 (each independently
+  re-ran tests where applicable).
+- Builders completed: tC2 #114, tC4 #116, tC5 #115, tC3 #117.
+- PR-number map: tDESIGN #109, tA1 #110, tC1 #111, tB1 #112, tA2 #113, tC2 #114,
+  tC5 #115, tC4 #116, tC3 #117. (Bookkeeping #108.)
+- Reviewers now in flight: #116 (tC4), #115 (tC5), #117 (tC3).
+- SOURCE-CHANGE deviations to watch at audit (all flagged behavior-preserving,
+  matching the existing `import.meta.url` main-entry-guard convention used by
+  run.mjs/extract.mjs):
+  - tC1 #111: `export countExtraAttempts` in pipeline/envelope.mjs.
+  - tC2 #114: no source change (functions already exported).
+  - tC3 #117: `export findOrphanClues` in checks/mechanical.mjs.
+  - tC4 #116: `export knownSchemaNames` + main-entry guard in pipeline/validate.mjs.
+  - tC5 #115: 4 helper exports + main-entry guard in runtime/cases-from-trace.mjs.
+- ALL non-dependent tasks now dispatched. Remaining pending: tA3 (←tA1), tD1
+  (←tDESIGN), tB2 (←tB1+tA3), tB3 (←tDESIGN+tD1), tFINAL (←all). Fully gated on
+  human merges; will resume dispatch on merge events.

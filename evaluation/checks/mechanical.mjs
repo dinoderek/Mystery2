@@ -105,7 +105,7 @@ function mkCheck(id, passed, details) {
   };
 }
 
-function findOrphanClues(bp) {
+export function findOrphanClues(bp) {
   const referenced = new Set();
   const allPaths = [...bp.solution_paths, ...bp.red_herrings, ...bp.suspect_elimination_paths];
   for (const p of allPaths) {

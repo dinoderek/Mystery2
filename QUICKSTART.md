@@ -144,6 +144,32 @@ chat UI. No `--model` or API key required. Output defaults to
 `$MYSTERY_CONFIG_ROOT/chat-gen-prompts/` (or `chat-gen-prompts/` under repo
 root). Override with `--output` or `--output-file`.
 
+## Evaluation Pipelines
+
+Three peer evaluation pipelines score different artifacts. Each is driven by npm
+scripts and documented next to its code. Pass-through flags go after `--`.
+
+| Pipeline | What it evaluates | npm scripts |
+|----------|-------------------|-------------|
+| Blueprint | Generated mystery blueprints | `npm run eval` |
+| Trace | Played game-master traces | `npm run eval:trace`, `npm run eval:trace:extract` |
+| Runtime | Live narrator responses to a single action | `npm run eval:runtime`, `npm run eval:runtime:rejudge`, `npm run eval:cases-from-trace` |
+
+Start with [`docs/evaluation-pipeline.md`](docs/evaluation-pipeline.md) for the
+shared design, then the per-pipeline runbooks:
+[`evaluation/README.md`](evaluation/README.md) (blueprint),
+[`evaluation/trace/README.md`](evaluation/trace/README.md) (trace), and
+[`evaluation/runtime/README.md`](evaluation/runtime/README.md) (runtime).
+
+```bash
+npm run eval -- --help                       # blueprint eval
+npm run eval:trace -- --help                 # trace eval
+npm run eval:trace:extract -- --help         # pull a trace from a played session
+npm run eval:runtime -- <case-or-dir>        # eval a runtime case
+npm run eval:runtime:rejudge -- <interaction.json>  # re-judge a stored interaction
+npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a trace
+```
+
 ## Image Generation
 
 Env file: copy `.env.images.example` to `.env.images.local`.

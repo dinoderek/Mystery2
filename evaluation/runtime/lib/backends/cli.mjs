@@ -13,22 +13,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCliWithRetries } from "../../../pipeline/cli-runner.mjs";
-import { loadCliConfig } from "../cli-config.mjs";
+import { loadCliConfig, parseFencedJson } from "../cli-config.mjs";
 import { buildRoleRequest } from "../prompt-build.mjs";
 import { makeResponse } from "../transcript.mjs";
 import { getAction, normalizeHistory } from "../roles.mjs";
 
 export const id = "cli";
-
-/** Strip ```json fences a model may wrap around its JSON, then parse. */
-function parseRoleJson(text) {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  return JSON.parse(cleaned);
-}
 
 export async function collect(testCase, ctx) {
   const variant = ctx.variant ?? "claude";
@@ -65,7 +55,7 @@ export async function collect(testCase, ctx) {
     throw new Error(`CLI ${testCase.action.type} failed: ${result.error?.message}`);
   }
 
-  const roleOutput = parseRoleJson(result.extracted);
+  const roleOutput = parseFencedJson(result.extracted);
   const narration = typeof roleOutput.narration === "string" ? roleOutput.narration : "";
   const speaker = action.cli.speaker(testCase.given, testCase.action, blueprint);
 

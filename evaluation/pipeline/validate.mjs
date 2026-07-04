@@ -67,7 +67,23 @@ if (schemaName === "blueprint") {
     );
     process.exit(2);
   }
-  ({ schema } = await import(schemaPath));
+  // Guard the load as well as the existence: a schema file with a load-time
+  // error or without a named `schema` export must produce the same clean
+  // exit-2 contract as an unknown name, not an uncaught stack trace.
+  try {
+    ({ schema } = await import(schemaPath));
+  } catch (err) {
+    process.stderr.write(
+      `Schema for "${schemaName}" failed to load from ${schemaPath}: ${err.message}\n`,
+    );
+    process.exit(2);
+  }
+  if (typeof schema?.safeParse !== "function") {
+    process.stderr.write(
+      `Schema for "${schemaName}" must export a named 'schema' (Zod schema) from ${schemaPath}.\n`,
+    );
+    process.exit(2);
+  }
 }
 
 let text;

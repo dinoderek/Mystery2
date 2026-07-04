@@ -1,9 +1,20 @@
-// Loader for the runtime harness's CLI bindings (config/cli.json, falling
-// back to the committed config/cli.example.json). Shared by the cli model
-// backend (narrator role variants) and the LLM judges (judge variants).
+// Shared plumbing for the runtime harness's pluggable CLIs: the bindings
+// loader (config/cli.json, falling back to the committed
+// config/cli.example.json) and the model-output JSON parser. Used by the cli
+// model backend (narrator role variants) and the LLM judges (judge variants).
 
 import fs from "node:fs/promises";
 import path from "node:path";
+
+/** Strip ```json fences a model may wrap around its JSON, then parse. */
+export function parseFencedJson(text) {
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  return JSON.parse(cleaned);
+}
 
 const CONFIG_DIR = path.join("evaluation", "runtime", "config");
 

@@ -21,7 +21,7 @@
 //   targetAge  — override the interaction's target_age
 
 import { runCliWithRetries } from "../../../pipeline/cli-runner.mjs";
-import { loadCliConfig } from "../cli-config.mjs";
+import { loadCliConfig, parseFencedJson } from "../cli-config.mjs";
 
 export const id = "age_appropriate";
 
@@ -71,16 +71,6 @@ async function buildSystemPrompt(targetAge) {
     ``,
     OUTPUT_CONTRACT,
   ].join("\n");
-}
-
-/** Strip ```json fences a model may wrap around its JSON, then parse. */
-function parseVerdictJson(text) {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  return JSON.parse(cleaned);
 }
 
 /** Shape-check the model's verdict; throws with a specific message on miss. */
@@ -171,7 +161,7 @@ export async function judge(interaction, { config = {} } = {}) {
     userMessage,
     logDir: null,
     retries: entry.retries ?? 0,
-    validateExtracted: (extracted) => validateVerdict(parseVerdictJson(extracted)),
+    validateExtracted: (extracted) => validateVerdict(parseFencedJson(extracted)),
     env: judgeModel ? { RUNTIME_EVAL_MODEL: judgeModel } : null,
   });
 
@@ -189,7 +179,7 @@ export async function judge(interaction, { config = {} } = {}) {
     };
   }
 
-  const verdict = validateVerdict(parseVerdictJson(outcome.extracted));
+  const verdict = validateVerdict(parseFencedJson(outcome.extracted));
   return {
     id,
     status: verdict.verdict,

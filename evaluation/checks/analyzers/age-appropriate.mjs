@@ -43,6 +43,18 @@ export function analyze({ blueprint, context }) {
   const threshold = expectedGrade + tolerance;
 
   const strings = extractPlayerFacingText(blueprint);
+  if (strings.length === 0) {
+    // Nothing to check is a failure, not a pass: an empty or malformed
+    // blueprint must not be reported as passing the age-appropriate screen.
+    return {
+      status: "fail",
+      details: {
+        target_age: targetAge,
+        strings_total: 0,
+        summary: "no player-facing text extracted from the blueprint — nothing to check",
+      },
+    };
+  }
   const measured = strings.map((s) => {
     const words = splitWords(s.text).length;
     const grade = fleschKincaidGrade(s.text);

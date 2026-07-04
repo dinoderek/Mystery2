@@ -25,22 +25,27 @@ export function getJudge(judgeId) {
   return judge;
 }
 
-/** Run a set of judges over an interaction, returning their result objects. */
+/**
+ * Run a set of judges over an interaction, returning their result objects in
+ * the same order as judgeIds. Judges are independent (each reads the same
+ * frozen interaction), so they run concurrently; a judge that throws becomes
+ * an error result without affecting the others.
+ */
 export async function runJudges(judgeIds, interaction, judgeConfig = {}) {
-  const results = [];
-  for (const judgeId of judgeIds) {
-    try {
-      const judge = getJudge(judgeId);
-      results.push(await judge.judge(interaction, { config: judgeConfig[judgeId] ?? {} }));
-    } catch (err) {
-      results.push({
-        id: judgeId,
-        status: "error",
-        score: null,
-        details: { error: err instanceof Error ? err.message : String(err) },
-        parts: [],
-      });
-    }
-  }
-  return results;
+  return Promise.all(
+    judgeIds.map(async (judgeId) => {
+      try {
+        const judge = getJudge(judgeId);
+        return await judge.judge(interaction, { config: judgeConfig[judgeId] ?? {} });
+      } catch (err) {
+        return {
+          id: judgeId,
+          status: "error",
+          score: null,
+          details: { error: err instanceof Error ? err.message : String(err) },
+          parts: [],
+        };
+      }
+    }),
+  );
 }

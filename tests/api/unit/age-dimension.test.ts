@@ -138,6 +138,16 @@ describe("age_appropriate analyzer", () => {
     expect(result.status).toBe("fail");
     expect(result.details.summary).toContain("target_age");
   });
+
+  it("fails when there is no player-facing text to check", () => {
+    const result = analyze({
+      blueprint: { metadata: { target_age: 8 } },
+      context: {},
+    });
+    expect(result.status).toBe("fail");
+    expect(result.details.strings_total).toBe(0);
+    expect(result.details.summary).toContain("nothing to check");
+  });
 });
 
 describe("age_appropriate dimension wiring", () => {

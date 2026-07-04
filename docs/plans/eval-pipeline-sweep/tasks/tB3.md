@@ -18,7 +18,8 @@ verification-behavior decision and the migration itself.
 
 **Inputs:** tDESIGN merged (binding decision on post-deprecation verification
 behavior) AND tD1 merged (the migration is applied, so the documented behavior
-matches reality). Binding contract: `designs/tDESIGN.md ## Decision`.
+matches reality). Binding contract: `designs/tDESIGN.md ## Decision` — document
+the behavior it decides; do not restate or re-derive it here.
 
 > Updated from tDESIGN: see `designs/tDESIGN.md ## Decision` for what
 > `generate:blueprint`'s post-generation verification does after the old

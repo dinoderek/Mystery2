@@ -129,9 +129,93 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
   --backend cli:stub --judges flesch,age_appropriate
 ```
 
-`run.mjs` flags: `--backend <spec[,spec]>`, `--ai-profile <id>` (endpoint
-backend), `--judges a,b`, `--out <dir>`. Exit code is `2` if any judge fails or
-errors.
+`run.mjs` flags:
+
+- `--backend <spec[,spec]>` — one or more backends per case
+  (`endpoint | cli:claude | cli:openai | cli:stub`). Defaults to the case's
+  `backend`, else `endpoint`.
+- `--ai-profile <id>` — server `ai_profile` for the `endpoint` backend.
+  Defaults to the case's `aiProfile`, else `default`.
+- `--judges a,b` — override the judges to run (default: the case's `judges`).
+- `--out <dir>` — runs output root. Default: `evaluation/runtime/runs`.
+
+Exit code is `2` if any judge fails or errors.
+
+### Model overrides (`RUNTIME_EVAL_MODEL`, `RUNTIME_EVAL_JUDGE_MODEL`)
+
+Two env vars steer which model the CLI wrappers actually call. They apply to the
+CLI-backed paths (`cli:*` backends and the `age_appropriate` LLM judge); the
+`endpoint` backend's model is fixed by the session's `ai_profile` instead.
+
+- `RUNTIME_EVAL_MODEL` — the **backend (narrator) model** the CLI wrapper
+  invokes. The wrappers read it directly
+  (`config/wrappers/claude-runtime.sh` defaults to `sonnet`,
+  `openai-runtime.sh` to `gpt-4o-mini`). When you do not set it, the `cli:*`
+  backend passes the selected variant's `"model"` from `config/cli.json` down to
+  the wrapper; when you do set it, your value wins over the config's `"model"`.
+- `RUNTIME_EVAL_JUDGE_MODEL` — the **judge model** override for the
+  `age_appropriate` LLM judge. It overrides the `judge` variant's `"model"` and
+  is what the judge's CLI call runs. It is independent of `RUNTIME_EVAL_MODEL`,
+  so you can pin the narrator and the judge to different models in the same run.
+
+```bash
+# Run the CLI narrator on a specific Claude model:
+RUNTIME_EVAL_MODEL=opus \
+  node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --backend cli:claude
+
+# Pin the age_appropriate judge to its own model, independent of the narrator:
+RUNTIME_EVAL_JUDGE_MODEL=opus \
+  node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
+  --backend cli:stub --judges flesch,age_appropriate
+```
+
+### Re-judging a stored interaction (`rejudge.mjs`)
+
+Re-run judges over a stored `interaction.json` without re-running the narrator —
+the inner loop while iterating on judges. Deterministic judges (`flesch`) are
+free to re-run; the `age_appropriate` judge calls its judge model unless pointed
+at the `judge-stub` CLI variant.
+
+```bash
+node evaluation/runtime/rejudge.mjs runs/<run_id>/<case>__<backend>/interaction.json [options]
+```
+
+Positional: the `interaction.json` to re-judge. Flags:
+
+- `--judges <a,b>` — judges to run. Default: the ids from the sibling
+  `result.json`, else `flesch`.
+- `--case <file>` — case file to read `judgeConfig` from (e.g. per-judge
+  tolerances). Default: none (no per-case judge config).
+- `--out <file>` — where to write the result. Default: `result.rejudge.json`
+  beside the interaction (so the original `result.json` is preserved).
+
+Exit code is `2` if any judge fails or errors.
+
+### Generating cases from a played trace (`cases-from-trace.mjs`)
+
+Turn a collected game-master trace (produced by `evaluation/trace/extract.mjs`)
+into deterministic runtime-eval cases. Each target event's payload
+self-describes the exact state it was generated from, so each event becomes one
+case: the pre-event state plus all prior events as fixed history is the `given`,
+and the event itself is the `action`. The trace's blueprint is written alongside
+the cases so they can reference it by path.
+
+```bash
+node evaluation/runtime/cases-from-trace.mjs <trace.json> [options]
+```
+
+Positional: the trace JSON to read. Flags:
+
+- `--out <dir>` — output directory for the generated `*.cases.mjs` file and the
+  extracted `blueprints/`. Default: `evaluation/runtime/cases/from-traces`.
+- `--types <list>` — event types to turn into cases. Default: `ask,talk`.
+  (`ask`/`talk` replay on both backends; `move`/`search` are endpoint-only.)
+- `--max <n>` — cap on cases per type, sampled evenly across the session.
+  Default: `3`.
+- `--judges <list>` — judges attached to the generated cases. Default: `flesch`.
+
+The emitted `*.cases.mjs` is a normal case file, so feed it straight to
+`run.mjs`.
 
 ## CLI backend configuration
 

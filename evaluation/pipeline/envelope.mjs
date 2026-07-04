@@ -94,7 +94,7 @@ export function buildEnvelope({
   };
 }
 
-function countExtraAttempts(attempts) {
+export function countExtraAttempts(attempts) {
   if (!Array.isArray(attempts) || attempts.length <= 1) return 0;
   return attempts.length - 1;
 }

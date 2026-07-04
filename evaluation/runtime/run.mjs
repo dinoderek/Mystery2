@@ -133,12 +133,14 @@ async function main() {
         await fs.mkdir(caseDir, { recursive: true });
         await fs.writeFile(path.join(caseDir, "interaction.json"), JSON.stringify(interaction, null, 2) + "\n");
 
-        const judgeResults = runJudges(judgeIds, interaction, testCase.judgeConfig ?? {});
+        const judgeResults = await runJudges(judgeIds, interaction, testCase.judgeConfig ?? {});
         const result = buildResult({ interaction, judgeResults });
         await fs.writeFile(path.join(caseDir, "result.json"), JSON.stringify(result, null, 2) + "\n");
 
+        // score is the judge's headline number: FK grade for flesch,
+        // estimated reading age for age_appropriate.
         const verdicts = judgeResults
-          .map((j) => `${j.id}:${j.status}${j.id === "flesch" && j.score !== null ? `(grade ${j.score})` : ""}`)
+          .map((j) => `${j.id}:${j.status}${j.score !== null && j.score !== undefined ? `(${j.score})` : ""}`)
           .join(" ");
         console.log(`[runtime-eval] ${label} -> ${verdicts || "(no judges)"}`);
         summary.push({

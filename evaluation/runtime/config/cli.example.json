@@ -28,5 +28,24 @@
     "extract_path": null,
     "timeout_ms": 30000,
     "retries": 0
+  },
+
+  "judge": {
+    "description": "One-shot Claude CLI call used by LLM judges (age_appropriate), NOT selectable as a --backend. Same wrapper contract as the claude variant; the judge's verdict JSON is read from extract_path 'result'. Model override env: RUNTIME_EVAL_JUDGE_MODEL.",
+    "cmd": "evaluation/runtime/config/wrappers/claude-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "sonnet",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "judge-stub": {
+    "description": "Deterministic judge stub — no model call. Emits a fixed pass verdict (override via RUNTIME_JUDGE_STUB_VERDICT) so LLM-judge wiring can be tested offline: judgeConfig { age_appropriate: { cli: 'judge-stub' } }.",
+    "cmd": "evaluation/runtime/config/wrappers/stub-judge.sh",
+    "args": ["{{user_message_file}}"],
+    "extract_path": null,
+    "timeout_ms": 30000,
+    "retries": 0
   }
 }

@@ -39,8 +39,11 @@ const askAlibiPressure = {
     ],
   },
   action: { type: "ask", player_input: "Then why are your hands shaking?" },
+  // Default judges are deterministic (no judge-model calls). Add the LLM judge
+  // with --judges flesch,age_appropriate; its CLI variant comes from
+  // judgeConfig below ("judge" = real model, "judge-stub" = offline).
   judges: ["flesch"],
-  judgeConfig: { flesch: { tolerance: 2 } },
+  judgeConfig: { flesch: { tolerance: 2 }, age_appropriate: { cli: "judge" } },
 };
 
 /** Opening a conversation cold — narrator scene-setting prose. */
@@ -55,7 +58,7 @@ const talkBobOpen = {
   },
   action: { type: "talk", character_id: "char-bob" },
   judges: ["flesch"],
-  judgeConfig: { flesch: { tolerance: 2 } },
+  judgeConfig: { flesch: { tolerance: 2 }, age_appropriate: { cli: "judge" } },
 };
 
 export default [askAlibiPressure, talkBobOpen];

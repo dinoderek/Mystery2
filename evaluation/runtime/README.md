@@ -62,14 +62,28 @@ narration, so models diverged as turns accumulated and were not comparable.)
     today); add a mapping to support another.
 
 - **Judge** — scores a stored interaction's single response
-  (`judge(interaction, { config }) -> { id, status, score, details, parts }`).
-  First judge: `flesch`, a deterministic Flesch–Kincaid grade-level check
-  against the blueprint's `target_age`. Add judges in `lib/judges/`.
+  (`judge(interaction, { config }) -> { id, status, score, details, parts }`;
+  sync or async). Two judges today:
+  - `flesch` — deterministic Flesch–Kincaid grade-level check against the
+    blueprint's `target_age`. `score` is the FK grade.
+  - `age_appropriate` — an **LLM judge** for what the formula can't see:
+    vocabulary a child of `target_age` wouldn't know, idioms/figurative
+    language, and unclear phrasing. It renders its standard from the same
+    `age-profile.ts` complexity profile the narrator prompt was built from,
+    and calls a judge model through the CLI bindings (variant `judge` in
+    `config/cli.json`; `judge-stub` is a deterministic offline stub;
+    `RUNTIME_EVAL_JUDGE_MODEL` overrides the model). `score` is the judge's
+    estimated reading age; `details.findings[]` quotes each problem phrase.
+    Configure per case via `judgeConfig.age_appropriate = { cli, targetAge }`.
+
+  Add judges in `lib/judges/`.
 
 - **Collect → judge split** — every run writes the raw `interaction.json`
   **before** any judge runs, then judges into `result.json`. Re-run judges over a
-  stored interaction with `rejudge.mjs` — no endpoint or model calls. This is the
-  inner loop while iterating on judges.
+  stored interaction with `rejudge.mjs` — the narrator is never re-run. This is
+  the inner loop while iterating on judges. Deterministic judges cost nothing to
+  re-run; the `age_appropriate` judge calls its judge model unless pointed at
+  `judge-stub`.
 
 ## Artifacts (`runs/<run_id>/<case>__<backend>/`, gitignored)
 
@@ -105,8 +119,14 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --b
 # CLI backend, offline wiring check (deterministic, no model call):
 node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --backend cli:stub
 
-# Re-judge a stored interaction (no API calls) — the judge-iteration loop:
+# Re-judge a stored interaction — the judge-iteration loop (deterministic
+# judges are free; age_appropriate calls the judge model):
 node evaluation/runtime/rejudge.mjs runs/<run_id>/<case>__<backend>/interaction.json
+
+# Add the LLM age-appropriateness judge on top of flesch (needs the `claude`
+# CLI; use the judge-stub CLI variant in judgeConfig for offline wiring tests):
+node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
+  --backend cli:stub --judges flesch,age_appropriate
 ```
 
 `run.mjs` flags: `--backend <spec[,spec]>`, `--ai-profile <id>` (endpoint
@@ -134,4 +154,6 @@ from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
 ## Tests
 
 Unit tests for the deterministic Flesch judge live at
-`tests/api/unit/runtime-flesch.test.ts` and run with `npm run test:unit`.
+`tests/api/unit/runtime-flesch.test.ts`; the `age_appropriate` LLM judge is
+tested offline against the `judge-stub` CLI variant in
+`tests/api/unit/runtime-age-judge.test.ts`. Both run with `npm run test:unit`.

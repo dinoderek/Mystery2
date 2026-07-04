@@ -9,7 +9,7 @@ passes.
 
 - `./dimension-id` — single-line text file naming the dimension you are
   judging (e.g. `solve_depth`, `fairness`, `timeline_coherence`,
-  `knowledge_coherence`, `character_grounding`).
+  `knowledge_coherence`, `character_grounding`, `age_appropriate`).
 - `./dimension.md` — the dimension definition: what's being asked, how to
   judge it, and the required output shape. **Read first.**
 - `./brief.json` — the story brief that was given to the generator.
@@ -69,6 +69,12 @@ Validator exit code 0. Nothing else counts.
   `blueprint.solution_paths[]` entry, with the matching `id`. Every clue id in
   `necessary_clues` must be a real blueprint clue, and `shortest_path_id` must
   be one of those path ids (or `null`).
+- **For `age_appropriate`:** `target_age` must equal
+  `blueprint.metadata.target_age`, and every `findings[].path` must be one of
+  the blueprint's **player-facing** string paths (the dimension definition
+  lists the fields; spell paths exactly, e.g.
+  `world.locations[2].clues[0].text`). Findings on narrator-only fields are
+  rejected. The validator checks both.
 - **Be terse in `reasoning` fields.** Bullet-equivalent prose. Long
   explanations dilute signal.
 - **No markdown code fences** in `verdict.json`. The file must be a single

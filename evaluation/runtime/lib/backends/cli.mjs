@@ -13,44 +13,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCliWithRetries } from "../../../pipeline/cli-runner.mjs";
+import { loadCliConfig, parseFencedJson } from "../cli-config.mjs";
 import { buildRoleRequest } from "../prompt-build.mjs";
 import { makeResponse } from "../transcript.mjs";
 import { getAction, normalizeHistory } from "../roles.mjs";
 
 export const id = "cli";
-
-const CONFIG_DIR = path.join("evaluation", "runtime", "config");
-
-async function loadCliConfig(variant) {
-  const override = path.resolve(process.cwd(), CONFIG_DIR, "cli.json");
-  const example = path.resolve(process.cwd(), CONFIG_DIR, "cli.example.json");
-  let file = example;
-  try {
-    await fs.access(override);
-    file = override;
-  } catch {
-    // fall back to the committed example
-  }
-  const all = JSON.parse(await fs.readFile(file, "utf-8"));
-  const entry = all[variant];
-  if (!entry) {
-    throw new Error(
-      `CLI variant "${variant}" not found in ${path.relative(process.cwd(), file)}. ` +
-        `Known: ${Object.keys(all).filter((k) => !k.startsWith("_")).join(", ")}`,
-    );
-  }
-  return entry;
-}
-
-/** Strip ```json fences a model may wrap around its JSON, then parse. */
-function parseRoleJson(text) {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  return JSON.parse(cleaned);
-}
 
 export async function collect(testCase, ctx) {
   const variant = ctx.variant ?? "claude";
@@ -87,7 +55,7 @@ export async function collect(testCase, ctx) {
     throw new Error(`CLI ${testCase.action.type} failed: ${result.error?.message}`);
   }
 
-  const roleOutput = parseRoleJson(result.extracted);
+  const roleOutput = parseFencedJson(result.extracted);
   const narration = typeof roleOutput.narration === "string" ? roleOutput.narration : "";
   const speaker = action.cli.speaker(testCase.given, testCase.action, blueprint);
 

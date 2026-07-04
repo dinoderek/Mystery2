@@ -18,6 +18,10 @@
 //                               first_name matches blueprint; cover every
 //                               blueprint character; every topics[].topic is
 //                               in context.probe_topics
+//        - age_appropriate:     target_age matches the blueprint; every
+//                               findings[].path is one of the blueprint's
+//                               player-facing string paths
+//        - other dimensions:    none (shape check only)
 //
 // Usage: node validate-judge-output.mjs <path-to-verdict.json>
 //
@@ -32,6 +36,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
+
+import { extractPlayerFacingText } from "../../checks/lib/player-text.mjs";
 
 const SCRIPT_PATH = url.fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..", "..", "..");
@@ -261,12 +267,43 @@ function semanticChecksNoop() {
   return [];
 }
 
+// age_appropriate: target_age must match the blueprint, and every finding's
+// path must be one of the blueprint's player-facing strings — the same set
+// the analyzer screens (evaluation/checks/lib/player-text.mjs). This also
+// rejects findings on narrator-only fields (hints, backgrounds, tells), which
+// the dimension forbids flagging.
+function semanticChecksAgeAppropriate(verdict, blueprint) {
+  const issues = [];
+  const blueprintAge = blueprint.metadata?.target_age;
+  if (verdict.target_age !== blueprintAge) {
+    issues.push(
+      `target_age ${verdict.target_age} does not match blueprint.metadata.target_age (${blueprintAge})`,
+    );
+  }
+  const playerPaths = new Set(
+    extractPlayerFacingText(blueprint).map((s) => s.path),
+  );
+  for (const f of verdict.findings ?? []) {
+    if (!playerPaths.has(f.path)) {
+      issues.push(
+        `findings[].path "${f.path}" is not a player-facing string in blueprint.json ` +
+          `(must be one of the dimension's player-facing field paths, spelled exactly, ` +
+          `e.g. "world.locations[0].clues[1].text")`,
+      );
+    }
+  }
+  return issues;
+}
+
+// Dimensions without an entry here (e.g. clue_graph) get no semantic checks —
+// the stage-1 shape check still applies.
 const SEMANTIC = {
   solve_depth: semanticChecksSolveDepth,
   fairness: semanticChecksFairness,
   timeline_coherence: semanticChecksNoop,
   knowledge_coherence: semanticChecksNoop,
   character_grounding: semanticChecksCharacterGrounding,
+  age_appropriate: semanticChecksAgeAppropriate,
 };
 
 async function main() {
@@ -284,10 +321,8 @@ async function main() {
     );
     process.exit(2);
   }
-  if (!SEMANTIC[dimId]) {
-    process.stderr.write(`unknown dimension id: "${dimId}"\n`);
-    process.exit(2);
-  }
+  // Unknown dimension ids are rejected by the stage-1 shape check (no
+  // <slug>.schema.ts on disk), so no allowlist is needed here.
 
   // Stage 1: shape via evaluation/pipeline/validate.mjs
   const shape = shapeCheck(dimId, verdictPath);
@@ -320,10 +355,8 @@ async function main() {
     context = {};
   }
 
-  const semanticIssues =
-    dimId === "character_grounding"
-      ? SEMANTIC[dimId](verdict, blueprint, context)
-      : SEMANTIC[dimId](verdict, blueprint);
+  const semanticChecks = SEMANTIC[dimId] ?? semanticChecksNoop;
+  const semanticIssues = semanticChecks(verdict, blueprint, context);
 
   if (semanticIssues.length > 0) {
     process.stderr.write(

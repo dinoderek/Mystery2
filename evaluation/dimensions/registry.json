@@ -19,6 +19,7 @@
       }
     },
     { "id": "path_payoff" },
-    { "id": "clue_graph" }
+    { "id": "clue_graph" },
+    { "id": "age_appropriate", "context": { "tolerance": 2, "min_words": 8 } }
   ]
 }

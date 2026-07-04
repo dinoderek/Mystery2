@@ -11,13 +11,10 @@
 //   node evaluation/pipeline/validate.mjs <schema> <candidate.json>
 //
 // Schemas:
-//   blueprint              — BlueprintV2Schema (the full generated blueprint)
-//   solve_depth            — judge output for solve depth
-//   fairness               — judge output for fairness
-//   timeline_coherence     — judge output for timeline coherence
-//   knowledge_coherence    — judge output for knowledge coherence
-//   character_grounding    — judge output for character grounding
-//   path_payoff            — judge output for path payoff
+//   blueprint     — BlueprintV2Schema (the full generated blueprint)
+//   <dimension>   — any dimension id whose evaluation/dimensions/<id>.schema.ts
+//                   exists (resolved generically, so adding a dimension needs
+//                   no edit here)
 //
 // Output:
 //   On success: prints "OK" to stdout, exits 0.
@@ -30,44 +27,63 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..");
+const dimensionsDir = path.join(repoRoot, "evaluation", "dimensions");
+
+async function knownSchemaNames() {
+  const files = await fs.readdir(dimensionsDir);
+  const dims = files
+    .filter((f) => f.endsWith(".schema.ts"))
+    .map((f) => f.replace(/\.schema\.ts$/, "").replaceAll("-", "_"))
+    .sort();
+  return ["blueprint", ...dims];
+}
 
 const [schemaName, candidatePath] = process.argv.slice(2);
 if (!schemaName || !candidatePath) {
   process.stderr.write(
     "Usage: node evaluation/pipeline/validate.mjs <schema> <candidate.json>\n" +
-      "Schemas: blueprint, solve_depth, fairness, timeline_coherence, knowledge_coherence, character_grounding, path_payoff\n",
+      `Schemas: ${(await knownSchemaNames()).join(", ")}\n`,
   );
   process.exit(2);
 }
-
-const dimensionSchemas = new Set([
-  "solve_depth",
-  "fairness",
-  "timeline_coherence",
-  "knowledge_coherence",
-  "character_grounding",
-  "path_payoff",
-]);
 
 let schema;
 if (schemaName === "blueprint") {
   ({ BlueprintV2Schema: schema } = await import(
     path.join(repoRoot, "packages/shared/src/blueprint-schema-v2.ts")
   ));
-} else if (dimensionSchemas.has(schemaName)) {
-  // Dimension ids use underscores everywhere except their schema filenames,
-  // which use kebab-case to match the .md files next to them.
-  const fileSlug = schemaName.replaceAll("_", "-");
-  ({ schema } = await import(
-    path.join(repoRoot, "evaluation/dimensions", `${fileSlug}.schema.ts`)
-  ));
 } else {
-  process.stderr.write(
-    `Unknown schema: ${schemaName}. Expected one of: blueprint, ${[
-      ...dimensionSchemas,
-    ].join(", ")}\n`,
-  );
-  process.exit(2);
+  // Dimension ids use underscores everywhere except their schema filenames,
+  // which use kebab-case to match the .md files next to them. Resolved
+  // generically from the files on disk — a new dimension's schema is picked
+  // up with no edit here (matching loadDimensionDefinition in load.mjs).
+  const fileSlug = schemaName.replaceAll("_", "-");
+  const schemaPath = path.join(dimensionsDir, `${fileSlug}.schema.ts`);
+  try {
+    await fs.access(schemaPath);
+  } catch {
+    process.stderr.write(
+      `Unknown schema: ${schemaName}. Expected one of: ${(await knownSchemaNames()).join(", ")}\n`,
+    );
+    process.exit(2);
+  }
+  // Guard the load as well as the existence: a schema file with a load-time
+  // error or without a named `schema` export must produce the same clean
+  // exit-2 contract as an unknown name, not an uncaught stack trace.
+  try {
+    ({ schema } = await import(schemaPath));
+  } catch (err) {
+    process.stderr.write(
+      `Schema for "${schemaName}" failed to load from ${schemaPath}: ${err.message}\n`,
+    );
+    process.exit(2);
+  }
+  if (typeof schema?.safeParse !== "function") {
+    process.stderr.write(
+      `Schema for "${schemaName}" must export a named 'schema' (Zod schema) from ${schemaPath}.\n`,
+    );
+    process.exit(2);
+  }
 }
 
 let text;

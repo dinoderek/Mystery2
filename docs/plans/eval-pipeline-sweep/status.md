@@ -16,19 +16,19 @@ Orchestrator running log. One entry per iteration. Newest at bottom.
 - tFINAL ← all
 
 ## Task state (pending | open | approved | merged)
-- tDESIGN — approved (PR #109, awaiting human merge)
-- tA1 — approved (PR #110, awaiting human merge)
-- tA2 — approved (PR #113, awaiting human merge)
-- tA3 — pending (blocked ← tA1 merge)
-- tB1 — approved (PR #112, awaiting human merge)
-- tB2 — pending (blocked ← tB1 + tA3)
-- tB3 — pending (blocked ← tDESIGN + tD1)
-- tC1 — approved (PR #111, awaiting human merge)
-- tC2 — approved (PR #114, awaiting human merge)
-- tC3 — approved (PR #117, awaiting human merge)
-- tC4 — approved (PR #116, awaiting human merge)
-- tC5 — approved (PR #115, awaiting human merge)
-- tD1 — pending (blocked ← tDESIGN merge)
+- tDESIGN — MERGED (PR #109)
+- tA1 — MERGED (PR #110)
+- tA2 — MERGED (PR #113)
+- tA3 — open (building; ← tA1 done)
+- tB1 — MERGED (PR #112)
+- tB2 — pending (blocked ← tB1 done + tA3)
+- tB3 — pending (blocked ← tDESIGN done + tD1)
+- tC1 — MERGED (PR #111)
+- tC2 — MERGED (PR #114)
+- tC3 — MERGED (PR #117)
+- tC4 — MERGED (PR #116)
+- tC5 — MERGED (PR #115)
+- tD1 — open (building; ← tDESIGN done)
 - tFINAL — pending (blocked ← all)
 
 ## Iterations
@@ -136,3 +136,20 @@ Orchestrator running log. One entry per iteration. Newest at bottom.
 - No agents in flight. Plan fully gated on human merges. Next dispatch triggers:
   on #109 merge → tD1; on #110 merge → tA3; then tB2 (tB1+tA3), tB3 (tDESIGN+tD1),
   finally tFINAL (all) → audit.
+
+### Iteration 9 (all 10 PRs merged by human)
+- Human merged ALL: #108 (bookkeeping), #109-#117 (all tasks). Verified on
+  origin/main: designs/tDESIGN.md present; tD1.md + tB3.md carry the pointer
+  Inputs edits; corrected READMEs present; runtime npm scripts present;
+  status.md present.
+- Consistency check (single design tDESIGN): decision Option B (mechanical
+  subset) is faithfully encoded in tD1's contract (both importers handled;
+  build-blueprint-evaluation-markdown.mjs removal confirmed by design notes);
+  no downstream card invalidated; tB3 still valid. CLEAN.
+- Newly ready: tD1 (←tDESIGN), tA3 (←tA1). Disjoint file sets → dispatched both
+  in parallel (2 builders, under cap 4).
+  - tD1 given the binding design + the "both importers" reminder explicitly.
+  - tA3 told to compose with tA1's already-merged corrected README wording.
+- Still blocked: tB2 (←tA3), tB3 (←tD1), tFINAL (←all).
+- Prior bookkeeping branch (#108) merged + deleted; new bookkeeping branch this
+  iteration is off fresh origin/main.

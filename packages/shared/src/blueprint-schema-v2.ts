@@ -444,6 +444,16 @@ export const BlueprintV2Schema = z
         .int()
         .positive()
         .describe("The number of turns the player has to solve the mystery."),
+      narration_style: z
+        .string()
+        .trim()
+        .min(1)
+        .optional()
+        .describe(
+          "Optional narration voice/tone direction for the in-game narrator, layered on "
+            + "top of the standard narrator style (e.g. 'salty harbor air, gull cries, a "
+            + "gentle pirate lilt in the narration'). Omit to use the standard voice alone.",
+        ),
       art_style: z
         .string()
         .trim()

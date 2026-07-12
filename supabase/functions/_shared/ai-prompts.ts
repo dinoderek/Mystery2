@@ -7,11 +7,13 @@ import {
 } from "./age-profile.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
+// `search_bare` defaults to the lean "nothing found" budget; the search handler
+// overrides it to `search_find` on turns where a clue will be revealed (see
+// LoadPromptOptions.interaction).
 const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   talk_start: "talk_greeting",
   talk_conversation: "talk_round",
   talk_end: "talk_farewell",
-  search: "search_empty",
   search_bare: "search_empty",
   search_targeted: "search_find",
   accusation_start: "accusation_open",
@@ -27,12 +29,38 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
   return renderGuidance(INTERACTION_BY_ROLE[role], targetAge);
 }
 
+// The standard narrator voice shared by every runtime prompt. Kept short so it
+// layers under role-specific guidance; a blueprint may extend it with its own
+// voice via metadata.narration_style (see buildStyleGuidance).
+const STANDARD_NARRATION_STYLE = [
+  "## Narration style",
+  '- Address the player as "you", the investigator, in the present tense.',
+  "- Tone: warm, playful, and curious — a cozy mystery for children, never scary or gory.",
+  "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
+  "- Characters always speak in direct first-person dialogue with brief action beats.",
+  "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
+].join("\n");
+
+/**
+ * Style guidance for a runtime prompt: the standard narrator style, plus the
+ * blueprint's own optional voice (`metadata.narration_style`) layered on top.
+ */
+export function buildStyleGuidance(narrationStyle?: string | null): string {
+  const custom = narrationStyle?.trim();
+  if (!custom) {
+    return STANDARD_NARRATION_STYLE;
+  }
+
+  return `${STANDARD_NARRATION_STYLE}\n- This mystery's own voice (follow it within the rules above): ${custom}`;
+}
+
 // Prompts are embedded intentionally so runtime does not depend on filesystem
 // behavior inside the edge bundler. The `{{age_guidance}}` placeholder is filled
 // per role + target age from `age-profile.ts` (see buildAgeGuidance).
 const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
   talk_start: `You are the in-character narrator for a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - Start a new conversation with {{character_name}} in {{location_name}}.
@@ -57,6 +85,7 @@ Return JSON:
 }`,
   talk_conversation: `You are roleplaying {{character_name}} in a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - Reply to the investigator's latest question: {{player_input}}.
@@ -229,6 +258,7 @@ Return JSON:
 }`,
   talk_end: `You are the narrator for a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - Close the active conversation with {{character_name}}.
@@ -243,27 +273,9 @@ Return JSON:
 {
   "narration": "..."
 }`,
-  search: `You are the Game Master narrator for a children's mystery game.
-{{age_guidance}}
-
-Task:
-- The player is doing a general search of {{location_name}} (no specific target).
-- Use the provided location description and search context only.
-- If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
-- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
-- If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
-- Do not leak full solution ground truth.
-- costs_turn is always true for general searches.
-
-Return JSON:
-{
-  "narration": "...",
-  "revealed_clue_id": "clue-id-here or null",
-  "costs_turn": true,
-  "input_understood": true
-}`,
   search_bare: `You are the Game Master narrator for a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - The player is doing a general search of {{location_name}} (no specific target).
@@ -284,6 +296,7 @@ Return JSON:
 }`,
   search_targeted: `You are the Game Master narrator for a children's mystery game. You act like a tabletop RPG Game Master, adjudicating the player's search attempt.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - The player is searching {{location_name}} with this description: "{{search_query}}"
@@ -309,13 +322,16 @@ Return JSON:
 }`,
   accusation_start: `You are the narrator starting the accusation phase of a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
 - Frame a dramatic accusation scene and ask for the player's accusation.
 - If the accusation is forced by time pressure, make that urgency explicit.
 - Ask the player to clearly name who they accuse and explain evidence.
 - Context to incorporate when relevant: {{forced_context}}
-- Use the provided character sex to choose pronouns. Never guess pronouns.
+- The people listed in accusation_start_context.characters are the only
+  characters in this mystery. Use only those names.
+- Use each character's sex field to choose pronouns. Never guess pronouns.
 
 Return JSON:
 {
@@ -324,15 +340,45 @@ Return JSON:
 }`,
   accusation_judge: `You are the adjudication narrator for the final accusation in a children's mystery game.
 {{age_guidance}}
+{{style_guidance}}
 
 Task:
-- Evaluate the player's reasoning against the mystery's hidden truth.
-- Use the provided solution_paths to check if the player's deduction follows a valid reasoning chain.
-- Use suspect_elimination_paths to verify the player correctly ruled out innocent suspects.
-- Consider red_herrings to assess whether the player was misled by false leads.
-- If the reasoning is incomplete, return "continue" with one targeted follow-up question.
-- If reasoning is sufficient, decide "win" or "lose".
+- Judge the player's accusation and reasoning against the mystery's hidden
+  truth: ground_truth, solution_paths, suspect_elimination_paths, and
+  red_herrings in the provided full blueprint.
 - Use the provided character sex to choose pronouns. Never guess pronouns.
+
+## When to accept (resolution "win")
+Accept ONLY when the player names the true culprit AND at least one of these
+holds:
+1. Evidence chain: their reasoning follows one of the solution_paths — they
+   cite, in their own words, the substance of the clues on that path (check the
+   conversation history for what they actually discovered).
+2. True account: they correctly tell the story of what happened — the culprit,
+   the key sequence of events, and the motive — matching ground_truth, even if
+   they cite clues loosely.
+Judge substance, not wording. Most of the key facts must be right; naming the
+culprit with no supporting facts is a lucky guess, not a win.
+
+## Confrontation and confession
+If the player confronts the accused directly (or asks to), you may play the
+confrontation out in the narration. The culprit confesses ONLY when the player
+already has most of the facts right — the culprit plus the substance of what
+happened or of the evidence against them. A confession earned this way is a
+"win". If the player confronts with weak or wrong facts, the culprit deflects
+and the accusation is not accepted.
+
+## When to reject (resolution "continue" or "lose")
+- Wrong suspect, or right suspect with too few facts: return "continue".
+  Reject warmly — say the case is not proven yet, hint at what KIND of fact is
+  missing (never reveal the answer), and encourage the player to try again in
+  "follow_up_prompt".
+- The provided round counts the player's completed reasoning attempts. From
+  round 3 onward, if the accusation still fails, return "lose" with a gentle,
+  hopeful closing that kindly reveals the truth.
+- Use suspect_elimination_paths to check whether the player ruled out innocent
+  suspects, and red_herrings to recognize when they were misled — being misled
+  earns an encouraging nudge, not punishment.
 
 Return JSON:
 {
@@ -342,21 +388,41 @@ Return JSON:
 }`,
 };
 
+export interface LoadPromptOptions {
+  /**
+   * Override the interaction whose word budget applies. Used by bare search,
+   * which defaults to the lean `search_empty` budget but needs the roomier
+   * `search_find` budget on turns where the backend already knows a clue will
+   * be revealed.
+   */
+  interaction?: InteractionId;
+  /**
+   * The blueprint's optional narration voice (`metadata.narration_style`),
+   * layered on top of the standard narrator style.
+   */
+  narrationStyle?: string | null;
+}
+
 /**
- * Load a role template with its age-band guidance already injected.
+ * Load a role template with its age-band and style guidance already injected.
  *
  * `targetAge` is REQUIRED: the guidance is filled here, not by the caller, so a
  * handler cannot accidentally ship a prompt with blank `{{age_guidance}}` — a
- * missing age is a compile error, not a silent empty substitution.
+ * missing age is a compile error, not a silent empty substitution. The
+ * `{{style_guidance}}` slot is likewise always filled: with the standard
+ * narrator style alone, or with the blueprint's voice layered on top.
  */
 export async function loadPromptTemplate(
   role: AIPromptKey,
   targetAge: number,
+  options: LoadPromptOptions = {},
 ): Promise<string> {
-  return PROMPT_TEMPLATE_BY_ROLE[role].replace(
-    "{{age_guidance}}",
-    buildAgeGuidance(role, targetAge),
-  );
+  return PROMPT_TEMPLATE_BY_ROLE[role]
+    .replace(
+      "{{age_guidance}}",
+      renderGuidance(options.interaction ?? INTERACTION_BY_ROLE[role], targetAge),
+    )
+    .replace("{{style_guidance}}", buildStyleGuidance(options.narrationStyle));
 }
 
 export function renderPrompt(
@@ -379,11 +445,13 @@ export function renderPrompt(
 export function buildGameStartPrompt(input: {
   target_age: number;
   premise: string;
+  narration_style?: string | null;
 }): string {
   return [
     "You are the narrator for a children's mystery game.",
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("intro", input.target_age),
+    buildStyleGuidance(input.narration_style),
     "Open the case with the given premise and invite investigation.",
     `Premise: ${input.premise}`,
   ].join("\n");
@@ -397,6 +465,7 @@ export function buildGameMovePrompt(input: {
   destination_history_json: string;
   destination_characters_json: string;
   destination_sub_locations_json?: string;
+  narration_style?: string | null;
 }): string {
   const revisitInstruction = input.has_visited_before
     ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
@@ -407,6 +476,7 @@ export function buildGameMovePrompt(input: {
     `Describe the player arriving at ${input.destination_name}.`,
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("ambience", input.target_age),
+    buildStyleGuidance(input.narration_style),
     revisitInstruction,
     "Base the description on the provided destination description, destination-specific history, and the public summaries of characters currently present.",
     "If characters are present, mention who is visibly here using only the provided names and descriptions.",

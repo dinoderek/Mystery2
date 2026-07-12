@@ -227,12 +227,26 @@ describe("ai-context guardrails", () => {
       location_id: "loc-kitchen",
       sex: "female",
       appearance: "red hair",
-      background: "the baker",
+      public_summary: "The baker; was in the kitchen.",
     });
+    // Other characters expose only public knowledge — private authored fields
+    // (background, alibi, motive, clues, ...) stay out of the shared roster.
+    const bobSummary = talkContext.talk_context?.characters.find(
+      (character) => character.id === "char-bob",
+    );
+    expect(bobSummary).toMatchObject({
+      public_summary: "A guest; was out in the garden.",
+    });
+    expect(bobSummary).not.toHaveProperty("background");
+    expect(bobSummary).not.toHaveProperty("stated_alibi");
+    expect(bobSummary).not.toHaveProperty("motive");
+    expect(bobSummary).not.toHaveProperty("clues");
     expect(talkContext.talk_context?.active_character).toMatchObject({
       id: "char-alice",
       first_name: "Alice",
       sex: "female",
+      background: "the baker",
+      public_summary: "The baker; was in the kitchen.",
       personality: "nervous",
       stated_alibi: "I was reading",
       clues: [{ id: "clue-alice-bob", text: "Bob was in the garden.", about_character_id: "char-bob" }],
@@ -434,7 +448,7 @@ describe("ai-context guardrails", () => {
           location_id: "loc-kitchen",
           sex: "female",
           appearance: "red hair",
-          background: "the baker",
+          public_summary: "The baker; was in the kitchen.",
         },
       ],
     });
@@ -456,6 +470,18 @@ describe("ai-context guardrails", () => {
       current_location_name: "Kitchen",
       current_location_description: "A messy kitchen",
     });
+    // The public roster is provided so the narrator can name suspects and use
+    // grounded pronouns — spoiler-safe fields only.
+    expect(startContext.accusation_start_context?.characters).toEqual([
+      expect.objectContaining({ id: "char-alice", first_name: "Alice", sex: "female" }),
+      expect.objectContaining({ id: "char-bob", first_name: "Bob", sex: "male" }),
+    ]);
+    expect(startContext.accusation_start_context?.characters[0]).not.toHaveProperty(
+      "is_culprit",
+    );
+    expect(startContext.accusation_start_context?.characters[0]).not.toHaveProperty(
+      "motive",
+    );
     expect(startContext.accusation_judge_context).toBeNull();
 
     const judgeContext = buildAccusationJudgeContext({

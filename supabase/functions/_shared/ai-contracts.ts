@@ -6,7 +6,13 @@ export type AIRoleName =
   | "accusation_start"
   | "accusation_judge";
 
-export type AIPromptKey = AIRoleName | "search_bare" | "search_targeted";
+// Prompt templates are keyed per concrete prompt. The "search" ROLE (output
+// contract) stays, but it has no template of its own: the handler always picks
+// the "search_bare" or "search_targeted" prompt.
+export type AIPromptKey =
+  | Exclude<AIRoleName, "search">
+  | "search_bare"
+  | "search_targeted";
 
 export type AccusationResolution = "win" | "lose" | "continue";
 

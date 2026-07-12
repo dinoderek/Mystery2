@@ -46,7 +46,9 @@ export async function generateForcedAccusationStartNarration(input: {
     conversation_history: input.conversation_history,
   });
 
-  const promptTemplate = await loadPromptTemplate("accusation_start", input.blueprint.metadata.target_age);
+  const promptTemplate = await loadPromptTemplate("accusation_start", input.blueprint.metadata.target_age, {
+    narrationStyle: input.blueprint.metadata.narration_style ?? null,
+  });
   const prompt = renderPrompt(promptTemplate, {
     forced_context: input.scene_summary,
     target_age: input.blueprint.metadata.target_age,

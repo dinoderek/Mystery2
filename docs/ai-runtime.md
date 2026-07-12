@@ -31,10 +31,11 @@ Important version note:
 - `supabase/functions/_shared/ai-context.ts`
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
-- `supabase/functions/_shared/ai-prompts/`
-  - Prompt templates for each role
 - `supabase/functions/_shared/ai-prompts.ts`
-  - Embedded prompt templates and variable rendering
+  - Embedded prompt templates and variable rendering (single source of truth —
+    there are no separate prompt files)
+  - Standard narrator style plus optional per-blueprint
+    `metadata.narration_style` layering (`buildStyleGuidance`)
 - `packages/shared/src/mystery-api-contracts.ts`
   - Shared request/response boundary contracts for UI/backend payloads
 - `packages/shared/src/evaluation/`
@@ -67,14 +68,39 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
   - Handles follow-up question responses with continuity context
 - `talk_end`
   - Produces short conversation-close narration
-- `search` (with prompt variants `search_bare` and `search_targeted`)
+- `search` (output-contract role; the prompt is always one of the two variants
+  `search_bare` / `search_targeted` — there is no plain `search` template)
   - Produces search narration for the current location
-  - `search_bare`: reveals next location-level clue and hints about sub-locations
+  - `search_bare`: reveals next location-level clue and hints about sub-locations.
+    It defaults to the lean `search_empty` word budget, but the handler switches
+    to the roomier `search_find` budget on turns where the backend already knows
+    a clue will be revealed.
   - `search_targeted`: AI judges player's freeform search text against sub-locations, decides whether to reveal a clue, and controls turn cost
 - `accusation_start`
   - Frames accusation scene and requests accusation + reasoning
 - `accusation_judge`
   - Evaluates iterative reasoning rounds and returns `continue|win|lose`
+  - Accepts (`win`) only when the player names the true culprit AND either
+    follows a `solution_paths` evidence chain or correctly tells the story of
+    what happened (culprit + key sequence of events + motive). A direct
+    confrontation can earn a confession, but only when the player already has
+    most of the facts right.
+  - Rejects wrong or under-supported accusations with warm encouragement
+    (`continue` + retry-inviting `follow_up_prompt`); from round 3 onward a
+    still-failing accusation resolves `lose` with a gentle reveal.
+
+## Narration Style
+
+Every runtime prompt carries a `{{style_guidance}}` slot that
+`loadPromptTemplate` always fills (`buildStyleGuidance` in `ai-prompts.ts`):
+
+- The **standard narrator style** (second person, present tense; warm, cozy,
+  never scary; concrete sensory detail; first-person character dialogue with
+  action beats; no meta-commentary) applies to every role, including the
+  code-built `game-start` and `game-move` prompts.
+- A blueprint may optionally set `metadata.narration_style` (one sentence of
+  voice/tone direction). It is layered on top of the standard style — it can
+  flavor the voice, not override the safety/POV rules.
 
 ## Context Boundaries
 
@@ -84,7 +110,12 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
 - Role-specific grounding lives outside the shared context:
   - talk roles get grounded location summaries, public character summaries,
     and active-character roleplay context (including `agendas`, `tells`, and
-    `player_known_clues` when present). `tells` is a first-class array on the
+    `player_known_clues` when present). Public character summaries are
+    **public knowledge only**: identity, `sex`, visible `appearance`, and the
+    player-facing `public_summary` from `narrative.starting_knowledge`. Private
+    authored fields (`background`, alibi, motive, clues, agendas, ...) exist
+    only on the ACTIVE character's private context — knowledge about other
+    characters travels exclusively via explicit clues (`about_character_id`). `tells` is a first-class array on the
     character (separate from agendas); each tell has `text` (the visible cue)
     and a `trigger` whose `kind` is `always`, `condition` (free-text narrative
     condition), or `clue` (fires only when the player brings up the referenced
@@ -98,7 +129,9 @@ Both the evaluator and the gameplay runtime target Blueprint V2.
     in-fiction reason it is withheld) and a precomputed `prereqs_met` flag (see
     Clue discovery and gating). Prerequisite clue ids themselves are not sent.
   - search gets location description, canonical clue progression state, sub-location context (with hints and unrevealed clues), and optional `search_query` for targeted searches. Locked clues (unmet `requires`) are filtered out of the sub-location `unrevealed_clues` so the narrator never weaves a locked clue's text in.
-  - accusation start gets spoiler-safe current-state context
+  - accusation start gets spoiler-safe current-state context plus the public
+    character roster (names, `sex`, `appearance`, `public_summary`) so the
+    narrator can name suspects with grounded pronouns
   - accusation judge gets the full blueprint
 - Character `sex` is included anywhere runtime AI receives character summaries
   or full blueprint data, and prompt guidance now explicitly tells the model to
@@ -250,6 +283,8 @@ For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`,
 - Non-judge talk flows receive `sex` through `talk_context` public/private
   character summaries.
 - `game-move` receives `sex` in destination character public summaries.
+- `accusation_start` receives `sex` through the explicit public character
+  roster on `accusation_start_context.characters`.
 - `accusation_judge` receives `sex` through the full blueprint context.
 - `game-start` and `game-get` also expose `sex` on player-visible character
   summaries so the API boundary stays aligned with the narrator-facing data
@@ -279,6 +314,12 @@ not by parsing narration:
 2. `game-accuse` from `accuse` with reasoning:
    - emits `accuse_round` when resolution is `continue`
    - emits `accuse_resolved` and transitions to `ended` on `win|lose`
+3. Judge semantics: wrong or under-supported accusations return `continue` with
+   encouragement to try again; `win` requires the true culprit plus a valid
+   evidence chain or a correct account of events (or a confession earned by
+   confronting with most facts right); from round 3 a still-failing accusation
+   resolves `lose`. The mock provider mirrors this (wrong suspect → `continue`
+   until round 3, then `lose`).
 
 ## Per-Event Model Attribution
 

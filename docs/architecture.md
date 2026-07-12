@@ -282,7 +282,7 @@ Failure-handling expectations:
 
 - Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
   - Gameplay responses now carry explicit `speaker` metadata via `narration_parts[].speaker`, and `game-get` state returns `narration_events[]` so the UI can rebuild the transcript without inferred `narration_speaker` fields.
-- Prompt role files live under `supabase/functions/_shared/ai-prompts/`.
+- Prompt templates are embedded in `supabase/functions/_shared/ai-prompts.ts` (the single source of truth; there are no separate prompt files).
 - Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
 - Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.
 - `accusation_judge` is the only role allowed to receive full `ground_truth_context`.

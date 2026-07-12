@@ -115,7 +115,9 @@ serveWithCors(async (req) => {
       conversation_history: historyRows ?? [],
     });
 
-    const promptTemplate = await loadPromptTemplate("talk_conversation", blueprint.metadata.target_age);
+    const promptTemplate = await loadPromptTemplate("talk_conversation", blueprint.metadata.target_age, {
+      narrationStyle: blueprint.metadata.narration_style ?? null,
+    });
     const prompt = renderPrompt(promptTemplate, {
       character_name: activeCharacter.first_name,
       player_input: playerInput,

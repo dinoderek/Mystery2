@@ -105,6 +105,14 @@ serveWithCors(async (req) => {
     );
     const hasVisitedBefore = locationHistory.length > 0;
     const locationHistoryJson = JSON.stringify(locationHistory);
+    // Public-knowledge summaries only: identity, visible appearance, and the
+    // player-facing starting_knowledge summary. Private authored material
+    // (background, alibi, motive, ...) never reaches move narration.
+    const publicSummaryByCharacterId = new Map(
+      (blueprint.narrative.starting_knowledge?.characters ?? []).map(
+        (entry) => [entry.character_id, entry.summary] as const,
+      ),
+    );
     const destinationCharactersJson = JSON.stringify(
       blueprint.world.characters
         .filter((character) => character.location_id === destLoc.id)
@@ -114,7 +122,7 @@ serveWithCors(async (req) => {
           last_name: character.last_name,
           sex: character.sex,
           appearance: character.appearance,
-          background: character.background,
+          public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
         })),
     );
 
@@ -130,6 +138,7 @@ serveWithCors(async (req) => {
       destination_characters_json: destinationCharactersJson,
       destination_sub_locations_json:
         subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
+      narration_style: blueprint.metadata.narration_style ?? null,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

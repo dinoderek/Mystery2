@@ -37,6 +37,25 @@ The pipeline:
    `result.json` envelope, the generated `blueprint.json`, per-step CLI `logs/`,
    and the `generator/` + `evaluators/<dimension>/` agent workspaces.
 
+## Prerequisites
+
+**The `claude` CLI — installed and authenticated — is a hard prerequisite** for
+the generate step and for every judge. The bundled wrappers under
+`config/wrappers/` shell out to `claude` (see [Pluggable CLI](#pluggable-cli)),
+so blueprint generation and each dimension's judge both fail without it. Install
+the CLI and sign in once — `claude` uses its own authentication (an interactive
+login session or an API key it is configured to accept) — before running
+anything that generates a blueprint or invokes a judge. The only path that needs
+no `claude` is a `--blueprint` run with no `cli.json`, which runs the mechanical
+checks and skips the judges (see the CLI-config note under
+[Quick start](#quick-start)).
+
+This is the **canonical** statement of the `claude` prerequisite for all three
+evaluation harnesses: the [trace pipeline](trace/README.md) judges and the
+[runtime harness](runtime/README.md) `cli:*` backends and `age_appropriate`
+judge all call `claude` the same way. Those READMEs point back here rather than
+restating it.
+
 ## Quick start
 
 ```bash
@@ -61,6 +80,22 @@ npm run eval -- \
 to a brief JSON file. With a directory the run slug is the directory name; with
 a file it is the file name (minus a trailing `.brief.json`/`.json`), or the
 parent directory name when the file is itself `input.brief.json`.
+
+### Brief and CLI-config gotchas
+
+- **`--spec` (the brief) is required even when you pass `--blueprint`.** The
+  brief is never optional: it drives the brief-derived mechanical checks
+  (`culprit_count_matches_brief` and the other `*_count_matches_brief` checks)
+  and is handed to every judge alongside the blueprint. So a `--blueprint` run
+  still needs a `--spec`, and the brief must **correspond to that blueprint** —
+  a mismatched brief produces spurious count failures and misleads the judges.
+- **A missing `cli.json` silently downgrades a `--blueprint` run to
+  mechanical-only.** When you pass `--blueprint` and no `config/cli.json`
+  exists, the run continues with the judges skipped and *no error* — you get the
+  mechanical checks and nothing else. Copy `config/cli.example.json` to
+  `config/cli.json` first if you want the judge battery. (On the generation
+  path — no `--blueprint` — a missing `cli.json` is instead a hard error, since
+  there is nothing to generate the blueprint with.)
 
 ## Layout
 

@@ -95,6 +95,12 @@ narration, so models diverged as turns accumulated and were not comparable.)
 
 ## Running
 
+The `node evaluation/runtime/*.mjs` commands below have packaged npm aliases —
+`npm run eval:runtime`, `npm run eval:runtime:rejudge`, and
+`npm run eval:cases-from-trace` (pass positional args and flags after `--`).
+They are equivalent; the [end-to-end runbook](#end-to-end-from-a-played-trace)
+uses the aliases.
+
 The `endpoint` backend needs the local Supabase stack up and seeded:
 
 ```bash
@@ -217,6 +223,54 @@ Positional: the trace JSON to read. Flags:
 The emitted `*.cases.mjs` is a normal case file, so feed it straight to
 `run.mjs`.
 
+## End-to-end: from a played trace
+
+Pulling a runtime case out of a real played session and then scoring the
+narrator on it is one flow across three npm scripts: **extract** a trace,
+**turn it into cases**, then **evaluate** the cases.
+
+**Prerequisites (documented elsewhere — pointers, not restated here):**
+
+- **An authenticated `claude` CLI** — the hard prerequisite for the narrator
+  (`cli:claude`) backend and the `age_appropriate` judge, documented once in
+  [`evaluation/README.md`](../README.md#prerequisites). An offline wiring check
+  (`--backend cli:stub --judges flesch`) needs no `claude`.
+- **For the extract step:** `SERVICE_ROLE_KEY`, the local Supabase stack
+  running, and the `--session` already present in the database. The key's
+  provenance (it comes from `npx supabase status`, **not** deploy's
+  `SUPABASE_SERVICE_ROLE_KEY`) and the stack runbook are documented in
+  [`evaluation/trace/README.md`](../trace/README.md#prerequisites) and
+  [`docs/local-infrastructure.md`](../../docs/local-infrastructure.md).
+
+Run every step from the **repo root**: `eval:cases-from-trace` records the
+blueprint path relative to the working directory and `eval:runtime` resolves it
+the same way, so a consistent cwd keeps the generated case's blueprint reference
+valid.
+
+```bash
+# 1. Extract a played session to a raw trace artifact. Needs SERVICE_ROLE_KEY,
+#    a running stack, and an existing session — see the pointers above.
+SERVICE_ROLE_KEY=... npm run eval:trace:extract -- \
+  --session <session-id> --out trace.json
+
+# 2. Turn the trace into deterministic runtime cases. Writes
+#    <trace-id>.cases.mjs plus the trace's blueprint under blueprints/ into the
+#    --out directory (default: evaluation/runtime/cases/from-traces).
+npm run eval:cases-from-trace -- trace.json \
+  --out evaluation/runtime/cases/from-traces
+
+# 3. Evaluate the generated cases. The case file name is derived from the trace
+#    file name (trace.json -> trace.cases.mjs). cli:stub is a deterministic,
+#    offline wiring check; swap to cli:claude (authenticated claude) for a real
+#    narration eval, or endpoint to drive the seeded game endpoints (see Running).
+npm run eval:runtime -- \
+  evaluation/runtime/cases/from-traces/trace.cases.mjs \
+  --backend cli:stub --judges flesch
+```
+
+From step 3 onward the emitted file is an ordinary case file, so every per-case
+flag from [Running](#running) applies (extra `--backend`s, `--judges`, `--out`).
+
 ## CLI backend configuration
 
 `config/cli.example.json` defines the `claude`, `openai`, and `stub` variants
@@ -224,7 +278,10 @@ The emitted `*.cases.mjs` is a normal case file, so feed it straight to
 (gitignored) to change the model or wrapper. Each wrapper receives the role
 system prompt and the user message (`JSON.stringify({ prompt, context })`) as
 file arguments and returns the model's role JSON; the backend reads `.narration`
-from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
+from it. The `claude` variant needs an installed and authenticated `claude` CLI
+(the shared prerequisite documented in
+[`evaluation/README.md`](../README.md#prerequisites)); the `openai` wrapper needs
+the `openai` CLI and `OPENAI_API_KEY`. `stub` needs neither.
 
 ## Adding things
 

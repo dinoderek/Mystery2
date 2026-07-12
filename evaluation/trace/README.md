@@ -60,6 +60,25 @@ npm run eval:trace -- --trace trace.json
 SERVICE_ROLE_KEY=... npm run eval:trace -- --session <session-id>
 ```
 
+### Prerequisites
+
+- **`SERVICE_ROLE_KEY` — for `eval:trace:extract`.** This is Supabase's local
+  `service_role` key: the `service_role key` line printed by
+  `npx supabase status` (in a worktree, run `npm run supabase:patch` once first
+  so the CLI can read the worktree's config). It is **not** deploy's
+  `SUPABASE_SERVICE_ROLE_KEY`, and the two are not interchangeable. Extraction
+  reads the played session straight from Postgres and storage, so the **local
+  stack must be running** and the `--session <id>` must **already exist** (play a
+  game, or seed a session) before you extract. See
+  [`docs/local-infrastructure.md`](../../docs/local-infrastructure.md) for
+  starting, patching, and inspecting the worktree stack.
+- **The `claude` CLI — for the judges.** The trace judges shell out to an
+  authenticated `claude` exactly like the blueprint pipeline. It is documented
+  once, canonically, in
+  [`evaluation/README.md`](../README.md#prerequisites) — this pipeline does not
+  restate it. Without a `cli.json` the run is mechanical-only and needs no
+  `claude`.
+
 Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
 `~/mysteryevals`): `result.json`, `reconstruction.json`, the inline-extracted
 `trace.json` (when `--session` is used), and per-judge `logs/`.
@@ -139,7 +158,9 @@ LLM and run in the standard unit gate.
   correctness, tone. (Per-event age-appropriateness is already judgeable by
   converting trace events into runtime-harness cases with
   `evaluation/runtime/cases-from-trace.mjs` and running the `flesch` +
-  `age_appropriate` judges there.)
+  `age_appropriate` judges there — the full extract → cases → evaluate flow is
+  the runbook in
+  [`evaluation/runtime/README.md`](../runtime/README.md#end-to-end-from-a-played-trace).)
 - Failure → fixture: freeze a flagged turn's reconstructed context as a golden
   fixture and replay it against a different model/prompt to confirm a fix — the
   "switch the model or iterate on the prompt" loop.

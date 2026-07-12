@@ -177,17 +177,11 @@ CLI, and prints `{ "result": "<model-output>" }` on stdout. The bundled
 wrappers in `evaluation/config/wrappers/` invoke `claude`.
 
 **Live progress.** Long agent steps would otherwise be silent, so the runner
-streams each step's stdout/stderr to `logs/<step>.{stdout,stderr}.log` as chunks
-arrive (not buffered to the end), and sets `EVAL_STREAM_FILE` to a per-step
-`logs/<step>.stream.jsonl`. The bundled wrappers run
-`claude --output-format stream-json --verbose` and write the event stream there;
-both `run.mjs` entry points tail it and print a batched tick on an interval —
-elapsed time, the running estimated-thinking-token total (summed from
-`thinking_tokens` deltas), and the digest messages since the last tick, capped
-(`--quiet` to suppress, `EVAL_HEARTBEAT_MS` to tune). The result contract is
-unchanged — wrappers still resolve `extract_path: "result"` from their stdout
-(blueprint/judge read the artifact from disk; the trace judge recovers it from
-the stream's final result event). See `evaluation/README.md` → "Live progress".
+tails each step's event stream and prints periodic progress ticks. This is a
+reporting layer over the wrappers: the result contract is unchanged — a wrapper
+still resolves its `extract_path` from stdout regardless of what it streams. The
+operational surface (the per-step stream/log files, the tick cadence and its
+knobs, `--quiet`) lives in `evaluation/README.md` → "Live progress".
 
 ## Generator and judge harnesses
 
@@ -221,13 +215,14 @@ This pattern matters for two reasons:
 
 ## Output envelope
 
-Every run writes one self-contained output directory outside the repo (default
-`~/mysteryevals/<date>/<time>/run-<brief>/`, override with `--output-root` /
-`$MYSTERYEVALS_DIR`). It holds the `result.json` envelope, the `blueprint.json`,
-per-step `logs/`, and the preserved `generator/` + `evaluators/<dimension>/`
-agent workspaces — see `evaluation/README.md` → "Output directory" for the
-layout. Each run gets its own subtree, so prior runs (including each agent's
-`claude.stderr.log`) are never overwritten.
+Every run writes one self-contained output directory **outside the repo** so
+debug iterations don't churn git. It holds the `result.json` envelope, the
+`blueprint.json`, per-step `logs/`, and the preserved `generator/` +
+`evaluators/<dimension>/` agent workspaces. Each run gets its own subtree, so
+prior runs (including each agent's `claude.stderr.log`) are never overwritten,
+which keeps failures debuggable after the fact. The default root and the
+override, plus the directory layout, are in `evaluation/README.md` → "Output
+directory".
 
 The envelope shape is version-tagged (`schema_version`). Top-level fields:
 `run_id`, `started_at`, `ended_at`, `spec_dir`, `blueprint_path`,
@@ -238,22 +233,23 @@ and combined `overall` status. Consumers can distinguish "didn't run" from
 
 `timing` is a monotonic-clock breakdown (integer milliseconds) of every
 pipeline stage plus per-dimension sub-steps, mirrored to stdout at the end of
-each run. Because dimensions evaluate in parallel, the `dimensions` stage
-duration is wall-clock (≈ the slowest dimension), not the sum of the
-per-dimension durations; and a stage's duration is the wall-clock of the whole
-stage **including retries**, so it can exceed the summed per-attempt
-`duration_ms` under `generation`/`judge`. See `evaluation/README.md` for the
-field-by-field shape.
+each run. The clock is monotonic (not wall time) precisely so a mid-run system
+clock adjustment can't produce negative or inflated durations. The two
+consequences of the parallel, retrying design that make the numbers read
+oddly — the `dimensions` stage duration being wall-clock rather than the sum of
+the per-dimension durations, and a stage's duration including its retries — are
+documented with the field-by-field shape in `evaluation/README.md` → "Timing".
 
 ## Retries
 
 Each step (`generate`, `judge`) retries on transient failures, configured by its
-`retries` count — covering CLI failures *and* schema validation of the model's
+`retries` count — covering CLI failures *and* validation of the model's parsed
 output, so a retry re-exercises the model on a real failure rather than a flake.
-Per-attempt outcomes (`ok | cli_fail | schema_fail`) are recorded in the
-envelope so we can tell whether retries are reducing flake or masking a
-systematic bug. See `evaluation/README.md` → "Retries" for the per-step
-retriable conditions and the default counts.
+Per-attempt outcomes are recorded in the envelope so we can tell whether retries
+are reducing flake or masking a systematic bug: generation attempts record
+`ok | cli_fail | parse_fail`. See `evaluation/README.md` → "Retries" for the
+per-step retriable conditions, the judge-attempt outcomes, and the default
+counts.
 
 ## Dimensions
 
@@ -261,7 +257,7 @@ Today's enabled set (`evaluation/dimensions/registry.json`):
 
 | ID                  | Question                                                                                                    | Analyzer? |
 |---------------------|-------------------------------------------------------------------------------------------------------------|-----------|
-| `solve_depth`       | Is the case solvable; does the **shortest** route to the culprit need ≥ `minPathLength` distinct clues (from `story_brief.minPathLength`, else registry `min_clues`, else 3 — enforced on the main suspect only); and does every suspect have an elimination path (lengths **measured**, not floored)? Supersedes `solvability`. | No        |
+| `solve_depth`       | Is the case solvable; does the **shortest** route to the culprit need enough distinct clues to be a real deduction (a minimum-path floor, enforced on the main suspect only); and does every suspect have an elimination path (lengths **measured**, not floored)? Supersedes `solvability`. The floor's source and fallback are in `evaluation/README.md` → "Enabled dimensions". | No        |
 | `fairness`          | Does the evidence **uniquely** point at the culprit? (No non-culprit is equally well supported.)            | No        |
 | `timeline_coherence`  | Around the crime, do characters' `actual_actions` produce `what_happened` and place each suspect consistently with the clues that clear/implicate them? (`actual_actions` are authoritative; the prose `ground_truth.timeline` is a non-binding summary.) | No        |
 | `knowledge_coherence` | Can each character know the clues they reveal (observability), and is every falsehood an *authored, intended* lie rather than an accidental contradiction (deception integrity)? | No        |

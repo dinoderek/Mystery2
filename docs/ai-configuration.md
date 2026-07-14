@@ -47,7 +47,7 @@ This document is the canonical source for:
   - output defaults to `{MYSTERY_CONFIG_ROOT}/chat-gen-prompts/blueprint-packet.*.chat.md`
   - packet content is built from the same generator prompt, user-message JSON, and response-schema builder used by the live API path
   - `--model` is ignored completely in chat mode so packets stay model-agnostic
-- verification defaults to `google/gemini-3-flash-preview` unless `--verification-model <model-id>` is provided
+- post-generation verification runs offline, in-process mechanical checks (no verifier model, no extra network call) and writes a pass/fail structural report to the sibling verification artifact
 - if the model returns JSON that fails Blueprint V2 schema validation, the CLI still persists that raw JSON to the target blueprint file and records the failure in the sibling verification artifact
 - `--parallel` runs all queued jobs concurrently; `--parallelism <n>` caps concurrent jobs
 - it uses `AI_OPENROUTER_TIMEOUT_MS` for request timeout control (default `120000`)
@@ -131,7 +131,6 @@ Operator flags:
 
 - repeat `--brief-file <path>` to queue multiple story briefs
 - repeat `--model <model-id>` to queue multiple models
-- `--verification-model <model-id>` chooses the verification model; default is `google/gemini-3-flash-preview`
 - `--output <path>` writes a single job to an exact file path
 - `--output-file <path>` writes one file per queued job using the composed filename
 - `--chat-packet` writes markdown packets instead of calling OpenRouter; if no output path is given it defaults under `chat-gen-prompts/`

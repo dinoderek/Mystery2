@@ -8,8 +8,7 @@ For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
 For a field-by-field map of which blueprint data reaches each generated output,
 see `docs/blueprint-generation-flows.md`.
-For the standalone blueprint evaluator prompt and output schema, see
-`docs/blueprint-evaluation.md`.
+For how generated blueprints are evaluated, see `docs/evaluation-pipeline.md`.
 
 Important version note:
 
@@ -37,9 +36,6 @@ Important version note:
   - Embedded prompt templates and variable rendering
 - `packages/shared/src/mystery-api-contracts.ts`
   - Shared request/response boundary contracts for UI/backend payloads
-- `packages/shared/src/evaluation/`
-  - Standalone blueprint-evaluation prompt and output schema for offline or
-    pre-runtime quality checks
 
 ## Blueprint Evaluation Reference
 
@@ -51,13 +47,13 @@ one LLM judge per dimension (solve depth, fairness, timeline + knowledge
 coherence, character grounding, path payoff) and writes a structured
 `result.json` envelope.
 
-The original single-prompt evaluator (`packages/shared/src/evaluation/`,
-`prompt.ts` + `schema.ts`) is **deprecated**. It survives only as the
-post-generation verification pass in `scripts/generate-blueprint.mjs` (which
-writes a sibling `*.verification.json` artifact) and will be removed once that
-path moves to the pipeline.
+The former single-prompt evaluator has been **removed**. The post-generation
+verification pass in `scripts/generate-blueprint.mjs` now runs the pipeline's
+own mechanical checks (`evaluation/checks/mechanical.mjs`) in-process and writes
+the pass/fail structural result to a sibling `*.verification.json` artifact — no
+LLM verifier and no extra network call.
 
-Both the evaluator and the gameplay runtime target Blueprint V2.
+Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
 
 ## Roles and Prompt Responsibilities
 

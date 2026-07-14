@@ -120,16 +120,22 @@ Key flags:
 | `--openrouter-api-key <key>` | Explicit key (falls back to `OPENROUTER_API_KEY` env) |
 | `--output <path>` | Write single job to exact file (stdout otherwise) |
 | `--output-file <prefix>` | Write composed filenames `<prefix>.<model>.<brief>.json` |
-| `--verification-model <id>` | Verifier model (default: `google/gemini-3-flash-preview`) |
 | `--parallel` / `--parallelism <n>` | Concurrent jobs |
 
 Repeat `--brief-file` and/or `--model` for multi-job runs (requires
 `--output-file`). Set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid
 repeating `--model`.
 
-Both blueprint and sibling `.verification.json` files are written on
-completion. Schema or verification failures are reported in the summary without
-failing the process.
+Both the blueprint and a sibling `.verification.json` file are written on
+completion. Verification is a purely structural, offline check that runs the
+shared deterministic checks (schema validity, culprit/location/character/
+red-herring counts vs. the brief, orphan clues, and a satisfiable clue graph)
+against the just-written blueprint — no verifier model and no extra network
+call. The `.verification.json` record reports `passed`, the individual `checks`,
+and any `failed_checks`. Schema or structural-check failures are reported in the
+summary without failing the process. For deeper semantic evaluation
+(brief-alignment, dead-ends, fairness), run the evaluation pipeline (`npm run
+eval`).
 
 ### Export chat packets (no API key needed)
 

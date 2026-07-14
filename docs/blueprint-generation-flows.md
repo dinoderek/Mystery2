@@ -7,8 +7,7 @@ Use it as the implementation-level companion to:
 
 - `docs/ai-runtime.md` for gameplay narration runtime mechanics
 - `docs/ai-configuration.md` for AI provider and image-generation config
-- `docs/blueprint-evaluation.md` for the evaluator prompt, output schema, and
-  blueprint-evaluation follow-up notes
+- `docs/evaluation-pipeline.md` for how generated blueprints are evaluated
 - `docs/game.md` for player-facing game rules and flow
 
 The goal here is narrow: show which blueprint fields actually reach each
@@ -39,7 +38,7 @@ use IDs (`character_id`, `destination` as location ID).
   `docs/ai-runtime.md` together so the field map and runtime behavior stay in
   sync.
 - When evaluator assumptions or blueprint-quality contracts change, also update
-  `docs/blueprint-evaluation.md`.
+  `docs/evaluation-pipeline.md`.
 
 ## Blueprint Generation Prompt Structure
 
@@ -369,11 +368,9 @@ Scope notes:
 
 ## Evaluation Assets And Follow-Up Design Ideas
 
-Current evaluation assets live in the shared package:
+Blueprint evaluation lives in the evaluation pipeline at `evaluation/`, which
+targets Blueprint V2. It combines always-on mechanical checks
+(`evaluation/checks/mechanical.mjs`) with one LLM judge per dimension.
 
-- prompt: `packages/shared/src/evaluation/prompt.ts`
-- output schema: `packages/shared/src/evaluation/schema.ts`
-
-Those assets target Blueprint V2.
-
-See `docs/blueprint-evaluation.md` for the fuller list.
+See `docs/evaluation-pipeline.md` for the design and `evaluation/README.md` for
+how to run it.

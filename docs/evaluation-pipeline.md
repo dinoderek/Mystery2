@@ -1,8 +1,7 @@
 # Evaluation Pipeline (Design)
 
-**Status:** In active development. Supersedes the single-prompt evaluator
-described in `docs/blueprint-evaluation.md` (now deprecated; scheduled for
-removal in a follow-up branch).
+**Status:** In active development. Supersedes the former single-prompt
+evaluator, which has been removed.
 
 This document explains **why** the evaluation pipeline at `evaluation/` is
 shaped the way it is. For how to run it, see `evaluation/README.md`.
@@ -328,21 +327,18 @@ customization, if ever needed again, should re-enter through a different door
 
 ## Relationship to the old evaluator
 
-The single-prompt evaluator at `packages/shared/src/evaluation/`
-(`prompt.ts`, `schema.ts`) is **deprecated**. It is still wired into
-`scripts/generate-blueprint.mjs` for post-generation verification (writes a
-sibling `*.verification.json` file) and that path still works.
+The former single-prompt evaluator (a standalone LLM prompt plus Zod output
+schema) has been **removed**. This pipeline is the only place evaluator work
+happens.
 
-Direction:
-
-- No new dimensions or features land in the old evaluator.
-- The new pipeline is the only place evaluator work happens.
-- A follow-up branch will delete the old evaluator and migrate the
-  post-generation verification call to invoke the new pipeline (or a
-  pipeline-aligned variant), then remove `docs/blueprint-evaluation.md`.
-
-Until that follow-up lands, treat the old doc as historical. This doc is the
-canonical reference.
+The blueprint generator (`scripts/generate-blueprint.mjs`) previously called
+that evaluator over OpenRouter for post-generation verification. It now runs
+this pipeline's own always-on first tier — `runMechanicalChecks` from
+`evaluation/checks/mechanical.mjs` — in-process instead, writing the pass/fail
+structural result to the sibling `*.verification.json`. So the OpenRouter
+generation path and this pipeline share one deterministic implementation for
+the mechanical checks and cannot drift. Deeper semantic evaluation
+(brief-alignment, dead-ends, fairness) lives here, in the full pipeline.
 
 ## Intentionally out of scope (for now)
 

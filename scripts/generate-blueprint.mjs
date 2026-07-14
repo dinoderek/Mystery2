@@ -3,19 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { zodToJsonSchema } from "zod-to-json-schema";
-
 import {
   BlueprintGenerationError,
-  StoryBriefSchema,
   generateBlueprint,
 } from "../packages/blueprint-generator/src/index.ts";
 import { buildBlueprintGenerationMarkdownPacket } from "../packages/blueprint-generator/src/chat-packet.ts";
-import { BlueprintV2Schema } from "../packages/shared/src/blueprint-schema-v2.ts";
-import {
-  BLUEPRINT_EVALUATION_PROMPT,
-  BlueprintEvaluationOutputSchema,
-} from "../packages/shared/src/evaluation/index.ts";
+import { runMechanicalChecks } from "../evaluation/checks/mechanical.mjs";
 import {
   getBaseEnvPath,
   getBlueprintsDir,
@@ -25,8 +18,6 @@ import {
 import { loadEnvFile } from "./supabase-utils.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_VERIFICATION_MODEL = "google/gemini-3-flash-preview";
 
 function parsePositiveInt(
   rawValue,
@@ -133,21 +124,19 @@ function buildSummaryEntry({
   status,
   briefFile,
   model,
-  verificationModel,
   outputPath,
   verificationFile,
   verificationStatus = null,
-  overallPass = null,
+  passed = null,
 }) {
   return {
     status,
     brief_file: briefFile,
     model,
-    verification_model: verificationModel,
     blueprint_file: outputPath || null,
     verification_file: verificationFile || null,
     verification_status: verificationStatus,
-    overall_pass: overallPass,
+    passed,
   };
 }
 
@@ -169,7 +158,6 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
     models: parseModelList(
       env.OPENROUTER_BLUEPRINT_MODEL || env.AI_MODEL || "",
     ),
-    verificationModel: DEFAULT_VERIFICATION_MODEL,
     openRouterApiKey: env.OPENROUTER_API_KEY || "",
     timeoutMs: parsePositiveInt(
       env.AI_OPENROUTER_TIMEOUT_MS,
@@ -212,11 +200,6 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
     }
     if (token === "--openrouter-api-key") {
       options.openRouterApiKey = String(argv[index + 1] ?? "");
-      index += 1;
-      continue;
-    }
-    if (token === "--verification-model") {
-      options.verificationModel = String(argv[index + 1] ?? "").trim();
       index += 1;
       continue;
     }
@@ -263,9 +246,6 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
       "Missing required --openrouter-api-key (or OPENROUTER_API_KEY env)",
     );
   }
-  if (!options.chatPacket && !options.verificationModel) {
-    throw new Error("Missing required --verification-model");
-  }
   if (!options.chatPacket && !options.output && !options.outputFile) {
     const blueprintsDir = getBlueprintsDir();
     options.outputFile = path.join(blueprintsDir, "blueprint");
@@ -293,355 +273,25 @@ export async function loadBlueprintGenerationEnv(
   return { ...rootEnv, ...baseEnv };
 }
 
-function makePropertyNullable(schema) {
-  const currentType = schema.type;
-
-  if (typeof currentType === "string") {
-    if (currentType === "null") return schema;
-    return { ...schema, type: [currentType, "null"] };
-  }
-
-  if (Array.isArray(currentType)) {
-    return currentType.includes("null")
-      ? schema
-      : { ...schema, type: [...currentType, "null"] };
-  }
-
-  const anyOf = Array.isArray(schema.anyOf) ? schema.anyOf : [];
-  const hasNullVariant = anyOf.some(
-    (variant) =>
-      typeof variant === "object" &&
-      variant !== null &&
-      !Array.isArray(variant) &&
-      variant.type === "null",
-  );
-
-  if (hasNullVariant) {
-    return schema;
-  }
+// Post-generation verification is a purely structural, offline check: it runs
+// the shared deterministic checks (schema validity, culprit/location/character/
+// red-herring counts vs. the brief, orphan clues, and a satisfiable clue graph)
+// against the just-written blueprint. It makes no network call and needs no
+// model — the record is a pass/fail structural report, not an LLM judgement.
+export function verifyGeneratedBlueprint({ storyBrief, blueprint }) {
+  const checks = runMechanicalChecks({
+    brief: storyBrief,
+    blueprintCandidate: blueprint,
+  });
+  const failedChecks = checks
+    .filter((check) => check.status !== "pass")
+    .map((check) => check.id);
 
   return {
-    anyOf: [schema, { type: "null" }],
+    passed: failedChecks.length === 0,
+    checks,
+    failedChecks,
   };
-}
-
-function normalizeStructuredOutputSchema(schema) {
-  if (Array.isArray(schema)) {
-    return schema.map(normalizeStructuredOutputSchema);
-  }
-
-  if (!schema || typeof schema !== "object") {
-    return schema;
-  }
-
-  const normalized = Object.fromEntries(
-    Object.entries(schema).map(([key, value]) => [
-      key,
-      normalizeStructuredOutputSchema(value),
-    ]),
-  );
-
-  if (
-    normalized.properties &&
-    typeof normalized.properties === "object" &&
-    !Array.isArray(normalized.properties)
-  ) {
-    const properties = normalized.properties;
-    const propertyNames = Object.keys(properties);
-    const existingRequired = Array.isArray(normalized.required)
-      ? normalized.required.filter((value) => typeof value === "string")
-      : [];
-    const requiredSet = new Set(existingRequired);
-
-    for (const propertyName of propertyNames) {
-      const propertySchema = properties[propertyName];
-      if (
-        !requiredSet.has(propertyName) &&
-        propertySchema &&
-        typeof propertySchema === "object" &&
-        !Array.isArray(propertySchema)
-      ) {
-        properties[propertyName] = makePropertyNullable(propertySchema);
-      }
-    }
-
-    normalized.properties = properties;
-    normalized.required = propertyNames;
-    normalized.additionalProperties = false;
-  }
-
-  return normalized;
-}
-
-function buildStructuredOutputSchema(zodSchema, name) {
-  const raw = zodToJsonSchema(zodSchema, {
-    name,
-    $refStrategy: "none",
-  });
-  const definition = raw.definitions?.[name];
-  const root =
-    definition && typeof definition === "object" && !Array.isArray(definition)
-      ? definition
-      : raw;
-  const normalized = normalizeStructuredOutputSchema(root);
-
-  if (
-    normalized &&
-    typeof normalized === "object" &&
-    !Array.isArray(normalized) &&
-    "$schema" in normalized
-  ) {
-    delete normalized.$schema;
-  }
-
-  return normalized;
-}
-
-function extractAssistantContent(payload) {
-  const content = payload?.choices?.[0]?.message?.content;
-
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => (typeof part?.text === "string" ? part.text : ""))
-      .join("");
-  }
-
-  throw new BlueprintGenerationError(
-    "OPENROUTER_ERROR",
-    "OpenRouter response missing assistant content",
-  );
-}
-
-function mapStructuredOutputError(
-  responseBody,
-  status,
-  model,
-  requestBody,
-  label,
-) {
-  const normalized = responseBody.toLowerCase();
-
-  if (
-    status >= 400 &&
-    status < 500 &&
-    (normalized.includes("json_schema") ||
-      normalized.includes("response_format") ||
-      normalized.includes("structured") ||
-      normalized.includes("require_parameters"))
-  ) {
-    return new BlueprintGenerationError(
-      "UNSUPPORTED_STRUCTURED_OUTPUTS",
-      `Model "${model}" could not satisfy structured-output requirements for ${label}`,
-      { status, responseBody, model, requestBody },
-    );
-  }
-
-  return new BlueprintGenerationError(
-    "OPENROUTER_ERROR",
-    `OpenRouter ${label} request failed (${status})`,
-    { status, responseBody, model, requestBody },
-  );
-}
-
-function buildVerificationRequestBody({ storyBrief, blueprint, model }) {
-  return {
-    model,
-    messages: [
-      {
-        role: "system",
-        content: BLUEPRINT_EVALUATION_PROMPT,
-      },
-      {
-        role: "user",
-        content: JSON.stringify({
-          story_brief: storyBrief,
-          blueprint,
-          instructions:
-            "Return only a JSON object that satisfies the provided response schema.",
-        }),
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "BlueprintEvaluationOutput",
-        strict: true,
-        schema: buildStructuredOutputSchema(
-          BlueprintEvaluationOutputSchema,
-          "BlueprintEvaluationOutput",
-        ),
-      },
-    },
-    provider: {
-      require_parameters: true,
-    },
-  };
-}
-
-async function verifyGeneratedBlueprint(options) {
-  const parsedBrief = StoryBriefSchema.safeParse(options.storyBrief);
-  if (!parsedBrief.success) {
-    throw new BlueprintGenerationError(
-      "INVALID_STORY_BRIEF",
-      "Story brief did not match the expected schema for verification",
-      { issues: parsedBrief.error.format() },
-    );
-  }
-
-  const parsedBlueprint = BlueprintV2Schema.safeParse(options.blueprint);
-  if (!parsedBlueprint.success) {
-    throw new BlueprintGenerationError(
-      "SCHEMA_VALIDATION_FAILED",
-      "Generated blueprint did not match the Blueprint V2 schema for verification",
-      { issues: parsedBlueprint.error.format() },
-    );
-  }
-
-  const model = String(options.model ?? "").trim();
-  if (!model) {
-    throw new BlueprintGenerationError(
-      "OPENROUTER_ERROR",
-      "Missing model for blueprint verification",
-    );
-  }
-
-  const openRouterApiKey = String(options.openRouterApiKey ?? "").trim();
-  if (!openRouterApiKey) {
-    throw new BlueprintGenerationError(
-      "OPENROUTER_ERROR",
-      "Missing OpenRouter API key for blueprint verification",
-    );
-  }
-
-  const fetchImpl = options.fetchImpl ?? globalThis.fetch;
-  const requestBody = buildVerificationRequestBody({
-    storyBrief: parsedBrief.data,
-    blueprint: parsedBlueprint.data,
-    model,
-  });
-  const controller = new globalThis.AbortController();
-  const timeoutMs = options.timeoutMs ?? DEFAULT_OPENROUTER_TIMEOUT_MS;
-  const timeout = globalThis.setTimeout(() => controller.abort(), timeoutMs);
-
-  let response;
-  try {
-    response = await fetchImpl(options.baseUrl ?? OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openRouterApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new BlueprintGenerationError(
-        "OPENROUTER_ERROR",
-        "OpenRouter blueprint verification request timed out",
-        { model, requestBody },
-        error,
-      );
-    }
-
-    throw new BlueprintGenerationError(
-      "OPENROUTER_ERROR",
-      "OpenRouter blueprint verification request failed",
-      { model, requestBody },
-      error,
-    );
-  } finally {
-    globalThis.clearTimeout(timeout);
-  }
-
-  if (!response.ok) {
-    const responseBody = await response.text();
-    throw mapStructuredOutputError(
-      responseBody,
-      response.status,
-      model,
-      requestBody,
-      "blueprint verification",
-    );
-  }
-
-  const payload = await response.json();
-  const responseText = extractAssistantContent(payload);
-
-  let parsedJson;
-  try {
-    parsedJson = JSON.parse(responseText);
-  } catch (error) {
-    throw new BlueprintGenerationError(
-      "INVALID_JSON_RESPONSE",
-      "OpenRouter returned non-JSON blueprint verification output",
-      { responseText, model, requestBody },
-      error,
-    );
-  }
-
-  const verification = BlueprintEvaluationOutputSchema.safeParse(parsedJson);
-  if (!verification.success) {
-    throw new BlueprintGenerationError(
-      "SCHEMA_VALIDATION_FAILED",
-      "Blueprint verification output failed schema validation",
-      {
-        issues: verification.error.format(),
-        responseText,
-        model,
-        requestBody,
-      },
-    );
-  }
-
-  return verification.data;
-}
-
-function collectDeterministicIssues(blueprint) {
-  const issues = [];
-
-  const referencedClueIds = new Set();
-  const allPaths = [
-    ...blueprint.solution_paths,
-    ...blueprint.red_herrings,
-    ...blueprint.suspect_elimination_paths,
-  ];
-  for (const rp of allPaths) {
-    for (const id of rp.location_clue_ids) referencedClueIds.add(id);
-    for (const id of rp.character_clue_ids) referencedClueIds.add(id);
-  }
-
-  for (const location of blueprint.world.locations) {
-    for (const clue of location.clues) {
-      if (!referencedClueIds.has(clue.id)) {
-        issues.push({
-          check: "unreferenced_location_clue",
-          path: `world.locations[${blueprint.world.locations.indexOf(location)}].clues[${location.clues.indexOf(clue)}]`,
-          clue_id: clue.id,
-          message: `Location clue "${clue.id}" is not referenced by any solution, red herring, or suspect elimination path.`,
-        });
-      }
-    }
-  }
-
-  for (const character of blueprint.world.characters) {
-    for (const clue of character.clues) {
-      if (!referencedClueIds.has(clue.id)) {
-        issues.push({
-          check: "unreferenced_character_clue",
-          path: `world.characters[${blueprint.world.characters.indexOf(character)}].clues[${character.clues.indexOf(clue)}]`,
-          clue_id: clue.id,
-          message: `Character clue "${clue.id}" is not referenced by any solution, red herring, or suspect elimination path.`,
-        });
-      }
-    }
-  }
-
-  return issues;
 }
 
 function buildVerificationRecord({
@@ -649,20 +299,17 @@ function buildVerificationRecord({
   job,
   outputPath,
   verification,
-  verificationModel,
-  deterministic_issues = [],
   error,
 }) {
   return {
     status,
     verified_at: new Date().toISOString(),
     model: job.model,
-    verification_model: verificationModel,
     brief_file: job.briefFile,
     blueprint_file: outputPath,
-    overall_pass: verification?.overall_pass ?? null,
-    evaluation: verification ?? null,
-    deterministic_issues,
+    passed: verification?.passed ?? null,
+    checks: verification?.checks ?? [],
+    failed_checks: verification?.failedChecks ?? [],
     error:
       error instanceof Error
         ? {
@@ -715,9 +362,6 @@ function formatBlueprintGenerationError(error) {
     if (typeof error.details.model === "string") {
       lines.push(`Model: ${error.details.model}`);
     }
-    if (typeof error.details.verificationModel === "string") {
-      lines.push(`Verification model: ${error.details.verificationModel}`);
-    }
     if (typeof error.details.outputPath === "string") {
       lines.push(`Blueprint file: ${error.details.outputPath}`);
     }
@@ -725,12 +369,10 @@ function formatBlueprintGenerationError(error) {
       lines.push(`Verification file: ${error.details.verificationFile}`);
     }
     if (
-      Array.isArray(error.details.failedDimensions) &&
-      error.details.failedDimensions.length > 0
+      Array.isArray(error.details.failedChecks) &&
+      error.details.failedChecks.length > 0
     ) {
-      lines.push(
-        `Failed dimensions: ${error.details.failedDimensions.join(", ")}`,
-      );
+      lines.push(`Failed checks: ${error.details.failedChecks.join(", ")}`);
     }
     if (error.cause) {
       lines.push(`Cause:\n${formatBlueprintGenerationError(error.cause)}`);
@@ -1077,11 +719,8 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             verification = await verifyBlueprintImpl({
               storyBrief,
               blueprint,
-              model: options.verificationModel,
-              openRouterApiKey: options.openRouterApiKey,
-              timeoutMs: options.timeoutMs,
             });
-            if (!verification.overall_pass) {
+            if (!verification.passed) {
               verificationStatus = "failed";
             }
           } catch (error) {
@@ -1089,14 +728,11 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             verificationError = error;
           }
 
-          const deterministicIssues = collectDeterministicIssues(blueprint);
           const verificationRecord = buildVerificationRecord({
             status: verificationStatus,
             job,
             outputPath,
             verification,
-            verificationModel: options.verificationModel,
-            deterministic_issues: deterministicIssues,
             error: verificationError,
           });
           await writeFile(
@@ -1113,26 +749,20 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
               "Blueprint verification errored after the blueprint file was written",
               {
                 model: job.model,
-                verificationModel: options.verificationModel,
                 outputPath,
                 verificationFile,
               },
               verificationError,
             );
           }
-          if (verification && !verification.overall_pass) {
-            const failedDimensions = Object.entries(verification.dimensions)
-              .filter(([, result]) => result?.yes === false)
-              .map(([dimension]) => dimension);
-
+          if (verification && !verification.passed) {
             throw new BlueprintVerificationError(
               "Generated blueprint did not pass verification",
               {
                 model: job.model,
-                verificationModel: options.verificationModel,
                 outputPath,
                 verificationFile,
-                failedDimensions,
+                failedChecks: verification.failedChecks,
               },
             );
           }
@@ -1148,19 +778,17 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             status: "fulfilled",
             briefFile: job.briefFile,
             model: job.model,
-            verificationModel: options.verificationModel,
             outputPath,
             verificationFile: outputPath
               ? buildVerificationOutputPath(outputPath)
               : "",
             verificationStatus: outputPath ? "passed" : null,
-            overallPass: outputPath ? true : null,
+            passed: outputPath ? true : null,
           }),
           value: {
             blueprint,
             briefFile: job.briefFile,
             model: job.model,
-            verificationModel: options.verificationModel,
             outputPath,
             verificationFile: outputPath
               ? buildVerificationOutputPath(outputPath)
@@ -1179,7 +807,7 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             : "";
         let verificationStatus =
           error instanceof BlueprintVerificationError
-            ? error.details.failedDimensions
+            ? error.details.failedChecks
               ? "failed"
               : "error"
             : null;
@@ -1205,7 +833,6 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
               job,
               outputPath,
               verification: null,
-              verificationModel: options.verificationModel,
               error,
             });
             await writeFile(
@@ -1246,11 +873,10 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
             status: "rejected",
             briefFile: job.briefFile,
             model: job.model,
-            verificationModel: options.verificationModel,
             outputPath,
             verificationFile,
             verificationStatus,
-            overallPass: verificationStatus === "failed" ? false : null,
+            passed: verificationStatus === "failed" ? false : null,
           }),
         };
       }

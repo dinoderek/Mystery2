@@ -170,6 +170,7 @@ serveWithCors(async (req) => {
       buildGameStartPrompt({
         target_age: blueprint.metadata.target_age,
         premise: blueprint.narrative.premise,
+        narration_style: blueprint.metadata.narration_style ?? null,
       }),
       aiMetadata,
     );

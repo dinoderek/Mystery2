@@ -208,6 +208,9 @@ over fewer dense ones.
 
 **Metadata.** `schema_version`: `"v2"`. `title`: 2–6 words. `one_liner`: one
 sentence. `target_age`: copy from the brief. `time_budget`: per the rule above.
+`narration_style`: optional — one sentence of narration voice/tone direction for
+the in-game narrator, layered on top of the standard narrator voice (e.g. 'salty
+harbor air, gull cries, a gentle pirate lilt'); omit to use the standard voice.
 `art_style`: null (superseded). `visual_direction`: structured object —
 `art_style` (specific medium, not just "watercolor"), `color_palette` (3–5 colors
 + emotional register, tied to the setting), `mood` (1–2 phrases), `lighting`

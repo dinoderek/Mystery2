@@ -518,19 +518,26 @@ class MockAIProvider implements AIProvider {
         const isCulprit = typeof culpritFirstName === "string"
           ? culpritFirstName.trim().toLowerCase() === normalizedCharacter
           : normalizedCharacter !== "bob";
+        // Mirrors the live judge semantics: a wrong or unsupported accusation
+        // is rejected with encouragement ("continue") until round 3, when the
+        // case finally resolves "lose". A correct culprit wins from round 1.
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
           : isCulprit
           ? "win"
-          : "lose";
+          : round >= 3
+          ? "lose"
+          : "continue";
 
         return {
           narration:
-            accusationResolution === "continue"
+            accusationResolution === "win"
+              ? "[Mock] The evidence is decisive. Your accusation is correct."
+              : accusationResolution === "lose"
+              ? "[Mock] The case closes without proof — the truth slips away this time."
+              : round < 1
               ? "[Mock] I need a stronger chain of evidence before deciding."
-              : accusationResolution === "win"
-                ? "[Mock] The evidence is decisive. Your accusation is correct."
-                : "[Mock] The evidence does not support your accusation.",
+              : "[Mock] Not proven yet. Look at your clues again and try another accusation.",
           accusation_resolution: accusationResolution,
           follow_up_prompt:
             accusationResolution === "continue"

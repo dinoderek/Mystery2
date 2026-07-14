@@ -287,6 +287,49 @@ describe("ai-provider mock role output", () => {
     expect(secondRound.follow_up_prompt).toBeNull();
   });
 
+  it("rejects a wrong accusation with encouragement, losing only from round 3", async () => {
+    const provider = createAIProviderFromProfile({
+      provider: "mock",
+      model: "mock/default",
+    });
+
+    const judgeContext = (round: number) => ({
+      player_input: "It was Bob, I'm sure of it.",
+      accusation_judge_context: {
+        round,
+        full_blueprint: {
+          world: {
+            characters: [
+              { first_name: "Alice", is_culprit: true },
+              { first_name: "Bob", is_culprit: false },
+            ],
+          },
+        },
+      },
+    });
+
+    // Early wrong accusations are rejected with an invitation to try again.
+    const earlyRound = await provider.generateRoleOutput({
+      role: "accusation_judge",
+      prompt: "prompt",
+      context: judgeContext(1),
+      parse: parseAccusationJudgeOutput,
+    });
+    expect(earlyRound.accusation_resolution).toBe("continue");
+    expect(earlyRound.follow_up_prompt).toBeTruthy();
+    expect(earlyRound.narration).toContain("try another accusation");
+
+    // From round 3 a still-wrong accusation finally resolves to lose.
+    const finalRound = await provider.generateRoleOutput({
+      role: "accusation_judge",
+      prompt: "prompt",
+      context: judgeContext(3),
+      parse: parseAccusationJudgeOutput,
+    });
+    expect(finalRound.accusation_resolution).toBe("lose");
+    expect(finalRound.follow_up_prompt).toBeNull();
+  });
+
   it("generates search narration from location context only", async () => {
     const provider = createAIProviderFromProfile({
       provider: "mock",

@@ -185,7 +185,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseData.narration_parts[0].speaker.kind).toBe("narrator");
   });
 
-  it("resolves to lose for an incorrect suspect", async () => {
+  it("rejects a wrong suspect with encouragement, then resolves to lose from round 3", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
@@ -195,15 +195,25 @@ describe("game-accuse endpoint", () => {
     });
     const { game_id } = await startRes.json();
 
-    await fetch(`${API_URL}/game-accuse`, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id,
-        player_reasoning: "I accuse Bob because he was near the scene.",
-      }),
-    });
+    // Rounds 0–2: a wrong accusation is rejected with a retry invitation.
+    let lastData: Record<string, unknown> | null = null;
+    for (let round = 0; round < 3; round += 1) {
+      const roundRes = await fetch(`${API_URL}/game-accuse`, {
+        method: "POST",
+        headers: auth.headers,
+        body: JSON.stringify({
+          game_id,
+          player_reasoning: "I accuse Bob because he was near the scene.",
+        }),
+      });
+      expect(roundRes.status).toBe(200);
+      lastData = await roundRes.json();
+      expect(lastData?.mode).toBe("accuse");
+      expect(lastData?.result).toBeNull();
+      expect(lastData?.follow_up_prompt).toBeTruthy();
+    }
 
+    // Round 3: a still-wrong accusation finally resolves to lose.
     const resolveRes = await fetch(`${API_URL}/game-accuse`, {
       method: "POST",
       headers: auth.headers,

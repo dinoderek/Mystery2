@@ -26,10 +26,24 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
 
 ## Judge Resolution Rules
 
-- If reasoning is incomplete, judge must return:
+- `win` requires naming the true culprit AND one of:
+  - an evidence chain following one of the blueprint's `solution_paths` (using
+    clues the player actually discovered), or
+  - a correct account of what happened — culprit, key sequence of events, and
+    motive — matching `ground_truth`, or
+  - a confession earned by confronting the accused while already holding most
+    of the facts.
+  Substance beats wording, but a name-only lucky guess is not a win.
+- Wrong or under-supported accusations are rejected with encouragement:
   - `accusation_resolution='continue'`
-  - targeted `follow_up_prompt`.
+  - a warm, retry-inviting `follow_up_prompt` that hints at what KIND of fact
+    is missing without revealing the answer.
+- From round 3 onward a still-failing accusation resolves
+  `accusation_resolution='lose'` with a gentle reveal, so a session always
+  terminates.
 - Terminal outputs (`win|lose`) are authoritative for session outcome.
+- The mock provider mirrors these semantics deterministically (wrong suspect →
+  `continue` until round 3, then `lose`; true culprit → `win` from round 1).
 
 ## Timeout Forced Endgame
 

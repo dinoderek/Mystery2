@@ -56,6 +56,9 @@ export interface BlueprintContext {
     target_age: number;
     time_budget?: number;
     image_id?: string;
+    // Optional narration voice for this mystery, layered on top of the
+    // standard narrator style (see buildStyleGuidance in ai-prompts.ts).
+    narration_style?: string;
   };
   narrative: {
     premise: string;
@@ -166,6 +169,12 @@ export interface TalkLocationSummary {
   description: string;
 }
 
+// What ANY character context may say about a character other than the active
+// one: identity, visible appearance, and the player-facing summary from
+// narrative.starting_knowledge. Private authored material (background,
+// personality, alibi, motive, clues, agendas, ...) is reserved for the active
+// character's own private context — cross-character knowledge travels only via
+// explicit clues (about_character_id).
 export interface TalkCharacterPublicSummary {
   id: string;
   first_name: string;
@@ -173,7 +182,9 @@ export interface TalkCharacterPublicSummary {
   location_id: string;
   sex: "male" | "female";
   appearance: string;
-  background: string;
+  // Player-facing public knowledge from narrative.starting_knowledge; null
+  // when the blueprint has no entry for this character.
+  public_summary: string | null;
 }
 
 // A character clue as presented to the narrator during conversation. Carries the
@@ -191,6 +202,7 @@ export interface TalkClueContext {
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
+  background: string;
   personality: string;
   initial_attitude_towards_investigator: string;
   stated_alibi: string | null;
@@ -216,6 +228,9 @@ export interface AccusationStartContext {
   current_location_id: string | null;
   current_location_name: string | null;
   current_location_description: string | null;
+  // Spoiler-safe public roster so the narrator can name the suspects and pick
+  // grounded pronouns (sex is explicit per character) when framing the scene.
+  characters: TalkCharacterPublicSummary[];
 }
 
 export interface AccusationJudgeContext {
@@ -412,9 +427,15 @@ function buildTalkLocationSummaries(
   }));
 }
 
-function buildTalkCharacterPublicSummaries(
+export function buildTalkCharacterPublicSummaries(
   blueprint: BlueprintContext,
 ): TalkCharacterPublicSummary[] {
+  const publicSummaryByCharacterId = new Map(
+    (blueprint.narrative.starting_knowledge?.characters ?? []).map(
+      (entry) => [entry.character_id, entry.summary] as const,
+    ),
+  );
+
   return blueprint.world.characters.map((character) => ({
     id: character.id,
     first_name: character.first_name,
@@ -422,7 +443,7 @@ function buildTalkCharacterPublicSummaries(
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
-    background: character.background,
+    public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
   }));
 }
 
@@ -449,6 +470,11 @@ function buildTalkCharacterPrivateContext(
     throw new Error(`Character ${characterId} not found in blueprint`);
   }
 
+  const publicSummary =
+    blueprint.narrative.starting_knowledge?.characters.find(
+      (entry) => entry.character_id === characterId,
+    )?.summary ?? null;
+
   const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
   const clues: TalkClueContext[] = character.clues.map((clue) => ({
     id: clue.id,
@@ -466,6 +492,7 @@ function buildTalkCharacterPrivateContext(
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
+    public_summary: publicSummary,
     background: character.background,
     personality: character.personality,
     initial_attitude_towards_investigator:
@@ -814,6 +841,7 @@ export function buildAccusationStartContext(input: {
       current_location_id: input.session.current_location_id ?? null,
       current_location_name: location?.name ?? null,
       current_location_description: location?.description ?? null,
+      characters: buildTalkCharacterPublicSummaries(input.blueprint),
     },
   });
 }

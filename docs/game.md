@@ -38,6 +38,13 @@ A text-based mystery adventure for kids that makes reading and writing feel like
 - Classic whodunnit resolution: the investigator accuses a suspect and explains reasoning.
 - Narrator adjudicates and explains the true solution.
 - The explanation must be logically consistent with clues, timeline, and alibis.
+- An accusation is accepted when the investigator names the true culprit AND
+  either backs it with a discovered clue chain (a solution path) or correctly
+  tells the story of what happened. Confronting the accused can earn a
+  confession — but only when most of the facts are already right.
+- Wrong or under-supported accusations are rejected with encouragement to keep
+  investigating and try again; after repeated failed attempts (round 3+) the
+  case resolves as a loss with a gentle reveal.
 
 ---
 

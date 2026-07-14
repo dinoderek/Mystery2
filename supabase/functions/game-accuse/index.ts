@@ -115,7 +115,9 @@ serveWithCors(async (req) => {
         history_mode: accusationHistoryMode,
       });
 
-      const promptTemplate = await loadPromptTemplate("accusation_judge", blueprint.metadata.target_age);
+      const promptTemplate = await loadPromptTemplate("accusation_judge", blueprint.metadata.target_age, {
+        narrationStyle: blueprint.metadata.narration_style ?? null,
+      });
       const prompt = renderPrompt(promptTemplate, {
         forced_context: "",
         target_age: blueprint.metadata.target_age,
@@ -316,7 +318,9 @@ serveWithCors(async (req) => {
           history_mode: accusationHistoryMode,
         });
 
-        const promptTemplate = await loadPromptTemplate("accusation_start", blueprint.metadata.target_age);
+        const promptTemplate = await loadPromptTemplate("accusation_start", blueprint.metadata.target_age, {
+          narrationStyle: blueprint.metadata.narration_style ?? null,
+        });
         const prompt = renderPrompt(promptTemplate, {
           forced_context: "",
           target_age: blueprint.metadata.target_age,

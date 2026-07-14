@@ -118,6 +118,7 @@ export const BlueprintV2Schema = z.object({
     one_liner: z.string().trim().min(1),
     target_age: z.number().int().positive(),
     time_budget: z.number().int().positive(),
+    narration_style: z.string().trim().min(1).optional(),
     art_style: z.string().trim().min(1).optional(),
     visual_direction: z
       .object({

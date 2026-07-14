@@ -8,12 +8,11 @@ import {
 } from "../../../supabase/functions/_shared/ai-prompts.ts";
 
 describe("ai-prompts", () => {
-  it("loadPromptTemplate injects age-band guidance for every role (cannot be forgotten)", async () => {
+  it("loadPromptTemplate injects age-band and style guidance for every role (cannot be forgotten)", async () => {
     const roles = [
       "talk_start",
       "talk_conversation",
       "talk_end",
-      "search",
       "search_bare",
       "search_targeted",
       "accusation_start",
@@ -21,11 +20,14 @@ describe("ai-prompts", () => {
     ] as const;
 
     for (const role of roles) {
-      // The loader fills {{age_guidance}} itself — callers never pass it.
+      // The loader fills {{age_guidance}} and {{style_guidance}} itself —
+      // callers never pass them.
       const template = await loadPromptTemplate(role, 10);
       expect(template).toContain("10 years old");
       expect(template.toLowerCase()).toContain("guidance");
+      expect(template).toContain("Narration style");
       expect(template).not.toContain("{{age_guidance}}");
+      expect(template).not.toContain("{{style_guidance}}");
 
       // Rendering the remaining variables must not reintroduce a blank slot.
       const rendered = renderPrompt(template, {
@@ -37,6 +39,31 @@ describe("ai-prompts", () => {
       });
       expect(rendered).toContain("10 years old");
     }
+  });
+
+  it("layers the blueprint's narration_style on top of the standard style", async () => {
+    const plain = await loadPromptTemplate("talk_start", 10);
+    expect(plain).toContain("Narration style");
+    expect(plain).not.toContain("This mystery's own voice");
+
+    const styled = await loadPromptTemplate("talk_start", 10, {
+      narrationStyle: "salty harbor air and gull cries",
+    });
+    expect(styled).toContain("Narration style");
+    expect(styled).toContain(
+      "This mystery's own voice (follow it within the rules above): salty harbor air and gull cries",
+    );
+  });
+
+  it("bare search can borrow the clue-reveal word budget when a clue will surface", async () => {
+    const wordTarget = (s: string) =>
+      Number(s.match(/aim for about (\d+) words/)?.[1] ?? 0);
+
+    const empty = await loadPromptTemplate("search_bare", 10);
+    const reveal = await loadPromptTemplate("search_bare", 10, {
+      interaction: "search_find",
+    });
+    expect(wordTarget(reveal)).toBeGreaterThan(wordTarget(empty));
   });
 
   it("differentiates length guidance by interaction (verdict longer than farewell)", () => {
@@ -75,7 +102,7 @@ describe("ai-prompts", () => {
       has_visited_before: true,
       destination_history_json: "[]",
       destination_characters_json:
-        '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","background":"the baker"}]',
+        '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","public_summary":"The baker; was in the kitchen."}]',
     });
 
     expect(prompt).toContain("9 years old");
@@ -86,5 +113,27 @@ describe("ai-prompts", () => {
     expect(prompt).toContain('"sex":"female"');
     expect(prompt).toContain("Never guess pronouns");
     expect(prompt).toContain("Do not invent extra characters");
+    expect(prompt).toContain("Narration style");
+  });
+
+  it("includes the standard style (and optional blueprint voice) in start/move prompts", () => {
+    const start = buildGameStartPrompt({
+      target_age: 8,
+      premise: "Someone stole the cake.",
+      narration_style: "seaside carnival bustle",
+    });
+    expect(start).toContain("Narration style");
+    expect(start).toContain("This mystery's own voice (follow it within the rules above): seaside carnival bustle");
+
+    const move = buildGameMovePrompt({
+      target_age: 9,
+      destination_name: "Kitchen",
+      destination_description: "A messy kitchen.",
+      has_visited_before: false,
+      destination_history_json: "[]",
+      destination_characters_json: "[]",
+    });
+    expect(move).toContain("Narration style");
+    expect(move).not.toContain("This mystery's own voice");
   });
 });

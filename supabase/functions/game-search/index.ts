@@ -236,7 +236,13 @@ serveWithCors(async (req) => {
       conversation_history: historyRows ?? [],
     });
 
-    const promptTemplate = await loadPromptTemplate(promptKey, blueprint.metadata.target_age);
+    const promptTemplate = await loadPromptTemplate(promptKey, blueprint.metadata.target_age, {
+      // Bare search defaults to the lean "nothing found" budget; when the
+      // backend already knows a clue will be revealed, use the roomier
+      // clue-reveal budget so the payoff is not squeezed.
+      interaction: promptKey === "search_bare" && nextClue ? "search_find" : undefined,
+      narrationStyle: blueprint.metadata.narration_style ?? null,
+    });
     const prompt = renderPrompt(promptTemplate, {
       location_name: currentLocation.name,
       target_age: blueprint.metadata.target_age,

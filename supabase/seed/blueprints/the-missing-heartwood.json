@@ -1,0 +1,487 @@
+{
+  "schema_version": "v2",
+  "id": "a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34",
+  "metadata": {
+    "title": "The Missing Heartwood",
+    "one_liner": "Someone stole the forest's magical Heartwood in the dead of night — can you follow the glow and find the thief?",
+    "target_age": 7,
+    "time_budget": 14,
+    "narration_style": "warm and playful, full of glittering-forest wonder, gentle and reassuring for a young detective",
+    "visual_direction": {
+      "art_style": "soft storybook digital painting with a hand-drawn picture-book feel",
+      "color_palette": "glittering teal, violet, and neon-pink glows against warm leafy greens and cozy brown treehouses — magical and inviting",
+      "mood": "wondrous and gently mysterious",
+      "lighting": "dappled moonlight and the soft magical glow of the forest floor",
+      "texture": "painterly, with a subtle sparkle on leaves and water"
+    }
+  },
+  "narrative": {
+    "premise": "Deep in the heart of Arbrum's glittering forest, the magical Heartwood Trunk has vanished! It was the source of all the forest's sparkle, and it was taken in the dead of night, around 2 o'clock. Now the glow is fading from the leaves and the river, and everyone is worried. Can you follow the clues and discover who took it?",
+    "starting_knowledge": {
+      "mystery_summary": "Around 2 o'clock last night — the moment the forest's glow first flickered — the magical Heartwood Trunk was dug up and carried away from the deep heart of the forest.",
+      "locations": [
+        { "location_id": "glimmerbank_landing", "summary": "The busy riverside clearing where the swim team meets, with a diving dock, reed shallows, and fluttering cheer banners." },
+        { "location_id": "heartwood_hollow", "summary": "The quiet dell at the forest's heart where the Heartwood Trunk once stood. Now there is only a glowing pit and torn roots." },
+        { "location_id": "eva_leaf_lab", "summary": "Eva the squirrel's treehouse laboratory, crammed with leaf-jars, insect drawings, and gardening tools." },
+        { "location_id": "cheer_stage_grove", "summary": "The bright platform where the swim team's cheerleaders practice, strung with half-hung swim-meet banners." }
+      ],
+      "characters": [
+        { "character_id": "sophie", "summary": "A shy little otter who loves to play in the river all day long." },
+        { "character_id": "eva", "summary": "A clever, mysterious squirrel scientist who knows every plant, tree, and insect in the forest." },
+        { "character_id": "sam", "summary": "A big, grumpy bear who guards the river as its lifeguard and loves to dive." },
+        { "character_id": "toby", "summary": "A cheerful enchanted pigeon who cheers for the city's swimming team." },
+        { "character_id": "alexandra", "summary": "A fast, shiny meerkat, another of the swim team's cheerleaders." }
+      ]
+    }
+  },
+  "world": {
+    "starting_location_id": "glimmerbank_landing",
+    "locations": [
+      {
+        "id": "glimmerbank_landing",
+        "name": "Glimmerbank Landing",
+        "description": "A wide, mossy clearing where the glittering river bends. A wooden diving dock stretches over the water, reeds whisper in the shallows, and half-hung cheer banners flutter between the trees. This is where all of Arbrum gathers, worried, this morning.",
+        "clues": [],
+        "sub_locations": [
+          {
+            "id": "sl_diving_dock",
+            "name": "The Diving Dock",
+            "hint": "Point players here if they wonder where Sam was. The big prints look scary at first but are only water.",
+            "clues": [
+              {
+                "id": "clue_wet_bear_prints",
+                "text": "Big, heavy bear paw prints cross the diving dock — but they're wet with river water, not glowing. Whoever made these was in the water, not digging up plants."
+              }
+            ]
+          },
+          {
+            "id": "sl_reed_shallows",
+            "name": "The Reed Shallows",
+            "hint": "The golden splinter bobs among the reeds — this explains Sophie's glowing paws.",
+            "clues": [
+              {
+                "id": "clue_river_splinter",
+                "text": "A little golden splinter of Heartwood bobs among the reeds, glowing softly. Chips like this broke off and floated downriver after the trunk was pulled up."
+              }
+            ]
+          },
+          {
+            "id": "sl_banner_wall",
+            "name": "The Banner Wall",
+            "hint": "Atmospheric only — half-hung cheer banners ripple in the breeze. No clue here, just color and cheer.",
+            "clues": []
+          }
+        ]
+      },
+      {
+        "id": "heartwood_hollow",
+        "name": "Heartwood Hollow",
+        "description": "A hushed dell at the very heart of the forest. In the middle is a round pit, its edges still glowing teal, purple, and neon pink, where the great Heartwood Trunk used to stand. Torn roots curl at the rim, and the air feels strangely quiet without the forest's hum.",
+        "clues": [
+          {
+            "id": "clue_footprint_trail",
+            "text": "A line of glowing footprints leads up and out of the empty pit and off through the ferns. Whoever took the trunk carried it away on foot."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "sl_pit_edge",
+            "name": "The Pit's Edge",
+            "hint": "Steer here to compare the print size — far too small for a great big bear's paw.",
+            "clues": [
+              {
+                "id": "clue_prints_small",
+                "text": "Up close, the glowing footprints are small and neat — far too little to have been made by a great big bear's paw."
+              }
+            ]
+          },
+          {
+            "id": "sl_torn_roots",
+            "name": "The Torn Roots",
+            "hint": "The claw marks matter — thin digging claws, not an otter's wide webbed feet.",
+            "clues": [
+              {
+                "id": "clue_prints_clawed",
+                "text": "The prints show thin little digging-claws, not the wide webbed feet of a river otter."
+              }
+            ]
+          },
+          {
+            "id": "sl_fern_path",
+            "name": "The Fading Fern Path",
+            "hint": "Only mention the trail's direction once the player has found the footprints. It fades uphill toward the treehouses.",
+            "clues": [
+              {
+                "id": "clue_trail_direction",
+                "text": "Following the glowing footprints, they lead away from the river and uphill toward where the treehouses cluster, before the glow fades away.",
+                "requires": {
+                  "clue_ids": ["clue_footprint_trail"],
+                  "rationale": "You can only follow the trail once you've spotted the glowing footprints leaving the pit."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "eva_leaf_lab",
+        "name": "Eva's Leaf-Lab",
+        "description": "Eva the squirrel's cozy treehouse laboratory, uphill among the tall trees. Shelves are lined with glowing leaf-jars, the walls are covered in careful beetle drawings, and a workbench holds tiny tools. In the back, a curtain is drawn across a nook that hums very faintly.",
+        "clues": [
+          {
+            "id": "clue_eva_gloves_glow",
+            "text": "Eva's little gardening gloves lie on the workbench, dusted with fresh, still-glowing sparkle — as if she'd been handling freshly pulled-up magic plants very recently, not sleeping.",
+            "requires": {
+              "clue_ids": ["clue_trail_direction"],
+              "rationale": "The glowing gloves only catch your eye once the glowing trail has led you up to Eva's lab."
+            }
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "sl_leaf_jars",
+            "name": "The Leaf-Jar Shelves",
+            "hint": "Eva's note about the gold glow explains the river splinter's color and shows how well she studied the Heartwood.",
+            "clues": [
+              {
+                "id": "clue_gold_glow_note",
+                "text": "A science note in Eva's neat handwriting: 'The Heartwood glows GOLD when it is hurt — different from ordinary plants, which glow teal, purple, and pink.'"
+              }
+            ]
+          },
+          {
+            "id": "sl_insect_drawings",
+            "name": "The Insect Drawings",
+            "hint": "Atmospheric only — beetle and dragonfly sketches cover the wall. No clue here.",
+            "clues": []
+          },
+          {
+            "id": "sl_back_nook",
+            "name": "The Curtained Back-Nook",
+            "hint": "The stolen trunk is hidden here, humming softly — but keep it curtained. It is revealed only when the player accuses Eva, never found as an ordinary clue.",
+            "clues": []
+          }
+        ]
+      },
+      {
+        "id": "cheer_stage_grove",
+        "name": "Cheer Stage Grove",
+        "description": "A bright wooden platform strung between the trees, uphill from the river. Half-hung swim-meet banners sway overhead, a tall ladder leans against them, and a heap of colorful pom-poms sits in the corner. This is where the cheerleaders practice their routines.",
+        "clues": [
+          {
+            "id": "clue_half_hung_banners",
+            "text": "Half-hung swim-meet banners flap in the breeze, a ladder still leaning against them, and a note reads 'finish hanging before the meet!' — someone was decorating up here through the night."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "sl_pompom_pile",
+            "name": "The Pom-Pom Pile",
+            "hint": "Alexandra's little dig-spot of plain brown dirt is near here — it does not glow.",
+            "clues": [
+              {
+                "id": "clue_alex_dirt",
+                "text": "Near the pom-poms is a freshly patted-down patch of plain brown dirt. The dirt is ordinary — no magic glow at all."
+              }
+            ]
+          },
+          {
+            "id": "sl_ladder",
+            "name": "The Tall Ladder",
+            "hint": "Atmospheric only — a tall ladder leans against the banners. No clue here.",
+            "clues": []
+          }
+        ]
+      }
+    ],
+    "characters": [
+      {
+        "id": "sophie",
+        "first_name": "Sophie",
+        "last_name": "Ripple",
+        "location_id": "glimmerbank_landing",
+        "sex": "female",
+        "appearance": "A small, sleek river otter with soft brown fur, big shy eyes, and paws that glow very faintly.",
+        "background": "A playful otter pup who spends every day splashing in the river and counting the glimmer-fish that sparkle in the shallows.",
+        "personality": "Shy and sweet, easily startled, but honest and eager to help once she feels safe.",
+        "initial_attitude_towards_investigator": "Nervous and worried she'll be blamed, because her paws are glowing.",
+        "stated_alibi": "I was at the river all night because I couldn't sleep — I never went into the forest.",
+        "motive": null,
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_sophie_splinter",
+            "text": "I couldn't sleep, so I was playing in the reeds. I found a pretty golden splinter floating in the water and held it — that's why my paws glow! And Sam was diving right there the whole time; he saw me."
+          }
+        ],
+        "flavor_knowledge": [
+          "She loves counting the glimmer-fish that sparkle in the shallows.",
+          "She's ticklish and giggles when the reeds brush her paws."
+        ],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Couldn't sleep and slipped down to the reed shallows to play." },
+          { "sequence": 2, "summary": "Found a floating golden splinter and picked it up, making her paws glow." },
+          { "sequence": 3, "summary": "Stayed near Sam, who was diving on night watch, until morning." }
+        ],
+        "agendas": [],
+        "tells": [
+          {
+            "id": "tell_sophie_glow",
+            "text": "she shyly tucks her faintly glowing paws under her tail",
+            "trigger": { "kind": "always" }
+          }
+        ]
+      },
+      {
+        "id": "eva",
+        "first_name": "Eva",
+        "last_name": "Nutwood",
+        "location_id": "eva_leaf_lab",
+        "sex": "female",
+        "appearance": "A sleek silver-grey squirrel with a big bushy tail, bright curious eyes, and tiny gardening gloves tucked into her belt.",
+        "background": "Arbrum's plant scientist, who knows every leaf, root, and beetle, and studies how the forest's magic grows.",
+        "personality": "Clever, quiet, and secretive; kind, but quite sure she always knows best.",
+        "initial_attitude_towards_investigator": "Calm and helpful on the surface, but tense and carefully guarded.",
+        "stated_alibi": "I was fast asleep in my lab all night. I didn't hear a single thing.",
+        "motive": "She believes she could make the whole forest even more magical if only she could study the Heartwood up close.",
+        "is_culprit": true,
+        "clues": [],
+        "flavor_knowledge": [
+          "She can name every beetle in the forest by the sound of its wings.",
+          "She hums a little tune whenever she's nervous."
+        ],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Waited until the forest was quiet, near 2 o'clock in the morning." },
+          { "sequence": 2, "summary": "Slipped down to Heartwood Hollow carrying her digging trowel." },
+          { "sequence": 3, "summary": "Pulled the Heartwood Trunk free, making the pit and her own footprints glow." },
+          { "sequence": 4, "summary": "Carried the trunk uphill on foot to her Leaf-Lab, getting glow-dust on her gloves." },
+          { "sequence": 5, "summary": "Hid the trunk behind the curtain in her back-nook and pretended to have been asleep." }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "maintain_false_alibi",
+            "priority": "high",
+            "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook. Only crumbles and admits she 'only borrowed' the Heartwood if shown both her still-glowing gloves and that the trail leads to her grove."
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_eva_tail",
+            "text": "her bushy tail puffs up and she sneaks a glance at the curtained back-nook",
+            "trigger": { "kind": "clue", "clue_ids": ["clue_eva_gloves_glow"] }
+          },
+          {
+            "id": "tell_eva_hum",
+            "text": "she hums a nervous little tune under her breath",
+            "trigger": { "kind": "condition", "condition": "the investigator brings up the missing Heartwood trunk" }
+          }
+        ]
+      },
+      {
+        "id": "sam",
+        "first_name": "Sam",
+        "last_name": "Bramble",
+        "location_id": "glimmerbank_landing",
+        "sex": "male",
+        "appearance": "A huge brown bear with broad shoulders, a permanent frown, and a bright red lifeguard whistle around his neck.",
+        "background": "The river's lifeguard, who loves diving and works hard to keep everyone safe in the water.",
+        "personality": "Grumpy and gruff on the outside, but soft-hearted and protective, especially of the little ones.",
+        "initial_attitude_towards_investigator": "Grumbles that he's far too busy for questions, but answers honestly if you're patient.",
+        "stated_alibi": "I was on night watch, diving after a glimmer-turtle stuck under the dock. Left wet prints everywhere.",
+        "motive": "He's strong enough to carry the heavy trunk and grumpy enough that some folk whisper he wanted the river all to himself.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_sam_saw_sophie",
+            "text": "Grr. I was diving on night watch around 2, freeing a glimmer-turtle stuck under the dock. Little Sophie was splashing in the shallows the whole time — she never once went into the forest. And my paw prints are wet, not glowy; that's just plain river water.",
+            "about_character_id": "sophie"
+          }
+        ],
+        "flavor_knowledge": [
+          "He's very proud of his perfect swan dive.",
+          "He secretly keeps a stash of snacks for the otter pups."
+        ],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Began his night lifeguard watch along the river." },
+          { "sequence": 2, "summary": "Dived under the dock around 2 o'clock to free a stuck glimmer-turtle, leaving wet prints." },
+          { "sequence": 3, "summary": "Kept a watchful eye on Sophie in the shallows until morning." }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "gruff_deflection",
+            "priority": "low",
+            "details": "Grumbles that a busy lifeguard has no time for silly questions, but tells the whole truth once you're patient and polite."
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_sam_soft",
+            "text": "his gruff voice suddenly goes soft and gentle",
+            "trigger": { "kind": "condition", "condition": "the investigator mentions Sophie" }
+          }
+        ]
+      },
+      {
+        "id": "toby",
+        "first_name": "Toby",
+        "last_name": "Flit",
+        "location_id": "cheer_stage_grove",
+        "sex": "male",
+        "appearance": "A plump enchanted pigeon with shimmering rainbow-tinged feathers and tiny pom-poms tied to his wingtips.",
+        "background": "The bubbly cheerleader for Arbrum's swimming team, always decorating, chanting, and cheering the swimmers on.",
+        "personality": "Kind, cheerful, and a chatterbox who absolutely adores his friends.",
+        "initial_attitude_towards_investigator": "Delighted to help, chatty and eager to share everything he knows.",
+        "stated_alibi": "Alexandra and I were hanging banners all night for the big swim meet — right through 2 o'clock!",
+        "motive": "He can fly, so he could reach the deep forest and leave no footprints — which makes some folk suspect him.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_toby_alex_alibi",
+            "text": "Alexandra and I were up ALL night on the ladder hanging banners for the meet — we were together right through 2 o'clock, keeping each other company. Neither of us went anywhere near the forest!",
+            "about_character_id": "alexandra"
+          }
+        ],
+        "flavor_knowledge": [
+          "He invents a brand-new cheer for every single splash.",
+          "He can hang a banner perfectly straight on the very first try."
+        ],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Met Alexandra at the Cheer Stage near midnight." },
+          { "sequence": 2, "summary": "Hung swim-meet banners together with her through the night, including 2 o'clock." },
+          { "sequence": 3, "summary": "Finished at dawn and flew off to check on the fading glitter." }
+        ],
+        "agendas": [
+          {
+            "type": "protect_other",
+            "strategy": "vouch_eagerly",
+            "priority": "low",
+            "details": "Rushes to insist Alexandra was with him all night — which happens to be completely true.",
+            "target_character_id": "alexandra"
+          }
+        ],
+        "tells": []
+      },
+      {
+        "id": "alexandra",
+        "first_name": "Alexandra",
+        "last_name": "Dash",
+        "location_id": "cheer_stage_grove",
+        "sex": "female",
+        "appearance": "A quick, slender meerkat with a glossy coat, bright darting eyes, and dirt-crusted little paws she keeps trying to hide.",
+        "background": "A speedy cheerleader who choreographs the team's routines and adores collecting shiny things.",
+        "personality": "Energetic and bubbly, but a little secretive about her shiny treasures.",
+        "initial_attitude_towards_investigator": "Friendly but fidgety, clearly embarrassed about her dirty paws.",
+        "stated_alibi": "I was with Toby at the Cheer Stage all night, hanging banners.",
+        "motive": "Meerkats are fast, clever diggers, and her paws are covered in fresh dirt — just right for digging up a trunk.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_alex_trophy",
+            "text": "Okay, okay — my paws are dirty because I buried our team's shiny trophy to keep it safe, not because I dug up any trunk! It's just plain brown dirt. See? No glow at all."
+          }
+        ],
+        "flavor_knowledge": [
+          "She collects shiny bottle-caps and buries her very favorites for safekeeping.",
+          "She can scamper up the tall ladder faster than anyone in Arbrum."
+        ],
+        "actual_actions": [
+          { "sequence": 1, "summary": "Met Toby at the Cheer Stage near midnight." },
+          { "sequence": 2, "summary": "Hung banners with Toby through the night, including 2 o'clock." },
+          { "sequence": 3, "summary": "Slipped away briefly to bury the team's trophy in plain dirt for safekeeping." }
+        ],
+        "agendas": [
+          {
+            "type": "conditional_reveal",
+            "strategy": "admit_buried_trophy",
+            "priority": "medium",
+            "details": "Won't explain her dirty paws until she trusts you won't tell her secret — then reveals she buried the team's shiny trophy in plain dirt to keep it safe.",
+            "condition": "trust_established",
+            "gated_clue_id": "clue_alex_trophy"
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_alex_paws",
+            "text": "she quickly hides her dirt-crusted paws behind her back",
+            "trigger": { "kind": "always" }
+          }
+        ]
+      }
+    ]
+  },
+  "cover_image": {
+    "description": "A glittering forest of leafy treehouses glows under a big round moon, teal and pink light shimmering across a winding river. In the middle of a quiet clearing sits an empty, softly glowing pit where something magical is missing. Woodland friends gather near the water — an otter, a bear, a squirrel, a pigeon, and a meerkat — each with a little secret. Who took the forest's magic?",
+    "location_ids": ["heartwood_hollow", "glimmerbank_landing"],
+    "character_ids": ["sophie", "eva", "sam", "toby", "alexandra"]
+  },
+  "ground_truth": {
+    "what_happened": "Eva the squirrel scientist secretly dug up the Heartwood Trunk at about 2 o'clock in the morning and carried it on foot up to her Leaf-Lab, hiding it behind the curtain in her back-nook. She meant to study it and 'improve' the forest's magic, but removing the Heartwood is exactly what made the glitter begin to fade.",
+    "why_it_happened": "Eva was certain she could make the whole forest even more magical if she could study the Heartwood up close, and she didn't think anyone would ever let her — so she took it without asking, planning to return it 'better.'",
+    "timeline": [
+      "Around midnight, Toby and Alexandra begin hanging banners at the Cheer Stage for the swim meet.",
+      "Sophie can't sleep and goes to play in the reed shallows; Sam is on night watch, diving after a stuck glimmer-turtle.",
+      "Just before 2 o'clock, Eva slips down to Heartwood Hollow carrying her digging trowel.",
+      "At about 2 o'clock, Eva pulls the Heartwood Trunk free — the pit and her footprints glow, and the forest's glitter flickers.",
+      "Eva carries the trunk uphill on foot to her Leaf-Lab, getting glow-dust on her gloves, and hides it behind the back-nook curtain.",
+      "A stray golden splinter of Heartwood drifts down the river; Sophie finds it and her paws glow.",
+      "By morning the forest's glitter is fading, and everyone gathers at Glimmerbank Landing, worried."
+    ]
+  },
+  "solution_paths": [
+    {
+      "id": "sp_follow_the_glow",
+      "summary": "The thief walked (glowing footprints) on small, clawed feet — so not the flying pigeon, not the big bear, not the webbed-footed otter. Sam vouches Sophie was at the river; Toby vouches he and Alexandra were together all night. That clears everyone but Eva.",
+      "description": "The necessary chain is three narrowings: the small prints rule out big Sam; the clawed (not webbed) prints rule out otter Sophie; and Toby's testimony that he and Alexandra were together through 2am rules out both of them. Only Eva remains — confirmed by her still-glowing gloves and the trail leading up to her grove.",
+      "location_clue_ids": ["clue_footprint_trail", "clue_prints_small", "clue_prints_clawed", "clue_trail_direction", "clue_eva_gloves_glow"],
+      "character_clue_ids": ["clue_sam_saw_sophie", "clue_toby_alex_alibi"]
+    }
+  ],
+  "red_herrings": [
+    {
+      "id": "rh_grumpy_bear",
+      "summary": "Sam is big and strong enough to carry the heavy trunk, he was out at the river at night, and there are heavy prints on the dock — surely the grumpy bear did it?",
+      "payoff": "The grumpy bear is cleared: the pit prints are far too small for his great paws, and his dock prints are only wet river water — he was diving on watch, not digging.",
+      "location_clue_ids": ["clue_wet_bear_prints", "clue_prints_small"],
+      "character_clue_ids": ["clue_sam_saw_sophie"]
+    },
+    {
+      "id": "rh_glowing_paws",
+      "summary": "Sophie was out past her bedtime and her paws are glowing — she looks caught red-handed!",
+      "payoff": "Sophie's glowing paws are explained: she touched a golden Heartwood splinter floating in the river, where Sam watched her all night — and the clawed pit prints are not her webbed otter feet.",
+      "location_clue_ids": ["clue_river_splinter", "clue_gold_glow_note", "clue_prints_clawed"],
+      "character_clue_ids": ["clue_sophie_splinter", "clue_sam_saw_sophie"]
+    }
+  ],
+  "suspect_elimination_paths": [
+    {
+      "id": "ep_sophie",
+      "summary": "Sophie is cleared: the pit prints show digging claws, not her webbed otter feet; Sam saw her at the river at 2am; and her glowing paws came from a golden river splinter.",
+      "payoff": "Sophie is cleared and her scary-looking glowing paws are fully explained.",
+      "location_clue_ids": ["clue_prints_clawed", "clue_river_splinter", "clue_gold_glow_note"],
+      "character_clue_ids": ["clue_sam_saw_sophie", "clue_sophie_splinter"]
+    },
+    {
+      "id": "ep_sam",
+      "summary": "Sam is cleared: the pit prints are far too small for a big bear, and he was diving on night watch (wet dock prints), with Sophie able to vouch he was at the river the whole time.",
+      "payoff": "The grumpy bear is cleared and his strength stops looking like guilt.",
+      "location_clue_ids": ["clue_prints_small", "clue_wet_bear_prints"],
+      "character_clue_ids": ["clue_sam_saw_sophie", "clue_sophie_splinter"]
+    },
+    {
+      "id": "ep_toby",
+      "summary": "Toby is cleared: a flyer leaves no footprints, yet the thief left a walking glow-trail, and he was hanging banners with Alexandra straight through 2am.",
+      "payoff": "The flying pigeon is cleared — the trail proves the thief walked.",
+      "location_clue_ids": ["clue_footprint_trail", "clue_half_hung_banners"],
+      "character_clue_ids": ["clue_toby_alex_alibi"]
+    },
+    {
+      "id": "ep_alexandra",
+      "summary": "Alexandra is cleared: she was decorating with Toby all night, and her dirty paws are plain brown burrow dirt from burying the team trophy — not the thief's glow.",
+      "payoff": "The fast little digger is cleared and her dirty paws are explained.",
+      "location_clue_ids": ["clue_alex_dirt", "clue_half_hung_banners"],
+      "character_clue_ids": ["clue_toby_alex_alibi", "clue_alex_trophy"]
+    }
+  ]
+}

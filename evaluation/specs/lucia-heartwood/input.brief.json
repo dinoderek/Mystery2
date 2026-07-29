@@ -1,0 +1,22 @@
+{
+  "brief": "Arbrum is a magical city of windowless treehouses built from multi-coloured, glittery leaves, set in a forest with a river running through the middle where all kinds of animals love to play and swim. The forest floor magically glows teal, purple, and neon pink whenever plants are chopped, pulled, or damaged. Deep in the forest stood the magical Heartwood Trunk, the source of all the forest's magical energy - and in the dead of night, around 2am, it was stolen. The cast: Sophie, a shy, cute otter child who loves to play all day; Eva, a beautiful, mysterious squirrel scientist who is an expert in every plant, tree, and insect; Sam, a big, grumpy bear who is the river lifeguard and loves to dive and swim; Toby, a kind, cheerful, enchanted pigeon who cheers for the city's swimming team; and Alexandra, a fast, shiny meerkat, another of the cheerleaders. Make every character a genuine potential culprit, with alibis to crack and confirm, believable false paths, and lots of clues to discover.",
+  "targetAge": 7,
+  "timeBudget": 14,
+  "titleHint": "The Missing Heartwood",
+  "artStyle": "Soft storybook digital painting with a hand-drawn picture-book feel, glittering teal, violet, and neon-pink glows against warm leafy greens and cozy brown treehouses, dappled moonlight and the soft magical glow of the forest floor.",
+  "mustInclude": [
+    "the magical glowing forest floor as a source of clues (glowing footprints left by pulling up plants)",
+    "every one of the five characters is a plausible suspect with a reason to seem guilty",
+    "alibis the player can both crack and confirm",
+    "at least one strong red herring plot thread"
+  ],
+  "culprits": 1,
+  "suspects": 4,
+  "witnesses": 0,
+  "locations": 4,
+  "redHerringTrails": 2,
+  "coverUps": true,
+  "eliminationComplexity": "moderate",
+  "minPathLength": 3,
+  "targetPathLength": 3
+}

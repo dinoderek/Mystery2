@@ -54,6 +54,10 @@ the blueprint is correct.
 - **`id` at the top level is a UUID.** Generate a fresh one (UUID v4 format).
 - **`metadata.art_style` is optional.** If you don't have a value, omit the
   field entirely. Do not set it to `null` — the validator rejects `null`.
+- **Portrait backgrounds are location-agnostic.** If you author
+  `metadata.visual_direction.portrait_background`, it must be abstract (colour,
+  light, blur only) and must not reference any location from your mystery. Omit
+  the field to get the default bokeh backdrop.
 - **Brief counts are contracts.** Total `world.characters.length` must equal
   `culprits + suspects + witnesses` from the brief. `world.locations.length`
   must equal `brief.locations`. `red_herrings.length` must equal

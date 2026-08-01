@@ -19,7 +19,7 @@ literally and respect.
 | `targetAge` | yes | Target reading level. Tones every text field. |
 | `timeBudget` | no | If present, use exactly as `metadata.time_budget`. If absent, infer a moderate budget from the brief's complexity. |
 | `titleHint` | no | If present, base `metadata.title` on it. |
-| `artStyle` | no | If present, expand into `metadata.visual_direction`. Do not copy verbatim. |
+| `artStyle` | no | If present, expand into `metadata.visual_direction`. Do not copy verbatim. The expansion may include the optional `portrait_background` — character-portrait backdrops only, abstract colour/light/blur, never a location from the mystery. |
 | `mustInclude` | no | Required ingredients. Each string in this array must appear meaningfully in the blueprint (in clues, descriptions, ground truth, etc). Mechanical check enforces this. |
 | `culprits` | no, default 1 | **The blueprint schema requires exactly one culprit** (`is_culprit: true` on exactly one character). If the brief asks for more than 1, treat as 1 — the schema does not currently support multi-culprit mysteries. |
 | `suspects` | no | Number of *red-herring suspects*: characters who look guilty but aren't. They should have apparent motive or opportunity but be eliminable through clues. |

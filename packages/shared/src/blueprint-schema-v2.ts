@@ -500,10 +500,28 @@ export const BlueprintV2Schema = z
             .describe(
               "Surface or material quality (e.g. 'visible paper grain', 'smooth digital', 'chalky matte finish').",
             ),
+          portrait_background: z
+            .string()
+            .trim()
+            .min(1)
+            .optional()
+            .describe(
+              "Optional backdrop direction for CHARACTER PORTRAITS ONLY — not used for "
+                + "cover or location images. One sentence of pure colour, light, and blur "
+                + "that suits the art style and palette (e.g. 'flat vertical wash of dusty "
+                + "rose fading to slate'). Must stay abstract and non-diegetic: never "
+                + "depict, name, or allude to any location, room, building, or setting "
+                + "from this mystery — portraits are deliberately location-agnostic so "
+                + "they read consistently wherever they appear. Omit to use the default "
+                + "warm/cool bokeh wash.",
+            ),
         })
         .optional()
         .describe(
-          "Structured visual direction for image generation. When present, takes precedence over art_style.",
+          "Structured visual direction for image generation. When present, takes "
+            + "precedence over art_style. Every field except portrait_background applies "
+            + "to all generated images; portrait_background applies only to character "
+            + "portraits.",
         ),
       image_id: z
         .string()

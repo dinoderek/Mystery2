@@ -100,6 +100,11 @@ or null `sex` causes pronoun drift in talk and move narration.
   `metadata.visual_direction` is the structured replacement. Prefer
   `visual_direction`; if you omit `art_style`, omit it entirely (do not set
   it to `null`).
+- `metadata.visual_direction.portrait_background` is optional and steers only
+  the backdrop behind character portraits. Keep it abstract — colour, light,
+  blur. It must never depict or reference any location from the mystery;
+  portraits are deliberately location-agnostic. Omit it entirely (do not set
+  it to `null`) to fall back to the default bokeh wash.
 - The accusation judge gets the full blueprint, so `ground_truth`,
   `solution_paths`, `red_herrings`, and `suspect_elimination_paths` are real
   consumers of your authoring effort — not metadata.

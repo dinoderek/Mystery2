@@ -214,7 +214,14 @@ harbor air, gull cries, a gentle pirate lilt'); omit to use the standard voice.
 `art_style`: null (superseded). `visual_direction`: structured object —
 `art_style` (specific medium, not just "watercolor"), `color_palette` (3–5 colors
 + emotional register, tied to the setting), `mood` (1–2 phrases), `lighting`
-(source + quality), `texture` (optional). Seed from `artStyle` but expand.
+(source + quality), `texture` (optional), `portrait_background` (optional). Seed
+from `artStyle` but expand. `portrait_background` directs the backdrop behind
+**character portraits only** — one sentence of abstract colour, light, and blur
+that suits the art style and palette (e.g. 'flat vertical wash of dusty rose
+fading to slate'). It must never depict, name, or allude to any location, room,
+building, or setting from the mystery: portraits stay location-agnostic on
+purpose. Omit the field entirely (do not set it to `null`) to use the default
+warm/cool bokeh wash.
 
 **Cover image.** `description`: 2–4 vivid, child-friendly sentences, intriguing
 without spoiling the culprit. `location_ids` / `character_ids`: ids featured, or

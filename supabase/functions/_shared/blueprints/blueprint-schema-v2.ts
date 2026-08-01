@@ -127,6 +127,7 @@ export const BlueprintV2Schema = z.object({
         mood: z.string().trim().min(1),
         lighting: z.string().trim().min(1),
         texture: z.string().trim().min(1).optional(),
+        portrait_background: z.string().trim().min(1).optional(),
       })
       .optional(),
     image_id: z.string().optional(),

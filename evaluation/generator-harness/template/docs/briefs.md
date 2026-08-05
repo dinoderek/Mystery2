@@ -4,8 +4,8 @@
 > Sources: `packages/blueprint-generator/src/story-brief.ts`, sizing notes from
 > `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
-> - `packages/blueprint-generator/src/story-brief.ts` — `f6b888fd7a20a87258133319bef3eabf4d33b7f2`
-> - `docs/blueprint-generation-flows.md` — `b92ce9cd79d51725342a19daf0d988685aea040b`
+> - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
+> - `docs/blueprint-generation-flows.md` — `63b4243003f4b7a610fb1caf590b82850ac40e73`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect brief interpretation, regenerate this file.
 
@@ -28,6 +28,26 @@ literally and respect.
 | `redHerringTrails` | no | Number of red-herring plot threads to weave through clues. Mechanical check enforces the `red_herrings[]` count. |
 | `coverUps` | no | If `true`, suspects should have cover stories or false alibis — author agendas that lie or omit (`self_protect`, `implicate_other`). |
 | `eliminationComplexity` | no | `"simple"` (one clue rules out a suspect) / `"moderate"` (cross-reference 2+ clues) / `"complex"` (must break through an agenda or multi-step reasoning). Affects how `suspect_elimination_paths` are structured. |
+| `minPathLength` | no | **Hard floor on solution-path depth.** The shortest route to the culprit must need at least this many distinct, *necessary* clues. Enforced by the `solve_depth` evaluation; falls back to the registry default when unset. |
+| `targetPathLength` | no | Solution-path depth the generator should *aim* for. A generation hint only — no judge enforces it. Treat as `>= minPathLength` when both are set. |
+
+## Solution-path depth
+
+`minPathLength` is the one sizing knob that is graded rather than counted, so
+it needs deliberate work rather than a tally at the end.
+
+Before you output, trace the *shortest* solution path the way the `solve_depth`
+judge measures it:
+
+- Count only clues that are **necessary** — remove a clue and the chain to the
+  culprit must break. Redundant corroboration does not add depth.
+- Count **distinct** clues. The same clue reached two ways counts once.
+- **Every solution path counts, and the shortest one sets the score.** Adding a
+  long, elaborate second path does not rescue a two-clue shortcut on the first.
+
+If the shortest path falls short of `minPathLength`, deepen the chain — insert a
+genuinely load-bearing intermediate step — rather than padding with extra
+corroborating clues.
 
 ## Character count math
 
@@ -53,13 +73,24 @@ Treat the brief as a *contract*, not a suggestion. Mismatch on `locations`,
 `culprits` (always = 1), character total, `redHerringTrails`, or `mustInclude`
 will fail mechanical checks regardless of how good the prose is.
 
+`minPathLength` is a contract too, but a graded one — it is checked by the
+`solve_depth` judge rather than a mechanical count, so a blueprint can validate
+cleanly and still score badly against it.
+
 ## Recommended workflow
 
 1. Read `brief.json` end to end.
 2. Inventory: how many of each character type, how many locations, how many
-   red-herring trails, which `mustInclude` items.
+   red-herring trails, which `mustInclude` items, and the required solution-path
+   depth (`minPathLength` / `targetPathLength`).
 3. Sketch the ground truth (culprit, motive, timeline) before laying out clues.
-4. Distribute clues across location.clues, sub_location.clues, and
+4. Lay out the reasoning chain to the required depth *before* placing clues, so
+   depth is structural rather than retrofitted.
+5. Distribute clues across location.clues, sub_location.clues, and
    character.clues so that exploration is broad.
-5. Author agendas in proportion to `eliminationComplexity`.
-6. Validate. Iterate on validation failures.
+6. Design the clue discovery graph (`requires` gates) — see
+   `docs/game-overview.md`. Keep most clues ungated and every solution clue
+   reachable from an ungated root.
+7. Author agendas in proportion to `eliminationComplexity`.
+8. Re-trace the shortest solution path against `minPathLength`. Deepen if short.
+9. Validate. Iterate on validation failures.

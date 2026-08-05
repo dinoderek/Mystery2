@@ -1,7 +1,8 @@
 /**
  * Test gate orchestrator — replaces the chained && in `npm test`.
  *
- * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests
+ * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
+ *                     drift check
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 needs a local Supabase stack in Docker. In the cloud execution
@@ -31,6 +32,7 @@ const STEPS = [
   { name: "check-web", phase: 1, args: ["-w", "web", "run", "check"] },
   { name: "unit-api", phase: 1, args: ["run", "test:unit"] },
   { name: "unit-web", phase: 1, args: ["-w", "web", "run", "test:unit"] },
+  { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
 
   // Phase 2 — share Supabase state, run serially
   { name: "integration", phase: 2, args: ["run", "test:integration"] },

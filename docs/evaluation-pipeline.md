@@ -212,6 +212,15 @@ This pattern matters for two reasons:
   saw. Bugs reproduce by re-running the workspace; we don't have to
   reconstruct the prompt context after the fact.
 
+The generator workspace also ships **curated extracts** of the repo docs
+(`template/docs/`) rather than the docs themselves, so the agent gets a compact,
+authoring-focused view. Each extract records the git blob hash of every source it
+was derived from, and `npm run check:curated-docs` — a Phase 1 step of the
+`npm test` gate — fails when a source moves on without the extract. On drift,
+regenerate the extract and update the hash together; bumping the hash alone
+silences the check without fixing the doc. See
+`evaluation/generator-harness/template/README.md`.
+
 ## Output envelope
 
 Every run writes one self-contained output directory **outside the repo** so

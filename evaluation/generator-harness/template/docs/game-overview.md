@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `c49ff0b6490433959e8e3823d0f92b050b9302c9`
+> Source git blob hash: `24ddd3857c5f9d0c5bb82e5dea4611b558606dc7`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -24,19 +24,52 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 - `search <free text>` (targeted) — player describes where/what to look at; AI
   judges whether it matches a sub-location and reveals that sub-location's clue
   if so; 1 turn (waivable for nonsensical attempts)
+- `notebook` — opens the case notebook overlay; free, works in every mode
 - `accuse <name>` — endgame; iterative judge rounds until win or lose
 - when the turn budget hits zero, the game forces accuse mode
+
+## Clue gating (the discovery graph)
+
+Any clue may carry an optional `requires` object (`{ clue_ids, rationale }`): it
+cannot be revealed until every prerequisite clue has already been discovered.
+This is what turns a flat clue list into a discovery-driven investigation.
+
+- **Search gates are hard.** Bare search reveals the next location-level clue
+  that is both unrevealed *and* unlocked, skipping locked ones so the player is
+  never dead-ended. Targeted search filters locked clues out of the narrator's
+  context entirely, and a backend backstop rejects a locked reveal.
+- **Conversation gates are soft.** A gated character clue is normally withheld,
+  and the narrator uses the gate's `rationale` to color the deflection. But the
+  narrator MAY grant an off-script reveal for a genuinely clever question or a
+  convincing bluff — *only* when the rationale implies a social or knowledge gate
+  that cleverness could bypass, never a hard physical one. Write each
+  `rationale` so it signals which kind it is ("she only opens up once you can
+  prove you saw her at the dock" vs. "the safe cannot be opened without the key").
+- Off-script reveals are recorded as real discoveries, so a clever player is
+  never hard-stuck on the critical path.
+
+Authoring rules the schema and the `clue_graph` eval dimension enforce:
+
+- keep most clues **ungated** — gating should create momentum, never dead-ends
+- the graph must be **acyclic**, and a clue may not require itself
+- every reasoning path is a small mini-mystery with **at least one ungated entry
+  clue**, and every solution-path clue must be reachable from ungated roots
 
 ## Where each piece of your blueprint shows up
 
 - `metadata.title`, `metadata.one_liner` → mystery selection screen
 - `metadata.target_age` → tone calibration in every AI prompt
 - `metadata.time_budget` → initial turn budget
+- `metadata.narration_style` (optional) → one sentence of voice/tone direction,
+  layered on top of the standard narrator style. It flavors the voice; it cannot
+  override the POV or safety rules. Omit to use the standard voice alone.
 - `narrative.premise` → opening narration (the hook)
 - `narrative.starting_knowledge` → surfaced (not generated) as the player's
   in-game **notebook**: `mystery_summary` plus the per-location and
   per-character `summary` lines are shown verbatim as the case facts, people,
-  and places. Write them as clear, player-facing one-liners.
+  and places. Write them as clear, player-facing one-liners. The per-character
+  `summary` doubles as the character's **public summary** at runtime — it is the
+  only authored prose about a character that other characters' scenes can see.
 - `world.starting_location_id` → the player's first scene
 - `world.locations[].description` → narrator's room-entry text on every visit
 - `world.locations[].clues[]` → revealed by **bare** search (at most 1 per
@@ -44,12 +77,17 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 - `world.locations[].sub_locations[].clues[]` → revealed by **targeted**
   search (at most 1 per sub-location); sub-location names are surfaced when the
   player arrives so they know what's investigable
-- `world.characters[].first_name / last_name / sex / appearance / background`
-  → public summary the narrator uses when describing who's present
-- `world.characters[].personality / initial_attitude_towards_investigator`
+- `world.characters[].first_name / last_name / sex / appearance`
+  → the **public** roster the narrator uses when describing who's present, plus
+  that character's `starting_knowledge` summary. `background` is **not** public —
+  see "Public vs. private" below.
+- `world.characters[].background / personality /
+  initial_attitude_towards_investigator`
   → private; shapes how the character roleplays during talk
-- `world.characters[].stated_alibi / motive` → public claim plus hidden motive;
-  surface during talk and contradiction-finding
+- `world.characters[].stated_alibi / motive` → the character's own claim plus
+  their hidden motive; both surface during talk and contradiction-finding. Both
+  are private *data* — "public claim" means what the character says out loud on
+  their own turn, not something other scenes can read.
 - `world.characters[].clues[]` → shared during talk only on relevant topics
 - `world.characters[].flavor_knowledge[]` → shared freely during talk to add
   personality and depth; **this is how the narrator answers "off-script"
@@ -58,10 +96,55 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
   really did; keeps character roleplay consistent during talk
 - `world.characters[].agendas[]` → shapes whether/when a character lies,
   protects someone, or reveals things conditionally
+- `world.characters[].tells[]` → behavioral cues the character leaks, each fired
+  by its own `trigger` (`always`, a free-text narrative `condition`, or a `clue`
+  the player must raise and be believed about). Tells are *reactions*, not
+  defaults — an untriggered tell stays hidden. Defaults to `[]`.
 - `ground_truth.{what_happened, why_it_happened, timeline}` → the accusation
   judge sees these; runtime narration outside of judging never does
 - `solution_paths`, `red_herrings`, `suspect_elimination_paths` → the
-  accusation judge walks these to decide if the player's reasoning was sound
+  accusation judge walks these to decide if the player's reasoning was sound;
+  they also determine which mini-mystery thread each discovered clue is filed
+  under in the notebook
+
+## Public vs. private
+
+The runtime enforces a hard split, and authoring against the wrong side of it
+is the most common way to waste effort:
+
+- **Public** — identity (`first_name`, `last_name`), `sex`, visible
+  `appearance`, and the character's `starting_knowledge` summary. This is all
+  that arrival narration and the accusation-start roster ever see.
+- **Private** — `background`, `personality`, `stated_alibi`, `motive`, `clues`,
+  `agendas`, `tells`, `actual_actions`, `flavor_knowledge`. These reach the
+  narrator **only** on the character's own talk turn.
+
+Knowledge about *other* characters travels exclusively through explicit clues
+carrying `about_character_id`. If you want the player to be able to learn
+something about character B, author it as a clue on character A — writing it
+into B's `background` puts it somewhere nothing but B's own scene can reach.
+
+## The notebook
+
+Discovered clues are recorded permanently and shown in the case notebook,
+grouped by which mini-mystery thread they serve (the main solution, a specific
+red herring, or ruling out a suspect) — derived from which reasoning path the
+clue belongs to. A clue that belongs to no authored path has nowhere to be filed;
+the mechanical check rejects orphan clues for exactly this reason.
+
+## Winning and losing
+
+The accusation judge accepts (`win`) only when the player names the true culprit
+**and** either backs it with a discovered clue chain matching a `solution_paths`
+entry, or correctly tells the story of what happened (culprit + key sequence +
+motive). Confronting the accused can earn a confession, but only once most of
+the facts are already right.
+
+Wrong or under-supported accusations return `continue` with encouragement to
+keep investigating; from round 3 onward a still-failing accusation resolves as a
+loss with a gentle reveal. This is why `solution_paths` and
+`suspect_elimination_paths` have to be genuinely walkable from clues the player
+can actually discover — they are the judge's accept criteria, not decoration.
 
 ## Things that matter for authoring
 

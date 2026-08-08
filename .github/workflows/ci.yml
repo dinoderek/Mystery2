@@ -49,6 +49,9 @@ jobs:
       - name: Unit tests (web)
         run: npm -w web run test:unit
 
+      - name: Curated generator docs in sync
+        run: npm run check:curated-docs
+
   # ------------------------------------------------------------------
   # Phase 2a — integration & API e2e (needs local Supabase)
   # Only runs on push to main (skipped on PRs).

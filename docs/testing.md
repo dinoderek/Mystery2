@@ -251,15 +251,24 @@ Integration, API E2E, and browser E2E tests should rely on:
 3. `npm -w web run check`
 4. `npm run test:unit`
 5. `npm -w web run test:unit`
+6. `npm run check:curated-docs`
 
 **Phase 2 (serial — shares Supabase state):**
 
-6. `npm run test:integration`
-7. `npm run test:e2e`
-8. `npm -w web run test:e2e`
+7. `npm run test:integration`
+8. `npm run test:e2e`
+9. `npm -w web run test:e2e`
 
 Phase 2 only runs if all phase 1 steps pass. After phase 2, a non-fatal leak
 check runs to detect orphaned test users.
+
+`check:curated-docs` verifies that the curated extracts in
+`evaluation/generator-harness/template/docs/` still match the git blob hashes of
+the repo docs they were derived from. It needs no Supabase and no network, which
+is why it sits in Phase 1. On drift, regenerate the affected extract against its
+current source and update the hash in the same change — refreshing the hash
+alone silences the check without fixing the doc. See
+`evaluation/generator-harness/template/README.md`.
 
 Focused sub-scripts are for iteration only. They do not replace the final
 `npm test` gate.
@@ -433,15 +442,15 @@ const count = await detectTestUserLeaks();
 
 ## CI Pipeline
 
-A GitHub Actions workflow (`.github/workflows/test.yml`) runs on every push to
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to
 `main` and every pull request targeting `main`.
 
 ### Jobs
 
-1. **static-and-unit** — lint, typecheck, svelte-check, unit tests (no
-   Supabase needed)
-2. **integration-and-e2e** — starts local Supabase, seeds, runs integration,
-   API E2E, and browser E2E tests
+1. **quality** ("Quality gates") — lint, typecheck, svelte-check, unit tests,
+   curated-doc drift check (no Supabase needed)
+2. **integration-e2e** / **browser-e2e** — start local Supabase, seed, then run
+   integration + API E2E and browser E2E respectively
 
 ### Artifacts
 

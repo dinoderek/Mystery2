@@ -37,9 +37,16 @@ overwritten or deleted.
 
 ## Curated docs sync
 
-Each curated doc carries the git blob hash of its source. Run
-`node evaluation/generator-harness/scripts/check-curated-docs.mjs` from the
-repo to detect drift. CI / `npm test` wiring is intentionally not done yet.
+Each curated doc carries the git blob hash of every source it was derived from.
+`npm run check:curated-docs` recomputes those hashes and fails on drift. It runs
+as part of Phase 1 of the `npm test` gate, so a source edit that outdates a
+curated extract fails the gate.
+
+When it reports drift, **regenerate the affected extract against its current
+source and update the hash together**. Bumping the hash alone is not a fix — the
+header's claim is "this extract was derived from the source at this blob", so a
+refreshed hash over stale prose turns a true positive into a permanent silent
+false negative.
 
 ## Pruning
 

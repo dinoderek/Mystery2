@@ -113,6 +113,52 @@ describe("image prompt builder", () => {
     expect(characterPrompt).not.toContain("Environment: Kitchen");
   });
 
+  it("uses the blueprint-provided portrait background when set", () => {
+    const customBlueprint = {
+      ...blueprint,
+      metadata: {
+        ...blueprint.metadata,
+        visual_direction: {
+          ...visualDirection,
+          portrait_background: "flat wash of dusty rose fading into slate grey",
+        },
+      },
+    };
+    // The new field must be schema-legal.
+    BlueprintV2Schema.parse(customBlueprint);
+
+    const prompt = buildImagePrompt(customBlueprint, {
+      targetType: "character",
+      targetKey: "char_alice",
+    });
+    expect(prompt).toContain(
+      "Portrait background: flat wash of dusty rose fading into slate grey",
+    );
+    expect(prompt).not.toContain("bokeh");
+  });
+
+  it("keeps portrait_background out of cover and location prompts", () => {
+    const customBlueprint = {
+      ...blueprint,
+      metadata: {
+        ...blueprint.metadata,
+        visual_direction: {
+          ...visualDirection,
+          portrait_background: "flat wash of dusty rose fading into slate grey",
+        },
+      },
+    };
+
+    for (const target of [
+      { targetType: "blueprint", targetKey: null },
+      { targetType: "location", targetKey: "loc_kitchen" },
+    ]) {
+      const prompt = buildImagePrompt(customBlueprint, target);
+      expect(prompt).not.toContain("Portrait background");
+      expect(prompt).not.toContain("dusty rose");
+    }
+  });
+
   it("builds location scene prompt with characters and clue details", () => {
     const locationPrompt = buildImagePrompt(blueprint, {
       targetType: "location",

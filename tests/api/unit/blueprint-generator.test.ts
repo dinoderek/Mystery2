@@ -131,6 +131,7 @@ describe("blueprint generator", () => {
     expect(objectVariant?.properties).toHaveProperty("mood");
     expect(objectVariant?.properties).toHaveProperty("lighting");
     expect(objectVariant?.properties).toHaveProperty("texture");
+    expect(objectVariant?.properties).toHaveProperty("portrait_background");
     expect(
       body.response_format.json_schema.schema.properties.world.properties
         .locations.items.properties.location_image_id,

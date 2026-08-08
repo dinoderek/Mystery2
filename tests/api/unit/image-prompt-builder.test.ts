@@ -239,6 +239,34 @@ describe("image prompt builder", () => {
     expect(prompt).not.toContain("Texture:");
   });
 
+  it("defaults the output framing to 4:3", () => {
+    const prompt = buildImagePrompt(blueprint, {
+      targetType: "blueprint",
+      targetKey: null,
+    });
+    expect(prompt).toContain("Output: one static image, 4:3 framing,");
+  });
+
+  it("tracks an explicit aspect ratio in the output framing", () => {
+    const prompt = buildImagePrompt(
+      blueprint,
+      { targetType: "blueprint", targetKey: null },
+      { aspectRatio: "16:9" },
+    );
+    expect(prompt).toContain("Output: one static image, 16:9 framing,");
+    expect(prompt).not.toContain("4:3 framing");
+  });
+
+  it("drops the framing clause when the aspect ratio is auto", () => {
+    const prompt = buildImagePrompt(
+      blueprint,
+      { targetType: "blueprint", targetKey: null },
+      { aspectRatio: "auto" },
+    );
+    expect(prompt).toContain("Output: one static image, consistent visual style.");
+    expect(prompt).not.toContain("framing");
+  });
+
   it("creates deterministic slugged image ids with blueprint prefix", () => {
     const imageId = createImageId("Mock Blueprint", "character", "char_alice");
     expect(imageId).toBe("mock-blueprint.character-char-alice");

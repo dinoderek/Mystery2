@@ -57,13 +57,19 @@ function charactersAtLocation(blueprint, locationId) {
   );
 }
 
-function portraitBackgroundHint() {
-  return [
-    "Portrait background: Heavily blurred, out-of-focus wash of warm and cool tones",
-    "as if photographed with a very wide aperture. Soft bokeh circles of light in amber",
-    "and pale blue. The background should feel atmospheric but contain no recognizable",
-    "objects, rooms, or scenery — only diffused light and color.",
-  ].join(" ");
+// Used when the blueprint does not author
+// metadata.visual_direction.portrait_background.
+const PORTRAIT_BACKGROUND_DEFAULT = [
+  "Heavily blurred, out-of-focus wash of warm and cool tones",
+  "as if photographed with a very wide aperture. Soft bokeh circles of light in amber",
+  "and pale blue. The background should feel atmospheric but contain no recognizable",
+  "objects, rooms, or scenery — only diffused light and color.",
+].join(" ");
+
+function portraitBackgroundHint(blueprint) {
+  const custom =
+    blueprint?.metadata?.visual_direction?.portrait_background?.trim();
+  return `Portrait background: ${custom || PORTRAIT_BACKGROUND_DEFAULT}`;
 }
 
 function targetBlock(blueprint, target, _options = {}) {
@@ -129,6 +135,7 @@ function targetBlock(blueprint, target, _options = {}) {
     const attitudeCue = character?.initial_attitude_towards_investigator
       ? `Expression/body language cue: ${character.initial_attitude_towards_investigator}.`
       : "";
+    // Character backstory, not the visual backdrop — see portraitBackgroundHint.
     const backgroundCue = character?.background
       ? `Background context: ${character.background}`
       : "";
@@ -141,7 +148,7 @@ function targetBlock(blueprint, target, _options = {}) {
       attitudeCue,
       backgroundCue,
       `Personality cue: ${character?.personality ?? ""}.`,
-      portraitBackgroundHint(),
+      portraitBackgroundHint(blueprint),
     ]
       .filter(Boolean)
       .join(" ");

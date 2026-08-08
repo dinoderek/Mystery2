@@ -5,7 +5,7 @@
 > `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
 > - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
-> - `docs/blueprint-generation-flows.md` — `63b4243003f4b7a610fb1caf590b82850ac40e73`
+> - `docs/blueprint-generation-flows.md` — `b5ecaef493d60067d45fb628939254aedb429764`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect brief interpretation, regenerate this file.
 
@@ -19,7 +19,7 @@ literally and respect.
 | `targetAge` | yes | Target reading level. Tones every text field. |
 | `timeBudget` | no | If present, use exactly as `metadata.time_budget`. If absent, infer a moderate budget from the brief's complexity. |
 | `titleHint` | no | If present, base `metadata.title` on it. |
-| `artStyle` | no | If present, expand into `metadata.visual_direction`. Do not copy verbatim. |
+| `artStyle` | no | If present, expand into `metadata.visual_direction`. Do not copy verbatim. The expansion may include the optional `portrait_background` — character-portrait backdrops only, abstract colour/light/blur, never a location from the mystery. |
 | `mustInclude` | no | Required ingredients. Each string in this array must appear meaningfully in the blueprint (in clues, descriptions, ground truth, etc). Mechanical check enforces this. |
 | `culprits` | no, default 1 | **The blueprint schema requires exactly one culprit** (`is_culprit: true` on exactly one character). If the brief asks for more than 1, treat as 1 — the schema does not currently support multi-culprit mysteries. |
 | `suspects` | no | Number of *red-herring suspects*: characters who look guilty but aren't. They should have apparent motive or opportunity but be eliminable through clues. |

@@ -4,7 +4,7 @@
 > Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
 > - `docs/ai-runtime.md` — `14984b59bd97ded31e0d6412fede63865e5fae02`
-> - `docs/blueprint-generation-flows.md` — `63b4243003f4b7a610fb1caf590b82850ac40e73`
+> - `docs/blueprint-generation-flows.md` — `b5ecaef493d60067d45fb628939254aedb429764`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect blueprint authoring, regenerate this file.
 
@@ -174,6 +174,11 @@ or null `sex` causes pronoun drift in talk and move narration.
   `metadata.visual_direction` is the structured replacement. Prefer
   `visual_direction`; if you omit `art_style`, omit it entirely (do not set
   it to `null`).
+- `metadata.visual_direction.portrait_background` is optional and steers only
+  the backdrop behind character portraits. Keep it abstract — colour, light,
+  blur. It must never depict or reference any location from the mystery;
+  portraits are deliberately location-agnostic. Omit it entirely (do not set
+  it to `null`) to fall back to the default bokeh wash.
 - `metadata.narration_style` is optional. Omit it entirely if you have no
   voice direction to give — do not set it to `null`.
 - `narrative.starting_knowledge` needs an entry for **every** location and

@@ -8,11 +8,11 @@
     "time_budget": 14,
     "narration_style": "warm and playful, full of glittering-forest wonder, gentle and reassuring for a young detective",
     "visual_direction": {
-      "art_style": "soft storybook digital painting with a hand-drawn picture-book feel",
-      "color_palette": "glittering teal, violet, and neon-pink glows against warm leafy greens and cozy brown treehouses — magical and inviting",
-      "mood": "wondrous and gently mysterious",
-      "lighting": "dappled moonlight and the soft magical glow of the forest floor",
-      "texture": "painterly, with a subtle sparkle on leaves and water"
+      "art_style": "layered cut-paper diorama illustration — the scene built from stacked paper silhouettes receding into depth, with crisp scissor-cut edges, small drop shadows between layers, and simple graphic shapes",
+      "color_palette": "deep indigo and midnight-blue paper layers in front and behind, with leaf shapes in two or three greens, and cut translucent vellum in teal and hot pink for anything magical",
+      "mood": "hushed, theatrical, and full of night-time wonder",
+      "lighting": "backlit — the magical glow comes from behind the paper layers and shines through translucent cut shapes, rimming edges and throwing soft layer shadows forward",
+      "texture": "textured art paper with faintly visible fibres and clean die-cut edges; no painterly blending anywhere"
     }
   },
   "narrative": {

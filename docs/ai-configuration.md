@@ -154,25 +154,54 @@ Deploy writes `ai_profiles.id='default'` from `.env.deploy.<env>.local`:
 
 ## Image Generation Configuration
 
+The image-generation CLI calls OpenRouter's dedicated Images API
+(`POST https://openrouter.ai/api/v1/images`). Image models are rejected by
+`/chat/completions` with a 404. Responses carry the image as
+`data[0].b64_json`; the CLI requests `output_format: "png"` and writes those
+bytes straight to `<image_id>.png`.
+
 Use `.env.images.local` for operator image-generation settings:
 
 - `OPENROUTER_API_KEY=<secret>`
 - `OPENROUTER_IMAGE_MODEL=<model-id>` optional
+- `OPENROUTER_IMAGE_ASPECT_RATIO=<ratio>` optional
 
 The image-generation CLI resolves config in this order:
 
 1. shell env at invocation time
 2. `.env.images.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
 3. `.env.local` from `MYSTERY_CONFIG_ROOT` when set, otherwise from the repo root
-4. built-in default model
+4. built-in defaults (model `openai/gpt-image-2`, aspect ratio `4:3`)
 
 Operator flags:
 
+- `--model <model-id>` overrides the image model for one run
+- `--aspect-ratio <ratio>` overrides the output ratio; it is sent as the
+  `aspect_ratio` request param *and* interpolated into the prompt's `Output:`
+  line, so the two cannot disagree
 - `--chat-packets` writes one markdown prompt packet per selected target instead of calling OpenRouter
 - if `--output-dir` is omitted in chat mode, packets default to `chat-gen-prompts/images`
 - packets are one-way operator artifacts: you upload any reference images manually and paste the prompt into chat yourself
 
+Aspect-ratio support is per-model and the CLI only validates syntax. Run
+`curl https://openrouter.ai/api/v1/images/models` (public, no auth) to see each
+model's `supported_parameters`; anything unsupported comes back as a 400 with
+OpenRouter's own explanation. Note that `openai/gpt-image-1` accepts only
+`1:1`, `3:2`, `2:3`, and `auto` — pinning it requires `--aspect-ratio 3:2`.
+
+Reference images (character portraits fed into location scenes, and both fed
+into the cover) are sent as `input_references[]` base64 PNG data URLs and are
+capped at 16, the limit the gpt-image family advertises. A target that exceeds
+the cap logs a warning and sends the first 16.
+
+Failure behavior:
+
+- a failed or cancelled generation returns HTTP 502 and is **not** billed
+- per-target failures are reported and the run continues; re-run just the
+  affected targets with `--character` / `--location`
+
 Timeout behavior:
 
-- `AI_OPENROUTER_TIMEOUT_MS=<milliseconds>` optional
+- `AI_OPENROUTER_TIMEOUT_MS=<milliseconds>` optional — the same knob covers
+  image generation and text generation
 - default is `120000`

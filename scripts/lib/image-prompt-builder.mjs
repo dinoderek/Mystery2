@@ -1,3 +1,7 @@
+// Shared by the prompt text and the Images API `aspect_ratio` request param so
+// the two can never disagree about framing.
+export const DEFAULT_IMAGE_ASPECT_RATIO = "4:3";
+
 export function slugify(value, maxLength = 48) {
   return String(value)
     .toLowerCase()
@@ -203,8 +207,10 @@ function guardrailBlock() {
   ].join(" ");
 }
 
-function outputBlock() {
-  return "Output: one static image, 4:3 framing, consistent visual style.";
+function outputBlock(aspectRatio) {
+  const framing =
+    aspectRatio && aspectRatio !== "auto" ? `${aspectRatio} framing, ` : "";
+  return `Output: one static image, ${framing}consistent visual style.`;
 }
 
 export function buildReferenceLegend(referenceImages) {
@@ -223,12 +229,13 @@ export function buildReferenceLegend(referenceImages) {
 
 export function buildImagePrompt(blueprint, target, options = {}) {
   const legend = buildReferenceLegend(options.referenceImages);
+  const aspectRatio = options.aspectRatio ?? DEFAULT_IMAGE_ASPECT_RATIO;
   return [
     styleBlock(blueprint),
     targetBlock(blueprint, target, options),
     legend,
     guardrailBlock(),
-    outputBlock(),
+    outputBlock(aspectRatio),
   ]
     .filter(Boolean)
     .join("\n\n");

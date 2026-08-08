@@ -181,14 +181,15 @@ npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a
 Env file: copy `.env.images.example` to `.env.images.local`.
 
 Supported keys: `OPENROUTER_API_KEY`, optional `OPENROUTER_IMAGE_MODEL`
-(default: `openai/gpt-image-1`).
+(default: `openai/gpt-image-2`), optional `OPENROUTER_IMAGE_ASPECT_RATIO`
+(default: `4:3`).
 
-### Generate images (calls OpenRouter)
+### Generate images (calls the OpenRouter Images API)
 
 ```bash
 npm run generate:images -- \
   --blueprint-path spring-treats-6yo.json \
-  --model openai/gpt-image-1 \
+  --model openai/gpt-image-2 \
   --all
 ```
 
@@ -200,8 +201,15 @@ Key flags:
 | `--blueprint` | Blueprint-level image only |
 | `--characters "A,B"` / `--character "A"` | Character subset |
 | `--locations "X,Y"` / `--location "X"` | Location subset |
+| `--model <id>` | Override the image model |
+| `--aspect-ratio <ratio>` | Output aspect ratio (default `4:3`; must be supported by the model) |
 | `--output-dir <dir>` | Override output directory |
-| `--dry-mode` | Print prompts without calling API |
+| `--dry-mode` | Print the Images API request (base64 redacted) without calling it |
+
+Aspect-ratio support varies by model — `openai/gpt-image-1` accepts only
+`1:1`, `3:2`, `2:3`, and `auto`, so pass `--aspect-ratio 3:2` if you pin it.
+`curl https://openrouter.ai/api/v1/images/models` (public, no auth) lists each
+model's `supported_parameters`.
 
 `--blueprint-path` resolves from `$MYSTERY_CONFIG_ROOT/blueprints/` first, then
 falls back to the literal path. `--output-dir` defaults to

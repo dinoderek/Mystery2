@@ -83,10 +83,12 @@ export function formatImageTargetLabel(target) {
 export function buildImageChatPacket({
   blueprint,
   target,
+  aspectRatio,
 }) {
   const referenceManifest = buildImageReferenceManifest(blueprint, target);
   const prompt = buildImagePrompt(blueprint, target, {
     referenceImages: referenceManifest.map(({ label }) => ({ label })),
+    aspectRatio,
   });
   const recommendedImageFilename = `${createImageId(
     blueprint.metadata?.title ?? blueprint.id,

@@ -45,15 +45,15 @@
             </li>
             <li>
               <span class="text-t-bright">accuse [statement]</span>
-              - Begin or continue your final accusation reasoning
+              - Say who did it, and why you think so
             </li>
             <li>
               <span class="text-t-bright">locations / where can i go</span>
-              - Show all locations and who is there
+              - Show every place you can go, and who is there
             </li>
             <li>
               <span class="text-t-bright">characters / who is here</span>
-              - Show characters in the current location
+              - Show who is here with you right now
             </li>
           </ul>
         </section>
@@ -86,10 +86,10 @@
         <section>
           <h3 class="text-t-primary font-bold mb-1">GENERAL</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
-            <li><span class="text-t-bright">notebook / n</span> - Open your case notebook: the mystery facts, people, places, and clues found so far</li>
-            <li><span class="text-t-bright">zoom</span> - View current scene image fullscreen with narration</li>
-            <li><span class="text-t-bright">help</span> - Open this detailed command reference</li>
-            <li><span class="text-t-bright">quit / exit</span> - End the current session</li>
+            <li><span class="text-t-bright">notebook / n</span> - Open your case notebook: what you know, who you have met, and every clue you have found</li>
+            <li><span class="text-t-bright">zoom</span> - See the picture of this place in full screen</li>
+            <li><span class="text-t-bright">help</span> - Open this list of commands</li>
+            <li><span class="text-t-bright">quit / exit</span> - Stop playing this case</li>
           </ul>
         </section>
       </div>

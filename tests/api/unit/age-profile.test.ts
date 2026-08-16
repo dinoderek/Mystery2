@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   allAgeProfiles,
+  allAuthoredFields,
   allInteractions,
+  authoredFieldBudget,
   clampTargetAge,
   getAgeProfile,
   getInteraction,
@@ -11,6 +13,7 @@ import {
   renderGenerationGuidance,
   renderGuidance,
   renderLengthGuidance,
+  renderOutcomeLengthGuidance,
   wordBudget,
 } from "../../../packages/shared/src/age-profile.ts";
 
@@ -112,5 +115,57 @@ describe("guidance rendering", () => {
     expect(g).toContain("8 years old");
     expect(g.toLowerCase()).toContain("wall of text");
     expect(g.toLowerCase()).toContain("player-facing");
+  });
+
+  it("generation guidance states an explicit budget for every authored field", () => {
+    const g = renderGenerationGuidance(8);
+    for (const id of allAuthoredFields()) {
+      expect(g).toContain(`about ${authoredFieldBudget(id, 8)} words`);
+    }
+    expect(g).toContain("`narrative.premise`");
+    expect(g).toContain("every clue `text`");
+  });
+
+  it("outcome length guidance names both budgets and their conditions", () => {
+    const g = renderOutcomeLengthGuidance(10, [
+      { id: "search_find", when: "if you reveal a clue" },
+      { id: "search_empty", when: "if you reveal nothing" },
+    ]);
+    expect(g).toContain("if you reveal a clue, aim for about 35 words");
+    expect(g).toContain("if you reveal nothing, aim for about 20 words");
+    expect(g.toLowerCase()).toContain("not a hard limit");
+  });
+});
+
+describe("authored field budgets (generation length dial)", () => {
+  it("covers every authored field at every age", () => {
+    for (const id of allAuthoredFields()) {
+      for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age++) {
+        expect(authoredFieldBudget(id, age)).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("budgets rise with age for every authored field", () => {
+    for (const id of allAuthoredFields()) {
+      for (let age = MIN_TARGET_AGE + 1; age <= MAX_TARGET_AGE; age++) {
+        expect(authoredFieldBudget(id, age)).toBeGreaterThanOrEqual(
+          authoredFieldBudget(id, age - 1),
+        );
+      }
+    }
+  });
+
+  it("clamps the age before reading a budget", () => {
+    expect(authoredFieldBudget("premise", 2)).toBe(
+      authoredFieldBudget("premise", MIN_TARGET_AGE),
+    );
+    expect(authoredFieldBudget("premise", 50)).toBe(
+      authoredFieldBudget("premise", MAX_TARGET_AGE),
+    );
+  });
+
+  it("excludes names, which do not scale with reading age", () => {
+    expect(allAuthoredFields()).not.toContain("title");
   });
 });

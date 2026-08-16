@@ -33,6 +33,7 @@ const STEPS = [
   { name: "unit-api", phase: 1, args: ["run", "test:unit"] },
   { name: "unit-web", phase: 1, args: ["-w", "web", "run", "test:unit"] },
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
+  { name: "shared-sync", phase: 1, args: ["run", "check:shared-sync"] },
 
   // Phase 2 — share Supabase state, run serially
   { name: "integration", phase: 2, args: ["run", "test:integration"] },

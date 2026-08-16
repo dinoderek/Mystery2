@@ -11,7 +11,7 @@
       : gameSessionStore.state?.mode === "accuse"
         ? "> Accuse mode..."
         : gameSessionStore.state?.mode === "ended"
-          ? "> Session ended..."
+          ? "> Case is over..."
           : "> Explore mode...",
   );
 

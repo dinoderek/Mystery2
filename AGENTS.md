@@ -52,6 +52,12 @@ summaries rather than treating them as passive background reading.
   integration tests, API E2E tests, browser E2E tests, or `npm test`. The test
   scripts call `ensureSupabaseRunning()`, but they do not restart stale Edge
   Function code automatically.
+- **Mirrored shared modules:** Some `packages/shared/src/*.ts` modules are
+  mirrored byte-for-byte into `supabase/functions/_shared/` because an Edge
+  Function cannot import out of `supabase/functions`. Edit only the canonical
+  file in `packages/shared/src/`, then run `npm run sync:shared`. The pairs are
+  declared in `MIRRORED_FILES` (`scripts/sync-shared.mjs`); the `shared-sync`
+  gate step fails on drift. See `docs/backend-conventions.md`.
 - **Worktree-safe commands:** In a worktree, use `npm run supabase:*`,
   `npm run seed:*`, and repo test scripts instead of raw `npx supabase`
   commands. Use `QUICKSTART.md` for the command runbook and

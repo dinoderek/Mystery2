@@ -5,7 +5,7 @@
 > `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
 > - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
-> - `docs/blueprint-generation-flows.md` — `25d0439e67dc1afc78bbc4451913917ec0f29318`
+> - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect brief interpretation, regenerate this file.
 
@@ -16,7 +16,7 @@ literally and respect.
 | Field | Required | Meaning |
 |---|---|---|
 | `brief` | yes | Free-form mystery premise. Treat as creative seed and constraint. |
-| `targetAge` | yes | Target reading level. Tones every text field. |
+| `targetAge` | yes | Target reading level. Tones every text field. Drives two dials in the age guidance appended to your instructions: **complexity** (sentence length, vocabulary, new-word allowance) and **length** (an explicit word budget for `metadata.one_liner`, `narrative.premise`, every `starting_knowledge` summary, every location `description`, and every clue `text`). Names carry no word budget. |
 | `timeBudget` | no | If present, use exactly as `metadata.time_budget`. If absent, infer a moderate budget from the brief's complexity. |
 | `titleHint` | no | If present, base `metadata.title` on it. |
 | `artStyle` | no | If present, expand into `metadata.visual_direction`. Do not copy verbatim. The expansion may include the optional `portrait_background` — character-portrait backdrops only, abstract colour/light/blur, never a location from the mystery. |

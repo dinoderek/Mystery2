@@ -28,10 +28,13 @@ import { serveWithCors } from "../_shared/cors.ts";
 // Shown once at the start of every case. The mystery facts, people, places, and
 // discovered clues that used to be dumped here now live in the in-game notebook
 // (see the `state` payload below), so the opening only needs to point there.
+// Written for the youngest player (6): one idea per sentence, everyday words.
+// This is the first prose in every case and is not age-parameterised, so it is
+// pitched at the bottom of the 6–11 band rather than the middle.
 const NOTEBOOK_GUIDANCE =
-  'Tip: type "notebook" (or "n") at any time to open your case notebook — ' +
-  "the facts of the mystery, the people and places, and the clues you've " +
-  'gathered so far. Type "help" to see every command.';
+  'Tip: type "notebook" (or "n") to open your case notebook. ' +
+  "It holds what you know, who you have met, and every clue you have found. " +
+  'Type "help" to see what else you can do.';
 
 serveWithCors(async (req) => {
   if (req.method !== "POST") {

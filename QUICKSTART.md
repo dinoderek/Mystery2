@@ -315,3 +315,14 @@ npm -w web run test:e2e
 ```
 
 See [`docs/testing.md`](docs/testing.md) for suite ownership and guidance.
+
+After editing a shared module that is mirrored into `supabase/functions`
+(currently `age-profile.ts`), re-sync the copy:
+
+```bash
+npm run sync:shared
+```
+
+The `shared-sync` gate step fails on drift. See
+[`docs/backend-conventions.md`](docs/backend-conventions.md) for why the mirror
+exists and when to write an adapter instead.

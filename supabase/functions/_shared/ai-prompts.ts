@@ -4,12 +4,14 @@ import {
   renderComplexityGuidance,
   renderGuidance,
   renderLengthGuidance,
+  renderOutcomeLengthGuidance,
 } from "./age-profile.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
 // `search_bare` defaults to the lean "nothing found" budget; the search handler
 // overrides it to `search_find` on turns where a clue will be revealed (see
-// LoadPromptOptions.interaction).
+// LoadPromptOptions.interaction). `search_targeted` is the exception that needs
+// OUTCOME_LENGTH_BY_ROLE instead — see there.
 const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   talk_start: "talk_greeting",
   talk_conversation: "talk_round",
@@ -20,13 +22,46 @@ const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   accusation_judge: "accusation_verdict",
 };
 
+// Roles whose word budget depends on an outcome the model itself decides, so
+// the backend cannot pick one up front the way it does for bare search. The
+// prompt states both budgets and the condition that selects them; without this
+// a targeted search that finds nothing was billed the roomier `search_find`
+// budget — around 2.5x the words of an equally empty bare search.
+const OUTCOME_LENGTH_BY_ROLE: Partial<
+  Record<AIPromptKey, readonly { id: InteractionId; when: string }[]>
+> = {
+  search_targeted: [
+    { id: "search_find", when: "if you reveal a clue" },
+    { id: "search_empty", when: "if you reveal nothing" },
+  ],
+};
+
+/**
+ * Age-band guidance (complexity + length) for a role, honouring an explicit
+ * interaction override before falling back to the role's own budget — branched
+ * when the role's budget depends on the outcome.
+ */
+function renderRoleGuidance(
+  role: AIPromptKey,
+  targetAge: number,
+  interaction?: InteractionId,
+): string {
+  const branches = OUTCOME_LENGTH_BY_ROLE[role];
+  if (!interaction && branches) {
+    return `${renderComplexityGuidance(targetAge)}\n${
+      renderOutcomeLengthGuidance(targetAge, branches)
+    }`;
+  }
+  return renderGuidance(interaction ?? INTERACTION_BY_ROLE[role], targetAge);
+}
+
 /**
  * Age-band guidance (complexity + length) for a runtime role, ready to drop
  * into a prompt via the `{{age_guidance}}` placeholder. Single source of truth
  * is `age-profile.ts`.
  */
 export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
-  return renderGuidance(INTERACTION_BY_ROLE[role], targetAge);
+  return renderRoleGuidance(role, targetAge);
 }
 
 // The standard narrator voice shared by every runtime prompt. Kept short so it
@@ -51,7 +86,13 @@ export function buildStyleGuidance(narrationStyle?: string | null): string {
     return STANDARD_NARRATION_STYLE;
   }
 
-  return `${STANDARD_NARRATION_STYLE}\n- This mystery's own voice (follow it within the rules above): ${custom}`;
+  return [
+    STANDARD_NARRATION_STYLE,
+    `- This mystery's own voice (follow it within the rules above): ${custom}`,
+    "- That voice flavors tone and imagery only. It never licenses harder words," +
+      " longer sentences, or more figurative language than the reading-level" +
+      " guidance allows — where the two pull apart, the reading level wins.",
+  ].join("\n");
 }
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
@@ -332,6 +373,8 @@ Task:
 - The people listed in accusation_start_context.characters are the only
   characters in this mystery. Use only those names.
 - Use each character's sex field to choose pronouns. Never guess pronouns.
+- "follow_up_prompt" is shown to the player as well: hold it to the same
+  reading level, and keep it to one short, direct question.
 
 Return JSON:
 {
@@ -404,6 +447,11 @@ and the accusation is not accepted.
 - Use suspect_elimination_paths to check whether the player ruled out innocent
   suspects, and red_herrings to recognize when they were misled — being misled
   earns an encouraging nudge, not punishment.
+- "follow_up_prompt" is shown to the player as well: hold it to the same
+  reading level, and keep it to one short, direct question.
+
+The word budget above applies to "narration". "follow_up_prompt" is extra and
+should stay well under it.
 
 Return JSON:
 {
@@ -445,7 +493,7 @@ export async function loadPromptTemplate(
   return PROMPT_TEMPLATE_BY_ROLE[role]
     .replace(
       "{{age_guidance}}",
-      renderGuidance(options.interaction ?? INTERACTION_BY_ROLE[role], targetAge),
+      renderRoleGuidance(role, targetAge, options.interaction),
     )
     .replace("{{style_guidance}}", buildStyleGuidance(options.narrationStyle));
 }

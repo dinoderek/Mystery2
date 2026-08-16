@@ -1,6 +1,25 @@
 /**
  * Age-appropriate text — the single source of truth for ages 6–11.
  *
+ * ============================ MIRRORED FILE ============================
+ * This exact content lives in TWO places and must stay byte-identical:
+ *
+ *   canonical  packages/shared/src/age-profile.ts          <- EDIT HERE
+ *   copy       supabase/functions/_shared/age-profile.ts   <- NEVER EDIT
+ *
+ * Why a copy rather than an import: the edge runtime container bind-mounts
+ * only `supabase/functions`, so an import reaching out to `packages/shared`
+ * resolves to a path that does not exist inside the container. The edge side
+ * needs a real file on disk.
+ *
+ * After editing the canonical source, run:  npm run sync:shared
+ * Drift fails the `shared-sync` step of `npm test` and a unit test.
+ *
+ * Keep this file import-free — the copy has to be valid under both Deno and
+ * Node, which resolve specifiers differently (`zod` vs `npm:zod`). Anything
+ * needing imports wants a hand-written adapter, not a mirror.
+ * =======================================================================
+ *
  * The model has TWO independent dials:
  *
  *   1. COMPLEXITY (depends on age only) — how hard the words and sentences are:
@@ -207,22 +226,93 @@ export function renderLengthGuidance(id: InteractionId, age: number): string {
   ].join("\n");
 }
 
+/**
+ * Length guidance for an interaction whose budget depends on an outcome only
+ * the narrator knows. Bare search can pick a budget up front because the
+ * backend already knows whether a clue is coming; a targeted search cannot,
+ * because the model itself judges whether the player's description hits
+ * anything. Rather than always billing the roomier budget, state both and let
+ * the outcome select one.
+ */
+export function renderOutcomeLengthGuidance(
+  age: number,
+  branches: readonly { id: InteractionId; when: string }[],
+): string {
+  const clauses = branches.map(
+    (b) => `${b.when}, aim for about ${wordBudget(b.id, age)} words`,
+  );
+  return [
+    `Length (guidance, not a hard limit): ${clauses.join("; ")}. Prefer shorter; never write a wall of text.`,
+    `Go a little over only if the character or the moment truly needs it.`,
+  ].join("\n");
+}
+
 /** Combined complexity + length guidance for an interaction at an age. */
 export function renderGuidance(id: InteractionId, age: number): string {
   return `${renderComplexityGuidance(age)}\n${renderLengthGuidance(id, age)}`;
 }
 
 /**
+ * The player-facing fields the blueprint generator authors as prose, each with
+ * an explicit word budget per age — the generation-time counterpart to
+ * WORD_BUDGET. Without these the generator only heard "a sentence or two",
+ * which says nothing about how long a sentence may be at age 6 versus 11.
+ *
+ * Titles, location names, and sub-location names are deliberately absent: a
+ * name is a label rather than prose, and its length does not scale with reading
+ * age. `generator-prompt.md` sizes those directly.
+ */
+export type AuthoredFieldId =
+  | "one_liner"
+  | "premise"
+  | "notebook_summary"
+  | "location_description"
+  | "clue_text";
+
+const AUTHORED_FIELD_BUDGET: Record<AuthoredFieldId, Record<number, number>> = {
+  one_liner: { 6: 8, 7: 10, 8: 12, 9: 14, 10: 16, 11: 18 },
+  premise: { 6: 25, 7: 30, 8: 35, 9: 40, 10: 45, 11: 50 },
+  notebook_summary: { 6: 12, 7: 14, 8: 16, 9: 18, 10: 20, 11: 22 },
+  location_description: { 6: 20, 7: 24, 8: 28, 9: 32, 10: 36, 11: 40 },
+  clue_text: { 6: 12, 7: 14, 8: 16, 9: 20, 10: 24, 11: 28 },
+};
+
+const AUTHORED_FIELD_LABEL: Record<AuthoredFieldId, string> = {
+  one_liner: "`metadata.one_liner`",
+  premise: "`narrative.premise`",
+  notebook_summary:
+    "every `starting_knowledge` summary (`mystery_summary`, and each location and character `summary`)",
+  location_description: "every location `description`",
+  clue_text: "every clue `text`, wherever it is authored",
+};
+
+/** The explicit target word budget for an authored field at a given age. */
+export function authoredFieldBudget(id: AuthoredFieldId, age: number): number {
+  return AUTHORED_FIELD_BUDGET[id][clampTargetAge(age)];
+}
+
+/** All authored player-facing prose fields. */
+export function allAuthoredFields(): AuthoredFieldId[] {
+  return Object.keys(AUTHORED_FIELD_BUDGET) as AuthoredFieldId[];
+}
+
+/**
  * Generation-time guidance for the blueprint generator: the age's complexity
- * rules plus a reminder to keep authored player-facing text brief. Generation
- * produces many fields rather than one interaction, so this uses complexity
- * (age-only) plus a general brevity note rather than a single length budget.
+ * rules plus an explicit word budget per player-facing prose field. Generation
+ * authors many fields rather than one interaction, so the length dial is a
+ * per-field table instead of the single budget a runtime role gets.
  */
 export function renderGenerationGuidance(age: number): string {
   const p = getAgeProfile(age);
   return [
     "## Age-appropriate writing",
     renderComplexityGuidance(age),
-    `Keep every player-facing string (title, one-liner, premise, location descriptions, clue text) short — a sentence or two each. Bias toward brevity to hold a ${p.age}-year-old's attention; never write a wall of text.`,
+    "",
+    "### Length of player-facing text",
+    `Soft targets, biased short, with no minimum. Bias toward brevity to hold a ${p.age}-year-old's attention; never write a wall of text. Go a little over only where the mystery genuinely needs it.`,
+    ...allAuthoredFields().map(
+      (id) =>
+        `- ${AUTHORED_FIELD_LABEL[id]}: about ${authoredFieldBudget(id, age)} words`,
+    ),
   ].join("\n");
 }

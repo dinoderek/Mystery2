@@ -756,7 +756,7 @@ export class GameSessionStore {
     this.lastFailedInput = null;
     this.accusationOutcome = null;
     this.awaitingReturnToList = true;
-    this.appendSystemFeedback('Session ended. Press any key to go back to the mystery list.');
+    this.appendSystemFeedback('This case is over. Press any key to go back to the list of mysteries.');
   }
 
   clearSessionForMysteryList() {
@@ -1049,7 +1049,7 @@ export class GameSessionStore {
 
         if (attempt === maxAttempts) {
           this.error = failure.message ?? 'Request failed after retries.';
-          this.appendError('Request failed after 3 attempts. Use [ RETRY LAST COMMAND ] to try again.');
+          this.appendError('That did not work, even after 3 tries. Use [ RETRY LAST COMMAND ] to try again.');
           this.lastFailedInput = rawInput;
           this.isRetrying = false;
           this.retryCount = 0;
@@ -1059,7 +1059,7 @@ export class GameSessionStore {
 
         this.isRetrying = true;
         this.retryCount = attempt;
-        this.appendSystemFeedback(`Connection issue. Retrying (${attempt}/3)...`);
+        this.appendSystemFeedback(`Something went wrong. Trying again (${attempt}/3)...`);
         await sleep(getBackoffDelayMs(attempt));
       } catch (thrownError) {
         const transient = isTransientFailure(null, thrownError);
@@ -1077,7 +1077,7 @@ export class GameSessionStore {
 
         if (attempt === maxAttempts) {
           this.error = message;
-          this.appendError('Request failed after 3 attempts. Use [ RETRY LAST COMMAND ] to try again.');
+          this.appendError('That did not work, even after 3 tries. Use [ RETRY LAST COMMAND ] to try again.');
           this.lastFailedInput = rawInput;
           this.isRetrying = false;
           this.retryCount = 0;
@@ -1087,7 +1087,7 @@ export class GameSessionStore {
 
         this.isRetrying = true;
         this.retryCount = attempt;
-        this.appendSystemFeedback(`Connection issue. Retrying (${attempt}/3)...`);
+        this.appendSystemFeedback(`Something went wrong. Trying again (${attempt}/3)...`);
         await sleep(getBackoffDelayMs(attempt));
       }
     }

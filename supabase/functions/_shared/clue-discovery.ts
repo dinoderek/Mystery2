@@ -91,7 +91,10 @@ interface NotebookReasoningPath {
   character_clue_ids: string[];
 }
 
-export interface NotebookBlueprint {
+// The world shape needed to resolve a clue id to its text and where it came
+// from. Both the notebook blueprint and the runtime `BlueprintContext` satisfy
+// it; sub-location clues take their parent location's origin.
+export interface ClueOriginWorld {
   world: {
     locations: Array<{
       id: string;
@@ -106,6 +109,9 @@ export interface NotebookBlueprint {
       clues: NotebookClue[];
     }>;
   };
+}
+
+export interface NotebookBlueprint extends ClueOriginWorld {
   solution_paths: NotebookReasoningPath[];
   red_herrings: NotebookReasoningPath[];
   suspect_elimination_paths: NotebookReasoningPath[];
@@ -162,7 +168,7 @@ interface ClueIndexEntry {
   origin: DiscoveryOrigin;
 }
 
-function buildClueIndex(blueprint: NotebookBlueprint): Map<string, ClueIndexEntry> {
+function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry> {
   const index = new Map<string, ClueIndexEntry>();
   for (const location of blueprint.world.locations) {
     const origin: DiscoveryOrigin = {
@@ -218,4 +224,92 @@ export function buildDiscoveryRecords(
     }
   }
   return records;
+}
+
+// --- Accusation judge: what the investigator earned, and how far it gets them ---
+
+export interface KnownClueWithOrigin {
+  id: string;
+  text: string;
+  // Short human-readable provenance ("found at the Kitchen", "told by Alice
+  // Smith") so the judge can narrate the player's own case back to them.
+  origin_label: string;
+}
+
+// Resolve the discovered clue ids to text + provenance, preserving the caller's
+// iteration order (discovery order, when the set comes from event history).
+// Ids absent from the blueprint are dropped, matching `buildDiscoveryRecords`.
+export function buildKnownCluesWithOrigin(
+  world: ClueOriginWorld,
+  discovered: Iterable<string>,
+): KnownClueWithOrigin[] {
+  const index = buildClueIndex(world);
+  const known: KnownClueWithOrigin[] = [];
+  const seen = new Set<string>();
+  for (const id of discovered) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const entry = index.get(id);
+    if (!entry) continue;
+    known.push({
+      id,
+      text: entry.text,
+      origin_label:
+        entry.origin.kind === "location"
+          ? `found at ${entry.origin.location_name}`
+          : `told by ${entry.origin.character_name}`,
+    });
+  }
+  return known;
+}
+
+export type PathCoverageKind = "solution" | "red_herring" | "eliminate";
+
+export interface PathCoverage {
+  path_id: string;
+  kind: PathCoverageKind;
+  summary: string;
+  found_clue_ids: string[];
+  missing_clue_ids: string[];
+}
+
+interface CoverageReasoningPath {
+  id: string;
+  summary: string;
+  location_clue_ids: string[];
+  character_clue_ids: string[];
+}
+
+export interface CoverageBlueprint {
+  solution_paths: CoverageReasoningPath[];
+  red_herrings: CoverageReasoningPath[];
+  suspect_elimination_paths: CoverageReasoningPath[];
+}
+
+// Split each reasoning path's clue ids by whether the investigator discovered
+// them. The judge already holds every path via the full blueprint; this is the
+// intersection with what the player actually found, precomputed so the model
+// does not have to do set math over a long context (the same reasoning behind
+// `prereqs_met` in the talk context).
+export function buildPathCoverage(
+  blueprint: CoverageBlueprint,
+  discovered: Set<string>,
+): PathCoverage[] {
+  const coverage: PathCoverage[] = [];
+  const collect = (kind: PathCoverageKind, paths: CoverageReasoningPath[]) => {
+    for (const path of paths) {
+      const clueIds = [...path.location_clue_ids, ...path.character_clue_ids];
+      coverage.push({
+        path_id: path.id,
+        kind,
+        summary: path.summary,
+        found_clue_ids: clueIds.filter((id) => discovered.has(id)),
+        missing_clue_ids: clueIds.filter((id) => !discovered.has(id)),
+      });
+    }
+  };
+  collect("solution", blueprint.solution_paths);
+  collect("red_herring", blueprint.red_herrings);
+  collect("eliminate", blueprint.suspect_elimination_paths);
+  return coverage;
 }

@@ -499,6 +499,83 @@ describe("ai-context guardrails", () => {
     });
     expect(judgeContext.accusation_judge_context?.full_blueprint.solution_paths).toHaveLength(1);
     expect(judgeContext.accusation_judge_context?.full_blueprint.suspect_elimination_paths).toHaveLength(1);
+
+    // With no history the player has earned nothing, even though the blueprint
+    // handed to the judge contains every clue in the mystery.
+    expect(judgeContext.accusation_judge_context?.player_known_clues).toEqual([]);
+    expect(judgeContext.accusation_judge_context?.path_coverage).toEqual([
+      {
+        path_id: "path-solution",
+        kind: "solution",
+        summary: "Crumbs and Alice's motive",
+        found_clue_ids: [],
+        missing_clue_ids: ["clue-crumbs", "clue-bob-alice"],
+      },
+      {
+        path_id: "path-bob-clear",
+        kind: "eliminate",
+        summary: "Bob was in the garden",
+        found_clue_ids: [],
+        missing_clue_ids: ["clue-alice-bob"],
+      },
+    ]);
+  });
+
+  it("gives accusation_judge the clues the investigator actually discovered", () => {
+    const history: ConversationFragment[] = [
+      {
+        sequence: 1,
+        event_type: "search",
+        actor: "narrator",
+        narration: "Crumbs on the floor.",
+        payload: { revealed_clue_ids: ["clue-crumbs"] },
+      },
+      {
+        sequence: 2,
+        event_type: "ask",
+        actor: "char-bob",
+        narration: "Alice looked worried.",
+        payload: { revealed_clue_ids: ["clue-bob-alice"] },
+      },
+    ];
+
+    const judgeContext = buildAccusationJudgeContext({
+      game_id: "game-1",
+      session: { ...session, mode: "accuse" },
+      blueprint,
+      player_input: "Alice stole the pie.",
+      round: 1,
+      conversation_history: history,
+    });
+
+    // Discovery order, annotated with provenance so the judge can narrate the
+    // player's own case back to them.
+    expect(judgeContext.accusation_judge_context?.player_known_clues).toEqual([
+      { id: "clue-crumbs", text: "crumbs", origin_label: "found at Kitchen" },
+      {
+        id: "clue-bob-alice",
+        text: "Alice looked worried.",
+        origin_label: "told by Bob Jones",
+      },
+    ]);
+
+    // The solution path is fully covered; the elimination path is untouched.
+    expect(judgeContext.accusation_judge_context?.path_coverage).toEqual([
+      {
+        path_id: "path-solution",
+        kind: "solution",
+        summary: "Crumbs and Alice's motive",
+        found_clue_ids: ["clue-crumbs", "clue-bob-alice"],
+        missing_clue_ids: [],
+      },
+      {
+        path_id: "path-bob-clear",
+        kind: "eliminate",
+        summary: "Bob was in the garden",
+        found_clue_ids: [],
+        missing_clue_ids: ["clue-alice-bob"],
+      },
+    ]);
   });
 
   it("throws when non-judge role receives accusation_judge_context", () => {
@@ -520,6 +597,8 @@ describe("ai-context guardrails", () => {
         accusation_judge_context: {
           round: 1,
           full_blueprint: blueprint,
+          player_known_clues: [],
+          path_coverage: [],
         },
       }),
     ).toThrow("not allowed");

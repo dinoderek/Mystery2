@@ -14,8 +14,8 @@ import {
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
-import { buildTalkEndContext, findCharacterById } from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { findCharacterById } from "../_shared/ai-context.ts";
+import { buildRoleRequest } from "../_shared/role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -86,22 +86,14 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const aiContext = buildTalkEndContext({
+    const { prompt, context: aiContext } = await buildRoleRequest({
+      role: "talk_end",
       game_id: gameId,
       session,
       blueprint,
       character_id: session.current_talk_character_id,
       location_id: session.current_location_id,
       conversation_history: historyRows ?? [],
-    });
-
-    const characterName = activeCharacter?.first_name ?? session.current_talk_character_id;
-    const promptTemplate = await loadPromptTemplate("talk_end", blueprint.metadata.target_age, {
-      narrationStyle: blueprint.metadata.narration_style ?? null,
-    });
-    const prompt = renderPrompt(promptTemplate, {
-      character_name: characterName,
-      target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,
@@ -165,7 +157,7 @@ serveWithCors(async (req) => {
       payload: {
         role: "talk_end",
         character_id: session.current_talk_character_id,
-        character_name: characterName,
+        character_name: activeCharacter?.first_name ?? session.current_talk_character_id,
         location_id: session.current_location_id,
         speaker: NARRATOR_SPEAKER,
       },

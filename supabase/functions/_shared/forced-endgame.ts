@@ -3,12 +3,11 @@ import { createAIRequestMetadata } from "./ai-provider.ts";
 import { aiRetriableError, RetriableAIError } from "./errors.ts";
 import { parseAccusationStartOutput } from "./ai-contracts.ts";
 import {
-  buildAccusationStartContext,
   type BlueprintContext,
   type ConversationFragment,
   type SessionSnapshot,
 } from "./ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "./ai-prompts.ts";
+import { buildRoleRequest } from "./role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -34,7 +33,8 @@ export async function generateForcedAccusationStartNarration(input: {
   follow_up_prompt: string;
   model: string;
 }> {
-  const aiContext = buildAccusationStartContext({
+  const { prompt, context: aiContext } = await buildRoleRequest({
+    role: "accusation_start",
     game_id: input.game_id,
     session: {
       ...input.session,
@@ -43,15 +43,8 @@ export async function generateForcedAccusationStartNarration(input: {
     },
     blueprint: input.blueprint,
     forced_by_timeout: true,
-    conversation_history: input.conversation_history,
-  });
-
-  const promptTemplate = await loadPromptTemplate("accusation_start", input.blueprint.metadata.target_age, {
-    narrationStyle: input.blueprint.metadata.narration_style ?? null,
-  });
-  const prompt = renderPrompt(promptTemplate, {
     forced_context: input.scene_summary,
-    target_age: input.blueprint.metadata.target_age,
+    conversation_history: input.conversation_history,
   });
   const aiMetadata = createAIRequestMetadata(input.req, {
     request_id: input.request_id,

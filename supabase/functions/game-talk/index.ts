@@ -14,8 +14,7 @@ import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
-import { buildTalkStartContext } from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { buildRoleRequest } from "../_shared/role-request.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import {
   createNarrationDiagnostics,
@@ -100,24 +99,14 @@ serveWithCors(async (req) => {
       .eq("session_id", gameId)
       .order("sequence", { ascending: true });
 
-    const aiContext = buildTalkStartContext({
+    const { prompt, context: aiContext } = await buildRoleRequest({
+      role: "talk_start",
       game_id: gameId,
       session,
       blueprint,
       character_id: activeCharacter.id,
       location_id: session.current_location_id,
       conversation_history: historyRows ?? [],
-    });
-
-    const promptTemplate = await loadPromptTemplate("talk_start", blueprint.metadata.target_age, {
-      narrationStyle: blueprint.metadata.narration_style ?? null,
-    });
-    const prompt = renderPrompt(promptTemplate, {
-      character_name: activeCharacter.first_name,
-      location_name: blueprint.world.locations.find(
-        (l) => l.id === session.current_location_id,
-      )?.name ?? session.current_location_id,
-      target_age: blueprint.metadata.target_age,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

@@ -13,9 +13,8 @@ import {
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
-import { parseSearchOutput, type AIPromptKey } from "../_shared/ai-contracts.ts";
+import { parseSearchOutput } from "../_shared/ai-contracts.ts";
 import {
-  buildSearchContext,
   findLocationById,
   type BlueprintClue,
 } from "../_shared/ai-context.ts";
@@ -25,7 +24,7 @@ import {
   mapClueToThreads,
 } from "../_shared/clue-discovery.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { buildRoleRequest, resolveSearchRole } from "../_shared/role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -221,10 +220,12 @@ serveWithCors(async (req) => {
         ) ?? null)
       : null;
 
-    // Choose prompt based on search type
-    const promptKey: AIPromptKey = searchQuery ? "search_targeted" : "search_bare";
+    // Bare vs targeted is resolved in the shared layer so the eval harness
+    // picks the same prompt (and the same word budget) for the same input.
+    const promptKey = resolveSearchRole(searchQuery);
 
-    const aiContext = buildSearchContext({
+    const { prompt, context: aiContext } = await buildRoleRequest({
+      role: promptKey,
       game_id: gameId,
       session,
       blueprint,
@@ -234,19 +235,6 @@ serveWithCors(async (req) => {
       next_clue: nextClue,
       search_query: searchQuery,
       conversation_history: historyRows ?? [],
-    });
-
-    const promptTemplate = await loadPromptTemplate(promptKey, blueprint.metadata.target_age, {
-      // Bare search defaults to the lean "nothing found" budget; when the
-      // backend already knows a clue will be revealed, use the roomier
-      // clue-reveal budget so the payoff is not squeezed.
-      interaction: promptKey === "search_bare" && nextClue ? "search_find" : undefined,
-      narrationStyle: blueprint.metadata.narration_style ?? null,
-    });
-    const prompt = renderPrompt(promptTemplate, {
-      location_name: currentLocation.name,
-      target_age: blueprint.metadata.target_age,
-      search_query: searchQuery ?? "",
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

@@ -91,14 +91,14 @@ describe("getAction", () => {
 
   it("throws a listing the known types for an unknown action", () => {
     expect(() => getAction("nope")).toThrow(
-      'Unknown action type "nope". Known: talk, ask, move, search, accuse',
+      'Unknown action type "nope". Known: talk, ask, end_talk, move, search, accuse',
     );
   });
 });
 
 describe("ACTIONS registry", () => {
-  it("exposes exactly the five supported action types", () => {
-    expect(Object.keys(ACTIONS)).toEqual(["talk", "ask", "move", "search", "accuse"]);
+  it("exposes exactly the six supported action types", () => {
+    expect(Object.keys(ACTIONS)).toEqual(["talk", "ask", "end_talk", "move", "search", "accuse"]);
   });
 
   it("reports the session mode each action is valid from", () => {
@@ -156,49 +156,47 @@ describe("ACTIONS registry", () => {
     });
   });
 
-  it("only carries CLI-replay config for the actions whose prompt is replayed", () => {
-    // talk and ask reconstruct a local prompt; move/search/accuse are
-    // endpoint-only and intentionally have no cli block.
-    expect(ACTIONS.talk.cli).toBeDefined();
-    expect(ACTIONS.ask.cli).toBeDefined();
-    expect(ACTIONS.move.cli).toBeUndefined();
-    expect(ACTIONS.search.cli).toBeUndefined();
-    expect(ACTIONS.accuse.cli).toBeUndefined();
+  it("carries a local-replay mapping for every action", () => {
+    // Prompt assembly is shared with the handlers now, so every action can be
+    // replayed locally — there is no endpoint-only tier left.
+    for (const type of Object.keys(ACTIONS)) {
+      const action = getAction(type);
+      expect(action.roleInput, `${type} has no roleInput`).toBeTypeOf("function");
+      expect(action.speaker, `${type} has no speaker`).toBeTypeOf("function");
+    }
   });
 });
 
-describe("ACTIONS CLI replay config", () => {
+describe("ACTIONS local-replay mapping", () => {
   const blueprint = {
     metadata: { target_age: 9 },
+    narrative: { starting_knowledge: { characters: [] } },
     world: {
-      characters: [{ id: "c1", first_name: "Ann" }],
-      locations: [{ id: "l1", name: "Hall" }],
+      characters: [{ id: "c1", first_name: "Ann", location_id: "l1" }],
+      locations: [{ id: "l1", name: "Hall", clues: [] }],
     },
   };
 
-  it("resolves the talk-start role, prompt vars, context input, and speaker", () => {
+  it("names the role and hands over the handler's fields for talk", () => {
     const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
     const action = { type: "talk", character_id: "c1" };
-    const { cli } = ACTIONS.talk;
 
-    expect(cli.role).toBe("talk_start");
-    expect(cli.builder).toBe("buildTalkStartContext");
-    expect(cli.promptVars(given, action, blueprint)).toEqual({
-      character_name: "Ann",
-      location_name: "Hall",
-      target_age: 9,
-    });
-
-    const context = cli.contextInput(given, action, blueprint, ["H"]);
-    expect(context).toMatchObject({
+    const input = ACTIONS.talk.roleInput(given, action, blueprint, ["H"]);
+    expect(input).toMatchObject({
+      role: "talk_start",
       game_id: "case",
       character_id: "c1",
       location_id: "l1",
       conversation_history: ["H"],
       session: snapshotFromGiven(given),
     });
+    // The mapping carries no prompt text or context of its own — assembly is
+    // the shared layer's job.
+    expect(input).not.toHaveProperty("promptVars");
+    expect(input).not.toHaveProperty("builder");
+
     // A talk-start turn is narrated, so the speaker is the narrator.
-    expect(cli.speaker(given, action, blueprint)).toEqual({
+    expect(ACTIONS.talk.speaker(given, action, blueprint)).toEqual({
       kind: "narrator",
       key: "narrator",
       label: "Narrator",
@@ -208,21 +206,59 @@ describe("ACTIONS CLI replay config", () => {
   it("resolves the talk-conversation role and character speaker for ask", () => {
     const given = { mode: "talk", location_id: "l1", talk_character_id: "c1", time_remaining: 20 };
     const action = { type: "ask", player_input: "who?" };
-    const { cli } = ACTIONS.ask;
 
-    expect(cli.role).toBe("talk_conversation");
-    expect(cli.builder).toBe("buildTalkConversationContext");
-    expect(cli.promptVars(given, action, blueprint)).toEqual({
-      character_name: "Ann",
-      player_input: "who?",
-      target_age: 9,
-    });
-    expect(cli.contextInput(given, action, blueprint, []).player_input).toBe("who?");
+    const input = ACTIONS.ask.roleInput(given, action, blueprint, []);
+    expect(input.role).toBe("talk_conversation");
+    expect(input.player_input).toBe("who?");
     // A reply comes from the character being questioned.
-    expect(cli.speaker(given, action, blueprint)).toEqual({
+    expect(ACTIONS.ask.speaker(given, action, blueprint)).toEqual({
       kind: "character",
       key: "character:ann",
       label: "Ann",
+    });
+  });
+
+  it("picks the search role from the presence of a free-text query", () => {
+    const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
+    expect(
+      ACTIONS.search.roleInput(given, { type: "search" }, blueprint, []).role,
+    ).toBe("search_bare");
+    expect(
+      ACTIONS.search.roleInput(given, { type: "search", search_query: "under the bed" }, blueprint, []).role,
+    ).toBe("search_targeted");
+  });
+
+  it("picks the accusation role from the presence of reasoning", () => {
+    const given = { mode: "accuse", location_id: "l1", time_remaining: 5 };
+    expect(
+      ACTIONS.accuse.roleInput(given, { type: "accuse" }, blueprint, []).role,
+    ).toBe("accusation_start");
+
+    const judge = ACTIONS.accuse.roleInput(
+      given,
+      { type: "accuse", player_reasoning: "It was Ann" },
+      blueprint,
+      [{ event_type: "accuse_round" }],
+    );
+    expect(judge.role).toBe("accusation_judge");
+    expect(judge.player_input).toBe("It was Ann");
+    expect(judge.round).toBe(1);
+  });
+
+  it("omits player_reasoning from the accuse body when opening the scene", () => {
+    const given = { mode: "accuse", location_id: "l1", time_remaining: 5 };
+    expect(ACTIONS.accuse.endpoint.body(given, { type: "accuse" }, "g1")).toEqual({
+      game_id: "g1",
+    });
+  });
+
+  it("passes a search query through to the endpoint body", () => {
+    const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
+    expect(
+      ACTIONS.search.endpoint.body(given, { type: "search", search_query: "the shelf" }, "g1"),
+    ).toEqual({ game_id: "g1", search_query: "the shelf" });
+    expect(ACTIONS.search.endpoint.body(given, { type: "search" }, "g1")).toEqual({
+      game_id: "g1",
     });
   });
 });

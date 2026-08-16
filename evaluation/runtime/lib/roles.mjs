@@ -1,10 +1,18 @@
-// Shared action/role map — the single source of truth both backends use to
-// turn a case's `action` (+ fixed `given` state and history) into either a
-// reconstructed prompt (CLI backend) or an endpoint call (endpoint backend).
+// Shared action map — how a case's `action` (+ fixed `given` state and history)
+// becomes either an endpoint call or a local prompt replay.
 //
 // A case evaluates exactly ONE action against a fully-specified prior state, so
 // the input is deterministic and identical across models. There is no turn
 // accumulation here — `given.history` is the complete, fixed conversation.
+//
+// Role resolution and prompt assembly are NOT here: they live in
+// supabase/functions/_shared/role-request.ts, shared with the Edge Function
+// handlers, so both paths pick the same role and build the same prompt.
+
+import {
+  resolveAccusationRole,
+  resolveSearchRole,
+} from "../../../supabase/functions/_shared/role-request.ts";
 
 export function characterFirstName(blueprint, characterId) {
   return blueprint.world.characters.find((c) => c.id === characterId)?.first_name ?? characterId;
@@ -32,65 +40,124 @@ export function snapshotFromGiven(given) {
 
 // Each action maps to:
 //   requiredMode  — session mode the action is valid from (also what we seed)
-//   cli           — how to replay it locally (role + context builder + vars + speaker).
-//                   Absent for actions whose runtime prompt we don't replay yet.
-//   endpoint      — how to call the live function (name, method, body builder).
+//   endpoint      — how to call the live function (name, method, body builder)
+//   roleInput     — the RoleRequestInput for the local (CLI) replay of the same
+//                   turn, built from the case's fixed `given` + `action`
+//   speaker       — who the resulting narration is attributed to
+//
+// `roleInput` deliberately carries NO prompt or context logic: it names the role
+// and hands over the same fields the handler would, and
+// supabase/functions/_shared/role-request.ts does the assembly for both. The
+// per-action `cli` blocks that used to live here duplicated that assembly and
+// drifted out of sync with the handlers (see prompt-build.mjs).
 export const ACTIONS = {
   talk: {
     requiredMode: "explore",
     endpoint: { name: "game-talk", method: "POST", body: (g, a, gid) => ({ game_id: gid, character_id: a.character_id }) },
-    cli: {
+    roleInput: (g, a, bp, history) => ({
       role: "talk_start",
-      builder: "buildTalkStartContext",
-      promptVars: (g, a, bp) => ({
-        character_name: characterFirstName(bp, a.character_id),
-        location_name: locationName(bp, g.location_id),
-        target_age: bp.metadata.target_age,
-      }),
-      contextInput: (g, a, bp, history) => ({
-        game_id: "case",
-        session: snapshotFromGiven(g),
-        blueprint: bp,
-        character_id: a.character_id,
-        location_id: g.location_id,
-        conversation_history: history,
-      }),
-      speaker: () => narratorSpeaker(),
-    },
+      game_id: "case",
+      blueprint: bp,
+      session: snapshotFromGiven(g),
+      character_id: a.character_id,
+      location_id: g.location_id,
+      conversation_history: history,
+    }),
+    speaker: () => narratorSpeaker(),
   },
 
   ask: {
     requiredMode: "talk",
     endpoint: { name: "game-ask", method: "POST", body: (g, a, gid) => ({ game_id: gid, player_input: a.player_input }) },
-    cli: {
+    roleInput: (g, a, bp, history) => ({
       role: "talk_conversation",
-      builder: "buildTalkConversationContext",
-      promptVars: (g, a, bp) => ({
-        character_name: characterFirstName(bp, g.talk_character_id),
-        player_input: a.player_input,
-        target_age: bp.metadata.target_age,
-      }),
-      contextInput: (g, a, bp, history) => ({
-        game_id: "case",
-        session: snapshotFromGiven(g),
-        blueprint: bp,
-        character_id: g.talk_character_id,
-        player_input: a.player_input,
-        location_id: g.location_id,
-        conversation_history: history,
-      }),
-      speaker: (g, a, bp) => characterSpeaker(characterFirstName(bp, g.talk_character_id)),
-    },
+      game_id: "case",
+      blueprint: bp,
+      session: snapshotFromGiven(g),
+      character_id: g.talk_character_id,
+      location_id: g.location_id,
+      player_input: a.player_input,
+      conversation_history: history,
+    }),
+    speaker: (g, a, bp) => characterSpeaker(characterFirstName(bp, g.talk_character_id)),
+  },
+
+  end_talk: {
+    requiredMode: "talk",
+    endpoint: { name: "game-end-talk", method: "POST", body: (g, a, gid) => ({ game_id: gid }) },
+    roleInput: (g, a, bp, history) => ({
+      role: "talk_end",
+      game_id: "case",
+      blueprint: bp,
+      session: snapshotFromGiven(g),
+      character_id: g.talk_character_id,
+      location_id: g.location_id,
+      conversation_history: history,
+    }),
+    speaker: () => narratorSpeaker(),
   },
 
   move: {
     requiredMode: "explore",
     endpoint: { name: "game-move", method: "POST", body: (g, a, gid) => ({ game_id: gid, destination: a.destination }) },
+    roleInput: (g, a, bp, history) => ({
+      role: "ambience",
+      game_id: "case",
+      blueprint: bp,
+      destination_id: a.destination,
+      // The handler derives these from the destination's own history; a case
+      // fixes the history, so derive them the same way from `given`.
+      has_visited_before: history.some(
+        (e) => (e.payload?.location_id ?? e.payload?.destination) === a.destination,
+      ),
+      destination_history_json: JSON.stringify(
+        history.filter(
+          (e) => (e.payload?.location_id ?? e.payload?.destination) === a.destination,
+        ),
+      ),
+      destination_characters_json: JSON.stringify(
+        (bp.world.characters ?? [])
+          .filter((c) => c.location_id === a.destination)
+          .map((c) => ({
+            id: c.id,
+            first_name: c.first_name,
+            last_name: c.last_name,
+            sex: c.sex,
+            appearance: c.appearance,
+            public_summary:
+              (bp.narrative?.starting_knowledge?.characters ?? []).find(
+                (entry) => entry.character_id === c.id,
+              )?.summary ?? null,
+          })),
+      ),
+      conversation_history: history,
+    }),
+    speaker: () => narratorSpeaker(),
   },
 
   search: {
     requiredMode: "explore",
-    endpoint: { name: "game-search", method: "POST", body: (g, a, gid) => ({ game_id: gid }) },
+    endpoint: {
+      name: "game-search",
+      method: "POST",
+      body: (g, a, gid) => ({
+        game_id: gid,
+        ...(a.search_query ? { search_query: a.search_query } : {}),
+      }),
+    },
+    roleInput: (g, a, bp, history) => ({
+      role: resolveSearchRole(a.search_query),
+      game_id: "case",
+      blueprint: bp,
+      session: snapshotFromGiven(g),
+      location_id: g.location_id,
+      revealed_clue_ids: g.revealed_clue_ids ?? [],
+      discovered_clue_ids: g.discovered_clues ?? [],
+      next_clue: a.search_query ? null : (nextUnrevealedClue(bp, g) ?? null),
+      search_query: a.search_query ?? null,
+      conversation_history: history,
+    }),
+    speaker: () => narratorSpeaker(),
   },
 
   accuse: {
@@ -100,12 +167,50 @@ export const ACTIONS = {
       method: "POST",
       body: (g, a, gid) => ({
         game_id: gid,
-        player_reasoning: a.player_reasoning,
+        ...(a.player_reasoning ? { player_reasoning: a.player_reasoning } : {}),
         ...(a.accusation_history_mode ? { accusation_history_mode: a.accusation_history_mode } : {}),
       }),
     },
+    roleInput: (g, a, bp, history) => {
+      const role = resolveAccusationRole(a.player_reasoning);
+      const base = {
+        role,
+        game_id: "case",
+        blueprint: bp,
+        session: { ...snapshotFromGiven(g), mode: "accuse", current_talk_character_id: null },
+        conversation_history: history,
+        ...(a.accusation_history_mode ? { history_mode: a.accusation_history_mode } : {}),
+      };
+      return role === "accusation_judge"
+        ? {
+          ...base,
+          player_input: a.player_reasoning,
+          round: history.filter((e) => e.event_type === "accuse_round").length,
+        }
+        : base;
+    },
+    speaker: () => narratorSpeaker(),
   },
 };
+
+/**
+ * The first location-level clue a bare search would surface, mirroring the
+ * handler's rule (unrevealed AND unlocked). Locking needs the session-global
+ * discovered set, which a case supplies via `given.discovered_clues`.
+ */
+function nextUnrevealedClue(blueprint, given) {
+  const location = (blueprint.world.locations ?? []).find((l) => l.id === given.location_id);
+  if (!location) return null;
+  const revealed = new Set(given.revealed_clue_ids ?? []);
+  const discovered = new Set(given.discovered_clues ?? []);
+  return (
+    (location.clues ?? []).find(
+      (c) =>
+        !revealed.has(c.id) &&
+        (c.requires?.clue_ids ?? []).every((id) => discovered.has(id)),
+    ) ?? null
+  );
+}
 
 export function getAction(type) {
   const action = ACTIONS[type];

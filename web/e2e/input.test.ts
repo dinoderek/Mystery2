@@ -754,7 +754,7 @@ test.describe('Command Input', () => {
     await input.fill('search');
     await input.press('Enter');
 
-    await expect(page.getByText(/Connection issue\. Retrying/)).toBeVisible();
+    await expect(page.getByText(/Something went wrong\. Trying again/)).toBeVisible();
     await expect(page.getByText('Recovered after retry.')).toBeVisible();
     expect(searchCalls).toBe(3);
   });
@@ -779,7 +779,7 @@ test.describe('Command Input', () => {
     await input.fill('search');
     await input.press('Enter');
 
-    await expect(page.getByText(/Request failed after 3 attempts/)).toBeVisible();
+    await expect(page.getByText(/That did not work, even after 3 tries/)).toBeVisible();
     expect(searchCalls).toBe(3);
   });
 

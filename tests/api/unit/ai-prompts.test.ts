@@ -66,6 +66,39 @@ describe("ai-prompts", () => {
     expect(wordTarget(reveal)).toBeGreaterThan(wordTarget(empty));
   });
 
+  it("targeted search states both budgets rather than always billing the clue-reveal one", async () => {
+    const targeted = await loadPromptTemplate("search_targeted", 10);
+
+    // The model decides the outcome, so both budgets must be in the prompt.
+    expect(targeted).toContain("if you reveal a clue, aim for about 35 words");
+    expect(targeted).toContain("if you reveal nothing, aim for about 20 words");
+
+    // An empty targeted search must not cost more words than an empty bare one.
+    const bareEmpty = await loadPromptTemplate("search_bare", 10);
+    expect(bareEmpty).toContain("aim for about 20 words");
+
+    // An explicit interaction override still wins over the branched budget.
+    const forced = await loadPromptTemplate("search_targeted", 10, {
+      interaction: "search_find",
+    });
+    expect(forced).toContain("aim for about 35 words");
+    expect(forced).not.toContain("if you reveal nothing");
+  });
+
+  it("subordinates the blueprint's voice to the reading level", async () => {
+    const styled = await loadPromptTemplate("talk_start", 10, {
+      narrationStyle: "wry, gothic, faintly archaic",
+    });
+    expect(styled).toContain("where the two pull apart, the reading level wins");
+  });
+
+  it("tells the accusation roles that follow_up_prompt is player-facing too", async () => {
+    for (const role of ["accusation_start", "accusation_judge"] as const) {
+      const template = await loadPromptTemplate(role, 10);
+      expect(template).toContain('"follow_up_prompt" is shown to the player as well');
+    }
+  });
+
   it("differentiates length guidance by interaction (verdict longer than farewell)", () => {
     const verdict = buildAgeGuidance("accusation_judge", 10);
     const farewell = buildAgeGuidance("talk_end", 10);

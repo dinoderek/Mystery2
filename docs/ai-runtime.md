@@ -71,7 +71,13 @@ Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
     It defaults to the lean `search_empty` word budget, but the handler switches
     to the roomier `search_find` budget on turns where the backend already knows
     a clue will be revealed.
-  - `search_targeted`: AI judges player's freeform search text against sub-locations, decides whether to reveal a clue, and controls turn cost
+  - `search_targeted`: AI judges player's freeform search text against sub-locations, decides whether to reveal a clue, and controls turn cost.
+    Because the model — not the backend — decides the outcome, its word budget
+    cannot be picked in advance the way bare search's can. The prompt instead
+    carries **both** budgets with the condition that selects them (`search_find`
+    when a clue is revealed, `search_empty` when nothing is), so an empty
+    targeted search is no longer billed the roomier clue-reveal budget. See
+    `OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`.
 - `accusation_start`
   - Frames accusation scene and requests accusation + reasoning
 - `accusation_judge`
@@ -97,6 +103,13 @@ Every runtime prompt carries a `{{style_guidance}}` slot that
 - A blueprint may optionally set `metadata.narration_style` (one sentence of
   voice/tone direction). It is layered on top of the standard style — it can
   flavor the voice, not override the safety/POV rules.
+- The style layer is explicitly **subordinate to the reading level**. A voice
+  like "wry, gothic, faintly archaic" is a legitimate authored style but an
+  illegitimate licence to raise vocabulary or sentence length, so
+  `buildStyleGuidance` states that where voice and reading level pull apart,
+  the reading level wins. The generator prompt enforces the same rule at the
+  authoring end: `narration_style` may direct tone, mood, and imagery only, and
+  must not call for archaic, ornate, technical, or heavily figurative diction.
 
 ## Context Boundaries
 
@@ -163,6 +176,10 @@ All AI role outputs are validated before any session/event writes:
   - `narration`
   - `accusation_resolution` in `win|lose|continue`
   - `follow_up_prompt` required when resolution is `continue`
+- `follow_up_prompt` is player-facing text, not a control field. Both accusation
+  prompts now say so explicitly: it is held to the same reading level as the
+  narration, kept to one short question, and excluded from (and expected to stay
+  well under) the role's word budget, which governs `narration` alone.
 
 Invalid output returns a retriable error and does not finalize turn state.
 

@@ -206,11 +206,22 @@ over fewer dense ones.
 
 ## Field Sizing Guidance
 
-**Metadata.** `schema_version`: `"v2"`. `title`: 2–6 words. `one_liner`: one
-sentence. `target_age`: copy from the brief. `time_budget`: per the rule above.
+Player-facing prose (`one_liner`, `premise`, the `starting_knowledge` summaries,
+location `description`, and clue `text`) is sized by the per-age word budgets in
+the age-appropriate writing section appended below — follow those rather than
+counting sentences. The sizes below cover names and operator-only fields, which
+do not scale with reading age.
+
+**Metadata.** `schema_version`: `"v2"`. `title`: 2–6 words. `target_age`: copy
+from the brief. `time_budget`: per the rule above.
 `narration_style`: optional — one sentence of narration voice/tone direction for
 the in-game narrator, layered on top of the standard narrator voice (e.g. 'salty
 harbor air, gull cries, a gentle pirate lilt'); omit to use the standard voice.
+It may direct tone, mood, and imagery only. It must never call for archaic,
+ornate, technical, or heavily figurative diction: the narrator applies it on top
+of the target age's reading level, and a voice the age band cannot carry will
+either be ignored or push the narration above the reading level. Omit it rather
+than write one that fights the age.
 `art_style`: null (superseded). `visual_direction`: structured object —
 `art_style` (specific medium, not just "watercolor"), `color_palette` (3–5 colors
 + emotional register, tied to the setting), `mood` (1–2 phrases), `lighting`
@@ -227,14 +238,14 @@ warm/cool bokeh wash.
 without spoiling the culprit. `location_ids` / `character_ids`: ids featured, or
 empty if abstract.
 
-**Narrative.** `premise`: 2–4 sentence hook, no spoilers. `starting_knowledge`:
-`mystery_summary` (one sentence — what happened, approximate time, and how the
+**Narrative.** `premise`: a hook, no spoilers. `starting_knowledge`:
+`mystery_summary` (what happened, approximate time, and how the
 time was established), plus one `locations[]` entry (`location_id` + player-facing
 `summary`) and one `characters[]` entry (`character_id` + who they are and why
 they matter) for **every** location and character.
 
 **Locations.** `id` (short, stable, unique), `name` (distinct, easy to type),
-`description` (2–4 sentences). 2–4 sub-locations each, every one with `id`,
+`description`. 2–4 sub-locations each, every one with `id`,
 evocative `name`, narrator-only `hint`, and at most one clue. Not every
 sub-location needs a clue — some are atmospheric.
 

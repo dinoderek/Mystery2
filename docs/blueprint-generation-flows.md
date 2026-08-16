@@ -50,7 +50,10 @@ The OpenRouter request has three important parts:
 
 1. `system` message:
    the full contents of
-   `supabase/functions/_shared/blueprints/generator-prompt.md`
+   `supabase/functions/_shared/blueprints/generator-prompt.md`, followed by
+   `renderGenerationGuidance(targetAge)` from
+   `packages/shared/src/age-profile.ts` — the same single source of truth the
+   runtime narrator's `{{age_guidance}}` comes from
 2. `user` message:
    a JSON object containing the validated `story_brief` plus a fixed
    instruction string
@@ -127,7 +130,16 @@ The system prompt in `generator-prompt.md` tells the model to:
   - suspect-elimination paths
   - structured clue distribution
   - flavor pass
-- keep all text age-appropriate for the requested target age
+- keep all text age-appropriate for the requested target age, on two dials that
+  mirror the runtime narrator's: **complexity** (age only — sentence length,
+  vocabulary, new-word allowance) and **length** (an explicit per-age word
+  budget for each authored player-facing prose field: `metadata.one_liner`,
+  `narrative.premise`, every `starting_knowledge` summary, every location
+  `description`, and every clue `text`). Names — `metadata.title`, location and
+  sub-location names — carry no word budget because a name is a label rather
+  than prose and does not scale with reading age; `generator-prompt.md` sizes
+  those directly. Where a budget applies, `generator-prompt.md` defers to it
+  rather than stating its own sentence count.
 - calibrate challenge around `story_brief.timeBudget` when present, or infer a
   moderate `metadata.time_budget` when absent
 - keep clue count, suspect count, red herrings, and timeline complexity within

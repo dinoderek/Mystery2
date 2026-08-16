@@ -3,8 +3,8 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
-> - `docs/ai-runtime.md` — `a9e116341f20c02d2b2aeb645d3fedad5211806a`
-> - `docs/blueprint-generation-flows.md` — `25d0439e67dc1afc78bbc4451913917ec0f29318`
+> - `docs/ai-runtime.md` — `74a80971650f06711732c1afa1a3b9c8d97fd721`
+> - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect blueprint authoring, regenerate this file.
 
@@ -54,6 +54,12 @@ Every runtime prompt carries a style slot the runtime always fills:
   It can flavor the voice; it cannot override the POV or safety rules. Write it
   as voice/tone direction ("salty harbor air, gull cries, a gentle pirate lilt"),
   not as plot instruction. Omit the field entirely to use the standard voice.
+- The style is **subordinate to the reading level**. It may direct tone, mood,
+  and imagery only — never archaic, ornate, technical, or heavily figurative
+  diction. The runtime applies it on top of the target age's reading level and
+  is told that where the two pull apart, the reading level wins, so a voice the
+  age band cannot carry is either ignored or pushes the narration above the
+  reading level. Omit the field rather than write one that fights the age.
 
 ## Clue gating at runtime
 

@@ -241,7 +241,8 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
   - **People** — the characters with brief descriptions.
   - **Places** — the locations with brief descriptions.
   - **Clues** — the clues discovered so far (from searching and asking),
-    accumulating live as the investigator finds them.
+    accumulating live as the investigator finds them, grouped by where they came
+    from ("Found at the Boathouse", "Told by Maya").
 - The case facts, people, and places come from the blueprint's
   `narrative.starting_knowledge`; clues are the player's discovered set. The
   notebook replaces the old wall-of-text opening — the game start now points the
@@ -311,12 +312,17 @@ generated images and narration, see `docs/blueprint-generation-flows.md`.
 A persistent, celebrated record of every clue the investigator discovers.
 
 - Discovered clues are recorded forever and surfaced via `game-get`
-  (`state.discovered_clues`), each annotated with where/when it was found, whether
-  it was an off-script grant, and which mini-mystery thread(s) it serves (main
-  solution, a specific red herring, ruling out a suspect — derived from
-  reasoning-path membership).
-- The notebook panel groups clues by thread. A "new clue discovered" celebration
-  fires when a search/ask turn surfaces a clue.
+  (`state.discovered_clues`), each annotated with where/when it was found and
+  whether it was an off-script grant.
+- The notebook panel groups clues by **origin** — the location they were found
+  at or the character who volunteered them. Grouping must stay something the
+  player could work out themselves. An earlier version grouped by mini-mystery
+  thread, which printed headings like "Main solution" and
+  "Red herring: <payoff>" and so told the child which of their own clues were
+  dead ends. Reasoning-path membership is therefore no longer sent to the client
+  at all (see `docs/ai-runtime.md`).
+- A "new clue discovered" celebration fires when a search/ask turn surfaces a
+  clue.
 - Implemented on desktop (`Notebook.svelte`, `ClueDiscoveredToast.svelte`, a
   count/toggle in `StatusBar`) and mobile (mounted in `MobileSession`, opened from
   `MobileDrawer`). See `docs/component-inventory.md`.

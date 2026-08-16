@@ -64,8 +64,9 @@ _(Add components here as they are built. Example format below)_
 - **Purpose**: Modal overlay ("case notebook") showing the mystery's case facts
   (`premise` + `mystery_summary`), people and places (with their `summary`
   blurbs), and the clues discovered so far (`discovered_clues`), grouped by
-  mini-mystery thread (main solution / red herring / ruling out a suspect /
-  other) with off-script grants flagged as a "lucky break". Reads
+  origin ("Found at <location>" / "Told by <character>") with off-script grants
+  flagged as a "lucky break". Grouping is deliberately player-derivable — do not
+  group by reasoning-path thread, which spoils the mystery. Reads
   everything from `gameSessionStore.state`. Opened by the `notebook` / `n`
   command (`showNotebook` store flag) on desktop and the Notebook action in
   `MobileDrawer` on mobile. Closes on backdrop click, the close button, or

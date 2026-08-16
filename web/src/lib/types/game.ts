@@ -28,15 +28,13 @@ export interface HistoryEntry {
   image_id?: string | null;
 }
 
-export type DiscoveryThread =
-  | { kind: 'solution'; label: string }
-  | { kind: 'red_herring'; label: string }
-  | { kind: 'eliminate'; label: string };
-
 export type DiscoveryOrigin =
   | { kind: 'location'; location_id: string; location_name: string }
   | { kind: 'character'; character_id: string; character_name: string };
 
+// Carries no reasoning-path ("thread") information by design — those labels
+// name red herrings and the solution outright, so they must not reach the
+// player mid-game. The notebook groups by `origin` instead.
 export interface DiscoveredClue {
   id: string;
   text: string;
@@ -44,7 +42,6 @@ export interface DiscoveredClue {
   origin: DiscoveryOrigin;
   discovered_at: string | null;
   off_script: boolean;
-  threads: DiscoveryThread[];
 }
 
 export interface GameState {

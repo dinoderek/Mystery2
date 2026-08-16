@@ -87,7 +87,7 @@ describe("mapClueToThreads", () => {
 });
 
 describe("buildDiscoveryRecords", () => {
-  it("builds ordered records with origin, source, off-script flag, and threads", () => {
+  it("builds ordered records with origin, source, and off-script flag", () => {
     const records = buildDiscoveryRecords(notebookBlueprint, [
       { event_type: "search", payload: { revealed_clue_ids: ["loc-crumbs"] }, created_at: "t1" },
       { event_type: "ask", payload: { revealed_clue_ids: ["char-alice"], revealed_off_script: ["char-alice"] }, created_at: "t2" },
@@ -101,8 +101,10 @@ describe("buildDiscoveryRecords", () => {
       origin: { kind: "location", location_id: "kitchen", location_name: "Kitchen" },
       discovered_at: "t1",
       off_script: false,
-      threads: [{ kind: "solution", label: "Main solution" }],
     });
+    // Reasoning-path labels ("Main solution", "Red herring: ...") name the
+    // answer, so they must never ride along on a player-facing record.
+    expect(records[0]).not.toHaveProperty("threads");
     expect(records[1]).toMatchObject({
       id: "char-alice",
       source: "talk",

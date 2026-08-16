@@ -23,19 +23,27 @@
   const locations = $derived(state?.locations ?? []);
   const clues = $derived(state?.discovered_clues ?? []);
 
-  const OTHER_GROUP = 'Other clues';
+  const OTHER_GROUP = 'Elsewhere';
 
-  // Group discovered clues by mini-mystery thread. A clue serving several threads
-  // appears under each; a clue with none falls into "Other clues".
+  // Group discovered clues by where the investigator found them. Grouping must
+  // stay derivable by the player: an earlier version grouped by mini-mystery
+  // thread, which labelled clues "Main solution" / "Red herring: <payoff>" and
+  // handed the child the answer. Origin is something they already know.
+  function groupLabel(clue: DiscoveredClue): string {
+    if (clue.origin.kind === 'location') return `Found at ${clue.origin.location_name}`;
+    if (clue.origin.kind === 'character') return `Told by ${clue.origin.character_name}`;
+    return OTHER_GROUP;
+  }
+
   const clueGroups = $derived.by(() => {
     const byLabel = new Map<string, DiscoveredClue[]>();
+    // Insertion order follows discovery order, so the notebook reads as a
+    // record of the investigation rather than a re-sorted index.
     for (const clue of clues) {
-      const labels = clue.threads.length > 0 ? clue.threads.map((t) => t.label) : [OTHER_GROUP];
-      for (const label of labels) {
-        const list = byLabel.get(label) ?? [];
-        list.push(clue);
-        byLabel.set(label, list);
-      }
+      const label = groupLabel(clue);
+      const list = byLabel.get(label) ?? [];
+      list.push(clue);
+      byLabel.set(label, list);
     }
     return [...byLabel.entries()].map(([label, items]) => ({ label, items }));
   });

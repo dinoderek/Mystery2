@@ -126,6 +126,10 @@ export type DiscoveryOrigin =
   | { kind: "location"; location_id: string; location_name: string }
   | { kind: "character"; character_id: string; character_name: string };
 
+// Deliberately carries no reasoning-path information. Thread labels read
+// "Main solution" / "Red herring: <payoff>", so putting them on a record that
+// reaches the player's notebook told the child which of their own clues were
+// dead ends. The notebook groups by `origin` instead.
 export interface DiscoveredClueRecord {
   id: string;
   text: string;
@@ -133,11 +137,12 @@ export interface DiscoveredClueRecord {
   origin: DiscoveryOrigin;
   discovered_at: string | null;
   off_script: boolean;
-  threads: DiscoveryThread[];
 }
 
 // Which mini-mystery threads a clue serves, derived from reasoning-path
-// membership. A clue may serve several threads; the notebook groups by these.
+// membership. NOT part of `DiscoveredClueRecord` and must never be sent to the
+// client mid-game — the labels spoil the mystery. Retained for post-resolution
+// surfaces (an end-of-game recap), where the answer is already out.
 export function mapClueToThreads(
   blueprint: NotebookBlueprint,
   clueId: string,
@@ -219,7 +224,6 @@ export function buildDiscoveryRecords(
         origin: entry.origin,
         discovered_at: event.created_at ?? null,
         off_script: offScript.has(id),
-        threads: mapClueToThreads(blueprint, id),
       });
     }
   }

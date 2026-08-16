@@ -69,7 +69,8 @@ describe("game-search endpoint", () => {
       origin: { kind: "location" },
       off_script: false,
     });
-    expect(Array.isArray(firstData.revealed_clues[0].threads)).toBe(true);
+    // Reasoning-path labels spoil the mystery and must not reach the client.
+    expect(firstData.revealed_clues[0]).not.toHaveProperty("threads");
 
     const secondSearchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",

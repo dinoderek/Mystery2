@@ -612,12 +612,9 @@ export class GameSessionStore {
       const text = readString(entry.text);
       if (id.length === 0 || text.length === 0) continue;
       const origin = isRecord(entry.origin) ? entry.origin : {};
-      const threads = Array.isArray(entry.threads)
-        ? entry.threads
-            .filter((t): t is Record<string, unknown> => isRecord(t))
-            .map((t) => ({ kind: readString(t.kind), label: readString(t.label) }))
-            .filter((t) => t.label.length > 0)
-        : [];
+      // `entry.threads` is ignored on purpose: older sessions and any stale
+      // payload may still carry spoiler-bearing thread labels, and nothing in
+      // the client may surface them.
       clues.push({
         id,
         text,
@@ -636,7 +633,6 @@ export class GameSessionStore {
               },
         discovered_at: typeof entry.discovered_at === 'string' ? entry.discovered_at : null,
         off_script: entry.off_script === true,
-        threads: threads as DiscoveredClue['threads'],
       });
     }
     return clues;

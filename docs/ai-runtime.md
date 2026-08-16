@@ -223,8 +223,13 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   from round 1) but reads `path_coverage` to aim its rejection follow-up at an
   unfinished solution path.
 
-The notebook (`game-get` `state.discovered_clues`) groups discovered clues by
-mini-mystery thread via `mapClueToThreads` / `buildDiscoveryRecords`.
+The notebook (`game-get` `state.discovered_clues`) is built by
+`buildDiscoveryRecords` and carries no reasoning-path information:
+`DiscoveredClueRecord` has `origin`, `source`, `discovered_at`, and `off_script`
+only, and the client groups by `origin`. `mapClueToThreads` still exists but is
+deliberately unused by any player-facing path — its labels ("Main solution",
+"Red herring: <payoff>") name the answer, so they may only ever appear after the
+case resolves.
 
 ## Failure and Retry Model
 

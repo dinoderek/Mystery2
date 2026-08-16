@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `0b328f5f35867f59cf13e0c8aa7920fb73ccc3e9`
+> Source git blob hash: `4ce4bb554ed1ab8949403150ad71f8d564cd4969`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -103,9 +103,9 @@ Authoring rules the schema and the `clue_graph` eval dimension enforce:
 - `ground_truth.{what_happened, why_it_happened, timeline}` → the accusation
   judge sees these; runtime narration outside of judging never does
 - `solution_paths`, `red_herrings`, `suspect_elimination_paths` → the
-  accusation judge walks these to decide if the player's reasoning was sound;
-  they also determine which mini-mystery thread each discovered clue is filed
-  under in the notebook
+  accusation judge walks these to decide if the player's reasoning was sound.
+  They are never shown to the player: naming a clue's path would tell the child
+  which of their clues are dead ends.
 
 ## Public vs. private
 
@@ -127,10 +127,14 @@ into B's `background` puts it somewhere nothing but B's own scene can reach.
 ## The notebook
 
 Discovered clues are recorded permanently and shown in the case notebook,
-grouped by which mini-mystery thread they serve (the main solution, a specific
-red herring, or ruling out a suspect) — derived from which reasoning path the
-clue belongs to. A clue that belongs to no authored path has nowhere to be filed;
-the mechanical check rejects orphan clues for exactly this reason.
+grouped by where the investigator found them ("Found at the Boathouse", "Told by
+Maya"). Grouping is deliberately something the player already knows — the
+notebook never reveals which reasoning path a clue serves.
+
+This does not make orphan clues harmless. A clue belonging to no authored path
+can never contribute to a win, because the judge credits an evidence chain only
+against `solution_paths`; the mechanical check rejects orphan clues for that
+reason.
 
 ## Winning and losing
 

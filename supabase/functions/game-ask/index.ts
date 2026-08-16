@@ -15,7 +15,6 @@ import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildTalkConversationContext } from "../_shared/ai-context.ts";
-import { mapClueToThreads } from "../_shared/clue-discovery.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
 import {
   createNarrationDiagnostics,
@@ -244,7 +243,6 @@ serveWithCors(async (req) => {
       },
       discovered_at: new Date().toISOString(),
       off_script: validatedOffScript.includes(id),
-      threads: mapClueToThreads(blueprint, id),
     }));
 
     return new Response(

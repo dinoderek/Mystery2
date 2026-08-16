@@ -135,13 +135,18 @@ describe('store speaker behavior', () => {
   it('merges revealed_clues from a search response into discovered_clues', async () => {
     const store = createStore();
 
-    const crumbClue = {
+    const storedCrumbClue = {
       id: 'clue-crumbs',
       text: 'Crumbs on the floor.',
       source: 'search',
       origin: { kind: 'location', location_id: 'loc-kitchen', location_name: 'Kitchen' },
       discovered_at: '2026-06-01T10:00:00Z',
       off_script: false,
+    };
+    // The wire payload here still carries spoiler-bearing `threads`, as a stale
+    // or legacy response could. The store must drop it on the way in.
+    const crumbClue = {
+      ...storedCrumbClue,
       threads: [{ kind: 'solution', label: 'Main solution' }],
     };
 
@@ -158,10 +163,10 @@ describe('store speaker behavior', () => {
     expect(store.state?.discovered_clues).toEqual([]);
     await store.submitInput('search');
 
-    expect(store.state?.discovered_clues).toEqual([crumbClue]);
+    expect(store.state?.discovered_clues).toEqual([storedCrumbClue]);
 
     // A second search revealing the same clue does not duplicate it.
     await store.submitInput('search');
-    expect(store.state?.discovered_clues).toEqual([crumbClue]);
+    expect(store.state?.discovered_clues).toEqual([storedCrumbClue]);
   });
 });

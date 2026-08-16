@@ -22,7 +22,6 @@ import {
 import {
   buildDiscoveredClueIdSet,
   isClueUnlocked,
-  mapClueToThreads,
 } from "../_shared/clue-discovery.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
@@ -461,7 +460,6 @@ serveWithCors(async (req) => {
         },
         discovered_at: new Date().toISOString(),
         off_script: false,
-        threads: mapClueToThreads(blueprint, validatedClueId),
       }]
       : [];
 

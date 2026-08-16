@@ -3,8 +3,7 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
-> - `docs/ai-runtime.md` — `a96b7925772d5937d04c876ad46dad77b4623e19`
-> - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
+> - `docs/ai-runtime.md` — `50ec5b3b9bddf0698904b9aacc63893e5e0f446f`
 > - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect blueprint authoring, regenerate this file.
@@ -194,5 +193,6 @@ or null `sex` causes pronoun drift in talk and move narration.
   a thin arrival scene.
 - The accusation judge gets the full blueprint, so `ground_truth`,
   `solution_paths`, `red_herrings`, and `suspect_elimination_paths` are real
-  consumers of your authoring effort — not metadata. They also file each
-  discovered clue under a mini-mystery thread in the player's notebook.
+  consumers of your authoring effort — not metadata. They stay judge-side only:
+  the player's notebook groups clues by where they were found and never names
+  the path a clue serves.

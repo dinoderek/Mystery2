@@ -22,6 +22,28 @@ All secure backend logic runs in **Supabase Edge Functions** (Deno runtime).
 - Any shared logic or inferred types must be imported using valid Deno relative paths (including the `.ts` extension).
 - Edge Functions are responsible for wrapping the AI provider (OpenRouter) using server-side secrets. The UI never calls OpenRouter directly.
 
+### Sharing code with `packages/shared`
+
+An Edge Function **cannot** import out of `supabase/functions`. The local edge
+runtime container bind-mounts only that directory, so a relative path escaping
+it (`../../../packages/shared/...`) resolves to a path that does not exist
+inside the container. Code shared with the Node side therefore takes one of two
+forms:
+
+- **Verbatim mirror** — for a module with **no imports**, keep the canonical
+  copy in `packages/shared/src/` and mirror it byte-for-byte into
+  `supabase/functions/_shared/`. Declare the pair in `MIRRORED_FILES`
+  (`scripts/sync-shared.mjs`), edit only the canonical file, and run
+  `npm run sync:shared`. Both files carry a MIRRORED FILE banner naming which
+  is which. Enforcement is two-layer: the `shared-sync` gate step
+  (`npm run check:shared-sync`) and `tests/api/unit/shared-sync.test.ts`, which
+  also fails if a mirrored file grows an import.
+  Current mirror: `age-profile.ts`.
+- **Hand-written adapter** — for anything with imports, since the runtimes
+  resolve specifiers differently (`zod` vs `npm:zod`). The adapter is a real,
+  separately maintained file and is *not* byte-identical; see
+  `supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`.
+
 ## 3. Postgres & RLS
 
 - All data access from the UI must happen via the Supabase Javascript Client utilizing Row Level Security (RLS).

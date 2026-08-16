@@ -128,7 +128,18 @@ Every runtime prompt carries a `{{style_guidance}}` slot that
   - accusation start gets spoiler-safe current-state context plus the public
     character roster (names, `sex`, `appearance`, `public_summary`) so the
     narrator can name suspects with grounded pronouns
-  - accusation judge gets the full blueprint
+  - accusation judge gets the full blueprint, plus the two fields that say what
+    the investigator actually earned from it: `player_known_clues` (every clue
+    discovered this session, in discovery order, each with a short
+    `origin_label` such as "found at the Kitchen" / "told by Alice Smith") and
+    `path_coverage` (per reasoning path: `path_id`, `kind`
+    (`solution` | `red_herring` | `eliminate`), `summary`, `found_clue_ids`,
+    `missing_clue_ids`). The blueprint alone lists every clue that *exists*, so
+    without these the judge cannot tell an earned case from an unearned one.
+    Both are rebuilt from event history via `buildDiscoveredClueIdSet`, not read
+    from the `discovered_clues` cache. `path_coverage` is precomputed for the
+    same reason `prereqs_met` is on the talk side: the model should not have to
+    intersect sets across a long context. See Clue discovery and gating.
 - Character `sex` is included anywhere runtime AI receives character summaries
   or full blueprint data, and prompt guidance now explicitly tells the model to
   use that field for pronoun choice instead of guessing.
@@ -177,9 +188,26 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   off-script reveal for a clever question/convincing bluff when the rationale
   implies a bypassable social/knowledge gate; such reveals are listed in
   `revealed_off_script` and recorded as real discoveries.
+- **Accusation (judged, not mechanical).** The judge receives
+  `player_known_clues` and `path_coverage` (see Context Boundaries), built by
+  `buildKnownCluesWithOrigin` / `buildPathCoverage`. Three deliberate scoping
+  rules are encoded in the `accusation_judge` prompt:
+  - The discovered set constrains the **evidence-chain** win route only. The
+    "true account" route and a confession earned by confrontation do not require
+    discovered clues, so a child who intuits the answer can still win.
+  - `missing_clue_ids` steers the *follow-up question*; it is explicitly not a
+    checklist to reject against. A player need not hold every clue on a path.
+  - The set is what the player may **cite as evidence**, not a fence around what
+    they may reason. A correctly deduced fact they were never handed is credited.
+
+  There is no mechanical gate: the resolution stays AI-judged, and nothing in
+  `game-accuse` rejects an accusation on coverage alone.
 - **Mock runtime.** The mock `talk_conversation` reveals the first `prereqs_met`
   clue, and on a sentinel in the player input ("aha"/"i bet") grants the first
-  locked clue off-script — so tests exercise both paths deterministically.
+  locked clue off-script — so tests exercise both paths deterministically. The
+  mock `accusation_judge` keeps its own resolution rule (correct culprit wins
+  from round 1) but reads `path_coverage` to aim its rejection follow-up at an
+  unfinished solution path.
 
 The notebook (`game-get` `state.discovered_clues`) groups discovered clues by
 mini-mystery thread via `mapClueToThreads` / `buildDiscoveryRecords`.

@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `24ddd3857c5f9d0c5bb82e5dea4611b558606dc7`
+> Source git blob hash: `0b328f5f35867f59cf13e0c8aa7920fb73ccc3e9`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -145,6 +145,11 @@ keep investigating; from round 3 onward a still-failing accusation resolves as a
 loss with a gentle reveal. This is why `solution_paths` and
 `suspect_elimination_paths` have to be genuinely walkable from clues the player
 can actually discover — they are the judge's accept criteria, not decoration.
+
+The judge is handed the player's actual discovered clues and, per path, which of
+its clues they hold and which they are missing — so "discovered clue chain" is
+checked, not assumed. A `solution_paths` entry whose clues are hard or
+impossible to reach will visibly fail to earn wins.
 
 ## Things that matter for authoring
 

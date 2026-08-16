@@ -26,9 +26,16 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
 
 ## Judge Resolution Rules
 
+The judge context carries `player_known_clues` and `path_coverage` alongside the
+full blueprint, so "clues the player actually discovered" is a fact the judge is
+given rather than one it has to infer from the transcript. See
+`docs/ai-runtime.md` (Clue discovery and gating) for the scoping rules that keep
+this from making the game stricter.
+
 - `win` requires naming the true culprit AND one of:
-  - an evidence chain following one of the blueprint's `solution_paths` (using
-    clues the player actually discovered), or
+  - an evidence chain following one of the blueprint's `solution_paths`, citing
+    the substance of clues present in `player_known_clues` (path clues the
+    player never discovered are not credited), or
   - a correct account of what happened — culprit, key sequence of events, and
     motive — matching `ground_truth`, or
   - a confession earned by confronting the accused while already holding most
@@ -43,7 +50,9 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
   terminates.
 - Terminal outputs (`win|lose`) are authoritative for session outcome.
 - The mock provider mirrors these semantics deterministically (wrong suspect →
-  `continue` until round 3, then `lose`; true culprit → `win` from round 1).
+  `continue` until round 3, then `lose`; true culprit → `win` from round 1). It
+  does not re-implement the evidence check, but it does read `path_coverage` to
+  point its rejection `follow_up_prompt` at an unfinished solution path.
 
 ## Timeout Forced Endgame
 

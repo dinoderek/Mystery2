@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildDiscoveredClueIdSet,
   buildDiscoveryRecords,
+  buildKnownCluesWithOrigin,
+  buildPathCoverage,
+  type CoverageBlueprint,
   eventRevealedClueIds,
   isClueUnlocked,
   mapClueToThreads,
@@ -106,5 +109,83 @@ describe("buildDiscoveryRecords", () => {
       origin: { kind: "character", character_id: "alice", character_name: "Alice Smith" },
       off_script: true,
     });
+  });
+});
+
+describe("buildKnownCluesWithOrigin", () => {
+  it("resolves ids to text plus provenance, preserving discovery order", () => {
+    expect(
+      buildKnownCluesWithOrigin(notebookBlueprint, ["char-alice", "loc-crumbs"]),
+    ).toEqual([
+      { id: "char-alice", text: "I saw it.", origin_label: "told by Alice Smith" },
+      { id: "loc-crumbs", text: "crumbs", origin_label: "found at Kitchen" },
+    ]);
+  });
+
+  it("gives sub-location clues their parent location's origin", () => {
+    expect(buildKnownCluesWithOrigin(notebookBlueprint, ["loc-note"])).toEqual([
+      { id: "loc-note", text: "a note", origin_label: "found at Kitchen" },
+    ]);
+  });
+
+  it("drops duplicates and ids absent from the blueprint", () => {
+    expect(
+      buildKnownCluesWithOrigin(notebookBlueprint, [
+        "loc-crumbs",
+        "loc-crumbs",
+        "ghost-clue",
+      ]),
+    ).toEqual([
+      { id: "loc-crumbs", text: "crumbs", origin_label: "found at Kitchen" },
+    ]);
+  });
+});
+
+describe("buildPathCoverage", () => {
+  const coverageBlueprint: CoverageBlueprint = {
+    solution_paths: [
+      {
+        id: "path-solution",
+        summary: "the crumbs solve it",
+        location_clue_ids: ["loc-crumbs"],
+        character_clue_ids: ["char-alice"],
+      },
+    ],
+    red_herrings: [
+      {
+        id: "path-window",
+        summary: "the open window",
+        location_clue_ids: ["loc-note"],
+        character_clue_ids: [],
+      },
+    ],
+    suspect_elimination_paths: [],
+  };
+
+  it("splits each path's clues by what the investigator discovered", () => {
+    expect(
+      buildPathCoverage(coverageBlueprint, new Set(["loc-crumbs", "loc-note"])),
+    ).toEqual([
+      {
+        path_id: "path-solution",
+        kind: "solution",
+        summary: "the crumbs solve it",
+        found_clue_ids: ["loc-crumbs"],
+        missing_clue_ids: ["char-alice"],
+      },
+      {
+        path_id: "path-window",
+        kind: "red_herring",
+        summary: "the open window",
+        found_clue_ids: ["loc-note"],
+        missing_clue_ids: [],
+      },
+    ]);
+  });
+
+  it("reports every clue missing when nothing has been discovered", () => {
+    const coverage = buildPathCoverage(coverageBlueprint, new Set());
+    expect(coverage.every((entry) => entry.found_clue_ids.length === 0)).toBe(true);
+    expect(coverage[0].missing_clue_ids).toEqual(["loc-crumbs", "char-alice"]);
   });
 });

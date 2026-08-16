@@ -1,8 +1,12 @@
 import type { AIRoleName } from "./ai-contracts.ts";
 import {
   buildDiscoveredClueIdSet,
+  buildKnownCluesWithOrigin,
+  buildPathCoverage,
   type ClueRequires,
   isClueUnlocked,
+  type KnownClueWithOrigin,
+  type PathCoverage,
 } from "./clue-discovery.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 
@@ -233,9 +237,18 @@ export interface AccusationStartContext {
   characters: TalkCharacterPublicSummary[];
 }
 
+// The judge receives the whole blueprint, so it knows every clue that EXISTS.
+// What it cannot infer reliably from a long transcript is which of those the
+// investigator actually earned — that is what these two fields carry.
 export interface AccusationJudgeContext {
   round: number;
   full_blueprint: BlueprintContext;
+  // Every clue discovered this session, in discovery order. The only thing
+  // separating what exists in the blueprint from what the player holds.
+  player_known_clues: KnownClueWithOrigin[];
+  // That set intersected with each reasoning path, precomputed. Lets the judge
+  // tell a near-complete case from a red-herring-led one from a guess.
+  path_coverage: PathCoverage[];
 }
 
 export interface AIContext {
@@ -855,6 +868,9 @@ export function buildAccusationJudgeContext(input: {
   conversation_history?: ConversationFragment[];
   history_mode?: "all" | "none";
 }): AIContext {
+  // Reconstructed from the full session history (searches included), not the
+  // `discovered_clues` cache — same source of truth as the talk context.
+  const discovered = buildDiscoveredClueIdSet(input.conversation_history ?? []);
   return buildContext({
     game_id: input.game_id,
     role_name: "accusation_judge",
@@ -866,6 +882,8 @@ export function buildAccusationJudgeContext(input: {
     accusation_judge_context: {
       round: input.round,
       full_blueprint: input.blueprint,
+      player_known_clues: buildKnownCluesWithOrigin(input.blueprint, discovered),
+      path_coverage: buildPathCoverage(input.blueprint, discovered),
     },
   });
 }

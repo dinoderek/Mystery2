@@ -493,7 +493,11 @@ class MockAIProvider implements AIProvider {
       }
       case "accusation_judge": {
         const accusationJudgeContext = context.accusation_judge_context as
-          | { round?: number; full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } } }
+          | {
+            round?: number;
+            full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
+            path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
+          }
           | undefined;
         const round = accusationJudgeContext?.round ??
           requireContextNumber(role, context, "round");
@@ -529,6 +533,14 @@ class MockAIProvider implements AIProvider {
           ? "lose"
           : "continue";
 
+        // Mirrors the live judge's use of path_coverage: on a rejection, steer
+        // the follow-up at a solution path the investigator has not finished,
+        // rather than asking a generic question.
+        const unfinishedSolutionPath = accusationJudgeContext?.path_coverage?.find(
+          (entry) =>
+            entry?.kind === "solution" && (entry.missing_clue_ids?.length ?? 0) > 0,
+        );
+
         return {
           narration:
             accusationResolution === "win"
@@ -541,7 +553,9 @@ class MockAIProvider implements AIProvider {
           accusation_resolution: accusationResolution,
           follow_up_prompt:
             accusationResolution === "continue"
-              ? "Which evidence directly connects this suspect to the event?"
+              ? unfinishedSolutionPath?.summary
+                ? `There is more to find about ${unfinishedSolutionPath.summary}. Which evidence directly connects this suspect to the event?`
+                : "Which evidence directly connects this suspect to the event?"
               : null,
         };
       }

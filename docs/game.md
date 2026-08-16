@@ -42,6 +42,11 @@ A text-based mystery adventure for kids that makes reading and writing feel like
   either backs it with a discovered clue chain (a solution path) or correctly
   tells the story of what happened. Confronting the accused can earn a
   confession — but only when most of the facts are already right.
+- "Discovered" is enforceable: the judge is given the investigator's actual
+  discovered clues and, per reasoning path, which of its clues they hold and
+  which they are missing. The clue-chain route only credits clues they really
+  found; telling the true account and earning a confession do not require them,
+  so a child who reasons their way to the answer is never blocked.
 - Wrong or under-supported accusations are rejected with encouragement to keep
   investigating and try again; after repeated failed attempts (round 3+) the
   case resolves as a loss with a gentle reveal.

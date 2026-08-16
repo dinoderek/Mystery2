@@ -251,7 +251,6 @@ export type AuthoredFieldId =
   | "clue_text";
 
 const AUTHORED_FIELD_BUDGET: Record<AuthoredFieldId, Record<number, number>> = {
-  //                          age:  6      7      8      9     10     11
   one_liner: { 6: 8, 7: 10, 8: 12, 9: 14, 10: 16, 11: 18 },
   premise: { 6: 25, 7: 30, 8: 35, 9: 40, 10: 45, 11: 50 },
   notebook_summary: { 6: 12, 7: 14, 8: 16, 9: 18, 10: 20, 11: 22 },

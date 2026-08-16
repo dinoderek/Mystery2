@@ -72,12 +72,9 @@ Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
     to the roomier `search_find` budget on turns where the backend already knows
     a clue will be revealed.
   - `search_targeted`: AI judges player's freeform search text against sub-locations, decides whether to reveal a clue, and controls turn cost.
-    Because the model — not the backend — decides the outcome, its word budget
-    cannot be picked in advance the way bare search's can. The prompt instead
-    carries **both** budgets with the condition that selects them (`search_find`
-    when a clue is revealed, `search_empty` when nothing is), so an empty
-    targeted search is no longer billed the roomier clue-reveal budget. See
-    `OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`.
+    The model decides the outcome, so the prompt carries two word budgets:
+    `search_find` when a clue is revealed, `search_empty` when none is
+    (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`).
 - `accusation_start`
   - Frames accusation scene and requests accusation + reasoning
 - `accusation_judge`
@@ -176,10 +173,10 @@ All AI role outputs are validated before any session/event writes:
   - `narration`
   - `accusation_resolution` in `win|lose|continue`
   - `follow_up_prompt` required when resolution is `continue`
-- `follow_up_prompt` is player-facing text, not a control field. Both accusation
-  prompts now say so explicitly: it is held to the same reading level as the
-  narration, kept to one short question, and excluded from (and expected to stay
-  well under) the role's word budget, which governs `narration` alone.
+- `follow_up_prompt` is the prompt shown to the player when they need to add
+  more to their accusation. It is player-facing, so it is held to the same
+  reading level and kept to one short question; the role's word budget governs
+  `narration` alone.
 
 Invalid output returns a retriable error and does not finalize turn state.
 

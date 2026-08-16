@@ -35,6 +35,19 @@ Important version note:
     there are no separate prompt files)
   - Standard narrator style plus optional per-blueprint
     `metadata.narration_style` layering (`buildStyleGuidance`)
+- `supabase/functions/_shared/role-request.ts`
+  - **The single assembly path for every narrator request.** A registry keyed by
+    role knows its context builder and how to render its prompt;
+    `buildRoleRequest` (role-output roles) and `buildNarrationPrompt`
+    (`intro`, `ambience`) are the only entry points.
+  - Owns the action+state → role resolution: `resolveSearchRole`
+    (`search_bare` | `search_targeted`) and `resolveAccusationRole`
+    (`accusation_start` | `accusation_judge`).
+  - The only place `target_age` and `narration_style` are applied. Handlers no
+    longer call `loadPromptTemplate`/`renderPrompt` directly, and neither does
+    the eval harness — see [Why assembly is shared](#why-assembly-is-shared).
+  - Purity contract: imports only sibling `_shared/*.ts`, no Deno globals, no
+    DB. Node imports it directly so the runtime eval harness reuses it.
 - `packages/shared/src/mystery-api-contracts.ts`
   - Shared request/response boundary contracts for UI/backend payloads
 
@@ -87,6 +100,30 @@ Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
   - Rejects wrong or under-supported accusations with warm encouragement
     (`continue` + retry-inviting `follow_up_prompt`); from round 3 onward a
     still-failing accusation resolves `lose` with a gentle reveal.
+
+## Why assembly is shared
+
+Assembling a narrator request means three things: pick the role, build its
+context, and render its prompt with the blueprint's `target_age` and
+`narration_style`. That used to be inlined in every handler **and**
+re-implemented by the runtime eval harness, so there were two independent
+assembly paths — and they drifted.
+
+The harness called `loadPromptTemplate(role)` with no age and no style.
+`targetAge` is required; omitted, `clampTargetAge` falls back to
+`MIN_TARGET_AGE`, so **every evaluated prompt was built for a 6-year-old**
+regardless of the blueprint, while the `flesch` judge graded the output against
+the blueprint's real age. `narration_style` never reached the model on that path
+at all. Nothing failed — the assertion in `ai-prompts.ts` that "a missing age is
+a compile error" holds only for TypeScript callers, and the JS harness was never
+in `tsc`'s include.
+
+One assembly path removes that class of bug by construction: there is no second
+implementation left to drift. Transport (an HTTP call to an Edge Function, or a
+local CLI replay) is layered on top rather than duplicating the logic.
+
+`tests/api/unit/role-request.test.ts` is the standing guard — for every role it
+asserts the assembled prompt carries the blueprint's age and voice.
 
 ## Narration Style
 

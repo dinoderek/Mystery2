@@ -1,47 +1,59 @@
-// Faithful runtime-prompt assembly for the CLI backend.
+// Runtime-prompt assembly for the CLI backend.
 //
-// Reuses the REAL prompt templates and context builders from
-// supabase/functions/_shared so there is a single source of truth — no
-// duplicated prompt text. Node 24 strips TypeScript types on import, so these
-// Deno-authored .ts modules load directly (they have no value imports beyond
-// each other and no Deno-only globals on these code paths).
+// This is a thin transport wrapper: the assembly itself lives in
+// supabase/functions/_shared/role-request.ts, the SAME module the Edge Function
+// handlers call. Node 24 strips TypeScript types on import, so the Deno-authored
+// module loads directly (it imports only sibling _shared/*.ts and touches no
+// Deno globals — a purity contract documented there and worth preserving).
 //
-// The produced { system, user } pair is byte-for-byte what the OpenRouter
-// provider sends for a role output (see OpenRouterProvider.generateRoleOutput in
-// ai-provider.ts): a strict-JSON system message plus a user message carrying
+// It used to reimplement the assembly here, and drifted: it called
+// loadPromptTemplate(role) with no target age, so clampTargetAge fell back to
+// age 6 and every replayed prompt was built for the wrong reader while being
+// graded against the blueprint's real age; narration_style never reached the
+// model at all. Sharing the assembly removes that failure mode by construction
+// — there is no second implementation left to drift.
+//
+// The produced { system, user } pair is what the OpenRouter provider sends for
+// a role output (see OpenRouterProvider.generateRoleOutput in ai-provider.ts):
+// a strict-JSON system message plus a user message carrying
 // JSON.stringify({ prompt, context }).
 
 let cached = null;
 
 async function loadShared() {
   if (cached) return cached;
-  const ctx = await import("../../../supabase/functions/_shared/ai-context.ts");
-  const prompts = await import("../../../supabase/functions/_shared/ai-prompts.ts");
-  cached = { ctx, prompts };
+  cached = await import("../../../supabase/functions/_shared/role-request.ts");
   return cached;
 }
 
 /**
- * Build the model request for one role.
- *   role:        AIPromptKey (e.g. "talk_conversation")
- *   builder:     name of the ai-context.ts builder to call (e.g. "buildTalkConversationContext")
- *   contextInput: the builder's input object
- *   promptVars:  variables for renderPrompt of the role template
+ * Build the model request for one role-output role.
+ *   input: a RoleRequestInput (see role-request.ts) — `role` plus the
+ *          blueprint, session, history and role-specific fields.
  * Returns { system, user, prompt, context }.
  */
-export async function buildRoleRequest({ role, builder, contextInput, promptVars }) {
-  const { ctx, prompts } = await loadShared();
-  const build = ctx[builder];
-  if (typeof build !== "function") {
-    throw new Error(`Unknown context builder "${builder}"`);
-  }
-  const context = build(contextInput);
-  const template = await prompts.loadPromptTemplate(role);
-  const prompt = prompts.renderPrompt(template, promptVars);
+export async function buildRoleRequest(input) {
+  const shared = await loadShared();
+  const { role, prompt, context } = await shared.buildRoleRequest(input);
   return {
     system: `You are a strict JSON API for role "${role}". Output JSON only.`,
     user: JSON.stringify({ prompt, context }),
     prompt,
     context,
   };
+}
+
+/** Build the prompt for a narration role (`intro`, `ambience`). */
+export async function buildNarrationPrompt(input) {
+  const shared = await loadShared();
+  return shared.buildNarrationPrompt(input);
+}
+
+/** Re-exported so callers resolve roles the same way the handlers do. */
+export async function resolveSearchRole(searchQuery) {
+  return (await loadShared()).resolveSearchRole(searchQuery);
+}
+
+export async function resolveAccusationRole(playerReasoning) {
+  return (await loadShared()).resolveAccusationRole(playerReasoning);
 }

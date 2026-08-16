@@ -54,12 +54,18 @@ narration, so models diverged as turns accumulated and were not comparable.)
     from the seeded rows, so the only variable is the model behind the session's
     `ai_profile` (`mock` for plumbing/CI; an `openrouter` profile reaching
     `openai/*` or `anthropic/*` for a real run). Supports every action.
-  - `cli:<variant>` — reconstructs the **real** runtime prompt+context for the
-    action (reusing the shared builders in `supabase/functions/_shared`, imported
-    directly — Node strips the TypeScript types) and pipes it to a local CLI
-    (`claude`, `openai`, or a deterministic `stub`). No game server needed.
-    Replays the roles with a `cli` mapping in `lib/roles.mjs` (`talk`, `ask`
-    today); add a mapping to support another.
+  - `cli:<variant>` — builds the **real** runtime prompt+context for the action
+    through `supabase/functions/_shared/role-request.ts` — the same module the
+    Edge Function handlers call, imported directly (Node strips the TypeScript
+    types) — and pipes it to a local CLI (`claude`, `openai`, or a deterministic
+    `stub`). No game server needed. Every action has a local-replay mapping.
+
+    Assembly is shared rather than reimplemented here for a concrete reason:
+    this backend used to build its own prompts and called `loadPromptTemplate`
+    with no target age, so every replayed prompt was built for a 6-year-old
+    while being graded against the blueprint's real age, and `narration_style`
+    never reached the model. Results produced before that fix are not comparable
+    with results after it.
 
 - **Judge** — scores a stored interaction's single response
   (`judge(interaction, { config }) -> { id, status, score, details, parts }`;
@@ -232,8 +238,11 @@ from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
   `target_age` (or other property) you want, write the fixed `given` + `action`.
 - **New judge** — add `lib/judges/<id>.mjs` exporting `id` + `judge(...)`, then
   register it in `lib/judges/index.mjs`.
-- **New action / CLI role** — add an entry to `ACTIONS` in `lib/roles.mjs`
-  (endpoint mapping, and a `cli` mapping to also replay it locally).
+- **New action** — add an entry to `ACTIONS` in `lib/roles.mjs`: the `endpoint`
+  transport, a `roleInput` naming the role and handing over the same fields the
+  handler passes, and a `speaker`. Prompt assembly itself belongs in the
+  registry in `supabase/functions/_shared/role-request.ts`, so it is defined
+  once for both the handler and this harness.
 
 ## Tests
 

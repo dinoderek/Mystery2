@@ -14,7 +14,8 @@ import process from "node:process";
 // The runner writes both temp files, substitutes paths, spawns cmd with the
 // rendered args. stdin is closed. stdout is captured. timeout is enforced.
 //
-// On success the runner parses stdout as JSON. If extract_path is provided
+// On success the runner parses stdout as JSON, unless config.raw_stdout is set
+// (plain-text model output). If extract_path is provided
 // (dotted, e.g. "result"), it walks into the parsed object before returning.
 // The extracted value is returned as a string for the caller to parse
 // further (typically as JSON again for structured model responses).
@@ -151,6 +152,14 @@ export async function runCli({
   }
 
   const stdoutText = Buffer.concat(stdoutChunks).toString("utf8").trim();
+
+  // Some model outputs are legitimately plain text rather than JSON — the
+  // narration roles (intro, ambience) send a prose prompt and get prose back,
+  // mirroring the provider's own narration path. Opt in per call rather than
+  // relaxing the JSON gate for every caller.
+  if (config.raw_stdout) {
+    return { extracted: stdoutText, raw: stdoutText };
+  }
 
   let parsed;
   try {

@@ -50,7 +50,9 @@ narration, so models diverged as turns accumulated and were not comparable.)
 - **Model backend** — produces the response. One interface
   (`collect(testCase, ctx) -> { response, blueprint, model }`):
   - `endpoint` — seeds the fixed session + history into the DB (service role),
-    then calls the ONE `game-*` endpoint. The server rebuilds the exact context
+    then calls the ONE `game-*` endpoint. The exception is `start`, which
+    *creates* the session (`createsSession` in `lib/roles.mjs`), so nothing is
+    seeded and the body names the blueprint instead of a game id. The server rebuilds the exact context
     from the seeded rows, so the only variable is the model behind the session's
     `ai_profile` (`mock` for plumbing/CI; an `openrouter` profile reaching
     `openai/*` or `anthropic/*` for a real run). Supports every action.
@@ -90,6 +92,39 @@ narration, so models diverged as turns accumulated and were not comparable.)
   the inner loop while iterating on judges. Deterministic judges cost nothing to
   re-run; the `age_appropriate` judge calls its judge model unless pointed at
   `judge-stub`.
+
+## Coverage
+
+`cases/all-interactions.mjs` holds one case per narrator interaction — the
+baseline that all nine are reachable and judged:
+
+| Interaction | Case |
+|---|---|
+| `intro` | `intro` |
+| `ambience` | `ambience-first-visit` |
+| `search_empty` | `search-bare-nothing-left` |
+| `search_find` | `search-bare-reveals-clue` |
+| `search_targeted` | `search-targeted-pantry` |
+| `talk_greeting` | `talk-greeting-alice` |
+| `talk_round` | `talk-round-pressure-alice` |
+| `talk_farewell` | `talk-farewell-alice` |
+| `accusation_open` | `accusation-open` |
+| `accusation_verdict` | `accusation-verdict-well-argued` |
+
+Both backends run all of them. Against the mock provider (`endpoint` with the
+default profile, or `cli:stub`) every case passes `flesch`, so the suite is a
+clean green baseline and a real failure stands out. That is also why the mock
+provider's canned narration is written at the target reading age — it is a
+fixture, but the harness grades whatever the provider returns, and grade-10
+phrasing there would read as a permanent false failure.
+
+```bash
+# Plumbing, no model calls, no game server:
+node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --backend cli:stub
+
+# Plumbing through the real server, mock model:
+node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --backend endpoint
+```
 
 ## Artifacts (`runs/<run_id>/<case>__<backend>/`, gitignored)
 

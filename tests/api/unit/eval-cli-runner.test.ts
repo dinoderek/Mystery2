@@ -108,6 +108,17 @@ describe("runCli extract_path dotted-walk", () => {
     await expect(runOnce(step())).rejects.toThrow(/stdout is not valid JSON/);
   });
 
+  it("returns plain-text stdout unparsed when raw_stdout is set", async () => {
+    // The narration roles (intro, ambience) send a prose prompt and get prose
+    // back, mirroring the provider's narration path — so the JSON gate has to
+    // be opt-out for them without relaxing it for every other caller.
+    process.env.MOCK_CLI_MODE = "not_json";
+    const result = await runOnce({ ...step(), raw_stdout: true } as never);
+    expect(typeof result.extracted).toBe("string");
+    expect(result.extracted.length).toBeGreaterThan(0);
+    expect(result.raw).toBe(result.extracted);
+  });
+
   it("throws with the exit code when the process crashes", async () => {
     process.env.MOCK_CLI_MODE = "crash";
     await expect(runOnce(step())).rejects.toThrow(/exited with code 1/);

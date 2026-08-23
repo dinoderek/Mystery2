@@ -317,7 +317,7 @@ describe("ai-provider mock role output", () => {
     });
     expect(earlyRound.accusation_resolution).toBe("continue");
     expect(earlyRound.follow_up_prompt).toBeTruthy();
-    expect(earlyRound.narration).toContain("try another accusation");
+    expect(earlyRound.narration).toContain("have another go");
 
     // From round 3 a still-wrong accusation finally resolves to lose.
     const finalRound = await provider.generateRoleOutput({

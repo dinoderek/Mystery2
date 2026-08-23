@@ -42,18 +42,27 @@ export async function collect(testCase, ctx) {
   const roleInput = action.roleInput(testCase.given, testCase.action, blueprint, history);
   const isNarrationRole = NARRATION_ROLES.has(roleInput.role);
 
-  const request = isNarrationRole
-    ? {
-      system: "You are a narrator. Reply with narration text only.",
-      user: await buildNarrationPrompt(roleInput),
-      prompt: await buildNarrationPrompt(roleInput),
+  // Mirror exactly what the provider sends for each shape (see
+  // OpenRouterProvider.generateNarration / generateRoleOutput): narration roles
+  // get the system line and the raw prompt as the user message; role-output
+  // roles get the strict-JSON system line and {prompt, context} as JSON.
+  let request;
+  if (isNarrationRole) {
+    const prompt = await buildNarrationPrompt(roleInput);
+    request = {
+      system: "You are the narrator for a kids mystery game. Return plain text only.",
+      user: prompt,
+      prompt,
       context: null,
-    }
-    : await buildRoleRequest(roleInput);
+    };
+  } else {
+    request = await buildRoleRequest(roleInput);
+  }
 
   const result = await runCliWithRetries({
     step: `${testCase.id}-${testCase.action.type}`,
-    config: entry,
+    // Narration roles reply with prose, so the runner's JSON gate does not apply.
+    config: isNarrationRole ? { ...entry, raw_stdout: true } : entry,
     systemPrompt: request.system,
     userMessage: request.user,
     logDir: null,

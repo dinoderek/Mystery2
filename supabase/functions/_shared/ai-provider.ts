@@ -337,7 +337,11 @@ class MockAIProvider implements AIProvider {
         );
         return {
           narration:
-            `[Mock] You walk up to ${characterName} in ${locationName}. ${pronoun} looks ${appearance}.`,
+            // `appearance` is authored as a standalone sentence in real
+            // blueprints ("A small, sleek river otter with soft brown fur."),
+            // so it stands on its own rather than being spliced in after
+            // "looks" — which produced "she looks A small, sleek river otter".
+            `[Mock] You walk up to ${characterName} in ${locationName}. ${appearance} Then ${pronoun} looks up at you.`,
         };
       }
       case "talk_conversation": {

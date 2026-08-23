@@ -174,27 +174,34 @@ describe('parseCommand - target validation and lists', () => {
     });
   });
 
-  it('parses list aliases for locations and characters', () => {
-    const locations = parseCommand('where can i go', 'explore', context);
-    expect(locations.type).toBe('list');
-    if (locations.type === 'list') {
-      expect(locations.listType).toBe('locations');
-      expect(locations.items).toEqual([
-        { kind: 'location', name: 'Kitchen', characters: ['Rosie Jones', 'Mayor Fox'] },
-        { kind: 'location', name: 'Garden', characters: ['Bob Smith'] },
-        { kind: 'location', name: 'Barn', characters: [] },
-      ]);
-    }
+  it('opens the notebook at the matching section for the list aliases', () => {
+    expect(parseCommand('where can i go', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'places',
+    });
+    expect(parseCommand('locations', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'places',
+    });
+    expect(parseCommand('who is here', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'people',
+    });
+    expect(parseCommand('characters', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'people',
+    });
+  });
 
-    const characters = parseCommand('characters', 'explore', context);
-    expect(characters.type).toBe('list');
-    if (characters.type === 'list') {
-      expect(characters.listType).toBe('characters');
-      expect(characters.items).toEqual([
-        { kind: 'character', displayName: 'Rosie Jones' },
-        { kind: 'character', displayName: 'Mayor Fox' },
-      ]);
-    }
+  it('normalizes casing for the list aliases', () => {
+    expect(parseCommand('Locations', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'places',
+    });
+    expect(parseCommand('WHO IS HERE?', 'explore', context)).toEqual({
+      type: 'notebook',
+      section: 'people',
+    });
   });
 
   it('resolves character by first and last name', () => {
@@ -280,19 +287,30 @@ describe('parseCommand - zoom command', () => {
 
 describe('parseCommand - notebook command', () => {
   it('parses "notebook" as notebook in all modes', () => {
-    expect(parseCommand('notebook', 'explore', context)).toEqual({ type: 'notebook' });
-    expect(parseCommand('notebook', 'talk', context)).toEqual({ type: 'notebook' });
-    expect(parseCommand('notebook', 'accuse', context)).toEqual({ type: 'notebook' });
-    expect(parseCommand('notebook', 'ended', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('notebook', 'explore', context)).toEqual({ type: 'notebook', section: null });
+    expect(parseCommand('notebook', 'talk', context)).toEqual({ type: 'notebook', section: null });
+    expect(parseCommand('notebook', 'accuse', context)).toEqual({ type: 'notebook', section: null });
+    expect(parseCommand('notebook', 'ended', context)).toEqual({ type: 'notebook', section: null });
   });
 
   it('parses the "n" alias as notebook in all modes', () => {
-    expect(parseCommand('n', 'explore', context)).toEqual({ type: 'notebook' });
-    expect(parseCommand('n', 'talk', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('n', 'explore', context)).toEqual({ type: 'notebook', section: null });
+    expect(parseCommand('n', 'talk', context)).toEqual({ type: 'notebook', section: null });
   });
 
   it('normalizes casing for notebook command', () => {
-    expect(parseCommand('Notebook', 'explore', context)).toEqual({ type: 'notebook' });
-    expect(parseCommand('N', 'talk', context)).toEqual({ type: 'notebook' });
+    expect(parseCommand('Notebook', 'explore', context)).toEqual({ type: 'notebook', section: null });
+    expect(parseCommand('N', 'talk', context)).toEqual({ type: 'notebook', section: null });
+  });
+
+  it('leaves the list aliases askable as questions in talk mode', () => {
+    expect(parseCommand('who is here', 'talk', context)).toEqual({
+      type: 'valid',
+      command: { type: 'ask', question: 'who is here' },
+    });
+    expect(parseCommand('characters', 'talk', context)).toEqual({
+      type: 'valid',
+      command: { type: 'ask', question: 'characters' },
+    });
   });
 });

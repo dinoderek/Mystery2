@@ -28,7 +28,7 @@
   <div class="flex items-center gap-4">
     <button
       class="text-t-primary hover:text-t-bright transition-colors cursor-pointer"
-      onclick={() => (gameSessionStore.showNotebook = true)}
+      onclick={() => gameSessionStore.openNotebook()}
     >
       <span class="text-t-muted/70 font-bold">NOTEBOOK:</span>
       {gameSessionStore.state?.discovered_clues.length ?? 0}
@@ -53,5 +53,5 @@
       {/if}
     </div>
   </div>
-  <span class="text-t-muted/50">type 'help' to see commands</span>
+  <span class="text-t-muted/50">Tab: notebook &middot; type 'help' to see commands</span>
 </div>

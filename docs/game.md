@@ -84,7 +84,7 @@ The investigator repeatedly chooses actions until:
 - **Move** (go to a location)
 - **Search** (look for clues)
 - **Accuse** (endgame)
-- **Notebook** (review the case)
+- **Notebook** (review the case — `Tab`, or `notebook` / `n`)
 - **Help**
 - **Quit**
 
@@ -229,20 +229,33 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
 
 ## Notebook
 
-**Command:** `notebook` or `n`
+**Open and close:** `Tab` at any time. The typed commands `notebook` and `n`
+still work, and `Esc` also closes.
 
 ### Notebook Behavior
 
-- Opens the **case notebook**, an overlay the investigator can consult at any
-  time (works in every mode and costs 0 turns).
-- Shows four sections:
-  - **The case** — the premise hook and a one-line summary of what happened and
+- Opens the **case notebook**, a full-screen overlay the investigator can
+  consult at any time (works in every mode and costs 0 turns, and leaves no
+  entry in the transcript).
+- One section is shown at a time, behind a tab strip:
+  `STORY · PLACES · PEOPLE · CLUES`.
+  - **Story** — the premise hook and a one-line summary of what happened and
     roughly when (the "what / where / when").
-  - **People** — the characters with brief descriptions.
-  - **Places** — the locations with brief descriptions.
+  - **Places** — every location with its description, a `[ you are here ]`
+    marker on the current one, and who is standing at each.
+  - **People** — everyone met so far, each with a description and where they
+    are (`Here with you` when they share the investigator's location).
   - **Clues** — the clues discovered so far (from searching and asking),
-    accumulating live as the investigator finds them, grouped by where they came
-    from ("Found at the Boathouse", "Told by Maya").
+    accumulating live, in two buckets: `FOUND AT PLACES` and `TOLD BY PEOPLE`.
+    Each bucket sub-groups by the location or character with a count, e.g.
+    `Kitchen (2)`.
+- **Navigation:** `←` / `→` move between sections and wrap around, `↑` / `↓`
+  scroll the current section, `1`–`4` jump straight to a section.
+- **Deep links:** `locations` / `where can i go` open the notebook at Places,
+  and `characters` / `who is here` open it at People. They no longer print
+  inline lists — the notebook holds the same facts and more.
+- The notebook reopens at whichever section the player last used; the deep-link
+  commands and the clue-discovered toast override that with a specific section.
 - The case facts, people, and places come from the blueprint's
   `narrative.starting_knowledge`; clues are the player's discovered set. The
   notebook replaces the old wall-of-text opening — the game start now points the
@@ -257,8 +270,10 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
 ### Quit Behavior
 
 - Ends the current play session immediately.
-- Replaces the command input with a terminal prompt: `press any key to go back to the mystery list`.
-- Pressing any key returns the player to the landing menu (`/`).
+- Replaces the command input with a terminal prompt: `Tab: review notebook · any other key: back to the mystery list`.
+- `Tab` still opens the notebook, so a finished case can be reviewed; while the
+  notebook is open no key leaves the session. Any other key returns the player
+  to the landing menu (`/`).
 
 ---
 
@@ -283,7 +298,7 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
   - If incorrect: explanation + correct culprit + where reasoning diverged
 - After accusation resolves (`win` or `lose`), gameplay input ends for that session and the UI shows an end-state terminal prompt:
   - explicit success/failure status
-  - `press any key to go back to the mystery list`
+  - `Tab: review notebook · any other key: back to the mystery list`
 
 **Hard requirement:** The explanation must make sense and align with:
 
@@ -312,17 +327,22 @@ A persistent, celebrated record of every clue the investigator discovers.
 - Discovered clues are recorded forever and surfaced via `game-get`
   (`state.discovered_clues`), each annotated with where/when it was found and
   whether it was an off-script grant.
-- The notebook panel groups clues by **origin** — the location they were found
-  at or the character who volunteered them. Grouping must stay something the
-  player could work out themselves. An earlier version grouped by mini-mystery
+- The notebook panel groups clues by **origin** — first into the buckets
+  `FOUND AT PLACES` and `TOLD BY PEOPLE`, then per location or character with a
+  count. Grouping must stay something the player could work out themselves. An earlier version grouped by mini-mystery
   thread, which printed headings like "Main solution" and
   "Red herring: <payoff>" and so told the child which of their own clues were
   dead ends. Reasoning-path membership is therefore no longer sent to the client
   at all (see `docs/ai-runtime.md`).
 - A "new clue discovered" celebration fires when a search/ask turn surfaces a
   clue.
-- Implemented via `Notebook.svelte`, `ClueDiscoveredToast.svelte`, and a
-  count/toggle in `StatusBar`. See `docs/component-inventory.md`.
+- Grouping is driven by the clue list itself rather than by `state.locations` /
+  `state.characters`, so a clue whose origin entity is unknown still appears
+  under its recorded name and a place with no clues renders no empty heading.
+- Implemented via `NotebookPanel.svelte`, `ClueDiscoveredToast.svelte`, and a
+  count/toggle in `StatusBar`. The pure derivation and grouping helpers live in
+  `web/src/lib/domain/notebook.ts` (unit-tested in `notebook.test.ts`). See
+  `docs/component-inventory.md`.
 
 ## UX / UI Concept
 
@@ -335,7 +355,8 @@ A persistent, celebrated record of every clue the investigator discovers.
 
 ### Navigation
 
-- Arrow key navigation (for history / scrolling / maybe command recall).
+- Arrow key navigation. In the notebook, `←` / `→` change section and `↑` / `↓`
+  scroll; `1`–`4` jump to a section and `Tab` toggles the notebook itself.
 - Narration is scrollable and auto-scrolls to bottom by default.
 
 ---

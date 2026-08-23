@@ -29,15 +29,16 @@ _(Add components here as they are built. Example format below)_
 ### `StatusBar.svelte`
 
 - **Purpose**: Shows current location, time, hints, and visible characters, plus a
-  notebook count/toggle button that opens `NotebookPanel` (via the
-  `gameSessionStore.showNotebook` flag).
+  notebook count/toggle button that opens `NotebookPanel` at the section the
+  player last used (`gameSessionStore.openNotebook()`), and a `Tab: notebook`
+  hint alongside the help hint.
 - **Props**: None (reads from store)
 
 ### `ClueDiscoveredToast.svelte`
 
 - **Purpose**: Transient "new clue discovered" celebration shown when a search/ask
   turn surfaces clues (`gameSessionStore.recentlyDiscovered`); tapping opens the
-  notebook. Auto-dismisses.
+  notebook at its Clues section (`openNotebook('clues')`). Auto-dismisses.
 - **Props**: None (reads from store)
 
 ### `NarrationBox.svelte`
@@ -52,24 +53,41 @@ _(Add components here as they are built. Example format below)_
 - **Session-view behavior**:
   - Automatically disables command entry while loading.
   - Disables command entry for ended sessions.
-  - Renders the read-only return prompt (`[ PRESS ANY KEY TO GO BACK TO THE MYSTERY LIST ]`) for completed-session viewer mode.
+  - Renders the read-only return prompt (`[ TAB: REVIEW NOTEBOOK · ANY OTHER KEY: BACK TO THE MYSTERY LIST ]`) for completed-session viewer mode.
+  - Blurs itself while `showNotebook` is set (releasing its focus latch) and refocuses when the notebook closes, so notebook shortcuts never land in the command line.
 
 ### `HelpModal.svelte`
 
 - **Purpose**: Modal overlay displaying available commands in different modes.
+  The command list scrolls (`max-h-[85vh]` + `overflow-y-auto`) so the close
+  button stays in view as commands are added.
 - **Props**: None (reads from store)
 
 ### `NotebookPanel.svelte`
 
-- **Purpose**: Modal overlay ("case notebook") showing the mystery's case facts
-  (`premise` + `mystery_summary`), people and places (with their `summary`
-  blurbs), and the clues discovered so far (`discovered_clues`), grouped by
-  origin ("Found at <location>" / "Told by <character>") with off-script grants
-  flagged as a "lucky break". Grouping is deliberately player-derivable — do not
-  group by reasoning-path thread, which spoils the mystery. Reads
-  everything from `gameSessionStore.state`. Opened by the `notebook` / `n`
-  command (`showNotebook` store flag). Closes on backdrop click, the close
-  button, or Escape. Degrades gracefully when summaries are absent.
+- **Purpose**: Full-screen, opaque overlay ("case notebook") showing one of four
+  sections at a time behind a tab strip — Story (`premise` + `mystery_summary`),
+  Places (locations with a `[ you are here ]` marker and who is at each), People
+  (everyone met, with where they are), and Clues (`discovered_clues` bucketed
+  into `FOUND AT PLACES` / `TOLD BY PEOPLE`, sub-grouped per location or
+  character with a count, off-script grants flagged as a "lucky break").
+  Grouping is deliberately player-derivable — do not group by reasoning-path
+  thread, which spoils the mystery. Reads everything from
+  `gameSessionStore.state`; all derivation and grouping lives in the pure
+  `web/src/lib/domain/notebook.ts`.
+- **Keyboard**: owns a single window `keydown` handler for every notebook key —
+  `Tab` toggles (open and close), `Esc` closes, `←` / `→` change section with
+  wraparound, `↑` / `↓` scroll the body, `1`-`4` jump to a section. The handler
+  lives here rather than on the session page so the toggle cannot depend on
+  listener registration order.
+- **Accessibility**: `role="dialog"` / `aria-modal`, a `role="tablist"` strip
+  with roving `tabindex`, and a `role="tabpanel"` body. Repurposing `Tab` as
+  close is a deliberate deviation from the standard focus-cycle behavior: it
+  means `[ CLOSE ]` is not keyboard-reachable, but `Tab` and `Esc` both close,
+  so nothing is stranded. Being full-bleed, it has no backdrop to click.
+- **Motion**: a ~90ms fade plus a ~140ms fly, both collapsed to zero under
+  `prefersReducedMotion`. Kept short on purpose — `Tab` is a toggle players
+  press repeatedly.
 - **Props**: None (reads from store)
 - **Used by**: `routes/session/+page.svelte`.
 

@@ -83,12 +83,104 @@ test.describe('Case notebook', () => {
     await page.getByText('NEW CLUE DISCOVERED').click();
 
     await expect(page.getByText('CASE NOTEBOOK')).toBeVisible();
+    // The toast is clue-specific, so it lands on the clues section.
+    await expect(page.getByRole('tab', { name: 'CLUES' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByText('Crumbs lead to the pantry.')).toBeVisible();
     // Grouped by where it was found — something the player already knows.
-    await expect(page.getByText('Found at Kitchen')).toBeVisible();
+    await expect(page.getByText('FOUND AT PLACES')).toBeVisible();
+    await expect(page.getByText('Kitchen (1)')).toBeVisible();
     // The mystery-spoiling grouping must not appear anywhere on the page.
     await expect(page.getByText(/Red herring/i)).toHaveCount(0);
     await expect(page.getByText(/Main solution/i)).toHaveCount(0);
     await expect(page.getByText(/Ruling out/i)).toHaveCount(0);
+  });
+
+  test('toggles with Tab and closes with Escape', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const notebook = page.getByRole('dialog');
+    await expect(notebook).toBeHidden();
+
+    await page.keyboard.press('Tab');
+    await expect(notebook).toBeVisible();
+
+    await page.keyboard.press('Tab');
+    await expect(notebook).toBeHidden();
+
+    await page.keyboard.press('Tab');
+    await expect(notebook).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(notebook).toBeHidden();
+  });
+
+  test('navigates sections with arrows and number keys', async ({ page }) => {
+    await bootstrapSession(page);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('tab', { name: 'STORY' })).toHaveAttribute('aria-selected', 'true');
+
+    // Wraps backwards off the front of the strip.
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('tab', { name: 'CLUES' })).toHaveAttribute('aria-selected', 'true');
+
+    // ...and forwards off the end.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'STORY' })).toHaveAttribute('aria-selected', 'true');
+
+    await page.keyboard.press('2');
+    await expect(page.getByRole('tab', { name: 'PLACES' })).toHaveAttribute('aria-selected', 'true');
+
+    await page.keyboard.press('3');
+    await expect(page.getByRole('tab', { name: 'PEOPLE' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('reopens at the section the player left', async ({ page }) => {
+    await bootstrapSession(page);
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('4');
+    await expect(page.getByRole('tab', { name: 'CLUES' })).toHaveAttribute('aria-selected', 'true');
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('tab', { name: 'CLUES' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('parks the command input while open and hands focus back on close', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await page.keyboard.press('Tab');
+    await expect(input).not.toBeFocused();
+
+    // Section shortcuts must not leak into the command line.
+    await page.keyboard.press('2');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue('');
+  });
+
+  test('stays reachable after the case ends, while any other key still exits', async ({ page }) => {
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('quit');
+    await input.press('Enter');
+    await expect(page.getByTestId('return-to-list-prompt')).toBeVisible();
+
+    // The one carve-out from "press any key": Tab reviews the finished case.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page).toHaveURL(/.*\/session/);
+
+    // While the notebook is open no key leaves the session.
+    await page.keyboard.press('k');
+    await expect(page).toHaveURL(/.*\/session/);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await page.keyboard.press('k');
+    await expect(page).toHaveURL(/\/$/);
   });
 });

@@ -80,16 +80,25 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Maintains narration/event history, mode, and remaining time.
 - **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
 - **Overlays**: `HelpModal`, `SceneZoomModal`, `NotebookPanel` (the case
-  notebook, opened by the `notebook` / `n` command via the `showNotebook` store
-  flag, or the Status Bar's discovered-clue count), and `ClueDiscoveredToast`
-  (the clue-discovery celebration).
+  notebook — toggled by `Tab`, the `notebook` / `n` command, or the Status Bar's
+  discovered-clue count, via the `showNotebook` / `notebookSection` store
+  fields), and `ClueDiscoveredToast` (the clue-discovery celebration).
+  `openNotebook()` closes the other two overlays: all three sit at `z-50` with
+  no stacking coordination, so this is what keeps the notebook on top.
 - **Special behavior**:
   - During backend waits, narration shows a terminal spinner.
-  - The notebook lists discovered clues grouped by where they were found
-    (location or character); a toast celebrates new discoveries.
+  - The notebook is a full-screen overlay with four sections behind a tab strip
+    (`STORY · PLACES · PEOPLE · CLUES`): `←` / `→` change section, `↑` / `↓`
+    scroll, `1`-`4` jump, `Tab` or `Esc` closes. Clues are bucketed into
+    `FOUND AT PLACES` and `TOLD BY PEOPLE`, sub-grouped per location or
+    character with a count; a toast celebrates new discoveries and opens the
+    notebook at Clues.
+  - `locations` / `where can i go` and `characters` / `who is here` deep-link
+    into the Places and People sections instead of printing inline lists, so
+    they no longer add anything to the narration transcript.
   - Optional side image panel renders location/character imagery from move/talk payload image IDs.
   - Side panel falls back to placeholder text if image link issuance fails or asset is missing.
-  - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt and any key returns to `/`.
+  - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt. `Tab` is the one carve-out from "press any key": it opens the notebook so a finished case can be reviewed, and while the notebook is open no key leaves the session. Any other key returns to `/`.
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
   - Includes a logout action that clears browser auth session.
 

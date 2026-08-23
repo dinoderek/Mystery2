@@ -14,7 +14,7 @@ import {
   getAIProfileById,
   getDefaultAIProfile,
 } from "../_shared/ai-profile.ts";
-import { buildGameStartPrompt } from "../_shared/ai-prompts.ts";
+import { buildNarrationPrompt } from "../_shared/role-request.ts";
 import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
@@ -170,10 +170,10 @@ serveWithCors(async (req) => {
       game_id: sessionId,
     });
     const narration = await aiProvider.generateNarration(
-      buildGameStartPrompt({
-        target_age: blueprint.metadata.target_age,
-        premise: blueprint.narrative.premise,
-        narration_style: blueprint.metadata.narration_style ?? null,
+      buildNarrationPrompt({
+        role: "intro",
+        game_id: sessionId,
+        blueprint,
       }),
       aiMetadata,
     );

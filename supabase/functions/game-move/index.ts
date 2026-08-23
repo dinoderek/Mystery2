@@ -11,7 +11,7 @@ import {
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
 import { getAIProfileById } from "../_shared/ai-profile.ts";
-import { buildGameMovePrompt } from "../_shared/ai-prompts.ts";
+import { buildNarrationPrompt } from "../_shared/role-request.ts";
 import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
@@ -129,16 +129,16 @@ serveWithCors(async (req) => {
     const subLocations = (destLoc.sub_locations ?? []).map((sl) => ({
       name: sl.name,
     }));
-    const aiPrompt = buildGameMovePrompt({
-      target_age: blueprint.metadata.target_age,
-      destination_name: destLoc.name,
-      destination_description: destLoc.description,
+    const aiPrompt = buildNarrationPrompt({
+      role: "ambience",
+      game_id: game_id,
+      blueprint,
+      destination_id: destLoc.id,
       has_visited_before: hasVisitedBefore,
       destination_history_json: locationHistoryJson,
       destination_characters_json: destinationCharactersJson,
       destination_sub_locations_json:
         subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
-      narration_style: blueprint.metadata.narration_style ?? null,
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

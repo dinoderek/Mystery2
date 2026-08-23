@@ -20,11 +20,7 @@ import {
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
 } from "../_shared/ai-contracts.ts";
-import {
-  buildAccusationJudgeContext,
-  buildAccusationStartContext,
-} from "../_shared/ai-context.ts";
-import { loadPromptTemplate, renderPrompt } from "../_shared/ai-prompts.ts";
+import { buildRoleRequest } from "../_shared/role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
@@ -101,7 +97,8 @@ serveWithCors(async (req) => {
         (entry) => entry.event_type === "accuse_round",
       ).length;
 
-      const aiContext = buildAccusationJudgeContext({
+      const { prompt, context: aiContext } = await buildRoleRequest({
+        role: "accusation_judge",
         game_id: gameId,
         session: {
           ...contextSession,
@@ -113,14 +110,6 @@ serveWithCors(async (req) => {
         round: accusationRounds,
         conversation_history: history,
         history_mode: accusationHistoryMode,
-      });
-
-      const promptTemplate = await loadPromptTemplate("accusation_judge", blueprint.metadata.target_age, {
-        narrationStyle: blueprint.metadata.narration_style ?? null,
-      });
-      const prompt = renderPrompt(promptTemplate, {
-        forced_context: "",
-        target_age: blueprint.metadata.target_age,
       });
       const aiMetadata = createAIRequestMetadata(req, {
         request_id: requestId,
@@ -305,7 +294,8 @@ serveWithCors(async (req) => {
       validateTransition(session.mode, resolveAccusationAction(session.mode));
 
       if (playerReasoning.length === 0) {
-        const aiContext = buildAccusationStartContext({
+        const { prompt, context: aiContext } = await buildRoleRequest({
+          role: "accusation_start",
           game_id: gameId,
           session: {
             ...session,
@@ -313,17 +303,8 @@ serveWithCors(async (req) => {
             current_talk_character_id: null,
           },
           blueprint,
-          player_input: null,
           conversation_history: history,
           history_mode: accusationHistoryMode,
-        });
-
-        const promptTemplate = await loadPromptTemplate("accusation_start", blueprint.metadata.target_age, {
-          narrationStyle: blueprint.metadata.narration_style ?? null,
-        });
-        const prompt = renderPrompt(promptTemplate, {
-          forced_context: "",
-          target_age: blueprint.metadata.target_age,
         });
         const aiMetadata = createAIRequestMetadata(req, {
           request_id: requestId,

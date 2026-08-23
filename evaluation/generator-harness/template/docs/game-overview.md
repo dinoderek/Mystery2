@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `4ce4bb554ed1ab8949403150ad71f8d564cd4969`
+> Source git blob hash: `9c93b0f54c533404986f6513d597181462b090da`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 

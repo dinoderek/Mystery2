@@ -5,10 +5,6 @@
   import { authStore } from '$lib/domain/auth-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
   import SignedImage from '$lib/components/SignedImage.svelte';
-  import MobileBackButton from '$lib/components/MobileBackButton.svelte';
-  import { mobileKeyboard } from '$lib/domain/mobile-keyboard.svelte';
-  import { mobileDetect } from '$lib/domain/mobile-detect.svelte';
-  import MobileHome from '$lib/components/mobile/MobileHome.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -20,10 +16,6 @@
 
   onMount(() => {
     void gameSessionStore.loadSessionCatalog(true);
-    mobileKeyboard.inputMode = 'numeric';
-    return () => {
-      mobileKeyboard.inputMode = 'none';
-    };
   });
 
   function backToMenu() {
@@ -39,7 +31,6 @@
   }
 
   async function handleKeydown(event: KeyboardEvent) {
-    if (mobileDetect.isMobile) return;
     if (isStartingGame) {
       return;
     }
@@ -85,11 +76,6 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
-
-{#if !mobileDetect.isMobile}
-{#if view === 'new-game'}
-  <MobileBackButton onback={backToMenu} />
-{/if}
 
 <main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
   {#if isStartingGame}
@@ -191,6 +177,3 @@
     </div>
   {/if}
 </main>
-{:else}
-<MobileHome />
-{/if}

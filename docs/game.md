@@ -247,8 +247,6 @@ discovery-driven (see `docs/blueprint-generation-flows.md`).
   `narrative.starting_knowledge`; clues are the player's discovered set. The
   notebook replaces the old wall-of-text opening — the game start now points the
   investigator here instead.
-- On mobile (no command line), the notebook is opened from the drawer's
-  **Notebook** action.
 
 ---
 
@@ -323,9 +321,8 @@ A persistent, celebrated record of every clue the investigator discovers.
   at all (see `docs/ai-runtime.md`).
 - A "new clue discovered" celebration fires when a search/ask turn surfaces a
   clue.
-- Implemented on desktop (`Notebook.svelte`, `ClueDiscoveredToast.svelte`, a
-  count/toggle in `StatusBar`) and mobile (mounted in `MobileSession`, opened from
-  `MobileDrawer`). See `docs/component-inventory.md`.
+- Implemented via `Notebook.svelte`, `ClueDiscoveredToast.svelte`, and a
+  count/toggle in `StatusBar`. See `docs/component-inventory.md`.
 
 ## UX / UI Concept
 

@@ -14,7 +14,8 @@
       "lighting": "backlit — the magical glow comes from behind the paper layers and shines through translucent cut shapes, rimming edges and throwing soft layer shadows forward",
       "texture": "textured art paper with faintly visible fibres and clean die-cut edges; no painterly blending anywhere",
       "portrait_background": "Flat horizontal bands of cut paper stacked one behind the other — midnight blue at the top through deep indigo to a lighter slate-blue at the bottom — each band a crisp die-cut edge with a thin soft drop shadow onto the band below, no gradients, no blending, and no objects or scenery of any kind."
-    }
+    },
+    "image_id": "the-missing-heartwood.blueprint.png"
   },
   "narrative": {
     "premise": "Deep in Arbrum's sparkly forest, the magic Heartwood Trunk is gone! All the forest's sparkle came from it. Someone took it late at night, at about 2 o'clock. Now the glow is fading from the leaves and the river. Everyone is worried. Can you find the clues and work out who took it?",
@@ -99,7 +100,8 @@
             "hint": "Atmospheric only — cheer flags, half hung, ripple in the breeze. No clue here, just colour and cheer.",
             "clues": []
           }
-        ]
+        ],
+        "location_image_id": "the-missing-heartwood.location-glimmerbank-landing.png"
       },
       {
         "id": "heartwood_hollow",
@@ -151,7 +153,8 @@
               }
             ]
           }
-        ]
+        ],
+        "location_image_id": "the-missing-heartwood.location-heartwood-hollow.png"
       },
       {
         "id": "eva_leaf_lab",
@@ -193,7 +196,8 @@
             "hint": "The stolen trunk is hidden here, humming softly — but keep the curtain shut. It is revealed only when the player accuses Eva, never found as an ordinary clue.",
             "clues": []
           }
-        ]
+        ],
+        "location_image_id": "the-missing-heartwood.location-eva-leaf-lab.png"
       },
       {
         "id": "cheer_stage_grove",
@@ -223,7 +227,8 @@
             "hint": "Atmospheric only — a tall ladder leans against the banners. No clue here.",
             "clues": []
           }
-        ]
+        ],
+        "location_image_id": "the-missing-heartwood.location-cheer-stage-grove.png"
       }
     ],
     "characters": [
@@ -280,7 +285,8 @@
               "kind": "always"
             }
           }
-        ]
+        ],
+        "portrait_image_id": "the-missing-heartwood.character-sophie.png"
       },
       {
         "id": "eva",
@@ -356,7 +362,8 @@
               "condition": "the investigator brings up the missing Heartwood trunk"
             }
           }
-        ]
+        ],
+        "portrait_image_id": "the-missing-heartwood.character-eva.png"
       },
       {
         "id": "sam",
@@ -419,7 +426,8 @@
               "condition": "the investigator mentions Sophie"
             }
           }
-        ]
+        ],
+        "portrait_image_id": "the-missing-heartwood.character-sam.png"
       },
       {
         "id": "toby",
@@ -475,7 +483,8 @@
             "target_character_id": "alexandra"
           }
         ],
-        "tells": []
+        "tells": [],
+        "portrait_image_id": "the-missing-heartwood.character-toby.png"
       },
       {
         "id": "alexandra",
@@ -539,7 +548,8 @@
               "kind": "always"
             }
           }
-        ]
+        ],
+        "portrait_image_id": "the-missing-heartwood.character-alexandra.png"
       }
     ]
   },

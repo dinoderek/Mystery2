@@ -78,14 +78,33 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **State Dependencies**:
   - Reads the active in-memory session from the game store.
   - Maintains narration/event history, mode, and remaining time.
-- **Sub-views**: Contains the Narration Window, Status Bar, and Input Area.
-- **Overlays**: `HelpModal`, `SceneZoomModal`, `NotebookPanel` (the case
-  notebook — toggled by `Tab`, the `notebook` / `n` command, or the Status Bar's
-  discovered-clue count, via the `showNotebook` / `notebookSection` store
-  fields), and `ClueDiscoveredToast` (the clue-discovery celebration).
-  `openNotebook()` closes the other two overlays: all three sit at `z-50` with
-  no stacking coordination, so this is what keeps the notebook on top.
+- **Layout**: Full-screen two columns. The left third is a vertical stack —
+  `Header`, `PageNavigator`, the scrollable `PageNarration`, `StatusBar`,
+  `InputBox`. The right two thirds are `ScenePane`, a fixed image that does not
+  scroll with the text.
+- **Overlays**: `HelpModal`, `NotebookPanel` (the case notebook — toggled by
+  `Tab`, the `notebook` / `n` command, or the Status Bar's discovered-clue
+  count, via the `showNotebook` / `notebookSection` store fields), and
+  `ClueDiscoveredToast` (the clue-discovery celebration). `openNotebook()`
+  closes help: both sit at `z-50` with no stacking coordination, so this is what
+  keeps the notebook on top.
+- **Pages**: The transcript is split into pages, one per interaction, by
+  `src/lib/domain/session-pages.ts`. A new page opens on `start`, `move`,
+  `talk`, `end_talk`, and `accuse_start`; everything else joins the page already
+  open, so a whole conversation is one page and all searching at a location is
+  one page. The echo of the command that caused a page moves onto that page. A
+  page with no image of its own keeps showing the previous page's.
+  See `docs/game.md` for the player-facing description.
 - **Special behavior**:
+  - The opening page pauses: `[ PRESS ANY KEY TO BEGIN THE INVESTIGATION ]`, and
+    the keypress calls `game-enter` to narrate arrival at the starting location
+    as page 2. The prompt is derived from history (only the opening page
+    exists), so a session abandoned there resumes back into it.
+  - `‹` / `›`, `PageUp` / `PageDown` (or `Alt+←` / `Alt+→`), and a `[ latest ]`
+    control move between pages. Plain arrows are deliberately left alone so they
+    still move the caret in the command line. Command input stays live on old
+    pages; submitting snaps back to the newest. While the notebook is open it
+    owns every key, so nothing pages behind the overlay.
   - During backend waits, narration shows a terminal spinner.
   - The notebook is a full-screen overlay with four sections behind a tab strip
     (`STORY · PLACES · PEOPLE · CLUES`): `←` / `→` change section, `↑` / `↓`
@@ -96,8 +115,8 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - `locations` / `where can i go` and `characters` / `who is here` deep-link
     into the Places and People sections instead of printing inline lists, so
     they no longer add anything to the narration transcript.
-  - Optional side image panel renders location/character imagery from move/talk payload image IDs.
-  - Side panel falls back to placeholder text if image link issuance fails or asset is missing.
+  - `ScenePane` falls back to a labelled placeholder if the image link fails,
+    the asset is missing, or the image itself does not load.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt. `Tab` is the one carve-out from "press any key": it opens the notebook so a finished case can be reviewed, and while the notebook is open no key leaves the session. Any other key returns to `/`.
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
   - Includes a logout action that clears browser auth session.

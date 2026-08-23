@@ -158,14 +158,14 @@ describe('session catalog helpers', () => {
       {
         sequence: 1,
         event_type: 'move',
-        text: 'You enter the kitchen.',
-        speaker: NARRATOR_SPEAKER,
-        image_id: null,
+        narration_parts: [
+          { text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER, image_id: null },
+        ],
       },
     ]);
   });
 
-  it('flattens multi-part resumed transcripts without changing order', async () => {
+  it('preserves multi-part resumed transcripts without changing order', async () => {
     const store = new GameSessionStore();
     const aliceSpeaker = characterSpeaker('Alice');
     const fetchMock = vi.fn().mockResolvedValue({
@@ -214,23 +214,25 @@ describe('session catalog helpers', () => {
       {
         sequence: 1,
         event_type: 'ask',
-        text: 'Alice says she heard the clock strike nine.',
-        speaker: aliceSpeaker,
-        image_id: 'portrait-alice',
-      },
-      {
-        sequence: 1,
-        event_type: 'ask',
-        text: 'The room falls silent as time runs out.',
-        speaker: NARRATOR_SPEAKER,
-        image_id: null,
+        narration_parts: [
+          {
+            text: 'Alice says she heard the clock strike nine.',
+            speaker: aliceSpeaker,
+            image_id: 'portrait-alice',
+          },
+          {
+            text: 'The room falls silent as time runs out.',
+            speaker: NARRATOR_SPEAKER,
+            image_id: null,
+          },
+        ],
       },
       {
         sequence: 2,
         event_type: 'forced_endgame',
-        text: 'You must make your accusation now.',
-        speaker: NARRATOR_SPEAKER,
-        image_id: null,
+        narration_parts: [
+          { text: 'You must make your accusation now.', speaker: NARRATOR_SPEAKER, image_id: null },
+        ],
       },
     ]);
   });

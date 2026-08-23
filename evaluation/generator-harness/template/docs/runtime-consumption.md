@@ -3,7 +3,7 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
-> - `docs/ai-runtime.md` — `8183a198a5bd1e1ebdab694df2e870aec509880e`
+> - `docs/ai-runtime.md` — `b9820273748897807b0b6435643a5960e9818042`
 > - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect blueprint authoring, regenerate this file.
@@ -17,6 +17,7 @@ except the accusation judge.
 | Role | What it does | Blueprint slice it receives |
 |---|---|---|
 | `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is not used for narration — it is surfaced verbatim (not generated) as the player's in-game notebook (case facts, people, places). |
+| `game-enter` | arrival at the **starting** location, once, after the player confirms the opening | same slice as `game-move` for `world.starting_location_id`, with no prior history. Your starting location's `description`, sub-locations, and characters are therefore read out at the very start of play, not first seen on a return visit. |
 | `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus **public-only** summaries of characters currently at that location (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`). Plus prior history at that location. |
 | `game-search` (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
 | `game-search` (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |

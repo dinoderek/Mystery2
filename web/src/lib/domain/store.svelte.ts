@@ -3,14 +3,12 @@ import type {
   Blueprint,
   DiscoveredClue,
   GameState,
-  HistoryEntry,
   NarrationEvent,
   NarrationPart,
   SessionCatalog,
   SessionOutcome,
   SessionSummary,
   Speaker,
-  StoryImageState,
 } from '../types/game';
 import {
   INVESTIGATOR_SPEAKER,
@@ -30,12 +28,19 @@ import {
   sleep,
   type InvokeFailure,
 } from './store.retry';
+import { buildSessionPages, type SessionPage } from './session-pages';
 import { themeStore } from './theme-store.svelte';
 import { DEFAULT_NOTEBOOK_SECTION, type NotebookSection } from './notebook';
 
 interface BackendInvocation {
   endpoint: string;
   body: Record<string, unknown>;
+  /**
+   * The event type the backend persists for this action. The client stamps the
+   * same value onto the optimistically appended event so a live session and a
+   * resumed one produce identical pages.
+   */
+  eventType: string;
 }
 
 export type ThemeName = 'matrix' | 'amber';
@@ -208,9 +213,7 @@ export class GameSessionStore {
   state = $state<GameState | null>(null);
   error = $state<string | null>(null);
   blueprints = $state<Blueprint[]>([]);
-  activeStoryImage = $state<StoryImageState | null>(null);
   showHelp = $state(false);
-  showZoomModal = $state(false);
   showNotebook = $state(false);
   notebookSection = $state<NotebookSection>(DEFAULT_NOTEBOOK_SECTION);
   isRetrying = $state(false);
@@ -225,6 +228,11 @@ export class GameSessionStore {
   viewerMode = $state<SessionViewerMode>('interactive');
   // Clues discovered on the most recent turn — drives the discovery celebration.
   recentlyDiscovered = $state<DiscoveredClue[]>([]);
+  /**
+   * Which page the player is reading. `null` means "follow the newest page", so
+   * a fresh turn stays on screen without anyone having to advance the index.
+   */
+  activePageIndex = $state<number | null>(null);
 
   dismissRecentlyDiscovered() {
     this.recentlyDiscovered = [];
@@ -235,15 +243,14 @@ export class GameSessionStore {
    * behaves like a bookmark. Entry points that mean a specific section — the
    * `locations` / `characters` commands, the clue toast — pass one explicitly.
    *
-   * The three overlays all sit at z-50 with no stacking coordination, so
-   * closing the other two is what keeps the notebook reliably on top.
+   * Both overlays sit at z-50 with no stacking coordination, so closing help is
+   * what keeps the notebook reliably on top.
    */
   openNotebook(section: NotebookSection | null = null) {
     if (section) {
       this.notebookSection = section;
     }
     this.showHelp = false;
-    this.showZoomModal = false;
     this.showNotebook = true;
   }
 
@@ -257,6 +264,69 @@ export class GameSessionStore {
       return;
     }
     this.openNotebook(section);
+  }
+
+  get pages(): SessionPage[] {
+    if (!this.state) {
+      return [];
+    }
+    const blueprint = this.blueprints.find((candidate) => candidate.id === this.blueprint_id);
+    return buildSessionPages(this.state.history, { mysteryTitle: blueprint?.title });
+  }
+
+  get pageCount(): number {
+    return this.pages.length;
+  }
+
+  get activePage(): SessionPage | null {
+    const pages = this.pages;
+    if (pages.length === 0) {
+      return null;
+    }
+    const index = this.activePageIndex ?? pages.length - 1;
+    return pages[Math.min(Math.max(index, 0), pages.length - 1)] ?? null;
+  }
+
+  get isOnLivePage(): boolean {
+    return this.activePageIndex === null || this.activePageIndex >= this.pages.length - 1;
+  }
+
+  /**
+   * True while the opening page is the only page: the player has read the
+   * premise but has not yet stepped into the starting location. Derived from
+   * history rather than a flag, so a session abandoned at the prompt resumes
+   * back into it.
+   */
+  get awaitingOpeningConfirmation(): boolean {
+    const pages = this.pages;
+    return (
+      this.viewerMode === 'interactive' &&
+      pages.length === 1 &&
+      pages[0].kind === 'opening'
+    );
+  }
+
+  goToPage(index: number) {
+    const pages = this.pages;
+    if (pages.length === 0) {
+      return;
+    }
+    const clamped = Math.min(Math.max(index, 0), pages.length - 1);
+    this.activePageIndex = clamped === pages.length - 1 ? null : clamped;
+  }
+
+  goToLivePage() {
+    this.activePageIndex = null;
+  }
+
+  prevPage() {
+    const current = this.activePageIndex ?? this.pages.length - 1;
+    this.goToPage(current - 1);
+  }
+
+  nextPage() {
+    const current = this.activePageIndex ?? this.pages.length - 1;
+    this.goToPage(current + 1);
   }
 
   initializeTheme() {
@@ -358,7 +428,6 @@ export class GameSessionStore {
       this.showHelp = false;
       this.showNotebook = false;
       this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
-      this.refreshStoryImageFromHistory();
       this.status = 'active';
     }
   }
@@ -410,7 +479,6 @@ export class GameSessionStore {
       this.showHelp = false;
       this.showNotebook = false;
       this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
-      this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
         this.viewerMode = 'read_only_completed';
@@ -446,6 +514,10 @@ export class GameSessionStore {
       return;
     }
 
+    // Acting from an old page returns the player to the live one, so the
+    // result of what they just typed is what they see.
+    this.goToLivePage();
+
     const parseContext = this.getParseContext();
     const parsed = parseCommand(input, this.state.mode, parseContext);
 
@@ -471,23 +543,14 @@ export class GameSessionStore {
       return;
     }
 
-    if (parsed.type === 'zoom') {
-      if (this.activeStoryImage) {
-        this.showZoomModal = true;
-      } else {
-        this.appendSystemFeedback('No image to zoom into.');
-      }
-      return;
-    }
-
-    // Above appendHistory on purpose: opening the notebook costs no turn and
+    // Above the input echo on purpose: opening the notebook costs no turn and
     // leaves no trace in the transcript.
     if (parsed.type === 'notebook') {
       this.openNotebook(parsed.section);
       return;
     }
 
-    this.appendHistory('input', INVESTIGATOR_SPEAKER, input);
+    this.appendLine('input', INVESTIGATOR_SPEAKER, input);
 
     switch (parsed.type) {
       case 'help':
@@ -561,18 +624,6 @@ export class GameSessionStore {
     return normalized.filter((entry): entry is NarrationEvent => entry !== null);
   }
 
-  private flattenNarrationEvents(events: NarrationEvent[]): HistoryEntry[] {
-    return events.flatMap((event) =>
-      event.narration_parts.map((part) => ({
-        sequence: event.sequence,
-        event_type: event.event_type,
-        text: part.text,
-        speaker: part.speaker,
-        image_id: part.image_id ?? null,
-      })),
-    );
-  }
-
   private mergeDiscoveredClues(raw: unknown) {
     if (!this.state) {
       return;
@@ -632,7 +683,7 @@ export class GameSessionStore {
       mode: readMode(source.mode, 'explore'),
       current_talk_character:
         typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
-      history: this.flattenNarrationEvents(narrationEvents),
+      history: narrationEvents,
     };
   }
 
@@ -687,7 +738,16 @@ export class GameSessionStore {
     };
   }
 
-  private appendHistory(eventType: string, speaker: Speaker, text: string, imageId: string | null = null) {
+  /**
+   * Append a client-side event to the history. Client events carry the same
+   * shape as backend narration events so the page builder can treat them
+   * identically -- they simply never open a new page.
+   */
+  private appendEvent(
+    eventType: string,
+    parts: NarrationPart[],
+    payload?: Record<string, unknown>,
+  ) {
     if (!this.state) {
       return;
     }
@@ -703,24 +763,60 @@ export class GameSessionStore {
     this.state.history.push({
       sequence: currentSequence + 1,
       event_type: eventType,
-      text,
-      speaker,
-      image_id: imageId,
+      narration_parts: parts,
+      payload,
     });
   }
 
-  private appendNarrationParts(eventType: string, parts: NarrationPart[]) {
-    for (const part of parts) {
-      this.appendHistory(eventType, part.speaker, part.text, part.image_id ?? null);
+  private appendLine(
+    eventType: string,
+    speaker: Speaker,
+    text: string,
+    payload?: Record<string, unknown>,
+  ) {
+    this.appendEvent(eventType, [{ text, speaker, image_id: null }], payload);
+  }
+
+  /**
+   * The naming half of a backend event's payload, rebuilt client-side. The
+   * server stores it on the persisted event, so without this a page would be
+   * labelled "Location" while playing and "Gull Cry Dock" after a resume.
+   */
+  private buildEventPayload(eventType: string): Record<string, unknown> | undefined {
+    if (!this.state) {
+      return undefined;
     }
+
+    if (eventType === 'talk' || eventType === 'ask') {
+      // `current_talk_character` echoes however the player typed the name, so
+      // resolve it against the cast to match what the server persists.
+      const active = this.state.current_talk_character;
+      if (!active) {
+        return undefined;
+      }
+      const match = this.state.characters.find(
+        (character) =>
+          character.id === active ||
+          character.first_name.toLowerCase() === active.toLowerCase(),
+      );
+      return { character_name: match?.first_name ?? active };
+    }
+
+    if (eventType === 'move' || eventType === 'end_talk') {
+      const current = this.state.location;
+      const name = this.state.locations.find((l) => l.id === current)?.name ?? current;
+      return name ? { location_name: name } : undefined;
+    }
+
+    return undefined;
   }
 
   private appendSystemFeedback(text: string) {
-    this.appendHistory('system_response', SYSTEM_SPEAKER, text);
+    this.appendLine('system_response', SYSTEM_SPEAKER, text);
   }
 
   private appendError(text: string) {
-    this.appendHistory('error', SYSTEM_SPEAKER, text);
+    this.appendLine('error', SYSTEM_SPEAKER, text);
   }
 
   private formatSuggestions(suggestions: string[]): string {
@@ -765,7 +861,6 @@ export class GameSessionStore {
     this.status = 'idle';
     this.error = null;
     this.showHelp = false;
-    this.showZoomModal = false;
     this.showNotebook = false;
     this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
     this.isRetrying = false;
@@ -774,7 +869,7 @@ export class GameSessionStore {
     this.accusationOutcome = null;
     this.awaitingReturnToList = false;
     this.viewerMode = 'interactive';
-    this.activeStoryImage = null;
+    this.activePageIndex = null;
   }
 
   private getBackendInvocation(command: ActionCommand): BackendInvocation {
@@ -787,42 +882,51 @@ export class GameSessionStore {
         return {
           endpoint: 'game-move',
           body: { game_id: this.game_id, destination: command.destination },
+          eventType: 'move',
         };
       case 'search':
         return {
           endpoint: 'game-search',
           body: { game_id: this.game_id, search_query: command.query },
+          eventType: 'search',
         };
       case 'talk':
         return {
           endpoint: 'game-talk',
           body: { game_id: this.game_id, character_id: command.character_id },
+          eventType: 'talk',
         };
       case 'ask':
         if (this.state?.mode === 'accuse') {
           return {
             endpoint: 'game-accuse',
             body: { game_id: this.game_id, player_reasoning: command.question },
+            eventType: 'accuse_round',
           };
         }
         return {
           endpoint: 'game-ask',
           body: { game_id: this.game_id, player_input: command.question },
+          eventType: 'ask',
         };
       case 'end_talk':
         return {
           endpoint: 'game-end-talk',
           body: { game_id: this.game_id },
+          eventType: 'end_talk',
         };
       case 'accuse':
+        // Both forms of `accuse` open the accusation, so both open its page.
         return command.reasoning
           ? {
           endpoint: 'game-accuse',
           body: { game_id: this.game_id, player_reasoning: command.reasoning },
+          eventType: 'accuse_start',
         }
           : {
           endpoint: 'game-accuse',
           body: { game_id: this.game_id },
+          eventType: 'accuse_start',
         };
       default:
         throw new Error('Unsupported command.');
@@ -918,86 +1022,32 @@ export class GameSessionStore {
     }
   }
 
-  getActiveSceneText(): HistoryEntry[] {
-    if (!this.state || !this.activeStoryImage) {
-      return [];
-    }
-
-    const targetImageId = this.activeStoryImage.image_id;
-    const history = this.state.history;
-
-    // Find the last entry that introduced this image
-    let imageEntryIndex = -1;
-    for (let i = history.length - 1; i >= 0; i--) {
-      if (history[i].image_id === targetImageId) {
-        imageEntryIndex = i;
-        break;
-      }
-    }
-
-    if (imageEntryIndex < 0) {
-      return [];
-    }
-
-    // The group is: all consecutive entries from imageEntryIndex that share the same sequence,
-    // plus subsequent entries with null image_id and the same sequence
-    const anchorSequence = history[imageEntryIndex].sequence;
-    const entries: HistoryEntry[] = [];
-
-    for (let i = imageEntryIndex; i < history.length; i++) {
-      const entry = history[i];
-      if (entry.sequence === anchorSequence) {
-        entries.push(entry);
-      } else {
-        break;
-      }
-    }
-
-    return entries;
-  }
-
-  private inferStoryImageTitle(entry: HistoryEntry): string {
-    if (entry.event_type === 'start') {
-      const blueprint = this.blueprints.find((candidate) => candidate.id === this.blueprint_id);
-      return blueprint ? `${blueprint.title} cover` : 'Mystery cover';
-    }
-
-    if (entry.event_type === 'talk' || entry.event_type === 'ask') {
-      const speakerLabel = entry.speaker.label || this.state?.current_talk_character || 'Character';
-      return `${speakerLabel} portrait`;
-    }
-
-    const location = this.state?.location || 'Location';
-    return `${location} scene`;
-  }
-
-  private refreshStoryImageFromHistory() {
-    if (!this.blueprint_id || !this.state) {
-      this.activeStoryImage = null;
-      return;
-    }
-
-    const latestWithImage = [...this.state.history].reverse().find((entry) => entry.image_id);
-    if (!latestWithImage?.image_id) {
-      this.activeStoryImage = null;
-      return;
-    }
-
-    const kind = latestWithImage.event_type === 'start'
-      ? 'blueprint' as const
-      : (latestWithImage.event_type === 'talk' || latestWithImage.event_type === 'ask')
-        ? 'character' as const
-        : 'location' as const;
-
-    this.activeStoryImage = {
-      kind,
-      title: this.inferStoryImageTitle(latestWithImage),
-      image_id: latestWithImage.image_id,
-    };
-  }
-
   private async submitValidCommand(command: ActionCommand, rawInput: string) {
-    const invocation = this.getBackendInvocation(command);
+    await this.runInvocation(this.getBackendInvocation(command), rawInput);
+  }
+
+  /**
+   * Step into the starting location. The opening event only sets the scene; the
+   * arrival narration is generated on demand so the player gets a beat to read
+   * the premise first. `game-enter` is idempotent, so a second call while the
+   * first is in flight cannot produce a duplicate page.
+   */
+  async enterStartingLocation() {
+    if (!this.game_id || this.status === 'loading' || !this.awaitingOpeningConfirmation) {
+      return;
+    }
+
+    await this.runInvocation(
+      {
+        endpoint: 'game-enter',
+        body: { game_id: this.game_id },
+        eventType: 'move',
+      },
+      null,
+    );
+  }
+
+  private async runInvocation(invocation: BackendInvocation, rawInput: string | null) {
     const maxAttempts = 3;
 
     this.status = 'loading';
@@ -1020,14 +1070,21 @@ export class GameSessionStore {
             const payload = data as Record<string, unknown>;
             const narrationParts = this.readNarrationPartsFromPayload(payload);
 
-            if (narrationParts.length > 0) {
-              this.appendNarrationParts(invocation.endpoint, narrationParts);
-            } else {
-              this.appendHistory(invocation.endpoint, NARRATOR_SPEAKER, 'Action completed.');
-            }
-
+            // State first: the event's own payload names the place or person
+            // this turn moved to, and that is only known once applied.
             this.applyBackendState(payload, invocation.endpoint);
-            this.refreshStoryImageFromHistory();
+            const eventPayload = this.buildEventPayload(invocation.eventType);
+
+            if (narrationParts.length > 0) {
+              this.appendEvent(invocation.eventType, narrationParts, eventPayload);
+            } else {
+              this.appendLine(
+                invocation.eventType,
+                NARRATOR_SPEAKER,
+                'Action completed.',
+                eventPayload,
+              );
+            }
           }
 
           this.status = 'active';

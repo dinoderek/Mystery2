@@ -38,8 +38,7 @@ function createStore() {
       {
         sequence: 1,
         event_type: 'start',
-        text: 'Case begins.',
-        speaker: NARRATOR_SPEAKER,
+        narration_parts: [{ text: 'Case begins.', speaker: NARRATOR_SPEAKER }],
       },
     ],
   };
@@ -69,15 +68,17 @@ describe('store speaker behavior', () => {
 
     await store.submitInput('search');
 
-    const investigatorLine = store.state?.history.find((line) => line.event_type === 'input');
-    expect(investigatorLine?.speaker).toMatchObject({
+    const investigatorEvent = store.state?.history.find((event) => event.event_type === 'input');
+    expect(investigatorEvent?.narration_parts[0].speaker).toMatchObject({
       kind: 'investigator',
       key: 'you',
       label: 'You',
     });
 
-    const backendLine = store.state?.history.find((line) => line.event_type === 'game-search');
-    expect(backendLine?.speaker).toMatchObject({
+    // The client stamps the backend's own event type, not the endpoint name, so
+    // a live turn and a resumed one group into the same page.
+    const backendEvent = store.state?.history.find((event) => event.event_type === 'search');
+    expect(backendEvent?.narration_parts[0].speaker).toMatchObject({
       kind: 'narrator',
       key: 'narrator',
       label: 'Narrator',
@@ -90,7 +91,10 @@ describe('store speaker behavior', () => {
     await store.submitInput('help');
     await store.submitInput('go nowhere');
 
-    const systemLines = store.state?.history.filter((line) => line.speaker.kind === 'system') ?? [];
+    const systemLines =
+      store.state?.history.flatMap((event) => event.narration_parts).filter(
+        (line) => line.speaker.kind === 'system',
+      ) ?? [];
     expect(systemLines.length).toBeGreaterThanOrEqual(1);
 
     // Only local parsing branches ran; no backend mutation path for these lines.
@@ -163,15 +167,13 @@ describe('store speaker behavior', () => {
     expect(store.notebookSection).toBe('people');
   });
 
-  it('closes the other overlays when the notebook opens', () => {
+  it('closes help when the notebook opens', () => {
     const store = createStore();
     store.showHelp = true;
-    store.showZoomModal = true;
 
     store.openNotebook('clues');
 
     expect(store.showHelp).toBe(false);
-    expect(store.showZoomModal).toBe(false);
     expect(store.notebookSection).toBe('clues');
   });
 

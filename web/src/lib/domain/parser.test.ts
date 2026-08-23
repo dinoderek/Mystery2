@@ -271,17 +271,12 @@ describe('parseCommand - theme commands', () => {
   });
 });
 
-describe('parseCommand - zoom command', () => {
-  it('parses "zoom" as zoom in all modes', () => {
-    expect(parseCommand('zoom', 'explore', context)).toEqual({ type: 'zoom' });
-    expect(parseCommand('zoom', 'talk', context)).toEqual({ type: 'zoom' });
-    expect(parseCommand('zoom', 'accuse', context)).toEqual({ type: 'zoom' });
-    expect(parseCommand('zoom', 'ended', context)).toEqual({ type: 'zoom' });
-  });
-
-  it('normalizes casing for zoom command', () => {
-    expect(parseCommand('Zoom', 'explore', context)).toEqual({ type: 'zoom' });
-    expect(parseCommand('ZOOM', 'talk', context)).toEqual({ type: 'zoom' });
+describe('parseCommand - retired zoom command', () => {
+  // The scene image is permanently on screen now, so there is nothing to zoom.
+  // Only explore mode is asserted: in talk mode any free text is a question.
+  it('no longer recognises "zoom" in explore mode', () => {
+    expect(parseCommand('zoom', 'explore', context).type).toBe('unrecognized');
+    expect(parseCommand('ZOOM', 'explore', context).type).toBe('unrecognized');
   });
 });
 

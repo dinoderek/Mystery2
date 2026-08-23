@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -45,6 +46,7 @@ async function bootstrapSession(page: Page) {
   await expect(page.getByText('B1')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page).toHaveURL(/.*\/session/);
+  await confirmOpening(page);
 }
 
 test.describe('Command Input', () => {
@@ -420,13 +422,19 @@ test.describe('Command Input', () => {
     await input.fill('What did you see?');
     await input.press('Enter');
 
-    const characterRows = page.locator('[data-speaker-kind="character"]');
-    await expect(characterRows).toHaveCount(2);
-    const classList = await characterRows.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('class') ?? ''),
-    );
-    expect(new Set(classList).size).toBe(1);
-    expect(classList[0]).toContain('speaker-character-generic');
+    // Each conversation is its own page, so the two characters are gathered by
+    // paging back to the first one rather than reading a single stream.
+    const characterRow = page.locator('[data-speaker-kind="character"]');
+    await expect(characterRow).toHaveCount(1);
+    const rosieClass = await characterRow.getAttribute('class');
+
+    await page.getByTestId('page-prev').click();
+    await page.getByTestId('page-prev').click();
+    await expect(characterRow).toHaveCount(1);
+    const mayorClass = await characterRow.getAttribute('class');
+
+    expect(rosieClass).toBe(mayorClass);
+    expect(rosieClass).toContain('speaker-character-generic');
   });
 
   test('routes accuse-mode free text to game-accuse reasoning (not game-ask)', async ({ page }) => {

@@ -44,6 +44,37 @@ forms:
   separately maintained file and is *not* byte-identical; see
   `supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`.
 
+### Registering a new function
+
+`supabase/config.toml` is **generated per worktree and gitignored**. Add the
+`[functions.<name>] verify_jwt = false` block to `supabase/config.toml.template`
+instead, then run `npm run supabase:patch` (or any `supabase:*` script) to
+regenerate. Editing the generated file directly is silently undone on the next
+restart. Also add the function to the endpoint list in
+`tests/api/integration/cors-preflight.test.ts`; `scripts/deploy.mjs` discovers
+functions from the directory and needs no change.
+
+### Turn-free endpoints
+
+Not every action spends a turn. `game-end-talk` and `game-enter` both leave
+`time_remaining` and `current_location_id` untouched and only append a narration
+event. `game-enter` additionally guards on the session's event history — it is
+valid exactly once, when the only event is `start` — so a repeated call cannot
+duplicate the arrival.
+
+### Event payloads name the scene
+
+The client groups the transcript into pages and labels each one from the
+event payload, so a page-opening event must carry the name and image of where
+the player now is:
+
+- `move` (`game-move`, `game-enter`) — `location_name`, `location_image_id`
+- `talk` / `ask` — `character_name`, `character_portrait_image_id`
+- `end_talk` — `location_name` and `location_image_id` of the room the player
+  has returned to, alongside the `character_name` they were speaking to.
+  Without the location fields the page would be labelled and illustrated with
+  the character they just walked away from.
+
 ## 3. Postgres & RLS
 
 - All data access from the UI must happen via the Supabase Javascript Client utilizing Row Level Security (RLS).

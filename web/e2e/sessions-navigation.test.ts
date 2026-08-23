@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -76,6 +77,7 @@ test.describe('Sessions navigation', () => {
     await expect(page.getByText('The Missing Honey Cakes')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/\/session$/);
+    await confirmOpening(page);
 
     const input = page.locator('input[type="text"]');
     await input.fill('quit');
@@ -157,6 +159,7 @@ test.describe('Sessions navigation', () => {
     await expect(page.getByText('The Locked Library')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/\/session$/);
+    await confirmOpening(page);
 
     const input = page.locator('input[type="text"]');
     await input.fill('accuse Rosie did it because of the timeline.');
@@ -234,6 +237,13 @@ test.describe('Sessions navigation', () => {
           state: baseGameState,
           narration_events: [
             createNarrationEvent({
+              sequence: 1,
+              event_type: 'start',
+              narration_parts: [{ text: 'The cakes are missing.', speaker: narratorSpeaker }],
+            }),
+            createNarrationEvent({
+              sequence: 2,
+              event_type: 'move',
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
             }),
           ],

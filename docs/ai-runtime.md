@@ -343,6 +343,23 @@ For `game-start`:
    `premise`, and a `summary` on each location/character) so the in-game
    notebook can render it. See [game.md](game.md) (Notebook).
 
+For `game-enter` (arrival at the starting location, once per session):
+
+1. Reject unless the session's only event is `start` — the endpoint is valid
+   exactly once, right after `game-start`, and the guard is what stops a double
+   confirmation from narrating the arrival twice.
+2. Generate `ambience` narration for `current_location_id` with
+   `has_visited_before: false` and no destination history — nothing has happened
+   yet. This is the second `ambience` caller alongside `game-move`.
+3. Persist it as a normal `move` event (payload `role: "enter"`) carrying the
+   location image, but write no session state: entering costs no turn and moves
+   the player nowhere.
+
+`role: "enter"` also suppresses the synthetic `move to <location>` player line
+that `readNarrationEvent` reconstructs for real moves — the player confirmed a
+prompt, they did not type a command, and a replayed transcript must not invent
+one.
+
 For `game-move`:
 
 1. Load destination blueprint data and destination-relative history.

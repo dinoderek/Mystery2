@@ -63,6 +63,37 @@ test.describe('US2/US3 - Narration Rendering', () => {
     });
   });
 
+  test('pages with the keyboard, leaving plain arrows to the command line', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page.getByText('B1')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page).toHaveURL(/.*\/session/);
+
+    const opening = page.locator('text="Game started. The cake is gone."');
+    const arrival = page.locator('text="You enter the kitchen."').first();
+    await expect(arrival).toBeVisible();
+
+    await page.keyboard.press('PageUp');
+    await expect(opening).toBeVisible();
+    await page.keyboard.press('PageDown');
+    await expect(arrival).toBeVisible();
+
+    // Alt+arrows are the alternate binding.
+    await page.keyboard.press('Alt+ArrowLeft');
+    await expect(opening).toBeVisible();
+    await page.keyboard.press('Alt+ArrowRight');
+    await expect(arrival).toBeVisible();
+
+    // A plain arrow must stay with the caret, not turn the page.
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('ArrowLeft');
+    await expect(arrival).toBeVisible();
+    await expect(input).toHaveValue('search');
+  });
+
   test('renders narration history and auto-scrolls down', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
@@ -71,10 +102,17 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
 
+    // The opening and the arrival are separate pages: the newest one is live.
+    await expect(page.locator('text="You enter the kitchen."').first()).toBeVisible();
+    await expect(page.locator('text="Game started. The cake is gone."')).toBeHidden();
+
+    // Paging back reaches the opening, and forward returns to the live page.
+    await page.getByTestId('page-prev').click();
     await expect(page.locator('text="Game started. The cake is gone."')).toBeVisible();
+    await page.getByTestId('page-next').click();
     await expect(page.locator('text="You enter the kitchen."').first()).toBeVisible();
 
-    const scrollArea = page.locator('.overflow-y-auto');
+    const scrollArea = page.getByTestId('page-narration');
     await expect(scrollArea).toBeAttached();
 
     await page.locator('input').fill('move to garden');
@@ -116,17 +154,13 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
   });
 
-  test('auto-scrolls to bottom after image loads', async ({ page }) => {
-    // Serve an SVG with explicit dimensions so it takes up space in the layout,
-    // simulating a real scene image that shifts content when it loads.
+  test('shows the active page image in the scene pane and swaps it when paging', async ({ page }) => {
     const testImage = Buffer.from(
       '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">' +
       '<rect fill="#333" width="400" height="300"/></svg>',
     );
 
-    // Delay the signed-URL response so text renders before the image.
     await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      await new Promise((r) => setTimeout(r, 300));
       await route.fulfill({
         json: createImageLinkResponse({
           image_id: 'mock-blueprint.location-garden.png',
@@ -136,7 +170,6 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    // Serve the test image for the signed URL
     await page.route('**/storage/v1/object/sign/**', async (route) => {
       await route.fulfill({
         contentType: 'image/svg+xml',
@@ -144,30 +177,10 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    // Pad the narration so the scroll area overflows before the image group
-    const paddingParts = Array.from({ length: 20 }, (_, i) => ({
-      text: `Padding line ${i + 1} to force overflow in the scroll area.`,
-      speaker: narratorSpeaker,
-    }));
-
-    await page.route('**/functions/v1/game-start*', async (route) => {
-      await route.fulfill({
-        json: createGameStartResponse({
-          state: startState,
-          narration_events: [
-            createNarrationEvent({
-              narration_parts: [{ text: 'Game started.', speaker: narratorSpeaker }],
-            }),
-          ],
-        }),
-      });
-    }, { times: 1 });
-
     await page.route('**/functions/v1/game-move*', async (route) => {
       await route.fulfill({
         json: createMoveResponse({
           narration_parts: [
-            ...paddingParts,
             {
               text: 'You move to the garden.',
               speaker: narratorSpeaker,
@@ -189,22 +202,14 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.locator('input').fill('move to garden');
     await page.locator('input').press('Enter');
 
-    // Wait for the image to actually load in the DOM
-    await expect(page.locator('.story-image-asset')).toBeVisible({ timeout: 5000 });
+    // The garden page carries an image, so the pane renders it.
+    const sceneImage = page.getByTestId('scene-pane').locator('.story-image-asset');
+    await expect(sceneImage).toBeVisible({ timeout: 5000 });
 
-    // Give smooth-scroll time to finish after image load
-    await page.waitForTimeout(1000);
-
-    const scrollInfo = await page.locator('.overflow-y-auto').evaluate((node) => ({
-      scrollTop: node.scrollTop,
-      scrollHeight: node.scrollHeight,
-      clientHeight: node.clientHeight,
-    }));
-
-    // The sentinel is at the very bottom — we should be scrolled there
-    expect(scrollInfo.scrollTop + scrollInfo.clientHeight).toBeGreaterThanOrEqual(
-      scrollInfo.scrollHeight - 5,
-    );
+    // Paging back to a page with no image of its own keeps the last one shown
+    // rather than leaving two thirds of the screen empty.
+    await page.getByTestId('page-prev').click();
+    await expect(page.getByTestId('scene-pane')).toBeVisible();
   });
 
   test('keeps narration flow active when side image fails to load', async ({ page }) => {
@@ -243,8 +248,11 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     // Narration text should still render even when the image fails to load
     await expect(page.getByText('You move to the garden.')).toBeVisible();
-    // No image panel should be rendered for the failed image
-    await expect(page.locator('.story-image-panel')).toHaveCount(0);
+    // The scene pane is part of the layout, so it stays and shows its
+    // placeholder rather than collapsing and reflowing the page.
+    await expect(page.getByTestId('scene-pane')).toBeVisible();
+    await expect(page.locator('.story-image-asset')).toHaveCount(0);
+    await expect(page.locator('.story-image-placeholder')).toBeVisible();
   });
 
   test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {

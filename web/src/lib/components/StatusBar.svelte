@@ -30,15 +30,13 @@
       class="text-t-primary hover:text-t-bright transition-colors cursor-pointer"
       onclick={() => gameSessionStore.openNotebook()}
     >
-      <span class="text-t-muted/70 font-bold">NOTEBOOK:</span>
+      <span class="text-t-muted/70 font-bold">CLUES:</span>
       {gameSessionStore.state?.discovered_clues.length ?? 0}
     </button>
     <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
   </div>
 </div>
-<div
-  class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm"
->
+<div class="flex items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm">
   <div class="flex gap-2">
     <span class="text-t-muted/70 font-bold">CHARACTERS:</span>
     <div>
@@ -53,5 +51,4 @@
       {/if}
     </div>
   </div>
-  <span class="text-t-muted/50">Tab: notebook &middot; type 'help' to see commands</span>
 </div>

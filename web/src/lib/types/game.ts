@@ -20,14 +20,6 @@ export interface NarrationEvent {
   created_at?: string;
 }
 
-export interface HistoryEntry {
-  sequence: number;
-  event_type: string;
-  text: string;
-  speaker: Speaker;
-  image_id?: string | null;
-}
-
 export type DiscoveryOrigin =
   | { kind: 'location'; location_id: string; location_name: string }
   | { kind: 'character'; character_id: string; character_name: string };
@@ -61,7 +53,7 @@ export interface GameState {
   location: string;
   mode: 'explore' | 'talk' | 'accuse' | 'ended';
   current_talk_character: string | null;
-  history: HistoryEntry[];
+  history: NarrationEvent[];
 }
 
 export interface Blueprint {
@@ -70,12 +62,6 @@ export interface Blueprint {
   one_liner: string;
   target_age: number;
   blueprint_image_id?: string | null;
-}
-
-export interface StoryImageState {
-  kind: 'blueprint' | 'location' | 'character';
-  title: string;
-  image_id: string;
 }
 
 export type SessionMode = 'explore' | 'talk' | 'accuse' | 'ended';

@@ -30,7 +30,6 @@ export type ParseResult =
   | { type: 'quit' }
   | { type: 'theme-list' }
   | { type: 'theme-set'; themeName: string }
-  | { type: 'zoom' }
   | { type: 'notebook'; section: NotebookSection | null };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
@@ -44,7 +43,6 @@ const QUIT_ALIASES = ['quit', 'exit'] as const;
 const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
 const THEME_LIST_ALIASES = ['themes'] as const;
 const THEME_SET_PREFIX = 'theme' as const;
-const ZOOM_ALIASES = ['zoom'] as const;
 const NOTEBOOK_ALIASES = ['notebook', 'n'] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
@@ -351,10 +349,6 @@ function parseGlobalCommand(text: string): ParseResult | null {
     if (target !== '') {
       return { type: 'theme-set', themeName: target };
     }
-  }
-
-  if (isAliasExact(text, ZOOM_ALIASES)) {
-    return { type: 'zoom' };
   }
 
   if (isAliasExact(text, NOTEBOOK_ALIASES)) {

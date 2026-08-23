@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { enableAuthBypass } from './test-auth';
+import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -40,6 +41,7 @@ async function bootstrapSession(page: Page) {
   await expect(page.getByText('B1')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page).toHaveURL(/.*\/session/);
+  await confirmOpening(page);
 }
 
 test.describe('Case notebook', () => {

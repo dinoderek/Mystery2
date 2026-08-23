@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `ed51f8d9ae129718485ef2819f54dae98f18bc48`
+> Source git blob hash: `07b0198eabc13a46c32f8311a2571fa8ab4c9a0b`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -64,14 +64,17 @@ Authoring rules the schema and the `clue_graph` eval dimension enforce:
 - `metadata.narration_style` (optional) → one sentence of voice/tone direction,
   layered on top of the standard narrator style. It flavors the voice; it cannot
   override the POV or safety rules. Omit to use the standard voice alone.
-- `narrative.premise` → opening narration (the hook)
+- `narrative.premise` → opening narration (the hook), shown on its own before
+  play starts; the player confirms it before entering the first location
 - `narrative.starting_knowledge` → surfaced (not generated) as the player's
   in-game **notebook**: `mystery_summary` plus the per-location and
   per-character `summary` lines are shown verbatim as the case facts, people,
   and places. Write them as clear, player-facing one-liners. The per-character
   `summary` doubles as the character's **public summary** at runtime — it is the
   only authored prose about a character that other characters' scenes can see.
-- `world.starting_location_id` → the player's first scene
+- `world.starting_location_id` → the player's first scene, narrated as a real
+  arrival once the player confirms the opening — so its `description`,
+  sub-locations, and image all get used up front
 - `world.locations[].description` → narrator's room-entry text on every visit
 - `world.locations[].clues[]` → revealed by **bare** search (at most 1 per
   location)

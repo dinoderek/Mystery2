@@ -19,10 +19,16 @@
     gameSessionStore.awaitingReturnToList || gameSessionStore.viewerMode === "read_only_completed",
   );
 
+  // The opening page holds until the player is ready to step into the case.
+  let showBeginPrompt = $derived(
+    !showReadOnlyPrompt && gameSessionStore.awaitingOpeningConfirmation,
+  );
+
   let disabled = $derived(
     gameSessionStore.status === "loading" ||
       gameSessionStore.state?.mode === "ended" ||
-      showReadOnlyPrompt,
+      showReadOnlyPrompt ||
+      showBeginPrompt,
   );
 
   $effect(() => {
@@ -73,6 +79,10 @@
         [ TAB: REVIEW NOTEBOOK &middot; ANY OTHER KEY: BACK TO THE MYSTERY LIST ]
       </p>
     </div>
+  {:else if showBeginPrompt}
+    <p class="text-t-bright animate-pulse text-sm" data-testid="begin-investigation-prompt">
+      [ PRESS ANY KEY TO BEGIN THE INVESTIGATION ]
+    </p>
   {:else}
     {#if gameSessionStore.isRetrying}
       <div class="mb-2 text-xs text-t-warning" data-testid="retry-indicator">

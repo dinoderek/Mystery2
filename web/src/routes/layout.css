@@ -109,7 +109,6 @@
 }
 
 .story-image-asset {
-  aspect-ratio: 4 / 3;
   background-color: color-mix(in srgb, var(--t-bg) 88%, var(--t-muted) 12%);
 }
 
@@ -122,29 +121,6 @@
     color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 8px,
     color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 16px
   );
-}
-
-/* Inline image layout — mobile: stacked on top, md+: float right at 50% */
-.narration-image-group {
-  overflow: hidden; /* contain the float */
-}
-
-.narration-image-float {
-  width: 100%;
-  margin-bottom: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .narration-image-float {
-    float: right;
-    width: 50%;
-    margin-left: 1rem;
-    margin-bottom: 0.5rem;
-  }
-}
-
-.narration-image-clear {
-  clear: both;
 }
 
 .scrollbar-none {

@@ -409,11 +409,21 @@ Modes:
 
 ### Narration Window
 
+- The session screen is two columns: narration on the left third, a fixed scene
+  image on the right two thirds.
 - Block-based messages, left-aligned.
-- Session view may include a side image panel:
+- The transcript is presented as **pages**, one per interaction. Arriving
+  somewhere and searching it is one page; a whole conversation is one page.
+  Players move between pages with `‹` / `›`, `Alt+←` / `Alt+→`, or `[ latest ]`,
+  and can keep issuing commands from an old page — doing so returns them to the
+  newest one.
+- The case opens on its own page and waits for a keypress before narrating
+  arrival at the first location, so the premise gets read before play starts.
+- The scene image is whatever the active page carries:
   - `location_image_id` from `move` responses
   - `character_portrait_image_id` from `talk` responses
-  - Placeholder panel on missing/failed image link
+  - the previous page's image when an interaction has none of its own
+  - a labelled placeholder on a missing/failed image
 - Visually distinguish:
   - Narrator
   - Characters

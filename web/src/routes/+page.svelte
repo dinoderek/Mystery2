@@ -150,7 +150,7 @@
                       blueprintId={blueprint.id}
                       imageId={blueprint.blueprint_image_id}
                       alt="Case art"
-                      class="w-full object-cover"
+                      class="aspect-[4/3] w-full object-cover"
                       placeholderText="Case image unavailable"
                     />
                   </div>

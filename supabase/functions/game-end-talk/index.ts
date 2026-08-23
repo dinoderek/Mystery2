@@ -14,7 +14,7 @@ import {
 import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { parseTalkEndOutput } from "../_shared/ai-contracts.ts";
-import { findCharacterById } from "../_shared/ai-context.ts";
+import { findCharacterById, findLocationById } from "../_shared/ai-context.ts";
 import { buildRoleRequest } from "../_shared/role-request.ts";
 import {
   createNarrationDiagnostics,
@@ -79,6 +79,9 @@ serveWithCors(async (req) => {
       return internalError("Blueprint missing");
     }
     const activeCharacter = findCharacterById(blueprint, session.current_talk_character_id);
+    // Ending a conversation puts the player back in the room, so the narration
+    // carries the location's picture rather than leaving the portrait up.
+    const currentLocation = findLocationById(blueprint, session.current_location_id);
 
     const { data: historyRows } = await userClient
       .from("game_events")
@@ -148,7 +151,11 @@ serveWithCors(async (req) => {
     }
 
     const narrationParts = [
-      createNarrationPart(talkEndOutput.narration, NARRATOR_SPEAKER),
+      createNarrationPart(
+        talkEndOutput.narration,
+        NARRATOR_SPEAKER,
+        currentLocation?.location_image_id ?? null,
+      ),
     ];
     await insertNarrationEvent(userClient, {
       session_id: gameId,
@@ -159,6 +166,8 @@ serveWithCors(async (req) => {
         character_id: session.current_talk_character_id,
         character_name: activeCharacter?.first_name ?? session.current_talk_character_id,
         location_id: session.current_location_id,
+        location_name: currentLocation?.name ?? session.current_location_id,
+        location_image_id: currentLocation?.location_image_id ?? null,
         speaker: NARRATOR_SPEAKER,
       },
       narration_parts: narrationParts,

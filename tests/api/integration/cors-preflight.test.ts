@@ -6,6 +6,7 @@ const ENDPOINTS = [
   { path: "game-start", requestedMethod: "POST" },
   { path: "game-sessions-list", requestedMethod: "GET" },
   { path: "game-get", requestedMethod: "GET" },
+  { path: "game-enter", requestedMethod: "POST" },
   { path: "game-move", requestedMethod: "POST" },
   { path: "game-talk", requestedMethod: "POST" },
   { path: "game-ask", requestedMethod: "POST" },

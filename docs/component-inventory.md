@@ -41,9 +41,25 @@ _(Add components here as they are built. Example format below)_
   notebook at its Clues section (`openNotebook('clues')`). Auto-dismisses.
 - **Props**: None (reads from store)
 
-### `NarrationBox.svelte`
+### `PageNarration.svelte`
 
-- **Purpose**: Auto-scrolling container for the history of game events and latest narration.
+- **Purpose**: Renders the narration lines of the active page (`gameSessionStore.activePage`)
+  and the "narrator is thinking" spinner. Follows the bottom of a live page as it
+  grows; starts at the top when the player turns back to an older page.
+- **Props**: None (reads from store)
+
+### `ScenePane.svelte`
+
+- **Purpose**: The fixed image column — two thirds of the session screen. Shows
+  `activePage.imageId` via `SignedImage`, or a labelled placeholder when the page
+  has no image or the image cannot be loaded.
+- **Props**: None (reads from store)
+
+### `PageNavigator.svelte`
+
+- **Purpose**: Page controls above the narration: `‹` / `›`, a "Page N / M"
+  counter, the page's `title ?? fallbackLabel`, and a `[ latest ]` jump shown
+  only when the player is behind the newest page.
 - **Props**: None (reads from store)
 
 ### `InputBox.svelte`
@@ -54,6 +70,8 @@ _(Add components here as they are built. Example format below)_
   - Automatically disables command entry while loading.
   - Disables command entry for ended sessions.
   - Renders the read-only return prompt (`[ TAB: REVIEW NOTEBOOK · ANY OTHER KEY: BACK TO THE MYSTERY LIST ]`) for completed-session viewer mode.
+  - Renders the opening prompt (`[ PRESS ANY KEY TO BEGIN THE INVESTIGATION ]`) while
+    `gameSessionStore.awaitingOpeningConfirmation` holds on the opening page.
   - Blurs itself while `showNotebook` is set (releasing its focus latch) and refocuses when the notebook closes, so notebook shortcuts never land in the command line.
 
 ### `HelpModal.svelte`
@@ -112,6 +130,8 @@ _(Add components here as they are built. Example format below)_
   - `class`: `string` (additional CSS classes)
   - `loadingText`: `string` (text shown while resolving, default `"Loading image..."`)
   - `placeholderText`: `string` (text shown on failure, default `"Image unavailable"`)
+- **Note**: A signed URL can be issued for an asset that is not in storage, so the
+  component also falls back to the placeholder when the `<img>` itself fails to load.
 
 ### `LoginForm.svelte`
 

@@ -198,6 +198,13 @@ function extractPlayerInput(row: EventRow): string | null {
     return readString(row.payload.player_reasoning);
   }
   if (eventType === "move") {
+    // The arrival into the starting location is a move the player never typed:
+    // they confirmed the opening, they did not issue a command. Synthesizing
+    // "move to X" for it would put a phantom line in the transcript on resume
+    // that was not there while playing.
+    if (readString(row.payload.role) === "enter") {
+      return null;
+    }
     const locationName = readString(row.payload.location_name);
     return locationName ? `move to ${locationName}` : null;
   }

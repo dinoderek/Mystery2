@@ -29,9 +29,12 @@ _(Add components here as they are built. Example format below)_
 ### `StatusBar.svelte`
 
 - **Purpose**: Shows current location, time, and visible characters, plus a
-  notebook count/toggle button that opens `NotebookPanel` at the section the
-  player last used (`gameSessionStore.openNotebook()`). Carries no keyboard
-  hints — `HelpModal` is where the command and shortcut reference lives.
+  `CLUES:` count of `discovered_clues` that doubles as the button opening
+  `NotebookPanel` at the section the player last used
+  (`gameSessionStore.openNotebook()`). Labelled for what it counts rather than
+  where it leads, so it does not read as a page or turn number next to `TIME:`.
+  Carries no keyboard hints — `HelpModal` is where the command and shortcut
+  reference lives.
 - **Props**: None (reads from store)
 
 ### `ClueDiscoveredToast.svelte`

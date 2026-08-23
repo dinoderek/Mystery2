@@ -22,6 +22,13 @@
       return;
     }
 
+    // The one deliberate carve-out from "press any key": Tab still reaches
+    // NotebookPanel so a finished case can be reviewed, and while the notebook
+    // is open no key leaves the session.
+    if (event.key === 'Tab' || gameSessionStore.showNotebook) {
+      return;
+    }
+
     event.preventDefault();
     try {
       await gameSessionStore.loadSessionCatalog(true);

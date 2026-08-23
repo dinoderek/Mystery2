@@ -1,3 +1,5 @@
+import type { NotebookSection } from './notebook';
+
 export type GameMode = 'explore' | 'talk' | 'accuse' | 'ended';
 
 export interface ParseContext {
@@ -14,10 +16,6 @@ export type ActionCommand =
   | { type: 'accuse'; reasoning: string | null }
   | { type: 'end_talk' };
 
-export type ListItem =
-  | { kind: 'location'; name: string; characters: string[] }
-  | { kind: 'character'; displayName: string };
-
 export type ParseResult =
   | { type: 'valid'; command: ActionCommand }
   | { type: 'missing-target'; commandType: 'move' | 'talk'; suggestions: string[] }
@@ -27,14 +25,13 @@ export type ParseResult =
       attempted: string;
       suggestions: string[];
     }
-  | { type: 'list'; listType: 'locations' | 'characters'; items: ListItem[] }
   | { type: 'unrecognized'; raw: string; hint: string }
   | { type: 'help' }
   | { type: 'quit' }
   | { type: 'theme-list' }
   | { type: 'theme-set'; themeName: string }
   | { type: 'zoom' }
-  | { type: 'notebook' };
+  | { type: 'notebook'; section: NotebookSection | null };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
 const TALK_ALIASES = ['speak with', 'speak to', 'talk to'] as const;
@@ -157,31 +154,6 @@ function resolveSceneCharacter(target: string, context: ParseContext): string | 
   return null;
 }
 
-function locationItems(context: ParseContext): ListItem[] {
-  return context.locations.map((location) => {
-    const characters = context.characters
-      .filter((character) => {
-        const locName = normalizeInput(character.location_name);
-        return locName === normalizeInput(location.id) || locName === normalizeInput(location.name);
-      })
-      .map(displayNameOf);
-
-    return {
-      kind: 'location',
-      name: location.name,
-      characters,
-    };
-  });
-}
-
-function characterItems(context: ParseContext): ListItem[] {
-  const visibleCharacters = getCharactersInCurrentLocation(context);
-  return visibleCharacters.map((character) => ({
-    kind: 'character',
-    displayName: displayNameOf(character),
-  }));
-}
-
 function parseExploreCommand(text: string, rawInput: string, context: ParseContext): ParseResult {
   if (text === '') {
     return { type: 'unrecognized', raw: rawInput, hint: MODE_HINTS.explore };
@@ -195,20 +167,16 @@ function parseExploreCommand(text: string, rawInput: string, context: ParseConte
     return { type: 'quit' };
   }
 
+  // The list commands no longer print inline; they deep-link into the notebook
+  // section that holds the same facts. Kept explore-only on purpose: promoting
+  // them to global would turn "who is here?" asked of a character in talk mode
+  // into an overlay instead of a question.
   if (isAliasExact(text, LOCATION_LIST_ALIASES)) {
-    return {
-      type: 'list',
-      listType: 'locations',
-      items: locationItems(context),
-    };
+    return { type: 'notebook', section: 'places' };
   }
 
   if (isAliasExact(text, CHARACTER_LIST_ALIASES)) {
-    return {
-      type: 'list',
-      listType: 'characters',
-      items: characterItems(context),
-    };
+    return { type: 'notebook', section: 'people' };
   }
 
   for (const alias of SEARCH_ALIASES) {
@@ -390,7 +358,7 @@ function parseGlobalCommand(text: string): ParseResult | null {
   }
 
   if (isAliasExact(text, NOTEBOOK_ALIASES)) {
-    return { type: 'notebook' };
+    return { type: 'notebook', section: null };
   }
 
   return null;

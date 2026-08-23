@@ -4,7 +4,8 @@
   const clues = $derived(gameSessionStore.recentlyDiscovered);
 
   function openNotebook() {
-    gameSessionStore.showNotebook = true;
+    // A clue-specific affordance, so it lands on the clues section.
+    gameSessionStore.openNotebook('clues');
     gameSessionStore.dismissRecentlyDiscovered();
   }
 

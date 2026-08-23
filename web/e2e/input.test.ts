@@ -173,18 +173,32 @@ test.describe('Command Input', () => {
     expect(moveCalls).toBe(0);
   });
 
-  test('supports locations and characters list commands', async ({ page }) => {
+  test('list commands open the notebook at the matching section', async ({ page }) => {
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');
 
     await input.fill('locations');
     await input.press('Enter');
-    await expect(page.getByText(/Locations:/)).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'PLACES' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    // Everything the retired inline list printed is still here.
+    const notebook = page.getByRole('dialog');
+    await expect(notebook.getByText('[ you are here ]')).toBeVisible();
+    await expect(notebook.getByText('With: Rosie Jones, Mayor Fox')).toBeVisible();
+    await expect(notebook.getByText('No one here right now')).toBeVisible();
 
+    await page.keyboard.press('Escape');
     await input.fill('characters');
     await input.press('Enter');
-    await expect(page.getByText(/Characters here: Rosie Jones, Mayor Fox/)).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'PEOPLE' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(notebook.getByText('Rosie Jones')).toBeVisible();
+    await expect(notebook.getByText('At the Garden')).toBeVisible();
   });
 
   test('shows inline guidance for unrecognized commands', async ({ page }) => {

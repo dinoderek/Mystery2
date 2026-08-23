@@ -21,7 +21,6 @@ import {
 import {
   parseCommand,
   type ActionCommand,
-  type ListItem,
   type ParseContext,
   type ParseResult,
 } from './parser';
@@ -32,6 +31,7 @@ import {
   type InvokeFailure,
 } from './store.retry';
 import { themeStore } from './theme-store.svelte';
+import { DEFAULT_NOTEBOOK_SECTION, type NotebookSection } from './notebook';
 
 interface BackendInvocation {
   endpoint: string;
@@ -212,6 +212,7 @@ export class GameSessionStore {
   showHelp = $state(false);
   showZoomModal = $state(false);
   showNotebook = $state(false);
+  notebookSection = $state<NotebookSection>(DEFAULT_NOTEBOOK_SECTION);
   isRetrying = $state(false);
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
@@ -227,6 +228,35 @@ export class GameSessionStore {
 
   dismissRecentlyDiscovered() {
     this.recentlyDiscovered = [];
+  }
+
+  /**
+   * `section` of null reopens wherever the player last was, so the notebook
+   * behaves like a bookmark. Entry points that mean a specific section — the
+   * `locations` / `characters` commands, the clue toast — pass one explicitly.
+   *
+   * The three overlays all sit at z-50 with no stacking coordination, so
+   * closing the other two is what keeps the notebook reliably on top.
+   */
+  openNotebook(section: NotebookSection | null = null) {
+    if (section) {
+      this.notebookSection = section;
+    }
+    this.showHelp = false;
+    this.showZoomModal = false;
+    this.showNotebook = true;
+  }
+
+  closeNotebook() {
+    this.showNotebook = false;
+  }
+
+  toggleNotebook(section: NotebookSection | null = null) {
+    if (this.showNotebook) {
+      this.closeNotebook();
+      return;
+    }
+    this.openNotebook(section);
   }
 
   initializeTheme() {
@@ -325,6 +355,9 @@ export class GameSessionStore {
       this.accusationOutcome = null;
       this.awaitingReturnToList = false;
       this.viewerMode = 'interactive';
+      this.showHelp = false;
+      this.showNotebook = false;
+      this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
       this.refreshStoryImageFromHistory();
       this.status = 'active';
     }
@@ -376,6 +409,7 @@ export class GameSessionStore {
       this.retryCount = 0;
       this.showHelp = false;
       this.showNotebook = false;
+      this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
       this.refreshStoryImageFromHistory();
 
       if (this.state.mode === 'ended') {
@@ -446,8 +480,10 @@ export class GameSessionStore {
       return;
     }
 
+    // Above appendHistory on purpose: opening the notebook costs no turn and
+    // leaves no trace in the transcript.
     if (parsed.type === 'notebook') {
-      this.showNotebook = true;
+      this.openNotebook(parsed.section);
       return;
     }
 
@@ -466,9 +502,6 @@ export class GameSessionStore {
         return;
       case 'invalid-target':
         this.appendSystemFeedback(this.formatInvalidTargetMessage(parsed));
-        return;
-      case 'list':
-        this.appendSystemFeedback(this.formatListMessage(parsed));
         return;
       case 'unrecognized':
         this.appendSystemFeedback(parsed.hint);
@@ -710,38 +743,6 @@ export class GameSessionStore {
     return `"${result.attempted}" is not a valid ${targetLabel}. Try: ${this.formatSuggestions(result.suggestions)}.`;
   }
 
-  private formatListMessage(result: Extract<ParseResult, { type: 'list' }>): string {
-    if (result.listType === 'locations') {
-      const locationItems = result.items.filter(
-        (item): item is Extract<ListItem, { kind: 'location' }> => item.kind === 'location',
-      );
-
-      if (locationItems.length === 0) {
-        return 'Locations: none available.';
-      }
-
-      const rendered = locationItems.map((location) => {
-        if (location.characters.length === 0) {
-          return `${location.name} (no one here)`;
-        }
-
-        return `${location.name} (${location.characters.join(', ')})`;
-      });
-
-      return `Locations: ${rendered.join(' | ')}`;
-    }
-
-    const characterItems = result.items.filter(
-      (item): item is Extract<ListItem, { kind: 'character' }> => item.kind === 'character',
-    );
-
-    if (characterItems.length === 0) {
-      return 'Characters here: none.';
-    }
-
-    return `Characters here: ${characterItems.map((item) => item.displayName).join(', ')}`;
-  }
-
   private handleQuitCommand() {
     if (this.state) {
       this.state.mode = 'ended';
@@ -752,7 +753,9 @@ export class GameSessionStore {
     this.lastFailedInput = null;
     this.accusationOutcome = null;
     this.awaitingReturnToList = true;
-    this.appendSystemFeedback('This case is over. Press any key to go back to the list of mysteries.');
+    this.appendSystemFeedback(
+      'This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries.',
+    );
   }
 
   clearSessionForMysteryList() {
@@ -764,6 +767,7 @@ export class GameSessionStore {
     this.showHelp = false;
     this.showZoomModal = false;
     this.showNotebook = false;
+    this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
     this.isRetrying = false;
     this.retryCount = 0;
     this.lastFailedInput = null;

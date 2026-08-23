@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `9c93b0f54c533404986f6513d597181462b090da`
+> Source git blob hash: `ed51f8d9ae129718485ef2819f54dae98f18bc48`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -24,7 +24,8 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 - `search <free text>` (targeted) — player describes where/what to look at; AI
   judges whether it matches a sub-location and reveals that sub-location's clue
   if so; 1 turn (waivable for nonsensical attempts)
-- `notebook` — opens the case notebook overlay; free, works in every mode
+- `notebook` / `n` / `Tab` — opens the case notebook overlay; free, works in
+  every mode
 - `accuse <name>` — endgame; iterative judge rounds until win or lose
 - when the turn budget hits zero, the game forces accuse mode
 
@@ -126,10 +127,13 @@ into B's `background` puts it somewhere nothing but B's own scene can reach.
 
 ## The notebook
 
-Discovered clues are recorded permanently and shown in the case notebook,
-grouped by where the investigator found them ("Found at the Boathouse", "Told by
-Maya"). Grouping is deliberately something the player already knows — the
-notebook never reveals which reasoning path a clue serves.
+Discovered clues are recorded permanently and shown in the case notebook —
+one of its four sections (Story, Places, People, Clues) — bucketed into
+"Found at places" and "Told by people" and sub-grouped by the specific location
+or character. Grouping is deliberately something the player already knows: the
+notebook never reveals which reasoning path a clue serves. Places and People
+also list where everyone is, so `location`/`name` and the `summary` blurbs are
+read by the player directly.
 
 This does not make orphan clues harmless. A clue belonging to no authored path
 can never contribute to a win, because the judge credits an evidence chain only

@@ -124,12 +124,75 @@ describe('store speaker behavior', () => {
 
   it('opens the notebook on the "notebook" command without a backend call', async () => {
     const store = createStore();
+    const historyLength = store.state!.history.length;
     expect(store.showNotebook).toBe(false);
 
     await store.submitInput('notebook');
 
     expect(store.showNotebook).toBe(true);
+    expect(store.notebookSection).toBe('story');
     expect(invokeMock).not.toHaveBeenCalled();
+    // Costs no turn and leaves no trace in the transcript.
+    expect(store.state!.history).toHaveLength(historyLength);
+  });
+
+  it('opens the notebook at the matching section for the list commands', async () => {
+    const store = createStore();
+    const historyLength = store.state!.history.length;
+
+    await store.submitInput('locations');
+    expect(store.showNotebook).toBe(true);
+    expect(store.notebookSection).toBe('places');
+
+    store.closeNotebook();
+    await store.submitInput('who is here');
+    expect(store.showNotebook).toBe(true);
+    expect(store.notebookSection).toBe('people');
+
+    expect(invokeMock).not.toHaveBeenCalled();
+    expect(store.state!.history).toHaveLength(historyLength);
+  });
+
+  it('reopens at the last section when no section is given', async () => {
+    const store = createStore();
+
+    await store.submitInput('characters');
+    store.closeNotebook();
+    await store.submitInput('n');
+
+    expect(store.notebookSection).toBe('people');
+  });
+
+  it('closes the other overlays when the notebook opens', () => {
+    const store = createStore();
+    store.showHelp = true;
+    store.showZoomModal = true;
+
+    store.openNotebook('clues');
+
+    expect(store.showHelp).toBe(false);
+    expect(store.showZoomModal).toBe(false);
+    expect(store.notebookSection).toBe('clues');
+  });
+
+  it('toggles the notebook shut and back open', () => {
+    const store = createStore();
+
+    store.toggleNotebook();
+    expect(store.showNotebook).toBe(true);
+
+    store.toggleNotebook();
+    expect(store.showNotebook).toBe(false);
+  });
+
+  it('resets the notebook when the session is cleared', () => {
+    const store = createStore();
+    store.openNotebook('clues');
+
+    store.clearSessionForMysteryList();
+
+    expect(store.showNotebook).toBe(false);
+    expect(store.notebookSection).toBe('story');
   });
 
   it('merges revealed_clues from a search response into discovered_clues', async () => {

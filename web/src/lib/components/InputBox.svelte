@@ -31,6 +31,15 @@
       return;
     }
 
+    // Blur under the notebook so no caret blinks behind it and Enter cannot
+    // submit a half-typed command through the overlay. Releasing the latch is
+    // what makes the branch below refocus the input when the notebook closes.
+    if (gameSessionStore.showNotebook) {
+      inputElement.blur();
+      hasFocusedInput = false;
+      return;
+    }
+
     if (hasFocusedInput) {
       return;
     }
@@ -61,7 +70,7 @@
         <p>The accusation is incorrect. The mystery remains unresolved.</p>
       {/if}
       <p class="text-t-bright animate-pulse" data-testid="return-to-list-prompt">
-        [ PRESS ANY KEY TO GO BACK TO THE MYSTERY LIST ]
+        [ TAB: REVIEW NOTEBOOK &middot; ANY OTHER KEY: BACK TO THE MYSTERY LIST ]
       </p>
     </div>
   {:else}

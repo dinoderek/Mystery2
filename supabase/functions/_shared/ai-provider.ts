@@ -291,7 +291,7 @@ class MockAIProvider implements AIProvider {
       return {
         resolved: false,
         narration:
-          "[Mock] Your accusation is bold. Explain which evidence proves your theory.",
+          "[Mock] That is a bold guess. Which clue shows you are right?",
         follow_up_prompt:
           "Which evidence and timeline details most strongly support this accusation?",
       };
@@ -337,7 +337,7 @@ class MockAIProvider implements AIProvider {
         );
         return {
           narration:
-            `[Mock] You approach ${characterName} in ${locationName}. ${pronoun} appears ${appearance} and carries the air of ${background}.`,
+            `[Mock] You walk up to ${characterName} in ${locationName}. ${pronoun} looks ${appearance}.`,
         };
       }
       case "talk_conversation": {
@@ -385,14 +385,14 @@ class MockAIProvider implements AIProvider {
         const unlocked = clues.find((c) => c.prereqs_met !== false && c.id);
         if (unlocked?.id) {
           return {
-            narration: `[Mock] ${characterName} responds thoughtfully and shares: ${unlocked.text}`,
+            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}`,
             revealed_clue_ids: [unlocked.id],
             revealed_off_script: [],
             input_understood: true,
           };
         }
         return {
-          narration: `[Mock] ${characterName} responds thoughtfully to: "${playerInput}".`,
+          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".`,
           revealed_clue_ids: [],
           revealed_off_script: [],
           input_understood: true,
@@ -407,7 +407,7 @@ class MockAIProvider implements AIProvider {
           requireContextString(role, context, "character_name");
         return {
           narration:
-            `[Mock] You step back from ${characterName} and return to looking around.`,
+            `[Mock] You say goodbye to ${characterName} and look around again.`,
         };
       }
       case "search": {
@@ -464,7 +464,7 @@ class MockAIProvider implements AIProvider {
             };
           }
           return {
-            narration: `[Mock] You search ${locationName} for "${searchQuery}", but find nothing of interest.`,
+            narration: `[Mock] You look through ${locationName} for "${searchQuery}", but find nothing.`,
             revealed_clue_id: null,
             costs_turn: false,
             input_understood: true,
@@ -486,7 +486,7 @@ class MockAIProvider implements AIProvider {
           ? "Time is up. You must make your accusation now."
           : "The final accusation begins.";
         return {
-          narration: `[Mock] ${stagePrompt} Present your reasoning before judgment.`,
+          narration: `[Mock] ${stagePrompt} Tell me who did it, and how you know.`,
           follow_up_prompt:
             "Who do you accuse, and what evidence, timeline, and motive support your case?",
         };
@@ -504,7 +504,7 @@ class MockAIProvider implements AIProvider {
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
           return {
-            narration: "[Mock] I need a clearer suspect and stronger evidence.",
+            narration: "[Mock] I am not sure yet. Name one person, and one clue.",
             accusation_resolution: "continue",
             follow_up_prompt:
               "State the suspect's name clearly, then explain why the evidence supports that accusation.",
@@ -544,12 +544,12 @@ class MockAIProvider implements AIProvider {
         return {
           narration:
             accusationResolution === "win"
-              ? "[Mock] The evidence is decisive. Your accusation is correct."
+              ? "[Mock] The clues all fit. You got it right!"
               : accusationResolution === "lose"
-              ? "[Mock] The case closes without proof — the truth slips away this time."
+              ? "[Mock] The case ends here. This time the answer got away."
               : round < 1
-              ? "[Mock] I need a stronger chain of evidence before deciding."
-              : "[Mock] Not proven yet. Look at your clues again and try another accusation.",
+              ? "[Mock] I need one more clue before I can be sure."
+              : "[Mock] Not yet. Look at your clues again and have another go.",
           accusation_resolution: accusationResolution,
           follow_up_prompt:
             accusationResolution === "continue"

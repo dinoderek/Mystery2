@@ -91,14 +91,14 @@ describe("getAction", () => {
 
   it("throws a listing the known types for an unknown action", () => {
     expect(() => getAction("nope")).toThrow(
-      'Unknown action type "nope". Known: talk, ask, end_talk, move, search, accuse',
+      'Unknown action type "nope". Known: start, talk, ask, end_talk, move, search, accuse',
     );
   });
 });
 
 describe("ACTIONS registry", () => {
-  it("exposes exactly the six supported action types", () => {
-    expect(Object.keys(ACTIONS)).toEqual(["talk", "ask", "end_talk", "move", "search", "accuse"]);
+  it("exposes exactly the seven supported action types", () => {
+    expect(Object.keys(ACTIONS)).toEqual(["start", "talk", "ask", "end_talk", "move", "search", "accuse"]);
   });
 
   it("reports the session mode each action is valid from", () => {
@@ -260,6 +260,33 @@ describe("ACTIONS local-replay mapping", () => {
     expect(ACTIONS.search.endpoint.body(given, { type: "search" }, "g1")).toEqual({
       game_id: "g1",
     });
+  });
+});
+
+describe("the start action creates its own session", () => {
+  const blueprint = { id: "bp-1", metadata: { target_age: 9 }, world: { characters: [], locations: [] } };
+
+  it("is flagged as session-creating and has no prior mode", () => {
+    // Every other action addresses a seeded session; start makes one, so the
+    // endpoint backend must skip seeding for it.
+    expect(ACTIONS.start.createsSession).toBe(true);
+    expect(ACTIONS.start.requiredMode).toBeNull();
+    for (const type of ["talk", "ask", "end_talk", "move", "search", "accuse"]) {
+      expect(getAction(type).createsSession, `${type} must not create a session`).toBeUndefined();
+    }
+  });
+
+  it("addresses the blueprint and profile instead of a game id", () => {
+    expect(
+      ACTIONS.start.endpoint.body({}, { type: "start" }, null, {
+        blueprint,
+        aiProfile: "default",
+      }),
+    ).toEqual({ blueprint_id: "bp-1", ai_profile: "default" });
+  });
+
+  it("maps to the intro narration role", () => {
+    expect(ACTIONS.start.roleInput({}, { type: "start" }, blueprint, []).role).toBe("intro");
   });
 });
 

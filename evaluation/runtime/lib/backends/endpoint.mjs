@@ -1,7 +1,8 @@
 // Endpoint model backend (deterministic single-event).
 //
 // Seeds a fully-specified session + fixed history into the DB, then calls the
-// ONE endpoint for the case's action. The server rebuilds the exact runtime
+// ONE endpoint for the case's action. The exception is `start`, which creates
+// the session itself (action.createsSession). The server rebuilds the exact runtime
 // context from the seeded rows, so the input is identical every run and across
 // models — the only variable is the model behind the session's ai_profile
 // (`mock` for plumbing/CI, or an `openrouter` profile reaching openai/* or
@@ -43,15 +44,22 @@ export async function collect(testCase, ctx) {
   const auth = await setupHarnessAuth(testCase.id ?? "runtime-eval", env);
 
   try {
-    const gameId = await seedSessionWithHistory({
-      blueprint,
-      given: testCase.given,
-      aiProfile,
-      userId: auth.user.id,
-      env,
-    });
+    // `start` creates its own session, so there is nothing to seed and no game
+    // id to address; every other action acts on a fully-specified seeded one.
+    const gameId = action.createsSession
+      ? null
+      : await seedSessionWithHistory({
+        blueprint,
+        given: testCase.given,
+        aiProfile,
+        userId: auth.user.id,
+        env,
+      });
 
-    const body = action.endpoint.body(testCase.given, testCase.action, gameId);
+    const body = action.endpoint.body(testCase.given, testCase.action, gameId, {
+      blueprint,
+      aiProfile,
+    });
     const data = await callEndpoint(
       env.functionsUrl,
       action.endpoint.name,

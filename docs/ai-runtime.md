@@ -258,7 +258,10 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   locked clue off-script — so tests exercise both paths deterministically. The
   mock `accusation_judge` keeps its own resolution rule (correct culprit wins
   from round 1) but reads `path_coverage` to aim its rejection follow-up at an
-  unfinished solution path.
+  unfinished solution path. Mock narration is also written at the target reading
+  age: it is a fixture no child ever sees, but the runtime eval harness grades
+  whatever the provider returns, so adult-register mock text would show up as a
+  permanent false failure in the coverage sweep.
 
 The notebook (`game-get` `state.discovered_clues`) is built by
 `buildDiscoveryRecords` and carries no reasoning-path information:

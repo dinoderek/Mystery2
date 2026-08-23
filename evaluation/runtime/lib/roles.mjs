@@ -39,8 +39,14 @@ export function snapshotFromGiven(given) {
 }
 
 // Each action maps to:
-//   requiredMode  — session mode the action is valid from (also what we seed)
-//   endpoint      — how to call the live function (name, method, body builder)
+//   requiredMode  — session mode the action is valid from (also what we seed);
+//                   null for an action that has no prior state
+//   createsSession — true when the endpoint CREATES the session rather than
+//                   acting on a seeded one (`start` only). The endpoint backend
+//                   skips seeding and the body identifies the blueprint instead
+//                   of a game id.
+//   endpoint      — how to call the live function (name, method, body builder).
+//                   body(given, action, gameId, { blueprint, aiProfile })
 //   roleInput     — the RoleRequestInput for the local (CLI) replay of the same
 //                   turn, built from the case's fixed `given` + `action`
 //   speaker       — who the resulting narration is attributed to
@@ -51,6 +57,29 @@ export function snapshotFromGiven(given) {
 // per-action `cli` blocks that used to live here duplicated that assembly and
 // drifted out of sync with the handlers (see prompt-build.mjs).
 export const ACTIONS = {
+  // The opening narration. Unlike every other action there is no prior state to
+  // seed: game-start creates the session, so `given` is empty and the endpoint
+  // body names the blueprint rather than a game.
+  start: {
+    requiredMode: null,
+    createsSession: true,
+    endpoint: {
+      name: "game-start",
+      method: "POST",
+      body: (g, a, gid, extra) => ({
+        blueprint_id: extra.blueprint.id,
+        ai_profile: extra.aiProfile,
+      }),
+    },
+    roleInput: (g, a, bp) => ({
+      role: "intro",
+      game_id: "case",
+      blueprint: bp,
+      conversation_history: [],
+    }),
+    speaker: () => narratorSpeaker(),
+  },
+
   talk: {
     requiredMode: "explore",
     endpoint: { name: "game-talk", method: "POST", body: (g, a, gid) => ({ game_id: gid, character_id: a.character_id }) },

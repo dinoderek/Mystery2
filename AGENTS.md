@@ -97,7 +97,10 @@ Load additional guidance based on the area you are touching:
   conditional pointers onward. The runbook + in-depth reference live next to
   the code, one per pipeline: `evaluation/README.md` (blueprint pipeline),
   `evaluation/trace/README.md` (game-master trace pipeline), and
-  `evaluation/runtime/README.md` (runtime narrator harness).
+  `evaluation/runtime/README.md` (runtime narrator harness). The game-master
+  judges shared by the last two — their briefs, schemas, subject projection,
+  and verdict rule — are documented in `evaluation/judges/README.md`; read it
+  before adding or editing a `gm_*` judge.
 
 ## Documentation Maintenance
 

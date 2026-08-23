@@ -16,6 +16,12 @@
 // flagged turn into a replayable fixture later.
 
 import {
+  EVENT_ROLE,
+  offScriptClueIdsForEvent,
+  readField,
+  revealedClueIdsForEvent,
+} from "../../lib/game-events.mjs";
+import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
   buildMoveContext,
@@ -27,62 +33,9 @@ import {
   selectLocationConversationHistory,
 } from "../../../supabase/functions/_shared/ai-context.ts";
 
-// Maps a persisted event_type to the AI role whose context builder applies.
-// Event types with no game-master AI role (e.g. the opening "start" block) map
-// to null and get a turn record without a reconstructed context.
-//
-// Note: "move" is an internal label for selecting buildMoveContext. The real
-// runtime stamps move narration with role_name "search" (buildMoveContext in
-// ai-context.ts), but a distinct "move" label reads more clearly in turn
-// records and judge projections; it never reaches a builder as a role string.
-const EVENT_ROLE = {
-  move: "move",
-  search: "search",
-  talk: "talk_start",
-  ask: "talk_conversation",
-  end_talk: "talk_end",
-  accuse_start: "accusation_start",
-  accuse_round: "accusation_judge",
-  accuse_resolved: "accusation_judge",
-  forced_endgame: "accusation_start",
-};
-
-function readField(payload, key) {
-  if (!payload || typeof payload !== "object") return null;
-  const value = payload[key];
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function readStringArray(payload, key) {
-  if (!payload || typeof payload !== "object") return [];
-  const value = payload[key];
-  if (!Array.isArray(value)) return [];
-  return value.filter((v) => typeof v === "string" && v.trim().length > 0);
-}
-
-// The clue ids revealed by a single event THIS TURN. The runtime persists
-// reveals differently per event type, and conflating them double-counts:
-//   - `search` stores this turn's single find in payload.revealed_clue_id;
-//     its payload.revealed_clue_ids is the CUMULATIVE list of everything
-//     revealed in that location so far (game-search/index.ts), NOT a per-turn
-//     delta — using it as a delta makes clue-accounting false-fail.
-//   - `ask` stores this turn's reveals as the payload.revealed_clue_ids array
-//     (game-ask/index.ts).
-// The clues_revealed column is never written by the runtime; we honor it only
-// as a fallback for legacy/seeded rows on non-search/ask events.
-export function revealedClueIdsForEvent(event) {
-  const payload = event.payload ?? null;
-  if (event.event_type === "search") {
-    const single = readField(payload, "revealed_clue_id");
-    return single ? [single] : [];
-  }
-  if (event.event_type === "ask") {
-    return readStringArray(payload, "revealed_clue_ids");
-  }
-  return (event.clues_revealed ?? []).filter(
-    (id) => typeof id === "string" && id.length > 0,
-  );
-}
+// Re-exported so this module stays the trace pipeline's entry point for
+// per-event reveal reading (mechanical.mjs imports it from here).
+export { revealedClueIdsForEvent };
 
 function readDiagnosticsTimeAfter(payload) {
   if (!payload || typeof payload !== "object") return null;
@@ -290,6 +243,10 @@ export function reconstructTrace(rawTrace) {
       search_query: searchQuery,
       narration: event.narration,
       revealed_clue_ids: revealedClueIdsForEvent(event),
+      // Reveals the game master granted outside the discovery graph. The
+      // clue-discipline judge needs them to tell a declared brilliance bypass
+      // apart from an unearned reveal.
+      revealed_off_script: offScriptClueIdsForEvent(event),
       location_id: locationId,
       character_id: roleName && roleName.startsWith("talk") ? characterId : null,
       pre_state: preState,

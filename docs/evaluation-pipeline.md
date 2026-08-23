@@ -16,7 +16,20 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > recorder, the per-dimension `combineDimension` semantics, and the
 > `dimension = .md + .schema.ts + registry.json` convention — and adds
 > trace-specific extraction, run-time context reconstruction (via the real
-> runtime context builders), and a game-master dimension battery.
+> runtime context builders), and the game-master dimension battery.
+>
+> **One judge battery, two subjects.** The game-master judges themselves —
+> `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler` — are not
+> owned by either game-master harness. Their briefs and schemas live in
+> `evaluation/judges/`, written against a subject projection rather than against
+> a trace, so the trace pipeline runs them over a whole played session and the
+> runtime harness runs them over a single replayed interaction, from the same
+> prompt and the same output schema. What differs is only which turns are
+> *judged*: all of them in a trace, exactly one in an interaction (a runtime
+> case's fixed history is a fixture, so it is context the judge reads but never
+> faults). This is what lets a failure found in a played session be frozen into
+> a deterministic case and re-judged by the same standard against a different
+> model. See `evaluation/judges/README.md`.
 >
 > **A third, runtime harness.** `evaluation/runtime/` evaluates the **runtime
 > narrator live** rather than an artifact. A case is one deterministic
@@ -26,11 +39,12 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > endpoint, which seeds the fixed session/history into the DB, or by replaying
 > the real runtime prompt through a local `claude`/`openai` CLI) and scores it
 > with pluggable judges: `flesch`, a deterministic Flesch–Kincaid
-> age-readability check, and `age_appropriate`, an LLM judge for what the
-> formula can't see (vocabulary, figurative language, clarity), rendered from
-> the same per-age complexity profile the narrator prompt is built from. Like
-> the others it persists a re-judgeable capture and uses pluggable
-> backends/judges. See `evaluation/runtime/README.md`.
+> age-readability check; `age_appropriate`, an LLM judge for what the formula
+> can't see (vocabulary, figurative language, clarity), rendered from the same
+> per-age complexity profile the narrator prompt is built from; and the four
+> shared `gm_*` adherence judges above. Like the others it persists a
+> re-judgeable capture and uses pluggable backends/judges. See
+> `evaluation/runtime/README.md`.
 >
 > See `evaluation/trace/README.md` for its design and the "What's next" roadmap for
 > how the two relate.

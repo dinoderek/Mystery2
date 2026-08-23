@@ -3,7 +3,9 @@
 #
 #   $1 — user message file (JSON.stringify({ target_age, action, narration, ... }))
 #
-# stdout — a verdict JSON in the age_appropriate judge's output contract. No
+# stdout — a clean "nothing wrong" verdict. The fields are the union of the
+# LLM judges' contracts: estimated_reading_age for age_appropriate, and an empty
+# findings array, which every gm_* adherence schema accepts as a pass. No
 # network, no model. Override the emitted verdict by setting
 # RUNTIME_JUDGE_STUB_VERDICT to a JSON string (used by unit tests to exercise
 # fail/invalid paths).
@@ -20,6 +22,6 @@ node -e '
     estimated_reading_age: 8,
     findings: [],
     verdict: "pass",
-    reasoning: "Stub verdict: short sentences, everyday words.",
+    reasoning: "Stub verdict: nothing to report.",
   }));
 ' "$USER_FILE"

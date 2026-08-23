@@ -7,13 +7,13 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   evaluateDimension,
-  projectTurnsForJudge,
   runTraceJudge,
 } from "../../../evaluation/trace/run.mjs";
+import { projectTraceSubject } from "../../../evaluation/judges/subject.mjs";
 import { loadTraceJudgeSystemPrompt } from "../../../evaluation/trace/lib/load.mjs";
 import { createRunTimer } from "../../../evaluation/pipeline/timing.mjs";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.mjs";
-import { schema as gmFabricationSchema } from "../../../evaluation/trace/dimensions/gm-fabrication.schema.ts";
+import { schema as gmFabricationSchema } from "../../../evaluation/judges/gm-fabrication.schema.ts";
 import { makeRawTrace } from "./trace-fixtures";
 
 const MOCK_JUDGE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "trace-mock-judge.mjs");
@@ -38,14 +38,36 @@ afterEach(() => {
   else process.env.MOCK_JUDGE_MODE = originalMode;
 });
 
-describe("projectTurnsForJudge", () => {
+type ProjTurn = {
+  role_name: string | null;
+  sequence: number;
+  narration: string;
+  judged: boolean;
+  prior_revealed_clue_ids: string[];
+};
+
+describe("projectTraceSubject", () => {
   it("keeps only game-master turns and carries the narration", () => {
     const { turns } = reconstructTrace(makeRawTrace());
-    const projected = projectTurnsForJudge(turns);
-    type ProjTurn = { role_name: string | null; sequence: number; narration: string };
-    expect(projected.every((t: ProjTurn) => t.role_name !== null)).toBe(true);
-    expect(projected.find((t: ProjTurn) => t.sequence === 2)?.narration).toMatch(/muddy footprint/);
-    expect(projected.some((t: ProjTurn) => t.sequence === 1)).toBe(false); // start dropped
+    const subject = projectTraceSubject(turns);
+    const projected: ProjTurn[] = subject.turns;
+    expect(projected.every((t) => t.role_name !== null)).toBe(true);
+    expect(projected.find((t) => t.sequence === 2)?.narration).toMatch(/muddy footprint/);
+    expect(projected.some((t) => t.sequence === 1)).toBe(false); // start dropped
+  });
+
+  it("judges every turn of a trace and accumulates prior reveals", () => {
+    const { turns } = reconstructTrace(makeRawTrace());
+    const subject = projectTraceSubject(turns);
+    const projected: ProjTurn[] = subject.turns;
+    expect(subject.subject_kind).toBe("trace");
+    expect(projected.every((t) => t.judged)).toBe(true);
+    expect(subject.judged_sequences).toEqual(projected.map((t) => t.sequence));
+    // The first turn has nothing before it; a later turn carries what earlier
+    // turns revealed, which is what gates the clue-discipline judge.
+    expect(projected[0].prior_revealed_clue_ids).toEqual([]);
+    const lastPriors = projected[projected.length - 1].prior_revealed_clue_ids;
+    expect(lastPriors.length).toBeGreaterThan(0);
   });
 });
 
@@ -57,7 +79,7 @@ describe("evaluateDimension (mock judge CLI)", () => {
     const result = await evaluateDimension({
       dimRef: { id: "gm_fabrication" },
       blueprint: makeRawTrace().blueprint,
-      judgeTurns: projectTurnsForJudge(turns),
+      judgeSubject: projectTraceSubject(turns),
       judgeSystemBase: await loadTraceJudgeSystemPrompt(),
       judgeStep: judgeStep(),
       logDir: path.join(dir, "logs"),
@@ -75,7 +97,7 @@ describe("evaluateDimension (mock judge CLI)", () => {
     const result = await evaluateDimension({
       dimRef: { id: "gm_fabrication" },
       blueprint: makeRawTrace().blueprint,
-      judgeTurns: projectTurnsForJudge(turns),
+      judgeSubject: projectTraceSubject(turns),
       judgeSystemBase: await loadTraceJudgeSystemPrompt(),
       judgeStep: judgeStep(),
       logDir: path.join(dir, "logs"),

@@ -9,11 +9,22 @@
 
 import * as flesch from "./flesch.mjs";
 import * as ageAppropriate from "./age-appropriate.mjs";
+import { adherenceJudges } from "./adherence.mjs";
 
+// The gm_* judges are the shared game-master adherence battery
+// (evaluation/judges/): the same briefs and schemas the trace pipeline runs as
+// dimensions, bound here to a single interaction. Each is one judge-model call,
+// so they are opt-in per case rather than defaults.
 const REGISTRY = new Map([
   [flesch.id, flesch],
   [ageAppropriate.id, ageAppropriate],
+  ...adherenceJudges.map((judge) => [judge.id, judge]),
 ]);
+
+/** Every judge id this harness can run. */
+export function judgeIds() {
+  return [...REGISTRY.keys()];
+}
 
 export function getJudge(judgeId) {
   const judge = REGISTRY.get(judgeId);

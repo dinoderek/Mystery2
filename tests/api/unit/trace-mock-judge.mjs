@@ -20,7 +20,7 @@ if (mode === "crash") {
 
 let verdict;
 if (mode === "fail") {
-  verdict = { findings: [{ sequence: 6, severity: "major", claim: "Invented a locked gate.", why: "No such gate in the blueprint." }], verdict: "fail", reasoning: "One major fabrication." };
+  verdict = { findings: [{ sequence: 6, severity: "major", kind: "place", quote: "the locked gate", why: "No such gate in the blueprint.", refers_to: "loc_garden" }], verdict: "fail", reasoning: "One major fabrication." };
 } else if (mode === "invalid") {
   verdict = { verdict: "maybe" };
 } else {

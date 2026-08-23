@@ -5,9 +5,12 @@ import { performance } from "node:perf_hooks";
 import process from "node:process";
 import url from "node:url";
 
-import { zodToJsonSchema } from "zod-to-json-schema";
-
-import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
+import {
+  composeJudgeSystemPrompt,
+  resolveVerdict,
+  validateJudgeOutput,
+} from "../judges/index.mjs";
+import { projectTraceSubject } from "../judges/subject.mjs";
 import { runCli } from "../pipeline/cli-runner.mjs";
 import { startJudgeDigest } from "../pipeline/progress.mjs";
 import {
@@ -72,61 +75,6 @@ Options:
                       and log-path hints). Useful for CI.
   -h, --help          Show this help.
 `;
-}
-
-// Compact per-turn projection handed to the judge. The full reconstructed
-// context stays in the run directory (for fixtures); the judge needs the
-// blueprint plus what the game master actually said each turn.
-function projectTurnsForJudge(turns) {
-  return turns
-    .filter((t) => t.role_name !== null)
-    .map((t) => ({
-      sequence: t.sequence,
-      role_name: t.role_name,
-      location_id: t.location_id,
-      character_id: t.character_id,
-      player_input: t.player_input,
-      search_query: t.search_query,
-      revealed_clue_ids: t.revealed_clue_ids,
-      narration: t.narration,
-    }));
-}
-
-function composeJudgeSystemPrompt({ base, dimensionText, schema, context }) {
-  let composed = `${base}\n\n---\n\n${dimensionText}`;
-  if (schema) {
-    const jsonSchema = zodToJsonSchema(schema, { target: "jsonSchema7" });
-    composed +=
-      `\n\n---\n\n## Output JSON Schema (authoritative)\n\n` +
-      `Your response MUST be a single JSON object matching this schema. ` +
-      `If the prose contract above and this schema disagree, the schema wins.\n\n` +
-      `\`\`\`json\n${JSON.stringify(jsonSchema, null, 2)}\n\`\`\`\n`;
-  }
-  if (context && typeof context === "object") {
-    composed += `\n\n---\n\n## Dimension context\n\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n`;
-  }
-  return composed;
-}
-
-function validateJudgeOutput(parsed, schema) {
-  if (parsed === null || typeof parsed !== "object") {
-    return { ok: false, message: "Judge output is not a JSON object." };
-  }
-  if (!schema) {
-    if (!("verdict" in parsed)) {
-      return { ok: false, message: "Judge output missing verdict." };
-    }
-    return { ok: true, data: parsed };
-  }
-  const result = schema.safeParse(parsed);
-  if (!result.success) {
-    const issues = result.error.issues
-      .slice(0, 5)
-      .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
-      .join("; ");
-    return { ok: false, message: `Judge output failed schema validation: ${issues}` };
-  }
-  return { ok: true, data: result.data };
 }
 
 // One judge call with a retry budget covering CLI failures and schema
@@ -288,7 +236,10 @@ async function main() {
     }
 
     const judgeSystemBase = await timer.stage("load_judge_system_prompt", () => loadTraceJudgeSystemPrompt());
-    const judgeTurns = projectTurnsForJudge(reconstructed.turns);
+    // Every turn of a played trace is the game master's own output, so the
+    // whole subject is judged. (A runtime-harness interaction projects into the
+    // same shape with exactly one judged turn.)
+    const judgeSubject = projectTraceSubject(reconstructed.turns);
 
     process.stdout.write(
       `[trace-eval] dimensions: ${dimensions.length} started in parallel\n`,
@@ -321,7 +272,7 @@ async function main() {
               evaluateDimension({
                 dimRef,
                 blueprint: trace.blueprint,
-                judgeTurns,
+                judgeSubject,
                 judgeSystemBase,
                 judgeStep,
                 logDir,
@@ -373,7 +324,7 @@ async function main() {
   if (runState.runError) process.exit(1);
 }
 
-async function evaluateDimension({ dimRef, blueprint, judgeTurns, judgeSystemBase, judgeStep, logDir, runDir, timer }) {
+async function evaluateDimension({ dimRef, blueprint, judgeSubject, judgeSystemBase, judgeStep, logDir, runDir, timer }) {
   const dimId = dimRef.id;
   const tag = `[trace-eval][${dimId}]`;
   const dimTimer = timer.dimension(dimId);
@@ -391,7 +342,7 @@ async function evaluateDimension({ dimRef, blueprint, judgeTurns, judgeSystemBas
       dimension_id: dimId,
       context: dimRef.context ?? null,
       blueprint,
-      turns: judgeTurns,
+      subject: judgeSubject,
     });
 
     if (!judgeStep) {
@@ -420,12 +371,30 @@ async function evaluateDimension({ dimRef, blueprint, judgeTurns, judgeSystemBas
     );
 
     if (outcome.ok) {
-      const status = outcome.data.verdict === "pass" ? "pass" : "fail";
-      process.stdout.write(`${tag} judge: ${status} (${formatDuration(dimTimer.lastStepMs())})\n`);
+      // Same rule as the runtime harness: a dimension fails iff the judge
+      // reported a major finding. The model's own `verdict` is kept in the
+      // envelope (raw) and any disagreement is surfaced rather than hidden.
+      const verdict = resolveVerdict(outcome.data);
+      const status = verdict.status;
+      const disagreed = verdict.verdict_disagreement ? " (model said " + verdict.model_verdict + ")" : "";
+      process.stdout.write(
+        `${tag} judge: ${status}${disagreed} — ${verdict.major_count} major, ${verdict.minor_count} minor ` +
+          `(${formatDuration(dimTimer.lastStepMs())})\n`,
+      );
       return combineDimension({
         id: dimId,
         analyzer: null,
-        judge: { kind: "judge", status, reasoning: outcome.data.reasoning ?? "", raw: outcome.data, attempts: outcome.attempts },
+        judge: {
+          kind: "judge",
+          status,
+          reasoning: outcome.data.reasoning ?? "",
+          major_count: verdict.major_count,
+          minor_count: verdict.minor_count,
+          model_verdict: verdict.model_verdict,
+          verdict_disagreement: verdict.verdict_disagreement,
+          raw: outcome.data,
+          attempts: outcome.attempts,
+        },
         error: null,
       });
     }
@@ -446,4 +415,4 @@ if (isMain) {
   });
 }
 
-export { projectTurnsForJudge, composeJudgeSystemPrompt, validateJudgeOutput, runTraceJudge, evaluateDimension };
+export { runTraceJudge, evaluateDimension };

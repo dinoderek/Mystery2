@@ -241,6 +241,24 @@ function nextUnrevealedClue(blueprint, given) {
   );
 }
 
+/**
+ * The AI role an action resolves to, via the SAME roleInput mapping the
+ * backends use — so a judge labels a turn with the role the model actually ran
+ * as, including the resolutions that depend on the input (a search with a query
+ * is `search_targeted`, an accusation with reasoning is `accusation_judge`).
+ * Returns null for an action with no local role mapping.
+ */
+export function resolveRoleName(actionType, given, action, blueprint, history) {
+  const entry = getAction(actionType);
+  if (!entry.roleInput) return null;
+  return entry.roleInput(given, action, blueprint, normalizeHistory(history)).role ?? null;
+}
+
+/** Whether a role name belongs to the endgame, where the solution is discussed. */
+export function isAccusationRole(roleName) {
+  return typeof roleName === "string" && roleName.startsWith("accusation");
+}
+
 export function getAction(type) {
   const action = ACTIONS[type];
   if (!action) {

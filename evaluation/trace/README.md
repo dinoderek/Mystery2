@@ -5,10 +5,13 @@ the same machinery as the blueprint evaluation pipeline (`evaluation/`) but with
 a played *trace* as the subject instead of a generated blueprint.
 
 **Status:** walking skeleton. Extraction + reconstruction + two checks
-(`clue_accounting`, `spoiler_leak` — mechanical) + one judge dimension
-(`gm_fabrication`). The remaining judges (character consistency, search
-adjudication, accusation correctness, tone) and the failure→fixture replay loop
-are designed-for but not yet built.
+(`clue_accounting`, `spoiler_leak` — mechanical) + the four-judge game-master
+adherence battery (`gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`,
+`gm_spoiler`). Those judges are **shared** with the runtime harness — the briefs
+and schemas live in `evaluation/judges/` and grade a single replayed interaction
+just as well as a whole session (see `evaluation/judges/README.md`). The
+remaining judges (search adjudication, accusation correctness, tone) and the
+failure→fixture replay loop are designed-for but not yet built.
 
 ## Why this exists
 
@@ -93,11 +96,7 @@ evaluation/trace/
 │   ├── envelope.mjs         # trace-shaped result envelope (reuses combineDimension)
 │   └── load.mjs             # dimension registry + definition loaders
 ├── dimensions/
-│   ├── registry.json        # the judge battery + mechanical context
-│   ├── gm-fabrication.md     # judge prompt (prose contract)
-│   └── gm-fabrication.schema.ts
-├── prompts/
-│   └── judge-system.md      # shared system prefix for trace judges
+│   └── registry.json        # which judges make up this pipeline's battery
 └── config/
     ├── cli.example.json     # copy to cli.json
     └── wrappers/            # bundled judge CLI wrapper (invokes `claude`)
@@ -112,10 +111,19 @@ The subject-agnostic machinery is imported, not forked:
 - `evaluation/pipeline/envelope.mjs` → `combineDimension` — the per-dimension
   pass/fail/error/skipped semantics.
 
+The judge battery itself is shared in the other direction, with the **runtime**
+harness: `evaluation/judges/` holds the briefs, the output schemas, the
+evaluator preamble, the subject projection, and the `major`-finding verdict
+rule, and `evaluation/runtime/` runs the very same judges over a single replayed
+interaction.
+
 Trace-specific pieces (a trace has no generate stage; the subject already
 exists) live under `evaluation/trace/`. Dimensions follow the same convention as
 the blueprint battery: one `<id>.md` prose contract + one `<id>.schema.ts` Zod
-schema, picked up by id from `registry.json`.
+schema, picked up by id from `registry.json`. `loadTraceDimensionDefinition`
+resolves shared ids from `evaluation/judges/` first, then this pipeline's own
+`dimensions/` directory — so a trace-only dimension is still just two files
+dropped in here.
 
 ## Checks and dimensions
 
@@ -124,7 +132,10 @@ schema, picked up by id from `registry.json`.
 | `clue_accounting` | mechanical | Every revealed clue id is real and in scope; each bare search reveals the next not-yet-revealed location clue that is *unlocked* (its `requires` prerequisites are already revealed), skipping locked clues — the unlocked subsequence, not a strict array prefix — with no repeats. |
 | `spoiler_leak`    | mechanical | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only (high contiguous-word threshold); paraphrase leakage is a judge's job. |
 | `clue_requires_violation` | mechanical (opt-in) | A clue gated by `requires` was not revealed until its prerequisites were already revealed earlier in the trace (off-script grants, listed in the event's `revealed_off_script`, are exempt). **Off by default** — set `enforce_requires: true` in the registry mechanical context to enable. It proves the runtime honors the discovery graph; until the runtime gating is in place a real trace would fail it. |
-| `gm_fabrication`  | judge      | Did the game master invent material facts the blueprint does not support? |
+| `gm_roleplay`     | judge (shared) | Does the game master perform the authored character — persona, alibi, agendas, tells, knowledge boundary — and the required narrator voice? |
+| `gm_clue_discipline` | judge (shared) | Were the right clues released, at the right time, and recorded? Catches narration/record mismatches and `requires` gates opened early. |
+| `gm_fabrication`  | judge (shared) | Did the game master invent material facts the blueprint does not support? |
+| `gm_spoiler`      | judge (shared) | Did pre-accusation narration give away ground truth — culprit, motive, or mechanism — by paraphrase or confirmation? The judge half of `spoiler_leak`. |
 
 ## Tests
 
@@ -133,13 +144,16 @@ reconstruct, mechanical, envelope, run orchestration with a mock judge CLI).
 They use injected fixtures and a mock CLI, so they need neither a database nor an
 LLM and run in the standard unit gate.
 
+A run costs one model call per judge dimension — four with today's battery,
+running in parallel, so wall-clock is the slowest judge rather than their sum.
+
 ## Roadmap
 
-- More judges: character consistency, search adjudication, accusation
-  correctness, tone. (Per-event age-appropriateness is already judgeable by
-  converting trace events into runtime-harness cases with
-  `evaluation/runtime/cases-from-trace.mjs` and running the `flesch` +
-  `age_appropriate` judges there.)
+- More judges: search adjudication, accusation correctness, tone. (Per-event
+  age-appropriateness is already judgeable by converting trace events into
+  runtime-harness cases with `evaluation/runtime/cases-from-trace.mjs` and
+  running the `flesch` + `age_appropriate` judges there — and those same cases
+  now carry the `gm_*` battery with them.)
 - Failure → fixture: freeze a flagged turn's reconstructed context as a golden
   fixture and replay it against a different model/prompt to confirm a fix — the
   "switch the model or iterate on the prompt" loop.

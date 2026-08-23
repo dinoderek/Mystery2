@@ -6,6 +6,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import url from "node:url";
 
+import {
+  loadSharedJudgeDefinition,
+  loadSharedJudgeSystemPrompt,
+} from "../../judges/index.mjs";
+
 const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 const TRACE_ROOT = path.resolve(HERE, "..");
 
@@ -32,7 +37,15 @@ export async function loadTraceDimensions() {
   return { dimensions: registry.dimensions, mechanical_context: registry.mechanical_context ?? null };
 }
 
+// Dimension definitions resolve from the shared game-master judge layer first
+// (evaluation/judges/), then from this pipeline's own dimensions/ directory.
+// The shared judges are written against the subject projection rather than
+// against a trace, which is what lets the runtime harness run the very same
+// brief and schema over a single interaction.
 export async function loadTraceDimensionDefinition(dimensionId) {
+  const shared = await loadSharedJudgeDefinition(dimensionId);
+  if (shared) return shared;
+
   const filePath = path.join(
     TRACE_ROOT,
     "dimensions",
@@ -62,11 +75,11 @@ export async function loadTraceDimensionDefinition(dimensionId) {
   return { id: dimensionId, filePath, text, schema };
 }
 
+// The evaluator preamble is shared with the runtime harness, so a judge reads
+// the same framing (including the judged-vs-context turn rule) whichever
+// subject it is pointed at.
 export async function loadTraceJudgeSystemPrompt() {
-  return fs.readFile(
-    path.join(TRACE_ROOT, "prompts", "judge-system.md"),
-    "utf8",
-  );
+  return loadSharedJudgeSystemPrompt();
 }
 
 export async function loadCliConfig(configPath) {

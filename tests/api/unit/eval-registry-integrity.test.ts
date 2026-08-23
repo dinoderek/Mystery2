@@ -13,6 +13,7 @@ import {
   loadTraceDimensionDefinition,
   traceRoot,
 } from "../../../evaluation/trace/lib/load.mjs";
+import { judgesRoot } from "../../../evaluation/judges/index.mjs";
 
 // These tests guard the two dimension registries against drift: a registry
 // entry that points at a missing or malformed schema (or, for blueprint
@@ -105,12 +106,19 @@ describe("trace dimension registry integrity", () => {
     }
   });
 
-  it("resolves each dimension's .md and .schema.ts files inside the trace tree", async () => {
+  it("resolves each dimension to a brief in the trace tree or the shared judge layer", async () => {
     const { dimensions } = await loadTraceDimensions();
+    // The gm_* battery is shared with the runtime harness and lives in
+    // evaluation/judges/; a trace-only dimension still resolves from this
+    // pipeline's own dimensions/ directory.
     const traceDimsDir = path.join(traceRoot(), "dimensions");
+    const sharedJudgesDir = judgesRoot();
     for (const dim of dimensions) {
       const def = await loadTraceDimensionDefinition(dim.id);
-      expect(def.filePath.startsWith(traceDimsDir)).toBe(true);
+      expect(
+        def.filePath.startsWith(traceDimsDir) || def.filePath.startsWith(sharedJudgesDir),
+        `trace dimension "${dim.id}" resolved outside both dimension trees: ${def.filePath}`,
+      ).toBe(true);
       // Text of the dimension prompt is non-empty.
       expect(def.text.length).toBeGreaterThan(0);
     }

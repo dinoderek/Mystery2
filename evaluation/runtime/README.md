@@ -18,6 +18,36 @@ models**: swap the backend or the model and you are comparing apples to apples o
 the same input. (An earlier multi-turn design let each model see its *own* prior
 narration, so models diverged as turns accumulated and were not comparable.)
 
+## Choosing a backend
+
+`--backend` decides **who writes the narration under test**. Four choices, and
+only two of them involve a real model:
+
+| Backend | Narration comes from | Real model? | Needs |
+|---|---|---|---|
+| `cli:claude`, `cli:openai` | a real model, called directly by the harness | **yes** | that CLI on PATH (`OPENAI_API_KEY` for openai) |
+| `endpoint --ai-profile <openrouter id>` | a real model, called by the real server | **yes** | local Supabase stack + a seeded openrouter profile |
+| `endpoint` (default profile) | the mock provider inside the server | no — canned | local Supabase stack |
+| `cli:stub` | a shell script | no — canned | nothing |
+
+**The default is `endpoint`** (a case's own `backend`, else `endpoint`), and its
+default `ai_profile` is `default`, which resolves to the **mock** provider. So a
+bare `run.mjs <cases>` with no flags grades canned text, not a model.
+
+The two canned rows are fixtures. They exist to prove the plumbing works end to
+end offline; judging their *content* tells you nothing about the narrator. In
+particular `cli:stub` is blueprint-blind, so its canned line cannot be in
+character for an arbitrary character and `gm_roleplay` may legitimately flag it
+— that is the fixture's fault, not the runtime's. Keep stub runs to `flesch`.
+
+To grade AI quality, use **`cli:claude`** (simplest — real prompt, real model,
+no server or database). Use **`endpoint` with a real profile** when you also
+want the server in the loop: it validates the model's clue reveals before they
+reach you, which the CLI path does not.
+
+`--backend a,b` runs several per case. That comparison is meaningful precisely
+because the case fixes the input: both backends see byte-identical input.
+
 ## Concepts
 
 - **Case** — `cases/*.mjs`, default-exporting one case or an array of cases:
@@ -52,10 +82,9 @@ narration, so models diverged as turns accumulated and were not comparable.)
   - `endpoint` — seeds the fixed session + history into the DB (service role),
     then calls the ONE `game-*` endpoint. The exception is `start`, which
     *creates* the session (`createsSession` in `lib/roles.mjs`), so nothing is
-    seeded and the body names the blueprint instead of a game id. The server rebuilds the exact context
-    from the seeded rows, so the only variable is the model behind the session's
-    `ai_profile` (`mock` for plumbing/CI; an `openrouter` profile reaching
-    `openai/*` or `anthropic/*` for a real run). Supports every action.
+    seeded and the body names the blueprint instead of a game id. The server
+    rebuilds the exact context from the seeded rows, so the only variable is the
+    model behind the session's `ai_profile`. Supports every action.
   - `cli:<variant>` — builds the **real** runtime prompt+context for the action
     through `supabase/functions/_shared/role-request.ts` — the same module the
     Edge Function handlers call, imported directly (Node strips the TypeScript
@@ -71,18 +100,19 @@ narration, so models diverged as turns accumulated and were not comparable.)
 
 - **Judge** — scores a stored interaction's single response
   (`judge(interaction, { config }) -> { id, status, score, details, parts }`;
-  sync or async). Two judges today:
+  sync or async). Two readability judges:
   - `flesch` — deterministic Flesch–Kincaid grade-level check against the
     blueprint's `target_age`. `score` is the FK grade.
   - `age_appropriate` — an **LLM judge** for what the formula can't see:
     vocabulary a child of `target_age` wouldn't know, idioms/figurative
     language, and unclear phrasing. It renders its standard from the same
     `age-profile.ts` complexity profile the narrator prompt was built from,
-    and calls a judge model through the CLI bindings (variant `judge` in
-    `config/cli.json`; `judge-stub` is a deterministic offline stub;
-    `RUNTIME_EVAL_JUDGE_MODEL` overrides the model). `score` is the judge's
+    and calls a judge model through the CLI bindings. `score` is the judge's
     estimated reading age; `details.findings[]` quotes each problem phrase.
-    Configure per case via `judgeConfig.age_appropriate = { cli, targetAge }`.
+
+  …plus the four **blueprint-adherence** judges below. Which judges run, which
+  model runs them, and what a run costs are all in "Choosing and configuring
+  judges".
 
   Add judges in `lib/judges/`.
 
@@ -92,6 +122,83 @@ narration, so models diverged as turns accumulated and were not comparable.)
   the inner loop while iterating on judges. Deterministic judges cost nothing to
   re-run; the `age_appropriate` judge calls its judge model unless pointed at
   `judge-stub`.
+
+## Blueprint adherence (`gm_*` judges)
+
+Four LLM judges ask whether the narration honored the blueprint:
+
+| Judge | Asks |
+|---|---|
+| `gm_roleplay` | Does the character match their authored persona, alibi, agendas, tells, and knowledge boundary — and do narrator turns keep the required voice? |
+| `gm_clue_discipline` | Did this turn deliver the clues it recorded, record the clues it delivered, and respect `requires` gates? |
+| `gm_fabrication` | Did it invent people, places, objects, or events the blueprint does not support? |
+| `gm_spoiler` | Did pre-accusation narration give away the culprit, motive, or mechanism — by paraphrase or confirmation, not just verbatim copying? |
+
+These are **not** written here. The briefs and schemas live in
+`evaluation/judges/` and are shared with the trace pipeline
+(`evaluation/trace/`), which runs them as registry dimensions over a whole
+played session. This harness projects one stored interaction into the same
+subject shape — the case's fixed history as unjudged **context**, the action
+under test as the single **judged** turn — and runs the identical prompt. See
+`evaluation/judges/README.md` for the subject contract and the verdict rule.
+
+This is what lets a failure found in a played session be frozen into a case
+with `cases-from-trace.mjs` and re-judged by the same standard against a
+different model or a changed prompt, with no game server involved.
+
+```bash
+# All four, against a real model, on one deterministic interaction:
+node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
+  --backend cli:claude --judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler
+```
+
+`status` is `fail` iff the judge reported at least one `major` finding; `score`
+is that major count (0 is clean). `details.findings[]` carries each finding's
+`sequence`, `severity`, `kind`, a verbatim `quote`, `why`, and the blueprint id
+it `refers_to`. When the model's own `verdict` contradicts its findings, the
+findings win and `details.verdict_disagreement` records it.
+
+## Choosing and configuring judges
+
+**Which judges run.** `--judges a,b` wins; otherwise the case's own `judges`
+array; otherwise none at all. No committed case declares a `gm_*` judge, so the
+adherence battery is **opt-in** — by contrast, the trace pipeline runs all four
+on every trace.
+
+**Which model judges.** The `judge` CLI variant (`claude`, sonnet) unless a case
+points at `judge-stub` — a deterministic offline stub that always passes, for
+wiring checks only. `RUNTIME_EVAL_JUDGE_MODEL` overrides the model for a run
+(see "Model overrides"); to change it permanently, edit the `judge` entry in
+`config/cli.json`. There is no `--judge-cli` flag: selecting `judge-stub` means
+editing the case or your `cli.json`.
+
+**Per-case options** — `judgeConfig.<judge_id>`:
+
+| Option | Applies to | Effect |
+|---|---|---|
+| `cli` | every LLM judge | CLI variant to call (`judge`, `judge-stub`) |
+| `tolerance` | `flesch` | grade levels of slack above the target (default 2) |
+| `targetAge` | `flesch`, `age_appropriate` | override the blueprint's `target_age` |
+| `blueprintPath` | `gm_*` | override the blueprint the interaction was collected against |
+
+### What a run costs
+
+Model calls are `cases × backends × LLM judges`. `flesch` is free (pure
+computation); every other judge is one call per case per backend.
+
+Worked through on `all-interactions.mjs` (10 cases), which declares
+`["flesch", "age_appropriate"]`:
+
+| Command | Calls |
+|---|---|
+| no `--judges` | 10 — one `age_appropriate` per case |
+| `--judges flesch` | 0 |
+| `--judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler` | 40 |
+| the same four, `--backend endpoint,cli:claude` | 80 |
+
+That multiplier is why the adherence judges are in no case's `judges` array:
+adding the four ids there would take this ten-case coverage sweep from 10 calls
+to 50 for anyone who runs it without flags.
 
 ## Coverage
 
@@ -111,11 +218,10 @@ baseline that all nine are reachable and judged:
 | `accusation_open` | `accusation-open` |
 | `accusation_verdict` | `accusation-verdict-well-argued` |
 
-Both backends run all of them. Against the mock provider (`endpoint` with the
-default profile, or `cli:stub`) every case passes `flesch`, so the suite is a
-clean green baseline and a real failure stands out. That is also why the mock
-provider's canned narration is written at the target reading age — it is a
-fixture, but the harness grades whatever the provider returns, and grade-10
+Both backends run all of them, and every case passes `flesch` against either
+fixture provider — so the suite is a clean green baseline and a real failure
+stands out. That is why the fixtures' canned narration is written at the target
+reading age: the harness grades whatever the provider returns, so grade-10
 phrasing there would read as a permanent false failure.
 
 ```bash
@@ -164,8 +270,7 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --b
 # judges are free; age_appropriate calls the judge model):
 node evaluation/runtime/rejudge.mjs runs/<run_id>/<case>__<backend>/interaction.json
 
-# Add the LLM age-appropriateness judge on top of flesch (needs the `claude`
-# CLI; use the judge-stub CLI variant in judgeConfig for offline wiring tests):
+# Add the LLM age-appropriateness judge on top of flesch:
 node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
   --backend cli:stub --judges flesch,age_appropriate
 ```
@@ -177,7 +282,8 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs \
   `backend`, else `endpoint`.
 - `--ai-profile <id>` — server `ai_profile` for the `endpoint` backend.
   Defaults to the case's `aiProfile`, else `default`.
-- `--judges a,b` — override the judges to run (default: the case's `judges`).
+- `--judges a,b` — override the judges to run (default: the case's `judges`,
+  else none). See "Choosing and configuring judges".
 - `--out <dir>` — runs output root. Default: `evaluation/runtime/runs`.
 
 Exit code is `2` if any judge fails or errors.
@@ -272,7 +378,10 @@ from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
 - **New case** — add to `cases/<name>.mjs`. Pick a blueprint with the
   `target_age` (or other property) you want, write the fixed `given` + `action`.
 - **New judge** — add `lib/judges/<id>.mjs` exporting `id` + `judge(...)`, then
-  register it in `lib/judges/index.mjs`.
+  register it in `lib/judges/index.mjs`. A judge that grades narration against
+  the blueprint belongs in the shared layer instead — two files in
+  `evaluation/judges/` and it runs on both subjects
+  (`evaluation/judges/README.md` → "Adding a judge").
 - **New action** — add an entry to `ACTIONS` in `lib/roles.mjs`: the `endpoint`
   transport, a `roleInput` naming the role and handing over the same fields the
   handler passes, and a `speaker`. Prompt assembly itself belongs in the
@@ -284,4 +393,9 @@ from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
 Unit tests for the deterministic Flesch judge live at
 `tests/api/unit/runtime-flesch.test.ts`; the `age_appropriate` LLM judge is
 tested offline against the `judge-stub` CLI variant in
-`tests/api/unit/runtime-age-judge.test.ts`. Both run with `npm run test:unit`.
+`tests/api/unit/runtime-age-judge.test.ts`. The shared `gm_*` judges are covered
+by `tests/api/unit/runtime-adherence-judge.test.ts` (the runtime binding:
+projection, verdict mapping, retry and error paths) and
+`tests/api/unit/judges-shared.test.ts` + `judges-subject.test.ts` (the shared
+briefs, schemas, and subject projections). All run with `npm run test:unit` —
+none of them call a model.

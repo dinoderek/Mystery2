@@ -100,8 +100,11 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
     the keypress calls `game-enter` to narrate arrival at the starting location
     as page 2. The prompt is derived from history (only the opening page
     exists), so a session abandoned there resumes back into it.
-  - `‹` / `›`, `Alt+←` / `Alt+→`, and a `[ latest ]` control move between pages.
-    Command input stays live on old pages; submitting snaps back to the newest.
+  - `‹` / `›`, `PageUp` / `PageDown` (or `Alt+←` / `Alt+→`), and a `[ latest ]`
+    control move between pages. Plain arrows are deliberately left alone so they
+    still move the caret in the command line. Command input stays live on old
+    pages; submitting snaps back to the newest. While the notebook is open it
+    owns every key, so nothing pages behind the overlay.
   - During backend waits, narration shows a terminal spinner.
   - The notebook is a full-screen overlay with four sections behind a tab strip
     (`STORY · PLACES · PEOPLE · CLUES`): `←` / `→` change section, `↑` / `↓`

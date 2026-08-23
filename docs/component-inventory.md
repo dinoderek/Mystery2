@@ -28,10 +28,10 @@ _(Add components here as they are built. Example format below)_
 
 ### `StatusBar.svelte`
 
-- **Purpose**: Shows current location, time, hints, and visible characters, plus a
+- **Purpose**: Shows current location, time, and visible characters, plus a
   notebook count/toggle button that opens `NotebookPanel` at the section the
-  player last used (`gameSessionStore.openNotebook()`), and a `Tab: notebook`
-  hint alongside the help hint.
+  player last used (`gameSessionStore.openNotebook()`). Carries no keyboard
+  hints — `HelpModal` is where the command and shortcut reference lives.
 - **Props**: None (reads from store)
 
 ### `ClueDiscoveredToast.svelte`

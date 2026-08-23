@@ -26,11 +26,16 @@
       return;
     }
 
-    // Alt+arrows page through history. Plain arrows are left alone so they can
-    // still move the cursor inside the command input.
-    if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+    // Page through the transcript. Plain arrows are left alone so they can still
+    // move the caret in the command input; PageUp/PageDown are the ergonomic
+    // pair, since Alt+arrow is a word-jump in a macOS text field.
+    const back =
+      event.key === 'PageUp' || (event.altKey && event.key === 'ArrowLeft');
+    const forward =
+      event.key === 'PageDown' || (event.altKey && event.key === 'ArrowRight');
+    if (back || forward) {
       event.preventDefault();
-      if (event.key === 'ArrowLeft') {
+      if (back) {
         gameSessionStore.prevPage();
       } else {
         gameSessionStore.nextPage();

@@ -63,6 +63,37 @@ test.describe('US2/US3 - Narration Rendering', () => {
     });
   });
 
+  test('pages with the keyboard, leaving plain arrows to the command line', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page.getByText('B1')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page).toHaveURL(/.*\/session/);
+
+    const opening = page.locator('text="Game started. The cake is gone."');
+    const arrival = page.locator('text="You enter the kitchen."').first();
+    await expect(arrival).toBeVisible();
+
+    await page.keyboard.press('PageUp');
+    await expect(opening).toBeVisible();
+    await page.keyboard.press('PageDown');
+    await expect(arrival).toBeVisible();
+
+    // Alt+arrows are the alternate binding.
+    await page.keyboard.press('Alt+ArrowLeft');
+    await expect(opening).toBeVisible();
+    await page.keyboard.press('Alt+ArrowRight');
+    await expect(arrival).toBeVisible();
+
+    // A plain arrow must stay with the caret, not turn the page.
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('ArrowLeft');
+    await expect(arrival).toBeVisible();
+    await expect(input).toHaveValue('search');
+  });
+
   test('renders narration history and auto-scrolls down', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();

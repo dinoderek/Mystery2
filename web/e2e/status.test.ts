@@ -50,7 +50,6 @@ test.describe('US2 - Status Bar', () => {
         // Verify header/status elements
         await expect(page.locator('text=LOCATION: kitchen')).toBeVisible();
         await expect(page.locator('text=TIME: 8')).toBeVisible();
-        await expect(page.locator("text=type 'help' to see commands")).toBeVisible();
         // Only characters in the current location should be shown.
         await expect(page.locator('text=Bob Smith')).toBeVisible();
         await expect(page.locator('text=Alice Brown')).toHaveCount(0);

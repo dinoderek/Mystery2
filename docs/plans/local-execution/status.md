@@ -18,7 +18,7 @@ easy export path for mining past play.
 |---|---|---|
 | P0 | Dependency and runtime baseline | **MERGED** — [#138](https://github.com/dinoderek/Mystery2/pull/138) |
 | P1 | `EngineContext` seam, in place | **MERGED** — [#139](https://github.com/dinoderek/Mystery2/pull/139) |
-| P2 | Local adapters (SQLite + filesystem) | **MERGED** — see below |
+| P2 | Local adapters (SQLite + filesystem) | **MERGED** — [#142](https://github.com/dinoderek/Mystery2/pull/142) |
 | P3 | Move engine to `packages/game-engine/`, stand up SvelteKit `/api`, cut over client and tests | **NEXT** |
 | P4 | Mining and export (`npm run dump`, `sessions:ls`) | pending ← P3 |
 | P5 | Demolition and governance (delete `supabase/`, amend constitution) | pending ← P4 |
@@ -89,7 +89,7 @@ One deliberate behaviour change: a real database error while fetching a session
 used to return `400 Game session not found` (the guard was
 `if (sessionError || !session)`); it is now a 500. Missing sessions still 400/404.
 
-### P2 — merged
+### P2 — merged (#142)
 
 `packages/game-engine/` now holds a complete local `EngineContext` — SQLite plus
 the filesystem — sitting alongside the Supabase one. Handlers are untouched:

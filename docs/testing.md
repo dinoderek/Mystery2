@@ -133,6 +133,20 @@ Dependencies:
 - local Supabase stack
 - running local web server
 - seeded local auth users and seeded `default` mock profile
+- Playwright browser binaries matching the pinned `@playwright/test` version
+
+Install the browsers once per machine, and again after any `@playwright/test`
+version bump:
+
+```bash
+npx playwright install chromium webkit
+```
+
+The binaries are keyed to the Playwright version, so a bump invalidates the
+existing ones and every browser test fails with
+`browserType.launch: Executable doesn't exist at ...`. CI reinstalls
+automatically: its cache key hashes `package-lock.json` and `web/package.json`,
+so a version bump misses the cache and triggers a fresh install.
 
 Expected coverage includes:
 

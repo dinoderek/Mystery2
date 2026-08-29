@@ -17,7 +17,7 @@ easy export path for mining past play.
 | Phase | What | State |
 |---|---|---|
 | P0 | Dependency and runtime baseline | **MERGED** — [#138](https://github.com/dinoderek/Mystery2/pull/138) |
-| P1 | `EngineContext` seam, in place | **IN REVIEW** — [#139](https://github.com/dinoderek/Mystery2/pull/139) |
+| P1 | `EngineContext` seam, in place | **MERGED** — [#139](https://github.com/dinoderek/Mystery2/pull/139) |
 | P2 | Local adapters (SQLite + filesystem + SvelteKit `/api`) | **NEXT** |
 | P3 | Cut over client and tests; move engine to `packages/game-engine/` | pending ← P2 |
 | P4 | Mining and export (`npm run dump`, `sessions:ls`) | pending ← P3 |
@@ -54,7 +54,7 @@ Still deferred as separate PRs, deliberately: **TypeScript 7** (genuinely
 blocked — `typescript-eslint@8` caps at `typescript <6.1.0`), **Vite 8**, and
 **zod 4**.
 
-### P1 — in review (#139)
+### P1 — merged (#139)
 
 Handlers now reach the outside world only through `EngineContext`. Each endpoint
 exports `handle(req, ctx)` behind a thin `serveWithCors` wrapper that checks the
@@ -94,8 +94,10 @@ used to return `400 Game session not found` (the guard was
 P2 builds the local `EngineContext` implementation alongside the Supabase one.
 See `plan.md` § "P2 — Local adapters" for the full scope. Concretely:
 
-1. Read `supabase/functions/_shared/context.ts` — it is the contract to
-   implement, and it is short.
+1. Read [`supabase/functions/_shared/context.ts`](/supabase/functions/_shared/context.ts)
+   — it is the contract to implement, and it is short. Then skim
+   [`context-supabase.ts`](/supabase/functions/_shared/context-supabase.ts),
+   the reference implementation you are writing a local twin of.
 2. Implement it over `better-sqlite3` (pinned 13.0.3) + the filesystem. The
    driver must be confined to **one file** so `node:sqlite` can replace it later;
    see `plan.md` § "SQLite strategy" for the required pragmas
@@ -107,9 +109,34 @@ See `plan.md` § "P2 — Local adapters" for the full scope. Concretely:
    there is no import tooling by design.
 4. Blueprints and images are read straight off disk — they already exist there
    before `seed:storage` uploads them. Reuse `resolveBlueprintsDir()` /
-   `resolveBlueprintImagesDir()` from `scripts/local-config.mjs`.
+   `resolveBlueprintImagesDir()` from
+   [`scripts/local-config.mjs`](/scripts/local-config.mjs).
 5. Add the SvelteKit `/api` routes on `adapter-node`. Endpoint handlers are
    already `(req, ctx) => Response`, the same shape `+server.ts` uses.
+
+## Kickoff prompt for a fresh agent
+
+Paste this into a new session to start the next phase. Replace the phase number
+if the table above has moved on.
+
+```text
+Continue the "fully local execution" work in this repo.
+
+Read docs/plans/local-execution/status.md first, then plan.md. Work the phase
+marked NEXT in the status table (currently P2 — local adapters).
+
+Ground rules:
+- Follow AGENTS.md and .specify/memory/constitution.md.
+- Finish with the full `npm test` gate, green, no waiver. Start the local
+  Supabase stack yourself if it is not running — that is a setup step, not a
+  reason to skip a suite.
+- Run the gate backgrounded to a log file and read the log; never block on
+  `tail -f`. Check GATE_EXIT and the `Total` line, not the task exit code or
+  the last line printed.
+- Update status.md in the same PR as the phase, then open a PR against main.
+- If reality contradicts the plan, fix the plan and say so plainly rather than
+  working around it. Two phases have already been corrected this way.
+```
 
 ## Environment and workflow notes
 

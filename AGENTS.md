@@ -20,6 +20,20 @@ Treat these documents as both guardrails and low-cost project context. Pull the
 relevant facts and constraints forward into specs, plans, tasks, and final
 summaries rather than treating them as passive background reading.
 
+### Active multi-phase work
+
+An in-flight architecture change is tracked in `docs/plans/`. **Before touching
+`supabase/functions/`, `web/src/lib/api/`, the local stack scripts, or the deploy
+path, check whether a plan there already covers it**, and read that plan's
+`status.md` first — it records which phases have landed and what comes next.
+
+- `docs/plans/local-execution/` — moving the game to fully local execution
+  (SvelteKit + SQLite, no Docker, no cloud backend). Start with
+  [`status.md`](docs/plans/local-execution/status.md).
+
+A phase is only "done" when its PR is merged and `status.md` says so. Update
+`status.md` in the same PR as the phase it describes.
+
 ## Agent Execution Rules
 
 - **Quality gates:** Any non-documentation change must finish with `npm test`.

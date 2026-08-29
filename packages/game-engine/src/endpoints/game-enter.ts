@@ -11,27 +11,25 @@
  * the trace tooling — treats it as the arrival it is. Unlike `game-move` it
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
+import type { EngineContext } from "../context.ts";
 import {
   asRetriableAIResponse,
   badRequest,
   internalError,
   RetriableAIError,
-} from "../_shared/errors.ts";
+} from "../errors.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
-} from "../_shared/ai-provider.ts";
-import { buildNarrationPrompt } from "../_shared/role-request.ts";
-import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
+} from "../ai-provider.ts";
+import { buildNarrationPrompt } from "../role-request.ts";
+import { createRequestLogger, withLogContext } from "../logging.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
   insertNarrationEvent,
-} from "../_shared/narration.ts";
-import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+} from "../narration.ts";
+import { NARRATOR_SPEAKER } from "../speaker.ts";
 
 export async function handle(
   req: Request,
@@ -127,14 +125,17 @@ export async function handle(
       name: sl.name,
     }));
 
-    // No destination_history_json: this is the first thing that happens in the
-    // case, so there is nothing to have happened here before.
+    // Empty history: this is the first thing that happens in the case, so
+    // nothing has happened here before. It has to be the empty array rather
+    // than omitted — the prompt interpolates the value, and leaving it out put
+    // the literal string "undefined" in front of the narrator.
     const aiPrompt = buildNarrationPrompt({
       role: "ambience",
       game_id: gameId,
       blueprint,
       destination_id: location.id,
       has_visited_before: false,
+      destination_history_json: "[]",
       destination_characters_json: charactersJson,
       destination_sub_locations_json:
         subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
@@ -227,14 +228,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

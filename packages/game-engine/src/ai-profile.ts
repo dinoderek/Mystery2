@@ -17,8 +17,11 @@
 // the model actually used is on each event's `model` column.
 
 import { getAIEnvPath, getBaseEnvPath } from "../../../scripts/local-config.mjs";
-import { DEFAULT_AI_PROFILE_ID } from "./contract.ts";
-import type { AIProfileStore, EngineAIProfile } from "./contract.ts";
+import {
+  DEFAULT_AI_PROFILE_ID,
+  type AIProfileStore,
+  type EngineAIProfile,
+} from "./context.ts";
 import { readEnvFile, type EnvRecord } from "./env-file.ts";
 
 export const MOCK_AI_PROFILE_ID = "mock";

@@ -9,7 +9,7 @@ import {
   resolveAccusationRole,
   resolveSearchRole,
   type RoleRequestName,
-} from "../../../supabase/functions/_shared/role-request.ts";
+} from "../../../packages/game-engine/src/role-request.ts";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because the previous arrangement had two: the Edge Function handlers,

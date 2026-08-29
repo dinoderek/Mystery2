@@ -268,10 +268,7 @@ class MockAIProvider implements AIProvider {
     return this.profile.model;
   }
 
-  async generateNarration(
-    prompt: string,
-    _metadata?: AIRequestMetadata,
-  ): Promise<string> {
+  async generateNarration(prompt: string): Promise<string> {
     return `[Mock] Narration for: ${prompt.slice(0, 70)}...`;
   }
 
@@ -285,7 +282,7 @@ class MockAIProvider implements AIProvider {
     accused_character: string;
     is_culprit: boolean;
     player_reasoning: string;
-  }, _metadata?: AIRequestMetadata): Promise<ReasoningEvaluation> {
+  }): Promise<ReasoningEvaluation> {
     const rounds = Array.isArray(context.history) ? context.history.length : 0;
     if (rounds < 1) {
       return {
@@ -331,7 +328,6 @@ class MockAIProvider implements AIProvider {
           talkContext?.active_location_name ??
           requireContextString(role, context, "location_name");
         const appearance = talkContext?.active_character?.appearance ?? "a familiar face";
-        const background = talkContext?.active_character?.background ?? "someone tied to the case";
         const pronoun = pronounForSex(
           readCharacterSex(talkContext?.active_character?.sex),
         );
@@ -630,9 +626,10 @@ class OpenRouterProvider implements AIProvider {
     let parsed: unknown;
     try {
       parsed = JSON.parse(content);
-    } catch (_error) {
+    } catch (error) {
       throw new Error(
         `OpenRouter returned non-JSON payload for ${request.role}`,
+        { cause: error },
       );
     }
 

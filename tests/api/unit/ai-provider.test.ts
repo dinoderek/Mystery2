@@ -3,13 +3,13 @@ import {
   createAIProviderFromProfile,
   createAIRequestMetadata,
   isLiveAIEnabled,
-} from "../../../supabase/functions/_shared/ai-provider.ts";
+} from "../../../packages/game-engine/src/ai-provider.ts";
 import {
   parseSearchOutput,
   parseAccusationJudgeOutput,
   parseTalkConversationOutput,
   parseTalkStartOutput,
-} from "../../../supabase/functions/_shared/ai-contracts.ts";
+} from "../../../packages/game-engine/src/ai-contracts.ts";
 
 const originalFetch = globalThis.fetch;
 

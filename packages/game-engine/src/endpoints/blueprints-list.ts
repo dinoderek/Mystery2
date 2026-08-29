@@ -1,7 +1,5 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
-import { serveWithCors } from "../_shared/cors.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
+import type { EngineContext } from "../context.ts";
+import { createRequestLogger } from "../logging.ts";
 
 export async function handle(
   req: Request,
@@ -34,14 +32,3 @@ export async function handle(
     });
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

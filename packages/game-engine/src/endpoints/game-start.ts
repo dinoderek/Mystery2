@@ -1,25 +1,23 @@
-import { DEFAULT_AI_PROFILE_ID, type EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
+import { DEFAULT_AI_PROFILE_ID, type EngineContext } from "../context.ts";
 import {
   asRetriableAIResponse,
   badRequest,
   internalError,
   notFound,
   RetriableAIError,
-} from "../_shared/errors.ts";
+} from "../errors.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
-} from "../_shared/ai-provider.ts";
-import { buildNarrationPrompt } from "../_shared/role-request.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
-import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
+} from "../ai-provider.ts";
+import { buildNarrationPrompt } from "../role-request.ts";
+import { createRequestLogger } from "../logging.ts";
+import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
   insertNarrationEvent,
-} from "../_shared/narration.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+} from "../narration.ts";
 
 // Shown once at the start of every case. The mystery facts, people, places, and
 // discovered clues that used to be dumped here now live in the in-game notebook
@@ -255,14 +253,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

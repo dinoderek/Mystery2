@@ -4,7 +4,8 @@
 // migration 0004's event policy did with its `exists (select 1 from
 // game_sessions where ... user_id = auth.uid())` clause.
 
-import type { EventStore, GameEventRow, NarrationPart, NewGameEvent } from "../contract.ts";
+import type { EventStore, GameEventRow, NewGameEvent } from "../context.ts";
+import type { NarrationPart } from "../narration.ts";
 import type { Db } from "./client.ts";
 
 const OWNED_SESSION = `

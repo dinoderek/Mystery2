@@ -1,28 +1,26 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
+import type { EngineContext } from "../context.ts";
 import {
   aiRetriableError,
   badRequest,
   internalError,
   RetriableAIError,
-} from "../_shared/errors.ts";
-import { validateTransition } from "../_shared/state-machine.ts";
+} from "../errors.ts";
+import { validateTransition } from "../state-machine.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
-} from "../_shared/ai-provider.ts";
-import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
-import { buildRoleRequest } from "../_shared/role-request.ts";
+} from "../ai-provider.ts";
+import { createRequestLogger, withLogContext } from "../logging.ts";
+import { parseTalkConversationOutput } from "../ai-contracts.ts";
+import { buildRoleRequest } from "../role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
   insertNarrationEvent,
-} from "../_shared/narration.ts";
+} from "../narration.ts";
 import {
   createCharacterSpeaker,
-} from "../_shared/speaker.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+} from "../speaker.ts";
 
 export async function handle(
   req: Request,
@@ -242,14 +240,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

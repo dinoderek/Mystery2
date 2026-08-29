@@ -1,16 +1,14 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
-import { badRequest, internalError, notFound } from "../_shared/errors.ts";
-import type { BlueprintV2 } from "../_shared/blueprints/blueprint-schema-v2.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+import type { EngineContext } from "../context.ts";
+import { badRequest, internalError, notFound } from "../errors.ts";
+import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
+import { createRequestLogger } from "../logging.ts";
 import {
   buildImageStorageKey,
   ensureCanonicalImageId,
   IMAGE_LINK_TTL_SECONDS,
   normalizeSignedUrlExpiry,
   toRelativeSignedUrl,
-} from "../_shared/images.ts";
+} from "../images.ts";
 
 function isImageReferenced(
   blueprint: BlueprintV2,
@@ -78,14 +76,3 @@ export async function handle(
     return internalError("Failed to issue image link");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

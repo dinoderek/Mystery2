@@ -5,7 +5,7 @@
 // context the model actually saw — the runtime builds that fresh each turn from
 // (session, blueprint, history) and throws it away. We rebuild it here, at run
 // time, by replaying the event log and calling the SAME context builders the
-// edge functions use (supabase/functions/_shared/ai-context.ts). Importing the
+// the server uses (packages/game-engine/src/ai-context.ts). Importing the
 // real builders — rather than reimplementing them — is what keeps this faithful
 // to current game-master behavior. Node strips the builders' types on import.
 //
@@ -31,7 +31,7 @@ import {
   buildTalkStartContext,
   findLocationById,
   selectLocationConversationHistory,
-} from "../../../supabase/functions/_shared/ai-context.ts";
+} from "../../../packages/game-engine/src/ai-context.ts";
 
 // Re-exported so this module stays the trace pipeline's entry point for
 // per-event reveal reading (mechanical.mjs imports it from here).

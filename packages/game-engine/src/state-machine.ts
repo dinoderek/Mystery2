@@ -1,6 +1,22 @@
 import { BadRequestError } from "./errors.ts";
 
 export type GameMode = "explore" | "talk" | "accuse" | "ended";
+
+const GAME_MODES: readonly GameMode[] = ["explore", "talk", "accuse", "ended"];
+
+export function isGameMode(value: unknown): value is GameMode {
+  return typeof value === "string" && (GAME_MODES as readonly string[]).includes(value);
+}
+
+/**
+ * Narrows a mode read back out of storage. The column is text, so an
+ * unrecognised value is possible in principle; it falls back to `explore`
+ * rather than failing the request, which is what the session catalog has
+ * always done with it.
+ */
+export function readGameMode(value: unknown): GameMode {
+  return isGameMode(value) ? value : "explore";
+}
 export type ActionType =
   | "move"
   | "search"

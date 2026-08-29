@@ -1,35 +1,33 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
+import type { EngineContext } from "../context.ts";
 import {
   aiRetriableError,
   badRequest,
   internalError,
   RetriableAIError,
-} from "../_shared/errors.ts";
-import { validateTransition } from "../_shared/state-machine.ts";
+} from "../errors.ts";
+import { validateTransition } from "../state-machine.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
-} from "../_shared/ai-provider.ts";
-import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { parseSearchOutput } from "../_shared/ai-contracts.ts";
+} from "../ai-provider.ts";
+import { createRequestLogger, withLogContext } from "../logging.ts";
+import { parseSearchOutput } from "../ai-contracts.ts";
 import {
   findLocationById,
   type BlueprintClue,
-} from "../_shared/ai-context.ts";
+} from "../ai-context.ts";
 import {
   buildDiscoveredClueIdSet,
   isClueUnlocked,
-} from "../_shared/clue-discovery.ts";
-import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
-import { buildRoleRequest, resolveSearchRole } from "../_shared/role-request.ts";
+} from "../clue-discovery.ts";
+import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../forced-endgame.ts";
+import { buildRoleRequest, resolveSearchRole } from "../role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
   insertNarrationEvent,
-} from "../_shared/narration.ts";
-import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+} from "../narration.ts";
+import { NARRATOR_SPEAKER } from "../speaker.ts";
 
 function readPayloadField(
   payload: Record<string, unknown> | null | undefined,
@@ -462,14 +460,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

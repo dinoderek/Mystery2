@@ -13,20 +13,20 @@
  * wrong reader while being graded against the blueprint's real age.
  *
  * One assembly path removes that class of bug by construction. Transport —
- * an HTTP call to an Edge Function, or a local CLI replay — becomes a detail
+ * an HTTP call to the server, or a local CLI replay — becomes a detail
  * layered on top rather than a second implementation.
  *
  * PURITY CONTRACT
  *
- * This module must import only sibling `_shared/*.ts` and must not touch Deno
- * globals, the network, or the database. Node imports it directly (types are
- * stripped on load) so the eval harness can reuse it. Callers derive their own
+ * This module must import only its siblings in this package and must not touch
+ * the network or the database. The eval harness imports it directly so that it
+ * and the server assemble prompts the same way. Callers derive their own
  * inputs — anything needing a DB read (event history, discovered clues, the
  * next clue to reveal) is passed in, not fetched here.
  */
 
 import type { AIPromptKey } from "./ai-contracts.ts";
-import type { InteractionId } from "./age-profile.ts";
+import type { InteractionId } from "../../shared/src/age-profile.ts";
 import {
   type AIContext,
   type BlueprintClue,
@@ -183,8 +183,9 @@ type RoleSpec =
   | TemplateRoleSpec<AIPromptKey>
   | NarrationRoleSpec<NarrationRoleName>;
 
-// deno-lint-ignore no-explicit-any -- the registry is heterogeneous by design;
-// each entry is checked against its own input variant at the call sites below.
+// The registry is heterogeneous by design; each entry is checked against its
+// own input variant at the call sites below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const REGISTRY: Record<RoleRequestName, any> = {
   intro: {
     kind: "narration",

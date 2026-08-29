@@ -8,7 +8,7 @@ import {
   isExpiryWindowValid,
   normalizeSignedUrlExpiry,
   toRelativeSignedUrl,
-} from "../../../supabase/functions/_shared/images.ts";
+} from "../../../packages/game-engine/src/images.ts";
 import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
 
 const CANONICAL_FILENAME =

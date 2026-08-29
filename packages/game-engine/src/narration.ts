@@ -281,7 +281,7 @@ export async function insertNarrationEvent(
       sequence,
       error: message,
     });
-    throw new Error(message);
+    throw new Error(message, { cause: error });
   }
 
   input.logger?.log("narration_event.persisted", {

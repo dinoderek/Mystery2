@@ -4,7 +4,7 @@ import {
   createNarrationPart,
   narrationTextFromParts,
   readNarrationEvent,
-} from "../../../supabase/functions/_shared/narration.ts";
+} from "../../../packages/game-engine/src/narration.ts";
 import {
   INVESTIGATOR_SPEAKER,
   NARRATOR_SPEAKER,

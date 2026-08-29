@@ -22,7 +22,7 @@ import { createSessionStore } from "../../../packages/game-engine/src/db/session
 import type {
   NewGameEvent,
   NewGameSession,
-} from "../../../packages/game-engine/src/contract.ts";
+} from "../../../packages/game-engine/src/context.ts";
 
 let tempDir: string;
 let db: Db;

@@ -5,7 +5,7 @@ import {
   renderGuidance,
   renderLengthGuidance,
   renderOutcomeLengthGuidance,
-} from "./age-profile.ts";
+} from "../../shared/src/age-profile.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
 // `search_bare` defaults to the lean "nothing found" budget; the search handler

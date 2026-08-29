@@ -16,9 +16,9 @@
 //                     contiguous-word threshold keeps precision high; paraphrase
 //                     leakage is a judge's job.
 
-import { findCharacterById, findLocationById } from "../../../supabase/functions/_shared/ai-context.ts";
+import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
 import { collectClues } from "../../checks/lib/clue-graph.mjs";
-import { isClueUnlocked } from "../../../supabase/functions/_shared/clue-discovery.ts";
+import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.mjs";
 
 const DEFAULT_SPOILER_MIN_RUN = 12;

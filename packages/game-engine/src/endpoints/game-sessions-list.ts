@@ -1,20 +1,7 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
-import { internalError } from "../_shared/errors.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+import type { EngineContext, GameSessionSummaryRow } from "../context.ts";
+import { internalError } from "../errors.ts";
 
-type SessionMode = "explore" | "talk" | "accuse" | "ended";
 type SessionOutcome = "win" | "lose" | null;
-
-interface SessionRow {
-  id: string;
-  blueprint_id: string;
-  mode: string;
-  time_remaining: number;
-  outcome: string | null;
-  updated_at: string;
-  created_at: string;
-}
 
 interface SessionSummary {
   game_id: string;
@@ -22,19 +9,11 @@ interface SessionSummary {
   mystery_title: string;
   mystery_available: boolean;
   can_open: boolean;
-  mode: SessionMode;
+  mode: GameSessionSummaryRow["mode"];
   time_remaining: number;
   outcome: SessionOutcome;
   last_played_at: string;
   created_at: string;
-}
-
-function readMode(value: string): SessionMode {
-  if (value === "explore" || value === "talk" || value === "accuse" || value === "ended") {
-    return value;
-  }
-
-  return "explore";
 }
 
 function readOutcome(value: string | null): SessionOutcome {
@@ -77,7 +56,10 @@ async function loadBlueprintTitles(
   );
 }
 
-function toSummary(session: SessionRow, titleByBlueprintId: Map<string, string>): SessionSummary {
+function toSummary(
+  session: GameSessionSummaryRow,
+  titleByBlueprintId: Map<string, string>,
+): SessionSummary {
   const title = titleByBlueprintId.get(session.blueprint_id);
   const mystery_available = Boolean(title);
 
@@ -87,7 +69,7 @@ function toSummary(session: SessionRow, titleByBlueprintId: Map<string, string>)
     mystery_title: title ?? "Unknown Mystery",
     mystery_available,
     can_open: mystery_available,
-    mode: readMode(session.mode),
+    mode: session.mode,
     time_remaining: Number.isFinite(session.time_remaining)
       ? Math.max(0, Math.trunc(session.time_remaining))
       : 0,
@@ -112,7 +94,7 @@ export async function handle(
     const titleByBlueprintId = await loadBlueprintTitles(ctx);
 
     const summaries = sessions.map((session) =>
-      toSummary(session as SessionRow, titleByBlueprintId)
+      toSummary(session, titleByBlueprintId)
     );
 
     const inProgress = summaries
@@ -141,14 +123,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

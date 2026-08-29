@@ -1,39 +1,34 @@
 // The engine's boundary against its host platform.
 //
 // Endpoint handlers and shared helpers reach the outside world only through
-// `EngineContext`. Nothing below this file knows that Supabase exists: the
-// Supabase implementation lives in `context-supabase.ts`, and a local
-// (SQLite + filesystem) implementation replaces it when the game moves off
-// Supabase. Keeping the surface this narrow is what makes that swap tractable
-// — it is ~15 named operations, not a query builder.
+// `EngineContext`. Nothing below this file knows where the game's state is
+// kept; `context-local.ts` is the implementation, over SQLite and the
+// filesystem. Keeping the surface this narrow — ~15 named operations, not a
+// query builder — is what let the engine move off Supabase one adapter at a
+// time, and it is what would let it move again.
 //
 // Error convention, uniform across every method: a genuine backend failure
 // throws, and "the thing does not exist" is a `null`/empty return. Handlers
-// therefore map a thrown error to 500 and a null to 404/400, which is what the
-// hand-written `{ data, error }` checks did before.
+// therefore map a thrown error to 500 and a null to 404/400.
 
-import type { BlueprintV2 } from "./blueprints/blueprint-schema-v2.ts";
+import type { BlueprintV2 } from "../../shared/src/blueprint-schema-v2.ts";
 import type { LogWriter } from "./logging.ts";
 import type { NarrationPart } from "./narration.ts";
+import type { GameMode } from "./state-machine.ts";
 
-/** The authenticated player a request runs as. */
+/** The local profile a request runs as, resolved from its cookie. */
 export interface EnginePlayer {
   id: string;
-  email?: string;
+  name?: string;
 }
 
 /** A row of `game_sessions`, as every handler expects to read it. */
 export interface GameSessionRow {
   id: string;
-  /**
-   * Owning player. Under Supabase this is the `auth.users` id read from the
-   * `user_id` column; the local schema names the column `player_id` and there
-   * is no `auth` schema behind it.
-   */
   player_id: string;
   blueprint_id: string;
   ai_profile_id: string;
-  mode: string;
+  mode: GameMode;
   current_location_id: string;
   current_talk_character_id: string | null;
   time_remaining: number;
@@ -47,7 +42,7 @@ export interface GameSessionRow {
 export interface GameSessionSummaryRow {
   id: string;
   blueprint_id: string;
-  mode: string;
+  mode: GameMode;
   time_remaining: number;
   outcome: string | null;
   created_at: string;
@@ -58,7 +53,7 @@ export interface NewGameSession {
   player_id: string;
   blueprint_id: string;
   ai_profile_id: string;
-  mode: string;
+  mode: GameMode;
   current_location_id: string;
   time_remaining: number;
 }
@@ -68,7 +63,7 @@ export interface NewGameSession {
  * ones are written, mirroring the previous `.update({...})` calls.
  */
 export interface GameSessionPatch {
-  mode?: string;
+  mode?: GameMode;
   current_location_id?: string;
   current_talk_character_id?: string | null;
   time_remaining?: number;

@@ -16,7 +16,8 @@ import {
   BlueprintV2Schema,
   type BlueprintV2,
 } from "../../shared/src/blueprint-schema-v2.ts";
-import type { BlueprintSummaryEntry, ContentStore, LogWriter } from "./contract.ts";
+import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
+import type { LogWriter } from "./logging.ts";
 
 /** Route prefix the browser fetches blueprint images from. */
 export const IMAGE_ROUTE_PREFIX = "/api/images";

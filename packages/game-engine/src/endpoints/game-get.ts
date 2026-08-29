@@ -1,10 +1,8 @@
-import type { EngineContext } from "../_shared/context.ts";
-import { requireEngineContext } from "../_shared/context-supabase.ts";
-import { badRequest, notFound, internalError } from "../_shared/errors.ts";
-import { createRequestLogger } from "../_shared/logging.ts";
-import { readNarrationEvent } from "../_shared/narration.ts";
-import { buildDiscoveryRecords } from "../_shared/clue-discovery.ts";
-import { serveWithCors } from "../_shared/cors.ts";
+import type { EngineContext } from "../context.ts";
+import { badRequest, notFound, internalError } from "../errors.ts";
+import { createRequestLogger } from "../logging.ts";
+import { readNarrationEvent } from "../narration.ts";
+import { buildDiscoveryRecords } from "../clue-discovery.ts";
 
 export async function handle(
   req: Request,
@@ -123,14 +121,3 @@ export async function handle(
     return internalError("Internal Server Error");
   }
 }
-
-serveWithCors(async (req) => {
-  if (req.method !== "GET") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const ctx = await requireEngineContext(req);
-  if (ctx instanceof Response) return ctx;
-
-  return handle(req, ctx);
-});

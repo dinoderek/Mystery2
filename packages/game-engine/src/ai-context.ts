@@ -251,7 +251,10 @@ export interface AccusationJudgeContext {
   path_coverage: PathCoverage[];
 }
 
-export interface AIContext {
+// A type alias rather than an interface on purpose: only an alias gets an
+// implicit index signature, and every provider takes the context as a
+// `Record<string, unknown>` to serialise.
+export type AIContext = {
   game_id: string;
   role_name: AIRoleName;
   mode: SessionSnapshot["mode"];
@@ -266,7 +269,7 @@ export interface AIContext {
   talk_context: TalkContext | null;
   accusation_start_context: AccusationStartContext | null;
   accusation_judge_context: AccusationJudgeContext | null;
-}
+};
 
 interface BuildContextInput {
   game_id: string;

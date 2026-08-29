@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { BlueprintGenerationError } from "./errors.ts";
 
 const GENERATOR_PROMPT_URL = new URL(
-  "../../../supabase/functions/_shared/blueprints/generator-prompt.md",
+  "./generator-prompt.md",
   import.meta.url,
 );
 

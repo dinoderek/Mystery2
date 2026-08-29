@@ -11,7 +11,8 @@ import type {
   GameSessionSummaryRow,
   NewGameSession,
   SessionStore,
-} from "../contract.ts";
+} from "../context.ts";
+import { readGameMode } from "../state-machine.ts";
 import type { Db, SqlValue } from "./client.ts";
 
 const SUMMARY_COLUMNS =
@@ -54,7 +55,7 @@ function toSessionRow(row: Record<string, unknown>): GameSessionRow {
     player_id: String(row.player_id),
     blueprint_id: String(row.blueprint_id),
     ai_profile_id: String(row.ai_profile_id),
-    mode: String(row.mode),
+    mode: readGameMode(row.mode),
     current_location_id: String(row.current_location_id),
     current_talk_character_id:
       row.current_talk_character_id === null
@@ -72,7 +73,7 @@ function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
   return {
     id: String(row.id),
     blueprint_id: String(row.blueprint_id),
-    mode: String(row.mode),
+    mode: readGameMode(row.mode),
     time_remaining: Number(row.time_remaining),
     outcome: row.outcome === null ? null : String(row.outcome),
     created_at: String(row.created_at),

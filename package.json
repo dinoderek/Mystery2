@@ -40,8 +40,6 @@
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",
         "check:curated-docs": "node evaluation/generator-harness/scripts/check-curated-docs.mjs",
-        "sync:shared": "node scripts/sync-shared.mjs",
-        "check:shared-sync": "node scripts/sync-shared.mjs --check",
         "test:unit": "vitest run tests/api/unit",
         "test:integration": "node scripts/run-mock-tests.mjs integration",
         "test:e2e": "node scripts/run-mock-tests.mjs e2e",

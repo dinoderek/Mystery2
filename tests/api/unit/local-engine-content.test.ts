@@ -14,7 +14,7 @@ import {
   createLocalContentStore,
   resolveImageFile,
 } from "../../../packages/game-engine/src/content.ts";
-import type { LogWriter } from "../../../packages/game-engine/src/contract.ts";
+import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const BLUEPRINT_ID = validBlueprintV2.id;

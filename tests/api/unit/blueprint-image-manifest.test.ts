@@ -11,7 +11,7 @@ import {
 import {
   buildImageStorageKey,
   isCanonicalImageId,
-} from "../../../supabase/functions/_shared/images.ts";
+} from "../../../packages/game-engine/src/images.ts";
 import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 
 const blueprint: Pick<BlueprintV2, "schema_version" | "id" | "metadata" | "world"> = {

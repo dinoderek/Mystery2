@@ -13,7 +13,7 @@ test suite.
 | | |
 |---|---|
 | `src/context-local.ts` | `createLocalEngine()` — opens the database and assembles a context per player |
-| `src/db/schema.sql` | the whole database: `players`, `game_sessions`, `game_events` |
+| `src/db/schema.ts` | the whole database: `players`, `game_sessions`, `game_events` |
 | `src/db/client.ts` | the **only** file that imports a SQLite driver |
 | `src/db/{players,sessions,events}.ts` | repositories; ownership checks live here |
 | `src/content.ts` | blueprints and images off disk |
@@ -38,7 +38,7 @@ Progress and next steps: [`docs/plans/local-execution/status.md`](../../docs/pla
   eventual replacement for `better-sqlite3`, once it stops emitting
   `ExperimentalWarning`. Repositories are handed a `Db` interface and never see
   the driver, so that swap is a change to `db/client.ts` and nothing else.
-- **There is no migration chain.** `schema.sql` is the current shape and is
+- **There is no migration chain.** `schema.ts` is the current shape and is
   applied to a fresh database in one shot; existing databases move forward
   through the numbered steps in `client.ts`, keyed on `PRAGMA user_version`. The
   14 files in `supabase/migrations/` were read for their *end state* only —

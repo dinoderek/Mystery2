@@ -1,19 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { invokeMock, getSessionMock } = vi.hoisted(() => ({
+const { invokeMock, getMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
-  getSessionMock: vi.fn(),
+  getMock: vi.fn(),
 }));
 
-vi.mock('../api/supabase', () => ({
-  supabase: {
-    functions: {
-      invoke: invokeMock,
-    },
-    auth: {
-      getSession: getSessionMock,
-    },
-  },
+vi.mock('../api/client', () => ({
+  callApi: invokeMock,
+  callApiGet: getMock,
+  blueprintImageUrl: (blueprintId: string, imageId: string) =>
+    `/api/images/${blueprintId}/${imageId}`,
 }));
 
 import { normalizeSessionCatalog, normalizeSessionSummary, sortSessionSummaries } from './store.svelte';
@@ -30,14 +26,7 @@ import {
 describe('session catalog helpers', () => {
   beforeEach(() => {
     invokeMock.mockReset();
-    getSessionMock.mockReset();
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          access_token: 'test-token',
-        },
-      },
-    });
+    getMock.mockReset();
   });
 
   afterEach(() => {
@@ -132,9 +121,9 @@ describe('session catalog helpers', () => {
 
   it('hydrates resumed history only from persisted narration events', async () => {
     const store = new GameSessionStore();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    getMock.mockResolvedValue({
+      error: null,
+      data: {
         state: createGameState({
           locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
           characters: [],
@@ -147,9 +136,8 @@ describe('session catalog helpers', () => {
             narration_parts: [{ text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER }],
           }),
         ],
-      }),
+      },
     });
-    vi.stubGlobal('fetch', fetchMock);
 
     await store.resumeSession('game-1');
 
@@ -168,9 +156,9 @@ describe('session catalog helpers', () => {
   it('preserves multi-part resumed transcripts without changing order', async () => {
     const store = new GameSessionStore();
     const aliceSpeaker = characterSpeaker('Alice');
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    getMock.mockResolvedValue({
+      error: null,
+      data: {
         state: createGameState({
           locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
           characters: [{
@@ -201,9 +189,8 @@ describe('session catalog helpers', () => {
             ],
           }),
         ],
-      }),
+      },
     });
-    vi.stubGlobal('fetch', fetchMock);
 
     await store.resumeSession('game-2');
 
@@ -239,16 +226,15 @@ describe('session catalog helpers', () => {
 
   it('surfaces transcript recovery guidance when resume fails', async () => {
     const store = new GameSessionStore();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({
+    getMock.mockResolvedValue({
+      error: { message: 'Failed to load transcript', status: 500 },
+      data: {
         error: 'Failed to load transcript',
         details: {
           recovery: 'Return to the mystery list and reopen the case.',
         },
-      }),
+      },
     });
-    vi.stubGlobal('fetch', fetchMock);
 
     await store.resumeSession('game-1');
 

@@ -1,3 +1,8 @@
+// Types for `scripts/local-config.mjs` under the root tsconfig, which does not
+// enable `allowJs` — without this, the wildcard `declare module "*.mjs"` would
+// make every import from it `any`. The web workspace does enable `allowJs` and
+// reads the JSDoc annotations in the `.mjs` itself; keep the two in step.
+
 declare module "../scripts/local-config.mjs" {
   export * from "../../../scripts/local-config.mjs";
 }

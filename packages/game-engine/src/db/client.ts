@@ -12,8 +12,21 @@
 // for the OpenRouter calls, so an async driver would buy nothing.
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
-import Database from "better-sqlite3";
+import type BetterSqlite3 from "better-sqlite3";
+import { SCHEMA_SQL } from "./schema.ts";
+
+// Required rather than imported, and this is not stylistic. `better-sqlite3`
+// is a CommonJS wrapper around a `.node` binary, and it has to stay outside
+// any bundle: inlined, its binding loader hits `require.main` in an ES module
+// and the server dies at boot. Marking it external is not enough, because the
+// engine is a linked workspace package and Vite treats a linked package's
+// whole dependency graph as source. A `createRequire` call cannot be analysed
+// statically, so the resolution stays where it belongs — at runtime.
+const Database = createRequire(import.meta.url)(
+  "better-sqlite3",
+) as typeof BetterSqlite3;
 
 /** Values SQLite can bind directly. Objects and arrays are JSON-encoded first. */
 export type SqlValue = string | number | null;
@@ -39,7 +52,7 @@ export interface Db {
 // ---------------------------------------------------------------------------
 
 /**
- * The shape `schema.sql` describes. A fresh database is created straight from
+ * The shape `schema.ts` describes. A fresh database is created straight from
  * that file and stamped with this number; an existing one is brought forward
  * by the steps below. There is no migration chain to replay because the move
  * off Postgres did not carry its history over.
@@ -49,14 +62,10 @@ export const SCHEMA_VERSION = 1;
 /**
  * Forward-only upgrades for databases that already exist, applied in order for
  * every entry whose `to` exceeds the file's `PRAGMA user_version`. Adding one
- * means bumping `SCHEMA_VERSION` and editing `schema.sql` to match, so that a
+ * means bumping `SCHEMA_VERSION` and editing `schema.ts` to match, so that a
  * new database and an upgraded one end up identical.
  */
 const MIGRATIONS: ReadonlyArray<{ to: number; sql: string }> = [];
-
-function readSchemaSql(): string {
-  return fs.readFileSync(new URL("./schema.sql", import.meta.url), "utf-8");
-}
 
 // ---------------------------------------------------------------------------
 // Opening
@@ -108,7 +117,7 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
   };
 }
 
-function migrate(database: Database.Database): void {
+function migrate(database: BetterSqlite3.Database): void {
   const current = Number(database.pragma("user_version", { simple: true }));
 
   if (current > SCHEMA_VERSION) {
@@ -122,7 +131,7 @@ function migrate(database: Database.Database): void {
 
   database.transaction(() => {
     if (current === 0) {
-      database.exec(readSchemaSql());
+      database.exec(SCHEMA_SQL);
     } else {
       for (const migration of MIGRATIONS) {
         if (migration.to > current) database.exec(migration.sql);

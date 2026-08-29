@@ -6,7 +6,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { themeStore } from '$lib/domain/theme-store.svelte';
 	import { gameSessionStore } from '$lib/domain/store.svelte';
-	import { authStore } from '$lib/domain/auth-store.svelte';
+	import { playerStore } from '$lib/domain/player-store.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
 	let { children } = $props();
@@ -14,33 +14,27 @@
 	onMount(() => {
 		themeStore.init();
 		gameSessionStore.initializeTheme();
+		playerStore.init();
 	});
 
-	function isE2EAuthBypassEnabled(): boolean {
-		if (!import.meta.env.VITE_E2E_AUTH_BYPASS) return false;
-		if (typeof window === 'undefined') return false;
-		return window.localStorage.getItem('mystery-e2e-auth-bypass') === '1';
-	}
-
-	// Reactive auth gate
+	// There is no auth bypass any more: picking a profile is one request with
+	// no password, so the tests just pick one like a player would.
 	$effect(() => {
-		if (isE2EAuthBypassEnabled()) return;
-		if (authStore.loading) return;
+		if (playerStore.loading) return;
 
 		const currentPath = $page.url.pathname;
 		const currentTarget = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
 		const isLoginPage = currentPath === '/login';
 
-		if (!authStore.session && !isLoginPage) {
-			// Save intended path for post-login redirect
-			if (!authStore.intendedPath) {
-				authStore.intendedPath = currentTarget;
+		if (!playerStore.player && !isLoginPage) {
+			// Save intended path so the picker can send them back to it
+			if (!playerStore.intendedPath) {
+				playerStore.intendedPath = currentTarget;
 			}
 			goto('/login', { replaceState: true });
-		} else if (authStore.session && isLoginPage) {
-			// Redirect authenticated users away from login
-			const target = authStore.intendedPath || '/';
-			authStore.intendedPath = null;
+		} else if (playerStore.player && isLoginPage) {
+			const target = playerStore.intendedPath || '/';
+			playerStore.intendedPath = null;
 			goto(target, { replaceState: true });
 		}
 	});
@@ -48,9 +42,9 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-{#if authStore.loading}
+{#if playerStore.loading}
 	<main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center">
-		<TerminalSpinner text="Initializing secure session..." />
+		<TerminalSpinner text="Loading profiles..." />
 	</main>
 {:else}
 	{@render children()}

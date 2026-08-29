@@ -4,12 +4,11 @@ const { invokeMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
 }));
 
-vi.mock('../api/supabase', () => ({
-  supabase: {
-    functions: {
-      invoke: invokeMock,
-    },
-  },
+vi.mock('../api/client', () => ({
+  callApi: invokeMock,
+  callApiGet: vi.fn(),
+  blueprintImageUrl: (blueprintId: string, imageId: string) =>
+    `/api/images/${blueprintId}/${imageId}`,
 }));
 
 import { GameSessionStore } from './store.svelte';
@@ -178,7 +177,7 @@ describe('opening confirmation', () => {
 
     await store.enterStartingLocation();
 
-    expect(invokeMock).toHaveBeenCalledWith('game-enter', { body: { game_id: 'game-1' } });
+    expect(invokeMock).toHaveBeenCalledWith('game-enter', { game_id: 'game-1' });
     expect(store.pageCount).toBe(2);
     expect(store.pages[1].kind).toBe('location');
     expect(store.pages[1].imageId).toBe('kitchen.png');

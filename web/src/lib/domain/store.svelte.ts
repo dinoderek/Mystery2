@@ -1,4 +1,4 @@
-import { supabase } from '../api/supabase';
+import { callApi, callApiGet } from '../api/client';
 import type {
   Blueprint,
   DiscoveredClue,
@@ -48,7 +48,6 @@ export type SessionViewerMode = 'interactive' | 'read_only_completed';
 
 const THEME_STORAGE_KEY = 'mystery-theme';
 const THEME_NAMES: ThemeName[] = ['matrix', 'amber'];
-const FUNCTIONS_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54331'}/functions/v1`;
 const EMPTY_CATALOG: SessionCatalog = {
   in_progress: [],
   completed: [],
@@ -363,7 +362,7 @@ export class GameSessionStore {
 
   async loadBlueprints() {
     this.status = 'loading';
-    const { data, error } = await supabase.functions.invoke('blueprints-list');
+    const { data, error } = await callApi('blueprints-list');
     if (error) {
       this.error = error.message;
       this.status = 'error';
@@ -396,7 +395,7 @@ export class GameSessionStore {
     this.sessionCatalogStatus = 'loading';
     this.sessionCatalogError = null;
 
-    const { data, error } = await supabase.functions.invoke('game-sessions-list');
+    const { data, error } = await callApi('game-sessions-list');
     if (error) {
       this.sessionCatalog = EMPTY_CATALOG;
       this.sessionCatalogError = error.message;
@@ -410,9 +409,7 @@ export class GameSessionStore {
 
   async startGame(blueprintId: string) {
     this.status = 'loading';
-    const { data, error } = await supabase.functions.invoke('game-start', {
-      body: { blueprint_id: blueprintId },
-    });
+    const { data, error } = await callApi('game-start', { blueprint_id: blueprintId });
     if (error) {
       this.error = error.message;
       this.status = 'error';
@@ -433,34 +430,16 @@ export class GameSessionStore {
   }
 
   private async loadPersistedState(gameId: string): Promise<unknown> {
-    const headers = new Headers();
+    const { data, error } = await callApiGet('game-get', { game_id: gameId });
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      headers.set('Authorization', `Bearer ${session.access_token}`);
+    if (error) {
+      // `game-get` returns a `details.recovery` hint for the failures a player
+      // can do something about; it is worth more than the bare error.
+      const recovery = isRecord(data) ? readRecoveryMessage(data.details) : null;
+      throw new Error(recovery ? `${error.message}. ${recovery}` : error.message);
     }
 
-    const response = await fetch(
-      `${FUNCTIONS_BASE_URL}/game-get?game_id=${encodeURIComponent(gameId)}`,
-      {
-        method: 'GET',
-        headers,
-      },
-    );
-
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null);
-      if (isRecord(payload) && typeof payload.error === 'string') {
-        const recovery = readRecoveryMessage(payload.details);
-        throw new Error(recovery ? `${payload.error}. ${recovery}` : payload.error);
-      }
-
-      throw new Error(`Failed to load session (${response.status})`);
-    }
-
-    return response.json();
+    return data;
   }
 
   async resumeSession(gameId: string) {
@@ -1056,9 +1035,7 @@ export class GameSessionStore {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
-        const { data, error } = await supabase.functions.invoke(invocation.endpoint, {
-          body: invocation.body,
-        });
+        const { data, error } = await callApi(invocation.endpoint, invocation.body);
 
         if (!error) {
           this.error = null;

@@ -4,12 +4,11 @@ const { invokeMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
 }));
 
-vi.mock('../api/supabase', () => ({
-  supabase: {
-    functions: {
-      invoke: invokeMock,
-    },
-  },
+vi.mock('../api/client', () => ({
+  callApi: invokeMock,
+  callApiGet: vi.fn(),
+  blueprintImageUrl: (blueprintId: string, imageId: string) =>
+    `/api/images/${blueprintId}/${imageId}`,
 }));
 
 import { GameSessionStore } from './store.svelte';
@@ -120,10 +119,10 @@ describe('store speaker behavior', () => {
     await store.submitInput('search');
 
     expect(invokeMock).toHaveBeenCalledTimes(1);
-    const [, options] = invokeMock.mock.calls[0] as [string, { body: Record<string, unknown> }];
-    expect(options.body).toEqual({ game_id: 'game-1', search_query: null });
-    expect(options.body).not.toHaveProperty('history');
-    expect(options.body).not.toHaveProperty('system_feedback');
+    const [, body] = invokeMock.mock.calls[0] as [string, Record<string, unknown>];
+    expect(body).toEqual({ game_id: 'game-1', search_query: null });
+    expect(body).not.toHaveProperty('history');
+    expect(body).not.toHaveProperty('system_feedback');
   });
 
   it('opens the notebook on the "notebook" command without a backend call', async () => {

@@ -50,7 +50,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 ## Feature Additions (Local Execution)
 
-- `packages/game-engine/src/db/schema.sql`: The whole local database — `players`, `game_sessions`, `game_events` — derived from the end state of `supabase/migrations/`, with no migration chain.
+- `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` — derived from the end state of `supabase/migrations/`, with no migration chain.
 - `packages/game-engine/src/db/client.ts`: The only file that imports a SQLite driver, plus the connection pragmas and the `PRAGMA user_version` schema runner.
 - `data/`: Gitignored home of the local `game.db` when `MYSTERY_CONFIG_ROOT` is unset; otherwise the database lives at `$MYSTERY_CONFIG_ROOT/game.db` so worktrees share one history.
 

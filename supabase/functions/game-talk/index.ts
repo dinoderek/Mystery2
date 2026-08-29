@@ -1,4 +1,5 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -10,9 +11,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
-import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkStartOutput } from "../_shared/ai-contracts.ts";
 import { buildRoleRequest } from "../_shared/role-request.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
@@ -24,10 +23,10 @@ import {
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-talk");
   const { requestId, log, logError } = logger;
 
@@ -38,27 +37,18 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id or character_id");
     }
 
-    // Authenticate user
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
     const gameId = String(body.game_id);
     const characterId = String(body.character_id);
 
-    const { data: session, error: sessionError } = await userClient
-      .from("game_sessions")
-      .select("*")
-      .eq("id", gameId)
-      .single();
-    if (sessionError || !session) {
+    const session = await ctx.sessions.getById(gameId);
+    if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
 
     validateTransition(session.mode, "talk");
 
-    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",
@@ -71,7 +61,7 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const blueprint = await loadBlueprint(userClient, session.blueprint_id, logger);
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, logger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
@@ -93,11 +83,7 @@ serveWithCors(async (req) => {
       );
     }
 
-    const { data: historyRows } = await userClient
-      .from("game_events")
-      .select("sequence,event_type,actor,narration,payload")
-      .eq("session_id", gameId)
-      .order("sequence", { ascending: true });
+    const historyRows = await ctx.events.listBySession(gameId);
 
     const { prompt, context: aiContext } = await buildRoleRequest({
       role: "talk_start",
@@ -187,18 +173,16 @@ serveWithCors(async (req) => {
       combinedParts = [...talkParts, ...forcedParts];
     }
 
-    const { error: updateError } = await userClient
-      .from("game_sessions")
-      .update({
+    try {
+      await ctx.sessions.update(gameId, {
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character_id: isForcedEndgame
           ? null
           : activeCharacter.id,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", gameId);
-    if (updateError) {
+      });
+    } catch {
       logError("request.error", {
         reason: "session_update_failed",
         game_id: gameId,
@@ -206,7 +190,7 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const talkSequence = await insertNarrationEvent(userClient, {
+    const talkSequence = await insertNarrationEvent(ctx.events, {
       session_id: gameId,
       event_type: "talk",
       actor: "system",
@@ -235,7 +219,7 @@ serveWithCors(async (req) => {
     });
 
     if (isForcedEndgame) {
-      await insertForcedEndgameEvent(userClient, {
+      await insertForcedEndgameEvent(ctx.events, {
         session_id: gameId,
         action: "talk",
         action_sequence: talkSequence,
@@ -279,4 +263,15 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

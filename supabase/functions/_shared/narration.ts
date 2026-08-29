@@ -5,6 +5,7 @@ import {
   type Speaker,
 } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
+import type { EventStore } from "./context.ts";
 
 export interface NarrationPart {
   text: string;
@@ -51,24 +52,6 @@ interface InsertNarrationEventInput {
   model?: string | null;
   diagnostics?: NarrationDiagnostics;
   logger?: LogWriter;
-}
-
-interface DatabaseClient {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        order: (
-          column: string,
-          options: { ascending: boolean },
-        ) => {
-          limit: (count: number) => Promise<{ data: Array<{ sequence: number }> | null }>;
-        };
-      };
-    };
-    insert: (
-      values: Record<string, unknown> | Array<Record<string, unknown>>,
-    ) => Promise<{ error?: { message?: string } | null }>;
-  };
 }
 
 interface EventRow {
@@ -260,25 +243,11 @@ export function flattenNarrationEvents(
   );
 }
 
-export async function getNextNarrationSequence(
-  db: DatabaseClient,
-  gameId: string,
-): Promise<number> {
-  const { data } = await db
-    .from("game_events")
-    .select("sequence")
-    .eq("session_id", gameId)
-    .order("sequence", { ascending: false })
-    .limit(1);
-
-  return data && data.length > 0 ? data[0].sequence + 1 : 1;
-}
-
 export async function insertNarrationEvent(
-  db: DatabaseClient,
+  events: EventStore,
   input: InsertNarrationEventInput,
 ): Promise<number> {
-  const sequence = await getNextNarrationSequence(db, input.session_id);
+  const sequence = await events.nextSequence(input.session_id);
   const narration = narrationTextFromParts(input.narration_parts);
   const payload = input.payload ? { ...input.payload } : {};
 
@@ -292,25 +261,27 @@ export async function insertNarrationEvent(
     };
   }
 
-  const { error } = await db.from("game_events").insert({
-    session_id: input.session_id,
-    sequence,
-    event_type: input.event_type,
-    actor: input.actor,
-    payload: Object.keys(payload).length > 0 ? payload : null,
-    narration,
-    narration_parts: input.narration_parts,
-    model: input.model ?? null,
-  });
-
-  if (error) {
+  try {
+    await events.insert({
+      session_id: input.session_id,
+      sequence,
+      event_type: input.event_type,
+      actor: input.actor,
+      payload: Object.keys(payload).length > 0 ? payload : null,
+      narration,
+      narration_parts: input.narration_parts,
+      model: input.model ?? null,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to insert narration event";
     input.logger?.logError("narration_event.persist_failed", {
       session_id: input.session_id,
       event_type: input.event_type,
       sequence,
-      error: error.message ?? "Failed to insert narration event",
+      error: message,
     });
-    throw new Error(error.message ?? "Failed to insert narration event");
+    throw new Error(message);
   }
 
   input.logger?.log("narration_event.persisted", {
@@ -322,23 +293,4 @@ export async function insertNarrationEvent(
   });
 
   return sequence;
-}
-
-export async function insertNarrationEvents(
-  db: DatabaseClient,
-  sessionId: string,
-  events: Array<Omit<InsertNarrationEventInput, "session_id">>,
-): Promise<number[]> {
-  const sequences: number[] = [];
-
-  for (const event of events) {
-    sequences.push(
-      await insertNarrationEvent(db, {
-        session_id: sessionId,
-        ...event,
-      }),
-    );
-  }
-
-  return sequences;
 }

@@ -1,4 +1,5 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -10,9 +11,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseSearchOutput } from "../_shared/ai-contracts.ts";
 import {
   findLocationById,
@@ -123,10 +122,10 @@ function collectRevealedClueIds(
   return locationLevelIds;
 }
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-search");
   const { requestId, log, logError } = logger;
 
@@ -137,11 +136,6 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id");
     }
 
-    // Authenticate user
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
     const gameId = String(body.game_id);
     const searchQuery: string | null =
       typeof body.search_query === "string" && body.search_query.trim().length > 0
@@ -149,19 +143,15 @@ serveWithCors(async (req) => {
         : null;
     const narrationLogger = withLogContext(logger, { game_id: gameId });
 
-    const { data: session, error: sessionError } = await userClient
-      .from("game_sessions")
-      .select("*")
-      .eq("id", gameId)
-      .single();
+    const session = await ctx.sessions.getById(gameId);
 
-    if (sessionError || !session) {
+    if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
     validateTransition(session.mode, "search");
 
-    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",
@@ -174,7 +164,7 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
@@ -189,11 +179,7 @@ serveWithCors(async (req) => {
       return internalError("Current location not found in blueprint");
     }
 
-    const { data: historyRows } = await userClient
-      .from("game_events")
-      .select("sequence,event_type,actor,narration,payload")
-      .eq("session_id", gameId)
-      .order("sequence", { ascending: true });
+    const historyRows = await ctx.events.listBySession(gameId);
 
     // Collect all clue IDs (location-level + sub-location)
     const allCanonicalClueIds = collectAllLocationClueIds(currentLocation);
@@ -361,17 +347,15 @@ serveWithCors(async (req) => {
       ? existingDiscovered
       : [...new Set([...existingDiscovered, validatedClueId])];
 
-    const { error: updateError } = await userClient
-      .from("game_sessions")
-      .update({
+    try {
+      await ctx.sessions.update(gameId, {
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character_id: null,
         discovered_clues: discoveredClues,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", gameId);
-    if (updateError) {
+      });
+    } catch {
       logError("request.error", {
         reason: "session_update_failed",
         game_id: gameId,
@@ -383,7 +367,7 @@ serveWithCors(async (req) => {
       ? revealedClueIds
       : [...revealedClueIds, validatedClueId];
 
-    const searchSequence = await insertNarrationEvent(userClient, {
+    const searchSequence = await insertNarrationEvent(ctx.events, {
       session_id: gameId,
       event_type: "search",
       actor: "system",
@@ -416,7 +400,7 @@ serveWithCors(async (req) => {
     });
 
     if (isForcedEndgame) {
-      await insertForcedEndgameEvent(userClient, {
+      await insertForcedEndgameEvent(ctx.events, {
         session_id: gameId,
         action: "search",
         action_sequence: searchSequence,
@@ -477,4 +461,15 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

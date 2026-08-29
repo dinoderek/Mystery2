@@ -1,4 +1,5 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import { DEFAULT_AI_PROFILE_ID, type EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -10,12 +11,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import {
-  getAIProfileById,
-  getDefaultAIProfile,
-} from "../_shared/ai-profile.ts";
 import { buildNarrationPrompt } from "../_shared/role-request.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { createRequestLogger } from "../_shared/logging.ts";
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import {
@@ -36,19 +32,14 @@ const NOTEBOOK_GUIDANCE =
   "It holds what you know, who you have met, and every clue you have found. " +
   'Type "help" to see what else you can do.';
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-start");
   const { requestId, log, logError } = logger;
 
   try {
-    // Authenticate user
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: supabase, user: authUser } = authResult;
-
     const body = await req.json();
     if (!body || typeof body.blueprint_id !== "string") {
       log("request.invalid", { reason: "missing_or_invalid_blueprint_id" });
@@ -68,8 +59,8 @@ serveWithCors(async (req) => {
       : null;
 
     const aiProfile = requestedAIProfile
-      ? await getAIProfileById(requestedAIProfile)
-      : await getDefaultAIProfile();
+      ? await ctx.aiProfiles.getById(requestedAIProfile)
+      : await ctx.aiProfiles.getById(DEFAULT_AI_PROFILE_ID);
 
     if (requestedAIProfile && !aiProfile) {
       log("request.invalid", {
@@ -83,46 +74,15 @@ serveWithCors(async (req) => {
       return internalError("No default AI profile configured");
     }
 
-    // Prefer the canonical storage key, but retain a fallback scan for older buckets.
-    let blueprintText: string | null = null;
-    const { data: directBlueprintFile, error: directDownloadError } = await supabase.storage
-      .from("blueprints")
-      .download(`${blueprint_id}.json`);
-    if (!directDownloadError && directBlueprintFile) {
-      blueprintText = await directBlueprintFile.text();
+    let blueprint;
+    try {
+      blueprint = await ctx.content.loadBlueprint(blueprint_id, logger);
+    } catch {
+      logError("request.error", { reason: "storage_list_failed" });
+      return internalError("Failed to access blueprints");
     }
 
-    if (!blueprintText) {
-      const { data: files, error: listError } = await supabase.storage
-        .from("blueprints")
-        .list();
-      if (listError) {
-        logError("request.error", { reason: "storage_list_failed" });
-        return internalError("Failed to access blueprints");
-      }
-
-      for (const file of files || []) {
-        if (!file.name.endsWith(".json")) continue;
-
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from("blueprints")
-          .download(file.name);
-        if (downloadError) continue;
-
-        const text = await fileData.text();
-        try {
-          const rawJson = JSON.parse(text);
-          if (rawJson.id === blueprint_id) {
-            blueprintText = text;
-            break;
-          }
-        } catch (_error) {
-          // Ignore malformed storage rows while scanning.
-        }
-      }
-    }
-
-    if (!blueprintText) {
+    if (!blueprint) {
       log("request.invalid", {
         reason: "blueprint_not_found",
         blueprint_id,
@@ -130,34 +90,27 @@ serveWithCors(async (req) => {
       return notFound("Blueprint not found");
     }
 
-    const rawBlueprint = JSON.parse(blueprintText);
-    const blueprint = BlueprintV2Schema.parse(rawBlueprint);
     const startLocId = blueprint.world.starting_location_id;
 
-    // Insert game_session (user_id from authenticated user)
-    const { data: sessionData, error: sessionError } = await supabase
-      .from("game_sessions")
-      .insert({
-        user_id: authUser.id,
+    // Insert game_session (owned by the authenticated player)
+    let sessionId: string;
+    try {
+      sessionId = await ctx.sessions.create({
+        user_id: ctx.player.id,
         blueprint_id: blueprint.id,
         ai_profile_id: aiProfile.id,
         mode: "explore",
         current_location_id: startLocId,
         time_remaining: blueprint.metadata.time_budget,
-      })
-      .select("id")
-      .single();
-
-    if (sessionError) {
+      });
+    } catch (error) {
       logError("request.error", {
         reason: "session_create_failed",
         blueprint_id: blueprint.id,
-        error: sessionError.message,
+        error: error instanceof Error ? error.message : String(error),
       });
       return internalError("Failed to create session");
     }
-
-    const sessionId = sessionData.id;
 
     // Generate opening narration
     const aiProvider = createAIProviderFromProfile(aiProfile, {
@@ -188,7 +141,7 @@ serveWithCors(async (req) => {
 
     // Insert start event
     try {
-      await insertNarrationEvent(supabase, {
+      await insertNarrationEvent(ctx.events, {
         session_id: sessionId,
         event_type: "start",
         actor: "system",
@@ -301,4 +254,15 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

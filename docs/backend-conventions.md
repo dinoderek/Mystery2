@@ -22,6 +22,36 @@ All secure backend logic runs in **Supabase Edge Functions** (Deno runtime).
 - Any shared logic or inferred types must be imported using valid Deno relative paths (including the `.ts` extension).
 - Edge Functions are responsible for wrapping the AI provider (OpenRouter) using server-side secrets. The UI never calls OpenRouter directly.
 
+### The `EngineContext` seam
+
+Handlers do **not** touch the Supabase client. Each endpoint exports
+
+```ts
+export async function handle(req: Request, ctx: EngineContext): Promise<Response>
+```
+
+and keeps a thin `serveWithCors` wrapper that checks the HTTP method, calls
+`requireEngineContext(req)`, and delegates. `EngineContext`
+(`supabase/functions/_shared/context.ts`) is the engine's whole boundary against
+its host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
+`ctx.player`. The Supabase implementation lives in `context-supabase.ts` and is
+the only file that speaks the query builder, holds a service-role client, or
+knows what a storage bucket is.
+
+Rules:
+
+- Add a **named operation** to the relevant store interface rather than reaching
+  for a client. If a handler needs a query that does not exist yet, extend
+  `context.ts` and implement it in `context-supabase.ts`.
+- Keep the method check ahead of `requireEngineContext` so an unsupported method
+  still returns `405` without authenticating.
+- Error convention: a genuine backend failure **throws**, and "does not exist"
+  returns `null`/empty. Handlers map a throw to `500` and a `null` to `404`/`400`.
+
+This exists so the engine can be re-hosted without touching game logic. Anything
+that bypasses the seam has to be ported by hand later, so treat a direct client
+reference in a handler as a bug.
+
 ### Sharing code with `packages/shared`
 
 An Edge Function **cannot** import out of `supabase/functions`. The local edge

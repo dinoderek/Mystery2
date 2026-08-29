@@ -16,6 +16,7 @@ import {
 } from "./narration.ts";
 import { NARRATOR_SPEAKER } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
+import type { EventStore } from "./context.ts";
 
 export async function generateForcedAccusationStartNarration(input: {
   req: Request;
@@ -138,30 +139,12 @@ export async function tryGenerateForcedEndgame(input: {
   }
 }
 
-interface DatabaseClient {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        order: (
-          column: string,
-          options: { ascending: boolean },
-        ) => {
-          limit: (count: number) => Promise<{ data: Array<{ sequence: number }> | null }>;
-        };
-      };
-    };
-    insert: (
-      values: Record<string, unknown> | Array<Record<string, unknown>>,
-    ) => Promise<{ error?: { message?: string } | null }>;
-  };
-}
-
 /**
  * Inserts the forced_endgame narration event and logs the timeout transition.
  * Call after the action's own narration event has been persisted.
  */
 export async function insertForcedEndgameEvent(
-  db: DatabaseClient,
+  events: EventStore,
   input: {
     session_id: string;
     action: string;
@@ -176,7 +159,7 @@ export async function insertForcedEndgameEvent(
     logger: LogWriter;
   },
 ): Promise<number> {
-  const sequence = await insertNarrationEvent(db, {
+  const sequence = await insertNarrationEvent(events, {
     session_id: input.session_id,
     event_type: "forced_endgame",
     actor: "system",

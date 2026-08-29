@@ -11,7 +11,8 @@
  * the trace tooling — treats it as the arrival it is. Unlike `game-move` it
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -22,9 +23,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { buildNarrationPrompt } from "../_shared/role-request.ts";
-import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
 import {
   createNarrationDiagnostics,
@@ -34,10 +33,10 @@ import {
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-enter");
   const { requestId, log, logError } = logger;
 
@@ -48,20 +47,12 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id");
     }
 
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
     const gameId = String(body.game_id);
     const narrationLogger = withLogContext(logger, { game_id: gameId });
 
-    const { data: session, error: sessionError } = await userClient
-      .from("game_sessions")
-      .select("*")
-      .eq("id", gameId)
-      .single();
+    const session = await ctx.sessions.getById(gameId);
 
-    if (sessionError || !session) {
+    if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
@@ -69,11 +60,7 @@ serveWithCors(async (req) => {
     // Only ever valid once, immediately after game-start. Rejecting anything
     // else keeps a double-tap on the confirm prompt from narrating the arrival
     // twice, and is the same condition the client uses to show that prompt.
-    const { data: existingEvents } = await userClient
-      .from("game_events")
-      .select("sequence,event_type")
-      .eq("session_id", gameId)
-      .order("sequence", { ascending: true });
+    const existingEvents = await ctx.events.listBySession(gameId);
 
     const events = existingEvents ?? [];
     if (events.length !== 1 || events[0].event_type !== "start") {
@@ -85,7 +72,7 @@ serveWithCors(async (req) => {
       return badRequest("Starting location already entered");
     }
 
-    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",
@@ -98,7 +85,7 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
@@ -168,7 +155,7 @@ serveWithCors(async (req) => {
       ),
     ];
 
-    await insertNarrationEvent(userClient, {
+    await insertNarrationEvent(ctx.events, {
       session_id: gameId,
       event_type: "move",
       actor: "system",
@@ -239,4 +226,15 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

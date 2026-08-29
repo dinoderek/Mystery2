@@ -1,4 +1,5 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -10,9 +11,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { buildNarrationPrompt } from "../_shared/role-request.ts";
-import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { selectLocationConversationHistory } from "../_shared/ai-context.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../_shared/forced-endgame.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
@@ -24,9 +23,10 @@ import {
 import { NARRATOR_SPEAKER } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST")
-    return new Response("Method not allowed", { status: 405 });
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-move");
   const { requestId, log, logError } = logger;
 
@@ -37,29 +37,20 @@ serveWithCors(async (req) => {
       return badRequest("Missing game_id or destination");
     }
 
-    // Authenticate user
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
     const { game_id, destination } = body;
     const narrationLogger = withLogContext(logger, { game_id });
 
     // Fetch session
-    const { data: session, error: sessionError } = await userClient
-      .from("game_sessions")
-      .select("*")
-      .eq("id", game_id)
-      .single();
+    const session = await ctx.sessions.getById(game_id);
 
-    if (sessionError || !session) {
+    if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: game_id });
       return badRequest("Game session not found");
     }
 
     validateTransition(session.mode, "move");
 
-    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",
@@ -73,7 +64,7 @@ serveWithCors(async (req) => {
     });
 
     // Fetch blueprint
-    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
@@ -94,11 +85,7 @@ serveWithCors(async (req) => {
     const isForcedEndgame = newTime === 0;
     const nextMode = isForcedEndgame ? "accuse" : "explore";
 
-    const { data: historyRows } = await userClient
-      .from("game_events")
-      .select("sequence,event_type,actor,narration,payload")
-      .eq("session_id", game_id)
-      .order("sequence", { ascending: true });
+    const historyRows = await ctx.events.listBySession(game_id);
     const locationHistory = selectLocationConversationHistory(
       historyRows ?? [],
       destLoc.id,
@@ -189,18 +176,15 @@ serveWithCors(async (req) => {
     }
 
     // Update Session
-    const { error: updateError } = await userClient
-      .from("game_sessions")
-      .update({
+    try {
+      await ctx.sessions.update(game_id, {
         current_location_id: destLoc.id,
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character_id: null,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", game_id);
-
-    if (updateError) {
+      });
+    } catch {
       logError("request.error", {
         reason: "session_update_failed",
         game_id: game_id,
@@ -208,7 +192,7 @@ serveWithCors(async (req) => {
       return internalError("Failed to update session");
     }
 
-    const moveSequence = await insertNarrationEvent(userClient, {
+    const moveSequence = await insertNarrationEvent(ctx.events, {
       session_id: game_id,
       event_type: "move",
       actor: "system",
@@ -236,7 +220,7 @@ serveWithCors(async (req) => {
     });
 
     if (isForcedEndgame) {
-      await insertForcedEndgameEvent(userClient, {
+      await insertForcedEndgameEvent(ctx.events, {
         session_id: game_id,
         action: "move",
         action_sequence: moveSequence,
@@ -299,4 +283,14 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST")
+    return new Response("Method not allowed", { status: 405 });
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

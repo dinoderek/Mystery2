@@ -6,6 +6,9 @@
         "tests/*",
         "web"
     ],
+    "engines": {
+        "node": ">=24 <25"
+    },
     "scripts": {
         "dev": "node scripts/dev-mock.mjs",
         "dev:ai:free": "node scripts/dev-ai.mjs free",
@@ -54,16 +57,17 @@
         "test": "node scripts/run-test-gate.mjs"
     },
     "devDependencies": {
-        "@types/node": "^25.3.3",
-        "@vitest/coverage-v8": "^4.1.2",
-        "eslint": "^9.0.0",
-        "prettier": "^3.0.0",
-        "typescript": "^5.0.0",
-        "typescript-eslint": "^8.56.1",
-        "vitest": "^4.0.18",
-        "wrangler": "^4.71.0"
+        "@eslint/js": "10.0.1",
+        "@types/node": "24.13.3",
+        "@vitest/coverage-v8": "4.1.11",
+        "eslint": "10.9.1",
+        "prettier": "3.9.6",
+        "typescript": "5.9.3",
+        "typescript-eslint": "8.68.0",
+        "vitest": "4.1.11",
+        "wrangler": "4.71.0"
     },
     "dependencies": {
-        "@supabase/supabase-js": "^2.98.0"
+        "@supabase/supabase-js": "2.98.0"
     }
 }

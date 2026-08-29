@@ -5,6 +5,6 @@
   "main": "src/mystery-api-contracts.ts",
   "types": "src/mystery-api-contracts.ts",
   "dependencies": {
-    "zod": "^3.23.8"
+    "zod": "3.25.76"
   }
 }

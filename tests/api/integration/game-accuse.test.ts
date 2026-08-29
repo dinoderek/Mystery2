@@ -196,7 +196,6 @@ describe("game-accuse endpoint", () => {
     const { game_id } = await startRes.json();
 
     // Rounds 0–2: a wrong accusation is rejected with a retry invitation.
-    let lastData: Record<string, unknown> | null = null;
     for (let round = 0; round < 3; round += 1) {
       const roundRes = await fetch(`${API_URL}/game-accuse`, {
         method: "POST",
@@ -207,10 +206,10 @@ describe("game-accuse endpoint", () => {
         }),
       });
       expect(roundRes.status).toBe(200);
-      lastData = await roundRes.json();
-      expect(lastData?.mode).toBe("accuse");
-      expect(lastData?.result).toBeNull();
-      expect(lastData?.follow_up_prompt).toBeTruthy();
+      const roundData = await roundRes.json();
+      expect(roundData.mode).toBe("accuse");
+      expect(roundData.result).toBeNull();
+      expect(roundData.follow_up_prompt).toBeTruthy();
     }
 
     // Round 3: a still-wrong accusation finally resolves to lose.

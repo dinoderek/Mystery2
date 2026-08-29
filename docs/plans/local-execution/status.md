@@ -19,8 +19,8 @@ easy export path for mining past play.
 | P0 | Dependency and runtime baseline | **MERGED** — [#138](https://github.com/dinoderek/Mystery2/pull/138) |
 | P1 | `EngineContext` seam, in place | **MERGED** — [#139](https://github.com/dinoderek/Mystery2/pull/139) |
 | P2 | Local adapters (SQLite + filesystem) | **MERGED** — [#142](https://github.com/dinoderek/Mystery2/pull/142) |
-| P3 | Move engine to `packages/game-engine/`, stand up SvelteKit `/api`, cut over client and tests | **MERGED** — see below |
-| P5 | Demolition and governance (delete `supabase/`, amend constitution) | **MERGED** — see below |
+| P3 | Move engine to `packages/game-engine/`, stand up SvelteKit `/api`, cut over client and tests | **MERGED** — [#143](https://github.com/dinoderek/Mystery2/pull/143) |
+| P5 | Demolition and governance (delete `supabase/`, amend constitution) | **MERGED** — [#143](https://github.com/dinoderek/Mystery2/pull/143) |
 | P4 | Mining and export (`npm run dump`, `sessions:ls`) | **NEXT** |
 
 ## What landed
@@ -151,7 +151,7 @@ Two changes outside the new package, both small and both green on Supabase:
   `blueprint-image-link` works against either adapter (the local content store
   serves a same-origin `/api/images/...` path, which has no origin to strip).
 
-### P3 + P5 — merged
+### P3 + P5 — merged (#143)
 
 Shipped together, because the cutover and the demolition could not be separated
 without a phase in the middle where the suite could not be green: the moment

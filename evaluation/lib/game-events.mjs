@@ -2,7 +2,7 @@
 //
 // Both evaluation subjects are built from the same event shape
 // (event_type/actor/narration/payload): the trace pipeline reads rows straight
-// out of Supabase, and a runtime-harness case authors the identical shape as
+// out of the game database, and a runtime-harness case authors the same shape as
 // its fixed `given.history`. The mapping from an event to (a) the AI role that
 // produced it and (b) the clue ids it revealed therefore has to be identical on
 // both sides, so it lives here rather than in either harness.

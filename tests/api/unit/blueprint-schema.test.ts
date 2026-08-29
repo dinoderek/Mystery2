@@ -8,7 +8,7 @@ import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema
 const ROOT_DIR = process.cwd();
 
 async function loadCanonicalBlueprints() {
-  const sourceDirs = ["supabase/seed/blueprints"];
+  const sourceDirs = ["blueprints"];
   const results = [];
 
   for (const relativeDir of sourceDirs) {

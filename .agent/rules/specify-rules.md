@@ -2,6 +2,11 @@
 
 Auto-generated from all feature plans. Last updated: 2026-03-05
 
+> **Stale by design.** The entries below are a record of what each shipped
+> milestone used, not the current stack. Several name Supabase and Deno Edge
+> Functions; the game now runs as one local Node process over SQLite. See
+> `docs/architecture.md`.
+
 ## Active Technologies
 - TypeScript 5.x + SvelteKit, Svelte, Tailwind CSS, Vite, @supabase/supabase-js, Playwrigh (002-web-ui)
 - Local storage for minimal client state if needed (no DB directly accessed by UI) (002-web-ui)

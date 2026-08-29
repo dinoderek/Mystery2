@@ -1,63 +1,25 @@
+// Blueprint image identity.
+//
+// An image id is a filename carrying a uuid, so a given id always names the
+// same bytes. That is what makes `/api/images/<blueprint>/<image>` a permanent
+// URL, and why nothing here deals in signatures, expiry, or buckets any more.
+
 const IMAGE_FILENAME_PATTERN =
   /^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*\.(?:png|jpe?g|webp)$/i;
-
-export const BLUEPRINT_IMAGES_BUCKET = "blueprint-images";
-export const IMAGE_LINK_TTL_SECONDS = 3600;
 
 export function isCanonicalImageId(value: unknown): value is string {
   return typeof value === "string" && IMAGE_FILENAME_PATTERN.test(value);
 }
 
+/** The id, or null when it is not a canonical image filename. */
 export function ensureCanonicalImageId(value: unknown): string | null {
-  if (isCanonicalImageId(value)) {
-    return value;
-  }
-  return null;
+  return isCanonicalImageId(value) ? value : null;
 }
 
-export function normalizeSignedUrlExpiry(
-  issuedAtMs = Date.now(),
-  ttlSeconds = IMAGE_LINK_TTL_SECONDS,
-): string {
-  return new Date(issuedAtMs + ttlSeconds * 1000).toISOString();
-}
-
-export function isExpiryWindowValid(
-  expiresAtIso: string,
-  nowMs = Date.now(),
-  ttlSeconds = IMAGE_LINK_TTL_SECONDS,
-): boolean {
-  const expiresAtMs = Date.parse(expiresAtIso);
-  if (!Number.isFinite(expiresAtMs)) return false;
-
-  const deltaMs = expiresAtMs - nowMs;
-  if (deltaMs <= 0) return false;
-
-  return deltaMs <= ttlSeconds * 1000 + 5000;
-}
-
+/** How an image is addressed within a blueprint: `<blueprint id>/<filename>`. */
 export function buildImageStorageKey(
   blueprintId: string,
   imageFilename: string,
 ): string {
   return `${blueprintId}/${imageFilename}`;
-}
-
-/**
- * Strip the origin from an image URL and return only the path + query.
- *
- * Inside Supabase Edge Functions both `SUPABASE_URL` and `req.url` resolve to
- * internal Docker hostnames that are unreachable from the browser. By returning
- * a relative path the client can prepend its own known Supabase base URL, which
- * works in both local dev and production.
- *
- * A URL that is already origin-relative is returned unchanged: the local
- * `ContentStore` serves images from a same-origin `/api/images/...` route, so
- * it has no origin to strip.
- */
-export function toRelativeSignedUrl(signedUrl: string): string {
-  if (signedUrl.startsWith("/")) return signedUrl;
-
-  const parsed = new URL(signedUrl);
-  return `${parsed.pathname}${parsed.search}`;
 }

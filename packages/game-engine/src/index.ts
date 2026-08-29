@@ -75,7 +75,11 @@ export {
 } from "./paths.ts";
 
 // --- helpers the server and the tooling reach for ---
-export { ensureCanonicalImageId, buildImageStorageKey } from "./images.ts";
+export {
+  buildImageStorageKey,
+  ensureCanonicalImageId,
+  isCanonicalImageId,
+} from "./images.ts";
 export { createRequestLogger, type LogWriter, type RequestLogger } from "./logging.ts";
 export type { NarrationPart } from "./narration.ts";
 export { readGameMode, type GameMode } from "./state-machine.ts";

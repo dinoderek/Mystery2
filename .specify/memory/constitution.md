@@ -1,22 +1,29 @@
 <!-- Sync Impact Report:
-Version change: 1.2.0 -> 1.3.0
+Version change: 1.3.0 -> 2.0.0
+MAJOR because Principle IV is redefined: the approved architecture was
+"static SvelteKit UI, Supabase Auth/Postgres/Storage/Edge Functions", and the
+game now runs as one local Node process over SQLite and the filesystem. A
+principle that named a platform cannot be amended to name a different one
+without a major bump under this document's own versioning policy.
 Modified principles:
-- I. Documentation First -> I. Documentation First
-- II. Test Everything You Build (NON-NEGOTIABLE) -> II. Test Everything You Build (NON-NEGOTIABLE)
-- III. Run Quality Gates -> III. Run Quality Gates
-- IV. Architecture & Security Constraints -> IV. Architecture & Security Constraints
-- V. Context-Specific Conventions -> V. Context-Specific Conventions
-- VI. Observability and Logging -> VI. Observability and Logging
+- II. Test Everything You Build (NON-NEGOTIABLE) — boundary list follows the
+  new architecture (engine/API/database instead of Supabase services)
+- IV. Architecture & Security Constraints — REDEFINED (see above)
+- V. Context-Specific Conventions — Edge Functions -> the engine
+- VI. Observability and Logging — rationale no longer cites distributed
+  Supabase services
 Added sections: None
 Removed sections: None
 Templates requiring updates:
-- ✅ .specify/templates/agent-file-template.md
-- ✅ .specify/templates/constitution-template.md
 - ✅ .specify/templates/plan-template.md
-- ✅ .specify/templates/spec-template.md
-- ✅ .specify/templates/tasks-template.md
+- ✅ .specify/templates/agent-file-template.md (no Supabase references)
+- ✅ .specify/templates/constitution-template.md (no Supabase references)
+- ✅ .specify/templates/spec-template.md (no Supabase references)
+- ✅ .specify/templates/tasks-template.md (no Supabase references)
 Operational guidance updated:
 - ✅ AGENTS.md
+- ✅ docs/architecture.md, docs/testing.md, docs/backend-conventions.md,
+     docs/local-infrastructure.md, QUICKSTART.md
 Follow-up TODOs: None
 -->
 # Mystery Game Constitution
@@ -48,13 +55,13 @@ propagated through the delivery workflow.
 ### II. Test Everything You Build (NON-NEGOTIABLE)
 
 Every change MUST include a concrete test plan aligned with `docs/testing.md`.
-Public logic MUST have unit coverage; Supabase, Edge Function, auth, storage,
-and other cross-boundary behavior MUST have integration coverage; critical user
-journeys, API-backed flows, and visual flows MUST have E2E or browser coverage
-as appropriate. Documentation-only changes MAY skip code tests only when they
+Public logic MUST have unit coverage; the engine's endpoints, profile
+resolution, session ownership, and content loading MUST have integration
+coverage against a running server; critical user journeys, API-backed flows,
+and visual flows MUST have E2E or browser coverage as appropriate. Documentation-only changes MAY skip code tests only when they
 do not alter runtime code, tooling, migrations, tests, or environment
-contracts. Rationale: the project depends on multiple execution environments,
-and regressions are only visible when each boundary is exercised.
+contracts. Rationale: the game is one process over a real database and real files, and
+regressions at those boundaries are only visible when each is exercised.
 
 ### III. Run Quality Gates
 
@@ -68,13 +75,26 @@ exceptions.
 
 ### IV. Architecture & Security Constraints
 
-Changes MUST preserve the approved architecture in `docs/architecture.md`:
-static SvelteKit UI, Supabase Auth/Postgres/Storage/Edge Functions, and
-server-side AI calls. Secrets MUST stay out of the browser, auth and RLS
-expectations MUST remain intact, and blueprint/session flows MUST stay aligned
-with the documented request lifecycles. Any justified deviation MUST be
-recorded in the implementation plan before work begins. Rationale: architecture
-drift and client-side secret leaks create failures that are expensive to undo.
+Changes MUST preserve the approved architecture in `docs/architecture.md`: the
+game runs as **one local Node process** — a SvelteKit server that serves both
+the SPA and its `/api`, over SQLite and the filesystem, with server-side AI
+calls to OpenRouter. Three constraints follow and MUST hold:
+
+1. **Secrets stay out of the browser.** The OpenRouter key is read by the
+   server from the environment and never reaches the client.
+2. **Ownership is enforced in the engine's repositories.** Every session and
+   event query MUST be scoped to the requesting profile. There is no database
+   layer underneath to catch a query that forgets.
+3. **The engine does not know how it is hosted.** Handlers reach the outside
+   world only through `EngineContext`; anything that reaches past it — a file
+   path, a driver, an HTTP detail — belongs in an adapter.
+
+Reintroducing a hosted backend, a container dependency, or a build step between
+the source and the running game is a deviation and MUST be recorded in the
+implementation plan before work begins. Rationale: the whole value of this
+architecture is that it is small enough to hold in your head and runs with one
+command; drift back toward a platform is expensive to undo, and a leaked key or
+an unscoped query has no second line of defence.
 
 ### V. Context-Specific Conventions
 
@@ -82,7 +102,7 @@ Contributors MUST load the repo guidance that governs the surface area they are
 editing before implementation. This includes `docs/styling-conventions.md` for
 SvelteKit styling/theme work, `docs/component-inventory.md` for UI reuse,
 `docs/screen-navigation.md` for routing/page architecture,
-`docs/backend-conventions.md` for Edge Functions, API contracts, and database
+`docs/backend-conventions.md` for the engine, API contracts, and database
 changes, and `packages/shared/src/blueprint-schema-v2.ts` for
 structural mystery data-model changes. Plans, specs, and tasks MUST reflect
 those conventions instead of inventing parallel patterns. Rationale: shared
@@ -96,8 +116,9 @@ debugged. Errors MUST be logged or otherwise captured at least once with enough
 context to diagnose the failing request, session, or blueprint state, and
 user-facing flows MUST not silently swallow failures. When work introduces new
 operator workflows or debugging steps, the relevant docs MUST be updated in the
-same change. Rationale: AI-backed gameplay and distributed Supabase services
-are difficult to operate without deliberate diagnostics.
+same change. Rationale: AI-backed gameplay is
+non-deterministic, and a bad turn is only diagnosable from what the request
+logged while it happened.
 
 ## Development Workflow
 
@@ -129,4 +150,4 @@ guidance conflicts with this Constitution, this Constitution wins. Use
 `AGENTS.md` for agent workflow details and `docs/` for project/runtime
 guidance.
 
-**Version**: 1.3.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-15
+**Version**: 2.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-08-29

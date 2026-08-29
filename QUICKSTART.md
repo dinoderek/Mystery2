@@ -2,10 +2,9 @@
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+, [npm](https://www.npmjs.com/)
-- [Docker](https://www.docker.com/) (local Supabase)
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-- [Deno](https://deno.land/) (Edge Function tooling)
+- [Node.js](https://nodejs.org/) 24 (see `.nvmrc`), [npm](https://www.npmjs.com/)
+
+That is the whole list. The game is one Node process over a SQLite file.
 
 ## First-Time Setup
 
@@ -26,22 +25,19 @@ $MYSTERY_CONFIG_ROOT/
   .env.ai.free.local
   .env.ai.paid.local
   .env.images.local
-  .env.deploy.dev.local
-  .env.deploy.staging.local
-  .env.deploy.prod.local
-  deploy/bootstrap-users.dev.local.json
-  deploy/bootstrap-users.staging.local.json
-  supabase/seed/auth-users.local.json
+  game.db
+  blueprints/
+  blueprint-images/
 ```
 
-**Bootstrap everything:**
+**Bootstrap:**
 
 ```bash
-npm run seed:all
+npm ci
 ```
 
-This starts local Supabase (if needed), seeds auth users, AI profiles, blueprint
-storage, and images. Missing images produce warnings, not errors.
+There is nothing to seed. The database is created on first run, and blueprints
+are read off disk — the two committed in `blueprints/` are enough to play.
 
 ## Local Development
 
@@ -51,8 +47,10 @@ storage, and images. Missing images produce warnings, not errors.
 npm run dev
 ```
 
-Starts Supabase, seeds storage and mock AI profile, runs SvelteKit at
-`http://localhost:5173`.
+Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
+command prints it). Mock narration, no network, no API key.
+
+Pick a profile name on the first screen — that is the whole of signing in.
 
 ### Live AI
 
@@ -72,25 +70,23 @@ Then:
 npm run dev:ai:free   # or dev:ai:paid
 ```
 
-### Switch profile without restarting
+### Switching model
 
-```bash
-npm run seed:ai -- --only <mock|free|paid>
-```
+Stop the server and start the other command. Profiles are environment, not
+database rows, so there is nothing to reseed — and because a session's profile
+is resolved on every request, editing `.env.ai.free.local` takes effect on the
+next turn of a session already in progress.
 
-New sessions use the updated `default` profile. Existing sessions keep their
-stored `ai_profile_id`. See [`docs/ai-configuration.md`](docs/ai-configuration.md).
+Existing sessions keep the profile *label* they were started with, which is
+what the evaluation pipeline reads.
+See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 
-## Seeded Local Users
+## Profiles
 
-| Email                | Purpose                          |
-| -------------------- | -------------------------------- |
-| `player1@test.local` | Primary local player             |
-| `player2@test.local` | Second player / RLS checks       |
-
-Passwords are generated into `supabase/seed/auth-users.local.json` (or
-`$MYSTERY_CONFIG_ROOT/supabase/seed/auth-users.local.json`) on the first
-`seed:auth` run and reused thereafter.
+There are no seeded accounts. Type a name on the first screen and that profile
+exists; type a different one and you get a separate set of cases. Profiles are
+local to the machine and have no passwords — they keep one person's cases apart
+from another's, not anyone out.
 
 ## Blueprint Generation
 
@@ -228,74 +224,33 @@ Writes Markdown prompt files instead of calling OpenRouter. Output defaults to
 `$MYSTERY_CONFIG_ROOT/chat-gen-prompts/images/`. Cannot combine with
 `--dry-mode` or `--dry-run`.
 
-## Supabase Operations
+## Running The Game
 
-For full details see [`docs/local-infrastructure.md`](docs/local-infrastructure.md).
+There is no stack to start, restart, reset, or garbage-collect, and no Edge
+Functions to redeploy after an edit. `vite dev` reloads the engine like any
+other source file.
 
-### Worktrees: use `npm run` scripts
+### Worktrees
 
-In a git worktree, always use `npm run supabase:*` scripts instead of raw
-`npx supabase` commands. The scripts generate `supabase/config.toml` from
-`config.toml.template` with the worktree's project_id and ports. If you must
-run a raw command, generate the config first:
+Each worktree gets its own port (`51000 + slot`), so two checkouts can run side
+by side. Nothing else needs isolating.
 
-```bash
-npm run supabase:patch
-```
+### Looking at your data
 
-### When to restart vs reseed
-
-| Scenario | Command |
-|----------|---------|
-| Changed Edge Functions or `_shared/` code | `npm run supabase:restart` |
-| Containers unhealthy/stuck | `npm run supabase:restart` |
-| New worktree needs full state | `npm run seed:all` |
-| Database reset | `npm run supabase:reset` then `npm run seed:all` |
-| Switch AI profile or edited `.env.ai.*.local` | `npm run seed:ai -- --only <mock\|free\|paid>` |
-
-### Other commands
+The database is a SQLite file, readable while the game is running:
 
 ```bash
-npx supabase status          # check status
-npm run supabase:gc           # clean up stale worktree stacks
-npm run supabase:reset        # reset DB (re-applies migrations)
-npm run seed:storage          # reseed blueprint storage only
-npm run seed:auth             # reseed auth users only
-npm run seed:ai               # reseed all AI profiles
-npm run logs:edge             # tail Edge Function logs
+sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/game.db" "select outcome, count(*) from game_sessions group by 1;"
 ```
 
-### Stop the local stack
+To pull one session out as a self-contained artifact for the trace pipeline:
 
 ```bash
-npx supabase stop             # main checkout
-# In a worktree: npm run supabase:patch && npx supabase stop
+npm run eval:trace:extract -- --session <id>
 ```
 
-### Test scripts and stale Edge Functions
-
-Test scripts (`test:integration`, `test:e2e`) call `ensureSupabaseRunning()`
-and reseed mock AI, but do **not** restart stale Edge Function code. After
-changing `supabase/functions/`, run `npm run supabase:restart` before tests.
-
-## Deploy To Dev
-
-Create `.env.deploy.dev.local` (at repo root or `$MYSTERY_CONFIG_ROOT/`) with:
-
-- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
-- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`
-- `AI_DEFAULT_PROFILE_ID=default`, `AI_DEFAULT_PROFILE_PROVIDER`, `AI_DEFAULT_PROFILE_MODEL`
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY` (when provider is `openrouter`)
-
-Optional bootstrap users: copy `deploy/bootstrap-users.dev.example.json` to
-`deploy/bootstrap-users.dev.local.json` and replace sample passwords.
-
-```bash
-npm run deploy -- --env dev --preflight
-```
-
-Add `--image-dir <path>` to upload generated blueprint images during deploy.
+See [`docs/local-infrastructure.md`](docs/local-infrastructure.md) for the full
+runbook and troubleshooting.
 
 ## Testing
 
@@ -316,13 +271,6 @@ npm -w web run test:e2e
 
 See [`docs/testing.md`](docs/testing.md) for suite ownership and guidance.
 
-After editing a shared module that is mirrored into `supabase/functions`
-(currently `age-profile.ts`), re-sync the copy:
-
-```bash
-npm run sync:shared
-```
-
-The `shared-sync` gate step fails on drift. See
-[`docs/backend-conventions.md`](docs/backend-conventions.md) for why the mirror
-exists and when to write an adapter instead.
+The suites start the game themselves against a temporary database, so there is
+nothing to have running first — and nothing they can do to the sessions you
+have played.

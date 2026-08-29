@@ -128,7 +128,8 @@ export interface ContentStore {
   loadBlueprint(blueprintId: string, logger: LogWriter): Promise<BlueprintV2 | null>;
   /**
    * A URL the browser can fetch the image bytes from, or null when the object
-   * is missing. Under Supabase this is a short-lived signed URL.
+   * is missing. A same-origin path under `/api/images`, permanent because an
+   * image id names fixed bytes — `expiresInSeconds` is vestigial and ignored.
    */
   imageUrl(storageKey: string, expiresInSeconds: number): Promise<string | null>;
 }

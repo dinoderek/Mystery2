@@ -359,6 +359,14 @@ The capability the user asked for, built once the local DB is the real one.
 
 ### P5 — Demolition and governance (~1–2 days)
 
+> **Correction.** P5 shipped with P3 rather than after P4. The two are not
+> separable: the moment the engine leaves `supabase/functions/`, Deno has
+> nothing to serve and the test scripts that started Supabase have nothing to
+> start, so there is no point between them at which the gate can be green. P4's
+> `evaluation/` half came forward for the same reason — the harnesses had to
+> stop using Supabase for the demolition to be real — leaving P4 as the export
+> tooling proper.
+
 - Delete `supabase/`, `deploy/`, `scripts/{deploy*,supabase-*,seed-storage,seed-auth-users,seed-ai,seed-all,gc-worktree-supabase,tail-edge-logs,update-bootstrap-passwords}.mjs`,
   and the port-slot allocation in `scripts/worktree-ports.mjs` (only the Vite
   port survives).

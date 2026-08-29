@@ -11,7 +11,7 @@ import {
   API_URL,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "../integration/auth-helpers.ts";
+} from "../integration/helpers.ts";
 import { investigatorScript } from "./live-ai/investigator-script.ts";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
@@ -32,7 +32,6 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
   });
 
   afterAll(async () => {
-    await auth.cleanup();
   });
 
   it("executes the deterministic investigator script", async () => {

@@ -55,7 +55,7 @@ export function isUsingExternalLocalConfigRoot(
 }
 
 /** @param {string} relativePath @param {string} [repoRoot] @param {Env} [env] @returns {string} */
-export function resolveLocalConfigPath(
+function resolveLocalConfigPath(
   relativePath,
   repoRoot = process.cwd(),
   env = process.env,
@@ -86,37 +86,6 @@ export function getImagesEnvPath(
   env = process.env,
 ) {
   return resolveLocalConfigPath(".env.images.local", repoRoot, env);
-}
-
-/** @param {string} repoRoot @param {string} envName @param {Env} [env] @returns {string} */
-export function getDeployEnvPath(
-  repoRoot = process.cwd(),
-  envName,
-  env = process.env,
-) {
-  return resolveLocalConfigPath(`.env.deploy.${envName}.local`, repoRoot, env);
-}
-
-/** @param {string} [repoRoot] @param {Env} [env] @returns {string} */
-export function getAuthUsersLocalPath(
-  repoRoot = process.cwd(),
-  env = process.env,
-) {
-  return resolveLocalConfigPath("supabase/seed/auth-users.local.json", repoRoot, env);
-}
-
-/** @param {string} [repoRoot] @returns {string} */
-export function getAuthUsersExamplePath(repoRoot = process.cwd()) {
-  return path.join(normalizeRoot(repoRoot), "supabase/seed/auth-users.example.json");
-}
-
-/** @param {string} repoRoot @param {string} envName @param {Env} [env] @returns {string} */
-export function getBootstrapUsersPath(
-  repoRoot = process.cwd(),
-  envName,
-  env = process.env,
-) {
-  return resolveLocalConfigPath(`deploy/bootstrap-users.${envName}.local.json`, repoRoot, env);
 }
 
 /** @param {string} [repoRoot] @param {Env} [env] @returns {string} */
@@ -151,34 +120,3 @@ export function getChatGenPromptsDir(
   return resolveLocalConfigPath("chat-gen-prompts", repoRoot, env);
 }
 
-/** @param {string} repoRoot @param {string} envName @returns {string} */
-export function getBootstrapUsersExamplePath(repoRoot = process.cwd(), envName) {
-  return path.join(
-    normalizeRoot(repoRoot),
-    `deploy/bootstrap-users.${envName}.example.json`,
-  );
-}
-
-/** @param {string} repoRoot @param {string} filePath @returns {string} */
-export function formatResolvedLocalConfigPath(
-  repoRoot = process.cwd(),
-  filePath,
-) {
-  const normalizedRepoRoot = normalizeRoot(repoRoot);
-  const normalizedFilePath = path.resolve(filePath);
-  const relativePath = path.relative(normalizedRepoRoot, normalizedFilePath);
-
-  if (
-    relativePath.length > 0 &&
-    !relativePath.startsWith("..") &&
-    !path.isAbsolute(relativePath)
-  ) {
-    return relativePath;
-  }
-
-  if (relativePath === "") {
-    return ".";
-  }
-
-  return normalizedFilePath;
-}

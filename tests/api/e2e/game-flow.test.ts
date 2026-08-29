@@ -1,34 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
-  SUPABASE_URL,
-  ensureMockBlueprintSeeded,
+  setStoredTimeRemaining,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "../integration/auth-helpers";
+} from "../integration/helpers";
 
 describe("Full E2E API Investigation Flow", () => {
   let auth: ApiAuthContext;
 
-  const admin = createClient(
-    SUPABASE_URL,
-    process.env.SERVICE_ROLE_KEY ??
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("api-e2e-flow");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   async function startGameSession(headers: HeadersInit) {
     const listRes = await fetch(`${API_URL}/blueprints-list`, { headers });
@@ -191,10 +177,7 @@ describe("Full E2E API Investigation Flow", () => {
   it("forces endgame when the final move consumes the last turn", async () => {
     const headers = auth.headers;
     const gameId = await startGameSession(headers);
-    await admin
-      .from("game_sessions")
-      .update({ time_remaining: 1 })
-      .eq("id", gameId);
+    setStoredTimeRemaining(gameId, 1);
 
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
@@ -225,10 +208,7 @@ describe("Full E2E API Investigation Flow", () => {
   it("forces endgame when the final search consumes the last turn", async () => {
     const headers = auth.headers;
     const gameId = await startGameSession(headers);
-    await admin
-      .from("game_sessions")
-      .update({ time_remaining: 1 })
-      .eq("id", gameId);
+    setStoredTimeRemaining(gameId, 1);
 
     const searchRes = await fetch(`${API_URL}/game-search`, {
       method: "POST",
@@ -259,10 +239,7 @@ describe("Full E2E API Investigation Flow", () => {
   it("forces endgame when starting a conversation consumes the last turn", async () => {
     const headers = auth.headers;
     const gameId = await startGameSession(headers);
-    await admin
-      .from("game_sessions")
-      .update({ time_remaining: 1 })
-      .eq("id", gameId);
+    setStoredTimeRemaining(gameId, 1);
 
     const talkRes = await fetch(`${API_URL}/game-talk`, {
       method: "POST",

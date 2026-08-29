@@ -1,67 +1,82 @@
-// Seed a fully-specified game session + fixed history into the DB so the live
-// endpoint rebuilds the exact same context every run. This is what makes the
-// endpoint backend deterministic: identical seeded rows -> identical prompt ->
-// the only variable is the model behind the session's ai_profile.
+// Seed a fully-specified game session + fixed history into the database so the
+// live endpoint rebuilds the exact same context every run. This is what makes
+// the endpoint backend deterministic: identical seeded rows -> identical prompt
+// -> the only variable is the model behind the session's ai_profile.
+//
+// It writes straight into `game.db` rather than through a service-role client,
+// which is the same thing it always did — one fewer network hop.
 
-import { createClient } from "@supabase/supabase-js";
-import { resolveEnv } from "./env.mjs";
+import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
+import { resolveDatabasePath } from "../../../packages/game-engine/src/paths.ts";
 import { normalizeHistory } from "./roles.mjs";
 
-function adminClient(env) {
-  return createClient(env.supabaseUrl, env.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+const NARRATOR = { kind: "narrator", key: "narrator", label: "Narrator" };
 
 /**
  * Insert a session matching `given` plus its history rows. Returns the game_id.
  *   blueprint  — parsed blueprint (for blueprint_id)
  *   given      — { mode, location_id, talk_character_id?, time_remaining, discovered_clues?, history? }
- *   aiProfile  — ai_profiles.id to pin the session to (default "default")
- *   userId     — owner (a throwaway test user)
+ *   aiProfile  — profile label to pin the session to (default "default")
+ *   playerId   — owner (a throwaway harness profile)
  */
-export async function seedSessionWithHistory({ blueprint, given, aiProfile, userId, env = resolveEnv() }) {
-  const admin = adminClient(env);
+export async function seedSessionWithHistory({ blueprint, given, aiProfile, playerId }) {
+  const db = openDatabase({ path: resolveDatabasePath() });
 
-  const { data: session, error: sessionError } = await admin
-    .from("game_sessions")
-    .insert({
-      blueprint_id: blueprint.id,
-      mode: given.mode,
-      current_location_id: given.location_id,
-      current_talk_character_id: given.talk_character_id ?? null,
-      time_remaining: given.time_remaining,
-      discovered_clues: given.discovered_clues ?? [],
-      ai_profile_id: aiProfile ?? "default",
-      user_id: userId,
-    })
-    .select("id")
-    .single();
-  if (sessionError) {
-    throw new Error(`Failed to seed game session: ${sessionError.message}`);
-  }
-  const gameId = session.id;
+  try {
+    const gameId = crypto.randomUUID();
+    const now = new Date().toISOString();
 
-  const events = normalizeHistory(given.history).map((entry) => ({
-    session_id: gameId,
-    sequence: entry.sequence,
-    event_type: entry.event_type,
-    actor: entry.actor,
-    narration: entry.narration,
-    // game_events requires a non-empty narration_parts array (migration 0008).
-    // The runtime context builder only reads `narration`, so a single part
-    // mirroring the text satisfies the constraint without affecting the prompt.
-    narration_parts: entry.narration_parts ?? [
-      { text: entry.narration, speaker: { kind: "narrator", key: "narrator", label: "Narrator" } },
-    ],
-    payload: entry.payload,
-  }));
-  if (events.length > 0) {
-    const { error: eventsError } = await admin.from("game_events").insert(events);
-    if (eventsError) {
-      throw new Error(`Failed to seed game history: ${eventsError.message}`);
+    db.prepare(
+      `insert into game_sessions (
+         id, player_id, blueprint_id, ai_profile_id, mode, current_location_id,
+         current_talk_character_id, time_remaining, discovered_clues,
+         created_at, updated_at
+       ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      gameId,
+      playerId,
+      blueprint.id,
+      aiProfile ?? "default",
+      given.mode,
+      given.location_id,
+      given.talk_character_id ?? null,
+      given.time_remaining,
+      JSON.stringify(given.discovered_clues ?? []),
+      now,
+      now,
+    );
+
+    const insertEvent = db.prepare(
+      `insert into game_events (
+         id, session_id, sequence, event_type, actor, payload, narration,
+         narration_parts, model, created_at
+       ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+
+    for (const entry of normalizeHistory(given.history)) {
+      // game_events requires a non-empty narration_parts array. The runtime
+      // context builder only reads `narration`, so a single part mirroring the
+      // text satisfies the constraint without affecting the prompt.
+      const parts = entry.narration_parts ?? [{ text: entry.narration, speaker: NARRATOR }];
+
+      insertEvent.run(
+        crypto.randomUUID(),
+        gameId,
+        entry.sequence,
+        entry.event_type,
+        entry.actor,
+        entry.payload === null || entry.payload === undefined
+          ? null
+          : JSON.stringify(entry.payload),
+        entry.narration,
+        JSON.stringify(parts),
+        null,
+        now,
+      );
     }
-  }
 
-  return gameId;
+    return gameId;
+  } finally {
+    db.close();
+  }
 }

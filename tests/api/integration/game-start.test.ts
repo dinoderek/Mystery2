@@ -1,40 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
-  REST_URL,
-  ensureMockBlueprintSeeded,
+  readStoredSession,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("game-start endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-start");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
-  async function fetchSessionAIProfile(gameId: string): Promise<string> {
-    const res = await fetch(
-      `${REST_URL}/game_sessions?id=eq.${gameId}&select=ai_profile_id`,
-      {
-        headers: {
-          apikey: process.env.ANON_KEY ?? "",
-          Authorization: `Bearer ${auth.accessToken}`,
-        },
-      },
-    );
-    expect(res.status).toBe(200);
-    const rows = await res.json();
-    expect(rows).toHaveLength(1);
-    return rows[0].ai_profile_id as string;
+  function fetchSessionAIProfile(gameId: string): string {
+    const session = readStoredSession(gameId);
+    expect(session).not.toBeNull();
+    return session!.ai_profile_id;
   }
 
   it("starts a game with narrator speaker metadata", async () => {
@@ -91,7 +76,7 @@ describe("game-start endpoint", () => {
     expect(data.narration_events[0].narration_parts[1].text).not.toContain(
       "You already know:",
     );
-    expect(await fetchSessionAIProfile(data.game_id)).toBe("default");
+    expect(fetchSessionAIProfile(data.game_id)).toBe("default");
   });
 
   it("accepts ai_profile and persists it on the session", async () => {
@@ -107,7 +92,7 @@ describe("game-start endpoint", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.game_id).toBeDefined();
-    expect(await fetchSessionAIProfile(data.game_id)).toBe("mock");
+    expect(fetchSessionAIProfile(data.game_id)).toBe("mock");
   });
 
   it("rejects unknown ai_profile", async () => {

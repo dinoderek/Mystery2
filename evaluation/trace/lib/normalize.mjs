@@ -1,4 +1,4 @@
-// Trace normalization: turn raw Supabase rows into the canonical *raw* trace
+// Trace normalization: turn raw database rows into the canonical *raw* trace
 // artifact that the trace-evaluation pipeline consumes.
 //
 // "Raw" is deliberate. This artifact is a faithful dump of what was persisted
@@ -9,7 +9,7 @@
 // reconstruction logic stays versioned with the code rather than frozen into
 // old artifacts.
 //
-// This module is pure (no I/O). The Supabase fetch lives in datasource.mjs and
+// This module is pure (no I/O). The database read lives in datasource.mjs and
 // the CLI wiring in extract.mjs, which keeps this normalization unit-testable
 // without a database.
 

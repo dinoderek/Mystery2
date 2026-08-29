@@ -11,7 +11,7 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > (`evaluation/`), which judges a generated Blueprint V2 at authoring time. A
 > second pipeline, **game-master trace evaluation** (`evaluation/trace/`),
 > judges how the AI game master *played* a mystery, using a played session
-> trace (already persisted in Supabase for resume) as the subject. It reuses
+> trace (already persisted so a session can be resumed) as the subject. It reuses
 > the subject-agnostic parts here — the pluggable CLI runner, the timing
 > recorder, the per-dimension `combineDimension` semantics, and the
 > `dimension = .md + .schema.ts + registry.json` convention — and adds

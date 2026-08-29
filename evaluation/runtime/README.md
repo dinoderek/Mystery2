@@ -26,8 +26,8 @@ only two of them involve a real model:
 | Backend | Narration comes from | Real model? | Needs |
 |---|---|---|---|
 | `cli:claude`, `cli:openai` | a real model, called directly by the harness | **yes** | that CLI on PATH (`OPENAI_API_KEY` for openai) |
-| `endpoint --ai-profile <openrouter id>` | a real model, called by the real server | **yes** | local Supabase stack + a seeded openrouter profile |
-| `endpoint` (default profile) | the mock provider inside the server | no — canned | local Supabase stack |
+| `endpoint --ai-profile <openrouter id>` | a real model, called by the real server | **yes** | a running game server started with that profile's env |
+| `endpoint` (default profile) | the mock provider inside the server | no — canned | a running game server |
 | `cli:stub` | a shell script | no — canned | nothing |
 
 **The default is `endpoint`** (a case's own `backend`, else `endpoint`), and its
@@ -54,7 +54,7 @@ because the case fixes the input: both backends see byte-identical input.
   ```js
   {
     id: "ask-alice-alibi-pressure",
-    blueprint: { path: "supabase/seed/blueprints/mock-blueprint.json" }, // target_age 10
+    blueprint: { path: "blueprints/mock-blueprint.json" }, // target_age 10
     given: {                          // the EXACT fixed prior state
       mode: "talk",                   // explore | talk | accuse
       location_id: "loc-kitchen",
@@ -86,8 +86,8 @@ because the case fixes the input: both backends see byte-identical input.
     rebuilds the exact context from the seeded rows, so the only variable is the
     model behind the session's `ai_profile`. Supports every action.
   - `cli:<variant>` — builds the **real** runtime prompt+context for the action
-    through `supabase/functions/_shared/role-request.ts` — the same module the
-    Edge Function handlers call, imported directly (Node strips the TypeScript
+    through `packages/game-engine/src/role-request.ts` — the same module the
+    server handlers call, imported directly (Node strips the TypeScript
     types) — and pipes it to a local CLI (`claude`, `openai`, or a deterministic
     `stub`). No game server needed. Every action has a local-replay mapping.
 
@@ -242,12 +242,15 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --
 
 ## Running
 
-The `endpoint` backend needs the local Supabase stack up and seeded:
+The `endpoint` backend needs the game running:
 
 ```bash
-npm run supabase:restart   # start the worktree's stack
-npm run seed:all           # storage bucket + ai_profiles (default = mock)
+npm run dev                # mock narration
+npm run dev:ai:free        # or a real model, for a live run
 ```
+
+It seeds its sessions straight into that server's database and cleans them up
+afterwards. `MYSTERY_API_URL` points it at a server on another port.
 
 Then:
 
@@ -259,7 +262,7 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --b
 # Compare models on the IDENTICAL input — same case, two model paths:
 node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --backend endpoint,cli:claude
 
-# Endpoint backend against a real model (seed an openrouter profile first; see
+# Endpoint backend against a real model (start the server with dev:ai:free; see
 # docs/ai-configuration.md):
 node evaluation/runtime/run.mjs evaluation/runtime/cases/age-readability.mjs --backend endpoint --ai-profile free
 
@@ -385,7 +388,7 @@ from it. The `openai` wrapper needs the `openai` CLI and `OPENAI_API_KEY`.
 - **New action** — add an entry to `ACTIONS` in `lib/roles.mjs`: the `endpoint`
   transport, a `roleInput` naming the role and handing over the same fields the
   handler passes, and a `speaker`. Prompt assembly itself belongs in the
-  registry in `supabase/functions/_shared/role-request.ts`, so it is defined
+  registry in `packages/game-engine/src/role-request.ts`, so it is defined
   once for both the handler and this harness.
 
 ## Tests

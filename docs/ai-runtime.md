@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines how AI-assisted narration is executed in Supabase Edge Functions for talk, search, and accusation flows, while keeping state transitions predictable and spoiler boundaries intact.
+This document defines how AI-assisted narration is executed in the game server for talk, search, and accusation flows, while keeping state transitions predictable and spoiler boundaries intact.
 
 For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
@@ -13,30 +13,30 @@ For how generated blueprints are evaluated, see `docs/evaluation-pipeline.md`.
 Important version note:
 
 - live gameplay runtime now consumes Blueprint V2 from
-  `supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`
+  `packages/shared/src/blueprint-schema-v2.ts`
 
 ## Runtime Components
 
-- `supabase/functions/_shared/ai-provider.ts`
+- `packages/game-engine/src/ai-provider.ts`
   - Runtime provider/model resolution from session-linked AI profiles
   - OpenRouter retry/backoff and timeout controls
   - Structured AI call logs (JSON) with request/action metadata
   - Live-suite helpers (`AI_LIVE`, AI mode labeling)
-- `supabase/functions/_shared/context.ts`
+- `packages/game-engine/src/context.ts`
   - `AIProfileStore` — default and per-session profile lookup
-- `supabase/functions/_shared/context-supabase.ts`
+- `packages/game-engine/src/context-local.ts`
   - Service-role access to `ai_profiles` behind `AIProfileStore`
-- `supabase/functions/_shared/ai-contracts.ts`
+- `packages/game-engine/src/ai-contracts.ts`
   - Role output parsing and validation before state mutation
-- `supabase/functions/_shared/ai-context.ts`
+- `packages/game-engine/src/ai-context.ts`
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
-- `supabase/functions/_shared/ai-prompts.ts`
+- `packages/game-engine/src/ai-prompts.ts`
   - Embedded prompt templates and variable rendering (single source of truth —
     there are no separate prompt files)
   - Standard narrator style plus optional per-blueprint
     `metadata.narration_style` layering (`buildStyleGuidance`)
-- `supabase/functions/_shared/role-request.ts`
+- `packages/game-engine/src/role-request.ts`
   - **The single assembly path for every narrator request.** A registry keyed by
     role knows its context builder and how to render its prompt;
     `buildRoleRequest` (role-output roles) and `buildNarrationPrompt`
@@ -120,7 +120,7 @@ a compile error" holds only for TypeScript callers, and the JS harness was never
 in `tsc`'s include.
 
 One assembly path removes that class of bug by construction: there is no second
-implementation left to drift. Transport (an HTTP call to an Edge Function, or a
+implementation left to drift. Transport (an HTTP call to the server, or a
 local CLI replay) is layered on top rather than duplicating the logic.
 
 `tests/api/unit/role-request.test.ts` is the standing guard — for every role it
@@ -221,7 +221,7 @@ Invalid output returns a retriable error and does not finalize turn state.
 ## Clue discovery and gating
 
 Discovery is event-sourced. A clue is "discovered" once a `search` or `ask` event
-records its id; `supabase/functions/_shared/clue-discovery.ts` is the single place
+records its id; `packages/game-engine/src/clue-discovery.ts` is the single place
 that knows how reveals are encoded (`buildDiscoveredClueIdSet`,
 `eventRevealedClueIds`) and whether a gate is satisfied (`isClueUnlocked`).
 `game_sessions.discovered_clues` is a denormalized cache the search/ask handlers
@@ -287,8 +287,8 @@ case resolves.
 - Web UI retry logic remains the owner of retry policy.
 - `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
 - Blueprint reads are also resilient: the per-session turn endpoints load the
-  blueprint via `ctx.content.loadBlueprint()`, whose Supabase implementation
-  (`supabase/functions/_shared/context-supabase.ts`) retries transient
+  blueprint via `ctx.content.loadBlueprint()`, whose implementation
+  (`packages/game-engine/src/context-local.ts`) retries transient
   `blueprints` bucket download failures with a short backoff (3 attempts) before
   giving up. Storage reads can blip under concurrent load even when the object
   exists; the retry prevents a player-visible `500 Blueprint missing` mid-session.
@@ -320,7 +320,7 @@ case resolves.
 For endpoints using AI roles (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`):
 
 1. Validate request payload and current mode transition.
-2. Load current session and blueprint context from Supabase.
+2. Load current session and blueprint context through `EngineContext`.
 3. Build role context with `build*Context` in `ai-context.ts`.
 4. Select role-specific history via `selectConversationHistoryForRole`:
    - talk => character-relative only
@@ -401,11 +401,11 @@ not by parsing narration:
   (sourced from `narrative.starting_knowledge`; `null` when unauthored).
 - `game-get` returns the full `state.discovered_clues` snapshot, rebuilt from
   the event transcript via `buildPlayerKnownClues`
-  (`supabase/functions/_shared/ai-context.ts`).
+  (`packages/game-engine/src/ai-context.ts`).
 - `game-search` and `game-ask` return `revealed_clues` — the clue(s) revealed by
   that single action — which the client merges into its discovered-clue list so
   the notebook updates live. Clue ids are mapped to text via the shared
-  `mapClueIdsToClues` helper (`supabase/functions/_shared/clues.ts`).
+  `mapClueIdsToClues` helper (`packages/game-engine/src/clues.ts`).
 
 ## Accusation Round Lifecycle
 
@@ -427,7 +427,7 @@ not by parsing narration:
 Every AI-narrated event records the model that produced it in the
 `game_events.model` column (migration `0013_game_events_model.sql`):
 
-- Providers expose `resolvedModel` (`supabase/functions/_shared/ai-provider.ts`).
+- Providers expose `resolvedModel` (`packages/game-engine/src/ai-provider.ts`).
   For OpenRouter it is the model reported in the API response (`payload.model`),
   which can differ from the requested `profile.model`; for the mock provider it
   is the configured `profile.model`.

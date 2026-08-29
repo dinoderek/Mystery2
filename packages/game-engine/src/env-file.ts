@@ -1,11 +1,9 @@
 // Reading `.env*.local` files.
 //
-// A deliberate re-implementation rather than an import of
-// `scripts/supabase-utils.mjs`: that module boots Docker containers and is
-// deleted with the rest of the Supabase tooling in P5, and the engine must not
-// depend on it. The parsing rules match it exactly — `KEY=value`, `#` comments,
-// blank lines ignored, one layer of matching quotes stripped — so the same
-// files keep meaning the same thing.
+// The rules are `KEY=value`, `#` comments, blank lines ignored, and one layer
+// of matching quotes stripped — the same rules the scripts have always applied
+// to these files, which now read them through this parser too
+// (`scripts/lib/env-file.mjs`).
 
 import fs from "node:fs";
 

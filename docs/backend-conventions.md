@@ -1,149 +1,90 @@
 # Backend Conventions
 
-This document outlines the rules for AI agents and developers building Supabase Edge Functions and managing the database.
+The rules for building the game engine and managing its data.
 
 ## 1. The Shared Boundary (API Contracts)
 
-When we refer to the "Shared Boundary," we mean **specifically the data exchanged between the UI and the backend Edge Functions/Database**.
+The "Shared Boundary" is **specifically the data exchanged between the UI and
+the engine's endpoints**.
 
-- The backend will hold comprehensive data models internally (e.g., the full `Blueprint` with internal reasoning).
-- The frontend will only receive specific, sanitized _views_ of this data via API payloads (e.g., `PlayerVisibleBlueprint`).
-- All data shapes at this network boundary (e.g., the `TurnRequest`, `TurnResponse`) must be defined as Zod schemas.
-- The single source of truth for these API contracts lives in `packages/shared/src/mystery-api-contracts.ts`.
-- TypeScript types are inferred from these Zod schemas (e.g., `export type TurnResponse = z.infer<typeof TurnResponseSchema>;`).
-- AI Agents must always update these contract schemas first whenever the API boundary changes.
+- The engine holds comprehensive models internally (the full `Blueprint`, with
+  its solution and internal reasoning).
+- The frontend receives specific, sanitized _views_ via API payloads.
+- All shapes at that boundary MUST be Zod schemas.
+- The single source of truth is `packages/shared/src/mystery-api-contracts.ts`.
+- Update those schemas **first** whenever the API boundary changes.
 
-## 2. Supabase Edge Functions (Deno)
+## 2. The Engine (`packages/game-engine/`)
 
-All secure backend logic runs in **Supabase Edge Functions** (Deno runtime).
+All game logic runs in the engine, imported by the SvelteKit server.
 
-- Functions live in `supabase/functions/<function-name>/`.
-- Use standard Deno imports from `https://deno.land/...` or `npm:...`.
-- Any shared logic or inferred types must be imported using valid Deno relative paths (including the `.ts` extension).
-- Edge Functions are responsible for wrapping the AI provider (OpenRouter) using server-side secrets. The UI never calls OpenRouter directly.
+- Endpoint handlers live in `src/endpoints/<name>.ts` and are listed in
+  `src/endpoints/index.ts`. An unlisted name is a 404.
+- The engine wraps the AI provider (OpenRouter) using a server-side key. The UI
+  never calls OpenRouter directly.
+- The engine imports `packages/shared` directly. There is no mirroring, no
+  sandbox, and no build step between the source and the running game.
 
 ### The `EngineContext` seam
 
-Handlers do **not** touch the Supabase client. Each endpoint exports
+Handlers do **not** touch a database, a file path, or an HTTP detail. Each
+endpoint exports
 
 ```ts
 export async function handle(req: Request, ctx: EngineContext): Promise<Response>
 ```
 
-and keeps a thin `serveWithCors` wrapper that checks the HTTP method, calls
-`requireEngineContext(req)`, and delegates. `EngineContext`
-(`supabase/functions/_shared/context.ts`) is the engine's whole boundary against
-its host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
-`ctx.player`. The Supabase implementation lives in `context-supabase.ts` and is
-the only file that speaks the query builder, holds a service-role client, or
-knows what a storage bucket is.
+and `web/src/routes/api/[endpoint]/+server.ts` does the rest once for all of
+them: check the method, resolve the profile, build the context, delegate.
+
+`EngineContext` (`src/context.ts`) is the engine's whole boundary against its
+host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
+`ctx.player`. `src/context-local.ts` is the implementation, and it is the only
+file that knows the state is a SQLite file and the content is two directories.
 
 Rules:
 
-- Add a **named operation** to the relevant store interface rather than reaching
-  for a client. If a handler needs a query that does not exist yet, extend
-  `context.ts` and implement it in `context-supabase.ts`.
-- Keep the method check ahead of `requireEngineContext` so an unsupported method
-  still returns `405` without authenticating.
+- Add a **named operation** to the relevant store interface rather than
+  reaching past the seam. If a handler needs a query that does not exist yet,
+  extend `context.ts` and implement it in `context-local.ts`.
 - Error convention: a genuine backend failure **throws**, and "does not exist"
-  returns `null`/empty. Handlers map a throw to `500` and a `null` to `404`/`400`.
+  returns `null`/empty. Handlers map a throw to `500` and a `null` to
+  `404`/`400`.
+- Register the endpoint's allowed methods in `src/endpoints/index.ts`. The
+  route returns `405` from that list; handlers do not re-check.
 
-This exists so the engine can be re-hosted without touching game logic. Anything
-that bypasses the seam has to be ported by hand later, so treat a direct client
-reference in a handler as a bug.
+This exists so the engine can be re-hosted without touching game logic — it is
+how the move off Supabase happened underneath a green test suite, with both
+adapters live and the handlers unable to tell which one they had. Treat a
+direct file or driver reference in a handler as a bug.
 
-#### The two implementations
+## 3. The Database
 
-There are now two adapters behind the seam, and a new named operation has to be
-implemented in **both**:
+Three tables, defined once in `packages/game-engine/src/db/schema.ts`.
 
-| | Supabase | Local |
-|---|---|---|
-| File | `supabase/functions/_shared/context-supabase.ts` | `packages/game-engine/src/context-local.ts` |
-| Sessions / events | Postgres via the query builder, RLS | SQLite; `player_id = ?` in the repository |
-| Blueprints / images | two storage buckets, signed URLs | files on disk, a same-origin `/api/images/...` path |
-| AI profiles | the `ai_profiles` table, read with a service-role client | `AI_PROVIDER` / `AI_MODEL` / `OPENROUTER_API_KEY` from the env |
+- **Ownership is the repository's job.** Every statement in `db/sessions.ts`
+  and `db/events.ts` is scoped to one player. There is no row-level security
+  underneath to catch a query that forgets, so a repository method without a
+  `player_id` filter is a security bug, not a style problem.
+- **One driver import.** `db/client.ts` is the only file that imports
+  `better-sqlite3`, and it loads it through `createRequire` so no bundler can
+  inline a native addon. Repositories receive a `Db` interface.
+- **Schema changes are forward-only.** Edit `schema.ts` so a fresh database is
+  correct, add a matching entry to `MIGRATIONS` in `client.ts` so an existing
+  one is upgraded, and bump `SCHEMA_VERSION`. The two must agree: a new
+  database and an upgraded one have to end up identical.
+- **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`,
+  not a string; `readGameMode()` in `state-machine.ts` is the single place that
+  narrows text read back out of storage.
 
-The local adapter is not wired to a running server yet — P3 of the
-local-execution plan moves the endpoint handlers out of `supabase/functions/`
-and puts SvelteKit in front of them. Until then it is exercised by the
-`tests/api/unit/local-engine-*.test.ts` suites.
+## 4. Content
 
-One naming note: `GameSessionRow`/`NewGameSession` call the owning player
-`player_id`, which is the local column name. Postgres still calls that column
-`user_id`, and `context-supabase.ts` maps between the two.
+Blueprints and images are files. `src/content.ts` reads them, caches on mtime
+and size, and skips-and-logs anything unparseable rather than failing a whole
+catalog. `src/paths.ts` is the only place that decides where they are.
 
-### Sharing code with `packages/shared`
+## 5. AI Profiles
 
-An Edge Function **cannot** import out of `supabase/functions`. The local edge
-runtime container bind-mounts only that directory, so a relative path escaping
-it (`../../../packages/shared/...`) resolves to a path that does not exist
-inside the container. Code shared with the Node side therefore takes one of two
-forms:
-
-- **Verbatim mirror** — for a module with **no imports**, keep the canonical
-  copy in `packages/shared/src/` and mirror it byte-for-byte into
-  `supabase/functions/_shared/`. Declare the pair in `MIRRORED_FILES`
-  (`scripts/sync-shared.mjs`), edit only the canonical file, and run
-  `npm run sync:shared`. Both files carry a MIRRORED FILE banner naming which
-  is which. Enforcement is two-layer: the `shared-sync` gate step
-  (`npm run check:shared-sync`) and `tests/api/unit/shared-sync.test.ts`, which
-  also fails if a mirrored file grows an import.
-  Current mirror: `age-profile.ts`.
-- **Hand-written adapter** — for anything with imports, since the runtimes
-  resolve specifiers differently (`zod` vs `npm:zod`). The adapter is a real,
-  separately maintained file and is *not* byte-identical; see
-  `supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`.
-
-### Registering a new function
-
-`supabase/config.toml` is **generated per worktree and gitignored**. Add the
-`[functions.<name>] verify_jwt = false` block to `supabase/config.toml.template`
-instead, then run `npm run supabase:patch` (or any `supabase:*` script) to
-regenerate. Editing the generated file directly is silently undone on the next
-restart. Also add the function to the endpoint list in
-`tests/api/integration/cors-preflight.test.ts`; `scripts/deploy.mjs` discovers
-functions from the directory and needs no change.
-
-### Turn-free endpoints
-
-Not every action spends a turn. `game-end-talk` and `game-enter` both leave
-`time_remaining` and `current_location_id` untouched and only append a narration
-event. `game-enter` additionally guards on the session's event history — it is
-valid exactly once, when the only event is `start` — so a repeated call cannot
-duplicate the arrival.
-
-### Event payloads name the scene
-
-The client groups the transcript into pages and labels each one from the
-event payload, so a page-opening event must carry the name and image of where
-the player now is:
-
-- `move` (`game-move`, `game-enter`) — `location_name`, `location_image_id`
-- `talk` / `ask` — `character_name`, `character_portrait_image_id`
-- `end_talk` — `location_name` and `location_image_id` of the room the player
-  has returned to, alongside the `character_name` they were speaking to.
-  Without the location fields the page would be labelled and illustrated with
-  the character they just walked away from.
-
-## 3. Postgres & RLS
-
-- All data access from the UI must happen via the Supabase Javascript Client utilizing Row Level Security (RLS).
-- Edge Functions run with a Service Role key (bypassing RLS) when they need to do privileged operations, but they MUST manually verify the user's identity based on the passed JWT before performing any sensitive actions on their behalf.
-- Database schema changes strictly go through `supabase/migrations/`.
-- **Every new table in the `public` schema must explicitly grant DML to the
-  API roles.** Recent Supabase CLI / Postgres versions no longer auto-grant
-  `public` to `anon`, `authenticated`, and `service_role`, so a table without
-  grants exposes no `SELECT/INSERT/UPDATE/DELETE` and all PostgREST access
-  (seed scripts, Edge Functions, the REST API) fails with `permission denied
-  for table ...`. Add, in the table's migration:
-  `grant select, insert, update, delete on table <name> to anon, authenticated, service_role;`
-  (grant `usage, select` on any owned sequences too). RLS still governs row
-  visibility for `anon`/`authenticated`; these grants only restore table-level
-  access. See `supabase/migrations/0012_grant_table_privileges.sql`.
-
-## 4. Error Handling & Testing
-
-- Edge functions must return standard HTTP status codes (e.g., 400 for bad input, 401 for unauthorized, 500 for internal errors).
-- Responses must include a consistent JSON error shape (e.g., `{ error: string, details?: any }`) so the UI can predictably render error messages to the user.
-- **Testing:** All error conditions and failure branches within Edge Functions MUST be covered by integration tests (e.g., testing what happens when an invalid token is provided, when a blueprint cannot be found, or when OpenRouter rate-limits the request).
+Profiles are environment, not data — see `src/ai-profile.ts` and
+`docs/ai-configuration.md`. A misconfigured profile throws; an unconfigured one
+returns `null`, which handlers turn into `400 Invalid ai_profile`.

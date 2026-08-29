@@ -3,11 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildImageStorageKey,
   ensureCanonicalImageId,
-  IMAGE_LINK_TTL_SECONDS,
   isCanonicalImageId,
-  isExpiryWindowValid,
-  normalizeSignedUrlExpiry,
-  toRelativeSignedUrl,
 } from "../../../packages/game-engine/src/images.ts";
 import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
 
@@ -53,45 +49,7 @@ describe("image helper utilities", () => {
     }
   });
 
-  it("strips the origin from a signed URL and returns a relative path", () => {
-    const internal =
-      "http://kong:8000/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz";
-    expect(toRelativeSignedUrl(internal)).toBe(
-      "/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz",
-    );
-  });
 
-  it("strips a production origin the same way", () => {
-    const prod =
-      "https://my-project.supabase.co/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz";
-    expect(toRelativeSignedUrl(prod)).toBe(
-      "/storage/v1/object/sign/blueprint-images/abc/img.png?token=xyz",
-    );
-  });
 
-  it("leaves an already-relative image URL alone", () => {
-    // The local ContentStore serves images from a same-origin route, so there
-    // is no origin to strip.
-    expect(toRelativeSignedUrl("/api/images/abc/img.png")).toBe(
-      "/api/images/abc/img.png",
-    );
-  });
 
-  it("normalizes expiry timestamps and validates window bounds", () => {
-    const nowMs = Date.UTC(2030, 0, 1, 0, 0, 0);
-    const expiresAt = normalizeSignedUrlExpiry(nowMs, IMAGE_LINK_TTL_SECONDS);
-    const expiresMs = Date.parse(expiresAt);
-
-    expect(expiresMs).toBe(nowMs + IMAGE_LINK_TTL_SECONDS * 1000);
-    expect(isExpiryWindowValid(expiresAt, nowMs, IMAGE_LINK_TTL_SECONDS)).toBe(
-      true,
-    );
-    expect(
-      isExpiryWindowValid(
-        new Date(nowMs - 1000).toISOString(),
-        nowMs,
-        IMAGE_LINK_TTL_SECONDS,
-      ),
-    ).toBe(false);
-  });
 });

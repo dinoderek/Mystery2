@@ -1,89 +1,97 @@
-import { createClient } from "@supabase/supabase-js";
+import fs from "node:fs";
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
+  readStoredSession,
   setupApiTestAuth,
+  TEST_CONFIG_ROOT,
   type ApiAuthContext,
-  SUPABASE_URL,
-} from "./auth-helpers";
-const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+} from "./helpers";
 
-function getAdminClient() {
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
+// The property under test has not changed: a session's AI profile is resolved
+// on every request, not frozen when the session starts, so `dev:ai:free` and
+// `dev:ai:paid` take effect without a restart. What changed is where a profile
+// lives — it was a row in `ai_profiles` read with a service-role client, and it
+// is now the env file that already configured it.
+
+const FREE_ENV_PATH = path.join(TEST_CONFIG_ROOT, ".env.ai.free.local");
+
+function writeFreeProfile(lines: string[]): void {
+  fs.writeFileSync(FREE_ENV_PATH, `${lines.join("\n")}\n`);
+}
+
+async function search(auth: ApiAuthContext, gameId: string): Promise<number> {
+  const res = await fetch(`${API_URL}/game-search`, {
+    method: "POST",
+    headers: auth.headers,
+    body: JSON.stringify({ game_id: gameId }),
   });
+  return res.status;
 }
 
 describe("ai profile runtime resolution", () => {
   let auth: ApiAuthContext;
-  const createdProfiles = new Set<string>();
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("ai-profile-runtime");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-
-    const admin = getAdminClient();
-    for (const profileId of createdProfiles) {
-      const { error } = await admin.from("ai_profiles").delete().eq("id", profileId);
-      expect(error).toBeNull();
-    }
-    createdProfiles.clear();
+  afterEach(() => {
+    fs.rmSync(FREE_ENV_PATH, { force: true });
   });
 
-  it("applies ai profile changes immediately for active sessions", async () => {
-    const admin = getAdminClient();
-    const profileId = `runtime-${crypto.randomUUID().slice(0, 8)}`;
-    createdProfiles.add(profileId);
-
-    const { error: insertError } = await admin.from("ai_profiles").upsert(
-      {
-        id: profileId,
-        provider: "mock",
-        model: "mock/runtime-test",
-        openrouter_api_key: null,
-      },
-      { onConflict: "id" },
-    );
-    expect(insertError).toBeNull();
+  it("applies a profile change immediately for an active session", async () => {
+    writeFreeProfile(["AI_PROVIDER=mock", "AI_MODEL=mock/runtime-test"]);
 
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({
         blueprint_id: MOCK_BLUEPRINT_ID,
-        ai_profile: profileId,
+        ai_profile: "free",
       }),
     });
     expect(startRes.status).toBe(200);
     const { game_id: gameId } = await startRes.json();
 
-    const firstSearchRes = await fetch(`${API_URL}/game-search`, {
+    // The label is recorded on the session for provenance; the evaluation
+    // pipeline reads it.
+    expect(readStoredSession(gameId)?.ai_profile_id).toBe("free");
+    expect(await search(auth, gameId)).toBe(200);
+
+    // Break the profile after the session has started. A run that cached the
+    // profile at start would carry on working; resolving per request cannot.
+    writeFreeProfile(["AI_PROVIDER=mock", "AI_MODEL="]);
+    expect(await search(auth, gameId)).toBe(500);
+
+    writeFreeProfile(["AI_PROVIDER=mock", "AI_MODEL=mock/runtime-test"]);
+    expect(await search(auth, gameId)).toBe(200);
+  });
+
+  it("rejects a profile that is not configured on this machine", async () => {
+    const res = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId }),
+      body: JSON.stringify({
+        blueprint_id: MOCK_BLUEPRINT_ID,
+        ai_profile: "no-such-profile",
+      }),
     });
-    expect(firstSearchRes.status).toBe(200);
+    expect(res.status).toBe(400);
+  });
 
-    // Break the profile record after the session starts; endpoint should fail immediately
-    // if it resolves profile details dynamically per request.
-    const { error: updateError } = await admin
-      .from("ai_profiles")
-      .update({ model: "" })
-      .eq("id", profileId);
-    expect(updateError).toBeNull();
-
-    const secondSearchRes = await fetch(`${API_URL}/game-search`, {
+  it("falls back to the mock provider when nothing configures the default", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId }),
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
     });
-    expect(secondSearchRes.status).toBe(500);
+    expect(startRes.status).toBe(200);
+    const { game_id: gameId } = await startRes.json();
+
+    expect(readStoredSession(gameId)?.ai_profile_id).toBe("default");
   });
 });

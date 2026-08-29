@@ -2,393 +2,161 @@
 
 ## Decision summary
 
-We will build the Mystery Game using:
+The game runs as **one Node process on the player's machine**. There is no
+cloud backend, no container, and no separate API service.
 
-- **UI**: SvelteKit + Vite, deployed as a **static site** (no SSR runtime in cloud).
-- **Hosting (UI)**: Cloudflare Pages serves the static bundle.
-- **Backend platform**: Supabase
-  - **AuthN**: Supabase Auth (required)
-  - **AuthZ**: Postgres Row Level Security (RLS)
-  - **Database**: Postgres
-  - **Blob storage**: Supabase Storage
-  - **AI server-side execution**: Supabase Edge Functions (Deno runtime)
-  - **Model provider**: OpenRouter called from Edge Functions using server-side secrets
+- **Server**: SvelteKit on `adapter-node`. The same process serves the SPA and
+  its `/api` routes.
+- **Engine**: `packages/game-engine/` — the state machine, clue graph, prompt
+  assembly, AI provider, twelve endpoint handlers, and the adapter they run
+  against.
+- **Database**: SQLite (`better-sqlite3`), one file.
+- **Content**: blueprints and images read off disk.
+- **Identity**: local profiles. A name, an id, and a cookie. No passwords.
+- **Model provider**: OpenRouter, called from the server with a key that never
+  reaches the browser.
 
 Primary goals:
 
-- **Local dev simplicity**: one command starts UI + backend + database and seeds blueprint storage.
-- **Testability**: unit, integration, and E2E tests that exercise each component and the full stack.
-- **Simplicity**: minimize bespoke backend infrastructure; keep secrets off the client.
+- **One command.** `npm run dev` starts everything. Nothing else has to be
+  installed, started, seeded, or restarted.
+- **Testability.** The full gate — unit, integration, API E2E, browser E2E —
+  runs against a real server and a real database with no external dependencies.
+- **A history worth mining.** Every session is a row in a file you can query
+  with `sqlite3` and export for evaluation.
 
-Non-goals (for now):
+Non-goals:
 
-- SSR hosting for the app itself (we accept static UI + client-side data loading).
-- Always-on custom backend server.
+- Hosting. Nobody plays without running the repo. `adapter-node` leaves a
+  single deployable server if that changes.
+- Offline play. Live narration still calls OpenRouter.
+- Multi-user access control. Profiles separate one person's cases from
+  another's on a shared machine; they are not a security boundary.
+
+> **How it got here.** This replaced Cloudflare Pages plus Supabase (Auth,
+> Postgres, Storage, and twelve Deno Edge Functions). What that platform cost
+> in local development — Docker, a per-worktree port allocator, generated
+> config, orphaned-container garbage collection, a full stack restart after
+> every backend edit, three seed scripts, and two modules mirrored byte-for-byte
+> to satisfy a sandbox — was more than it returned for a single-player game.
+> The plan and its phase log are in
+> [`docs/plans/local-execution/`](plans/local-execution/status.md).
 
 ---
 
 ## Components and responsibilities
 
-### UI (SvelteKit static)
+### The server (`web/`)
 
-Responsibilities:
+One SvelteKit app, `adapter-node`, `ssr = false`. It stays a SPA — it is simply
+served by a process that also answers its API calls.
 
-- Render gameplay UI, manage client state, and call backend APIs.
-- Handle authentication UX using Supabase client SDK.
-- Call Edge Functions for AI-backed turns (never call OpenRouter directly).
-- Render session-aware navigation (`/`, `/sessions/in-progress`, `/sessions/completed`) using catalog data from Edge Functions.
+| Route | Responsibility |
+|---|---|
+| `src/routes/api/[endpoint]/+server.ts` | Dispatches to the engine's endpoint registry: checks the method, resolves the profile, builds an `EngineContext`, delegates. |
+| `src/routes/api/images/[blueprint]/[image]/+server.ts` | Serves blueprint artwork off disk, gated on a signed-in profile and on the image being referenced by the blueprint. |
+| `src/routes/api/player/+server.ts` | The current profile: read it, sign in, sign out. |
+| `src/routes/api/players/+server.ts` | Every profile on this machine, for the picker. |
+| `src/hooks.server.ts` | Resolves the `mystery-player-id` cookie into `locals.player`. |
+| `src/lib/server/engine.ts` | Opens the engine once for the process. |
 
-Constraints:
+The browser talks to all of it through `src/lib/api/client.ts` — `callApi(name,
+body)` returning `{ data, error }`. Same origin, so there is no CORS, no bearer
+token, and no base URL to configure.
 
-- **No secrets** in the browser bundle.
-- Be tolerant of network failures (retries, optimistic UI as needed).
+### The engine (`packages/game-engine/`)
 
-### Supabase Auth
+The engine is the game. It does not know how it is hosted: handlers take an
+`EngineContext` and reach the outside world only through it.
 
-Responsibilities:
-
-- Issue user sessions/tokens.
-- Enforce required sign-in before gameplay/API usage.
-
-### Postgres (Supabase)
-
-Responsibilities:
-
-- Persist game sessions, event logs, and derived state.
-- Enforce authorization via **RLS**.
-
-Recommended pattern:
-
-- Maintain an **append-only event log** for turns and actions.
-- Maintain a current “session snapshot” for fast reads.
-- Persist ordered `narration_parts` directly on each `game_events` row, with payload diagnostics describing order, timing, and mode transitions.
-- Return session loads as `state + narration_events`; the browser transcript is rebuilt from persisted narration events rather than inferred summary fields.
-
-### Supabase Storage
-
-Responsibilities:
-
-- Store user uploads, generated images, and other blobs.
-- Access is controlled via Storage policies and/or DB checks.
-- Blueprint JSON remains in `blueprints` bucket; static mystery artwork lives in private `blueprint-images`.
-- Player-facing image bytes are fetched via short-lived signed URLs issued by `blueprint-image-link` (auth required).
-
-### Supabase Edge Functions
-
-Responsibilities:
-
-- Verify identity (required on all player-facing endpoints).
-- Perform server-side operations that must remain secret:
-  - OpenRouter calls (API key)
-  - privileged DB mutations
-- Persist results into Postgres and return response payloads to UI.
-- Provide authenticated session-catalog reads (`game-sessions-list`) for in-progress/completed navigation.
-
----
-
-## URL shapes (no endpoint name assumptions)
-
-We avoid hardcoding endpoint names throughout the codebase.
-
-- **UI origin**
-  - Cloud: `https://<ui-host>`
-  - Local: `http://localhost:<ui-port>`
-
-- **Supabase origin**
-  - Cloud: `https://<project-ref>.supabase.co`
-  - Local: `http://localhost:<supabase-port>`
-
-- **Edge Function URL shape** (Supabase convention)
-  - `https://<supabase-origin>/functions/v1/<function-name>`
-
-The only “name” required by the UI to call a function is `<function-name>`, provided via config.
-
----
-
-## Request lifecycles
-
-### 1) Public UI load (no auth)
-
-**High-level**
-
-- Browser loads HTML/JS/CSS from UI host (Cloudflare Pages or local dev server).
-- No Supabase calls required.
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant B as Browser
-  participant UI as UI Host (Pages or Local Dev)
-  B->>UI: GET /
-  UI-->>B: HTML
-  B->>UI: GET /assets/*
-  UI-->>B: JS/CSS/Images
+```
+src/context.ts          EngineContext — the boundary. ~15 named operations.
+src/context-local.ts    The implementation: SQLite + the filesystem.
+src/endpoints/          handle(req, ctx) per endpoint, plus the registry.
+src/db/                 schema.ts, client.ts (the only driver import), repositories.
+src/content.ts          Blueprints and images off disk.
+src/ai-profile.ts       AI profiles resolved from the environment.
+src/ai-*.ts             Prompt assembly, contracts, provider.
+src/state-machine.ts    Legal transitions.
+src/clues.ts, clue-discovery.ts, forced-endgame.ts, narration.ts, speaker.ts
 ```
 
-### 2) Required authentication
+That boundary is why the move off Supabase could happen underneath a green test
+suite: for one phase both adapters existed, and the handlers could not tell
+which one they had.
 
-**Goal**
+### Data
 
-- User signs in; browser obtains an authenticated session.
-- Optional profile hydration can happen after sign-in if needed.
+Three tables, no migration chain. `packages/game-engine/src/db/schema.ts` is
+the whole schema; existing databases move forward through numbered steps keyed
+on `PRAGMA user_version`.
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant B as Browser (UI)
-  participant A as Supabase Auth
-  participant DB as Supabase Postgres
+- `players` — id, name. Replaces `auth.users`.
+- `game_sessions` — one per case played, owned by a player.
+- `game_events` — the append-only transcript, unique on `(session_id, sequence)`.
 
-  B->>A: Sign-in / Sign-up (via Supabase client SDK)
-  A-->>B: Session (access token + refresh mechanism)
+**Ownership lives in the repositories.** Every session and event statement is
+scoped to one player. There is no row-level security underneath to catch a
+query that forgets, which is why `docs/backend-conventions.md` treats a
+repository method without a `player_id` filter as a bug.
 
-  alt App needs profile record
-    B->>DB: Read/Upsert profile (Authorization: Bearer <token>)
-    DB-->>B: Profile row (RLS enforced)
-  end
-```
+Three connection pragmas are load-bearing: `journal_mode = WAL` so a reader
+does not block the running game, `foreign_keys = ON` because SQLite defaults it
+off and the `game_events` cascade depends on it, and `busy_timeout = 5000`.
 
-Notes:
+**Where the database lives:** `$MYSTERY_CONFIG_ROOT/game.db` when that is set —
+so several worktrees share one history to mine — otherwise `./data/game.db`,
+which is gitignored. Tests never touch either: they are given an explicit path
+under a temporary directory.
 
-- In static UI mode, the **browser** holds the session and sends tokens when needed.
-- RLS policies must ensure users can only access their own records.
+### Content
 
-### 3) Authenticated non-AI operations (DB / Storage)
+Blueprints are JSON files, searched for in the config root's `blueprints/`
+first and then the ones committed to `blueprints/`. Images are files named by
+image id. Both are parsed and cached in memory on mtime and size, so editing a
+blueprint takes effect without a restart.
 
-**Examples**
+A malformed blueprint is skipped and logged rather than failing the catalog:
+one bad file must not take the whole list down.
 
-- Create or continue a game session.
-- Fetch session history.
-- Upload/download an asset.
+### AI
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant B as Browser (UI)
-  participant DB as Supabase Postgres API
-  participant ST as Supabase Storage
+Profiles come from the environment, not a database:
 
-  alt Database read/write
-    B->>DB: Query/Mutation (Authorization: Bearer <token>)
-    DB-->>B: Rows / Result (RLS enforced)
-  end
+| Profile | Source |
+|---|---|
+| `mock` | Built in. No configuration, no network. |
+| `free` / `paid` | `.env.ai.<mode>.local` in the config root. |
+| `default` | Whatever the running process is configured with, falling back to mock. |
 
-  alt Blob upload/download
-    B->>ST: Storage operation (Authorization: Bearer <token>)
-    ST-->>B: Upload result / Bytes / Signed URL
-  end
-```
-
-### 3b) Authenticated session catalog read (`game-sessions-list`)
-
-**Goal**
-
-- Populate landing/list navigation with resumable and completed sessions for the signed-in player.
-
-**Hops**
-
-- UI -> Edge Function `game-sessions-list` with bearer token
-- Edge Function -> Postgres (`game_sessions`) for session rows
-- Edge Function -> Storage (`blueprints` bucket) for title resolution
-- Edge Function -> UI with grouped summaries (`in_progress`, `completed`, `counts`)
-
-Missing blueprint metadata is handled as a non-fatal case: rows remain visible but return `can_open=false` with fallback title `Unknown Mystery`.
-
-### 3.1) Authenticated static image delivery (signed URL)
-
-**Goal**
-
-- Keep blueprint image objects private while still rendering in the browser.
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant B as Browser (UI)
-  participant F as Edge Function (blueprint-image-link)
-  participant ST as Supabase Storage (blueprint-images)
-
-  B->>F: POST /functions/v1/blueprint-image-link (Bearer token, image_id)
-  F->>F: Validate auth + blueprint image reference
-  F->>ST: createSignedUrl(private object key, short TTL)
-  ST-->>F: signed URL
-  F-->>B: { signed_url, expires_at }
-  B->>ST: GET signed URL
-  ST-->>B: image bytes
-```
-
-### 4) Authenticated AI turn (Edge Function + OpenRouter)
-
-**Goal**
-
-- Perform an AI-assisted action (e.g., "take a turn") while keeping OpenRouter key server-side.
-
-**Hops**
-
-- UI → Edge Function (with required auth header)
-- Edge Function → verify/identify user
-- Edge Function → Postgres (read current state, write event)
-- Edge Function → OpenRouter (optional)
-- Edge Function → Postgres (persist AI result)
-- Edge Function → UI (return payload to render)
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant B as Browser (UI)
-  participant F as Supabase Edge Function
-  participant DB as Supabase Postgres
-  participant OR as OpenRouter
-
-  B->>F: POST /functions/v1/<function-name> (Authorization: Bearer <token>)
-  F->>F: Verify/Decode JWT and identify user
-  alt token missing or invalid
-    F-->>B: 401/403 (no DB/AI call)
-  end
-
-  F->>DB: Read session state (RLS + checks)
-  DB-->>F: Session state
-
-  F->>DB: Write "user action" event (optional but recommended)
-  DB-->>F: OK
-
-  alt AI needed for this request
-    F->>OR: Call model (server-side secret)
-    OR-->>F: Model response
-    F->>DB: Persist AI response + update session snapshot + events
-    DB-->>F: OK
-  else No AI required
-    F->>DB: Persist deterministic update
-    DB-->>F: OK
-  end
-
-  F-->>B: Response payload (renderable)
-```
-
-Failure-handling expectations:
-
-- OpenRouter failure: return error payload; optionally persist an “AI failure” event.
-- DB failure: return error; UI can refresh and retry.
-- Always design requests to be idempotent or safely retryable.
-- Browser-origin calls must support CORS preflight (`OPTIONS`) and include CORS headers on both success and error responses.
-
-### AI Runtime Contract (Current)
-
-- Role orchestration is implemented inside existing endpoints (`game-talk`, `game-ask`, `game-end-talk`, `game-search`, `game-accuse`) without changing endpoint paths.
-  - Gameplay responses now carry explicit `speaker` metadata via `narration_parts[].speaker`, and `game-get` state returns `narration_events[]` so the UI can rebuild the transcript without inferred `narration_speaker` fields.
-- Prompt templates are embedded in `supabase/functions/_shared/ai-prompts.ts` (the single source of truth; there are no separate prompt files).
-- Role outputs are validated in `supabase/functions/_shared/ai-contracts.ts` before mutating `game_sessions` or `game_events`.
-- Context assembly and anti-leak checks are centralized in `supabase/functions/_shared/ai-context.ts`.
-- `accusation_judge` is the only role allowed to receive full `ground_truth_context`.
-- Retriable AI/provider failures return structured 503 payloads (`details.retriable=true`) and do not finalize turns.
-- OpenRouter provider calls use bounded retry/backoff and emit structured JSON logs (`request_id`, endpoint/action, role, attempt, latency, outcome).
-- Full implementation details are documented in `docs/ai-runtime.md`.
-- Configuration runbook details are documented in `docs/ai-configuration.md`.
-- Accusation-specific flow details (reasoning-first rounds and timeout-forced endgame entry) are documented in `docs/accusation-flow.md`.
+`npm run dev:ai:free` is therefore a different command, not a different
+database state — switching models needs no seeding and no restart. A session
+records the profile *label* it was started with for provenance; the model
+actually used is on each event's `model` column.
 
 ---
 
-## Security model
+## Request lifecycle
 
-- **No secrets in UI**.
-- **OpenRouter key is server-side only** (stored in `ai_profiles.openrouter_api_key`).
-- **Gameplay runtime keys stay DB-first**; operator image generation uses a dedicated local env file instead of runtime profile storage.
-- **All data access** is controlled by Postgres **RLS** (and explicit checks where appropriate).
-- UI calls Edge Functions with a bearer token; functions validate it on every request.
-- RLS ownership design:
-  - `game_sessions.user_id` stores session owner (`auth.users.id` FK)
-  - `game_events` ownership is inherited through `session_id -> game_sessions.id`
-  - policies use the `authenticated` role pattern instead of permissive `anon` policies
+A turn, end to end:
 
----
+1. The browser calls `POST /api/game-move` with the session cookie.
+2. `hooks.server.ts` resolves the cookie into `locals.player`.
+3. `api/[endpoint]` finds `game-move` in the registry, checks the method,
+   builds an `EngineContext` scoped to that player, and calls its handler.
+4. The handler loads the session (scoped), validates the transition, loads the
+   blueprint from disk, assembles the prompt, and calls the AI provider.
+5. It appends a `game_events` row and updates the session in the same database
+   file, then returns the turn response.
 
-## Cloud deployment model
-
-- UI: Cloudflare Pages hosts static assets.
-- Backend: Supabase hosted project:
-  - Auth, Postgres, Storage
-  - Edge Functions deployed via Supabase tooling
-- Environment topology:
-  - `dev`: isolated Pages project + isolated Supabase project
-  - `staging`: isolated Pages project + isolated Supabase project
-  - `prod`: isolated Pages project + isolated Supabase project
-- Deployment operator flow:
-  - one local orchestrator (`scripts/deploy.mjs`) drives web deploy, backend deploy/provisioning, and smoke checks
-  - after validation/preflight/build, Pages and Supabase deploy lanes run in parallel by default
-  - the Supabase lane keeps DB/profile/seed/user work ordered, but deploys all Edge Functions in one CLI invocation with configurable parallel jobs
-  - deploy config writes canonical AI runtime profile row `ai_profiles.id='default'` per environment
-  - env mapping is committed in `deploy/targets.json`
-  - env secrets are loaded from uncommitted `.env.deploy.<env>.local` files
-  - optional bootstrap-user examples are committed, and real deploy user manifests are copied into `deploy/bootstrap-users.<env>.json`
-
-This keeps costs low and separates “UI bandwidth/CDN” from “compute for AI calls”.
-Runbook and failure handling details live in `docs/deployment.md`.
+Every step is in-process except the model call.
 
 ---
 
-## Local development model
+## What this architecture does not have
 
-- A single setup script initializes local development:
-  1. Ensures Supabase local stack is running (no restart by default)
-  2. Generates `supabase/seed/auth-users.local.json` from the committed example if needed, then seeds storage/auth/AI profile data
-- Dev/test scripts avoid restarts by default and use logical isolation instead of DB resets.
-- AI runtime profile selection is session-scoped (`game-start.ai_profile`) with canonical default `ai_profiles.id='default'`, and does not require Supabase restarts.
-
-For local development commands, use the scripts documented in the repository root `package.json`.
-
----
-
-## Target Folder structure (opinionated)
-
-This is the current planned target folder structure.
-This documentation will eventually be superseded by `project-structure.md` once the project is built
-
-```text
-.
-├─ apps/
-│  └─ web/                           # SvelteKit static UI (Vite)
-│     ├─ src/
-│     │  ├─ lib/
-│     │  │  ├─ supabase/             # client creation + auth helpers
-│     │  │  ├─ api/                  # wrappers that call Edge Functions / DB
-│     │  │  ├─ domain/               # core game types/logic, schemas, reducers
-│     │  │  └─ ui/                   # components
-│     │  └─ routes/                  # SvelteKit routes (static build)
-│     ├─ svelte.config.*             # adapter-static
-│     └─ vite.config.*
-│
-├─ supabase/
-│  ├─ migrations/                    # SQL schema + RLS policies
-│  ├─ seed/                          # deterministic seed/fixtures
-│  ├─ functions/                     # Edge Functions (Deno)
-│  │  ├─ <function-name>/            # one folder per function
-│  │  │  ├─ index.ts
-│  │  │  ├─ deps.ts
-│  │  │  └─ domain/                  # server-side turn processing
-│  │  └─ _shared/                    # shared function utilities
-│  └─ config.toml
-│
-├─ packages/
-│  ├─ apitests/                      # API-specific tests (unit, integration, e2e)
-│  ├─ shared/                        # shared TS types + request/response schemas
-│  └─ testkit/                       # helpers: seeding, auth helpers, fixtures
-│
-├─ scripts/
-│  ├─ dev                            # start supabase + web
-│  ├─ test-integration               # boot stack + run integration tests
-│  ├─ test-e2e                       # boot stack + run playwright
-│  └─ db-reset                       # deterministic resets (local)
-│
-└─ docs/                             # Source of truth documentation / agent initial memory
-   ├─ architecture.md                # Target game architecture
-   |- game.md                        # Target game design
-   └─ testing.md                     # Testing approach
-```
-
----
-
-## Operational conventions
-
-- Config for function names must be centralized (single module).
-- DB schema changes go through migrations only.
-- RLS policies are tested in integration tests (at least “user A cannot read user B”).
-- AI call boundary is tested with mocks in integration tests for determinism.
+No CORS, no JWTs, no refresh tokens, no signed URLs or their expiry, no
+row-level security policies, no service-role client, no storage buckets, no
+migration chain, no mirrored modules, no containers, no port allocator beyond
+one port per worktree, and no deploy pipeline. Each of those existed to serve a
+constraint that no longer applies.

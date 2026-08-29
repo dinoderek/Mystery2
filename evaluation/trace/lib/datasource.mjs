@@ -1,80 +1,114 @@
-// Supabase data source for trace extraction.
+// Local data source for trace extraction.
 //
 // Isolated from normalization (normalize.mjs) and orchestration (run.mjs) so
 // the rest of the pipeline is unit-testable without a database: tests pass a
 // fake source object with the same four methods to extractSessionTrace().
+//
+// This used to hold a service-role Supabase client. The game runs on SQLite and
+// the filesystem now, so a "connection" is a file path — which also means a
+// trace can be extracted from a copied `game.db` with nothing running.
 
-import { createClient } from "@supabase/supabase-js";
+import path from "node:path";
 
-import { resolveApiUrl } from "../../../scripts/worktree-ports.mjs";
+import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
+import { createLocalContentStore } from "../../../packages/game-engine/src/content.ts";
+import { resolveAIProfile } from "../../../packages/game-engine/src/ai-profile.ts";
+import {
+  resolveBlueprintDirs,
+  resolveBlueprintImagesDir,
+  resolveDatabasePath,
+} from "../../../packages/game-engine/src/paths.ts";
 import { buildRawTrace } from "./normalize.mjs";
 
-export function createSupabaseTraceSource({ url = null, serviceRoleKey = null } = {}) {
-  const resolvedUrl =
-    url ?? process.env.SUPABASE_URL ?? process.env.API_URL ?? resolveApiUrl();
-  const key = serviceRoleKey ?? process.env.SERVICE_ROLE_KEY;
-  if (!key) {
-    throw new Error(
-      "Missing SERVICE_ROLE_KEY — set it in the environment to extract a trace from Supabase.",
-    );
+const SILENT_LOGGER = { log: () => {}, logError: () => {} };
+
+function readJson(value) {
+  if (typeof value !== "string") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
   }
-  const client = createClient(resolvedUrl, key);
+}
+
+/**
+ * Reads sessions straight out of a game database.
+ *
+ * @param {{ databasePath?: string, repoRoot?: string }} [options]
+ *   `databasePath` defaults to the configured game database — pass a copy to
+ *   mine a snapshot without touching the live one.
+ */
+export function createLocalTraceSource({ databasePath = null, repoRoot = null } = {}) {
+  const root = repoRoot ?? process.cwd();
+  const resolvedPath = databasePath ?? resolveDatabasePath(root, process.env);
+  const db = openDatabase({ path: resolvedPath });
+  const content = createLocalContentStore({
+    blueprintDirs: resolveBlueprintDirs(root, process.env),
+    imagesDir: resolveBlueprintImagesDir(root, process.env),
+  });
 
   return {
-    url: resolvedUrl,
+    databasePath: resolvedPath,
 
     async fetchSession(sessionId) {
-      const { data, error } = await client
-        .from("game_sessions")
-        .select("*")
-        .eq("id", sessionId)
-        .single();
-      if (error || !data) {
-        throw new Error(`Could not load session ${sessionId}: ${error?.message ?? "not found"}`);
-      }
-      return data;
+      const row = db
+        .prepare("select * from game_sessions where id = ?")
+        .get(sessionId);
+      if (!row) throw new Error(`Could not load session ${sessionId}: not found`);
+
+      return {
+        ...row,
+        discovered_clues: readJson(row.discovered_clues) ?? [],
+      };
     },
 
     async fetchEvents(sessionId) {
-      const { data, error } = await client
-        .from("game_events")
-        .select("id,sequence,event_type,actor,payload,narration,narration_parts,clues_revealed,model,created_at")
-        .eq("session_id", sessionId)
-        .order("sequence", { ascending: true });
-      if (error) {
-        throw new Error(`Could not load events for session ${sessionId}: ${error.message}`);
-      }
-      return data ?? [];
+      return db
+        .prepare(
+          `select id, sequence, event_type, actor, payload, narration,
+                  narration_parts, model, created_at
+             from game_events where session_id = ? order by sequence asc`,
+        )
+        .all(sessionId)
+        .map((row) => ({
+          ...row,
+          payload: readJson(row.payload),
+          narration_parts: readJson(row.narration_parts) ?? [],
+        }));
     },
 
     async downloadBlueprint(blueprintId) {
-      const { data, error } = await client.storage
-        .from("blueprints")
-        .download(`${blueprintId}.json`);
-      if (error || !data) {
-        throw new Error(`Could not download blueprint ${blueprintId}: ${error?.message ?? "missing"}`);
+      const blueprint = await content.loadBlueprint(blueprintId, SILENT_LOGGER);
+      if (!blueprint) {
+        throw new Error(`Could not load blueprint ${blueprintId}: missing`);
       }
-      return JSON.parse(await data.text());
+      return blueprint;
     },
 
     async fetchProfile(profileId) {
-      const { data, error } = await client
-        .from("ai_profiles")
-        .select("id,provider,model,label,mode")
-        .eq("id", profileId)
-        .maybeSingle();
-      if (error) {
-        // Profile metadata is best-effort; a missing profile must not abort.
+      // Profile metadata is best-effort; an unconfigured profile must not
+      // abort an extraction of a session that used it months ago.
+      let profile;
+      try {
+        profile = resolveAIProfile(profileId, { repoRoot: root });
+      } catch {
         return null;
       }
-      return data ?? null;
+      if (!profile) return null;
+
+      // Never the key — a trace artifact gets shared and committed.
+      return { id: profile.id, provider: profile.provider, model: profile.model };
+    },
+
+    close() {
+      db.close();
     },
   };
 }
 
 // Pulls a full session trace through a source (real or fake) and returns the
 // canonical raw trace artifact. Pure orchestration over the source's four
-// methods — no Supabase specifics here.
+// methods — no storage specifics here.
 export async function extractSessionTrace(source, sessionId, { extractedAt = null } = {}) {
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
@@ -88,7 +122,10 @@ export async function extractSessionTrace(source, sessionId, { extractedAt = nul
     events,
     blueprint,
     aiProfile,
-    source: { kind: "supabase", api_url: source.url ?? null },
+    source: {
+      kind: "local",
+      database: source.databasePath ? path.resolve(source.databasePath) : null,
+    },
     extractedAt,
   });
 }

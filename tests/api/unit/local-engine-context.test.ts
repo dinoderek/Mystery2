@@ -2,7 +2,7 @@
 // SvelteKit server will assemble it in P3.
 //
 // The point of these tests is the seam, not the parts: a context built here is
-// the same shape a handler receives from `createSupabaseContext`, and two
+// the same shape every endpoint handler receives, and two
 // contexts built for two players cannot see each other's work.
 
 import fs from "node:fs";
@@ -141,13 +141,17 @@ describe("path resolution", () => {
     expect(resolveDatabasePath("/repo", {})).toBe(path.join("/repo", "data", "game.db"));
   });
 
-  it("searches the config root before the repo's seed blueprints", () => {
+  it("searches the config root before the blueprints committed to the repo", () => {
     expect(resolveBlueprintDirs("/repo", { MYSTERY_CONFIG_ROOT: "/shared/mystery" })).toEqual([
       path.join("/shared/mystery", "blueprints"),
-      path.join("/repo", "supabase/seed/blueprints"),
+      path.join("/repo", "blueprints"),
     ]);
     expect(resolveBlueprintImagesDir("/repo", {})).toBe(
       path.join("/repo", "blueprint-images"),
     );
+  });
+
+  it("searches one directory when there is no separate config root", () => {
+    expect(resolveBlueprintDirs("/repo", {})).toEqual([path.join("/repo", "blueprints")]);
   });
 });

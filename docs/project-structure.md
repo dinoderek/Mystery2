@@ -7,21 +7,17 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 ## Root Directories
 
 - `web/`: Front-end SvelteKit application for the player UI.
-- `blueprints/`: Stores committed seed blueprint JSON files. Generated blueprints are written to `$MYSTERY_CONFIG_ROOT/blueprints/` when the external config root is set (and also seeded from there).
-- `deploy/`: Deployment contracts (environment target mapping plus committed bootstrap-user examples; real non-prod bootstrap manifests use `bootstrap-users.<env>.json`).
+- `blueprints/`: Committed blueprint JSON, including the deterministic `mock-blueprint.json` the test suites play. Generated blueprints are written to `$MYSTERY_CONFIG_ROOT/blueprints/` when the external config root is set, and the server searches that directory first.
+- `lib/`: Runtime-agnostic helpers shared by scripts and config (currently the worktree port allocator).
 - `docs/`: Contains core project architecture, testing strategy, UI design, and development documentation.
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts and the canonical `narration_parts`/`narration_events` schemas.
   - `blueprint-generator/`: Reusable blueprint generation logic shared by local operator scripts and future backend adapters.
   - `game-engine/`: The engine's local platform adapter — a SQLite + filesystem implementation of `EngineContext`, plus the SQLite schema, its repositories, and env-based AI profile resolution. The rest of the engine (the shared modules and endpoint handlers still under `supabase/functions/`) moves in here in P3 of the local-execution plan; see `docs/plans/local-execution/status.md`.
 - `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
-- `scripts/`: Assorted scripts needed for development and operations (e.g., `seed-all` bootstrap, storage/auth/AI-profile seeding with canonical `default`, edge-runtime log tailing, and cloud deploy orchestration).
-  - `lib/`: Shared operator/deploy helpers (image prompt builder, target selection, blueprint image manifest and patch helpers).
-- `specs/`: Active, implementation-ready feature specifications separated by logical milestones (e.g. `001-supabase-api`).
-- `supabase/`: Contains the complete Supabase backend environment configuration and deployment artifacts.
-  - `functions/`: Deno Edge Functions forming our custom API Layer, orchestrating gameplay transitions, canonical narration-event persistence, and server-side speaker attribution.
-  - `migrations/`: Declarative SQL updates that manage Postgres DB schema and Row-Level Security rules.
-  - `seed/`: Deterministic fixture files used by local seed scripts (for example `seed/blueprints/mock-blueprint.json` and the committed `auth-users.example.json` template that generates a local-only auth manifest on first bootstrap).
+- `scripts/`: Development and operator scripts (starting the game, running the test suites against a built server, blueprint and image generation).
+  - `lib/`: Shared helpers (the test server, env-file reading, process spawning, image prompt builder, blueprint image manifest and patch helpers).
+- `specs/`: Historical, implementation-ready feature specifications, one per shipped milestone. They record what was built at the time and are **not** kept current — several describe the Supabase architecture the game has since moved off.
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).
@@ -42,20 +38,19 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 ## Feature Additions (Static Blueprint Images)
 
-- `supabase/functions/blueprint-image-link/`: Auth-gated signed URL issuance for private blueprint images.
-- `supabase/functions/_shared/images.ts`: Canonical image ID validation + storage key + TTL helpers.
-- `supabase/migrations/0007_blueprint_images_storage.sql`: Private `blueprint-images` bucket and authenticated read policy.
-- `web/src/lib/api/images.ts`: Frontend signed-link client with expiry-aware cache/refresh behavior.
+- `web/src/routes/api/images/[blueprint]/[image]/+server.ts`: Serves blueprint artwork off disk, gated on a signed-in profile and on the blueprint referencing the image.
+- `packages/game-engine/src/images.ts`: Canonical image ID validation and storage-key helpers.
 - `scripts/generate-blueprint-images.mjs`: Local operator image generation + selective blueprint patching CLI.
 
 ## Feature Additions (Local Execution)
 
-- `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` — derived from the end state of `supabase/migrations/`, with no migration chain.
+- `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` — with no migration chain.
 - `packages/game-engine/src/db/client.ts`: The only file that imports a SQLite driver, plus the connection pragmas and the `PRAGMA user_version` schema runner.
+- `web/src/routes/api/`: The server tier — the endpoint dispatcher, image serving, and profile routes.
 - `data/`: Gitignored home of the local `game.db` when `MYSTERY_CONFIG_ROOT` is unset; otherwise the database lives at `$MYSTERY_CONFIG_ROOT/game.db` so worktrees share one history.
 
 ## Feature Additions (Blueprint Generation)
 
-- `packages/shared/src/blueprint-schema-v2.ts`: Canonical Blueprint V2 Zod schema shared by Node tooling and Supabase Edge Functions.
+- `packages/shared/src/blueprint-schema-v2.ts`: Canonical Blueprint V2 Zod schema shared by Node tooling and the game server.
 - `packages/blueprint-generator/`: Shared prompt-loading, OpenRouter structured-output, and schema-validation flow for blueprint generation.
 - `scripts/generate-blueprint.mjs`: Local operator CLI that turns structured story briefs into canonical blueprint JSON.

@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
-} from '../integration/auth-helpers';
+} from '../integration/helpers';
 
 async function startSession(auth: ApiAuthContext): Promise<string> {
   const startRes = await fetch(`${API_URL}/game-start`, {
@@ -32,12 +31,8 @@ describe('session list resume/view API flows', () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth('sessions-flow');
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it('replays an in-progress session without changing the persisted transcript', async () => {
     const gameId = await startSession(auth);

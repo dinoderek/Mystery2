@@ -1,7 +1,7 @@
 // Endpoint model backend (deterministic single-event).
 //
-// Seeds a fully-specified session + fixed history into the DB, then calls the
-// ONE endpoint for the case's action. The exception is `start`, which creates
+// Seeds a fully-specified session + fixed history into the database, then calls
+// the ONE endpoint for the case's action. The exception is `start`, which creates
 // the session itself (action.createsSession). The server rebuilds the exact runtime
 // context from the seeded rows, so the input is identical every run and across
 // models — the only variable is the model behind the session's ai_profile
@@ -16,8 +16,8 @@ import { extractNarrationParts, makeResponse } from "../transcript.mjs";
 
 export const id = "endpoint";
 
-async function callEndpoint(functionsUrl, endpoint, method, body, headers) {
-  const res = await fetch(`${functionsUrl}/${endpoint}`, {
+async function callEndpoint(apiUrl, endpoint, method, body, headers) {
+  const res = await fetch(`${apiUrl}/${endpoint}`, {
     method,
     headers,
     body: JSON.stringify(body),
@@ -40,7 +40,7 @@ export async function collect(testCase, ctx) {
   const action = getAction(testCase.action.type);
   const aiProfile = ctx.aiProfile ?? testCase.aiProfile ?? "default";
 
-  const { blueprint, blueprintPath } = await ensureBlueprintSeeded(testCase.blueprint.path, env);
+  const { blueprint, blueprintPath } = await ensureBlueprintSeeded(testCase.blueprint.path);
   const auth = await setupHarnessAuth(testCase.id ?? "runtime-eval", env);
 
   try {
@@ -52,8 +52,7 @@ export async function collect(testCase, ctx) {
         blueprint,
         given: testCase.given,
         aiProfile,
-        userId: auth.user.id,
-        env,
+        playerId: auth.player.id,
       });
 
     const body = action.endpoint.body(testCase.given, testCase.action, gameId, {
@@ -61,7 +60,7 @@ export async function collect(testCase, ctx) {
       aiProfile,
     });
     const data = await callEndpoint(
-      env.functionsUrl,
+      env.apiUrl,
       action.endpoint.name,
       action.endpoint.method,
       body,

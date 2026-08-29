@@ -1,43 +1,35 @@
-import { getBaseEnvPath } from "./local-config.mjs";
-import {
-  ensureSupabaseRunning,
-  injectWorktreeEnv,
-  loadEnvFile,
-  npmBin,
-  parseScriptOptions,
-  runCommand,
-} from "./supabase-utils.mjs";
+/**
+ * Runs the integration or API E2E suite against a freshly built game server.
+ *
+ * The server writes to a temporary config root that is removed afterwards, so
+ * a test run can never touch the database you have been playing on.
+ */
+
+import { npmBin, runCommand } from "./lib/process.mjs";
+import { startTestServer } from "./lib/test-server.mjs";
+import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
 
 const suite = process.argv[2];
 if (suite !== "integration" && suite !== "e2e") {
   console.error("Usage: node scripts/run-mock-tests.mjs <integration|e2e>");
   process.exit(1);
 }
-const options = parseScriptOptions(process.argv.slice(3));
 
-const rootDir = process.cwd();
-const baseEnvPath = getBaseEnvPath(rootDir, process.env);
+const repoRoot = process.cwd();
+const vitestTarget =
+  suite === "integration" ? "tests/api/integration" : "tests/api/e2e";
+
+console.log(`Running ${suite} tests in "mock" AI mode...`);
+
+const { ports } = resolveWorktreePorts(repoRoot);
+const server = await startTestServer({ repoRoot, port: ports.web });
 
 try {
-  const baseVars = await loadEnvFile(baseEnvPath, false);
-  const env = injectWorktreeEnv({
-    ...baseVars,
+  runCommand(npmBin, ["exec", "--", "vitest", "run", vitestTarget], {
     ...process.env,
+    MYSTERY_TEST_API_URL: server.url,
+    MYSTERY_TEST_CONFIG_ROOT: server.configRoot,
   });
-
-  const vitestTarget =
-    suite === "integration" ? "tests/api/integration" : "tests/api/e2e";
-
-  console.log(`Running ${suite} tests in "mock" AI mode...`);
-  await ensureSupabaseRunning(env, { restart: options.restart });
-  if (options.seedStorage === "always" || options.seedStorage === "if-missing") {
-    runCommand(npmBin, ["run", "seed:storage"], env);
-  }
-  if (options.seedAI) {
-    runCommand(npmBin, ["run", "seed:ai", "--", "--only", "mock"], env);
-  }
-  runCommand(npmBin, ["exec", "--", "vitest", "run", vitestTarget], env);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+} finally {
+  server.stop();
 }

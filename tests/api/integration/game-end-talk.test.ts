@@ -1,24 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("game-end-talk endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-end-talk");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it("ends the conversation and returns narrator speaker", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {

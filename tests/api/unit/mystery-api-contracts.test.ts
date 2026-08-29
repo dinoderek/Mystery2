@@ -11,8 +11,6 @@ import {
   SessionSummarySchema,
   GameStartRequestSchema,
   GameStateSchema,
-  ImageLinkRequestSchema,
-  ImageLinkResponseSchema,
   MoveResponseSchema,
   SearchResponseSchema,
   SpeakerSchema,
@@ -26,7 +24,6 @@ import {
   createSessionCatalog,
   createBlueprintSummary,
   createMoveResponse,
-  createImageLinkResponse,
   createNarrationEvent,
 } from "../../testkit/src/fixtures.ts";
 
@@ -306,24 +303,4 @@ describe("shared mystery API contracts", () => {
     });
   });
 
-  it("validates image-link request and response schemas", () => {
-    expect(
-      ImageLinkRequestSchema.parse({
-        blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
-        image_id: "mock-blueprint.blueprint.png",
-      }),
-    ).toMatchObject({
-      image_id: "mock-blueprint.blueprint.png",
-    });
-
-    const imageLink = createImageLinkResponse({
-      image_id: "mock-blueprint.blueprint.png",
-      signed_url: "https://example.com/signed-image",
-    });
-    expect(
-      ImageLinkResponseSchema.parse(imageLink),
-    ).toMatchObject({
-      image_id: "mock-blueprint.blueprint.png",
-    });
-  });
 });

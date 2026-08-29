@@ -125,7 +125,7 @@ _(Add components here as they are built. Example format below)_
 
 ### `SignedImage.svelte`
 
-- **Purpose**: Self-managing signed-image component backed by `ImageLinkCache`. Handles resolution, caching, expiry, and automatic refresh of Supabase Storage signed URLs. Drop-in replacement anywhere a blueprint/location/character image is needed.
+- **Purpose**: Renders blueprint artwork from the same-origin `/api/images/<blueprint>/<image>` route, falling back to a placeholder when the image is missing. There is no link to resolve and nothing to expire, so it is a plain `<img>` with an error handler.
 - **Props**:
   - `blueprintId`: `string` (the blueprint that owns the image)
   - `imageId`: `string` (canonical image filename from the blueprint)

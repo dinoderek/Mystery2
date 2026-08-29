@@ -4,11 +4,8 @@
 // them, so the local implementation is the shorter path to the same bytes: no
 // bucket, no download, no signed URL, and therefore no expiry to refresh.
 //
-// The parse semantics of the Supabase adapter are kept exactly — one malformed
-// blueprint is skipped and logged, never fatal, because a single bad file must
-// not take down the whole catalog. What is dropped is the bounded retry around
-// downloads: a local read either succeeds or fails for a reason retrying will
-// not fix.
+// One malformed blueprint is skipped and logged, never fatal: a single bad
+// file must not take down the whole catalog.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -110,8 +107,7 @@ export function createLocalContentStore(
       }
 
       // `readdirSync` order is filesystem-dependent, so it is sorted here:
-      // the catalog must not shuffle between runs, and the Supabase adapter it
-      // stands in for gets name-ascending order from storage `.list()`.
+      // the catalog must not shuffle between runs or between machines.
       const names = entries
         .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
         .map((entry) => entry.name)
@@ -155,8 +151,8 @@ export function createLocalContentStore(
         }
       }
 
-      // Authored blueprints are not always filed under `<id>.json` — the same
-      // fallback the Supabase adapter does over the bucket.
+      // Authored blueprints are not always filed under `<id>.json`, so fall
+      // back to matching on the id inside the file.
       for (const filePath of blueprintFiles()) {
         const blueprint = readBlueprintFile(filePath, logger);
         if (blueprint?.id === blueprintId) return blueprint;

@@ -2,8 +2,8 @@
 //
 // Handlers see only the interface in `context.ts`, never this file. It is the
 // one place that knows the game's state is a SQLite file and its content is a
-// pair of directories; the Supabase adapter it replaced was the one place that
-// knew about a service-role client, a JWT and two storage buckets.
+// pair of directories — which is what makes it the only file that would have
+// to change to keep the state somewhere else.
 
 import { createLocalAIProfileStore } from "./ai-profile.ts";
 import { createLocalContentStore } from "./content.ts";

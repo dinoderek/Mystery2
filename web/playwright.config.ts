@@ -1,72 +1,30 @@
 import { defineConfig, devices } from '@playwright/test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getBaseEnvPath } from '../scripts/local-config.mjs';
 import { resolveWorktreePorts } from '../lib/worktree-ports.mjs';
-
-function parseEnvFile(filePath: string): Record<string, string> {
-  if (!fs.existsSync(filePath)) return {};
-  const contents = fs.readFileSync(filePath, 'utf8');
-  const vars: Record<string, string> = {};
-
-  for (const line of contents.split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const firstEq = trimmed.indexOf('=');
-    if (firstEq === -1) continue;
-
-    const key = trimmed.slice(0, firstEq).trim();
-    let value = trimmed.slice(firstEq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    vars[key] = value;
-  }
-
-  return vars;
-}
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(configDir, '..');
-const { ports, isWorktree } = resolveWorktreePorts(repoRoot);
-const rootEnv = parseEnvFile(getBaseEnvPath(repoRoot, process.env));
+const { ports } = resolveWorktreePorts(repoRoot);
 
-// In a worktree the derived Supabase URL is authoritative; in the main
-// checkout we fall back to .env.local / hardcoded defaults as before.
-const supabaseUrl = isWorktree
-  ? `http://127.0.0.1:${ports.api}`
-  : (process.env.VITE_SUPABASE_URL ?? rootEnv.API_URL ?? 'http://127.0.0.1:54331');
+const port = ports.web;
+// 127.0.0.1, not localhost: localhost resolves to ::1 first on this
+// machine and the dev server binds IPv4 only, so `page.request` would be
+// refused while `page.goto` quietly fell back.
+const baseURL = `http://127.0.0.1:${port}`;
 
-const webServerEnv = {
-  ...process.env,
-  VITE_SUPABASE_URL: supabaseUrl,
-  VITE_SUPABASE_ANON_KEY:
-    process.env.VITE_SUPABASE_ANON_KEY ??
-    rootEnv.ANON_KEY ??
-    process.env.VITE_SUPABASE_ANON_KEY,
-  VITE_E2E_AUTH_BYPASS: '1',
-};
+// The browser suite plays real sessions, so it gets a database of its own.
+// Deterministic rather than a mkdtemp: the config module is re-loaded in every
+// worker, and they all have to agree on the same directory. `global-setup.ts`
+// empties it at the start of each run and `global-teardown.ts` removes it.
+export const E2E_CONFIG_ROOT = path.join(os.tmpdir(), `mystery-e2e-${port}`);
+fs.mkdirSync(E2E_CONFIG_ROOT, { recursive: true });
 
-const vitePort = ports.vite_dev;
-const viteUrl = `http://localhost:${vitePort}`;
-
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
-
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
 export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   testDir: './e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -80,7 +38,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: viteUrl,
+    baseURL,
 
     /* Capture screenshot on failure for debugging */
     screenshot: 'only-on-failure',
@@ -95,23 +53,16 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* The game server: one process serving both the app and /api. */
   webServer: {
-    command: `npm run dev -- --port ${vitePort}`,
-    url: viteUrl,
+    command: `npm run dev -- --port ${port}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
-    env: webServerEnv,
+    env: {
+      ...process.env,
+      MYSTERY_CONFIG_ROOT: E2E_CONFIG_ROOT,
+    },
   },
 });

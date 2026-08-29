@@ -1,17 +1,16 @@
 // The endpoint registry.
 //
 // Each endpoint is a `handle(req, ctx) => Response` and a list of methods it
-// answers. Under Supabase every file carried its own `Deno.serve` bootstrap
-// that re-checked the method and built a context; now one SvelteKit route
-// (`web/src/routes/api/[endpoint]/+server.ts`) does that once, for all of them,
-// against this table.
+// answers. One SvelteKit route (`web/src/routes/api/[endpoint]/+server.ts`)
+// reads this table to check the method, resolve the profile and build a
+// context — once, for all of them, in place of the twelve identical bootstraps
+// this replaced.
 //
-// Adding an endpoint means adding it here — an unlisted name is a 404, which
-// is what the old per-function deployment gave for free.
+// Adding an endpoint means adding it here: an unlisted name is a 404, which
+// per-function deployment used to give for free.
 
 import type { EngineContext } from "../context.ts";
 
-import * as blueprintImageLink from "./blueprint-image-link.ts";
 import * as blueprintsList from "./blueprints-list.ts";
 import * as gameAccuse from "./game-accuse.ts";
 import * as gameAsk from "./game-ask.ts";
@@ -38,7 +37,6 @@ const GET_ONLY: readonly EndpointMethod[] = ["GET"];
 const GET_OR_POST: readonly EndpointMethod[] = ["GET", "POST"];
 
 export const ENDPOINTS: readonly EndpointDefinition[] = [
-  { name: "blueprint-image-link", methods: POST_ONLY, handle: blueprintImageLink.handle },
   { name: "blueprints-list", methods: GET_OR_POST, handle: blueprintsList.handle },
   { name: "game-accuse", methods: POST_ONLY, handle: gameAccuse.handle },
   { name: "game-ask", methods: POST_ONLY, handle: gameAsk.handle },

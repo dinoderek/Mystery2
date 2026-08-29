@@ -1,6 +1,8 @@
 # AI Configuration
 
-This project uses a DB-first AI configuration model.
+AI profiles are **environment, not data**. There is no `ai_profiles` table and
+nothing to seed: `mock` is built in, `free` and `paid` come from their env
+files, and `default` is whatever the running process is configured with.
 
 For day-to-day local setup and profile selection commands, see `../QUICKSTART.md`.
 For the implementation-level matrix of which blueprint fields feed image and
@@ -9,30 +11,37 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 ## Canonical Rules
 
 - Canonical default profile id is `default`.
-- `game-start` uses `default` unless request body includes `ai_profile`.
-- Existing sessions stay pinned to their stored `ai_profile_id`.
-- OpenRouter keys are stored in `ai_profiles.openrouter_api_key` (no function-secret fallback).
-- Local-only operator config can be relocated by setting `MYSTERY_CONFIG_ROOT` to an absolute path. When unset, local-only files continue to resolve from the repo root.
+- `game-start` uses `default` unless the request body includes `ai_profile`.
+- Existing sessions stay pinned to their stored `ai_profile_id` **label**, and
+  that label is resolved again on every request — so a config change takes
+  effect mid-session, with no restart.
+- A misconfigured profile (unknown provider, missing model, `openrouter` with
+  no key) **throws**, surfacing as a 500. A profile that is simply not
+  configured on this machine returns `null`, which `game-start` turns into
+  `400 Invalid ai_profile`. Neither silently falls back to mock.
+- The OpenRouter key is read by the server from the environment and never
+  reaches the browser.
+- Local-only operator config can be relocated by setting `MYSTERY_CONFIG_ROOT`
+  to an absolute path. When unset, local-only files resolve from the repo root.
 
 This document is the canonical source for:
 
 - `default` vs named local profiles (`mock`, `free`, `paid`)
-- when `npm run seed:ai` is sufficient
-- which local and test workflows rely on the seeded mock profile
+- which local and test workflows rely on the mock provider
 
 ## OpenRouter Injection Map
 
 - Local live gameplay:
-  - `.env.ai.free.local` / `.env.ai.paid.local` provide `OPENROUTER_API_KEY`
-  - when `MYSTERY_CONFIG_ROOT` is set, those files resolve from that directory instead of the repo root
-  - `scripts/seed-ai.mjs` writes that value into `ai_profiles.openrouter_api_key`
-- Deploy:
-  - `.env.deploy.<env>.local` provides `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY`
-  - when `MYSTERY_CONFIG_ROOT` is set, deploy reads those local-only env files from that directory
-  - deploy upserts `ai_profiles.id='default'`
+  - `.env.ai.free.local` / `.env.ai.paid.local` provide `AI_PROVIDER`,
+    `AI_MODEL`, and `OPENROUTER_API_KEY`
+  - when `MYSTERY_CONFIG_ROOT` is set, those files resolve from that directory
+    instead of the repo root
+  - a key absent from the mode file falls back to `OPENROUTER_API_KEY` in
+    `.env.local`
 - Runtime use:
-  - edge functions load the key from `ai_profiles.openrouter_api_key`
-  - runtime provider construction uses that DB value only
+  - `npm run dev:ai:free` loads the mode file into the server process
+  - `packages/game-engine/src/ai-profile.ts` resolves a request's profile from
+    that environment, per request
 - Blueprint generation:
   - `scripts/generate-blueprint.mjs` is operator tooling, not gameplay runtime
   - it loads `OPENROUTER_API_KEY` from shell env, then `.env.local`
@@ -70,73 +79,37 @@ This document is the canonical source for:
 
 - `npm run dev` points `default` to `mock`.
 - `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
-- `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
+- Switching profile is switching command — there is nothing to seed.
 - gameplay/runtime OpenRouter config stays DB-first; local blueprint/image generation use direct operator env values instead of AI profile rows
-
-## After The Move To Local Execution
-
-The DB-first model above describes the Supabase runtime, which is still the one
-that serves gameplay. The local engine adapter
-(`packages/game-engine/src/ai-profile.ts`) resolves the same three labels
-without a database:
-
-- `mock` is built in.
-- `free` / `paid` come straight from `.env.ai.<mode>.local` — the same files
-  `npm run seed:ai` reads today, so nothing about operator setup changes.
-- `default` is whatever the running process is configured with
-  (`AI_PROVIDER` / `AI_MODEL` / `OPENROUTER_API_KEY`, with `.env.local`
-  underneath), which is exactly what `npm run dev:ai:free` already exports.
-  There is no seeding step, so `seed:ai` has nothing left to do.
-
-A misconfigured profile — an unrecognised provider, a missing model, or
-`openrouter` with no key anywhere — throws rather than quietly falling back to
-mock. A profile that simply has no env file returns `null`, which `game-start`
-turns into `400 Invalid ai_profile`.
-
-Sessions keep recording the profile *label* in `game_sessions.ai_profile_id`
-for the evaluation pipeline; the model actually used is on each event's `model`
-column. This path is not serving requests yet — see
-`docs/plans/local-execution/status.md`.
 
 ## Testing And Mock Profile Rules
 
-The default automated test path is mock-backed:
+The default automated test path is mock-backed, and it is mock-backed by
+absence: the suites start the server against a temporary config root with no
+`.env.ai.*` files in it, so `default` resolves to the built-in mock provider.
+Nothing is seeded and nothing has to be reset between runs.
 
-- `npm run test:integration` reseeds `ai_profiles.id='default'` to mock mode
-- `npm run test:e2e` reseeds `ai_profiles.id='default'` to mock mode
-- browser E2E normally runs against that same local mock-backed runtime
-
-Use `npm run seed:ai -- --only <mock|free|paid>` when:
-
-- switching between local runtime modes
-- updating `.env.ai.<mode>.local`
-- changing seeded profile rows or provider/model defaults
-
-Use `npm run seed:all` instead when auth users, storage, and AI profiles all
-need to be recreated together.
-
-Because profile selection is stored in Postgres, `seed:ai` does not require a
-Supabase restart by itself.
+`tests/api/integration/ai-profile-runtime.test.ts` writes a `free` profile into
+that temporary root, plays a turn, breaks the file, and asserts the next turn
+fails — which is how per-request resolution stays proven.
 
 ## Change Management For AI Runtime Work
 
 When changing AI output contracts, prompt/context shape, provider selection, or
 profile resolution:
 
-- update the seeded profile behavior if local or test defaults changed
 - update mock-provider coverage in `tests/api/unit/ai-provider.test.ts`
 - update any affected integration or API E2E assertions that rely on mock
-  narration or the seeded `default` profile
-- rerun `npm run seed:ai` or `npm run seed:all` before local verification
+  narration or the `default` profile
 
 Typical touchpoints include:
 
-- `supabase/functions/_shared/ai-provider.ts`
-- `supabase/functions/_shared/context-supabase.ts` (`AIProfileStore`)
-- `scripts/seed-ai.mjs`
+- `packages/game-engine/src/ai-provider.ts`
+- `packages/game-engine/src/ai-profile.ts`
 - `tests/api/unit/ai-provider.test.ts`
+- `tests/api/unit/local-engine-ai-profile.test.ts`
 - `tests/api/integration/ai-profile-runtime.test.ts`
-- `tests/api/e2e/*` when journey assertions depend on seeded mock behavior
+- `tests/api/e2e/*` when journey assertions depend on mock behavior
 
 ## Blueprint Generation Configuration
 

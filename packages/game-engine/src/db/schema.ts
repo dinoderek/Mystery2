@@ -11,7 +11,7 @@ export const SCHEMA_SQL = `
 -- Local SQLite schema for the mystery engine.
 --
 -- This is the whole database: three tables, no migration chain. It was derived
--- from the *end state* of supabase/migrations/0001..0014 rather than replayed
+-- from the *end state* of the fourteen Postgres migrations rather than replayed
 -- from them, because none of that history needs to survive the move off
 -- Postgres (existing session data is disposable — see
 -- docs/plans/local-execution/plan.md).

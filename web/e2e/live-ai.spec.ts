@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginWithSeedUser } from "./test-auth";
+import { signInThroughPicker } from "./test-profile";
 
 test.skip(
   process.env.AI_LIVE !== "1",
@@ -8,7 +8,7 @@ test.skip(
 
 test.describe("Live AI smoke", () => {
   test("loads a real session and executes one live command", async ({ page }) => {
-    await loginWithSeedUser(page);
+    await signInThroughPicker(page);
 
     await expect(page.getByText("1. Start a new game")).toBeVisible();
     await page.keyboard.press("1");

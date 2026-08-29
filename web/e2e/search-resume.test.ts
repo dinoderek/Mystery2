@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   INVESTIGATOR_SPEAKER as investigatorSpeaker,
@@ -13,15 +13,15 @@ import {
 const baseState = createGameState({ time_remaining: 7 });
 
 async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
-  await enableAuthBypass(page);
+  await signInAsTestProfile(page);
 
-  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+  await page.route('**/api/blueprints-list*', async (route) => {
     await route.fulfill({
       json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
     });
   });
 
-  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+  await page.route('**/api/game-sessions-list*', async (route) => {
     await route.fulfill({
       json: createSessionCatalog({
         in_progress: [
@@ -39,7 +39,7 @@ async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
     });
   });
 
-  await page.route('**/functions/v1/game-get*', async (route) => {
+  await page.route('**/api/game-get*', async (route) => {
     await route.fulfill({
       json: {
         state: baseState,

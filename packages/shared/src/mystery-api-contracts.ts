@@ -167,17 +167,6 @@ export const BlueprintSummarySchema = z.object({
   blueprint_image_id: z.string().nullable().optional(),
 });
 
-export const ImageLinkRequestSchema = z.object({
-  blueprint_id: z.string().uuid(),
-  image_id: z.string().min(1),
-});
-
-export const ImageLinkResponseSchema = z.object({
-  image_id: z.string().min(1),
-  signed_url: z.string().url(),
-  expires_at: z.string().datetime(),
-});
-
 export const SessionSummarySchema = z.object({
   game_id: z.string().uuid(),
   blueprint_id: z.string().uuid(),
@@ -228,5 +217,3 @@ export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;
 export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;
-export type ImageLinkRequest = z.infer<typeof ImageLinkRequestSchema>;
-export type ImageLinkResponse = z.infer<typeof ImageLinkResponseSchema>;

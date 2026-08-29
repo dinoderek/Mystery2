@@ -1,5 +1,6 @@
 import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
-import { loadEnvFile, npmBin, runCommand } from "./supabase-utils.mjs";
+import { loadEnvFile } from "./lib/env-file.mjs";
+import { npmBin, runCommand } from "./lib/process.mjs";
 
 const mode = process.argv[2];
 if (mode !== "free" && mode !== "paid") {

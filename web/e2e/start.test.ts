@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -9,12 +9,11 @@ import {
   createNarrationEvent,
   createSessionSummary,
   createSessionCatalog,
-  createImageLinkResponse,
 } from '../../tests/testkit/src/fixtures';
 
 test.describe('US1 - Start Screen', () => {
   async function mockEmptyCatalog(page: import('@playwright/test').Page) {
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: EMPTY_CATALOG,
       });
@@ -22,7 +21,7 @@ test.describe('US1 - Start Screen', () => {
   }
 
   test('shows the 3-option landing menu and keeps disabled options non-navigable', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 
     await page.goto('/');
@@ -39,9 +38,9 @@ test.describe('US1 - Start Screen', () => {
   });
 
   test('navigates to list routes when in-progress and completed counts are non-zero', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
           in_progress: [
@@ -87,10 +86,10 @@ test.describe('US1 - Start Screen', () => {
   });
 
   test('enters new-game blueprint flow on option 1 and starts game by blueprint number', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
           blueprints: [
@@ -101,7 +100,7 @@ test.describe('US1 - Start Screen', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await route.fulfill({
         json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000123',
@@ -129,10 +128,10 @@ test.describe('US1 - Start Screen', () => {
   });
 
   test('shows centered loading indicator while starting from blueprint selection', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
           blueprints: [
@@ -142,7 +141,7 @@ test.describe('US1 - Start Screen', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       await route.fulfill({
         json: createGameStartResponse({
@@ -176,10 +175,10 @@ test.describe('US1 - Start Screen', () => {
   });
 
   test('renders blueprint cover image when an authenticated link is issued', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
           blueprints: [
@@ -195,13 +194,10 @@ test.describe('US1 - Start Screen', () => {
       });
     });
 
-    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
+    await page.route('**/api/images/**', async (route) => {
       await route.fulfill({
-        json: createImageLinkResponse({
-          image_id: 'mock-blueprint.blueprint.png',
-          signed_url:
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-        }),
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>',
       });
     });
 
@@ -214,10 +210,10 @@ test.describe('US1 - Start Screen', () => {
   });
 
   test('shows placeholder when blueprint image link request fails', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: {
           blueprints: [
@@ -233,9 +229,6 @@ test.describe('US1 - Start Screen', () => {
       });
     });
 
-    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      await route.fulfill({ status: 404, json: { error: 'Not found' } });
-    });
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();

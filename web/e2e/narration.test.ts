@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -8,7 +8,6 @@ import {
   createGameStartResponse,
   createNarrationEvent,
   createMoveResponse,
-  createImageLinkResponse,
   createSessionSummary,
   createSessionCatalog,
 } from '../../tests/testkit/src/fixtures';
@@ -21,19 +20,19 @@ const startState = createGameState({
 
 test.describe('US2/US3 - Narration Rendering', () => {
   test.beforeEach(async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({ json: EMPTY_CATALOG });
     });
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await route.fulfill({
         json: createGameStartResponse({
           state: startState,
@@ -53,7 +52,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       await route.fulfill({
         json: createMoveResponse({
           narration_parts: [{ text: 'You move to the garden.', speaker: narratorSpeaker }],
@@ -160,24 +159,14 @@ test.describe('US2/US3 - Narration Rendering', () => {
       '<rect fill="#333" width="400" height="300"/></svg>',
     );
 
-    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      await route.fulfill({
-        json: createImageLinkResponse({
-          image_id: 'mock-blueprint.location-garden.png',
-          signed_url: 'http://127.0.0.1/storage/v1/object/sign/fake/img.png',
-          expires_at: new Date(Date.now() + 3600_000).toISOString(),
-        }),
-      });
-    });
-
-    await page.route('**/storage/v1/object/sign/**', async (route) => {
+    await page.route('**/api/images/**', async (route) => {
       await route.fulfill({
         contentType: 'image/svg+xml',
         body: testImage,
       });
     });
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       await route.fulfill({
         json: createMoveResponse({
           narration_parts: [
@@ -213,15 +202,11 @@ test.describe('US2/US3 - Narration Rendering', () => {
   });
 
   test('keeps narration flow active when side image fails to load', async ({ page }) => {
-    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      await route.fulfill({
-        status: 404,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Image unavailable' }),
-      });
+    await page.route('**/api/images/**', async (route) => {
+      await route.fulfill({ status: 404, body: '' });
     });
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       await route.fulfill({
         json: createMoveResponse({
           narration_parts: [
@@ -256,7 +241,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
   });
 
   test('shows resume recovery guidance when transcript reload fails', async ({ page }) => {
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
           in_progress: [
@@ -274,7 +259,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-get*', async (route) => {
+    await page.route('**/api/game-get*', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',

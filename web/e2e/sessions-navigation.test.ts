@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
@@ -18,13 +18,13 @@ const baseGameState = createGameState({ time_remaining: 8 });
 
 test.describe('Sessions navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
   });
 
   test('refreshes landing counts after quitting a newly started session', async ({ page }) => {
     let catalogRequestCount = 0;
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
@@ -49,13 +49,13 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000002', title: 'The Missing Honey Cakes', one_liner: 'Track the crumbs', target_age: 8 })] },
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await route.fulfill({
         json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000011',
@@ -96,7 +96,7 @@ test.describe('Sessions navigation', () => {
   test('refreshes landing completed counts after finishing a newly started session', async ({ page }) => {
     let catalogRequestCount = 0;
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
@@ -123,13 +123,13 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000003', title: 'The Locked Library', one_liner: 'Solve the archive mystery', target_age: 9 })] },
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await route.fulfill({
         json: createGameStartResponse({
           game_id: '00000000-0000-0000-0000-000000000012',
@@ -143,7 +143,7 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-accuse*', async (route) => {
+    await page.route('**/api/game-accuse*', async (route) => {
       await route.fulfill({
         json: createAccuseResponse({
           narration_parts: [{ text: 'Case closed. Excellent reasoning.', speaker: narratorSpeaker }],
@@ -178,7 +178,7 @@ test.describe('Sessions navigation', () => {
   test('refreshes catalog when entering in-progress list route', async ({ page }) => {
     let catalogRequestCount = 0;
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       catalogRequestCount += 1;
 
       if (catalogRequestCount === 1) {
@@ -212,7 +212,7 @@ test.describe('Sessions navigation', () => {
   });
 
   test('renders in-progress list, supports b/back, and resumes by number', async ({ page }) => {
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
           in_progress: [
@@ -230,7 +230,7 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-get?game_id=00000000-0000-0000-0000-000000000014*', async (route) => {
+    await page.route('**/api/game-get?game_id=00000000-0000-0000-0000-000000000014*', async (route) => {
       await route.fulfill({
         json: {
           blueprint_id: '00000000-0000-0000-0000-000000000002',
@@ -251,7 +251,7 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       await route.fulfill({
         json: createSearchResponse({
           narration_parts: [{ text: 'You inspect the room and spot fresh crumbs.', speaker: narratorSpeaker }],
@@ -284,7 +284,7 @@ test.describe('Sessions navigation', () => {
   });
 
   test('renders completed list and opens ended sessions in read-only mode', async ({ page }) => {
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
           completed: [
@@ -304,7 +304,7 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-get?game_id=00000000-0000-0000-0000-000000000015*', async (route) => {
+    await page.route('**/api/game-get?game_id=00000000-0000-0000-0000-000000000015*', async (route) => {
       await route.fulfill({
         json: {
           blueprint_id: '00000000-0000-0000-0000-000000000003',
@@ -349,7 +349,7 @@ test.describe('Sessions navigation', () => {
   });
 
   test('blocks opening rows when can_open is false', async ({ page }) => {
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
           completed: [

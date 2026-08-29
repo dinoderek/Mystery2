@@ -1,8 +1,7 @@
 // The engine's `.env*.local` reader.
 //
-// It is a re-implementation of the parser in `scripts/supabase-utils.mjs`
-// (which the engine must not depend on — that module boots Docker and is
-// deleted in P5), so these cases pin the rules the two have to share.
+// The scripts read the same files through `scripts/lib/env-file.mjs`, which
+// wraps this parser, so these cases pin the rules for both.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -14,7 +13,6 @@ import {
   parseEnvFile,
   readEnvFile,
 } from "../../../packages/game-engine/src/env-file.ts";
-import { parseEnvLine } from "../../../scripts/supabase-utils.mjs";
 
 describe("parseEnvFile", () => {
   it("reads key/value pairs, ignoring comments and blank lines", () => {
@@ -47,23 +45,6 @@ describe("parseEnvFile", () => {
     });
   });
 
-  it("agrees line for line with the script parser it replaces", () => {
-    const lines = [
-      "# comment",
-      "",
-      "A=1",
-      "  B = two  ",
-      'C="quoted value"',
-      "D=has=equals",
-      "no-equals",
-    ];
-
-    const viaScript = Object.fromEntries(
-      lines.map(parseEnvLine).filter((entry): entry is [string, string] => entry !== null),
-    );
-
-    expect(parseEnvFile(lines.join("\n"))).toEqual(viaScript);
-  });
 });
 
 describe("readEnvFile", () => {

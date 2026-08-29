@@ -13,7 +13,7 @@ const STUB = { cli: "judge-stub" };
 // Untyped .mjs export; name it once so it.each() can infer the callback.
 const JUDGE_IDS: string[] = ADHERENCE_JUDGE_IDS;
 
-const MOCK_BLUEPRINT = "supabase/seed/blueprints/mock-blueprint.json";
+const MOCK_BLUEPRINT = "blueprints/mock-blueprint.json";
 
 function makeInteraction(overrides: Record<string, unknown> = {}) {
   return {

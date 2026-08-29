@@ -19,9 +19,9 @@ easy export path for mining past play.
 | P0 | Dependency and runtime baseline | **MERGED** — [#138](https://github.com/dinoderek/Mystery2/pull/138) |
 | P1 | `EngineContext` seam, in place | **MERGED** — [#139](https://github.com/dinoderek/Mystery2/pull/139) |
 | P2 | Local adapters (SQLite + filesystem) | **MERGED** — [#142](https://github.com/dinoderek/Mystery2/pull/142) |
-| P3 | Move engine to `packages/game-engine/`, stand up SvelteKit `/api`, cut over client and tests | **NEXT** |
-| P4 | Mining and export (`npm run dump`, `sessions:ls`) | pending ← P3 |
-| P5 | Demolition and governance (delete `supabase/`, amend constitution) | pending ← P4 |
+| P3 | Move engine to `packages/game-engine/`, stand up SvelteKit `/api`, cut over client and tests | **MERGED** — see below |
+| P5 | Demolition and governance (delete `supabase/`, amend constitution) | **MERGED** — see below |
+| P4 | Mining and export (`npm run dump`, `sessions:ls`) | **NEXT** |
 
 ## What landed
 
@@ -151,91 +151,152 @@ Two changes outside the new package, both small and both green on Supabase:
   `blueprint-image-link` works against either adapter (the local content store
   serves a same-origin `/api/images/...` path, which has no origin to strip).
 
-## Starting P3
+### P3 + P5 — merged
 
-P3 is the cutover, and it is now the biggest phase — it absorbed P2's SvelteKit
-work. See `plan.md` § "P3 — Cut over client and tests". In rough order:
+Shipped together, because the cutover and the demolition could not be separated
+without a phase in the middle where the suite could not be green: the moment
+the engine leaves `supabase/functions/`, Deno has nothing to serve, and the test
+scripts that started Supabase have nothing to start.
 
-1. **Move the engine.** `supabase/functions/_shared/*` →
-   `packages/game-engine/src/`, each `<name>/index.ts` →
-   `src/endpoints/<name>.ts` exporting `handle(req, ctx)`. The bind-mount
-   constraint dies with the move, so the engine can import `@my2/shared`
-   directly and `src/contract.ts` becomes the definition of `EngineContext`
-   instead of a re-export. `sync:shared`, the `shared-sync` gate step and the
-   duplicated 196-LOC `blueprint-schema-v2.ts` can go with it.
-2. **Stand up the server.** `adapter-node`, `hooks.server.ts` resolving the
-   `mystery-player-id` cookie through `engine.players`,
-   `routes/api/[endpoint]/+server.ts` dispatching to the handlers, and
-   `routes/api/images/[blueprint]/[image]/+server.ts` serving bytes via
-   `resolveImageFile()`. `createLocalEngine()` is the one call that opens
-   everything.
-3. **Cut over the client**, then the tests. Note that the CI deploy job and
-   `web/build`'s shape both change here; P5 deletes them.
+**The engine moved.** `supabase/functions/_shared/*` → `packages/game-engine/src/`,
+each `<name>/index.ts` → `src/endpoints/<name>.ts` as a bare `handle(req, ctx)`,
+and `src/endpoints/index.ts` is the registry that replaced twelve copies of the
+same `Deno.serve` bootstrap. `auth.ts`, `db.ts`, `context-supabase.ts` and
+`cors.ts` were deleted rather than moved, along with both mirrored duplicates,
+`scripts/sync-shared.mjs`, the `shared-sync` gate step and its two tests.
 
-It is worth considering splitting this in two — (1) move the engine and stand
-up the server, with the Supabase functions still serving the app, and (2) point
-the client and the tests at it — so that neither PR is a rewrite of both tiers
-at once. The suite cannot be green in between, though, which is an argument for
-keeping it whole. Judgement call for whoever picks it up.
+**Three defects fell out of type-checking the endpoints for the first time.**
+They were previously unreachable from Node, so nothing checked them:
+
+- `game-enter` never sent `destination_history_json`, which the ambience prompt
+  interpolates — every first location description was preceded by the literal
+  text `Destination history: undefined`.
+- `GameSessionRow.mode` was `string` while every consumer wanted `GameMode`.
+- `AIContext` was an interface, so it was not assignable to the
+  `Record<string, unknown>` every provider takes.
+
+**The server tier.** `adapter-node`, `hooks.server.ts` resolving the
+`mystery-player-id` cookie, `api/[endpoint]` dispatching to the registry,
+`api/images/[blueprint]/[image]` serving bytes off disk, and `api/player` /
+`api/players` replacing Supabase Auth. Signing in is naming a profile.
+
+**The client.** `supabase.functions.invoke(name, {body})` became
+`callApi(name, body)` with the same `{ data, error }`, so `store.retry.ts` and
+the call sites barely moved. `image-link-cache.ts` and its five-minute refresh
+sweep are gone; `SignedImage` is `BlueprintImage`, a plain `<img src>`.
+
+**The tests.** `scripts/lib/test-server.mjs` builds the game and runs it against
+a temporary config root, so a suite can never touch the database you play on.
+`setupApiTestAuth()` returns a cookie; `readStoredSession()`/`readStoredEvents()`
+replaced twelve service-role clients. `auth-rls.test.ts` became
+`session-ownership.test.ts` and asserts the same property through the API,
+`cors-preflight.test.ts` is deleted, and the browser suite picks a profile the
+way a player does.
+
+**The demolition.** `supabase/`, `deploy/`, eleven scripts, the nine-service
+port table (one port survives), `wrangler`, `@supabase/supabase-js` from both
+manifests, the `MYSTERY_CLOUD_SESSION` waiver, and leak detection — there are no
+auth users left to leak. CI went from four jobs to one.
+
+**Constitution amended to 2.0.0.** Principle IV named the platform, so
+redefining it is MAJOR under the document's own policy. It now names three
+constraints instead of a vendor: secrets stay out of the browser, ownership is
+enforced in the repositories, and the engine does not know how it is hosted.
+
+Two things worth knowing about the build, both found by running the artefact
+rather than trusting that it compiled:
+
+- `better-sqlite3` has to load through `createRequire`. Bundled, its binding
+  loader reaches `require.main` inside an ES module and the server dies at
+  boot. Marking it external does not work: the engine is a linked workspace
+  package, so Vite treats its whole dependency graph as source.
+- `schema.sql` became `schema.ts`. The engine has to load identically under
+  Vite's SSR bundle, vitest, and plain `node`; a bundled chunk cannot read a
+  sibling `.sql` file, and `?raw` is Vite-only.
+
+**Correction to the plan:** P4 was sequenced after P3 and is now the only phase
+left. Its `evaluation/` half was pulled forward — `createLocalTraceSource()`,
+`seed-session.mjs` and the runtime harness had to stop using Supabase for the
+demolition to be real — so what remains of P4 is the export tooling proper:
+`npm run dump` and `npm run sessions:ls`.
+
+## Starting P4
+
+Everything P4 depended on exists. `evaluation/trace/lib/datasource.mjs` already
+reads `game.db` directly (`--db <file>` points it at a copy), so
+`npm run eval:trace -- --session <id>` works on real sessions today. What is
+left is the bulk tooling from `plan.md` § "P4 — Mining and export":
+
+1. `scripts/dump-sessions.mjs` → `npm run dump`, writing `sessions.jsonl`,
+   `events.jsonl`, and `traces/<session_id>.json` in the shape
+   `extractSessionTrace()` already emits, with `--since` / `--player` /
+   `--outcome` / `--blueprint` filters and the `game.db` file copied alongside.
+2. `npm run sessions:ls` — bulk enumeration, which still does not exist.
+
+Both are reads against a file. Neither needs the game running.
 
 ## Kickoff prompt for a fresh agent
 
-Paste this into a new session to start the next phase. Replace the phase number
-if the table above has moved on.
+Paste this into a new session to start the next phase.
 
 ```text
 Continue the "fully local execution" work in this repo.
 
 Read docs/plans/local-execution/status.md first, then plan.md. Work the phase
-marked NEXT in the status table (currently P3 — move the engine, stand up
-SvelteKit, cut over the client and tests).
+marked NEXT in the status table (currently P4 — mining and export).
 
 Ground rules:
 - Follow AGENTS.md and .specify/memory/constitution.md.
-- Finish with the full `npm test` gate, green, no waiver. Start the local
-  Supabase stack yourself if it is not running — that is a setup step, not a
-  reason to skip a suite.
+- Finish with the full `npm test` gate, green. Every step runs everywhere now;
+  there is no waiver and nothing to start first.
 - Run the gate backgrounded to a log file and read the log; never block on
   `tail -f`. Check GATE_EXIT and the `Total` line, not the task exit code or
   the last line printed.
 - Update status.md in the same PR as the phase, then open a PR against main.
 - If reality contradicts the plan, fix the plan and say so plainly rather than
-  working around it. Three phases have already been corrected this way.
+  working around it. Four phases have already been corrected this way.
 ```
 
 ## Environment and workflow notes
 
 Things that cost time to rediscover:
 
-- **Reading gate results.** `npm test` is ~30s warm, minutes on a cold start
-  (Docker image pulls). Run it backgrounded to a log and read the log; never
-  block on `tail -f` (it does not return) and note `timeout` is not on macOS.
-  Check `GATE_EXIT`, not the task's exit code, and check the `Total` line, not
-  the last line printed. Full detail is in `AGENTS.md` § Agent Execution Rules.
-- **`packages/game-engine` leans on a `.d.ts` under `tests/`.**
-  `tests/local-config-module.d.ts` is what types
-  `scripts/local-config.mjs`, and ambient module declarations are keyed on the
-  literal specifier — `../../../scripts/local-config.mjs` happens to resolve to
-  the same file from both `tests/api/unit/` and `packages/game-engine/src/`.
-  Declaring it a second time is a duplicate-identifier error, so the engine
-  reuses the existing declaration. If the tests' copy moves, `paths.ts` and
-  `ai-profile.ts` stop typechecking.
-- **`tsc` does not cover the endpoint files.** It reaches only `_shared` modules
-  that tests import; the endpoint files use `Deno.serve` and an `https://esm.sh`
-  import and cannot be checked from Node. Integration + E2E is the real safety
-  net until P3 moves them.
+- **Reading gate results.** `npm test` takes about a minute. Run it
+  backgrounded to a log and read the log; never block on `tail -f` (it does not
+  return) and note `timeout` is not on macOS. Check `GATE_EXIT`, not the task's
+  exit code, and check the `Total` line, not the last line printed. Full detail
+  is in `AGENTS.md` § Agent Execution Rules.
+- **Gate the tree you ship.** Three separate P2 runs went green on trees that
+  were each edited a moment later; the first genuinely frozen run failed on a
+  real bug. Commit, then run the gate, then do nothing to the tree until it
+  finishes.
+- **Localhost is not 127.0.0.1 here.** `localhost` resolves to `::1` first on
+  this machine. `vite.config.ts` pins `server.host` to `127.0.0.1` and the
+  Playwright `baseURL` matches, because a server bound to one and a client
+  reaching for the other looks exactly like a server that failed to start.
+- **A stale server is worse than no server.** `startTestServer()` checks
+  whether the child exited before polling for readiness — otherwise a leftover
+  server on the same port answers the probe and the whole suite runs against a
+  stale database, failing in ways that look like product bugs.
+- **`scripts/local-config.mjs` is typed twice, deliberately.** The web
+  workspace enables `checkJs` and reads the JSDoc in the `.mjs` itself; the root
+  tsconfig does not, and reads `tests/local-config-module.d.ts`. Keep the two in
+  step. (Turning on `allowJs` at the root would unify them, and would also
+  surface about a dozen pre-existing `possibly undefined` errors in tests that
+  import `evaluation/*.mjs` — worth doing, but on its own.)
+- **Everything is under `tsc` now.** The endpoint files were unreachable from
+  Node while Deno served them, so nothing type-checked or linted them. Moving
+  them surfaced three real defects immediately.
 - **Prettier is not in the gate, and most of the repo fails it.**
   `supabase/functions/**`, `packages/shared/src/**` and several `docs/*.md`
   files already fail `prettier --check` on `main`. Do not run `npm run format`
   over them — it produces an enormous unrelated diff. Match the surrounding
   style by hand instead.
-- **Two tests flake under full-suite parallelism**, both timing-sensitive and
-  both pre-existing: `tests/api/integration/cors-preflight.test.ts` (deleted in
-  P3 — same-origin makes CORS moot) and
-  `web/e2e/search-resume.test.ts`. Each passes in isolation and on re-run.
+- **`web/e2e/search-resume.test.ts` has flaked under full-suite parallelism.**
+  Timing-sensitive and pre-existing; passes in isolation and on re-run.
 - **Playwright browsers are version-keyed.** After an `@playwright/test` bump,
-  run `npx playwright install chromium webkit` locally or every browser test
-  fails with `browserType.launch: Executable doesn't exist`. CI reinstalls
+  run `npx playwright install chromium` locally or every browser test fails
+  with `browserType.launch: Executable doesn't exist`. CI reinstalls
   automatically. Documented in `docs/testing.md`.
 - **Curated docs carry source hashes.** Editing `docs/ai-runtime.md` or
   `docs/blueprint-generation-flows.md` fails the `curated-docs` gate step until
@@ -243,25 +304,14 @@ Things that cost time to rediscover:
   `git hash-object <source>`. Only regenerate the extract's *content* if the
   change actually affects blueprint authoring.
 
-## Open items for later phases
+## Open items
 
-- **The constitution must be amended in P5.** Principle IV pins the architecture
-  to "Supabase Auth/Postgres/Storage/Edge Functions". Per the repo's own
-  versioning policy, redefining a principle is MAJOR: `1.3.0` → `2.0.0`, with a
-  Sync Impact Report and same-change updates to `.specify/templates/*`.
-- `scripts/sync-shared.mjs`, the `shared-sync` gate step, and the duplicated
-  196-LOC `blueprint-schema-v2.ts` survive until `supabase/` is deleted, because
-  the sandbox constraint that created them is still in force.
-- **The seed blueprints need a home before P5.** `supabase/seed/blueprints/`
-  holds `mock-blueprint.json` and `the-missing-heartwood.json`, which the local
-  content store reads as its second source directory. Deleting `supabase/`
-  deletes them; move them to `blueprints/` (or somewhere else committed) in the
-  same change, and update `resolveBlueprintDirs()`.
-- **`seed:ai` has nothing left to do once P3 lands.** Profiles resolve from the
-  environment, so the script, its `--only` plumbing in `dev-ai.mjs`/`dev-mock.mjs`,
-  and the `ai_profiles` reseeding in the test scripts all go in P5.
-- **`evaluation/trace/lib/datasource.mjs` calls `fetchProfile(ai_profile_id)`**
-  against the `ai_profiles` table. P4 wires `createLocalTraceSource()` in; that
-  method has to resolve labels through `resolveAIProfile()` instead.
-- The `MYSTERY_CLOUD_SESSION` gate waiver becomes dead once Phase 2 of the gate
-  no longer needs Docker; remove it **and** its policy block in `AGENTS.md`.
+- **`specs/` and `plan/` are historical and were left alone.** They record what
+  each shipped milestone built, and several describe the Supabase architecture.
+  `.agent/rules/specify-rules.md` now says so at the top. Rewriting them would
+  be revisionism; deleting them would lose the record.
+- **Turning on `allowJs` at the root tsconfig** would let one set of JSDoc types
+  serve both workspaces, and would surface about a dozen real `possibly
+  undefined` narrowing gaps in tests that import `evaluation/*.mjs`. Its own PR.
+- **The deferred dependency majors from P0 are still deferred**: TypeScript 7,
+  Vite 8, and zod 4. Each is its own PR.

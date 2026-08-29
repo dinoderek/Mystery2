@@ -3,17 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   MYSTERY_CONFIG_ROOT_ENV,
-  formatResolvedLocalConfigPath,
   getAIEnvPath,
-  getAuthUsersExamplePath,
-  getAuthUsersLocalPath,
   getBaseEnvPath,
   getBlueprintImagesDir,
   getBlueprintsDir,
   getBriefsDir,
-  getBootstrapUsersExamplePath,
-  getBootstrapUsersPath,
-  getDeployEnvPath,
+  getChatGenPromptsDir,
   getImagesEnvPath,
   isUsingExternalLocalConfigRoot,
   resolveLocalConfigRoot,
@@ -41,43 +36,27 @@ describe("local config resolver", () => {
     expect(getImagesEnvPath(repoRoot, env)).toBe(
       path.join(externalRoot, ".env.images.local"),
     );
-    expect(getDeployEnvPath(repoRoot, "dev", env)).toBe(
-      path.join(externalRoot, ".env.deploy.dev.local"),
-    );
-    expect(getAuthUsersLocalPath(repoRoot, env)).toBe(
-      path.join(externalRoot, "supabase/seed/auth-users.local.json"),
-    );
-    expect(getBootstrapUsersPath(repoRoot, "staging", env)).toBe(
-      path.join(externalRoot, "deploy/bootstrap-users.staging.local.json"),
-    );
   });
 
-  it("keeps committed example/template files repo-relative", () => {
-    const env = { [MYSTERY_CONFIG_ROOT_ENV]: externalRoot };
-
-    expect(getAuthUsersExamplePath(repoRoot)).toBe(
-      path.join(repoRoot, "supabase/seed/auth-users.example.json"),
-    );
-    expect(getBootstrapUsersExamplePath(repoRoot, "dev")).toBe(
-      path.join(repoRoot, "deploy/bootstrap-users.dev.example.json"),
-    );
-    expect(getAuthUsersExamplePath(repoRoot)).not.toContain(externalRoot);
-    expect(getBootstrapUsersExamplePath(repoRoot, "dev")).not.toContain(externalRoot);
-    expect(getBaseEnvPath(repoRoot, env)).toContain(externalRoot);
-  });
-
-  it("resolves blueprint, brief, and image dirs from external root", () => {
+  it("resolves content dirs from the external root", () => {
     const env = { [MYSTERY_CONFIG_ROOT_ENV]: externalRoot };
 
     expect(getBlueprintsDir(repoRoot, env)).toBe(path.join(externalRoot, "blueprints"));
     expect(getBriefsDir(repoRoot, env)).toBe(path.join(externalRoot, "briefs"));
-    expect(getBlueprintImagesDir(repoRoot, env)).toBe(path.join(externalRoot, "blueprint-images"));
+    expect(getBlueprintImagesDir(repoRoot, env)).toBe(
+      path.join(externalRoot, "blueprint-images"),
+    );
+    expect(getChatGenPromptsDir(repoRoot, env)).toBe(
+      path.join(externalRoot, "chat-gen-prompts"),
+    );
   });
 
-  it("resolves blueprint, brief, and image dirs from repo root when unset", () => {
+  it("resolves content dirs from the repo root when unset", () => {
     expect(getBlueprintsDir(repoRoot, {})).toBe(path.join(repoRoot, "blueprints"));
     expect(getBriefsDir(repoRoot, {})).toBe(path.join(repoRoot, "briefs"));
-    expect(getBlueprintImagesDir(repoRoot, {})).toBe(path.join(repoRoot, "blueprint-images"));
+    expect(getBlueprintImagesDir(repoRoot, {})).toBe(
+      path.join(repoRoot, "blueprint-images"),
+    );
   });
 
   it("rejects relative MYSTERY_CONFIG_ROOT values", () => {
@@ -86,17 +65,5 @@ describe("local config resolver", () => {
         [MYSTERY_CONFIG_ROOT_ENV]: "./relative-config",
       }),
     ).toThrow(`${MYSTERY_CONFIG_ROOT_ENV} must be an absolute path`);
-  });
-
-  it("formats repo-local paths relatively and external paths absolutely", () => {
-    expect(
-      formatResolvedLocalConfigPath(repoRoot, path.join(repoRoot, ".env.local")),
-    ).toBe(".env.local");
-    expect(
-      formatResolvedLocalConfigPath(
-        repoRoot,
-        path.join(externalRoot, "supabase/seed/auth-users.local.json"),
-      ),
-    ).toBe(path.join(externalRoot, "supabase/seed/auth-users.local.json"));
   });
 });

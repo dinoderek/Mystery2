@@ -19,7 +19,7 @@ import {
 } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
+import { loadEnvFile } from "./lib/env-file.mjs";
 
 const MAX_ERROR_BODY_LENGTH = 16_000;
 // OpenRouter serves image models from a dedicated Images API; image models are

@@ -83,11 +83,11 @@ describe("blueprint image manifest helpers", () => {
     expect(manifest.warnings.length).toBe(2);
   });
 
-  it("seed upload keys match the serving edge function's buildImageStorageKey", async () => {
+  it("generator image keys match the serving route's buildImageStorageKey", async () => {
     const plan = await buildImageUploadPlan(blueprint, "/nonexistent");
 
     for (const item of plan) {
-      // The edge function builds a storage key from (blueprintId, imageId).
+      // The image route builds a storage key from (blueprintId, imageId).
       // The seed script uploads to item.storageKey.
       // These MUST be identical or serving will 404.
       const edgeKey = buildImageStorageKey(blueprint.id, item.imageFilename);

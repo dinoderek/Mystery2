@@ -3,14 +3,15 @@ import path from "node:path";
 import process from "node:process";
 import url from "node:url";
 
-import { createSupabaseTraceSource, extractSessionTrace } from "./lib/datasource.mjs";
+import { createLocalTraceSource, extractSessionTrace } from "./lib/datasource.mjs";
 
 function parseArgs(argv) {
-  const args = { session: null, out: null, help: false };
+  const args = { session: null, out: null, db: null, help: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--session") args.session = argv[++i];
     else if (arg === "--out") args.out = argv[++i];
+    else if (arg === "--db") args.db = argv[++i];
     else if (arg === "--help" || arg === "-h") args.help = true;
   }
   return args;
@@ -19,22 +20,23 @@ function parseArgs(argv) {
 function usage() {
   return `Usage: node evaluation/trace/extract.mjs --session <id> [--out <file>]
 
-Pulls a played session out of Supabase (session snapshot + ordered event log +
-driving blueprint + non-secret AI-profile metadata) and writes a self-contained
-raw trace artifact. That artifact is the input to the trace-evaluation pipeline
-(node evaluation/trace/run.mjs --trace <file>).
+Pulls a played session out of the game database (session snapshot + ordered
+event log + driving blueprint + non-secret AI-profile metadata) and writes a
+self-contained raw trace artifact. That artifact is the input to the
+trace-evaluation pipeline (node evaluation/trace/run.mjs --trace <file>).
+
+The game does not have to be running: this reads `game.db` directly, so it also
+works on a copy.
 
 Required:
   --session <id>   The game_sessions id to extract.
 
 Options:
+  --db <file>      Database to read. Defaults to $MYSTERY_CONFIG_ROOT/game.db,
+                   or ./data/game.db when no config root is set.
   --out <file>     Where to write the raw trace JSON. Defaults to
                    ./trace-<session>.json in the current directory. Use "-" to
                    write to stdout.
-
-Environment:
-  SERVICE_ROLE_KEY   Required. Supabase service-role key.
-  SUPABASE_URL / API_URL   Optional. Supabase URL (auto-resolved in worktrees).
 `;
 }
 
@@ -45,8 +47,13 @@ async function main() {
     process.exit(args.help ? 0 : 1);
   }
 
-  const source = createSupabaseTraceSource();
-  const trace = await extractSessionTrace(source, args.session);
+  const source = createLocalTraceSource({ databasePath: args.db });
+  let trace;
+  try {
+    trace = await extractSessionTrace(source, args.session);
+  } finally {
+    source.close();
+  }
   const json = JSON.stringify(trace, null, 2);
 
   if (args.out === "-") {

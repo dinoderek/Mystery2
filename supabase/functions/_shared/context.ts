@@ -25,7 +25,12 @@ export interface EnginePlayer {
 /** A row of `game_sessions`, as every handler expects to read it. */
 export interface GameSessionRow {
   id: string;
-  user_id: string;
+  /**
+   * Owning player. Under Supabase this is the `auth.users` id read from the
+   * `user_id` column; the local schema names the column `player_id` and there
+   * is no `auth` schema behind it.
+   */
+  player_id: string;
   blueprint_id: string;
   ai_profile_id: string;
   mode: string;
@@ -50,7 +55,7 @@ export interface GameSessionSummaryRow {
 }
 
 export interface NewGameSession {
-  user_id: string;
+  player_id: string;
   blueprint_id: string;
   ai_profile_id: string;
   mode: string;

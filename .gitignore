@@ -23,3 +23,7 @@ generated/blueprint-images/
 deploy/bootstrap-users.*.local.json
 supabase/config.toml
 supabase/seed/auth-users.local.json
+
+# Local game database (SQLite). Lives in the config root when
+# MYSTERY_CONFIG_ROOT is set; otherwise here.
+data/

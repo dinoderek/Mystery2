@@ -69,13 +69,21 @@ class SupabaseSessionStore implements SessionStore {
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    return (data as GameSessionRow | null) ?? null;
+    if (!data) return null;
+
+    // The Postgres column is still `user_id`; the contract calls it
+    // `player_id`, which is the name the local schema uses.
+    const { user_id, ...rest } = data as Omit<GameSessionRow, "player_id"> & {
+      user_id: string;
+    };
+    return { ...rest, player_id: user_id };
   }
 
   async create(session: NewGameSession): Promise<string> {
+    const { player_id, ...rest } = session;
     const { data, error } = await this.#client
       .from("game_sessions")
-      .insert(session)
+      .insert({ ...rest, user_id: player_id })
       .select("id")
       .single();
 

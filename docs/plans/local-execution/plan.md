@@ -72,9 +72,11 @@ no longer exist — P1 consumed several of them.*
 packages/game-engine/           # was supabase/functions/
   src/*.ts                      #   ex-_shared: ai-*, narration, clues, state-machine…
   src/endpoints/<name>.ts       #   ex-<name>/index.ts, exporting handle(req, ctx)
-  src/db/                       #   schema.sql + migrate.ts + repositories
+  src/db/                       #   schema.sql + client.ts (driver + migrate) + repositories
   src/content.ts                #   blueprints + images off the filesystem
-  src/context.ts                #   EngineContext: { db, content, player, ai, logger }
+  src/ai-profile.ts             #   AI profiles from the environment
+  src/contract.ts               #   EngineContext: { player, sessions, events, content, aiProfiles }
+  src/context-local.ts          #   the local implementation of it
 
 web/
   svelte.config.js              # adapter-node
@@ -257,29 +259,48 @@ created them is still in force.
 
 ### P2 — Local adapters (~3–4 days)
 
-Build the local implementation alongside the Supabase one.
+Build the local implementation alongside the Supabase one, in
+`packages/game-engine/`.
+
+> **Correction.** Planning had this phase also stand up the SvelteKit server
+> tier. It cannot: a `+server.ts` route is only worth adding once it has
+> handlers to dispatch to, and the handlers cannot leave
+> `supabase/functions/<name>/index.ts` while Deno is still the runtime — the
+> same bind-mount constraint that already forced P1 to refactor in place. The
+> two consequences are that the adapter would have nothing to serve, and that
+> flipping `adapter-static` → `adapter-node` changes `web/build`'s shape and so
+> breaks the CI deploy job, which is not retired until P5. So the SvelteKit
+> work moves wholesale to P3, where the handlers arrive, the client cuts over
+> and the deploy story changes together. P2 is the adapter and its tests.
 
 - `src/db/schema.sql` — a clean single file, no migration chain. Read the 14
   existing migrations only to derive the *end state* of the columns
-  (`players`, `game_sessions`, `game_events`); `ai_profiles` is dropped, and
-  `game_sessions.user_id` becomes `player_id`. Add a forward-only runner keyed
+  (`players`, `game_sessions`, `game_events`); `ai_profiles` is dropped,
+  `game_sessions.user_id` becomes `player_id`, and `game_events.clues_revealed`
+  goes too (the runtime has never written it). Add a forward-only runner keyed
   on `PRAGMA user_version` for future schema changes.
 - Repositories: `sessions.ts` (create / getById / listByPlayer / update),
   `events.ts` (append-with-next-sequence / listBySession), `players.ts`.
   Ownership checks (`player_id = ?`) live here — this is where RLS goes.
-- `src/content.ts` reading `blueprints/*.json` and `blueprint-images/<id>/*.png`
-  via the existing `resolveBlueprintsDir()` / `resolveBlueprintImagesDir()`
-  helpers in [scripts/local-config.mjs](/scripts/local-config.mjs), with an
-  in-memory cache. Preserve the retry/logging semantics of `load.ts` for parse
-  failures even though transient-download retry is no longer needed.
+- `src/content.ts` reading blueprint JSON and `blueprint-images/*` off disk via
+  `getBlueprintsDir()` / `getBlueprintImagesDir()` in
+  [scripts/local-config.mjs](/scripts/local-config.mjs), with an in-memory
+  cache. Two details the survey missed: blueprints come from **two**
+  directories (the config root's, then the repo's `supabase/seed/blueprints`,
+  exactly as `seed-storage.mjs` collects them), so ids have to be de-duplicated;
+  and authored blueprints are not reliably named `<id>.json`, so the
+  scan-for-embedded-id fallback matters locally too. Preserve the parse-failure
+  logging semantics of `load.ts` even though transient-download retry is no
+  longer needed.
 - AI config from env, replacing `getAIProfileById()` with `resolveAIProfile()`.
   Keep `game-start`'s optional `ai_profile` body param mapping to named profiles
   (`mock`/`free`/`paid`) so `dev:ai:free` / `dev:ai:paid` keep working — now
   with no DB round-trip and no restart. Retain the resolved label on the session
   row for provenance, since the eval pipeline reads it.
-- SvelteKit: `adapter-node`, `hooks.server.ts`, `routes/api/[endpoint]/+server.ts`,
-  `routes/api/images/...`. Keep `ssr = false` in `+layout.ts` — the app stays a
-  SPA that happens to be served by a Node process.
+- Prove the adapter against the contract with unit suites over a temporary
+  database, since no server exercises it yet: ownership isolation, sequence
+  allocation, the `game_events` cascade, blueprint precedence and parse
+  failures, and profile resolution.
 
 ### P3 — Cut over client and tests (~2–3 days)
 
@@ -287,7 +308,14 @@ Build the local implementation alongside the Supabase one.
   `packages/game-engine/src/`, and each endpoint handler →
   `packages/game-engine/src/endpoints/<name>.ts`. Now that Node serves the
   endpoints the sandbox constraint is gone, so the engine imports `@my2/shared`
-  directly.
+  directly. `src/contract.ts` stops re-exporting `EngineContext` from the
+  Supabase tree and becomes its definition.
+- **Stand up the server tier** (moved here from P2): `adapter-node`,
+  `hooks.server.ts` resolving the player cookie into `locals.player`,
+  `routes/api/[endpoint]/+server.ts` dispatching to the handlers, and
+  `routes/api/images/[blueprint]/[image]/+server.ts` serving bytes from
+  `resolveImageFile()`. Keep `ssr = false` in `+layout.ts` — the app stays a
+  SPA that happens to be served by a Node process.
 - Replace the 6 `supabase.functions.invoke(name, {body})` calls with a
   `callApi(name, body)` helper that returns `{ data, error }`, so call sites in
   `store.svelte.ts` barely change. `FUNCTIONS_BASE_URL` → `/api`.

@@ -69,6 +69,14 @@ describe("image helper utilities", () => {
     );
   });
 
+  it("leaves an already-relative image URL alone", () => {
+    // The local ContentStore serves images from a same-origin route, so there
+    // is no origin to strip.
+    expect(toRelativeSignedUrl("/api/images/abc/img.png")).toBe(
+      "/api/images/abc/img.png",
+    );
+  });
+
   it("normalizes expiry timestamps and validates window bounds", () => {
     const nowMs = Date.UTC(2030, 0, 1, 0, 0, 0);
     const expiresAt = normalizeSignedUrlExpiry(nowMs, IMAGE_LINK_TTL_SECONDS);

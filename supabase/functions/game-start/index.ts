@@ -96,7 +96,7 @@ export async function handle(
     let sessionId: string;
     try {
       sessionId = await ctx.sessions.create({
-        user_id: ctx.player.id,
+        player_id: ctx.player.id,
         blueprint_id: blueprint.id,
         ai_profile_id: aiProfile.id,
         mode: "explore",

@@ -73,6 +73,31 @@ This document is the canonical source for:
 - `npm run seed:ai -- --only <mock|free|paid>` updates the selected profile and `default` without restarting Supabase.
 - gameplay/runtime OpenRouter config stays DB-first; local blueprint/image generation use direct operator env values instead of AI profile rows
 
+## After The Move To Local Execution
+
+The DB-first model above describes the Supabase runtime, which is still the one
+that serves gameplay. The local engine adapter
+(`packages/game-engine/src/ai-profile.ts`) resolves the same three labels
+without a database:
+
+- `mock` is built in.
+- `free` / `paid` come straight from `.env.ai.<mode>.local` — the same files
+  `npm run seed:ai` reads today, so nothing about operator setup changes.
+- `default` is whatever the running process is configured with
+  (`AI_PROVIDER` / `AI_MODEL` / `OPENROUTER_API_KEY`, with `.env.local`
+  underneath), which is exactly what `npm run dev:ai:free` already exports.
+  There is no seeding step, so `seed:ai` has nothing left to do.
+
+A misconfigured profile — an unrecognised provider, a missing model, or
+`openrouter` with no key anywhere — throws rather than quietly falling back to
+mock. A profile that simply has no env file returns `null`, which `game-start`
+turns into `400 Invalid ai_profile`.
+
+Sessions keep recording the profile *label* in `game_sessions.ai_profile_id`
+for the evaluation pipeline; the model actually used is on each event's `model`
+column. This path is not serving requests yet — see
+`docs/plans/local-execution/status.md`.
+
 ## Testing And Mock Profile Rules
 
 The default automated test path is mock-backed:

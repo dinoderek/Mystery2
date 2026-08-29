@@ -52,6 +52,27 @@ This exists so the engine can be re-hosted without touching game logic. Anything
 that bypasses the seam has to be ported by hand later, so treat a direct client
 reference in a handler as a bug.
 
+#### The two implementations
+
+There are now two adapters behind the seam, and a new named operation has to be
+implemented in **both**:
+
+| | Supabase | Local |
+|---|---|---|
+| File | `supabase/functions/_shared/context-supabase.ts` | `packages/game-engine/src/context-local.ts` |
+| Sessions / events | Postgres via the query builder, RLS | SQLite; `player_id = ?` in the repository |
+| Blueprints / images | two storage buckets, signed URLs | files on disk, a same-origin `/api/images/...` path |
+| AI profiles | the `ai_profiles` table, read with a service-role client | `AI_PROVIDER` / `AI_MODEL` / `OPENROUTER_API_KEY` from the env |
+
+The local adapter is not wired to a running server yet — P3 of the
+local-execution plan moves the endpoint handlers out of `supabase/functions/`
+and puts SvelteKit in front of them. Until then it is exercised by the
+`tests/api/unit/local-engine-*.test.ts` suites.
+
+One naming note: `GameSessionRow`/`NewGameSession` call the owning player
+`player_id`, which is the local column name. Postgres still calls that column
+`user_id`, and `context-supabase.ts` maps between the two.
+
 ### Sharing code with `packages/shared`
 
 An Edge Function **cannot** import out of `supabase/functions`. The local edge

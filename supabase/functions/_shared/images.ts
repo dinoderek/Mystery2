@@ -44,14 +44,20 @@ export function buildImageStorageKey(
 }
 
 /**
- * Strip the origin from a signed storage URL and return only the path + query.
+ * Strip the origin from an image URL and return only the path + query.
  *
  * Inside Supabase Edge Functions both `SUPABASE_URL` and `req.url` resolve to
  * internal Docker hostnames that are unreachable from the browser. By returning
  * a relative path the client can prepend its own known Supabase base URL, which
  * works in both local dev and production.
+ *
+ * A URL that is already origin-relative is returned unchanged: the local
+ * `ContentStore` serves images from a same-origin `/api/images/...` route, so
+ * it has no origin to strip.
  */
 export function toRelativeSignedUrl(signedUrl: string): string {
+  if (signedUrl.startsWith("/")) return signedUrl;
+
   const parsed = new URL(signedUrl);
   return `${parsed.pathname}${parsed.search}`;
 }

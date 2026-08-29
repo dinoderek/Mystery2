@@ -1,12 +1,10 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import { badRequest, internalError, notFound } from "../_shared/errors.ts";
-import {
-  BlueprintV2Schema,
-  type BlueprintV2,
-} from "../_shared/blueprints/blueprint-schema-v2.ts";
+import type { BlueprintV2 } from "../_shared/blueprints/blueprint-schema-v2.ts";
+import { createRequestLogger } from "../_shared/logging.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 import {
-  BLUEPRINT_IMAGES_BUCKET,
   buildImageStorageKey,
   ensureCanonicalImageId,
   IMAGE_LINK_TTL_SECONDS,
@@ -33,16 +31,11 @@ function isImageReferenced(
   );
 }
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   try {
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
     const body = await req.json().catch(() => null);
     const blueprintId = typeof body?.blueprint_id === "string"
       ? body.blueprint_id
@@ -56,29 +49,23 @@ serveWithCors(async (req) => {
       return badRequest("Invalid image_id");
     }
 
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(`${blueprintId}.json`);
-    if (downloadError || !fileData) {
+    const logger = createRequestLogger(req, "blueprint-image-link");
+    const blueprint = await ctx.content.loadBlueprint(blueprintId, logger);
+    if (!blueprint) {
       return notFound("Blueprint not found");
     }
-
-    const rawBlueprint = await fileData.text();
-    const blueprint = BlueprintV2Schema.parse(JSON.parse(rawBlueprint));
     if (!isImageReferenced(blueprint, imageId)) {
       return notFound("Image not referenced by blueprint");
     }
 
     const storageKey = buildImageStorageKey(blueprintId, imageId);
-    const { data, error } = await userClient.storage
-      .from(BLUEPRINT_IMAGES_BUCKET)
-      .createSignedUrl(storageKey, IMAGE_LINK_TTL_SECONDS);
+    const signedUrl = await ctx.content.imageUrl(storageKey, IMAGE_LINK_TTL_SECONDS);
 
-    if (!error && data?.signedUrl) {
+    if (signedUrl) {
       return new Response(
         JSON.stringify({
           image_id: imageId,
-          signed_url: toRelativeSignedUrl(data.signedUrl),
+          signed_url: toRelativeSignedUrl(signedUrl),
           expires_at: normalizeSignedUrlExpiry(),
         }),
         { headers: { "Content-Type": "application/json" } },
@@ -90,4 +77,15 @@ serveWithCors(async (req) => {
     console.error("blueprint-image-link failed", error);
     return internalError("Failed to issue image link");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

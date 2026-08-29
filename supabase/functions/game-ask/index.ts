@@ -1,4 +1,5 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import {
   aiRetriableError,
   badRequest,
@@ -10,9 +11,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../_shared/ai-provider.ts";
-import { getAIProfileById } from "../_shared/ai-profile.ts";
 import { createRequestLogger, withLogContext } from "../_shared/logging.ts";
-import { loadBlueprint } from "../_shared/blueprints/load.ts";
 import { parseTalkConversationOutput } from "../_shared/ai-contracts.ts";
 import { buildRoleRequest } from "../_shared/role-request.ts";
 import {
@@ -25,11 +24,10 @@ import {
 } from "../_shared/speaker.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
-serveWithCors(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   const logger = createRequestLogger(req, "game-ask");
   const { requestId, log, logError } = logger;
 
@@ -50,17 +48,8 @@ serveWithCors(async (req) => {
       return badRequest("Missing player_input");
     }
 
-    // Authenticate user
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) return authResult;
-    const { client: userClient } = authResult;
-
-    const { data: session, error: sessionError } = await userClient
-      .from("game_sessions")
-      .select("*")
-      .eq("id", gameId)
-      .single();
-    if (sessionError || !session) {
+    const session = await ctx.sessions.getById(gameId);
+    if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: gameId });
       return badRequest("Game session not found");
     }
@@ -71,7 +60,7 @@ serveWithCors(async (req) => {
       return badRequest("Not talking to anyone");
     }
 
-    const aiProfile = await getAIProfileById(session.ai_profile_id);
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",
@@ -84,7 +73,7 @@ serveWithCors(async (req) => {
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const blueprint = await loadBlueprint(userClient, session.blueprint_id, narrationLogger);
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
@@ -96,11 +85,7 @@ serveWithCors(async (req) => {
       return internalError("Character missing in blueprint");
     }
 
-    const { data: historyRows } = await userClient
-      .from("game_events")
-      .select("sequence,event_type,actor,narration,payload")
-      .eq("session_id", gameId)
-      .order("sequence", { ascending: true });
+    const historyRows = await ctx.events.listBySession(gameId);
 
     const characterSpeaker = createCharacterSpeaker(activeCharacter.first_name);
     const { prompt, context: aiContext } = await buildRoleRequest({
@@ -178,18 +163,16 @@ serveWithCors(async (req) => {
       ? existingDiscovered
       : [...new Set([...existingDiscovered, ...validatedRevealedClueIds])];
 
-    const { error: updateError } = await userClient
-      .from("game_sessions")
-      .update({
+    try {
+      await ctx.sessions.update(gameId, {
         discovered_clues: discoveredClues,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", gameId);
-    if (updateError) {
+      });
+    } catch {
       return internalError("Failed to update session");
     }
 
-    await insertNarrationEvent(userClient, {
+    await insertNarrationEvent(ctx.events, {
       session_id: gameId,
       event_type: "ask",
       actor: "system",
@@ -258,4 +241,15 @@ serveWithCors(async (req) => {
     });
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

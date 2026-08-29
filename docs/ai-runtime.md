@@ -22,9 +22,10 @@ Important version note:
   - OpenRouter retry/backoff and timeout controls
   - Structured AI call logs (JSON) with request/action metadata
   - Live-suite helpers (`AI_LIVE`, AI mode labeling)
-- `supabase/functions/_shared/ai-profile.ts`
-  - Service-role access to `ai_profiles`
-  - Default profile and per-session profile lookup
+- `supabase/functions/_shared/context.ts`
+  - `AIProfileStore` — default and per-session profile lookup
+- `supabase/functions/_shared/context-supabase.ts`
+  - Service-role access to `ai_profiles` behind `AIProfileStore`
 - `supabase/functions/_shared/ai-contracts.ts`
   - Role output parsing and validation before state mutation
 - `supabase/functions/_shared/ai-context.ts`
@@ -285,9 +286,9 @@ case resolves.
 - Output-contract failures are also returned as retriable AI failures.
 - Web UI retry logic remains the owner of retry policy.
 - `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
-- Blueprint storage reads are also resilient: the per-session turn endpoints load
-  the blueprint via the shared `loadBlueprint` helper
-  (`supabase/functions/_shared/blueprints/load.ts`), which retries transient
+- Blueprint reads are also resilient: the per-session turn endpoints load the
+  blueprint via `ctx.content.loadBlueprint()`, whose Supabase implementation
+  (`supabase/functions/_shared/context-supabase.ts`) retries transient
   `blueprints` bucket download failures with a short backoff (3 attempts) before
   giving up. Storage reads can blip under concurrent load even when the object
   exists; the retry prevents a player-visible `500 Blueprint missing` mid-session.

@@ -16,6 +16,9 @@
       ],
       "@testkit/*": [
         "tests/testkit/src/*"
+      ],
+      "npm:zod": [
+        "node_modules/zod"
       ]
     }
   },

@@ -107,7 +107,7 @@ profile resolution:
 Typical touchpoints include:
 
 - `supabase/functions/_shared/ai-provider.ts`
-- `supabase/functions/_shared/ai-profile.ts`
+- `supabase/functions/_shared/context-supabase.ts` (`AIProfileStore`)
 - `scripts/seed-ai.mjs`
 - `tests/api/unit/ai-provider.test.ts`
 - `tests/api/integration/ai-profile-runtime.test.ts`

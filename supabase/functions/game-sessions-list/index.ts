@@ -1,6 +1,6 @@
-import { requireAuth, isAuthError } from "../_shared/auth.ts";
+import type { EngineContext } from "../_shared/context.ts";
+import { requireEngineContext } from "../_shared/context-supabase.ts";
 import { internalError } from "../_shared/errors.ts";
-import { BlueprintV2Schema } from "../_shared/blueprints/blueprint-schema-v2.ts";
 import { serveWithCors } from "../_shared/cors.ts";
 
 type SessionMode = "explore" | "talk" | "accuse" | "ended";
@@ -27,21 +27,6 @@ interface SessionSummary {
   outcome: SessionOutcome;
   last_played_at: string;
   created_at: string;
-}
-
-interface StorageFile {
-  name: string;
-}
-
-interface BlueprintStorageClient {
-  storage: {
-    from: (bucket: string) => {
-      list: () => Promise<{ data: StorageFile[] | null; error: unknown }>;
-      download: (
-        path: string,
-      ) => Promise<{ data: Blob; error: unknown }>;
-    };
-  };
 }
 
 function readMode(value: string): SessionMode {
@@ -83,40 +68,13 @@ function compareByRecency(a: SessionSummary, b: SessionSummary): number {
   return b.game_id.localeCompare(a.game_id);
 }
 
-async function loadBlueprintTitles(userClient: BlueprintStorageClient): Promise<Map<string, string>> {
-  const titleByBlueprintId = new Map<string, string>();
-
-  const { data: files, error: listError } = await userClient.storage
-    .from("blueprints")
-    .list();
-
-  if (listError) {
-    throw new Error("Failed to access blueprints");
-  }
-
-  for (const file of files ?? []) {
-    if (!file.name.endsWith(".json")) {
-      continue;
-    }
-
-    const { data: fileData, error: downloadError } = await userClient.storage
-      .from("blueprints")
-      .download(file.name);
-
-    if (downloadError) {
-      continue;
-    }
-
-    try {
-      const text = await fileData.text();
-      const parsed = BlueprintV2Schema.parse(JSON.parse(text));
-      titleByBlueprintId.set(parsed.id, parsed.metadata.title);
-    } catch {
-      // Skip malformed blueprint files.
-    }
-  }
-
-  return titleByBlueprintId;
+async function loadBlueprintTitles(
+  ctx: EngineContext,
+): Promise<Map<string, string>> {
+  const entries = await ctx.content.listBlueprints();
+  return new Map(
+    entries.map(({ blueprint }) => [blueprint.id, blueprint.metadata.title]),
+  );
 }
 
 function toSummary(session: SessionRow, titleByBlueprintId: Map<string, string>): SessionSummary {
@@ -139,30 +97,21 @@ function toSummary(session: SessionRow, titleByBlueprintId: Map<string, string>)
   };
 }
 
-serveWithCors(async (req) => {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
   try {
-    const authResult = await requireAuth(req);
-    if (isAuthError(authResult)) {
-      return authResult;
-    }
-
-    const { client: userClient } = authResult;
-
-    const { data: sessions, error: sessionsError } = await userClient
-      .from("game_sessions")
-      .select("id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at");
-
-    if (sessionsError) {
+    let sessions;
+    try {
+      sessions = await ctx.sessions.listForPlayer();
+    } catch {
       return internalError("Failed to fetch sessions");
     }
 
-    const titleByBlueprintId = await loadBlueprintTitles(userClient);
+    const titleByBlueprintId = await loadBlueprintTitles(ctx);
 
-    const summaries = (sessions ?? []).map((session) =>
+    const summaries = sessions.map((session) =>
       toSummary(session as SessionRow, titleByBlueprintId)
     );
 
@@ -191,4 +140,15 @@ serveWithCors(async (req) => {
     console.error(error);
     return internalError("Internal Server Error");
   }
+}
+
+serveWithCors(async (req) => {
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const ctx = await requireEngineContext(req);
+  if (ctx instanceof Response) return ctx;
+
+  return handle(req, ctx);
 });

@@ -25,6 +25,30 @@ summaries rather than treating them as passive background reading.
 - **Quality gates:** Any non-documentation change must finish with `npm test`.
   Focused scripts (`test:unit`, `test:integration`, etc.) are for iteration,
   not final sign-off.
+- **Reading gate results:** `npm test` takes ~30s once the stack is warm, but
+  much longer on a cold start (Docker image pulls). Run it in the background
+  redirected to a file, then **read that file** when the completion
+  notification arrives:
+
+  ```bash
+  ( npm test; echo "GATE_EXIT=$?" ) > /tmp/gate.log 2>&1
+  ```
+
+  Never block on `tail -f`, `while sleep`, or similar — `tail -f` does not
+  return when the command finishes, it keeps following the file, so the call
+  hangs until it is killed. (`timeout` is also unavailable on macOS.) The
+  harness re-invokes you when a background command exits; just read the log
+  then.
+
+  Two traps when reading the result:
+
+  - **Check `GATE_EXIT`, not the task's exit code.** `( npm test; echo ... )`
+    reports the exit status of the final `echo`, so the notification says
+    "exit code 0" even when the gate failed. Likewise, piping `npm test` into
+    `tail` masks the real status.
+  - **Check the `Total` line, not the last line printed.** The per-step summary
+    prints a trailing detail line under a failing step that can be a *passing*
+    test name. `Total ... FAIL` is the verdict.
 - **Quality-gate environment policy:** The `npm test` gate is mandatory and is
   **not** optional based on tool availability.
   - **Local / any environment where `MYSTERY_CLOUD_SESSION` is unset (the

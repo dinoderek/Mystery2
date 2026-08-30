@@ -126,12 +126,6 @@ export interface ContentStore {
   listBlueprints(logger?: LogWriter): Promise<BlueprintSummaryEntry[]>;
   /** Returns null when the blueprint is missing or unparseable. */
   loadBlueprint(blueprintId: string, logger: LogWriter): Promise<BlueprintV2 | null>;
-  /**
-   * A URL the browser can fetch the image bytes from, or null when the object
-   * is missing. A same-origin path under `/api/images`, permanent because an
-   * image id names fixed bytes — `expiresInSeconds` is vestigial and ignored.
-   */
-  imageUrl(storageKey: string, expiresInSeconds: number): Promise<string | null>;
 }
 
 /** Resolved AI runtime profile, including the provider secret. */

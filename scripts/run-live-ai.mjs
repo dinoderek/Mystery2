@@ -49,7 +49,16 @@ const liveTestTimeout = env.AI_LIVE_TEST_TIMEOUT_MS || "600000";
 console.log(`Running ${suite} live AI tests in "${mode}" mode (${aiEnv.AI_MODEL})...`);
 
 const { ports } = resolveWorktreePorts(rootDir);
-const server = await startTestServer({ repoRoot: rootDir, port: ports.web, env: aiEnv });
+const server = await startTestServer({
+  repoRoot: rootDir,
+  port: ports.web,
+  env: aiEnv,
+}).catch((error) => {
+  // Every failure here is operator-facing — the port is taken, the build
+  // broke, the server never answered — so print the message, not a stack.
+  console.error(`\n${error.message}\n`);
+  process.exit(1);
+});
 
 try {
   runCommand(

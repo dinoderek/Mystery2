@@ -299,9 +299,12 @@ runtime behavior, testing workflow, or debugging guidance changes.
 (`scripts/run-mock-tests.mjs`):
 
 1. build the web app (`npm -w web run build`)
-2. start `node build/index.js` against a temporary config root, on the
-   worktree's port
-3. wait for it to answer, failing fast if something else already holds the port
+2. refuse to go further if anything is already listening on the worktree's
+   port — checked by connecting to it, before the server is started, because
+   the process holding the port would otherwise answer the readiness poll and
+   the suite would silently run against it
+3. start `node build/index.js` against a temporary config root, on that port,
+   and wait for it to answer
 4. run Vitest on the suite, passing the server URL and config root through
    `MYSTERY_TEST_API_URL` / `MYSTERY_TEST_CONFIG_ROOT`
 5. stop the server and delete the config root

@@ -46,8 +46,16 @@ summaries rather than treating them as passive background reading.
     "exit code 0" even when the gate failed. Likewise, piping `npm test` into
     `tail` masks the real status.
   - **Check the `Total` line, not the last line printed.** The per-step summary
-    prints a trailing detail line under a failing step that can be a *passing*
-    test name. `Total ... FAIL` is the verdict.
+    prints a trailing detail line under a failing step that can be a _passing_
+    test name, and a `=== Coverage ===` section follows the table.
+    `Total ... FAIL` is the verdict, and nothing under it can change it.
+
+- **Coverage:** the gate measures it and never enforces it. `summary.log` ends
+  with per-project totals and the files under the low-coverage threshold;
+  `coverage.log` in the same run directory lists all of them. Treat a named
+  file as a lead, not a failure — and remember the figures come from the unit
+  suites alone, so anything reached only over HTTP reads as 0%. See
+  `docs/testing.md`.
 - **Quality-gate environment policy:** The `npm test` gate is mandatory, and
   every step of it runs everywhere. The gate builds the game and runs it
   against a throwaway database in a temporary directory; it needs nothing

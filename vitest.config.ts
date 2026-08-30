@@ -9,7 +9,7 @@ export default defineConfig({
     hookTimeout: 15_000,
     coverage: {
       provider: "v8",
-      reporter: ["text-summary", "json", "html"],
+      reporter: ["text-summary", "json", "json-summary", "html"],
       reportsDirectory: "./coverage/api",
       include: [
         "packages/game-engine/src/**/*.ts",

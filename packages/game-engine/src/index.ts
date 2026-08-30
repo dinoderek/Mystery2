@@ -50,7 +50,6 @@ export {
 export {
   createLocalContentStore,
   resolveImageFile,
-  IMAGE_ROUTE_PREFIX,
   type LocalContentOptions,
 } from "./content.ts";
 export {

@@ -12,9 +12,6 @@ import {
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 
-/** Route prefix the browser fetches blueprint images from. */
-export const IMAGE_ROUTE_PREFIX = "/api/images";
-
 export interface LocalContentOptions {
   /** Directories searched for blueprint JSON, in precedence order. */
   blueprintDirs: string[];
@@ -155,28 +152,6 @@ export function createLocalContentStore(
       }
 
       return null;
-    },
-
-    async imageUrl(storageKey: string): Promise<string | null> {
-      // `<blueprint id>/<image filename>`, the key `seed:storage` uploads to.
-      const [blueprintId, imageFilename, ...rest] = storageKey.split("/");
-      if (
-        rest.length > 0 ||
-        !isSafeSegment(blueprintId ?? "") ||
-        !isSafeSegment(imageFilename ?? "")
-      ) {
-        return null;
-      }
-
-      // Images are stored flat, one copy per filename, shared across
-      // blueprints that reference the same art.
-      if (!fs.existsSync(path.join(options.imagesDir, imageFilename))) {
-        return null;
-      }
-
-      // Same-origin and permanent: there is no signature and nothing to expire,
-      // so the `expiresInSeconds` the contract passes is not used here.
-      return `${IMAGE_ROUTE_PREFIX}/${encodeURIComponent(blueprintId)}/${encodeURIComponent(imageFilename)}`;
     },
   };
 }

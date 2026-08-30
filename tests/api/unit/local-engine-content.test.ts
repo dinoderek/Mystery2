@@ -167,25 +167,8 @@ describe("loadBlueprint", () => {
   });
 });
 
-describe("imageUrl", () => {
+describe("resolveImageFile", () => {
   const IMAGE = "mock-blueprint.blueprint.png";
-
-  it("returns a same-origin path for an image that exists on disk", async () => {
-    fs.writeFileSync(path.join(imagesDir, IMAGE), "png-bytes");
-
-    expect(await store().imageUrl(`${BLUEPRINT_ID}/${IMAGE}`, 3600)).toBe(
-      `/api/images/${BLUEPRINT_ID}/${IMAGE}`,
-    );
-  });
-
-  it("returns null when the image is missing or the key is malformed", async () => {
-    const content = store();
-
-    expect(await content.imageUrl(`${BLUEPRINT_ID}/${IMAGE}`, 3600)).toBeNull();
-    expect(await content.imageUrl(IMAGE, 3600)).toBeNull();
-    expect(await content.imageUrl(`${BLUEPRINT_ID}/../secrets.png`, 3600)).toBeNull();
-    expect(await content.imageUrl(`${BLUEPRINT_ID}/nested/img.png`, 3600)).toBeNull();
-  });
 
   it("resolves image bytes only for a safe filename that exists", () => {
     fs.writeFileSync(path.join(imagesDir, IMAGE), "png-bytes");

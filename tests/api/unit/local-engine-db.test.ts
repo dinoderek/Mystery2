@@ -12,8 +12,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   openDatabase,
+  planMigrations,
   SCHEMA_VERSION,
   type Db,
+  type Migration,
 } from "../../../packages/game-engine/src/db/client.ts";
 import { createEventStore } from "../../../packages/game-engine/src/db/events.ts";
 import { createPlayerStore } from "../../../packages/game-engine/src/db/players.ts";
@@ -123,6 +125,43 @@ describe("local database client", () => {
 
     // Reopen something valid so the afterEach close does not double-fail.
     db = openDatabase({ path: path.join(tempDir, "other.db") });
+  });
+});
+
+// The upgrade path, which no other test can reach: every suite builds its
+// database from scratch, so `migrate()` only ever takes the version-0 branch.
+// These cover the branch that runs against a database someone has been playing
+// on — the only databases that ever take it.
+describe("planMigrations", () => {
+  const step = (to: number): Migration => ({ to, sql: `-- to ${to}` });
+
+  it("plans nothing when the database is already at the target", () => {
+    expect(planMigrations(3, 3, [step(2), step(3)])).toEqual([]);
+  });
+
+  it("plans every version in the gap, in ascending order", () => {
+    // Declared out of order, and with a step that is already applied.
+    const migrations = [step(4), step(2), step(3)];
+
+    expect(planMigrations(1, 4, migrations)).toEqual([step(2), step(3), step(4)]);
+  });
+
+  it("ignores steps at or below the current version", () => {
+    expect(planMigrations(2, 3, [step(1), step(2), step(3)])).toEqual([step(3)]);
+  });
+
+  it("refuses to cross a gap rather than stamping a version nothing produced", () => {
+    // The mistake this guards: `schema.ts` and `SCHEMA_VERSION` moved to 3,
+    // but only the step to 2 was written.
+    expect(() => planMigrations(1, 3, [step(2)])).toThrow(/No migration to schema version 3/);
+  });
+
+  it("names the first missing version, not the last", () => {
+    expect(() => planMigrations(1, 4, [step(4)])).toThrow(/version 2/);
+  });
+
+  it("refuses an empty chain when there is any gap at all", () => {
+    expect(() => planMigrations(1, 2, [])).toThrow(/No migration to schema version 2/);
   });
 });
 

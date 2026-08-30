@@ -60,18 +60,60 @@ export interface Db {
 /**
  * The shape `schema.ts` describes. A fresh database is created straight from
  * that file and stamped with this number; an existing one is brought forward
- * by the steps below. There is no migration chain to replay because the move
+ * by the steps below. There is no migration chain to replay because the
  * shape the game needs is described in one place, not accumulated.
  */
 export const SCHEMA_VERSION = 1;
 
+/** One forward step: the SQL, and the version the database is at afterwards. */
+export interface Migration {
+  to: number;
+  sql: string;
+}
+
 /**
- * Forward-only upgrades for databases that already exist, applied in order for
- * every entry whose `to` exceeds the file's `PRAGMA user_version`. Adding one
- * means bumping `SCHEMA_VERSION` and editing `schema.ts` to match, so that a
- * new database and an upgraded one end up identical.
+ * Forward-only upgrades for databases that already exist. Adding one means
+ * bumping `SCHEMA_VERSION` and editing `schema.ts` to match, so that a new
+ * database and an upgraded one end up identical.
+ *
+ * Every version between a file's `PRAGMA user_version` and `SCHEMA_VERSION`
+ * needs an entry here — `planMigrations()` refuses to upgrade across a gap
+ * rather than stamping a version nothing produced.
  */
-const MIGRATIONS: ReadonlyArray<{ to: number; sql: string }> = [];
+const MIGRATIONS: ReadonlyArray<Migration> = [];
+
+/**
+ * The steps that take `current` to `target`, in ascending order.
+ *
+ * Throws when any version in between has no step, and does so before anything
+ * is applied. That check is the whole point: the tempting shape is to filter
+ * the list and stamp `target` afterwards, which silently marks an old database
+ * as current when a `SCHEMA_VERSION` bump lands without its migration. Nothing
+ * catches that later — the next open sees the file claiming to be current and
+ * returns early — and no test suite can catch it either, because suites build
+ * their databases from scratch and never take this path.
+ */
+export function planMigrations(
+  current: number,
+  target: number,
+  migrations: ReadonlyArray<Migration>,
+): Migration[] {
+  const steps: Migration[] = [];
+
+  for (let version = current + 1; version <= target; version += 1) {
+    const step = migrations.find((migration) => migration.to === version);
+    if (!step) {
+      throw new Error(
+        `No migration to schema version ${version}. A database at version ` +
+          `${current} cannot be brought to ${target}: add an entry to ` +
+          "MIGRATIONS in db/client.ts, matching the change made to schema.ts.",
+      );
+    }
+    steps.push(step);
+  }
+
+  return steps;
+}
 
 // ---------------------------------------------------------------------------
 // Opening
@@ -156,16 +198,29 @@ function migrate(database: BetterSqlite3.Database): void {
 
   if (current === SCHEMA_VERSION) return;
 
-  database.transaction(() => {
-    if (current === 0) {
+  // Interpolated rather than bound, here and below: PRAGMA does not accept
+  // parameters. Every value is a module constant or a `Migration.to`, never
+  // request input.
+  if (current === 0) {
+    database.transaction(() => {
       database.exec(SCHEMA_SQL);
-    } else {
-      for (const migration of MIGRATIONS) {
-        if (migration.to > current) database.exec(migration.sql);
-      }
+      database.pragma(`user_version = ${SCHEMA_VERSION}`);
+    })();
+    return;
+  }
+
+  // Planned first, so a chain that cannot span the gap fails having touched
+  // nothing.
+  const steps = planMigrations(current, SCHEMA_VERSION, MIGRATIONS);
+
+  // One transaction for the whole chain: SQLite DDL is transactional, and a
+  // half-upgraded database is worse than one that refused to move. The version
+  // is stamped per step regardless, so it can only ever be set to a number some
+  // step actually reached.
+  database.transaction(() => {
+    for (const step of steps) {
+      database.exec(step.sql);
+      database.pragma(`user_version = ${step.to}`);
     }
-    // Interpolated, not bound: PRAGMA does not accept parameters. The value is
-    // a module constant, never request input.
-    database.pragma(`user_version = ${SCHEMA_VERSION}`);
   })();
 }

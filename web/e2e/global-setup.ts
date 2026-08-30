@@ -6,11 +6,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { E2E_CONFIG_ROOT } from '../playwright.config';
+import { E2E_CONFIG_ROOT, E2E_DATABASE_FILE } from '../playwright.config';
 
 export default function globalSetup() {
-	for (const entry of ['game.db', 'game.db-wal', 'game.db-shm']) {
-		fs.rmSync(path.join(E2E_CONFIG_ROOT, entry), { force: true });
+	// The sidecars too: a surviving `-wal` would replay the last run's committed
+	// transactions back into the "empty" database on the next open.
+	for (const suffix of ['', '-wal', '-shm']) {
+		fs.rmSync(`${E2E_DATABASE_FILE}${suffix}`, { force: true });
 	}
 	fs.mkdirSync(path.join(E2E_CONFIG_ROOT, 'blueprint-images'), { recursive: true });
 }

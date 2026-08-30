@@ -8,18 +8,47 @@
  * The mode's env file is loaded into the process rather than seeded into a
  * database, so switching models is switching command — there is no stack to
  * restart and nothing to reseed.
+ *
+ * `--db <name>` picks the database. Without it this checkout gets its own,
+ * named after the worktree; `npm run prod` passes `--db prod`, the persistent
+ * one. The AI mode and the database are orthogonal — either can be combined
+ * with either.
  */
 
 import { readEnvFile } from "../packages/game-engine/src/env-file.ts";
 import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
 import { npmBin, runCommand } from "./lib/process.mjs";
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
+import {
+  DATABASE_NAME_ENV,
+  isValidDatabaseName,
+  resolveDatabaseFile,
+  resolveDatabaseName,
+} from "../lib/database-target.mjs";
 
-const mode = process.argv[2] ?? null;
-if (mode !== null && mode !== "free" && mode !== "paid") {
-  console.error("Usage: node scripts/dev.mjs [free|paid]");
-  process.exit(1);
+function parseArgs(argv) {
+  const args = { mode: null, database: null };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--db") {
+      args.database = argv[++index] ?? "";
+      if (!isValidDatabaseName(args.database)) {
+        console.error(`--db needs a database name (received: "${args.database}")`);
+        process.exit(1);
+      }
+    } else if (token === "free" || token === "paid") {
+      args.mode = token;
+    } else {
+      console.error(`Usage: node scripts/dev.mjs [free|paid] [--db <name>]`);
+      process.exit(1);
+    }
+  }
+
+  return args;
 }
+
+const { mode, database } = parseArgs(process.argv.slice(2));
 
 const rootDir = process.cwd();
 const baseVars = readEnvFile(getBaseEnvPath(rootDir, process.env));
@@ -33,6 +62,10 @@ if (mode && Object.keys(modeVars).length === 0) {
 }
 
 const env = { ...baseVars, ...modeVars, ...process.env };
+
+// Same reasoning as the AI keys below: the flag just typed has to outrank an
+// ambient MYSTERY_DATABASE, or an exported one would silently win.
+if (database) env[DATABASE_NAME_ENV] = database;
 
 if (mode) {
   if (!env.AI_PROVIDER) throw new Error("Missing AI_PROVIDER in env configuration.");
@@ -49,6 +82,9 @@ if (mode) {
 } else {
   console.log('Starting the game with mock narration...');
 }
+
+const databaseName = resolveDatabaseName(rootDir, env);
+console.log(`Database: ${databaseName} (${resolveDatabaseFile(databaseName, rootDir, env)})`);
 
 const { ports } = resolveWorktreePorts(rootDir);
 runCommand(npmBin, ["-w", "web", "run", "dev", "--", "--port", String(ports.web)], env);

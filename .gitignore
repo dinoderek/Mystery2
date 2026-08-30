@@ -19,6 +19,6 @@ generated/blueprint-images/
 .generated/blueprint-images/
 .npm-cache
 
-# Local game database (SQLite). Lives in the config root when
-# MYSTERY_CONFIG_ROOT is set; otherwise here.
-data/
+# Local game databases (SQLite), one directory per worktree. Live in the
+# config root when MYSTERY_CONFIG_ROOT is set; otherwise here.
+database/

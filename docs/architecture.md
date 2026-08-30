@@ -95,10 +95,14 @@ Three connection pragmas are load-bearing: `journal_mode = WAL` so a reader
 does not block the running game, `foreign_keys = ON` because SQLite defaults it
 off and the `game_events` cascade depends on it, and `busy_timeout = 5000`.
 
-**Where the database lives:** `$MYSTERY_CONFIG_ROOT/game.db` when that is set —
-so several worktrees share one history to mine — otherwise `./data/game.db`,
-which is gitignored. Tests never touch either: they are given an explicit path
-under a temporary directory.
+**Where the database lives:** `<config root>/database/<name>/game.db`, where the
+config root is `$MYSTERY_CONFIG_ROOT` when set and the repo root otherwise, and
+the name is this worktree's — `main` in the main checkout, `prod` under
+`npm run prod`. Blueprints and images stay shared across worktrees; the database
+does not, because it is the one thing here carrying a schema version, and a
+branch that bumps `SCHEMA_VERSION` upgrades a file no other branch can then
+open. Tests never touch any of them: they are given an explicit path under a
+temporary directory.
 
 ### Content
 

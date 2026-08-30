@@ -33,6 +33,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
 - Set `MYSTERY_CONFIG_ROOT` to an absolute directory if you want those local-only files to live outside the repo and be shared across clones or worktrees. When unset, the repo root remains the local-config root.
 - When `MYSTERY_CONFIG_ROOT` is set, generated blueprints, story briefs, and blueprint images also default to subdirectories under that root (`blueprints/`, `briefs/`, `blueprint-images/`), keeping generated artifacts independent of any single checkout or worktree.
+- Databases are the exception to that sharing: `database/<name>/game.db`, one per worktree. See `docs/local-infrastructure.md`.
 
 ## Feature Additions (Static Blueprint Images)
 
@@ -45,7 +46,9 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` — with no migration chain.
 - `packages/game-engine/src/db/client.ts`: The only file that imports a SQLite driver, plus the connection pragmas and the `PRAGMA user_version` schema runner.
 - `web/src/routes/api/`: The server tier — the endpoint dispatcher, image serving, and profile routes.
-- `data/`: Gitignored home of the local `game.db` when `MYSTERY_CONFIG_ROOT` is unset; otherwise the database lives at `$MYSTERY_CONFIG_ROOT/game.db` so worktrees share one history.
+- `database/`: Gitignored home of the local databases when `MYSTERY_CONFIG_ROOT` is unset; otherwise they live at `$MYSTERY_CONFIG_ROOT/database/`. One directory per database — `main`, `prod`, and one named after each worktree.
+- `lib/database-target.mjs`: Derives which database a checkout talks to, and why it must not be shared.
+- `scripts/db.mjs`: `db:init`, `db:list`, `db:reset`, `db:copy`.
 
 ## Feature Additions (Blueprint Generation)
 

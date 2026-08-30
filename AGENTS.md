@@ -61,7 +61,9 @@ summaries rather than treating them as passive background reading.
 - **The game database:** the gate and the suites never touch the database you
   play on. `scripts/lib/test-server.mjs` points the server at a temporary
   config root and deletes it afterwards. Anything that opens a database in a
-  test must be given an explicit path — never `resolveDatabasePath()`.
+  test must be given an explicit path — never `resolveDatabasePath()`. Each
+  worktree has its own database; `prod` is the one every branch can open, so a
+  `SCHEMA_VERSION` bump reaches it and cannot be undone.
 - **Engine changes:** the engine is `packages/game-engine/`, imported by the
   SvelteKit server in `web/src/routes/api/`. Nothing needs restarting after an
   edit: `vite dev` reloads it, and the test scripts rebuild before each run.
@@ -81,7 +83,7 @@ Load additional guidance based on the area you are touching:
 - New UI elements or component reuse in `web/`: `docs/component-inventory.md`
 - SvelteKit routing or page architecture in `web/`: `docs/screen-navigation.md`
 - The engine, API contracts, or database work: `docs/backend-conventions.md`
-- Running the game, worktree isolation, or port issues:
+- Running the game, worktree isolation, databases, or port issues:
   `docs/local-infrastructure.md`
 - Structural mystery data-model changes:
   `packages/shared/src/blueprint-schema-v2.ts`

@@ -25,10 +25,16 @@ $MYSTERY_CONFIG_ROOT/
   .env.ai.free.local
   .env.ai.paid.local
   .env.images.local
-  game.db
+  database/
+    prod/game.db
+    <worktree>/game.db
   blueprints/
   blueprint-images/
 ```
+
+Blueprints and images are shared across worktrees; databases are not. Each
+worktree gets its own, and `npm run prod` opens the persistent `prod` one. See
+`docs/local-infrastructure.md`.
 
 **Bootstrap:**
 
@@ -51,6 +57,9 @@ Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
 command prints it). Mock narration, no network, no API key.
 
 Pick a profile name on the first screen — that is the whole of signing in.
+
+This checkout plays against a database of its own, thrown away whenever you
+like. `npm run prod` starts the same server against the persistent one instead.
 
 ### Live AI
 
@@ -226,21 +235,23 @@ Writes Markdown prompt files instead of calling OpenRouter. Output defaults to
 
 ## Running The Game
 
-There is no stack to start, restart, reset, or garbage-collect, and no Edge
-Functions to redeploy after an edit. `vite dev` reloads the engine like any
-other source file.
+There is no stack to start, restart, reset, or garbage-collect. `vite dev`
+reloads the engine like any other source file.
 
 ### Worktrees
 
-Each worktree gets its own port (`51000 + slot`), so two checkouts can run side
-by side. Nothing else needs isolating.
+Each worktree gets its own port (`51000 + slot`) and its own database
+(`database/<worktree name>/game.db`), so two checkouts can run side by side.
+Nothing else needs isolating.
 
 ### Looking at your data
 
-The database is a SQLite file, readable while the game is running:
+`npm run db:list` shows every database with its row counts and path;
+`db:init`, `db:reset`, and `db:copy` create, empty, and snapshot them. Each is
+a SQLite file, readable while the game is running:
 
 ```bash
-sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/game.db" "select outcome, count(*) from game_sessions group by 1;"
+sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/database/prod/game.db" "select outcome, count(*) from game_sessions group by 1;"
 ```
 
 To pull one session out as a self-contained artifact for the trace pipeline:

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveWorktreePorts } from '../lib/worktree-ports.mjs';
+import { TEST_DATABASE, resolveDatabaseFile } from '../lib/database-target.mjs';
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(configDir, '..');
@@ -21,6 +22,11 @@ const baseURL = `http://127.0.0.1:${port}`;
 // empties it at the start of each run and `global-teardown.ts` removes it.
 export const E2E_CONFIG_ROOT = path.join(os.tmpdir(), `mystery-e2e-${port}`);
 fs.mkdirSync(E2E_CONFIG_ROOT, { recursive: true });
+
+// Pinned rather than left to the worktree-derived name, so `global-setup.ts`
+// can empty the file the server is about to open without repeating the
+// derivation. It is inside E2E_CONFIG_ROOT either way, never a real database.
+export const E2E_DATABASE_FILE = resolveDatabaseFile(TEST_DATABASE, E2E_CONFIG_ROOT, {});
 
 export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
@@ -63,6 +69,7 @@ export default defineConfig({
     env: {
       ...process.env,
       MYSTERY_CONFIG_ROOT: E2E_CONFIG_ROOT,
+      MYSTERY_DATABASE: TEST_DATABASE,
     },
   },
 });

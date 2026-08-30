@@ -47,5 +47,6 @@ knows nothing about HTTP, cookies, or the process it runs in — that is
   block the running game), `foreign_keys = ON` (off by default in SQLite; the
   `game_events` cascade depends on it), and `busy_timeout = 5000`.
 - **The database is never the test database.** `resolveDatabasePath()` returns
-  `$MYSTERY_CONFIG_ROOT/game.db` when that is set and `./data/game.db`
-  otherwise. Tests pass an explicit path under a temporary directory.
+  `<config root>/database/<name>/game.db`, naming it after the worktree so two
+  checkouts cannot upgrade each other's schema; `MYSTERY_DATABASE` overrides the
+  name. Tests pass an explicit path under a temporary directory.

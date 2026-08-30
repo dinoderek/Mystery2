@@ -53,10 +53,10 @@ Rules:
 - Register the endpoint's allowed methods in `src/endpoints/index.ts`. The
   route returns `405` from that list; handlers do not re-check.
 
-This exists so the engine can be re-hosted without touching game logic — it is
-how the move off Supabase happened underneath a green test suite, with both
-adapters live and the handlers unable to tell which one they had. Treat a
-direct file or driver reference in a handler as a bug.
+This exists so the engine can be re-hosted without touching game logic: a
+second adapter can be written and tested alongside the first, with the handlers
+unable to tell which they have. Treat a direct file or driver reference in a
+handler as a bug.
 
 ## 3. The Database
 

@@ -12,7 +12,7 @@ import {
 } from "../../../packages/game-engine/src/role-request.ts";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
-// exist because the previous arrangement had two: the endpoint handlers,
+// exist because an earlier arrangement had two: the endpoint handlers,
 // and a parallel implementation in the eval harness that called
 // loadPromptTemplate WITHOUT a target age. clampTargetAge silently fell back to
 // age 6, so every evaluated prompt was built for the wrong reader while being
@@ -23,7 +23,6 @@ import {
 const TARGET_AGE = 10; // mock-blueprint's target_age
 const NARRATION_STYLE = "salty harbor air and gull cries";
 
-// deno-lint-ignore-file no-explicit-any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let blueprint: any;
 

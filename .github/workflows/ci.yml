@@ -12,10 +12,9 @@ concurrency:
 
 jobs:
   # ------------------------------------------------------------------
-  # One job. The game is one Node process against a SQLite file, so the
-  # whole gate — static checks, unit, integration, API and browser E2E —
-  # needs nothing but this repo. There is no Docker, no Supabase CLI, and
-  # nothing to deploy.
+  # One job. The game is one Node process against a SQLite file, so the whole
+  # gate — static checks, unit, integration, API and browser E2E — needs
+  # nothing but this repo and Playwright's browsers.
   # ------------------------------------------------------------------
   gate:
     name: Test gate

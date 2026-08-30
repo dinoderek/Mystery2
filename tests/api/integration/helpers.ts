@@ -24,8 +24,8 @@ export function setupApiTestAuth(tag: string): Promise<ApiAuthContext> {
 // Reading the server's database directly
 //
 // For assertions the API does not expose (what was actually persisted) and
-// for setting up states the API cannot reach (a session with one minute left).
-// They replace the service-role client the suites used to keep around.
+// for setting up states the API cannot reach (a session with one minute
+// left).
 // ---------------------------------------------------------------------------
 
 export interface StoredSession {
@@ -70,8 +70,7 @@ const PATCHABLE = new Set([
 
 /**
  * Writes session columns the API will not set for you — an all-but-expired
- * clock, a session completed last Tuesday. The database is a file, so this is
- * a statement rather than a privileged client.
+ * clock, a session completed last Tuesday.
  */
 export function patchStoredSession(
 	gameId: string,

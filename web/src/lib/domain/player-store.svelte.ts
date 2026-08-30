@@ -1,9 +1,8 @@
 // Which local profile is playing.
 //
-// This replaces the Supabase auth store, and it is much smaller than what it
-// replaces because there is nothing to keep in sync: no token to refresh, no
-// expiry to notice, no `onAuthStateChange` stream. The server holds the profile
-// id in an httpOnly cookie; this asks it who that is.
+// There is nothing to keep in sync here — no token to refresh, no expiry to
+// notice, no auth-state stream. The server holds the profile id in an httpOnly
+// cookie; this asks it who that is.
 
 export interface PlayerProfile {
 	id: string;

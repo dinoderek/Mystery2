@@ -55,7 +55,7 @@ export interface Db {
  * The shape `schema.ts` describes. A fresh database is created straight from
  * that file and stamped with this number; an existing one is brought forward
  * by the steps below. There is no migration chain to replay because the move
- * off Postgres did not carry its history over.
+ * shape the game needs is described in one place, not accumulated.
  */
 export const SCHEMA_VERSION = 1;
 

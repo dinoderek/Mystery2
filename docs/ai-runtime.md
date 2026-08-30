@@ -25,7 +25,7 @@ Important version note:
 - `packages/game-engine/src/context.ts`
   - `AIProfileStore` — default and per-session profile lookup
 - `packages/game-engine/src/context-local.ts`
-  - Service-role access to `ai_profiles` behind `AIProfileStore`
+  - Profile resolution from the environment, behind `AIProfileStore`
 - `packages/game-engine/src/ai-contracts.ts`
   - Role output parsing and validation before state mutation
 - `packages/game-engine/src/ai-context.ts`
@@ -47,7 +47,7 @@ Important version note:
   - The only place `target_age` and `narration_style` are applied. Handlers no
     longer call `loadPromptTemplate`/`renderPrompt` directly, and neither does
     the eval harness — see [Why assembly is shared](#why-assembly-is-shared).
-  - Purity contract: imports only sibling `_shared/*.ts`, no Deno globals, no
+  - Purity contract: imports only its siblings in the engine, no
     DB. Node imports it directly so the runtime eval harness reuses it.
 - `packages/shared/src/mystery-api-contracts.ts`
   - Shared request/response boundary contracts for UI/backend payloads
@@ -437,7 +437,7 @@ Every AI-narrated event records the model that produced it in the
   `forced_endgame` narration are separate AI calls, so each event is tagged with
   the model captured right after its own call rather than re-reading the
   provider at insert time.
-- The column is nullable: non-AI events and rows created before migration 0013
+- The column is nullable: non-AI events and older rows
   carry `null`.
 - The trace pipeline surfaces it as `events[].model`
   (`evaluation/trace/lib/normalize.mjs`); this is per-call ground truth and is

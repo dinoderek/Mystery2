@@ -1,9 +1,5 @@
 // `ContentStore` over the filesystem.
 //
-// Blueprints and images already exist on disk before `seed:storage` uploads
-// them, so the local implementation is the shorter path to the same bytes: no
-// bucket, no download, no signed URL, and therefore no expiry to refresh.
-//
 // One malformed blueprint is skipped and logged, never fatal: a single bad
 // file must not take down the whole catalog.
 

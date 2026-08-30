@@ -1,8 +1,7 @@
 // `EventStore` over SQLite.
 //
-// Ownership is enforced by joining through `game_sessions`, which is what
-// migration 0004's event policy did with its `exists (select 1 from
-// game_sessions where ... user_id = auth.uid())` clause.
+// Ownership is enforced by joining through `game_sessions`: an event is
+// yours if the session it belongs to is.
 
 import type { EventStore, GameEventRow, NewGameEvent } from "../context.ts";
 import type { NarrationPart } from "../narration.ts";
@@ -82,9 +81,8 @@ export function createEventStore(db: Db, playerId: string): EventStore {
     },
 
     async insert(event: NewGameEvent): Promise<void> {
-      // Postgres refused this through the policy's `with check`; the same
-      // refusal has to be explicit here, because a foreign key alone would
-      // happily let one player append to another's session.
+      // Explicit, because a foreign key alone would happily let one player
+      // append to another's session.
       assertOwnedSession(event.session_id);
 
       db.prepare(

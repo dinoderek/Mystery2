@@ -3,7 +3,7 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
-> - `docs/ai-runtime.md` — `92b5c9793f5b8f3ffbd2747825df6cb55a8d9c61`
+> - `docs/ai-runtime.md` — `802503cc3bf163504f153757bae712303e90f1e4`
 > - `docs/blueprint-generation-flows.md` — `bd245ed05355255e4a71139d0ac360d6bf2461dd`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect blueprint authoring, regenerate this file.

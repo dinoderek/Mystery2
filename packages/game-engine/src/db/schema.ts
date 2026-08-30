@@ -11,10 +11,8 @@ export const SCHEMA_SQL = `
 -- Local SQLite schema for the mystery engine.
 --
 -- This is the whole database: three tables, no migration chain. It was derived
--- from the *end state* of the fourteen Postgres migrations rather than replayed
--- from them, because none of that history needs to survive the move off
--- Postgres (existing session data is disposable — see
--- docs/plans/local-execution/plan.md).
+-- as an end state rather than replayed from a chain of migrations: this is the
+-- shape the game needs, not a record of how it got here.
 --
 -- Applied only to a fresh database. Once a database exists it is upgraded by
 -- the numbered steps in \`client.ts\`'s MIGRATIONS array, keyed on
@@ -22,18 +20,17 @@ export const SCHEMA_SQL = `
 -- database never replays that chain. Keep the two in step: a change here needs
 -- a matching MIGRATIONS entry and a bumped SCHEMA_VERSION.
 --
--- Type mapping from the Postgres original:
---   uuid        -> TEXT (crypto.randomUUID())
---   timestamptz -> TEXT holding an ISO-8601 UTC instant
---   jsonb       -> TEXT holding JSON
---   text[]      -> TEXT holding a JSON array
+-- Type conventions:
+--   ids         TEXT holding a uuid (crypto.randomUUID())
+--   timestamps  TEXT holding an ISO-8601 UTC instant
+--   structures  TEXT holding JSON
 --
 -- \`foreign_keys\` is OFF by default in SQLite and is enabled per connection in
 -- \`client.ts\`; the game_events cascade below depends on it.
 
--- Local player profiles. Replaces \`auth.users\`: no passwords, no JWTs — the
--- browser carries a player id in a cookie and the repositories below scope
--- every read and write to it, which is where the old RLS policies now live.
+-- Local player profiles: no passwords, no tokens. The browser carries a player
+-- id in a cookie and the repositories below scope every read and write to it,
+-- which is the whole of the access model.
 create table players (
     id          text primary key,
     name        text not null unique,
@@ -43,7 +40,6 @@ create table players (
 
 create table game_sessions (
     id                        text primary key,
-    -- was \`user_id uuid references auth.users(id)\` (migration 0004)
     player_id                 text not null references players(id) on delete cascade,
     blueprint_id              text not null,
     -- Provenance label only. The \`ai_profiles\` table is gone: profiles are
@@ -70,8 +66,8 @@ create table game_events (
     actor           text not null,
     payload         text,
     narration       text not null,
-    -- Migration 0008's non-empty check, kept: every event must carry at least
-    -- one narration part or the transcript cannot be rebuilt from history.
+    -- Every event must carry at least one narration part, or the transcript
+    -- cannot be rebuilt from history.
     narration_parts text not null default '[]'
                     check (json_valid(narration_parts)
                            and json_type(narration_parts) = 'array'

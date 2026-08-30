@@ -1,9 +1,8 @@
 // `SessionStore` over SQLite.
 //
 // Every statement is scoped to one player. That scoping is not a convenience:
-// it is where the RLS policy from migration 0004
-// (`using (auth.uid() = user_id)`) now lives, and it is the only thing
-// stopping one local profile from reading another's sessions.
+// it is the only thing stopping one local profile from reading another's
+// sessions, and nothing underneath will catch a query that forgets.
 
 import type {
   GameSessionPatch,
@@ -91,8 +90,7 @@ export function createSessionStore(db: Db, playerId: string): SessionStore {
     },
 
     async create(session: NewGameSession): Promise<string> {
-      // Postgres enforced this with the policy's `with check` clause; here it
-      // is an explicit refusal to write a row the writer could not read back.
+      // An explicit refusal to write a row the writer could not read back.
       if (session.player_id !== playerId) {
         throw new Error("Cannot create a session for another player");
       }
@@ -133,8 +131,8 @@ export function createSessionStore(db: Db, playerId: string): SessionStore {
 
       if (assignments.length === 0) return;
 
-      // Matching no rows is not an error, exactly as an RLS-filtered
-      // `update ... where id = ?` was a successful no-op under Postgres.
+      // Matching no rows is not an error: updating a session you do not own
+      // is a no-op, not a failure.
       db.prepare(
         `update game_sessions set ${assignments.join(", ")}
          where id = ? and player_id = ?`,

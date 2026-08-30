@@ -4,10 +4,9 @@
 // config root, and passes both down through the environment. Everything here
 // reads those two values; nothing here starts or stops anything.
 //
-// What this replaces: creating an auth user through the admin API, signing it
-// in for a JWT, and a service-role client for direct-database assertions. A
-// player is now a name, a session is a cookie, and the database is a file the
-// test can open.
+// A player is a name, a session is a cookie, and the database is a file the
+// test can open — so setting a test up and asserting what it persisted are
+// both a few lines, with no privileged client in between.
 
 import fs from 'node:fs';
 import path from 'node:path';

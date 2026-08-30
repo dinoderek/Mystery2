@@ -77,17 +77,7 @@ export interface AIProvider {
 }
 
 function getRuntimeEnv(): Record<string, string | undefined> {
-  const denoGlobal = (
-    globalThis as unknown as {
-      Deno?: { env?: { toObject?: () => Record<string, string> } };
-    }
-  ).Deno;
-
-  if (typeof denoGlobal?.env?.toObject === "function") {
-    return denoGlobal.env.toObject();
-  }
-
-  return process.env as Record<string, string | undefined>;
+  return process.env;
 }
 
 function requireContextString(

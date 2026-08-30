@@ -3,8 +3,8 @@
 // the endpoint backend deterministic: identical seeded rows -> identical prompt
 // -> the only variable is the model behind the session's ai_profile.
 //
-// It writes straight into `game.db` rather than through a service-role client,
-// which is the same thing it always did — one fewer network hop.
+// It writes straight into `game.db`, so there is no network hop between
+// setting a case up and playing it.
 
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import { resolveDatabasePath } from "../../../packages/game-engine/src/paths.ts";

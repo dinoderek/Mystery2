@@ -1,10 +1,10 @@
 // The current local profile: who you are, signing in, signing out.
 //
-// Replaces Supabase Auth. Signing in is naming a profile — it is created if it
-// does not exist — and the answer is a cookie holding its id. There is no
-// password because there is nothing to protect against: the database is a file
-// on the player's own machine, and profiles exist to keep one person's cases
-// separate from another's, not to keep anyone out.
+// Signing in is naming a profile — it is created if it does not exist — and
+// the answer is a cookie holding its id. There is no password because there is
+// nothing to protect against: the database is a file on the player's own
+// machine, and profiles exist to keep one person's cases separate from
+// another's, not to keep anyone out.
 
 import { json } from '@sveltejs/kit';
 import { PLAYER_COOKIE } from '../../../hooks.server';

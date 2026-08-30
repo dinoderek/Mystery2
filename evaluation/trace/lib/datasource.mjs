@@ -4,9 +4,8 @@
 // the rest of the pipeline is unit-testable without a database: tests pass a
 // fake source object with the same four methods to extractSessionTrace().
 //
-// This used to hold a service-role Supabase client. The game runs on SQLite and
-// the filesystem now, so a "connection" is a file path — which also means a
-// trace can be extracted from a copied `game.db` with nothing running.
+// A "connection" here is a file path, which means a trace can be extracted
+// from a copied `game.db` with nothing running.
 
 import path from "node:path";
 

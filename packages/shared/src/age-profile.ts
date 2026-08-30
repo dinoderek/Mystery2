@@ -1,11 +1,8 @@
 /**
  * Age-appropriate text — the single source of truth for ages 6–11.
  *
- * This file used to be mirrored byte-for-byte into `supabase/functions/`,
- * because an Edge Function could not import out of that directory. There is no
- * edge runtime any more: the engine and the evaluation harness both import
- * this file directly, and `scripts/sync-shared.mjs` is gone with the sandbox
- * that made it necessary.
+ * The engine and the evaluation harness both import this file directly, so
+ * narrator and judge always agree on what a given age can read.
  *
  * The model has TWO independent dials:
  *

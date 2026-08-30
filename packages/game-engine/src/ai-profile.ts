@@ -1,10 +1,6 @@
 // `AIProfileStore` over the environment.
 //
-// This replaces the `ai_profiles` table, whose only real job was holding an
-// OpenRouter key that a service-role client read back on every turn — the
-// engine's one privileged read, and the reason a service-role client existed
-// at all. The same three profiles now come from the env files that already
-// configure them:
+// Three profiles, resolved per request from the environment:
 //
 //   mock            built in; no configuration, no key
 //   free / paid     `.env.ai.<mode>.local`, as `npm run seed:ai` reads today

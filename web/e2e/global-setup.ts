@@ -1,10 +1,7 @@
 /**
- * Empties the browser suite's database before a run.
- *
- * This used to start the worktree's Supabase stack. There is nothing to start
- * now — Playwright's `webServer` runs the game server itself — but the run
- * still wants a database with no sessions in it, so results do not depend on
- * what the last run left behind.
+ * Empties the browser suite's database before a run, so results do not depend
+ * on what the last run left behind. Playwright's `webServer` starts the game
+ * itself, so there is nothing here to launch.
  */
 
 import fs from 'node:fs';

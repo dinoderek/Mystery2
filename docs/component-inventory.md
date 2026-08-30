@@ -54,7 +54,7 @@ _(Add components here as they are built. Example format below)_
 ### `ScenePane.svelte`
 
 - **Purpose**: The fixed image column — two thirds of the session screen. Shows
-  `activePage.imageId` via `SignedImage`, or a labelled placeholder when the page
+  `activePage.imageId` via `BlueprintImage`, or a labelled placeholder when the page
   has no image or the image cannot be loaded.
 - **Props**: None (reads from store)
 
@@ -118,31 +118,32 @@ _(Add components here as they are built. Example format below)_
 - **Props**:
   - `text`: `string` (optional status text shown next to the spinner)
 
-### `StoryImagePanel.svelte` *(deprecated — prefer `SignedImage.svelte`)*
+### `StoryImagePanel.svelte` *(deprecated — prefer `BlueprintImage.svelte`)*
 
-- **Purpose**: Static image/placeholder panel. Does not manage signed URL lifecycle.
-- **Note**: Replaced by `SignedImage` for all active use cases. Retained for reference.
+- **Purpose**: Static image/placeholder panel. Does not resolve image URLs itself.
+- **Note**: Replaced by `BlueprintImage` for all active use cases. Retained for reference.
 
-### `SignedImage.svelte`
+### `BlueprintImage.svelte`
 
-- **Purpose**: Renders blueprint artwork from the same-origin `/api/images/<blueprint>/<image>` route, falling back to a placeholder when the image is missing. There is no link to resolve and nothing to expire, so it is a plain `<img>` with an error handler.
+- **Purpose**: Renders blueprint artwork from `/api/images/<blueprint>/<image>`. The URL is derivable from the two ids, so there is nothing to fetch first and nothing to expire — it is a plain `<img>` with an error fallback.
 - **Props**:
   - `blueprintId`: `string` (the blueprint that owns the image)
   - `imageId`: `string` (canonical image filename from the blueprint)
   - `alt`: `string` (image alt text)
   - `class`: `string` (additional CSS classes)
-  - `loadingText`: `string` (text shown while resolving, default `"Loading image..."`)
   - `placeholderText`: `string` (text shown on failure, default `"Image unavailable"`)
-- **Note**: A signed URL can be issued for an asset that is not in storage, so the
-  component also falls back to the placeholder when the `<img>` itself fails to load.
+  - `onload` / `onfail`: `() => void` (optional load-outcome callbacks)
+- **Note**: A blueprint can reference an image nobody has generated yet, so the
+  component falls back to the placeholder when the `<img>` fails to load.
 
-### `LoginForm.svelte`
+### `ProfilePicker.svelte`
 
-- **Purpose**: Reusable email/password sign-in form for the `/login` route.
-- **Props**: None (reads and updates `authStore` directly).
+- **Purpose**: Chooses or creates the local profile on the `/login` route. There is no password — a profile is a name.
+- **Props**: None (reads and updates `playerStore` directly).
 - **Usage**:
   - Rendered by `src/routes/login/+page.svelte`.
-  - Handles required-field validation and displays authentication failures.
+  - Lists existing profiles as buttons (`data-testid="profile-option"`) and
+    offers a name field for a new one.
 
 ## Layout Components
 

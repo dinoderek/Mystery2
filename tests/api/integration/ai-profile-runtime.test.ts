@@ -11,11 +11,9 @@ import {
   type ApiAuthContext,
 } from "./helpers";
 
-// The property under test has not changed: a session's AI profile is resolved
-// on every request, not frozen when the session starts, so `dev:ai:free` and
-// `dev:ai:paid` take effect without a restart. What changed is where a profile
-// lives — it was a row in `ai_profiles` read with a service-role client, and it
-// is now the env file that already configured it.
+// A session's AI profile is resolved on every request, not frozen when the
+// session starts, so editing the env file behind a profile takes effect on the
+// next turn of a session already in progress.
 
 const FREE_ENV_PATH = path.join(TEST_CONFIG_ROOT, ".env.ai.free.local");
 

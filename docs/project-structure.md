@@ -13,11 +13,9 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `packages/`: Workspace packages shared across the monorepo (e.g. bundled for UI/backend).
   - `shared/`: Shared TypeScript types, utility functions, and Zod schemas that bridge frontend and backend, including speaker-aware gameplay contracts and the canonical `narration_parts`/`narration_events` schemas.
   - `blueprint-generator/`: Reusable blueprint generation logic shared by local operator scripts and future backend adapters.
-  - `game-engine/`: The engine's local platform adapter — a SQLite + filesystem implementation of `EngineContext`, plus the SQLite schema, its repositories, and env-based AI profile resolution. The rest of the engine (the shared modules and endpoint handlers still under `supabase/functions/`) moves in here in P3 of the local-execution plan; see `docs/plans/local-execution/status.md`.
-- `plan/`: Legacy planning documents used by Speckit workflow prior to full specification.
+  - `game-engine/`: The game engine — endpoint handlers, state machine, clue graph, prompt assembly, AI provider, and the SQLite + filesystem implementation of `EngineContext` they run against.
 - `scripts/`: Development and operator scripts (starting the game, running the test suites against a built server, blueprint and image generation).
   - `lib/`: Shared helpers (the test server, env-file reading, process spawning, image prompt builder, blueprint image manifest and patch helpers).
-- `specs/`: Historical, implementation-ready feature specifications, one per shipped milestone. They record what was built at the time and are **not** kept current — several describe the Supabase architecture the game has since moved off.
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).

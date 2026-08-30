@@ -3,9 +3,9 @@
 // Endpoint handlers and shared helpers reach the outside world only through
 // `EngineContext`. Nothing below this file knows where the game's state is
 // kept; `context-local.ts` is the implementation, over SQLite and the
-// filesystem. Keeping the surface this narrow — ~15 named operations, not a
-// query builder — is what let the engine move off Supabase one adapter at a
-// time, and it is what would let it move again.
+// filesystem. Keeping the surface narrow — ~15 named operations, not a query
+// builder — is what would let the state live somewhere else without touching
+// a line of game logic.
 //
 // Error convention, uniform across every method: a genuine backend failure
 // throws, and "the thing does not exist" is a `null`/empty return. Handlers

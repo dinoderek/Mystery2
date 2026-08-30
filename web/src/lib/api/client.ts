@@ -1,9 +1,8 @@
 // The game API, same origin.
 //
-// Every call used to go through `supabase.functions.invoke()`, which returned
-// `{ data, error }`; this keeps that shape so the retry classification in
-// `store.retry.ts` and the call sites in the store barely change. What is gone
-// is the JWT, the anon key, the cross-origin base URL, and the SDK.
+// Calls return `{ data, error }` rather than throwing, which is the shape
+// `store.retry.ts` classifies for its backoff. Same origin means no CORS, no
+// token, and no base URL to configure.
 
 export interface ApiFailure {
 	message: string;

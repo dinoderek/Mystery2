@@ -8,11 +8,9 @@ import {
   type ApiAuthContext,
 } from "./helpers";
 
-// This was `auth-rls.test.ts`, and it asserted the same property against
-// Postgres row-level security by driving two user-scoped clients at the tables
-// directly. The policies are now `where player_id = ?` in the engine's
-// repositories, so the assertions run through the API instead — which is
-// better, because the API is the only way in.
+// Ownership is `where player_id = ?` in the engine's repositories, with
+// nothing underneath to catch a query that forgets. These assertions go
+// through the API, which is the only way in.
 
 describe("session ownership", () => {
   let playerA: ApiAuthContext;

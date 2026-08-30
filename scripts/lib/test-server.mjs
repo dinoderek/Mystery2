@@ -1,8 +1,7 @@
 /**
  * The game server, started for a test run.
  *
- * This is what `ensureSupabaseRunning()` used to be, and it is a great deal
- * less: build the app, run it, wait for it to answer, stop it afterwards. No
+ * Build the app, run it, wait for it to answer, stop it afterwards. No
  * containers, no port table, no seeding.
  *
  * The server runs against a **temporary config root**, so its database is

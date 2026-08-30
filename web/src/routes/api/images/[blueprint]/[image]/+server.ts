@@ -1,10 +1,9 @@
 // Blueprint artwork, served straight off disk.
 //
-// This replaces the `blueprint-image-link` round trip and the signed URL it
-// issued: same-origin bytes at a stable path, so there is no expiry, no
-// refresh sweep, and nothing for the client to cache and re-request. The two
-// access rules the old private bucket enforced are kept — you have to be
-// signed in, and the image has to be one the blueprint actually references.
+// The path is stable and derivable from a blueprint id and an image id, so
+// there is nothing for the client to fetch first and nothing to expire. Two
+// access rules apply: you have to be signed in, and the image has to be one
+// the blueprint actually references.
 
 import { error } from '@sveltejs/kit';
 import fs from 'node:fs/promises';

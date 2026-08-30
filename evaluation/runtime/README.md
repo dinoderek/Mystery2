@@ -79,7 +79,7 @@ because the case fixes the input: both backends see byte-identical input.
 
 - **Model backend** — produces the response. One interface
   (`collect(testCase, ctx) -> { response, blueprint, model }`):
-  - `endpoint` — seeds the fixed session + history into the DB (service role),
+  - `endpoint` — seeds the fixed session + history straight into `game.db`,
     then calls the ONE `game-*` endpoint. The exception is `start`, which
     *creates* the session (`createsSession` in `lib/roles.mjs`), so nothing is
     seeded and the body names the blueprint instead of a game id. The server

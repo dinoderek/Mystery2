@@ -1,7 +1,4 @@
-/**
- * Small process helpers, extracted from the late `supabase-utils.mjs` — the
- * parts of it that were never about Supabase.
- */
+/** Small process helpers shared by the scripts. */
 
 import { spawnSync } from "node:child_process";
 

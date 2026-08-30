@@ -15,13 +15,8 @@ import {
 import { collectBlueprintImageReferences } from "../../../scripts/lib/blueprint-image-manifest.mjs";
 import { buildImageStorageKey } from "../../../packages/game-engine/src/images.ts";
 
-// This merges what used to be two suites — one proving the seed script and the
-// image endpoint agreed on a storage key, one proving the signed URL it issued
-// was reachable from outside Docker. Neither question survives: there is no
-// bucket to agree with, no signature to reach, and no link endpoint at all now
-// that the URL is derivable. What is left is the contract that matters — the
-// image ids a blueprint names are the files the server serves, at the path
-// `blueprintImageUrl()` builds.
+// The contract: the image ids a blueprint names are the files the server
+// serves, at the path `blueprintImageUrl()` builds — and only those.
 
 describe("blueprint images", () => {
   let auth: ApiAuthContext;

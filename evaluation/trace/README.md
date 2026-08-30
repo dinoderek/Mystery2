@@ -54,13 +54,13 @@ is preserved so a re-run is always possible.)
 cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
 
 # 2a. Extract a played session to a raw trace artifact:
-SERVICE_ROLE_KEY=... npm run eval:trace:extract -- --session <session-id> --out trace.json
+npm run eval:trace:extract -- --session <session-id> --out trace.json
 
 # 2b. Evaluate a pre-extracted trace:
 npm run eval:trace -- --trace trace.json
 
 # Or do both in one step (extract inline, then evaluate):
-SERVICE_ROLE_KEY=... npm run eval:trace -- --session <session-id>
+npm run eval:trace -- --session <session-id>
 ```
 
 Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default

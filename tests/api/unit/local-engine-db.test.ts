@@ -1,8 +1,7 @@
 // The local `EngineContext` stores, over a real SQLite file.
 //
-// These are the assertions that used to be enforced by Postgres and its RLS
-// policies — ownership, cascade, sequence uniqueness — now that they are the
-// repositories' job. Every test opens a fresh database under a temporary
+// Ownership, cascade, and sequence uniqueness are the repositories' job, so
+// they are asserted here. Every test opens a fresh database under a temporary
 // directory; none of them can reach the development database.
 
 import fs from "node:fs";
@@ -253,7 +252,7 @@ describe("session store", () => {
 
     expect(await graceSessions.getById(adaGame)).toBeNull();
 
-    // A no-op, exactly as an RLS-filtered UPDATE was: no error, no change.
+    // A no-op: no error, no change.
     await graceSessions.update(adaGame, { mode: "ended", outcome: "lose" });
     expect(await adaSessions.getById(adaGame)).toMatchObject({
       mode: "explore",

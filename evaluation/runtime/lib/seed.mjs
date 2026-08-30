@@ -1,8 +1,5 @@
-// Load the blueprint a case names.
-//
-// This used to upload the file into local Supabase storage so `game-start`
-// could download it again. The server reads blueprints off disk, so all that
-// is left is reading the file and checking it has an id.
+// Load the blueprint a case names. The server reads blueprints off disk, so
+// this is reading the file and checking it has an id.
 
 import fs from "node:fs/promises";
 import path from "node:path";

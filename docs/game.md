@@ -374,7 +374,7 @@ Modes:
 ### New Game
 
 - List blueprints.
-- If a blueprint has `blueprint_image_id`, render the cover image via authenticated signed URL.
+- If a blueprint has `blueprint_image_id`, render the cover image from `/api/images/<blueprint>/<image>`.
 - If image fetch fails or expires without refresh, show a placeholder panel (gameplay still continues).
 - Start by typing a number (e.g., `1`, `2`, `3`).
 - `b` returns to the three-option landing menu.

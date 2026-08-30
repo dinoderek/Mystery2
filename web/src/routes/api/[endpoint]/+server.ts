@@ -1,9 +1,8 @@
 // The one route that serves every game endpoint.
 //
-// Under Supabase each of the twelve endpoints was its own deployed function
-// with its own copy of the same preamble: check the method, authenticate,
-// build a context, delegate. That preamble now lives here once, and the
-// endpoints are plain `handle(req, ctx)` functions in the engine's registry.
+// The preamble every endpoint needs — check the method, resolve the profile,
+// build a context, delegate — lives here once. The endpoints themselves are
+// plain `handle(req, ctx)` functions in the engine's registry.
 
 import { error, json } from '@sveltejs/kit';
 import { findEndpoint, type EndpointMethod } from '@my2/game-engine';

@@ -33,15 +33,6 @@ Non-goals:
 - Multi-user access control. Profiles separate one person's cases from
   another's on a shared machine; they are not a security boundary.
 
-> **How it got here.** This replaced Cloudflare Pages plus Supabase (Auth,
-> Postgres, Storage, and twelve Deno Edge Functions). What that platform cost
-> in local development — Docker, a per-worktree port allocator, generated
-> config, orphaned-container garbage collection, a full stack restart after
-> every backend edit, three seed scripts, and two modules mirrored byte-for-byte
-> to satisfy a sandbox — was more than it returned for a single-player game.
-> The plan and its phase log are in
-> [`docs/plans/local-execution/`](plans/local-execution/status.md).
-
 ---
 
 ## Components and responsibilities
@@ -81,9 +72,9 @@ src/state-machine.ts    Legal transitions.
 src/clues.ts, clue-discovery.ts, forced-endgame.ts, narration.ts, speaker.ts
 ```
 
-That boundary is why the move off Supabase could happen underneath a green test
-suite: for one phase both adapters existed, and the handlers could not tell
-which one they had.
+That boundary is what makes the storage substitutable: an adapter can be
+written and tested alongside the current one, and the handlers cannot tell
+which they have.
 
 ### Data
 
@@ -91,7 +82,7 @@ Three tables, no migration chain. `packages/game-engine/src/db/schema.ts` is
 the whole schema; existing databases move forward through numbered steps keyed
 on `PRAGMA user_version`.
 
-- `players` — id, name. Replaces `auth.users`.
+- `players` — id, name. This is the whole of identity.
 - `game_sessions` — one per case played, owned by a player.
 - `game_events` — the append-only transcript, unique on `(session_id, sequence)`.
 
@@ -155,8 +146,7 @@ Every step is in-process except the model call.
 
 ## What this architecture does not have
 
-No CORS, no JWTs, no refresh tokens, no signed URLs or their expiry, no
-row-level security policies, no service-role client, no storage buckets, no
-migration chain, no mirrored modules, no containers, no port allocator beyond
-one port per worktree, and no deploy pipeline. Each of those existed to serve a
-constraint that no longer applies.
+No CORS, no tokens, no expiring image links, no privileged database
+client, no object storage, no migration chain, no mirrored modules, no
+containers, no port allocator beyond one port per worktree, and no deploy
+pipeline. A single-player game on one machine needs none of it.

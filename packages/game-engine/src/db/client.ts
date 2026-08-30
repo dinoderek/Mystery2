@@ -44,6 +44,12 @@ export interface Db {
   exec(sql: string): void;
   /** Runs `work` in a transaction, rolling back if it throws. */
   transaction<T>(work: () => T): T;
+  /**
+   * Writes a consistent snapshot to `destinationPath`, safe to call while the
+   * game is writing — which a file copy would not be, because the committed
+   * state is split between the database and its `-wal`.
+   */
+  backup(destinationPath: string): Promise<void>;
   close(): void;
 }
 
@@ -74,6 +80,13 @@ const MIGRATIONS: ReadonlyArray<{ to: number; sql: string }> = [];
 export interface OpenDatabaseOptions {
   /** Database file, or ":memory:". Parent directories are created. */
   path: string;
+  /**
+   * Open without writing: no directory is created, no schema is applied, and
+   * no migration runs. Inspecting a database must not silently upgrade it, so
+   * anything that only reads — `npm run db:list`, `npm run db:copy` — opens
+   * this way. The file has to exist already.
+   */
+  readonly?: boolean;
 }
 
 /**
@@ -81,7 +94,7 @@ export interface OpenDatabaseOptions {
  * to `SCHEMA_VERSION`.
  *
  * The pragmas are not optional:
- * - `journal_mode = WAL` so a reader (`npm run dump`, an ad-hoc `sqlite3`
+ * - `journal_mode = WAL` so a reader (`npm run db:copy`, an ad-hoc `sqlite3`
  *   query) does not block the running game.
  * - `foreign_keys = ON` because SQLite defaults it OFF per connection, and the
  *   `game_events -> game_sessions` cascade is the only thing keeping events
@@ -89,18 +102,26 @@ export interface OpenDatabaseOptions {
  * - `busy_timeout = 5000` so a concurrent writer waits instead of failing.
  */
 export function openDatabase(options: OpenDatabaseOptions): Db {
-  if (options.path !== ":memory:") {
+  const readonly = options.readonly === true;
+
+  if (!readonly && options.path !== ":memory:") {
     fs.mkdirSync(path.dirname(path.resolve(options.path)), { recursive: true });
   }
 
-  const database = new Database(options.path);
+  const database = new Database(options.path, { readonly });
 
   try {
-    database.pragma("journal_mode = WAL");
-    database.pragma("foreign_keys = ON");
-    database.pragma("busy_timeout = 5000");
+    if (readonly) {
+      // `journal_mode` is a write, and the schema is whatever the file already
+      // holds — a reader takes it as it finds it.
+      database.pragma("busy_timeout = 5000");
+    } else {
+      database.pragma("journal_mode = WAL");
+      database.pragma("foreign_keys = ON");
+      database.pragma("busy_timeout = 5000");
 
-    migrate(database);
+      migrate(database);
+    }
   } catch (error) {
     // Opening failed, so nobody is holding this handle to close it.
     database.close();
@@ -113,6 +134,12 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
       database.exec(sql);
     },
     transaction: <T>(work: () => T): T => database.transaction(work)(),
+    backup: async (destinationPath: string) => {
+      fs.mkdirSync(path.dirname(path.resolve(destinationPath)), {
+        recursive: true,
+      });
+      await database.backup(destinationPath);
+    },
     close: () => database.close(),
   };
 }

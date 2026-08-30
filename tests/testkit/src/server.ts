@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { openDatabase, type Db } from '../../../packages/game-engine/src/db/client.ts';
+import { TEST_DATABASE, resolveDatabaseFile } from '../../../lib/database-target.mjs';
 
 function required(name: string): string {
 	const value = process.env[name];
@@ -73,13 +74,27 @@ export async function createTestPlayer(tag: string): Promise<TestPlayer> {
 let database: Db | null = null;
 
 /**
- * The run's database, for assertions the API does not expose.
+ * The run's database — for assertions the API does not expose, and for forcing
+ * state no endpoint will produce (`patchStoredSession`).
  *
  * The server holds it open at the same time; that is what `journal_mode = WAL`
- * is for. Read through this, do not write.
+ * is for.
+ *
+ * The file must already exist: the server creates it at startup, so if it does
+ * not, this resolved to a different path than the server's. Opening would
+ * create an empty database and every assertion would then fail somewhere far
+ * from the cause, so it fails here instead.
  */
 export function testDatabase(): Db {
-	database ??= openDatabase({ path: path.join(TEST_CONFIG_ROOT, 'game.db') });
+	const file = resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {});
+	if (!fs.existsSync(file)) {
+		throw new Error(
+			`No database at ${file}. The server under test creates it at startup, so ` +
+				'this is a path mismatch between the testkit and the server, not an empty run.',
+		);
+	}
+
+	database ??= openDatabase({ path: file });
 	return database;
 }
 

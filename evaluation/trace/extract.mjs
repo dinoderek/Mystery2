@@ -25,15 +25,16 @@ event log + driving blueprint + non-secret AI-profile metadata) and writes a
 self-contained raw trace artifact. That artifact is the input to the
 trace-evaluation pipeline (node evaluation/trace/run.mjs --trace <file>).
 
-The game does not have to be running: this reads `game.db` directly, so it also
-works on a copy.
+The game does not have to be running: this reads the database file directly, so
+it also works on a copy.
 
 Required:
   --session <id>   The game_sessions id to extract.
 
 Options:
-  --db <file>      Database to read. Defaults to $MYSTERY_CONFIG_ROOT/game.db,
-                   or ./data/game.db when no config root is set.
+  --db <file>      Database to read. Defaults to this checkout's:
+                   <config root>/database/<worktree name>/game.db. Set
+                   MYSTERY_DATABASE=prod to read the persistent one.
   --out <file>     Where to write the raw trace JSON. Defaults to
                    ./trace-<session>.json in the current directory. Use "-" to
                    write to stdout.

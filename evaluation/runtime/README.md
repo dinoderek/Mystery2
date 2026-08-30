@@ -79,8 +79,12 @@ because the case fixes the input: both backends see byte-identical input.
 
 - **Model backend** — produces the response. One interface
   (`collect(testCase, ctx) -> { response, blueprint, model }`):
-  - `endpoint` — seeds the fixed session + history straight into `game.db`,
-    then calls the ONE `game-*` endpoint. The exception is `start`, which
+  - `endpoint` — seeds the fixed session + history straight into the database,
+    then calls the ONE `game-*` endpoint. It resolves the database the same way
+    the server does, so in a worktree both land on that worktree's; if you point
+    the server elsewhere (`npm run prod`, or `--db`), export the matching
+    `MYSTERY_DATABASE` for the harness or it will seed a database the server is
+    not reading. The exception is `start`, which
     *creates* the session (`createsSession` in `lib/roles.mjs`), so nothing is
     seeded and the body names the blueprint instead of a game id. The server
     rebuilds the exact context from the seeded rows, so the only variable is the

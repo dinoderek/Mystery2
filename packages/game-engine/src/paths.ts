@@ -4,26 +4,34 @@
 // the dev and generator scripts use, so a checkout with `MYSTERY_CONFIG_ROOT`
 // set reads the same blueprints and images the generators write.
 //
-// (The ambient type declaration for that `.mjs` module lives in
-// `tests/local-config-module.d.ts`; it is keyed on the literal specifier, which
-// resolves to the same file from here.)
+// The database is a step further out: it is named per worktree by
+// `lib/database-target.mjs`, because it is the one thing here carrying a schema
+// version and so the one thing two checkouts must not share.
+//
+// (The ambient type declarations for both `.mjs` modules live in
+// `tests/local-config-module.d.ts` and `tests/database-target-module.d.ts`;
+// they are keyed on the literal specifier, which resolves to the same file
+// from here.)
 
 import path from "node:path";
 import {
   getBlueprintImagesDir,
   getBlueprintsDir,
-  isUsingExternalLocalConfigRoot,
-  resolveLocalConfigRoot,
 } from "../../../scripts/local-config.mjs";
+import {
+  resolveDatabaseFile,
+  resolveDatabaseName,
+} from "../../../lib/database-target.mjs";
 
 type Env = Record<string, string | undefined>;
 
 /**
  * The game database.
  *
- * With `MYSTERY_CONFIG_ROOT` set it is `<root>/game.db`, so every worktree
- * shares one history worth mining; otherwise `<repo>/data/game.db`, which is
- * gitignored.
+ * `<config root>/database/<name>/game.db`, where the name is this worktree's
+ * (`main` in the main checkout) unless `MYSTERY_DATABASE` overrides it — which
+ * is how `npm run prod` reaches the persistent one. `lib/database-target.mjs`
+ * derives it, and explains why a worktree must not share a database.
  *
  * This is the *development* database. Tests must never open it — they pass an
  * explicit path under a temporary directory to `openDatabase()` instead.
@@ -32,10 +40,7 @@ export function resolveDatabasePath(
   repoRoot: string = process.cwd(),
   env: Env = process.env,
 ): string {
-  if (isUsingExternalLocalConfigRoot(repoRoot, env)) {
-    return path.join(resolveLocalConfigRoot(repoRoot, env), "game.db");
-  }
-  return path.join(path.resolve(repoRoot), "data", "game.db");
+  return resolveDatabaseFile(resolveDatabaseName(repoRoot, env), repoRoot, env);
 }
 
 /**

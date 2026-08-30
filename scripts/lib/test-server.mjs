@@ -20,6 +20,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { npmBin } from "./process.mjs";
+import { TEST_DATABASE } from "../../lib/database-target.mjs";
 
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
@@ -129,6 +130,9 @@ export async function startTestServer({ repoRoot, port, env = {} }) {
       HOST: host,
       MYSTERY_CONFIG_ROOT: configRoot,
       MYSTERY_REPO_ROOT: repoRoot,
+      // Pinned rather than left to the worktree-derived default, so the
+      // testkit can find the file without repeating the derivation.
+      MYSTERY_DATABASE: TEST_DATABASE,
     },
   });
 

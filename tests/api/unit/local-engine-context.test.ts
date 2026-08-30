@@ -28,7 +28,7 @@ function engine() {
   return createLocalEngine({
     repoRoot,
     env: {},
-    databasePath: path.join(repoRoot, "data", "game.db"),
+    databasePath: path.join(repoRoot, "database", "test", "game.db"),
   });
 }
 
@@ -126,19 +126,32 @@ describe("createLocalEngine", () => {
     const local = engine();
     local.close();
 
-    expect(fs.existsSync(path.join(repoRoot, "data", "game.db"))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, "database", "test", "game.db"))).toBe(true);
   });
 });
 
 describe("path resolution", () => {
   it("puts the database in the shared config root when one is set", () => {
     expect(
-      resolveDatabasePath("/repo", { MYSTERY_CONFIG_ROOT: "/shared/mystery" }),
-    ).toBe(path.join("/shared/mystery", "game.db"));
+      resolveDatabasePath("/repo", {
+        MYSTERY_CONFIG_ROOT: "/shared/mystery",
+        MYSTERY_DATABASE: "prod",
+      }),
+    ).toBe(path.join("/shared/mystery", "database", "prod", "game.db"));
   });
 
-  it("otherwise keeps it in the repo's gitignored data directory", () => {
-    expect(resolveDatabasePath("/repo", {})).toBe(path.join("/repo", "data", "game.db"));
+  it("otherwise keeps it in the repo's gitignored databases directory", () => {
+    expect(resolveDatabasePath("/repo", { MYSTERY_DATABASE: "main" })).toBe(
+      path.join("/repo", "database", "main", "game.db"),
+    );
+  });
+
+  it("names it after the database this checkout resolves to", () => {
+    // "/repo" is not a git worktree, so the name falls back to "main". The
+    // worktree-derived case is covered in database-target.test.ts.
+    expect(resolveDatabasePath("/repo", {})).toBe(
+      path.join("/repo", "database", "main", "game.db"),
+    );
   });
 
   it("searches the config root before the blueprints committed to the repo", () => {

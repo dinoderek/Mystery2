@@ -25,10 +25,6 @@ export function notFound(msg: string, details?: ErrorDetails): Response {
   return jsonError(404, msg, details);
 }
 
-export function unauthorized(msg: string, details?: ErrorDetails): Response {
-  return jsonError(401, msg, details);
-}
-
 export function internalError(msg: string, details?: ErrorDetails): Response {
   return jsonError(500, msg, details);
 }
@@ -55,13 +51,6 @@ export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "BadRequestError";
-  }
-}
-
-export class NotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NotFoundError";
   }
 }
 

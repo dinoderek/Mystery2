@@ -59,14 +59,6 @@ export interface AccusationJudgeOutput {
   follow_up_prompt: string | null;
 }
 
-export type AIRoleOutput =
-  | TalkStartOutput
-  | TalkConversationOutput
-  | TalkEndOutput
-  | SearchOutput
-  | AccusationStartOutput
-  | AccusationJudgeOutput;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -228,24 +220,4 @@ export function parseAccusationJudgeOutput(
     accusation_resolution: resolution,
     follow_up_prompt: followUpPrompt,
   };
-}
-
-export function parseRoleOutput(
-  role: AIRoleName,
-  value: unknown,
-): AIRoleOutput {
-  switch (role) {
-    case "talk_start":
-      return parseTalkStartOutput(value);
-    case "talk_conversation":
-      return parseTalkConversationOutput(value);
-    case "talk_end":
-      return parseTalkEndOutput(value);
-    case "search":
-      return parseSearchOutput(value);
-    case "accusation_start":
-      return parseAccusationStartOutput(value);
-    case "accusation_judge":
-      return parseAccusationJudgeOutput(value);
-  }
 }

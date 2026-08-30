@@ -105,9 +105,6 @@
   padding-left: 0.5rem;
 }
 
-.story-image-panel {
-}
-
 .story-image-asset {
   background-color: color-mix(in srgb, var(--t-bg) 88%, var(--t-muted) 12%);
 }
@@ -121,15 +118,6 @@
     color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 8px,
     color-mix(in srgb, var(--t-bg) 93%, var(--t-muted) 7%) 16px
   );
-}
-
-.scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
 }
 
 ::-webkit-scrollbar {

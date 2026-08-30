@@ -29,7 +29,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 ## Local-only Naming Convention
 
 - Use the `.local` suffix for machine-specific files that must stay gitignored.
-- An example in this repo is operator config such as `.env.images.local`.
+- Examples in this repo are operator config such as `.env.images.local` and the AI env files such as `.env.ai.free.local`.
 - When a committed template is needed, pair it with a non-local example file (for example `*.example.json` or `.env.images.example`) and keep the real local file out of version control.
 - Set `MYSTERY_CONFIG_ROOT` to an absolute directory if you want those local-only files to live outside the repo and be shared across clones or worktrees. When unset, the repo root remains the local-config root.
 - When `MYSTERY_CONFIG_ROOT` is set, generated blueprints, story briefs, and blueprint images also default to subdirectories under that root (`blueprints/`, `briefs/`, `blueprint-images/`), keeping generated artifacts independent of any single checkout or worktree.

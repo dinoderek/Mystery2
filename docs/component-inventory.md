@@ -118,11 +118,6 @@ _(Add components here as they are built. Example format below)_
 - **Props**:
   - `text`: `string` (optional status text shown next to the spinner)
 
-### `StoryImagePanel.svelte` *(deprecated — prefer `BlueprintImage.svelte`)*
-
-- **Purpose**: Static image/placeholder panel. Does not resolve image URLs itself.
-- **Note**: Replaced by `BlueprintImage` for all active use cases. Retained for reference.
-
 ### `BlueprintImage.svelte`
 
 - **Purpose**: Renders blueprint artwork from `/api/images/<blueprint>/<image>`. The URL is derivable from the two ids, so there is nothing to fetch first and nothing to expire — it is a plain `<img>` with an error fallback.

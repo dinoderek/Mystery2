@@ -6,9 +6,8 @@
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
- * nothing installed beyond this repo — no Docker, no containers, no seeding —
- * which is why the `MYSTERY_CLOUD_SESSION` waiver that used to let Phase 2 be
- * skipped is gone. Every step runs everywhere.
+ * nothing installed beyond this repo, so every step runs everywhere: there is
+ * no environment in which a suite may be skipped or waived.
  *
  * Produces timestamped log files in test-results/ and a summary with timing.
  */

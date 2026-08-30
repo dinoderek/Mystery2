@@ -72,9 +72,13 @@ Three tables, defined once in `packages/game-engine/src/db/schema.ts`.
 - **Schema changes are forward-only.** Edit `schema.ts` so a fresh database is
   correct, add a matching entry to `MIGRATIONS` in `client.ts` so an existing
   one is upgraded, and bump `SCHEMA_VERSION`. The two must agree: a new
-  database and an upgraded one have to end up identical. A bump reaches the
-  `prod` database the first time any branch opens it and cannot be undone, so
-  take a copy first (`npm run db:copy -- prod prod-backup`).
+  database and an upgraded one have to end up identical. Forgetting the
+  `MIGRATIONS` entry is caught: `planMigrations()` refuses to cross a version
+  with no step, naming it, rather than stamping one nothing produced. Nothing
+  catches it afterwards, and no suite can — they all build their databases from
+  scratch and never take the upgrade path. A bump reaches the `prod` database
+  the first time any branch opens it and cannot be undone, so take a copy first
+  (`npm run db:copy -- prod prod-backup`).
 - **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`,
   not a string; `readGameMode()` in `state-machine.ts` is the single place that
   narrows text read back out of storage.

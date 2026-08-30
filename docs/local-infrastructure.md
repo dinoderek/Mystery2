@@ -1,8 +1,7 @@
 # Running the game locally
 
-The game is one Node process. This document is what is left of a chapter that
-used to describe nine Docker containers, a port allocator, generated config,
-and orphaned-stack garbage collection.
+The game is one Node process: no containers, no generated config, and no port
+allocator beyond one port per worktree.
 
 ## Prerequisites
 

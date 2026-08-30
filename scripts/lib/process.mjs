@@ -2,7 +2,6 @@
 
 import { spawnSync } from "node:child_process";
 
-export const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
 export const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 
 /** Runs a command with inherited stdio, exiting this process if it fails. */

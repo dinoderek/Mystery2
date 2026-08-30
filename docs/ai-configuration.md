@@ -141,15 +141,6 @@ Timeout behavior:
 - `AI_OPENROUTER_TIMEOUT_MS=<milliseconds>` optional
 - default is `120000`
 
-## Deploy Configuration
-
-Deploy writes `ai_profiles.id='default'` from `.env.deploy.<env>.local`:
-
-- `AI_DEFAULT_PROFILE_ID=default`
-- `AI_DEFAULT_PROFILE_PROVIDER=<mock|openrouter>`
-- `AI_DEFAULT_PROFILE_MODEL=<model-id>`
-- `AI_DEFAULT_PROFILE_OPENROUTER_API_KEY=<secret>` when provider is `openrouter`
-
 ## Image Generation Configuration
 
 The image-generation CLI calls OpenRouter's dedicated Images API

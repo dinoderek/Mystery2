@@ -21,11 +21,6 @@ export interface NarrationEventRecord {
   created_at?: string;
 }
 
-export interface FlattenedNarrationLine extends NarrationPart {
-  sequence: number;
-  event_type: string;
-}
-
 export interface NarrationDiagnostics {
   action: string;
   event_category: string;
@@ -227,20 +222,6 @@ export function readNarrationEvent(row: EventRow): NarrationEventRecord {
     payload: isRecord(row.payload) ? row.payload : null,
     created_at: typeof row.created_at === "string" ? row.created_at : undefined,
   };
-}
-
-export function flattenNarrationEvents(
-  narrationEvents: NarrationEventRecord[],
-): FlattenedNarrationLine[] {
-  return narrationEvents.flatMap((event) =>
-    event.narration_parts.map((part) => ({
-      sequence: event.sequence,
-      event_type: event.event_type,
-      text: part.text,
-      speaker: part.speaker,
-      image_id: part.image_id ?? null,
-    }))
-  );
 }
 
 export async function insertNarrationEvent(

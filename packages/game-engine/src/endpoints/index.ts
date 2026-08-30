@@ -6,8 +6,7 @@
 // context — once, for all of them, in place of the twelve identical bootstraps
 // this replaced.
 //
-// Adding an endpoint means adding it here: an unlisted name is a 404, which
-// per-function deployment used to give for free.
+// Adding an endpoint means adding it here: an unlisted name is a 404.
 
 import type { EngineContext } from "../context.ts";
 

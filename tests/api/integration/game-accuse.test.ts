@@ -1,28 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
-  REST_URL,
+  readStoredSession,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
-async function fetchSessionSnapshot(gameId: string, accessToken: string) {
-  const res = await fetch(
-    `${REST_URL}/game_sessions?id=eq.${gameId}&select=mode,outcome,time_remaining`,
-    {
-      headers: {
-        apikey: process.env.ANON_KEY ?? "",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
-
-  expect(res.status).toBe(200);
-  const rows = await res.json();
-  expect(rows).toHaveLength(1);
-  return rows[0] as { mode: string; outcome: string | null; time_remaining: number };
+function fetchSessionSnapshot(gameId: string) {
+  const session = readStoredSession(gameId);
+  expect(session).not.toBeNull();
+  return session!;
 }
 
 describe("game-accuse endpoint", () => {
@@ -30,12 +18,8 @@ describe("game-accuse endpoint", () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-accuse");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it("runs a reasoning-first accusation flow and resolves to win", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
@@ -77,7 +61,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseRoundTwoData.result).toBe("win");
     expect(accuseRoundTwoData.narration_parts[0].speaker.kind).toBe("narrator");
 
-    const sessionAfterResolution = await fetchSessionSnapshot(game_id, auth.accessToken);
+    const sessionAfterResolution = fetchSessionSnapshot(game_id);
     expect(sessionAfterResolution.mode).toBe("ended");
     expect(sessionAfterResolution.outcome).toBe("win");
 
@@ -165,7 +149,7 @@ describe("game-accuse endpoint", () => {
 
     expect(mode).toBe("accuse");
 
-    const sessionAfterTimeout = await fetchSessionSnapshot(game_id, auth.accessToken);
+    const sessionAfterTimeout = fetchSessionSnapshot(game_id);
     expect(sessionAfterTimeout.mode).toBe("accuse");
     expect(sessionAfterTimeout.time_remaining).toBe(0);
 
@@ -228,7 +212,7 @@ describe("game-accuse endpoint", () => {
     expect(resolveData.result).toBe("lose");
     expect(resolveData.narration_parts[0].speaker.kind).toBe("narrator");
 
-    const sessionAfterResolution = await fetchSessionSnapshot(game_id, auth.accessToken);
+    const sessionAfterResolution = fetchSessionSnapshot(game_id);
     expect(sessionAfterResolution.mode).toBe("ended");
     expect(sessionAfterResolution.outcome).toBe("lose");
   });

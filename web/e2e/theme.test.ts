@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
@@ -11,19 +11,19 @@ import {
 } from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
-  await enableAuthBypass(page);
+  await signInAsTestProfile(page);
 
-  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+  await page.route('**/api/game-sessions-list*', async (route) => {
     await route.fulfill({ json: EMPTY_CATALOG });
   });
 
-  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+  await page.route('**/api/blueprints-list*', async (route) => {
     await route.fulfill({
       json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
     });
   });
 
-  await page.route('**/functions/v1/game-start*', async (route) => {
+  await page.route('**/api/game-start*', async (route) => {
     await route.fulfill({
       json: createGameStartResponse({
         narration_events: [
@@ -117,19 +117,19 @@ test.describe('Theme commands', () => {
   });
 
   test('theme commands work in talk mode', async ({ page }) => {
-    await enableAuthBypass(page);
+    await signInAsTestProfile(page);
 
-    await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+    await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({ json: EMPTY_CATALOG });
     });
 
-    await page.route('**/functions/v1/blueprints-list*', async (route) => {
+    await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
         json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
       });
     });
 
-    await page.route('**/functions/v1/game-start*', async (route) => {
+    await page.route('**/api/game-start*', async (route) => {
       await route.fulfill({
         json: createGameStartResponse({
           state: createGameState({ mode: 'talk', current_talk_character: 'Rosie' }),

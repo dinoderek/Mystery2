@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
@@ -14,19 +14,18 @@ import {
   createTalkAskResponse,
   createTalkEndResponse,
   createAccuseResponse,
-  createImageLinkResponse,
 } from '../../tests/testkit/src/fixtures';
 
 const GAME_ID = '00000000-0000-0000-0000-000000000001';
 
 async function bootstrapSession(page: Page) {
-  await enableAuthBypass(page);
+  await signInAsTestProfile(page);
 
-  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+  await page.route('**/api/game-sessions-list*', async (route) => {
     await route.fulfill({ json: EMPTY_CATALOG });
   });
 
-  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+  await page.route('**/api/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {
         blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })],
@@ -34,7 +33,7 @@ async function bootstrapSession(page: Page) {
     });
   });
 
-  await page.route('**/functions/v1/game-start*', async (route) => {
+  await page.route('**/api/game-start*', async (route) => {
     await route.fulfill({
       json: createGameStartResponse({ game_id: GAME_ID }),
     });
@@ -53,7 +52,7 @@ test.describe('Command Input', () => {
   test('accepts movement aliases and submits backend command', async ({ page }) => {
     let moveCalls = 0;
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       if (route.request().method() === 'POST') {
         moveCalls += 1;
       }
@@ -79,7 +78,7 @@ test.describe('Command Input', () => {
   });
 
   test('renders move/talk side imagery and falls back to placeholder when image link fails', async ({ page }) => {
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       await route.fulfill({
         json: createMoveResponse({
           narration_parts: narrationResponse('You travel to the garden.', narratorSpeaker, 'mock-blueprint.location-garden.png').narration_parts,
@@ -88,7 +87,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       await route.fulfill({
         json: createTalkStartResponse({
           narration_parts: narrationResponse('Bob greets you by the flower beds.', narratorSpeaker, 'mock-blueprint.character-bob.png').narration_parts,
@@ -98,23 +97,17 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/blueprint-image-link*', async (route) => {
-      const payload = route.request().postDataJSON() as { image_id?: string };
-
-      if (payload.image_id === 'mock-blueprint.location-garden.png') {
+    // The garden image resolves; anything else 404s, so the pane falls back to
+    // its placeholder without taking the narration flow with it.
+    await page.route('**/api/images/**', async (route) => {
+      if (route.request().url().includes('mock-blueprint.location-garden.png')) {
         await route.fulfill({
-          json: createImageLinkResponse({
-            image_id: 'mock-blueprint.location-garden.png',
-          }),
+          contentType: 'image/svg+xml',
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>',
         });
         return;
       }
-
-      await route.fulfill({
-        status: 404,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Image not found' }),
-      });
+      await route.fulfill({ status: 404, body: '' });
     });
 
     await bootstrapSession(page);
@@ -134,7 +127,7 @@ test.describe('Command Input', () => {
   test('blocks backend call for missing movement target', async ({ page }) => {
     let moveCalls = 0;
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       if (route.request().method() === 'POST') {
         moveCalls += 1;
       }
@@ -155,7 +148,7 @@ test.describe('Command Input', () => {
   test('blocks backend call for invalid movement target and shows suggestions', async ({ page }) => {
     let moveCalls = 0;
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       if (route.request().method() === 'POST') {
         moveCalls += 1;
       }
@@ -221,7 +214,7 @@ test.describe('Command Input', () => {
     let askCalls = 0;
     let askPayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       talkCalls += 1;
       await route.fulfill({
         json: createTalkStartResponse({
@@ -231,7 +224,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       askCalls += 1;
       askPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
@@ -267,7 +260,7 @@ test.describe('Command Input', () => {
   test('sends character_id (not character_name) to game-talk endpoint', async ({ page }) => {
     let talkPayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       talkPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
         json: createTalkStartResponse({
@@ -293,7 +286,7 @@ test.describe('Command Input', () => {
   test('sends destination to game-move endpoint', async ({ page }) => {
     let movePayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       movePayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
         json: createMoveResponse({
@@ -318,7 +311,7 @@ test.describe('Command Input', () => {
   test('sends game_id to game-search endpoint', async ({ page }) => {
     let searchPayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       searchPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
         json: createSearchResponse({
@@ -341,7 +334,7 @@ test.describe('Command Input', () => {
   test('sends game_id to game-end-talk endpoint', async ({ page }) => {
     let endTalkPayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       await route.fulfill({
         json: createTalkStartResponse({
           narration_parts: narrationResponse('Mayor Fox greets you.', narratorSpeaker).narration_parts,
@@ -350,7 +343,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-end-talk*', async (route) => {
+    await page.route('**/api/game-end-talk*', async (route) => {
       endTalkPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
         json: createTalkEndResponse({
@@ -377,7 +370,7 @@ test.describe('Command Input', () => {
   test('renders one generic style class for all character speakers', async ({ page }) => {
     let activeCharacter = 'Mayor';
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       const payload = route.request().postDataJSON() as { character_id?: string };
       activeCharacter = payload.character_id === 'char-rosie' ? 'Rosie' : 'Mayor';
       await route.fulfill({
@@ -388,7 +381,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       await route.fulfill({
         json: createTalkAskResponse({
           narration_parts: narrationResponse(`${activeCharacter} responds to your question.`, characterSpeaker(activeCharacter)).narration_parts,
@@ -398,7 +391,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-end-talk*', async (route) => {
+    await page.route('**/api/game-end-talk*', async (route) => {
       await route.fulfill({
         json: createTalkEndResponse({
           narration_parts: narrationResponse('Conversation ended.', narratorSpeaker).narration_parts,
@@ -442,7 +435,7 @@ test.describe('Command Input', () => {
     let askCalls = 0;
     let secondAccusePayload: Record<string, unknown> | null = null;
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       askCalls += 1;
       await route.fulfill({
         status: 400,
@@ -451,7 +444,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-accuse*', async (route) => {
+    await page.route('**/api/game-accuse*', async (route) => {
       accuseCalls += 1;
       const payload = route.request().postDataJSON() as Record<string, unknown>;
 
@@ -504,7 +497,7 @@ test.describe('Command Input', () => {
   test('shows failure end-state and returns to list on any key', async ({ page }) => {
     let accuseCalls = 0;
 
-    await page.route('**/functions/v1/game-accuse*', async (route) => {
+    await page.route('**/api/game-accuse*', async (route) => {
       accuseCalls += 1;
 
       if (accuseCalls === 1) {
@@ -567,7 +560,7 @@ test.describe('Command Input', () => {
     let askCalls = 0;
     let accuseCalls = 0;
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       await route.fulfill({
         json: createTalkStartResponse({
           narration_parts: narrationResponse('Mayor Fox greets you with a wry smile.', narratorSpeaker).narration_parts,
@@ -577,7 +570,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       askCalls += 1;
       await route.fulfill({
         json: createTalkAskResponse({
@@ -593,7 +586,7 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-accuse*', async (route) => {
+    await page.route('**/api/game-accuse*', async (route) => {
       accuseCalls += 1;
       await route.fulfill({
         json: createAccuseResponse({
@@ -636,7 +629,7 @@ test.describe('Command Input', () => {
     let searchCalls = 0;
     const accusePayloads: Record<string, unknown>[] = [];
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       askCalls += 1;
       await route.fulfill({
         status: 400,
@@ -645,22 +638,22 @@ test.describe('Command Input', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-move*', async (route) => {
+    await page.route('**/api/game-move*', async (route) => {
       moveCalls += 1;
       await route.fulfill({ json: { narration: 'unexpected move call' } });
     });
 
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       talkCalls += 1;
       await route.fulfill({ json: { narration: 'unexpected talk call' } });
     });
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       searchCalls += 1;
       await route.fulfill({ json: { narration: 'unexpected search call' } });
     });
 
-    await page.route('**/functions/v1/game-accuse*', async (route) => {
+    await page.route('**/api/game-accuse*', async (route) => {
       accuseCalls += 1;
       const payload = route.request().postDataJSON() as Record<string, unknown>;
       accusePayloads.push(payload);
@@ -725,7 +718,7 @@ test.describe('Command Input', () => {
   });
 
   test('shows terminal loading indicator while waiting for backend narration', async ({ page }) => {
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 450));
       await route.fulfill({
         json: createSearchResponse({
@@ -749,7 +742,7 @@ test.describe('Command Input', () => {
   test('retries transient backend failures and succeeds', async ({ page }) => {
     let searchCalls = 0;
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       if (route.request().method() === 'POST') {
         searchCalls += 1;
       }
@@ -784,7 +777,7 @@ test.describe('Command Input', () => {
   test('shows manual retry affordance after retry exhaustion', async ({ page }) => {
     let searchCalls = 0;
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       if (route.request().method() === 'POST') {
         searchCalls += 1;
       }
@@ -808,7 +801,7 @@ test.describe('Command Input', () => {
   test('does not retry permanent 4xx errors', async ({ page }) => {
     let searchCalls = 0;
 
-    await page.route('**/functions/v1/game-search*', async (route) => {
+    await page.route('**/api/game-search*', async (route) => {
       if (route.request().method() === 'POST') {
         searchCalls += 1;
       }

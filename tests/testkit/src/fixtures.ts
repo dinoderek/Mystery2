@@ -24,7 +24,6 @@ import {
   TalkAskResponseSchema,
   TalkEndResponseSchema,
   AccuseResponseSchema,
-  ImageLinkResponseSchema,
   type Speaker,
   type NarrationPart,
   type NarrationEvent,
@@ -39,7 +38,6 @@ import {
   type TalkAskResponse,
   type TalkEndResponse,
   type AccuseResponse,
-  type ImageLinkResponse,
 } from "@my2/shared";
 
 // ---------------------------------------------------------------------------
@@ -351,17 +349,3 @@ export function createAccuseResponse(
 // Image link
 // ---------------------------------------------------------------------------
 
-export function createImageLinkResponse(
-  overrides?: Partial<ImageLinkResponse>,
-): ImageLinkResponse {
-  const response: ImageLinkResponse = {
-    image_id: "mock-cover.png",
-    signed_url:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
-    expires_at: "2099-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-  return validate(ImageLinkResponseSchema, response);
-}
-
-export const MOCK_IMAGE_LINK: ImageLinkResponse = createImageLinkResponse();

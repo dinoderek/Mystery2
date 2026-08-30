@@ -3,7 +3,7 @@ import {
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
   parseSearchOutput,
-} from "../../../supabase/functions/_shared/ai-contracts.ts";
+} from "../../../packages/game-engine/src/ai-contracts.ts";
 
 describe("search and accusation AI output contracts", () => {
   it("accepts valid search output", () => {

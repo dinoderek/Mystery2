@@ -12,7 +12,7 @@
 //
 // This file exports a LIST of cases; run.mjs accepts a single case or a list.
 
-const blueprint = { path: "supabase/seed/blueprints/mock-blueprint.json" };
+const blueprint = { path: "blueprints/mock-blueprint.json" };
 
 /** Mid-conversation question to the culprit — the richest readability signal. */
 const askAlibiPressure = {

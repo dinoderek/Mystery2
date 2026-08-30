@@ -1,34 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER, INVESTIGATOR_SPEAKER, characterSpeaker } from "../../testkit/src/fixtures";
 import {
   API_URL,
-  SUPABASE_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
+  testDatabase,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("game-get endpoint", () => {
   let auth: ApiAuthContext;
-  const admin = createClient(
-    SUPABASE_URL,
-    process.env.SERVICE_ROLE_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-get");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it("returns 404 for missing or invalid game_id", async () => {
     const res = await fetch(
@@ -122,12 +108,13 @@ describe("game-get endpoint", () => {
     expect(startRes.status).toBe(200);
     const { game_id } = await startRes.json();
 
-    const { error } = await admin
-      .from("game_events")
-      .update({ narration_parts: [{}], narration: "" })
-      .eq("session_id", game_id)
-      .eq("event_type", "start");
-    expect(error).toBeNull();
+    // Corrupt the persisted start event so its narration cannot be rebuilt.
+    testDatabase()
+      .prepare(
+        `update game_events set narration_parts = '[{}]', narration = ''
+           where session_id = ? and event_type = 'start'`,
+      )
+      .run(game_id);
 
     const getRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers: auth.headers,

@@ -151,7 +151,7 @@ export function makeRawTrace(overrides: Record<string, unknown> = {}) {
   return {
     schema_version: "trace/0.1",
     extracted_at: "2026-06-02T00:00:00Z",
-    source: { kind: "supabase", api_url: "http://localhost:54321" },
+    source: { kind: "local", database: "/tmp/mystery/game.db" },
     session: makeSession(),
     ai_profile: { id: "default", provider: "mock", model: "mock" },
     blueprint: makeBlueprint(),

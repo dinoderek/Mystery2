@@ -1,9 +1,7 @@
-// AI profiles resolved from the environment instead of the `ai_profiles` table.
+// AI profiles resolved from the environment.
 //
-// The table's only real content was an OpenRouter key that the engine read
-// back with a service-role client on every turn. These tests pin the
-// replacement to the same three labels and the same env files `npm run seed:ai`
-// reads, so `dev:ai:free` and `dev:ai:paid` keep meaning what they meant.
+// These pin the three labels and the env files behind them, which is what
+// makes `npm run dev:ai:free` and `dev:ai:paid` mean something specific.
 
 import fs from "node:fs";
 import os from "node:os";

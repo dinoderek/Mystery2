@@ -1,0 +1,912 @@
+import type { AIRoleName } from "./ai-contracts.ts";
+import {
+  buildDiscoveredClueIdSet,
+  buildKnownCluesWithOrigin,
+  buildPathCoverage,
+  type ClueRequires,
+  isClueUnlocked,
+  type KnownClueWithOrigin,
+  type PathCoverage,
+} from "./clue-discovery.ts";
+import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
+
+export interface BlueprintClue {
+  id: string;
+  text: string;
+  about_character_id?: string;
+  hint_location_id?: string;
+  requires?: ClueRequires | null;
+}
+
+export interface BlueprintAgenda {
+  type: string;
+  strategy: string;
+  priority: string;
+  details: string;
+  target_character_id?: string;
+  gated_clue_id?: string;
+  condition?: string;
+  yields_to_clue_ids?: string[];
+}
+
+export type BlueprintTellTrigger =
+  | { kind: "always" }
+  | { kind: "condition"; condition: string }
+  | { kind: "clue"; clue_ids: string[] };
+
+export interface BlueprintTell {
+  id: string;
+  text: string;
+  trigger: BlueprintTellTrigger;
+}
+
+export interface BlueprintActualAction {
+  sequence: number;
+  summary: string;
+}
+
+export interface BlueprintReasoningPath {
+  id: string;
+  summary: string;
+  description?: string;
+  location_clue_ids: string[];
+  character_clue_ids: string[];
+}
+
+export interface BlueprintContext {
+  metadata: {
+    title: string;
+    one_liner: string;
+    target_age: number;
+    time_budget?: number;
+    image_id?: string;
+    // Optional narration voice for this mystery, layered on top of the
+    // standard narrator style (see buildStyleGuidance in ai-prompts.ts).
+    narration_style?: string;
+  };
+  narrative: {
+    premise: string;
+    starting_knowledge?: {
+      mystery_summary: string;
+      locations: Array<{ location_id: string; summary: string }>;
+      characters: Array<{ character_id: string; summary: string }>;
+    };
+  };
+  world: {
+    starting_location_id: string;
+    locations: Array<{
+      id: string;
+      name: string;
+      description: string;
+      clues: BlueprintClue[];
+      location_image_id?: string;
+      sub_locations?: Array<{
+        id: string;
+        name: string;
+        hint: string;
+        clues: BlueprintClue[];
+      }>;
+    }>;
+    characters: Array<{
+      id: string;
+      first_name: string;
+      last_name: string;
+      location_id: string;
+      sex: "male" | "female";
+      appearance: string;
+      background: string;
+      personality: string;
+      initial_attitude_towards_investigator: string;
+      stated_alibi: string | null;
+      motive: string | null;
+      is_culprit: boolean;
+      portrait_image_id?: string;
+      clues: BlueprintClue[];
+      flavor_knowledge: string[];
+      actual_actions: BlueprintActualAction[];
+      agendas?: BlueprintAgenda[];
+      tells?: BlueprintTell[];
+    }>;
+  };
+  ground_truth: {
+    what_happened: string;
+    why_it_happened: string;
+    timeline: string[];
+  };
+  solution_paths: BlueprintReasoningPath[];
+  red_herrings: BlueprintReasoningPath[];
+  suspect_elimination_paths: BlueprintReasoningPath[];
+}
+
+export interface SessionSnapshot {
+  mode: "explore" | "talk" | "accuse" | "ended";
+  current_location_id: string;
+  current_talk_character_id: string | null;
+  time_remaining: number;
+}
+
+export interface ConversationFragment {
+  sequence: number;
+  event_type: string;
+  actor: string;
+  narration: string;
+  payload?: Record<string, unknown> | null;
+}
+
+export interface SharedMysteryContext {
+  target_age: number;
+}
+
+export interface MoveContext {
+  destination_id: string;
+  destination_name: string;
+  destination_description: string;
+  has_visited_before: boolean;
+  destination_history: ConversationFragment[];
+  destination_characters: TalkCharacterPublicSummary[];
+}
+
+export interface SubLocationContext {
+  id: string;
+  name: string;
+  hint: string;
+  clues: BlueprintClue[];
+  unrevealed_clues: BlueprintClue[];
+  has_unrevealed_clues: boolean;
+}
+
+export interface SearchContext {
+  location_id: string;
+  location_name: string;
+  location_description: string;
+  clues: BlueprintClue[];
+  revealed_clue_ids: string[];
+  next_clue: BlueprintClue | null;
+  has_more_clues: boolean;
+  sub_locations: SubLocationContext[];
+  search_query: string | null;
+}
+
+export interface TalkLocationSummary {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// What ANY character context may say about a character other than the active
+// one: identity, visible appearance, and the player-facing summary from
+// narrative.starting_knowledge. Private authored material (background,
+// personality, alibi, motive, clues, agendas, ...) is reserved for the active
+// character's own private context — cross-character knowledge travels only via
+// explicit clues (about_character_id).
+export interface TalkCharacterPublicSummary {
+  id: string;
+  first_name: string;
+  last_name: string;
+  location_id: string;
+  sex: "male" | "female";
+  appearance: string;
+  // Player-facing public knowledge from narrative.starting_knowledge; null
+  // when the blueprint has no entry for this character.
+  public_summary: string | null;
+}
+
+// A character clue as presented to the narrator during conversation. Carries the
+// gate's `requires_rationale` (the in-fiction reason it is withheld) and a
+// precomputed `prereqs_met` flag so the model does not have to do set math. Clue
+// ids of prerequisites are intentionally NOT sent — the rationale + flag are
+// enough for the narrator to gate (and to judge an off-script unlock).
+export interface TalkClueContext {
+  id: string;
+  text: string;
+  about_character_id?: string;
+  hint_location_id?: string;
+  requires_rationale: string | null;
+  prereqs_met: boolean;
+}
+
+export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
+  background: string;
+  personality: string;
+  initial_attitude_towards_investigator: string;
+  stated_alibi: string | null;
+  motive: string | null;
+  clues: TalkClueContext[];
+  flavor_knowledge: string[];
+  actual_actions: BlueprintActualAction[];
+  agendas: BlueprintAgenda[];
+  tells: BlueprintTell[];
+  player_known_clues: Array<{ id: string; text: string }>;
+}
+
+export interface TalkContext {
+  active_location_id: string;
+  active_location_name: string;
+  active_location_description: string | null;
+  locations: TalkLocationSummary[];
+  characters: TalkCharacterPublicSummary[];
+  active_character: TalkCharacterPrivateContext;
+}
+
+export interface AccusationStartContext {
+  current_location_id: string | null;
+  current_location_name: string | null;
+  current_location_description: string | null;
+  // Spoiler-safe public roster so the narrator can name the suspects and pick
+  // grounded pronouns (sex is explicit per character) when framing the scene.
+  characters: TalkCharacterPublicSummary[];
+}
+
+// The judge receives the whole blueprint, so it knows every clue that EXISTS.
+// What it cannot infer reliably from a long transcript is which of those the
+// investigator actually earned — that is what these two fields carry.
+export interface AccusationJudgeContext {
+  round: number;
+  full_blueprint: BlueprintContext;
+  // Every clue discovered this session, in discovery order. The only thing
+  // separating what exists in the blueprint from what the player holds.
+  player_known_clues: KnownClueWithOrigin[];
+  // That set intersected with each reasoning path, precomputed. Lets the judge
+  // tell a near-complete case from a red-herring-led one from a guess.
+  path_coverage: PathCoverage[];
+}
+
+// A type alias rather than an interface on purpose: only an alias gets an
+// implicit index signature, and every provider takes the context as a
+// `Record<string, unknown>` to serialise.
+export type AIContext = {
+  game_id: string;
+  role_name: AIRoleName;
+  mode: SessionSnapshot["mode"];
+  forced_by_timeout: boolean;
+  location_id: string | null;
+  character_id: string | null;
+  player_input: string | null;
+  conversation_history: ConversationFragment[];
+  shared_mystery_context: SharedMysteryContext;
+  move_context: MoveContext | null;
+  search_context: SearchContext | null;
+  talk_context: TalkContext | null;
+  accusation_start_context: AccusationStartContext | null;
+  accusation_judge_context: AccusationJudgeContext | null;
+};
+
+interface BuildContextInput {
+  game_id: string;
+  role_name: AIRoleName;
+  session: SessionSnapshot;
+  forced_by_timeout?: boolean;
+  blueprint: BlueprintContext;
+  location_id?: string | null;
+  character_id?: string | null;
+  player_input?: string | null;
+  conversation_history?: ConversationFragment[];
+  accusation_history_mode?: "all" | "none";
+  move_context?: MoveContext | null;
+  search_context?: SearchContext | null;
+  talk_context?: TalkContext | null;
+  accusation_start_context?: AccusationStartContext | null;
+  accusation_judge_context?: AccusationJudgeContext | null;
+}
+
+export function findLocationById(
+  blueprint: BlueprintContext,
+  locationId: string,
+): BlueprintContext["world"]["locations"][number] | undefined {
+  return blueprint.world.locations.find((l) => l.id === locationId);
+}
+
+export function findCharacterById(
+  blueprint: BlueprintContext,
+  characterId: string,
+): BlueprintContext["world"]["characters"][number] | undefined {
+  return blueprint.world.characters.find((c) => c.id === characterId);
+}
+
+function readPayloadField(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): string | null {
+  if (!payload) {
+    return null;
+  }
+
+  const value = payload[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readPayloadStringArray(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): string[] {
+  if (!payload) {
+    return [];
+  }
+
+  const value = payload[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is string =>
+    typeof entry === "string" && entry.trim().length > 0
+  );
+}
+
+function sanitizePayload(
+  payload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | undefined {
+  if (!payload) {
+    return undefined;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  const stringFields = [
+    "character_id",
+    "character_name",
+    "character",
+    "location_id",
+    "location_name",
+    "destination",
+    "player_input",
+    "revealed_clue_text",
+    "revealed_clue_id",
+    "follow_up_prompt",
+  ];
+
+  for (const field of stringFields) {
+    const value = readPayloadField(payload, field);
+    if (value !== null) {
+      sanitized[field] = value;
+    }
+  }
+
+  const revealedClueIds = readPayloadStringArray(payload, "revealed_clue_ids");
+  if (revealedClueIds.length > 0) {
+    sanitized.revealed_clue_ids = revealedClueIds;
+  }
+
+  const revealedClues = readPayloadStringArray(payload, "revealed_clues");
+  if (revealedClues.length > 0) {
+    sanitized.revealed_clues = revealedClues;
+  }
+
+  const clueIndex = payload.revealed_clue_index;
+  if (typeof clueIndex === "number" && Number.isInteger(clueIndex)) {
+    sanitized.revealed_clue_index = clueIndex;
+  }
+
+  return Object.keys(sanitized).length > 0 ? sanitized : undefined;
+}
+
+function sanitizeConversationHistory(
+  conversationHistory: ConversationFragment[],
+): ConversationFragment[] {
+  return conversationHistory.map((entry) => ({
+    sequence: entry.sequence,
+    event_type: entry.event_type,
+    actor: entry.actor,
+    narration: entry.narration,
+    ...(sanitizePayload(entry.payload) ? { payload: sanitizePayload(entry.payload) } : {}),
+  }));
+}
+
+function filterCharacterHistory(
+  conversationHistory: ConversationFragment[],
+  characterId: string,
+): ConversationFragment[] {
+  return conversationHistory.filter((entry) => {
+    if (
+      entry.event_type !== "talk" &&
+      entry.event_type !== "ask" &&
+      entry.event_type !== "end_talk"
+    ) {
+      return false;
+    }
+
+    const payloadCharacterId =
+      readPayloadField(entry.payload, "character_id") ??
+      readPayloadField(entry.payload, "character_name") ??
+      readPayloadField(entry.payload, "character");
+    return payloadCharacterId === characterId || entry.actor === characterId;
+  });
+}
+
+function filterLocationHistory(
+  conversationHistory: ConversationFragment[],
+  locationId: string,
+): ConversationFragment[] {
+  return conversationHistory.filter((entry) => {
+    const payloadLocationId =
+      readPayloadField(entry.payload, "location_id") ??
+      readPayloadField(entry.payload, "location_name") ??
+      readPayloadField(entry.payload, "destination");
+    return payloadLocationId === locationId;
+  });
+}
+
+function buildSharedMysteryContext(
+  blueprint: BlueprintContext,
+): SharedMysteryContext {
+  return {
+    target_age: blueprint.metadata.target_age,
+  };
+}
+
+function buildTalkLocationSummaries(
+  blueprint: BlueprintContext,
+): TalkLocationSummary[] {
+  return blueprint.world.locations.map((location) => ({
+    id: location.id,
+    name: location.name,
+    description: location.description,
+  }));
+}
+
+export function buildTalkCharacterPublicSummaries(
+  blueprint: BlueprintContext,
+): TalkCharacterPublicSummary[] {
+  const publicSummaryByCharacterId = new Map(
+    (blueprint.narrative.starting_knowledge?.characters ?? []).map(
+      (entry) => [entry.character_id, entry.summary] as const,
+    ),
+  );
+
+  return blueprint.world.characters.map((character) => ({
+    id: character.id,
+    first_name: character.first_name,
+    last_name: character.last_name,
+    location_id: character.location_id,
+    sex: character.sex,
+    appearance: character.appearance,
+    public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
+  }));
+}
+
+export function buildPlayerKnownClues(
+  blueprint: ClueWorld,
+  conversationHistory: ConversationFragment[],
+): ClueRef[] {
+  const clueIds = buildDiscoveredClueIdSet(conversationHistory);
+
+  if (clueIds.size === 0) return [];
+
+  return mapClueIdsToClues(blueprint, clueIds);
+}
+
+function buildTalkCharacterPrivateContext(
+  blueprint: BlueprintContext,
+  characterId: string,
+  playerKnownClues: Array<{ id: string; text: string }>,
+): TalkCharacterPrivateContext {
+  const character = blueprint.world.characters.find(
+    (entry) => entry.id === characterId,
+  );
+  if (!character) {
+    throw new Error(`Character ${characterId} not found in blueprint`);
+  }
+
+  const publicSummary =
+    blueprint.narrative.starting_knowledge?.characters.find(
+      (entry) => entry.character_id === characterId,
+    )?.summary ?? null;
+
+  const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
+  const clues: TalkClueContext[] = character.clues.map((clue) => ({
+    id: clue.id,
+    text: clue.text,
+    about_character_id: clue.about_character_id,
+    hint_location_id: clue.hint_location_id,
+    requires_rationale: clue.requires?.rationale ?? null,
+    prereqs_met: isClueUnlocked(clue, discoveredSet),
+  }));
+
+  return {
+    id: character.id,
+    first_name: character.first_name,
+    last_name: character.last_name,
+    location_id: character.location_id,
+    sex: character.sex,
+    appearance: character.appearance,
+    public_summary: publicSummary,
+    background: character.background,
+    personality: character.personality,
+    initial_attitude_towards_investigator:
+      character.initial_attitude_towards_investigator,
+    stated_alibi: character.stated_alibi,
+    motive: character.motive,
+    clues,
+    flavor_knowledge: character.flavor_knowledge,
+    actual_actions: character.actual_actions,
+    agendas: character.agendas ?? [],
+    tells: character.tells ?? [],
+    player_known_clues: playerKnownClues,
+  };
+}
+
+function buildTalkContext(
+  blueprint: BlueprintContext,
+  locationId: string,
+  characterId: string,
+  playerKnownClues: Array<{ id: string; text: string }>,
+): TalkContext {
+  const location = findLocationById(blueprint, locationId);
+
+  return {
+    active_location_id: locationId,
+    active_location_name: location?.name ?? locationId,
+    active_location_description: location?.description ?? null,
+    locations: buildTalkLocationSummaries(blueprint),
+    characters: buildTalkCharacterPublicSummaries(blueprint),
+    active_character: buildTalkCharacterPrivateContext(
+      blueprint,
+      characterId,
+      playerKnownClues,
+    ),
+  };
+}
+
+export function selectCharacterConversationHistory(
+  conversationHistory: ConversationFragment[],
+  characterId: string,
+): ConversationFragment[] {
+  return sanitizeConversationHistory(
+    filterCharacterHistory(conversationHistory, characterId),
+  );
+}
+
+export function selectLocationConversationHistory(
+  conversationHistory: ConversationFragment[],
+  locationId: string,
+): ConversationFragment[] {
+  return sanitizeConversationHistory(
+    filterLocationHistory(conversationHistory, locationId),
+  );
+}
+
+function selectConversationHistoryForRole(
+  input: BuildContextInput,
+): ConversationFragment[] {
+  const conversationHistory = input.conversation_history ?? [];
+  if (conversationHistory.length === 0) {
+    return [];
+  }
+
+  if (
+    input.role_name === "talk_start" ||
+    input.role_name === "talk_conversation" ||
+    input.role_name === "talk_end"
+  ) {
+    const characterId =
+      input.character_id ?? input.session.current_talk_character_id;
+    if (!characterId) {
+      return [];
+    }
+
+    return selectCharacterConversationHistory(conversationHistory, characterId);
+  }
+
+  if (input.role_name === "search") {
+    const locationId =
+      input.location_id ?? input.session.current_location_id;
+    if (!locationId) {
+      return [];
+    }
+
+    return selectLocationConversationHistory(conversationHistory, locationId);
+  }
+
+  if (
+    input.role_name === "accusation_start" ||
+    input.role_name === "accusation_judge"
+  ) {
+    if (input.accusation_history_mode === "none") {
+      return [];
+    }
+
+    return sanitizeConversationHistory(conversationHistory);
+  }
+
+  return sanitizeConversationHistory(conversationHistory);
+}
+
+function buildContext(input: BuildContextInput): AIContext {
+  const resolvedLocationId =
+    input.location_id ?? input.session.current_location_id ?? null;
+  const resolvedCharacterId =
+    input.character_id ?? input.session.current_talk_character_id;
+
+  const context: AIContext = {
+    game_id: input.game_id,
+    role_name: input.role_name,
+    mode: input.session.mode,
+    forced_by_timeout: input.forced_by_timeout ?? false,
+    location_id: resolvedLocationId,
+    character_id: resolvedCharacterId,
+    player_input: input.player_input ?? null,
+    conversation_history: selectConversationHistoryForRole(input),
+    shared_mystery_context: buildSharedMysteryContext(input.blueprint),
+    move_context: input.move_context ?? null,
+    search_context: input.search_context ?? null,
+    talk_context: input.talk_context ?? null,
+    accusation_start_context: input.accusation_start_context ?? null,
+    accusation_judge_context: input.accusation_judge_context ?? null,
+  };
+
+  assertRoleContextSafety(input.role_name, context);
+  return context;
+}
+
+export function buildTalkStartContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  character_id: string;
+  location_id: string;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "talk_start",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    character_id: input.character_id,
+    conversation_history: input.conversation_history,
+    talk_context: buildTalkContext(
+      input.blueprint,
+      input.location_id,
+      input.character_id,
+      playerKnownClues,
+    ),
+  });
+}
+
+export function buildTalkConversationContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  character_id: string;
+  player_input: string;
+  location_id: string;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "talk_conversation",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    character_id: input.character_id,
+    player_input: input.player_input,
+    conversation_history: input.conversation_history,
+    talk_context: buildTalkContext(
+      input.blueprint,
+      input.location_id,
+      input.character_id,
+      playerKnownClues,
+    ),
+  });
+}
+
+export function buildTalkEndContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  character_id: string;
+  location_id: string;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const playerKnownClues = buildPlayerKnownClues(
+    input.blueprint,
+    input.conversation_history ?? [],
+  );
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "talk_end",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    character_id: input.character_id,
+    conversation_history: input.conversation_history,
+    talk_context: buildTalkContext(
+      input.blueprint,
+      input.location_id,
+      input.character_id,
+      playerKnownClues,
+    ),
+  });
+}
+
+export function buildSearchContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  location_id: string;
+  revealed_clue_ids: string[];
+  // Session-global set of discovered clue ids, used to gate locked clues. A clue
+  // whose `requires` prerequisites are not all discovered is filtered out of the
+  // prompt context so the narrator never weaves a locked clue's text in.
+  discovered_clue_ids?: string[];
+  next_clue: BlueprintClue | null;
+  search_query?: string | null;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const location = findLocationById(input.blueprint, input.location_id);
+  if (!location) {
+    throw new Error(`Location ${input.location_id} not found in blueprint`);
+  }
+
+  const revealedSet = new Set(input.revealed_clue_ids);
+  const discoveredSet = new Set(
+    input.discovered_clue_ids ?? input.revealed_clue_ids,
+  );
+  // A clue is visible to the narrator only if it has already been revealed or is
+  // currently unlocked. Locked clues are stripped from EVERY clue list in the
+  // context (not just `unrevealed_clues`) so their text can never be woven into
+  // narration before the player has earned them.
+  const isVisible = (c: BlueprintClue) =>
+    revealedSet.has(c.id) || isClueUnlocked(c, discoveredSet);
+  const subLocations: SubLocationContext[] = (location.sub_locations ?? []).map(
+    (sl) => {
+      const visibleClues = sl.clues.filter(isVisible);
+      const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
+      return {
+        id: sl.id,
+        name: sl.name,
+        hint: sl.hint,
+        clues: visibleClues,
+        unrevealed_clues: unrevealed,
+        has_unrevealed_clues: unrevealed.length > 0,
+      };
+    },
+  );
+
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "search",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    conversation_history: input.conversation_history,
+    search_context: {
+      location_id: location.id,
+      location_name: location.name,
+      location_description: location.description,
+      clues: location.clues.filter(isVisible),
+      revealed_clue_ids: input.revealed_clue_ids,
+      next_clue: input.next_clue,
+      has_more_clues: input.next_clue !== null,
+      sub_locations: subLocations,
+      search_query: input.search_query ?? null,
+    },
+  });
+}
+
+export function buildMoveContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  destination_id: string;
+  has_visited_before: boolean;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const location = findLocationById(input.blueprint, input.destination_id);
+  if (!location) {
+    throw new Error(`Location ${input.destination_id} not found in blueprint`);
+  }
+
+  const destinationHistory = selectLocationConversationHistory(
+    input.conversation_history ?? [],
+    input.destination_id,
+  );
+  const destinationCharacters = buildTalkCharacterPublicSummaries(
+    input.blueprint,
+  ).filter((character) => character.location_id === location.id);
+
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "search",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.destination_id,
+    conversation_history: input.conversation_history,
+    move_context: {
+      destination_id: location.id,
+      destination_name: location.name,
+      destination_description: location.description,
+      has_visited_before: input.has_visited_before,
+      destination_history: destinationHistory,
+      destination_characters: destinationCharacters,
+    },
+  });
+}
+
+export function buildAccusationStartContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  forced_by_timeout?: boolean;
+  player_input?: string | null;
+  conversation_history?: ConversationFragment[];
+  history_mode?: "all" | "none";
+}): AIContext {
+  const location = findLocationById(
+    input.blueprint,
+    input.session.current_location_id,
+  );
+
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "accusation_start",
+    session: input.session,
+    forced_by_timeout: input.forced_by_timeout ?? false,
+    blueprint: input.blueprint,
+    player_input: input.player_input ?? null,
+    conversation_history: input.conversation_history,
+    accusation_history_mode: input.history_mode ?? "all",
+    accusation_start_context: {
+      current_location_id: input.session.current_location_id ?? null,
+      current_location_name: location?.name ?? null,
+      current_location_description: location?.description ?? null,
+      characters: buildTalkCharacterPublicSummaries(input.blueprint),
+    },
+  });
+}
+
+export function buildAccusationJudgeContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  player_input: string;
+  round: number;
+  conversation_history?: ConversationFragment[];
+  history_mode?: "all" | "none";
+}): AIContext {
+  // Reconstructed from the full session history (searches included), not the
+  // `discovered_clues` cache — same source of truth as the talk context.
+  const discovered = buildDiscoveredClueIdSet(input.conversation_history ?? []);
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "accusation_judge",
+    session: input.session,
+    blueprint: input.blueprint,
+    player_input: input.player_input,
+    conversation_history: input.conversation_history,
+    accusation_history_mode: input.history_mode ?? "all",
+    accusation_judge_context: {
+      round: input.round,
+      full_blueprint: input.blueprint,
+      player_known_clues: buildKnownCluesWithOrigin(input.blueprint, discovered),
+      path_coverage: buildPathCoverage(input.blueprint, discovered),
+    },
+  });
+}
+
+export function assertRoleContextSafety(
+  role: AIRoleName,
+  context: AIContext,
+): void {
+  if (role === "accusation_judge") {
+    if (!context.accusation_judge_context) {
+      throw new Error(
+        "Invalid context: accusation_judge requires accusation_judge_context",
+      );
+    }
+    return;
+  }
+
+  if (context.accusation_judge_context) {
+    throw new Error(
+      `Invalid context: ${role} is not allowed to include accusation_judge_context`,
+    );
+  }
+}

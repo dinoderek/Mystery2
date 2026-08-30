@@ -1,0 +1,296 @@
+import {
+  INVESTIGATOR_SPEAKER,
+  NARRATOR_SPEAKER,
+  readSpeaker,
+  type Speaker,
+} from "./speaker.ts";
+import type { LogWriter } from "./logging.ts";
+import type { EventStore } from "./context.ts";
+
+export interface NarrationPart {
+  text: string;
+  speaker: Speaker;
+  image_id?: string | null;
+}
+
+export interface NarrationEventRecord {
+  sequence: number;
+  event_type: string;
+  narration_parts: NarrationPart[];
+  payload?: Record<string, unknown> | null;
+  created_at?: string;
+}
+
+export interface FlattenedNarrationLine extends NarrationPart {
+  sequence: number;
+  event_type: string;
+}
+
+export interface NarrationDiagnostics {
+  action: string;
+  event_category: string;
+  mode: string;
+  resulting_mode: string;
+  time_before: number | null;
+  time_after: number | null;
+  time_consumed: boolean;
+  forced_endgame: boolean;
+  trigger: string | null;
+  related_sequence?: number | null;
+}
+
+interface InsertNarrationEventInput {
+  session_id: string;
+  event_type: string;
+  actor: string;
+  narration_parts: NarrationPart[];
+  payload?: Record<string, unknown> | null;
+  /**
+   * Model that produced this event's narration (from the provider's
+   * `resolvedModel`). Null/omitted for events with no associated AI call.
+   */
+  model?: string | null;
+  diagnostics?: NarrationDiagnostics;
+  logger?: LogWriter;
+}
+
+interface EventRow {
+  sequence: unknown;
+  event_type: unknown;
+  narration: unknown;
+  narration_parts: unknown;
+  payload: unknown;
+  created_at?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function readImageIdFromPayload(payload: unknown): string | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  return readString(payload.image_id) ??
+    readString(payload.location_image_id) ??
+    readString(payload.character_portrait_image_id) ??
+    readString(payload.blueprint_image_id);
+}
+
+function fallbackSpeakerForEvent(row: EventRow): Speaker {
+  if (row.event_type === "ask" && isRecord(row.payload)) {
+    const characterName = readString(row.payload.character_name) ??
+      readString(row.payload.character);
+    if (characterName) {
+      return {
+        kind: "character",
+        key: `character:${characterName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        label: characterName,
+      };
+    }
+  }
+
+  return NARRATOR_SPEAKER;
+}
+
+export function createNarrationPart(
+  text: string,
+  speaker: Speaker,
+  imageId?: string | null,
+): NarrationPart {
+  return {
+    text,
+    speaker,
+    ...(imageId ? { image_id: imageId } : {}),
+  };
+}
+
+export function createNarrationDiagnostics(
+  diagnostics: NarrationDiagnostics,
+): NarrationDiagnostics {
+  return {
+    ...diagnostics,
+    trigger: diagnostics.trigger ?? null,
+    related_sequence: diagnostics.related_sequence ?? null,
+  };
+}
+
+export function narrationTextFromParts(narrationParts: NarrationPart[]): string {
+  return narrationParts.map((part) => part.text.trim()).filter(Boolean).join("\n\n");
+}
+
+export function parseNarrationParts(
+  value: unknown,
+  fallback: {
+    narration?: string | null;
+    speaker?: Speaker;
+    image_id?: string | null;
+  } = {},
+): NarrationPart[] {
+  if (Array.isArray(value)) {
+    const parts = value
+      .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+      .map((entry) => {
+        const text = readString(entry.text);
+        if (!text) {
+          return null;
+        }
+
+        return createNarrationPart(
+          text,
+          readSpeaker(entry.speaker, fallback.speaker ?? NARRATOR_SPEAKER),
+          readString(entry.image_id) ?? null,
+        );
+      })
+      .filter((entry): entry is NarrationPart => entry !== null);
+
+    if (parts.length > 0) {
+      return parts;
+    }
+  }
+
+  const fallbackText = readString(fallback.narration);
+  if (!fallbackText) {
+    return [];
+  }
+
+  return [
+    createNarrationPart(
+      fallbackText,
+      fallback.speaker ?? NARRATOR_SPEAKER,
+      fallback.image_id ?? null,
+    ),
+  ];
+}
+
+function extractPlayerInput(row: EventRow): string | null {
+  if (!isRecord(row.payload)) {
+    return null;
+  }
+
+  const eventType = readString(row.event_type);
+  if (eventType === "ask") {
+    return readString(row.payload.player_input);
+  }
+  if (eventType === "accuse_round" || eventType === "accuse_resolved") {
+    return readString(row.payload.player_reasoning);
+  }
+  if (eventType === "move") {
+    // The arrival into the starting location is a move the player never typed:
+    // they confirmed the opening, they did not issue a command. Synthesizing
+    // "move to X" for it would put a phantom line in the transcript on resume
+    // that was not there while playing.
+    if (readString(row.payload.role) === "enter") {
+      return null;
+    }
+    const locationName = readString(row.payload.location_name);
+    return locationName ? `move to ${locationName}` : null;
+  }
+  if (eventType === "talk") {
+    const characterName = readString(row.payload.character_name);
+    return characterName ? `talk to ${characterName}` : null;
+  }
+  if (eventType === "search") {
+    const searchQuery = readString(row.payload.search_query);
+    return searchQuery ? `search ${searchQuery}` : "search";
+  }
+
+  return null;
+}
+
+export function readNarrationEvent(row: EventRow): NarrationEventRecord {
+  const speaker = isRecord(row.payload)
+    ? readSpeaker(row.payload.speaker, fallbackSpeakerForEvent(row))
+    : fallbackSpeakerForEvent(row);
+  const narration = readString(row.narration);
+
+  const responseParts = parseNarrationParts(row.narration_parts, {
+    narration,
+    speaker,
+    image_id: readImageIdFromPayload(row.payload),
+  });
+
+  const playerInput = extractPlayerInput(row);
+  const narrationParts = playerInput
+    ? [createNarrationPart(playerInput, INVESTIGATOR_SPEAKER), ...responseParts]
+    : responseParts;
+
+  return {
+    sequence: typeof row.sequence === "number" ? row.sequence : 0,
+    event_type: readString(row.event_type) ?? "event",
+    narration_parts: narrationParts,
+    payload: isRecord(row.payload) ? row.payload : null,
+    created_at: typeof row.created_at === "string" ? row.created_at : undefined,
+  };
+}
+
+export function flattenNarrationEvents(
+  narrationEvents: NarrationEventRecord[],
+): FlattenedNarrationLine[] {
+  return narrationEvents.flatMap((event) =>
+    event.narration_parts.map((part) => ({
+      sequence: event.sequence,
+      event_type: event.event_type,
+      text: part.text,
+      speaker: part.speaker,
+      image_id: part.image_id ?? null,
+    }))
+  );
+}
+
+export async function insertNarrationEvent(
+  events: EventStore,
+  input: InsertNarrationEventInput,
+): Promise<number> {
+  const sequence = await events.nextSequence(input.session_id);
+  const narration = narrationTextFromParts(input.narration_parts);
+  const payload = input.payload ? { ...input.payload } : {};
+
+  if (input.diagnostics) {
+    payload.diagnostics = {
+      session_id: input.session_id,
+      sequence,
+      event_type: input.event_type,
+      part_count: input.narration_parts.length,
+      ...createNarrationDiagnostics(input.diagnostics),
+    };
+  }
+
+  try {
+    await events.insert({
+      session_id: input.session_id,
+      sequence,
+      event_type: input.event_type,
+      actor: input.actor,
+      payload: Object.keys(payload).length > 0 ? payload : null,
+      narration,
+      narration_parts: input.narration_parts,
+      model: input.model ?? null,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to insert narration event";
+    input.logger?.logError("narration_event.persist_failed", {
+      session_id: input.session_id,
+      event_type: input.event_type,
+      sequence,
+      error: message,
+    });
+    throw new Error(message, { cause: error });
+  }
+
+  input.logger?.log("narration_event.persisted", {
+    session_id: input.session_id,
+    event_type: input.event_type,
+    sequence,
+    part_count: input.narration_parts.length,
+    ...(input.diagnostics ? createNarrationDiagnostics(input.diagnostics) : {}),
+  });
+
+  return sequence;
+}

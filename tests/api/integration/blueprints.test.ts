@@ -1,22 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("blueprints-list endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("blueprints");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it("returns available mock blueprint", async () => {
     const res = await fetch(`${API_URL}/blueprints-list`, {

@@ -2,21 +2,26 @@
 
 ## Goals
 
-- exercise pure logic, the integrated Supabase stack, and the browser UX at the
-  correct layer
+- exercise pure logic, the running game, and the browser UX at the correct
+  layer
 - keep local and CI runs deterministic by default
 - make it obvious which suite to update when a change crosses a boundary
 - preserve one final quality gate: `npm test` for every non-documentation change
 
 ## Suite Map
 
-| Suite | Locations | Runner | Requires Supabase | Requires web dev server | AI mode | Command |
-| --- | --- | --- | --- | --- | --- | --- |
-| API/shared unit | `tests/api/unit` | Vitest | No | No | None or mocked in-process | `npm run test:unit` |
-| Web unit | `web/src/lib/**/*.test.ts` | Vitest | No | No | None | `npm -w web run test:unit` |
-| Integration | `tests/api/integration`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes | No | Seeded `mock` profile by default | `npm run test:integration` |
-| API E2E | `tests/api/e2e`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes | No | Seeded `mock` profile by default | `npm run test:e2e` |
-| Browser E2E | `web/e2e` | Playwright | Yes | Yes, via Playwright `webServer` | Seeded `mock` profile by default | `npm -w web run test:e2e` |
+| Suite | Locations | Runner | Runs a server | AI mode | Command |
+| --- | --- | --- | --- | --- | --- |
+| API/shared unit | `tests/api/unit` | Vitest | No | None or mocked in-process | `npm run test:unit` |
+| Web unit | `web/src/lib/**/*.test.ts` | Vitest | No | None | `npm -w web run test:unit` |
+| Integration | `tests/api/integration`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes — the built server | Mock provider | `npm run test:integration` |
+| API E2E | `tests/api/e2e`, helpers in `tests/testkit` | Vitest via `scripts/run-mock-tests.mjs` | Yes — the built server | Mock provider | `npm run test:e2e` |
+| Browser E2E | `web/e2e` | Playwright | Yes — `vite dev`, via `webServer` | Mock provider | `npm -w web run test:e2e` |
+
+**Every suite is self-contained.** The two API suites build the game and start
+it against a temporary config root; the browser suite runs the dev server
+against one of its own. Nothing has to be running first, and no suite can touch
+the database you have been playing on.
 
 ## Suite Responsibilities
 
@@ -29,16 +34,17 @@ Update this suite when changing:
 
 - shared contracts and schema validation
 - prompt construction, parsing, and AI-provider helper logic
-- blueprint generation, evaluation, image-generation, and deploy helpers
-- local auth or AI seed helper logic
-- mock provider behavior in `supabase/functions/_shared/ai-provider.ts`
+- blueprint generation, evaluation, and image-generation helpers
+- the local adapter: repositories, content loading, profile resolution, schema
+- mock provider behavior in `packages/game-engine/src/ai-provider.ts`
 
 Expected coverage includes:
 
 - domain logic and request/response schema validation
-- blueprint generator, evaluator, image, and deploy utility behavior
+- blueprint generator, evaluator, and image utility behavior
 - mock AI role output and provider-selection unit coverage
-- local auth and AI seeding helper logic
+- ownership isolation, sequence allocation, and the `game_events` cascade,
+  against a throwaway database (`tests/api/unit/local-engine-*.test.ts`)
 
 ### 2) Web unit
 
@@ -62,39 +68,39 @@ Expected coverage includes:
 
 ### 3) Integration
 
-Use this suite for real Supabase boundaries without a browser.
+Use this suite for one endpoint at a time against a running server.
 
 Update this suite when changing:
 
-- Edge Functions or files in `supabase/functions/_shared/`
-- shared API contracts used by Edge Functions
-- auth rules, RLS, storage policies, migrations, or seeded local state
-- AI profile resolution, provider selection, or the default mock profile
+- an endpoint handler or a shared engine module
+- shared API contracts used by the endpoints
+- profile gating, session ownership, or schema
+- AI profile resolution, provider selection, or the default profile
 
 Dependencies:
 
-- local Supabase stack
-- seeded storage blueprints
-- seeded `ai_profiles.id='default'` pointing at `mock`
-- test helpers in `tests/testkit`
+- the blueprints committed in `blueprints/` — the fixtures are deterministic
+- test helpers in `tests/testkit` (`server.ts`) and
+  `tests/api/integration/helpers.ts`
 
 Expected coverage includes:
 
-- auth rejection/success paths and CORS behavior
-- RLS and storage access rules
+- unauthenticated rejection and signed-in success
+- session ownership: another profile can neither read nor write yours
 - session lifecycle writes and reads
 - persisted event payloads, diagnostics, and state transitions
 - session catalog behavior
-- signed image-link behavior
-- AI profile runtime resolution and default/mock profile behavior
+- blueprint image serving, and the reference check that gates it
+- AI profile runtime resolution and default/mock behavior
 
-Never call OpenRouter in this suite. Use the seeded `mock` profile and assert
-persisted side effects instead.
+Never call OpenRouter here. The server runs with the mock provider; assert
+persisted side effects instead — `readStoredSession()` and
+`readStoredEvents()` read the run's database directly.
 
 ### 4) API E2E
 
-Use this suite for full player journeys through the Edge Function layer without
-the browser UI.
+Use this suite for full player journeys through the API without the browser
+UI.
 
 Update this suite when changing:
 
@@ -105,9 +111,7 @@ Update this suite when changing:
 
 Dependencies:
 
-- local Supabase stack
-- seeded storage blueprints
-- seeded `default` mock profile
+- the blueprints committed in `blueprints/`
 - test helpers in `tests/testkit`
 
 Expected coverage includes:
@@ -118,21 +122,21 @@ Expected coverage includes:
 
 ### 5) Browser E2E
 
-Use this suite for browser navigation, auth UX, rendering, and retry behavior.
+Use this suite for browser navigation, profile UX, rendering, and retry
+behavior.
 
 Update this suite when changing:
 
-- route protection and login/logout behavior
+- route protection and the profile picker
 - terminal rendering, command entry UX, loading states, and retries
 - session list navigation
 - theme commands and browser persistence
-- image rendering and signed-link failure UX
+- image rendering and its failure UX
 
 Dependencies:
 
-- local Supabase stack
-- running local web server
-- seeded local auth users and seeded `default` mock profile
+- the dev server, started by Playwright's `webServer` against a database of the
+  run's own (`web/e2e/global-setup.ts` empties it first)
 - Playwright browser binaries matching the pinned `@playwright/test` version
 
 Install the browsers once per machine, and again after any `@playwright/test`
@@ -156,7 +160,7 @@ Expected coverage includes:
 - transcript, speaker labels, and terminal loading indicators
 - in-progress/completed session navigation
 - theme commands and persistence
-- signed image rendering and placeholder fallback
+- image rendering and placeholder fallback
 
 Keep this suite high value. Prefer integration tests for backend behavior and
 reserve Playwright for browser-specific user journeys.
@@ -165,16 +169,16 @@ reserve Playwright for browser-specific user journeys.
 
 - shared logic, parser behavior, prompt builders, script helpers, and pure
   contract validation -> unit tests
-- Edge Functions, auth, RLS, storage, migrations, seeded runtime state, and
-  API contracts -> integration tests
-- multi-endpoint player journeys through Edge Functions -> API E2E
-- browser auth/navigation/rendering/retry UX -> browser E2E
+- endpoints, profile gating, ownership, schema, content loading, and API
+  contracts -> integration tests
+- multi-endpoint player journeys -> API E2E
+- browser profile/navigation/rendering/retry UX -> browser E2E
 
 When a change crosses more than one boundary, update every affected suite. For
 example, a change to AI output contracts may require:
 
-- unit updates for `supabase/functions/_shared/ai-provider.ts`
-- integration updates for Edge Function payloads and seeded profile flow
+- unit updates for `packages/game-engine/src/ai-provider.ts`
+- integration updates for endpoint payloads and profile resolution
 - API E2E updates if mock narration or session flow assertions change
 - browser E2E updates only if the rendered UX or retry behavior changes
 
@@ -182,16 +186,13 @@ example, a change to AI output contracts may require:
 
 - Use focused suites while iterating.
 - Before finalizing any non-documentation change, run `npm test`.
-- If you changed files under `supabase/functions/` or
-  `supabase/functions/_shared/`, run `npm run supabase:restart` before
-  integration, API E2E, browser E2E, or `npm test`.
-- `npm run test:integration` and `npm run test:e2e` call
-  `ensureSupabaseRunning()` and reseed storage plus the canonical `default`
-  mock profile, but they do not restart stale Edge Function code.
-- If you changed AI contracts, prompts, runtime context, provider selection, or
-  seeded AI profile behavior, update the mock provider unit coverage in
+- Nothing needs restarting after an engine edit. `npm run test:integration`
+  and `npm run test:e2e` rebuild the app before each run, and the browser
+  suite's dev server reloads it.
+- If you changed AI contracts, prompts, runtime context, or provider selection,
+  update the mock provider unit coverage in
   `tests/api/unit/ai-provider.test.ts` and any affected integration or API E2E
-  assertions, then reseed via `npm run seed:ai` or `npm run seed:all`.
+  assertions.
 - Live-AI suites are opt-in only and are never a substitute for the default
   mock-backed quality gate.
 
@@ -236,20 +237,18 @@ Functions: `characterSpeaker(name)`, `narrationResponse(text, speaker, imageId?)
 
 ## Test Isolation Strategy
 
-Because starting and stopping Supabase is resource-intensive, integration and
-E2E suites use logical isolation instead of database resets.
+Each API suite run gets its **own database**, created fresh in a temporary
+config root and deleted afterwards. There is nothing to reset between tests and
+nothing to leak between runs.
 
-Every test is responsible for:
+Within a run, tests still share that database, so each is responsible for:
 
-1. generating unique `user_id` and/or `session_id` values
+1. creating its own profile via `setupApiTestAuth(tag)`
 2. scoping assertions to its own identifiers
-3. optionally cleaning up through `ON DELETE CASCADE` rather than full resets
+3. avoiding global count assertions without scoping
 
-Integration, API E2E, and browser E2E tests should rely on:
-
-- programmatic setup via `tests/testkit`
-- unique IDs per test run
-- no global count assertions without scoping
+There is no cleanup step and no leak detection, because there is nothing left
+behind to detect.
 
 ## Test Execution
 
@@ -267,80 +266,66 @@ Integration, API E2E, and browser E2E tests should rely on:
 5. `npm -w web run test:unit`
 6. `npm run check:curated-docs`
 
-**Phase 2 (serial — shares Supabase state):**
+**Phase 2 (serial — each starts a server on the same port):**
 
 7. `npm run test:integration`
 8. `npm run test:e2e`
 9. `npm -w web run test:e2e`
 
-Phase 2 only runs if all phase 1 steps pass. After phase 2, a non-fatal leak
-check runs to detect orphaned test users.
+Phase 2 only runs if all phase 1 steps pass.
+
+**Every step runs in every environment.** The gate needs nothing installed
+beyond this repo — no Docker, no CLI, no seeding — so there is no waiver and no
+condition under which a suite may be reported as skipped. If a suite cannot
+start, that is a bug to fix, not a partial run to report.
 
 `check:curated-docs` verifies that the curated extracts in
 `evaluation/generator-harness/template/docs/` still match the git blob hashes of
-the repo docs they were derived from. It needs no Supabase and no network, which
-is why it sits in Phase 1. On drift, regenerate the affected extract against its
-current source and update the hash in the same change — refreshing the hash
-alone silences the check without fixing the doc. See
+the repo docs they were derived from. It needs no network, which is why it sits
+in Phase 1. On drift, regenerate the affected extract against its current source
+and update the hash in the same change — refreshing the hash alone silences the
+check without fixing the doc. See
 `evaluation/generator-harness/template/README.md`.
 
 Focused sub-scripts are for iteration only. They do not replace the final
 `npm test` gate.
-
-#### Cloud-session waiver
-
-Phase 2 needs a local Supabase stack in Docker. The cloud execution
-environment (Claude Code on the web) has no Docker, so Phase 2 is **waived
-there — and only there**. The waiver is gated on a positive,
-environment-owned marker, never on Docker or Supabase reachability:
-
-- When `MYSTERY_CLOUD_SESSION` is set (by the cloud environment definition),
-  the gate runs Phase 1, marks the Phase 2 suites `WAIVED`, and still exits
-  `0` if Phase 1 passes. The Supabase-backed suites must be run locally before
-  merge.
-- When `MYSTERY_CLOUD_SESSION` is unset (every local machine), Phase 2 always
-  runs. A stack that is not up is a setup step to complete
-  (`npm run supabase:restart` + seeds), not a reason to skip: if the stack
-  cannot start, the gate **fails** rather than skipping.
-
-The marker is read directly by `scripts/run-test-gate.mjs`. Agents must not
-set, export, or fabricate it to authorize a waiver. Keep it out of any local
-`.env*` files so it cannot leak into a local run.
 
 Documentation sync is still required alongside that gate whenever setup,
 runtime behavior, testing workflow, or debugging guidance changes.
 
 ### Script behavior
 
-`npm run test:integration`:
+`npm run test:integration` and `npm run test:e2e`
+(`scripts/run-mock-tests.mjs`):
 
-1. ensures Supabase is running
-2. seeds storage blueprints
-3. seeds or refreshes the canonical `default` AI profile in mock mode
-4. runs Vitest on `tests/api/integration`
+1. build the web app (`npm -w web run build`)
+2. start `node build/index.js` against a temporary config root, on the
+   worktree's port
+3. wait for it to answer, failing fast if something else already holds the port
+4. run Vitest on the suite, passing the server URL and config root through
+   `MYSTERY_TEST_API_URL` / `MYSTERY_TEST_CONFIG_ROOT`
+5. stop the server and delete the config root
 
-`npm run test:e2e`:
-
-1. ensures Supabase is running
-2. seeds storage blueprints
-3. seeds or refreshes the canonical `default` AI profile in mock mode
-4. runs Vitest on `tests/api/e2e`
+Using the production build rather than the dev server is deliberate: it is the
+artefact `npm run build` produces, and running it here is what catches a
+bundling failure before someone deploys one.
 
 `npm -w web run test:e2e`:
 
-1. starts the local web app through Playwright's `webServer` configuration
-2. runs Playwright browser E2E against that local app
-3. uses the current local project browser matrix in `web/playwright.config.ts`
+1. starts the dev server through Playwright's `webServer` configuration,
+   against a config root of its own that `global-setup.ts` empties first
+2. runs Playwright browser E2E against it
+3. removes that config root in `global-teardown.ts`
 
 ### Shared-suite execution
 
 - Treat integration, API E2E, and browser E2E as serialized within a single
   checkout or worktree.
-- Within one checkout, those suites share local Supabase state and the Vite dev
-  server port. Do not run more than one of them at the same time from separate
-  terminals.
+- Within one checkout, they share the worktree's port. Do not run more than one
+  at the same time from separate terminals — the second will fail fast rather
+  than test against the first one's server.
 - Across worktrees, they can run concurrently because each worktree gets its
-  own Supabase stack and Vite port. See
+  own port. See
   [`docs/local-infrastructure.md`](local-infrastructure.md).
 - Unit-only suites can run in parallel more safely.
 
@@ -361,20 +346,30 @@ Live suites require:
 
 - `AI_LIVE=1`
 - `.env.ai.free.local` or `.env.ai.paid.local`
-- `npm run seed:ai -- --only <free|paid>` to sync the selected live profile
 - resilient handling of retriable `503` failures
+
+There is no profile to seed: `scripts/run-live-ai.mjs` starts the server with
+the mode's AI env, so the sessions those tests play reach the real model.
 
 See [`docs/ai-configuration.md`](ai-configuration.md) for the canonical local
 profile and reseeding rules.
 
-## RLS And Boundary Minimum Bar
+## Ownership And Boundary Minimum Bar
 
-At minimum, integration coverage should prove:
+Ownership is enforced in the engine's repositories, with no database layer
+underneath to catch a query that forgets. Integration coverage must therefore
+prove, at minimum:
 
-- user A can create and read their own session rows
-- user B cannot read or mutate user A's rows
-- storage access is limited to the intended user unless explicitly shared
-- protected Edge Functions reject missing or invalid auth
+- profile A can create and read its own sessions
+- profile B can neither read nor mutate profile A's session, through any
+  endpoint that takes a `game_id`
+- image bytes are served only to a signed-in profile, and only for an image the
+  blueprint references
+- every endpoint rejects a missing cookie and a cookie naming a profile that
+  does not exist
+
+`tests/api/integration/session-ownership.test.ts` and `unauthenticated.test.ts`
+are where that bar lives.
 
 ## Observability During Tests
 
@@ -407,8 +402,9 @@ in `web/playwright-report/` and `web/test-results/`.
 
 ### Other failure inspection
 
-- Edge Function logs from local Supabase via `npm run logs:edge`
-- relevant DB state snapshots when testkit helpers provide them
+- the server's own stdout, which the suite runner inherits — every handler
+  logs structured JSON per request
+- `readStoredSession()` / `readStoredEvents()` for what was actually persisted
 
 ## Test Coverage
 
@@ -430,29 +426,12 @@ each `vitest.config.ts` `coverage.include` array.
 
 ### What is covered
 
-- **API/shared unit coverage**: `supabase/functions/**/*.ts`,
+- **API/shared unit coverage**: `packages/game-engine/src/**/*.ts`,
   `packages/shared/src/**/*.ts`
 - **Web unit coverage**: `src/lib/**/*.ts`, `src/lib/**/*.svelte`
 
 Integration and E2E suites do not collect coverage (they test through HTTP
 boundaries).
-
-## Leak Detection
-
-After phase 2 of the test gate, a non-fatal leak check queries the local
-Supabase auth store for users with emails matching `*@test.local`. These are
-test users that were not cleaned up by `afterEach` teardown.
-
-Results appear in the console output and in `test-results/<timestamp>/summary.log`.
-The check never fails the gate — it only logs warnings.
-
-The utility lives at `tests/testkit/src/leak-detector.ts` and can be called
-independently:
-
-```ts
-import { detectTestUserLeaks } from '@testkit/leak-detector';
-const count = await detectTestUserLeaks();
-```
 
 ## CI Pipeline
 
@@ -461,17 +440,14 @@ A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to
 
 ### Jobs
 
-1. **quality** ("Quality gates") — lint, typecheck, svelte-check, unit tests,
-   curated-doc drift check (no Supabase needed)
-2. **integration-e2e** / **browser-e2e** — start local Supabase, seed, then run
-   integration + API E2E and browser E2E respectively
+One: **gate**, which runs `npm test`. The whole suite needs nothing but this
+repo and Playwright's browsers, so there is nothing to provision and no reason
+to split it.
 
 ### Artifacts
 
-On every run (pass or fail), the workflow uploads:
-
-- Playwright HTML report (`playwright-report/`)
-- Playwright test results with screenshots/traces (`test-results/`)
+The workflow uploads the gate's per-step logs on every run, and Playwright's
+HTML report with screenshots and traces on failure.
 
 Artifacts are retained for 14 days.
 

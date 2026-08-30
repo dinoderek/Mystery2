@@ -11,7 +11,7 @@ import {
   API_URL,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "../auth-helpers.ts";
+} from "../helpers.ts";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
@@ -22,7 +22,6 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
   });
 
   afterAll(async () => {
-    await auth.cleanup();
   });
 
   it("progresses accusation rounds to a terminal outcome", async () => {

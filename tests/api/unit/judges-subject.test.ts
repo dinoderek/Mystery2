@@ -15,7 +15,7 @@ import { makeRawTrace } from "./trace-fixtures";
 function makeInteraction(overrides: Record<string, unknown> = {}) {
   return {
     case_id: "ask-alice",
-    blueprint_path: "supabase/seed/blueprints/mock-blueprint.json",
+    blueprint_path: "blueprints/mock-blueprint.json",
     given: {
       mode: "talk",
       location_id: "loc-kitchen",

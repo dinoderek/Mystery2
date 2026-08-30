@@ -16,7 +16,7 @@ export async function confirmOpening(
   // Narration only. The real endpoint echoes location/mode/time back unchanged,
   // so anything this mock sent would just overwrite whatever session state the
   // calling spec set up in its game-start fixture.
-  await page.route('**/functions/v1/game-enter*', async (route) => {
+  await page.route('**/api/game-enter*', async (route) => {
     await route.fulfill({
       json: {
         narration_parts: [

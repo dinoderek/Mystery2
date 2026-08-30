@@ -16,7 +16,7 @@ describe("buildRawTrace", () => {
       events,
       blueprint: makeBlueprint(),
       aiProfile: { id: "default", provider: "openrouter", model: "x", openrouter_api_key: "sk-secret" },
-      source: { kind: "supabase", api_url: "http://h" },
+      source: { kind: "local", database: "/tmp/h/game.db" },
       extractedAt: "2026-06-02T00:00:00Z",
     });
 
@@ -31,7 +31,7 @@ describe("buildRawTrace", () => {
       session: makeSession(),
       events: makeEvents(),
       blueprint: makeBlueprint(),
-      source: { kind: "supabase", api_url: "http://h" },
+      source: { kind: "local", database: "/tmp/h/game.db" },
     });
     const bySequence = (seq: number) =>
       trace.events.find((e: { sequence: number }) => e.sequence === seq);
@@ -60,7 +60,7 @@ describe("extractSessionTrace", () => {
   it("orchestrates a source's four methods into a raw trace", async () => {
     const calls: string[] = [];
     const fakeSource = {
-      url: "http://localhost:54321",
+      databasePath: "/tmp/mystery/game.db",
       async fetchSession(id: string) {
         calls.push(`session:${id}`);
         return makeSession();
@@ -82,7 +82,7 @@ describe("extractSessionTrace", () => {
     const trace = await extractSessionTrace(fakeSource, "sess-1", { extractedAt: "2026-06-02T00:00:00Z" });
     expect(trace.session.id).toBe("sess-1");
     expect(trace.events).toHaveLength(9);
-    expect(trace.source).toEqual({ kind: "supabase", api_url: "http://localhost:54321" });
+    expect(trace.source).toEqual({ kind: "local", database: "/tmp/mystery/game.db" });
     expect(calls).toEqual(["session:sess-1", "events:sess-1", "blueprint:bp-1", "profile:default"]);
   });
 });

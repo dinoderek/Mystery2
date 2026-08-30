@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import { confirmOpening } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
@@ -8,9 +8,9 @@ import {
 } from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
-  await enableAuthBypass(page);
+  await signInAsTestProfile(page);
 
-  await page.route('**/functions/v1/game-sessions-list*', async (route) => {
+  await page.route('**/api/game-sessions-list*', async (route) => {
     await route.fulfill({
       json: {
         in_progress: [],
@@ -20,7 +20,7 @@ async function bootstrapSession(page: Page) {
     });
   });
 
-  await page.route('**/functions/v1/blueprints-list*', async (route) => {
+  await page.route('**/api/blueprints-list*', async (route) => {
     await route.fulfill({
       json: {
         blueprints: [{ id: 'b1', title: 'Missing Honey Cakes', one_liner: 'A sticky mystery', target_age: 6 }],
@@ -28,7 +28,7 @@ async function bootstrapSession(page: Page) {
     });
   });
 
-  await page.route('**/functions/v1/game-start*', async (route) => {
+  await page.route('**/api/game-start*', async (route) => {
     await route.fulfill({
       json: {
         game_id: 'g1',
@@ -55,7 +55,7 @@ async function bootstrapSession(page: Page) {
 
 test.describe('Full stack browser flow', () => {
   test('covers parser + store + backend state machine for talk/ask', async ({ page }) => {
-    await page.route('**/functions/v1/game-talk*', async (route) => {
+    await page.route('**/api/game-talk*', async (route) => {
       await route.fulfill({
         json: {
           narration_parts: [
@@ -68,7 +68,7 @@ test.describe('Full stack browser flow', () => {
       });
     });
 
-    await page.route('**/functions/v1/game-ask*', async (route) => {
+    await page.route('**/api/game-ask*', async (route) => {
       await route.fulfill({
         json: {
           narration_parts: [

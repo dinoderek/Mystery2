@@ -35,7 +35,7 @@
 - [ ] Critical doc constraints and project knowledge are carried into this plan?
 - [ ] Testing strategy covers the required Unit, Integration, and E2E/browser tiers for this change?
 - [ ] Quality gates are runnable for this change, or doc-only validation is explicitly justified?
-- [ ] Static UI + Supabase backend constraints, auth, and no-client-secrets rules respected?
+- [ ] Local-execution architecture respected — engine behind `EngineContext`, ownership scoped in the repositories, no secrets in the browser?
 - [ ] Context-specific conventions and schema references were loaded for touched areas?
 - [ ] Observability/logging and failure-debugging expectations are defined?
 

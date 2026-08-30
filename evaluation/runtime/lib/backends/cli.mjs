@@ -9,7 +9,7 @@
 //
 // Every action with a `roleInput` mapping in lib/roles.mjs replays locally.
 // The prompt itself is assembled by the shared role-request layer, the same one
-// the Edge Function handlers use, so a local replay and a live endpoint call
+// the endpoint handlers use, so a local replay and a live endpoint call
 // build the same prompt for the same input.
 
 import fs from "node:fs/promises";

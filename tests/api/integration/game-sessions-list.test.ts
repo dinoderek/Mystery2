@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createAuthenticatedClient } from '../../testkit/src/auth';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
+  patchStoredSession,
   setupApiTestAuth,
   type ApiAuthContext,
-} from './auth-helpers';
+} from './helpers';
 
 async function startSession(auth: ApiAuthContext): Promise<string> {
   const res = await fetch(`${API_URL}/game-start`, {
@@ -20,18 +19,11 @@ async function startSession(auth: ApiAuthContext): Promise<string> {
   return data.game_id as string;
 }
 
-async function patchSession(
-  auth: ApiAuthContext,
+function patchSession(
   gameId: string,
-  patch: Record<string, unknown>,
-): Promise<void> {
-  const client = createAuthenticatedClient(auth.accessToken);
-  const { error } = await client
-    .from('game_sessions')
-    .update(patch)
-    .eq('id', gameId);
-
-  expect(error).toBeNull();
+  patch: Record<string, string | number | null>,
+): void {
+  patchStoredSession(gameId, patch);
 }
 
 describe('game-sessions-list endpoint', () => {
@@ -39,12 +31,8 @@ describe('game-sessions-list endpoint', () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth('game-sessions-list');
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it('rejects unauthenticated requests', async () => {
     const res = await fetch(`${API_URL}/game-sessions-list`, { method: 'GET' });
@@ -57,7 +45,7 @@ describe('game-sessions-list endpoint', () => {
     try {
       const ownInProgress = await startSession(auth);
       const ownCompleted = await startSession(auth);
-      await patchSession(auth, ownCompleted, {
+      patchSession(ownCompleted, {
         mode: 'ended',
         outcome: 'win',
         updated_at: '2026-03-10T09:00:00.000Z',
@@ -83,7 +71,7 @@ describe('game-sessions-list endpoint', () => {
       expect(allIds).toContain(ownCompleted);
       expect(allIds).toHaveLength(2);
     } finally {
-      await otherUser.cleanup();
+      // Nothing to clean up: the run's database is deleted with its config root.
     }
   });
 
@@ -93,26 +81,26 @@ describe('game-sessions-list endpoint', () => {
     const completedOlder = await startSession(auth);
     const completedNewer = await startSession(auth);
 
-    await patchSession(auth, inProgressOlder, {
+    patchSession(inProgressOlder, {
       mode: 'explore',
       time_remaining: 4,
       updated_at: '2026-03-09T09:00:00.000Z',
       created_at: '2026-03-08T09:00:00.000Z',
     });
-    await patchSession(auth, inProgressNewer, {
+    patchSession(inProgressNewer, {
       mode: 'talk',
       time_remaining: 8,
       updated_at: '2026-03-10T09:00:00.000Z',
       created_at: '2026-03-08T10:00:00.000Z',
     });
 
-    await patchSession(auth, completedOlder, {
+    patchSession(completedOlder, {
       mode: 'ended',
       outcome: 'lose',
       updated_at: '2026-03-07T09:00:00.000Z',
       created_at: '2026-03-06T09:00:00.000Z',
     });
-    await patchSession(auth, completedNewer, {
+    patchSession(completedNewer, {
       mode: 'ended',
       outcome: 'win',
       updated_at: '2026-03-11T09:00:00.000Z',
@@ -155,7 +143,7 @@ describe('game-sessions-list endpoint', () => {
   it('keeps sessions with missing blueprints visible but disabled', async () => {
     const gameId = await startSession(auth);
 
-    await patchSession(auth, gameId, {
+    patchSession(gameId, {
       blueprint_id: crypto.randomUUID(),
       mode: 'ended',
       outcome: null,

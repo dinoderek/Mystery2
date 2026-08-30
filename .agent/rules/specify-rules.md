@@ -1,35 +1,36 @@
 # w1 Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-05
-
 ## Active Technologies
-- TypeScript 5.x + SvelteKit, Svelte, Tailwind CSS, Vite, @supabase/supabase-js, Playwrigh (002-web-ui)
-- Local storage for minimal client state if needed (no DB directly accessed by UI) (002-web-ui)
-- TypeScript 5.x (SvelteKit 2 / Svelte 5) + SvelteKit (static), Tailwind CSS, Playwright (E2E), Vitest (unit) (003-webui-command-parser)
-- N/A (client-side only) (003-webui-command-parser)
 
-- TypeScript via Deno (Edge Functions) + TypeScript (Vitest/Playwright tests) + Supabase Edge Functions (Deno runtime), Supabase JS client (v2), OpenRouter API (AI calls), Zod (schema validation) (001-supabase-api)
+- TypeScript 5.9 on Node 24
+- SvelteKit 2 (`adapter-node`) + Svelte 5 + Tailwind CSS 4, served as a SPA by
+  the same process that serves its `/api`
+- SQLite via `better-sqlite3`, one file, no ORM
+- Zod for every shape at the UI/API boundary
+- OpenRouter for narration, called server-side
+- Vitest (unit, integration, API E2E) and Playwright (browser E2E)
 
 ## Project Structure
 
 ```text
-src/
-tests/
+packages/game-engine/   the game: endpoints, rules, AI, storage adapter
+packages/shared/        Zod contracts and the blueprint schema
+web/                    the server and the SPA it serves
+tests/                  unit, integration, and API E2E
+evaluation/             blueprint, trace, and runtime evaluation pipelines
 ```
 
 ## Commands
 
-npm test && npm run lint
+```bash
+npm run dev     # play it
+npm test        # the full quality gate
+```
 
 ## Code Style
 
-TypeScript via Deno (Edge Functions) + TypeScript (Vitest/Playwright tests): Follow standard conventions
-
-## Recent Changes
-- 003-webui-command-parser: Added TypeScript 5.x (SvelteKit 2 / Svelte 5) + SvelteKit (static), Tailwind CSS, Playwright (E2E), Vitest (unit)
-- 002-web-ui: Added TypeScript 5.x + SvelteKit, Svelte, Tailwind CSS, Vite, @supabase/supabase-js, Playwrigh
-
-- 001-supabase-api: Added TypeScript via Deno (Edge Functions) + TypeScript (Vitest/Playwright tests) + Supabase Edge Functions (Deno runtime), Supabase JS client (v2), OpenRouter API (AI calls), Zod (schema validation)
+Follow the conventions already in the surrounding file. `docs/` holds the
+guidance for each surface area; `.specify/memory/constitution.md` governs.
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

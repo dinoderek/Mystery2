@@ -11,7 +11,7 @@ import {
   selectCharacterConversationHistory,
   selectLocationConversationHistory,
   type SessionSnapshot,
-} from "../../../supabase/functions/_shared/ai-context.ts";
+} from "../../../packages/game-engine/src/ai-context.ts";
 
 const blueprint: BlueprintContext = {
   metadata: {

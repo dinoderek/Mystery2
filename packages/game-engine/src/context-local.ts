@@ -1,10 +1,9 @@
 // The local `EngineContext` — SQLite and the filesystem, assembled.
 //
-// This is the twin of `supabase/functions/_shared/context-supabase.ts`, and
-// the two are interchangeable by construction: handlers see only the interface
-// in `contract.ts`, so swapping one for the other changes nothing above this
-// line. Where the Supabase adapter holds a service-role client, a JWT and two
-// storage buckets, this one holds a file handle and two directory paths.
+// Handlers see only the interface in `context.ts`, never this file. It is the
+// one place that knows the game's state is a SQLite file and its content is a
+// pair of directories — which is what makes it the only file that would have
+// to change to keep the state somewhere else.
 
 import { createLocalAIProfileStore } from "./ai-profile.ts";
 import { createLocalContentStore } from "./content.ts";
@@ -13,7 +12,7 @@ import type {
   ContentStore,
   EngineContext,
   EnginePlayer,
-} from "./contract.ts";
+} from "./context.ts";
 import { openDatabase, type Db } from "./db/client.ts";
 import { createEventStore } from "./db/events.ts";
 import { createPlayerStore, type PlayerStore } from "./db/players.ts";

@@ -6,7 +6,7 @@
 // language a child would misread, and phrasing a target-age reader cannot
 // parse. The standard it judges against is rendered from the same
 // age-profile module that generated the narration's own prompt guidance
-// (supabase/functions/_shared/age-profile.ts), so narrator and judge share
+// (packages/shared/src/age-profile.ts), so narrator and judge share
 // one source of truth per age.
 //
 // The judge model is invoked through the harness's pluggable CLI bindings
@@ -50,7 +50,7 @@ const OUTPUT_CONTRACT = `{
 
 async function buildSystemPrompt(targetAge) {
   const { renderComplexityGuidance } = await import(
-    "../../../../supabase/functions/_shared/age-profile.ts"
+    "../../../../packages/shared/src/age-profile.ts"
   );
   return [
     `You are an expert in children's reading levels. You are judging ONE piece of narration from a detective game played by a ${targetAge}-year-old child.`,

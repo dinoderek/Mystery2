@@ -26,9 +26,14 @@ const mainRepoRoot = getWorktreeMainRepoRoot();
 
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
-  server: mainRepoRoot
-    ? { fs: { allow: [mainRepoRoot] } }
-    : undefined,
+  server: {
+    // Explicit IPv4. `localhost` resolves to ::1 first on some machines, and
+    // then a client that reaches for 127.0.0.1 — Playwright's `page.request`,
+    // curl, the test server's readiness probe — is refused by a server that is
+    // demonstrably up.
+    host: "127.0.0.1",
+    ...(mainRepoRoot ? { fs: { allow: [mainRepoRoot] } } : {}),
+  },
   test: {
     include: ["src/lib/domain/**/*.test.ts"],
     environment: "node",

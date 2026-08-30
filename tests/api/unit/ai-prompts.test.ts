@@ -5,7 +5,7 @@ import {
   buildGameStartPrompt,
   loadPromptTemplate,
   renderPrompt,
-} from "../../../supabase/functions/_shared/ai-prompts.ts";
+} from "../../../packages/game-engine/src/ai-prompts.ts";
 
 describe("ai-prompts", () => {
   it("loadPromptTemplate injects age-band and style guidance for every role (cannot be forgotten)", async () => {

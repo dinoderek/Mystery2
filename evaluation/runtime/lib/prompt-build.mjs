@@ -1,10 +1,11 @@
 // Runtime-prompt assembly for the CLI backend.
 //
 // This is a thin transport wrapper: the assembly itself lives in
-// supabase/functions/_shared/role-request.ts, the SAME module the Edge Function
-// handlers call. Node 24 strips TypeScript types on import, so the Deno-authored
-// module loads directly (it imports only sibling _shared/*.ts and touches no
-// Deno globals — a purity contract documented there and worth preserving).
+// packages/game-engine/src/role-request.ts, the SAME module the server
+// handlers call. Node 24 strips TypeScript types on import, so that module
+// loads directly — it imports only its siblings and touches neither the
+// network nor the database, a purity contract documented there and worth
+// preserving.
 //
 // It used to reimplement the assembly here, and drifted: it called
 // loadPromptTemplate(role) with no target age, so clampTargetAge fell back to
@@ -22,7 +23,7 @@ let cached = null;
 
 async function loadShared() {
   if (cached) return cached;
-  cached = await import("../../../supabase/functions/_shared/role-request.ts");
+  cached = await import("../../../packages/game-engine/src/role-request.ts");
   return cached;
 }
 

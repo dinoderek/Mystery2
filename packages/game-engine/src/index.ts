@@ -1,9 +1,46 @@
-// Public surface of the local game engine.
+// Public surface of the game engine.
 //
-// P3 moves the rest of the engine in here — the shared modules and the endpoint
-// handlers currently under `supabase/functions/` — at which point this file
-// also exports those. For now it is the local platform adapter only.
+// The engine is the game: the state machine, the clue graph, the AI provider
+// and prompt assembly, the twelve endpoint handlers, and the SQLite +
+// filesystem adapter they run against. What it deliberately does not contain
+// is a server — `EngineContext` is handed in, and `web/src/routes/api/` is the
+// only thing that knows about HTTP routing, cookies and the process.
 
+// --- the boundary ---
+export {
+  DEFAULT_AI_PROFILE_ID,
+  type AIProfileStore,
+  type BlueprintSummaryEntry,
+  type ContentStore,
+  type EngineAIProfile,
+  type EngineContext,
+  type EnginePlayer,
+  type EventStore,
+  type GameEventRow,
+  type GameSessionPatch,
+  type GameSessionRow,
+  type GameSessionSummaryRow,
+  type NewGameEvent,
+  type NewGameSession,
+  type SessionStore,
+} from "./context.ts";
+
+// --- the endpoints ---
+export {
+  ENDPOINTS,
+  findEndpoint,
+  type EndpointDefinition,
+  type EndpointMethod,
+} from "./endpoints/index.ts";
+
+// --- the local implementation of the boundary ---
+export {
+  createLocalContext,
+  createLocalEngine,
+  type LocalContextDeps,
+  type LocalEngine,
+  type LocalEngineOptions,
+} from "./context-local.ts";
 export {
   createLocalAIProfileStore,
   resolveAIProfile,
@@ -16,29 +53,6 @@ export {
   IMAGE_ROUTE_PREFIX,
   type LocalContentOptions,
 } from "./content.ts";
-export {
-  createLocalContext,
-  createLocalEngine,
-  type LocalContextDeps,
-  type LocalEngine,
-  type LocalEngineOptions,
-} from "./context-local.ts";
-export { DEFAULT_AI_PROFILE_ID } from "./contract.ts";
-export type {
-  AIProfileStore,
-  ContentStore,
-  EngineAIProfile,
-  EngineContext,
-  EnginePlayer,
-  EventStore,
-  GameEventRow,
-  GameSessionPatch,
-  GameSessionRow,
-  GameSessionSummaryRow,
-  NewGameEvent,
-  NewGameSession,
-  SessionStore,
-} from "./contract.ts";
 export {
   openDatabase,
   SCHEMA_VERSION,
@@ -59,3 +73,13 @@ export {
   resolveBlueprintImagesDir,
   resolveDatabasePath,
 } from "./paths.ts";
+
+// --- helpers the server and the tooling reach for ---
+export {
+  buildImageStorageKey,
+  ensureCanonicalImageId,
+  isCanonicalImageId,
+} from "./images.ts";
+export { createRequestLogger, type LogWriter, type RequestLogger } from "./logging.ts";
+export type { NarrationPart } from "./narration.ts";
+export { readGameMode, type GameMode } from "./state-machine.ts";

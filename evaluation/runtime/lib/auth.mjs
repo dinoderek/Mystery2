@@ -1,61 +1,50 @@
-// Node-native auth bootstrap for the runtime evaluation harness.
+// Profile bootstrap for the runtime evaluation harness.
 //
-// Functionally mirrors tests/testkit/src/auth.ts: create a throwaway test user
-// via the admin API, sign in to get a bearer token, and clean up afterwards.
+// Functionally mirrors tests/testkit/src/server.ts: create a throwaway local
+// profile and return the headers that act as it. It used to create an auth
+// user through the admin API and sign it in for a bearer token; a profile is
+// now a name, and the answer is a cookie.
 
-import { createClient } from "@supabase/supabase-js";
 import { resolveEnv } from "./env.mjs";
 
-function adminClient(env) {
-  return createClient(env.supabaseUrl, env.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 /**
- * Create a test user, sign in, and return the bearer headers plus a cleanup
- * function that deletes the user (and its owned rows) again.
+ * Creates a throwaway profile and returns its request headers, plus a
+ * `cleanup()` that removes the sessions it accumulated.
  */
 export async function setupHarnessAuth(tag = "runtime-eval", env = resolveEnv()) {
-  const email = `${tag}-${crypto.randomUUID().slice(0, 8)}@test.local`;
-  const password = "test-password-123";
+  const name = `${tag}-${crypto.randomUUID().slice(0, 8)}`;
 
-  const admin = adminClient(env);
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
+  const res = await fetch(`${env.apiUrl}/player`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
   });
-  if (createError) {
-    throw new Error(`Failed to create test user ${email}: ${createError.message}`);
+  if (!res.ok) {
+    throw new Error(`Failed to create harness profile ${name}: HTTP ${res.status}`);
   }
-  const user = created.user;
-
-  const anon = createClient(env.supabaseUrl, env.anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: signedIn, error: signInError } = await anon.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (signInError) {
-    throw new Error(`Failed to sign in as ${email}: ${signInError.message}`);
-  }
-  const accessToken = signedIn.session.access_token;
+  const { player } = await res.json();
 
   return {
-    user,
-    accessToken,
+    player,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      Cookie: `mystery-player-id=${player.id}`,
     },
+    // The harness seeds sessions into the same database a human plays on, so
+    // it does clean up after itself — unlike the test suites, which throw the
+    // whole database away.
     cleanup: async () => {
-      await admin.from("briefs").delete().eq("user_id", user.id);
-      await admin.from("game_sessions").delete().eq("user_id", user.id);
-      const { error } = await admin.auth.admin.deleteUser(user.id);
-      if (error) {
-        console.warn(`Failed to clean up test user ${user.id}: ${error.message}`);
+      const { openDatabase } = await import("../../../packages/game-engine/src/db/client.ts");
+      const { resolveDatabasePath } = await import(
+        "../../../packages/game-engine/src/paths.ts"
+      );
+      const db = openDatabase({ path: resolveDatabasePath() });
+      try {
+        // game_events cascades.
+        db.prepare("delete from game_sessions where player_id = ?").run(player.id);
+        db.prepare("delete from players where id = ?").run(player.id);
+      } finally {
+        db.close();
       }
     },
   };

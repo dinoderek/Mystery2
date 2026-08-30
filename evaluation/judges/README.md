@@ -9,7 +9,7 @@ projects its own data into one shared subject shape:
 
 | Harness | Subject | Judged turns | Bound as |
 |---|---|---|---|
-| `evaluation/trace/` | a whole played session, reconstructed from Supabase | every turn | registry dimensions (`dimensions/registry.json`) |
+| `evaluation/trace/` | a whole played session, reconstructed from the game database | every turn | registry dimensions (`dimensions/registry.json`) |
 | `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | judges (`--judges`, or a case's `judges`) |
 
 The payoff is that a failure found on a played trace can be frozen into a

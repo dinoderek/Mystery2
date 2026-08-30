@@ -1,8 +1,8 @@
 // The local `ContentStore` — blueprints and images read straight off disk.
 //
-// The behaviour under test is deliberately the Supabase adapter's: one
-// unparseable blueprint is skipped and logged rather than failing the catalog,
-// and a blueprint filed under a name other than `<id>.json` is still found.
+// Two behaviours matter here and are easy to lose: one unparseable blueprint
+// is skipped and logged rather than failing the whole catalog, and a blueprint
+// filed under a name other than `<id>.json` is still found.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -14,7 +14,7 @@ import {
   createLocalContentStore,
   resolveImageFile,
 } from "../../../packages/game-engine/src/content.ts";
-import type { LogWriter } from "../../../packages/game-engine/src/contract.ts";
+import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const BLUEPRINT_ID = validBlueprintV2.id;

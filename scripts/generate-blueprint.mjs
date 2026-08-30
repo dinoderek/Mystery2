@@ -15,7 +15,7 @@ import {
   getBriefsDir,
   getChatGenPromptsDir,
 } from "./local-config.mjs";
-import { loadEnvFile } from "./supabase-utils.mjs";
+import { loadEnvFile } from "./lib/env-file.mjs";
 
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
 

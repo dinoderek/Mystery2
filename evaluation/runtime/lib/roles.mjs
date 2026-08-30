@@ -6,13 +6,13 @@
 // accumulation here — `given.history` is the complete, fixed conversation.
 //
 // Role resolution and prompt assembly are NOT here: they live in
-// supabase/functions/_shared/role-request.ts, shared with the Edge Function
+// packages/game-engine/src/role-request.ts, shared with the server
 // handlers, so both paths pick the same role and build the same prompt.
 
 import {
   resolveAccusationRole,
   resolveSearchRole,
-} from "../../../supabase/functions/_shared/role-request.ts";
+} from "../../../packages/game-engine/src/role-request.ts";
 
 export function characterFirstName(blueprint, characterId) {
   return blueprint.world.characters.find((c) => c.id === characterId)?.first_name ?? characterId;
@@ -53,7 +53,7 @@ export function snapshotFromGiven(given) {
 //
 // `roleInput` deliberately carries NO prompt or context logic: it names the role
 // and hands over the same fields the handler would, and
-// supabase/functions/_shared/role-request.ts does the assembly for both. The
+// packages/game-engine/src/role-request.ts does the assembly for both. The
 // per-action `cli` blocks that used to live here duplicated that assembly and
 // drifted out of sync with the handlers (see prompt-build.mjs).
 export const ACTIONS = {

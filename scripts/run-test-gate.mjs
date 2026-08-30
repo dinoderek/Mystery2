@@ -5,13 +5,10 @@
  *                     drift check
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
- * Phase 2 needs a local Supabase stack in Docker. In the cloud execution
- * environment (Claude Code on the web) there is no Docker, so Phase 2 is
- * WAIVED — but only when the environment-owned marker `MYSTERY_CLOUD_SESSION`
- * is set. Locally that marker is absent, so Phase 2 always runs and a stack
- * that is not up is a setup step to complete, never a reason to skip. The
- * marker is set by the cloud environment definition; agents must not set,
- * export, or fabricate it to authorize a waiver.
+ * Phase 2 builds the game and runs it against a throwaway database. It needs
+ * nothing installed beyond this repo — no Docker, no containers, no seeding —
+ * which is why the `MYSTERY_CLOUD_SESSION` waiver that used to let Phase 2 be
+ * skipped is gone. Every step runs everywhere.
  *
  * Produces timestamped log files in test-results/ and a summary with timing.
  */
@@ -19,7 +16,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { npmBin } from "./supabase-utils.mjs";
+import { npmBin } from "./lib/process.mjs";
 
 // ---------------------------------------------------------------------------
 // Step definitions
@@ -33,9 +30,8 @@ const STEPS = [
   { name: "unit-api", phase: 1, args: ["run", "test:unit"] },
   { name: "unit-web", phase: 1, args: ["-w", "web", "run", "test:unit"] },
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
-  { name: "shared-sync", phase: 1, args: ["run", "check:shared-sync"] },
 
-  // Phase 2 — share Supabase state, run serially
+  // Phase 2 — each starts a server on the worktree's port, so serial
   { name: "integration", phase: 2, args: ["run", "test:integration"] },
   { name: "e2e-api", phase: 2, args: ["run", "test:e2e"] },
   { name: "e2e-browser", phase: 2, args: ["-w", "web", "run", "test:e2e"] },
@@ -127,19 +123,12 @@ function runStep(step, logDir) {
 // Main
 // ---------------------------------------------------------------------------
 
-// Waiver is gated on a positive, environment-owned marker — never on Docker
-// or Supabase reachability, which is the excuse this is designed to prevent.
-const cloudSession = Boolean(process.env.MYSTERY_CLOUD_SESSION);
-
 const baseDir = path.resolve("test-results");
 const runDir = path.join(baseDir, timestamp());
 fs.mkdirSync(runDir, { recursive: true });
 
 console.log(`\n=== Test Gate ===`);
 console.log(`Log directory: ${runDir}`);
-if (cloudSession) {
-  console.log(`Cloud session detected (MYSTERY_CLOUD_SESSION set).`);
-}
 console.log("");
 
 const results = [];
@@ -160,30 +149,6 @@ if (phase1Failed.length > 0) {
     `\nPhase 1 failures: ${phase1Failed.map((r) => r.name).join(", ")}`,
   );
   console.error("Skipping phase 2.\n");
-} else if (cloudSession) {
-  // --- Phase 2: WAIVED (cloud session) ---
-  // The cloud container has no Docker, so the Supabase-backed suites cannot
-  // run. Record them as explicitly waived (not skipped, not passed) so the
-  // summary is honest and the gate still goes green on Phase 1. These suites
-  // must be run locally before merge.
-  const phase2Steps = STEPS.filter((s) => s.phase === 2);
-  console.log(
-    `\n--- Phase 2 WAIVED: cloud session (MYSTERY_CLOUD_SESSION set) ---`,
-  );
-  console.log(
-    `Supabase-backed suites (${phase2Steps
-      .map((s) => s.name)
-      .join(", ")}) do not run without Docker. Run them locally before merge.\n`,
-  );
-  for (const step of phase2Steps) {
-    results.push({
-      name: step.name,
-      passed: false,
-      waived: true,
-      durationMs: 0,
-      logPath: null,
-    });
-  }
 } else {
   // --- Phase 2: serial ---
   const phase2Steps = STEPS.filter((s) => s.phase === 2);
@@ -211,47 +176,25 @@ if (phase1Failed.length > 0) {
     }
   }
 
-  // --- Leak detection (non-fatal, after phase 2) ---
-  try {
-    const { detectTestUserLeaks } = await import(
-      "../tests/testkit/src/leak-detector.ts"
-    );
-    const leakedCount = await detectTestUserLeaks();
-    const leakLine =
-      leakedCount > 0
-        ? `Leak check: ${leakedCount} orphaned test user(s) found`
-        : "Leak check: clean";
-    console.log(`\n${leakLine}`);
-    fs.appendFileSync(path.join(runDir, "summary.log"), `\n${leakLine}\n`);
-  } catch {
-    // Leak detection is best-effort — don't fail the gate
-  }
 }
 
 const totalMs = performance.now() - totalStart;
 
-// Waived steps do not fail the gate; skipped/failed steps do.
-const overallPass = results.every((r) => r.passed || r.waived);
+const overallPass = results.every((r) => r.passed);
 
 // --- Summary ---
 const lines = [
   "=== Test Gate Summary ===",
   "",
   ...results.map((r) => {
-    const status = r.skipped
-      ? "SKIP"
-      : r.waived
-        ? "WAIVED"
-        : r.passed
-          ? "PASS"
-          : "FAIL";
+    const status = r.skipped ? "SKIP" : r.passed ? "PASS" : "FAIL";
     const time = r.durationMs
       ? `${(r.durationMs / 1000).toFixed(1)}s`
       : "  -  ";
     const padName = r.name.padEnd(16);
     const padTime = time.padStart(7);
     let line = `${padName} ${padTime}  ${status}`;
-    if (!r.passed && !r.skipped && !r.waived && r.logPath) {
+    if (!r.passed && !r.skipped && r.logPath) {
       const err = firstErrorLine(r.logPath);
       if (err) line += `\n${"".padEnd(27)}${err}`;
     }
@@ -259,9 +202,6 @@ const lines = [
   }),
   "─".repeat(40),
   `${"Total".padEnd(16)} ${(totalMs / 1000).toFixed(1).padStart(7)}s  ${overallPass ? "PASS" : "FAIL"}`,
-  ...(cloudSession
-    ? ["", "Phase 2 WAIVED: cloud session (MYSTERY_CLOUD_SESSION). Run Supabase-backed suites locally before merge."]
-    : []),
   "",
 ];
 

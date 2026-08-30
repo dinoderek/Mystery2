@@ -59,9 +59,9 @@ function usage() {
 
 Subject (one required):
   --trace <file>      Evaluate a pre-extracted raw trace artifact (JSON).
-  --session <id>      Extract the session from Supabase first, then evaluate.
-                      Requires SERVICE_ROLE_KEY (and a resolvable Supabase URL)
-                      in the environment.
+  --session <id>      Extract the session from the game database first, then
+                      evaluate. Reads game.db directly, so the game does not
+                      have to be running.
 
 Options:
   --config <file>     Path to cli.json (default: evaluation/trace/config/cli.json).
@@ -127,18 +127,22 @@ async function loadRawTrace({ args, root, runDir, timer }) {
     return { trace, extraction: { skipped: true, source: "preexisting", input_path: tracePath } };
   }
 
-  // Extract inline from Supabase. Imported lazily so a --trace run (and the
-  // unit tests) never need the Supabase client or its env.
-  const { createSupabaseTraceSource, extractSessionTrace } = await import("./lib/datasource.mjs");
+  // Extract inline from the game database. Imported lazily so a --trace run
+  // (and the unit tests) never open a database at all.
+  const { createLocalTraceSource, extractSessionTrace } = await import("./lib/datasource.mjs");
   const trace = await timer.stage("extract", async () => {
-    const source = createSupabaseTraceSource();
-    return extractSessionTrace(source, args.session);
+    const source = createLocalTraceSource();
+    try {
+      return await extractSessionTrace(source, args.session);
+    } finally {
+      source.close();
+    }
   });
   // Persist the extracted raw trace into the run directory so the run is
   // self-contained and re-runnable with --trace.
   const tracePath = path.join(runDir, "trace.json");
   await fs.writeFile(tracePath, JSON.stringify(trace, null, 2));
-  return { trace, extraction: { skipped: false, source: "supabase", session_id: args.session, written_to: tracePath } };
+  return { trace, extraction: { skipped: false, source: "local", session_id: args.session, written_to: tracePath } };
 }
 
 async function main() {

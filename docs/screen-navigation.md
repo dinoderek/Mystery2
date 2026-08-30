@@ -8,7 +8,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 
 - **NO Server Routes**: Do not use `+page.server.ts` or `+layout.server.ts`.
 - **Client Loading**: Initialize data fetching in `+page.ts` (with `export const ssr = false;`).
-- **Auth Gate**: Root layout (`src/routes/+layout.svelte`) enforces authentication for all app routes except `/login`.
+- **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen local profile for all app routes except `/login`.
 
 ## Current Routes
 
@@ -24,10 +24,10 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Loads `Blueprints` only after entering the new-game sub-flow.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
-  - Blueprint cards optionally render cover images fetched via authenticated `blueprint-image-link` signed URLs.
+  - Blueprint cards optionally render cover images from `/api/images/<blueprint>/<image>`.
   - Cover-image fetch failures render a placeholder panel without blocking case selection.
   - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
-  - Includes a logout action that clears browser auth session.
+  - Includes a sign-out action that clears the profile cookie.
   - Forces a fresh session catalog load on route mount to avoid stale in-progress/completed counts after returning from `/session`.
   - Option 2 (`/sessions/in-progress`) and option 3 (`/sessions/completed`) are disabled when counts are zero.
   - In the new-game sub-flow, `b` returns to the root three-option menu.
@@ -35,7 +35,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 ### `/sessions/in-progress` (In-Progress List)
 
 - **Directory**: `src/routes/sessions/in-progress/+page.svelte`
-- **Purpose**: Shows resumable, non-ended sessions for the authenticated user.
+- **Purpose**: Shows resumable, non-ended sessions for the current profile.
 - **State Dependencies**:
   - Reads `sessionCatalog.in_progress` from `gameSessionStore`.
   - Uses `resumeSession(game_id)` to hydrate session state from `game-get`.
@@ -60,16 +60,16 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - If a row is not openable (`can_open=false`), selection is blocked with a warning.
   - Pressing `b` returns to `/`.
 
-### `/login` (Login Page)
+### `/login` (Profile Picker)
 
 - **Directory**: `src/routes/login/+page.svelte`
-- **Purpose**: Email/password authentication entry point.
+- **Purpose**: Choose or create the local profile to play as. There is no password.
 - **State Dependencies**:
-  - Uses `authStore` (`src/lib/domain/auth-store.svelte.ts`) via `LoginForm.svelte`.
+  - Uses `playerStore` (`src/lib/domain/player-store.svelte.ts`) via `ProfilePicker.svelte`.
 - **Special behavior**:
-  - Validates required fields inline.
-  - Displays auth errors (invalid credentials, expired session).
-  - Redirects to intended target path after successful sign-in.
+  - Lists existing profiles to pick from, and offers a name field for a new one.
+  - Refuses an empty name inline.
+  - Redirects to the intended target path once a profile is chosen.
 
 ### `/session` (Game Page)
 
@@ -119,12 +119,12 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
     the asset is missing, or the image itself does not load.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt. `Tab` is the one carve-out from "press any key": it opens the notebook so a finished case can be reviewed, and while the notebook is open no key leaves the session. Any other key returns to `/`.
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
-  - Includes a logout action that clears browser auth session.
+  - Includes a sign-out action that clears the profile cookie.
 
 ## Navigation Patterns
 
 - Use standard HTML `<a>` tags for standard links to leverage SvelteKit's built-in client-side router.
 - Use `goto('/path')` from `$app/navigation` for programmatic navigation (e.g., redirecting to a game session after clicking "Start").
-- Auth redirect rules:
-  - Unauthenticated access to protected routes redirects to `/login`.
-  - Authenticated navigation to `/login` redirects back to the stored intended path (or `/`).
+- Profile redirect rules:
+  - Reaching a protected route with no profile redirects to `/login`.
+  - Navigating to `/login` with a profile redirects back to the stored intended path (or `/`).

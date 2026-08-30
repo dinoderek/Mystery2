@@ -5,7 +5,7 @@
 > `docs/blueprint-generation-flows.md`
 > Source git blob hashes:
 > - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
-> - `docs/blueprint-generation-flows.md` — `36fb82b3b3e577c0f7c47380b396e286f8048a19`
+> - `docs/blueprint-generation-flows.md` — `bd245ed05355255e4a71139d0ac360d6bf2461dd`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If sources change in ways that affect brief interpretation, regenerate this file.
 

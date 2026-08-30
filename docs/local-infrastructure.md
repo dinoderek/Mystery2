@@ -1,173 +1,87 @@
-# Local Infrastructure
+# Running the game locally
 
-This document explains the worktree-isolated local Supabase architecture.
+The game is one Node process. This document is what is left of a chapter that
+used to describe nine Docker containers, a port allocator, generated config,
+and orphaned-stack garbage collection.
 
-For day-to-day commands such as restart, reset, seeding, and profile switching,
-use [`QUICKSTART.md`](../QUICKSTART.md). This file focuses on why the local
-stack behaves the way it does, which scripts make it safe in worktrees, and how
-to troubleshoot odd cases.
+## Prerequisites
 
-## Overview
+Node 24 (`.nvmrc`), and `npm ci`. That is the list.
 
-The local stack runs Supabase services in Docker containers. The base
-configuration lives in `supabase/config.toml.template` (checked in) with
-`project_id = "mystery"` and default ports. The actual `supabase/config.toml`
-is generated from this template at startup and is gitignored.
+## Starting it
 
-The repo is designed so that separate git worktrees can run isolated local
-Supabase stacks at the same time without clobbering each other's containers,
-ports, Edge Function mounts, or test state.
+```bash
+npm run dev
+```
 
-## Why Worktree Isolation Exists
+Mock narration, no network, no API key. `npm run dev:ai:free` and
+`npm run dev:ai:paid` start the same server with a real model, reading
+`.env.ai.free.local` / `.env.ai.paid.local` from the config root.
 
-Without isolation, all worktrees would share the same `project_id` and ports.
-The first worktree to run `supabase start` would effectively win, causing later
-worktrees to reuse the wrong containers. That creates three major failures:
+Switching between them is switching command. There is nothing to reseed and
+nothing to restart, because a profile is env, not a database row.
 
-- Edge Functions serving stale code from another worktree
-- migrations and seeded state drifting from the current checkout
-- tests passing or failing against the wrong codebase
+## Where your data lives
 
-## How Isolation Works
+| | |
+|---|---|
+| Database | `$MYSTERY_CONFIG_ROOT/game.db`, or `./data/game.db` (gitignored) |
+| Blueprints | `$MYSTERY_CONFIG_ROOT/blueprints/`, then the repo's `blueprints/` |
+| Images | `$MYSTERY_CONFIG_ROOT/blueprint-images/` |
+| Env | `.env.local`, `.env.ai.<mode>.local`, `.env.images.local` in the config root |
 
-Each worktree gets a derived `project_id` and an offset port range.
+`MYSTERY_CONFIG_ROOT` is an absolute path that moves all of it outside the
+repo, so several clones and worktrees share one set of blueprints and one
+history worth mining. Unset, everything resolves from the repo root.
 
-1. `scripts/worktree-ports.mjs` detects whether the current directory is the
-   main checkout or a git worktree.
-2. For worktrees, it hashes the worktree name into a deterministic slot.
-3. `patchConfigToml()` generates `supabase/config.toml` from
-   `config.toml.template` with the derived `project_id` and ports.
-4. `injectWorktreeEnv()` exports the matching `API_URL`, `SUPABASE_URL`,
-   `VITE_SUPABASE_URL`, and `VITE_DEV_PORT` so scripts and the web app point at
-   the right local services.
-5. `ensureSupabaseRunning()` wires this into the normal startup flow, so repo
-   scripts can safely target the current worktree.
+Nothing in the tests writes to your database. The suites start the server
+against a temporary config root and delete it afterwards.
 
-### Port Layout
+## Worktrees
 
-Ports are divided into three bands. Supabase services share the 54xxx range
-with stride 10 per slot. Vite and edge inspector each get their own band with
-stride 1, giving 1000 usable slots.
+Each worktree gets its own port so two checkouts can run side by side:
 
-| Service | Base (main) | Stride | Slot 1 | Slot 2 |
-| --- | --- | --- | --- | --- |
-| Vite dev server | 51000 | +1 | 51001 | 51002 |
-| Edge Inspector | 53000 | +1 | 53001 | 53002 |
-| API (functions) | 54331 | +10 | 54341 | 54351 |
-| Database | 54332 | +10 | 54342 | 54352 |
-| Shadow DB | 54330 | +10 | 54340 | 54350 |
-| Studio | 54333 | +10 | 54343 | 54353 |
-| Inbucket | 54334 | +10 | 54344 | 54354 |
-| Analytics | 54337 | +10 | 54347 | 54357 |
-| DB Pooler | 54339 | +10 | 54349 | 54359 |
+```
+web   51000 + slot     slot = hash(worktree name) % 1000 + 1
+```
 
-### Key Files
+`lib/worktree-ports.mjs` derives it. The main checkout uses 51000. There is
+nothing else to isolate — no database server, no containers, no project ids.
 
-| File | Role |
-| --- | --- |
-| `supabase/config.toml.template` | Checked-in base config; source of truth for `config.toml` |
-| `scripts/worktree-ports.mjs` | Worktree detection, port derivation, config generation |
-| `scripts/supabase-utils.mjs` | Startup orchestration, readiness checks, env injection |
-| `scripts/gc-worktree-supabase.mjs` | Garbage-collects orphaned worktree stacks |
+## Poking at the database
 
-## Operational Rules
+It is a SQLite file, so the usual tools work while the game is running (WAL
+mode is on for exactly this reason):
 
-- In worktrees, prefer the repo wrapper scripts (`npm run supabase:*`,
-  `npm run seed:*`, repo test scripts) over raw `npx supabase` commands.
-- Raw `npx supabase` commands are risky in worktrees because `config.toml` may
-  not have been generated yet for the current worktree.
-- If you truly need a raw CLI command such as `supabase status` or
-  `supabase migration new`, run `npm run supabase:patch` first.
-- Test and dev scripts use `ensureSupabaseRunning()` plus
-  `injectWorktreeEnv()`, so they automatically inherit the correct worktree
-  ports.
+```bash
+sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/game.db" "select id, mode, outcome, updated_at from game_sessions order by updated_at desc limit 10;"
+```
 
-## Garbage Collection
+To pull one session out as a self-contained artifact for the evaluation
+pipeline:
 
-Worktree stacks can outlive the worktree directory that created them. Cleanup
-happens in three layers:
+```bash
+npm run eval:trace:extract -- --session <id>
+```
 
-1. opportunistic GC inside `ensureSupabaseRunning()`
-2. manual cleanup with `npm run supabase:gc`
-3. machine restart, since these containers are not configured with
-   `--restart=always`
-
-The opportunistic GC pass looks for `mystery-wt-*` containers and stops stacks
-whose worktree no longer exists.
-
-## Main Checkout Behavior
-
-Outside a worktree, the system behaves like a normal single-checkout setup:
-
-- `project_id` stays `mystery`
-- default ports remain unchanged
-- `config.toml` is generated as an unmodified copy of the template
-- inherited env vars are preserved
+That reads the database directly, so the game does not have to be running, and
+`--db <file>` points it at a copy.
 
 ## Troubleshooting
 
-### Edge Functions appear stale
+**Something is already listening on the port.** Another checkout of this repo,
+or a server left running from a previous session. The test runner detects this
+and fails with a clear message rather than testing against the wrong server;
+for `npm run dev`, stop the other one.
 
-1. Verify which Supabase containers are running:
+**`better-sqlite3` failed to install.** It ships prebuilt binaries for macOS,
+Linux, and Windows on x64 and arm64, so this should not happen — but if a
+platform has no prebuild, npm falls back to compiling and needs a toolchain.
 
-   ```bash
-   docker ps --filter "label=com.supabase.cli.project" --format "{{.Names}}"
-   ```
+**The database is from a newer version of the engine.** `openDatabase()`
+refuses to open a file whose `PRAGMA user_version` is ahead of the code rather
+than corrupting it. Update the checkout, or start from a fresh database.
 
-2. Restart the stack from the affected checkout with `npm run supabase:restart`.
-
-This is especially important after changing files under `supabase/functions/`
-or `supabase/functions/_shared/`.
-
-### Port conflicts
-
-Inspect running containers and project labels:
-
-```bash
-docker ps --filter "label=com.supabase.cli.project" \
-  --format "table {{.Names}}\t{{.Labels}}"
-```
-
-If stale worktree stacks are present, clean them up with `npm run supabase:gc`.
-
-The slot allocator has 1000 buckets, so collisions are extremely rare (~0.3%
-with 3 concurrent worktrees). If one does occur, recreating the worktree under
-a different name will move it to a new slot.
-
-### A new worktree has an empty database
-
-Each worktree gets its own database. After first startup, seed it from that
-worktree with `npm run seed:all`.
-
-### `permission denied for table ...` (seed:ai or API fails)
-
-This means a `public` table has no DML grants for the API roles
-(`anon`/`authenticated`/`service_role`). It survives every reset because the
-grants are missing from the migrations, not from stale state — recent Supabase
-CLI / Postgres versions no longer auto-grant the `public` schema. Fix it in the
-migration that creates the table (see the convention in
-`docs/backend-conventions.md`), not by pinning the CLI. To verify the live
-grants, find this worktree's database container, then query it:
-
-```bash
-docker ps --format '{{.Names}}' | grep supabase_db   # pick your worktree's container
-
-docker exec -i supabase_db_<your-worktree> \
-  psql -U postgres -d postgres -c "select table_name, grantee, \
-  string_agg(privilege_type, ',' order by privilege_type) \
-  from information_schema.role_table_grants \
-  where table_schema='public' \
-  and grantee in ('anon','authenticated','service_role') \
-  group by 1,2 order by 1,2;"
-```
-
-The API roles should list `SELECT/INSERT/UPDATE/DELETE`, not just
-`REFERENCES/TRIGGER/TRUNCATE`.
-
-### You need a clean local database
-
-Use `npm run supabase:reset`, then reseed with `npm run seed:all`.
-
-### You need raw `npx supabase` in a worktree
-
-Generate the config first with `npm run supabase:patch`.
+**Blueprint edits are not showing up.** The content cache is keyed on mtime and
+size, so a saved edit is picked up on the next request. If you replaced a file
+with one of identical size in the same millisecond, touch it.

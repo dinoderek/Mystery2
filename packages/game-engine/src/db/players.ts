@@ -1,9 +1,8 @@
-// Local player profiles — the replacement for `auth.users`.
+// Local player profiles.
 //
 // There are no passwords and no tokens: a profile is a name and an id, the
 // browser carries the id in a cookie, and the session/event repositories scope
-// every query to it. That scoping is the whole of what the RLS policies in
-// migrations 0004 used to do.
+// every query to it. That scoping is the whole of the access model.
 
 import type { Db } from "./client.ts";
 

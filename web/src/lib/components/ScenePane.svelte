@@ -1,6 +1,6 @@
 <script lang="ts">
   import { gameSessionStore } from '$lib/domain/store.svelte';
-  import SignedImage from './SignedImage.svelte';
+  import BlueprintImage from './BlueprintImage.svelte';
 
   const page = $derived(gameSessionStore.activePage);
   const blueprintId = $derived(gameSessionStore.blueprint_id);
@@ -9,7 +9,7 @@
 <div class="story-image-panel h-full w-full overflow-hidden" data-testid="scene-pane">
   {#if page?.imageId && blueprintId}
     {#key page.imageId}
-      <SignedImage
+      <BlueprintImage
         blueprintId={blueprintId}
         imageId={page.imageId}
         alt={page.title ?? page.fallbackLabel}

@@ -12,7 +12,7 @@
 // The blueprint is the seeded mock (target_age 10), so `flesch` and
 // `age_appropriate` both grade against age 10.
 
-const BLUEPRINT = { path: "supabase/seed/blueprints/mock-blueprint.json" };
+const BLUEPRINT = { path: "blueprints/mock-blueprint.json" };
 const JUDGES = ["flesch", "age_appropriate"];
 const JUDGE_CONFIG = { flesch: { tolerance: 2 } };
 

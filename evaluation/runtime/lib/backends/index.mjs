@@ -19,8 +19,8 @@ export async function loadBackend(spec) {
   const [base, variant = null] = String(spec).split(":");
   let backend = REGISTRY.get(base);
   if (!backend && base === "cli") {
-    // Lazily import the CLI backend so its Deno/CLI dependencies are only
-    // required when actually requested.
+    // Lazily imported so the CLI it shells out to is only required when a
+    // run actually asks for that backend.
     backend = await import("./cli.mjs");
     REGISTRY.set(base, backend);
   }

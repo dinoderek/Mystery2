@@ -1,0 +1,284 @@
+import type { EngineContext } from "../context.ts";
+import {
+  asRetriableAIResponse,
+  badRequest,
+  internalError,
+  RetriableAIError,
+} from "../errors.ts";
+import { validateTransition } from "../state-machine.ts";
+import {
+  createAIRequestMetadata,
+  createAIProviderFromProfile,
+} from "../ai-provider.ts";
+import { buildNarrationPrompt } from "../role-request.ts";
+import { selectLocationConversationHistory } from "../ai-context.ts";
+import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../forced-endgame.ts";
+import { createRequestLogger, withLogContext } from "../logging.ts";
+import {
+  createNarrationDiagnostics,
+  createNarrationPart,
+  insertNarrationEvent,
+} from "../narration.ts";
+import { NARRATOR_SPEAKER } from "../speaker.ts";
+
+export async function handle(
+  req: Request,
+  ctx: EngineContext,
+): Promise<Response> {
+  const logger = createRequestLogger(req, "game-move");
+  const { requestId, log, logError } = logger;
+
+  try {
+    const body = await req.json();
+    if (!body || !body.game_id || !body.destination) {
+      log("request.invalid", { reason: "missing_game_id_or_destination" });
+      return badRequest("Missing game_id or destination");
+    }
+
+    const { game_id, destination } = body;
+    const narrationLogger = withLogContext(logger, { game_id });
+
+    // Fetch session
+    const session = await ctx.sessions.getById(game_id);
+
+    if (!session) {
+      log("request.invalid", { reason: "session_not_found", game_id: game_id });
+      return badRequest("Game session not found");
+    }
+
+    validateTransition(session.mode, "move");
+
+    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
+    if (!aiProfile) {
+      logError("request.error", {
+        reason: "ai_profile_missing",
+        game_id: game_id,
+        ai_profile_id: session.ai_profile_id ?? null,
+      });
+      return internalError("AI profile not found");
+    }
+    const aiProvider = createAIProviderFromProfile(aiProfile, {
+      openrouterApiKey: aiProfile.openrouter_api_key,
+    });
+
+    // Fetch blueprint
+    const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
+    if (!blueprint) {
+      return internalError("Blueprint missing");
+    }
+
+    const destLoc = blueprint.world.locations.find(
+      (l) => l.id === destination,
+    );
+    if (!destLoc) {
+      log("request.invalid", {
+        reason: "invalid_destination",
+        game_id: game_id,
+        destination,
+      });
+      return badRequest("Invalid destination");
+    }
+
+    const newTime = Math.max(session.time_remaining - 1, 0);
+    const isForcedEndgame = newTime === 0;
+    const nextMode = isForcedEndgame ? "accuse" : "explore";
+
+    const historyRows = await ctx.events.listBySession(game_id);
+    const locationHistory = selectLocationConversationHistory(
+      historyRows ?? [],
+      destLoc.id,
+    );
+    const hasVisitedBefore = locationHistory.length > 0;
+    const locationHistoryJson = JSON.stringify(locationHistory);
+    // Public-knowledge summaries only: identity, visible appearance, and the
+    // player-facing starting_knowledge summary. Private authored material
+    // (background, alibi, motive, ...) never reaches move narration.
+    const publicSummaryByCharacterId = new Map(
+      (blueprint.narrative.starting_knowledge?.characters ?? []).map(
+        (entry) => [entry.character_id, entry.summary] as const,
+      ),
+    );
+    const destinationCharactersJson = JSON.stringify(
+      blueprint.world.characters
+        .filter((character) => character.location_id === destLoc.id)
+        .map((character) => ({
+          id: character.id,
+          first_name: character.first_name,
+          last_name: character.last_name,
+          sex: character.sex,
+          appearance: character.appearance,
+          public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
+        })),
+    );
+
+    const subLocations = (destLoc.sub_locations ?? []).map((sl) => ({
+      name: sl.name,
+    }));
+    const aiPrompt = buildNarrationPrompt({
+      role: "ambience",
+      game_id: game_id,
+      blueprint,
+      destination_id: destLoc.id,
+      has_visited_before: hasVisitedBefore,
+      destination_history_json: locationHistoryJson,
+      destination_characters_json: destinationCharactersJson,
+      destination_sub_locations_json:
+        subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
+    });
+    const aiMetadata = createAIRequestMetadata(req, {
+      request_id: requestId,
+      endpoint: "game-move",
+      action: "move",
+      game_id: game_id,
+    });
+    const narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
+    // Capture the model now: a later forced-endgame generation would otherwise
+    // overwrite the provider's resolvedModel before this event is persisted.
+    const moveModel = aiProvider.resolvedModel;
+    const moveParts = [
+      createNarrationPart(
+        narration,
+        NARRATOR_SPEAKER,
+        destLoc.location_image_id ?? null,
+      ),
+    ];
+
+    let combinedParts = [...moveParts];
+    let followUpPrompt: string | null = null;
+    let forcedParts: typeof moveParts = [];
+    let forcedModel: string | null = null;
+
+    if (isForcedEndgame) {
+      const result = await tryGenerateForcedEndgame({
+        req,
+        request_id: requestId,
+        endpoint: "game-move",
+        game_id: game_id,
+        aiProvider,
+        session: {
+          ...session,
+          current_location_id: destLoc.id,
+          time_remaining: newTime,
+        },
+        blueprint,
+        conversation_history: historyRows ?? [],
+        scene_summary:
+          `The investigator moved to ${destLoc.name}, and that final movement exhausted all remaining time.`,
+        log,
+      });
+      if (!result.ok) return result.response;
+      followUpPrompt = result.follow_up_prompt;
+      forcedParts = result.narration_parts;
+      forcedModel = result.model;
+      combinedParts = [...moveParts, ...forcedParts];
+    }
+
+    // Update Session
+    try {
+      await ctx.sessions.update(game_id, {
+        current_location_id: destLoc.id,
+        time_remaining: newTime,
+        mode: nextMode,
+        current_talk_character_id: null,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {
+      logError("request.error", {
+        reason: "session_update_failed",
+        game_id: game_id,
+      });
+      return internalError("Failed to update session");
+    }
+
+    const moveSequence = await insertNarrationEvent(ctx.events, {
+      session_id: game_id,
+      event_type: "move",
+      actor: "system",
+      payload: {
+        destination: destLoc.id,
+        location_id: destLoc.id,
+        location_name: destLoc.name,
+        location_image_id: destLoc.location_image_id ?? null,
+        speaker: NARRATOR_SPEAKER,
+      },
+      narration_parts: moveParts,
+      model: moveModel,
+      diagnostics: createNarrationDiagnostics({
+        action: "move",
+        event_category: "move",
+        mode: "explore",
+        resulting_mode: nextMode,
+        time_before: session.time_remaining,
+        time_after: newTime,
+        time_consumed: true,
+        forced_endgame: isForcedEndgame,
+        trigger: "player",
+      }),
+      logger: narrationLogger,
+    });
+
+    if (isForcedEndgame) {
+      await insertForcedEndgameEvent(ctx.events, {
+        session_id: game_id,
+        action: "move",
+        action_sequence: moveSequence,
+        payload: {
+          location_id: destLoc.id,
+          location_name: destLoc.name,
+          location_image_id: destLoc.location_image_id ?? null,
+        },
+        narration_parts: forcedParts,
+        follow_up_prompt: followUpPrompt,
+        model: forcedModel,
+        time_before: session.time_remaining,
+        time_after: newTime,
+        resulting_mode: nextMode,
+        logger: narrationLogger,
+      });
+    }
+
+    const visible_characters = blueprint.world.characters
+      .filter((c) => c.location_id === destLoc.id)
+      .map((c) => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        sex: c.sex,
+      }));
+
+    return new Response(
+      JSON.stringify({
+        narration_parts: combinedParts,
+        current_location: destLoc.id,
+        visible_characters,
+        time_remaining: newTime,
+        mode: nextMode,
+        current_talk_character: null,
+        follow_up_prompt: followUpPrompt,
+      }),
+      { headers: { "Content-Type": "application/json" } },
+    );
+  } catch (err) {
+    if (err instanceof RetriableAIError) {
+      log("request.ai_retriable", {
+        code: err.details.code ?? null,
+        status: err.details.status ?? null,
+        error: err.message,
+      });
+      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
+    }
+    const aiResponse = asRetriableAIResponse(err);
+    if (aiResponse) return aiResponse;
+    if (err instanceof Error && err.name === "BadRequestError") {
+      log("request.invalid", {
+        reason: "bad_request_error",
+        message: err.message,
+      });
+      return badRequest(err.message);
+    }
+    logError("request.unhandled_error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return internalError("Internal Server Error");
+  }
+}

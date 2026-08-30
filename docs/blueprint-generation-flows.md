@@ -17,7 +17,7 @@ are only attached after generation.
 ## Schema Version
 
 All runtime endpoints, the blueprint generator, evaluator, and image pipeline
-use **Blueprint V2** (`supabase/functions/_shared/blueprints/blueprint-schema-v2.ts`).
+use **Blueprint V2** (`packages/shared/src/blueprint-schema-v2.ts`).
 
 All entity lookups are ID-based. The session DB stores V2 location and character
 IDs (`current_location_id`, `current_talk_character_id`). Client API requests
@@ -50,7 +50,7 @@ The OpenRouter request has three important parts:
 
 1. `system` message:
    the full contents of
-   `supabase/functions/_shared/blueprints/generator-prompt.md`, followed by
+   `packages/game-engine/src/blueprints/generator-prompt.md`, followed by
    `renderGenerationGuidance(targetAge)` from
    `packages/shared/src/age-profile.ts` — the same single source of truth the
    runtime narrator's `{{age_guidance}}` comes from
@@ -222,7 +222,7 @@ advertises); a target that exceeds the cap logs a warning and sends the first
 
 ## Gameplay Narration
 
-These outputs are generated at runtime in Supabase Edge Functions using
+These outputs are generated at runtime in the game server using
 Blueprint V2.
 
 | Generated output                  | Entry point                                                                                                             | Blueprint fields used as generation input                                                                                                                                                                                                                                                                                                                         | Non-blueprint context also used                                                                        | Attached after generation                                                                    | Notes                                                                                                                                                                                                                                                        |

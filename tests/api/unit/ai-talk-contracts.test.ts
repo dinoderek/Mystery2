@@ -3,7 +3,7 @@ import {
   parseTalkConversationOutput,
   parseTalkEndOutput,
   parseTalkStartOutput,
-} from "../../../supabase/functions/_shared/ai-contracts.ts";
+} from "../../../packages/game-engine/src/ai-contracts.ts";
 
 describe("talk AI output contracts", () => {
   it("accepts valid talk-start output", () => {

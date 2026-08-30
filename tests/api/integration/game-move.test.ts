@@ -1,35 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
-  SUPABASE_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
+  readStoredEvents,
+  setStoredTimeRemaining,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("game-move endpoint", () => {
   let auth: ApiAuthContext;
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-move");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
-  const admin = createClient(
-    SUPABASE_URL,
-    process.env.SERVICE_ROLE_KEY ??
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
 
   it("moves the player, decreases time, and returns narrator speaker", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
@@ -113,7 +100,7 @@ describe("game-move endpoint", () => {
     expect(startRes.status).toBe(200);
     const { game_id } = await startRes.json();
 
-    await admin.from("game_sessions").update({ time_remaining: 1 }).eq("id", game_id);
+    setStoredTimeRemaining(game_id, 1);
 
     const moveRes = await fetch(`${API_URL}/game-move`, {
       method: "POST",
@@ -130,12 +117,7 @@ describe("game-move endpoint", () => {
       moveData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
     ).toEqual(["narrator", "narrator"]);
 
-    const { data: events, error } = await admin
-      .from("game_events")
-      .select("sequence,event_type,payload,narration_parts,model")
-      .eq("session_id", game_id)
-      .order("sequence", { ascending: true });
-    expect(error).toBeNull();
+    const events = readStoredEvents(game_id);
 
     const moveEvent = events?.find((entry) => entry.event_type === "move");
     const forcedEvent = events?.find((entry) => entry.event_type === "forced_endgame");

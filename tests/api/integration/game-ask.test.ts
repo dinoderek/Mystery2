@@ -1,34 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { characterSpeaker } from "../../testkit/src/fixtures";
 import {
   API_URL,
-  SUPABASE_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
+  readStoredEvents,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 describe("game-ask endpoint", () => {
   let auth: ApiAuthContext;
-  const admin = createClient(
-    SUPABASE_URL,
-    process.env.SERVICE_ROLE_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-ask");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   it("requires non-empty player_input", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
@@ -132,11 +118,7 @@ describe("game-ask endpoint", () => {
     expect(askData.time_remaining).toBe(timeAfterTalk);
     expect(askData.mode).toBe("talk");
 
-    const { data: events } = await admin
-      .from("game_events")
-      .select("event_type,payload")
-      .eq("session_id", game_id)
-      .order("sequence", { ascending: true });
+    const events = readStoredEvents(game_id);
 
     const askEvent = events?.find((entry) => entry.event_type === "ask");
     expect(askEvent?.payload?.diagnostics).toMatchObject({

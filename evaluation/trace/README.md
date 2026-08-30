@@ -15,7 +15,7 @@ failure→fixture replay loop are designed-for but not yet built.
 
 ## Why this exists
 
-The game runtime already persists every played session in Supabase for the
+The game runtime already persists every played session for the
 resume feature: a `game_sessions` snapshot plus an append-only `game_events`
 log. That is a complete trace of what the game master did. This pipeline turns
 that data into a quality signal — where did the game master fabricate, leak the
@@ -26,17 +26,17 @@ switch models or iterate on a prompt.
 
 ```
 extract.mjs        run.mjs
-  Supabase  ──►  raw trace JSON  ──►  reconstruct (run-time)  ──►  checks + judges  ──►  result.json
+  game.db  ──►  raw trace JSON  ──►  reconstruct (run-time)  ──►  checks + judges  ──►  result.json
 ```
 
-1. **Extract** (`extract.mjs`) pulls a session out of Supabase — snapshot,
+1. **Extract** (`extract.mjs`) pulls a session out of `game.db` — snapshot,
    ordered events, the driving blueprint, and non-secret AI-profile metadata —
    and writes a **raw** trace artifact. Raw is deliberate: it is a faithful
    dump with no derived fields.
 2. **Run** (`run.mjs`) takes a raw trace (pre-extracted via `--trace`, or
    extracted inline via `--session`), **reconstructs** what the game master saw
    each turn by replaying the events through the real runtime context builders
-   (`supabase/functions/_shared/ai-context.ts`), runs the always-on mechanical
+   (`packages/game-engine/src/ai-context.ts`), runs the always-on mechanical
    checks and the judge battery, and writes a `result.json` envelope.
 
 Reconstruction is a run-time step, not baked into the stored artifact, so the
@@ -54,13 +54,13 @@ is preserved so a re-run is always possible.)
 cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
 
 # 2a. Extract a played session to a raw trace artifact:
-SERVICE_ROLE_KEY=... npm run eval:trace:extract -- --session <session-id> --out trace.json
+npm run eval:trace:extract -- --session <session-id> --out trace.json
 
 # 2b. Evaluate a pre-extracted trace:
 npm run eval:trace -- --trace trace.json
 
 # Or do both in one step (extract inline, then evaluate):
-SERVICE_ROLE_KEY=... npm run eval:trace -- --session <session-id>
+npm run eval:trace -- --session <session-id>
 ```
 
 Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
@@ -86,11 +86,11 @@ on `summary.mechanical.fail` / `summary.dimensions.fail`, not the exit code.
 
 ```
 evaluation/trace/
-├── extract.mjs              # CLI: Supabase session → raw trace artifact
+├── extract.mjs              # CLI: stored session → raw trace artifact
 ├── run.mjs                  # CLI: raw trace → reconstruct → checks + judges → envelope
 ├── lib/
 │   ├── normalize.mjs        # pure: rows → canonical raw trace artifact
-│   ├── datasource.mjs       # Supabase fetch (injectable; pure orchestration over 4 methods)
+│   ├── datasource.mjs       # database read (injectable; pure orchestration over 4 methods)
 │   ├── reconstruct.mjs      # run-time: fold session state + per-turn context via real builders
 │   ├── mechanical.mjs       # always-on deterministic checks (clue_accounting, spoiler_leak)
 │   ├── envelope.mjs         # trace-shaped result envelope (reuses combineDimension)

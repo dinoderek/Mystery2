@@ -10,7 +10,7 @@ import {
   isClueUnlocked,
   mapClueToThreads,
   type NotebookBlueprint,
-} from "../../../supabase/functions/_shared/clue-discovery.ts";
+} from "../../../packages/game-engine/src/clue-discovery.ts";
 
 const notebookBlueprint: NotebookBlueprint = {
   world: {

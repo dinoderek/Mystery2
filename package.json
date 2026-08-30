@@ -10,19 +10,9 @@
         "node": ">=24 <25"
     },
     "scripts": {
-        "dev": "node scripts/dev-mock.mjs",
-        "dev:ai:free": "node scripts/dev-ai.mjs free",
-        "dev:ai:paid": "node scripts/dev-ai.mjs paid",
-        "supabase:restart": "node scripts/supabase-restart.mjs",
-        "supabase:gc": "node scripts/gc-worktree-supabase.mjs --verbose",
-        "supabase:patch": "node scripts/supabase-patch.mjs",
-        "supabase:reset": "node scripts/supabase-reset.mjs",
-        "logs:edge": "node scripts/tail-edge-logs.mjs",
-        "seed:auth": "node scripts/seed-auth-users.mjs",
-        "seed:storage": "node scripts/seed-storage.mjs",
-        "seed:ai": "node scripts/seed-ai.mjs",
-        "seed:all": "node scripts/seed-all.mjs",
-        "users:update-passwords": "node scripts/update-bootstrap-passwords.mjs",
+        "dev": "node scripts/dev.mjs",
+        "dev:ai:free": "node scripts/dev.mjs free",
+        "dev:ai:paid": "node scripts/dev.mjs paid",
         "validate:blueprint": "node scripts/validate-blueprint.mjs",
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
@@ -32,16 +22,10 @@
         "eval:runtime": "node evaluation/runtime/run.mjs",
         "eval:runtime:rejudge": "node evaluation/runtime/rejudge.mjs",
         "eval:cases-from-trace": "node evaluation/runtime/cases-from-trace.mjs",
-        "deploy": "node scripts/deploy.mjs",
-        "deploy:dev": "npm run deploy -- --env dev",
-        "deploy:staging": "npm run deploy -- --env staging",
-        "deploy:prod": "npm run deploy -- --env prod",
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",
         "check:curated-docs": "node evaluation/generator-harness/scripts/check-curated-docs.mjs",
-        "sync:shared": "node scripts/sync-shared.mjs",
-        "check:shared-sync": "node scripts/sync-shared.mjs --check",
         "test:unit": "vitest run tests/api/unit",
         "test:integration": "node scripts/run-mock-tests.mjs integration",
         "test:e2e": "node scripts/run-mock-tests.mjs e2e",
@@ -64,10 +48,6 @@
         "prettier": "3.9.6",
         "typescript": "5.9.3",
         "typescript-eslint": "8.68.0",
-        "vitest": "4.1.11",
-        "wrangler": "4.71.0"
-    },
-    "dependencies": {
-        "@supabase/supabase-js": "2.98.0"
+        "vitest": "4.1.11"
     }
 }

@@ -12,7 +12,7 @@ export default defineConfig({
       reporter: ["text-summary", "json", "html"],
       reportsDirectory: "./coverage/api",
       include: [
-        "supabase/functions/**/*.ts",
+        "packages/game-engine/src/**/*.ts",
         "packages/shared/src/**/*.ts",
       ],
       exclude: ["**/*.test.ts", "**/node_modules/**", "**/*.d.ts"],

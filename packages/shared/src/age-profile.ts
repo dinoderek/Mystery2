@@ -1,24 +1,8 @@
 /**
  * Age-appropriate text — the single source of truth for ages 6–11.
  *
- * ============================ MIRRORED FILE ============================
- * This exact content lives in TWO places and must stay byte-identical:
- *
- *   canonical  packages/shared/src/age-profile.ts          <- EDIT HERE
- *   copy       supabase/functions/_shared/age-profile.ts   <- NEVER EDIT
- *
- * Why a copy rather than an import: the edge runtime container bind-mounts
- * only `supabase/functions`, so an import reaching out to `packages/shared`
- * resolves to a path that does not exist inside the container. The edge side
- * needs a real file on disk.
- *
- * After editing the canonical source, run:  npm run sync:shared
- * Drift fails the `shared-sync` step of `npm test` and a unit test.
- *
- * Keep this file import-free — the copy has to be valid under both Deno and
- * Node, which resolve specifiers differently (`zod` vs `npm:zod`). Anything
- * needing imports wants a hand-written adapter, not a mirror.
- * =======================================================================
+ * The engine and the evaluation harness both import this file directly, so
+ * narrator and judge always agree on what a given age can read.
  *
  * The model has TWO independent dials:
  *

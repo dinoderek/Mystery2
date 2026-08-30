@@ -1,8 +1,8 @@
 // Where the local engine finds its database and its content on disk.
 //
 // Everything is resolved through `scripts/local-config.mjs`, the same helper
-// the seed and dev scripts use, so a worktree with `MYSTERY_CONFIG_ROOT` set
-// reads the same blueprints and images the Supabase seeder uploads today.
+// the dev and generator scripts use, so a checkout with `MYSTERY_CONFIG_ROOT`
+// set reads the same blueprints and images the generators write.
 //
 // (The ambient type declaration for that `.mjs` module lives in
 // `tests/local-config-module.d.ts`; it is keyed on the literal specifier, which
@@ -39,21 +39,22 @@ export function resolveDatabasePath(
 }
 
 /**
- * Directories searched for blueprint JSON, in precedence order.
+ * Directories searched for blueprint JSON, in precedence order: the config
+ * root's `blueprints/` first, then the ones committed to the repo.
  *
- * Mirrors `scripts/seed-storage.mjs`: the config root's `blueprints/` first,
- * then the two seed blueprints checked into the repo. The second entry goes
- * away with `supabase/` in P5, at which point the seed blueprints need a new
- * home.
+ * The two are the same directory when `MYSTERY_CONFIG_ROOT` is unset, in which
+ * case only one is searched. Keeping the repo's copy in the list even when a
+ * config root is set is what lets the test suite run against fixtures it can
+ * rely on while writing its database somewhere disposable.
  */
 export function resolveBlueprintDirs(
   repoRoot: string = process.cwd(),
   env: Env = process.env,
 ): string[] {
-  return [
-    getBlueprintsDir(repoRoot, env),
-    path.join(path.resolve(repoRoot), "supabase/seed/blueprints"),
-  ];
+  const committed = path.join(path.resolve(repoRoot), "blueprints");
+  const configured = getBlueprintsDir(repoRoot, env);
+
+  return configured === committed ? [committed] : [configured, committed];
 }
 
 /**

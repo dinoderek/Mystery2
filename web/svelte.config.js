@@ -1,11 +1,12 @@
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-node';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		adapter: adapter({
-			fallback: '200.html'
-		})
+		// The game is one Node process on the machine: the same server that
+		// serves the SPA also serves `/api`, which is why nothing here needs
+		// CORS, JWTs or signed URLs any more.
+		adapter: adapter()
 	}
 };
 

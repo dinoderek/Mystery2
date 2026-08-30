@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { enableAuthBypass } from './test-auth';
+import { signInAsTestProfile } from './test-profile';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -11,15 +11,15 @@ import {
 
 test.describe('US2 - Status Bar', () => {
     test('displays correct status information (location, hints, time)', async ({ page }) => {
-        await enableAuthBypass(page);
-        await page.route('**/functions/v1/game-sessions-list*', async route => {
+        await signInAsTestProfile(page);
+        await page.route('**/api/game-sessions-list*', async route => {
             await route.fulfill({ json: EMPTY_CATALOG });
         });
-        await page.route('**/functions/v1/blueprints-list', async route => {
+        await page.route('**/api/blueprints-list', async route => {
             await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
         });
 
-        await page.route('**/functions/v1/game-start', async route => {
+        await page.route('**/api/game-start', async route => {
             await route.fulfill({
                 json: createGameStartResponse({
                     state: createGameState({

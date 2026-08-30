@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
     resolveAccusationAction,
     validateTransition,
-} from "../../../supabase/functions/_shared/state-machine.ts";
+} from "../../../packages/game-engine/src/state-machine.ts";
 
 describe("State Machine validateTransition", () => {
     it("allows valid explore actions", () => {

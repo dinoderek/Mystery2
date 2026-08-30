@@ -42,7 +42,7 @@ cp -R "$TEMPLATE_DIR/docs" "$TARGET/docs"
 
 # Symlinks to authoritative artifacts in the repo.
 # Use absolute paths so workspaces under $HOME work without cwd assumptions.
-ln -s "$REPO_ROOT/supabase/functions/_shared/blueprints/generator-prompt.md" \
+ln -s "$REPO_ROOT/packages/blueprint-generator/src/generator-prompt.md" \
       "$TARGET/prompts/generator-prompt.md"
 ln -s "$REPO_ROOT/packages/shared/src/blueprint-schema-v2.ts" \
       "$TARGET/schema/blueprint-schema-v2.ts"

@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
-  ensureMockBlueprintSeeded,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "./auth-helpers";
+} from "./helpers";
 
 const STARTING_LOCATION_ID = "loc-kitchen";
 const STARTING_LOCATION_IMAGE = "mock-blueprint.location-loc-kitchen.png";
@@ -16,12 +15,8 @@ describe("game-enter endpoint", () => {
 
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-enter");
-    await ensureMockBlueprintSeeded();
   });
 
-  afterEach(async () => {
-    await auth.cleanup();
-  });
 
   async function startGame(): Promise<string> {
     const startRes = await fetch(`${API_URL}/game-start`, {

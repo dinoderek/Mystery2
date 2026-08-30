@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   asRetriableAIResponse,
   RetriableAIError,
-} from "../../../supabase/functions/_shared/errors.ts";
+} from "../../../packages/game-engine/src/errors.ts";
 
 describe("error helpers", () => {
   it("maps RetriableAIError to 503 response payload", async () => {

@@ -32,6 +32,7 @@
         "eval:runtime": "node evaluation/runtime/run.mjs",
         "eval:runtime:rejudge": "node evaluation/runtime/rejudge.mjs",
         "eval:cases-from-trace": "node evaluation/runtime/cases-from-trace.mjs",
+        "eval:runtime:report": "node evaluation/runtime/report.mjs",
         "deploy": "node scripts/deploy.mjs",
         "deploy:dev": "npm run deploy -- --env dev",
         "deploy:staging": "npm run deploy -- --env staging",

@@ -224,6 +224,11 @@ stands out. That is why the fixtures' canned narration is written at the target
 reading age: the harness grades whatever the provider returns, so grade-10
 phrasing there would read as a permanent false failure.
 
+The mock provider's narration is fixed text, so it can only be a clean
+baseline at one age — the age-7 half of the suite fails `flesch` on mock and
+that is expected. Mock runs verify **plumbing** (every case executes, every
+contract parses); reading level is only meaningfully measured on a real model.
+
 ```bash
 # Plumbing, no model calls, no game server:
 node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --backend cli:stub
@@ -231,6 +236,29 @@ node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --
 # Plumbing through the real server, mock model:
 node evaluation/runtime/run.mjs evaluation/runtime/cases/all-interactions.mjs --backend endpoint
 ```
+
+## Reporting
+
+`report.mjs` pivots a run into an interaction x age table — the view that makes
+drift legible, since a single result.json tells you almost nothing:
+
+```bash
+npm run eval:runtime:report                 # newest run under runs/
+npm run eval:runtime:report -- <run-dir>    # a specific run
+npm run eval:runtime:report -- --json       # machine-readable rows
+```
+
+It prints, per interaction and age, the `flesch` grade against the grade implied
+by `target_age`, the LLM judge's estimated reading age against the target, and a
+closing list of just the cases above their level.
+
+Reading the two judges together matters: they disagree in a specific and
+informative way. `flesch` counts syllables, so a proper noun like "Glimmerbank
+Landing" pushes an otherwise simple sentence to grade 5.9 while the LLM judge
+reads the same line as age 6. The blueprint-side `age_appropriate` dimension
+explicitly exempts proper nouns ("learned, not read for meaning"); the runtime
+`flesch` judge has no such exemption. Treat a flesch-only failure on a line
+heavy with names as a measurement artefact, and weight the LLM judge's verdict.
 
 ## Artifacts (`runs/<run_id>/<case>__<backend>/`, gitignored)
 

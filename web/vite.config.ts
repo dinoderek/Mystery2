@@ -43,7 +43,7 @@ export default defineConfig({
     hookTimeout: 15_000,
     coverage: {
       provider: "v8",
-      reporter: ["text-summary", "json", "html"],
+      reporter: ["text-summary", "json", "json-summary", "html"],
       reportsDirectory: "./coverage",
       include: ["src/lib/**/*.ts", "src/lib/**/*.svelte"],
       exclude: ["**/*.test.ts", "**/node_modules/**"],

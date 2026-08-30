@@ -9,6 +9,10 @@
  * nothing installed beyond this repo, so every step runs everywhere: there is
  * no environment in which a suite may be skipped or waived.
  *
+ * The two unit steps run with coverage on, and the summary carries what they
+ * measured: totals per project, and the files thin enough to be worth naming.
+ * Coverage never decides the verdict.
+ *
  * Produces timestamped log files in test-results/ and a summary with timing.
  */
 
@@ -16,6 +20,12 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { npmBin } from "./lib/process.mjs";
+import {
+  clearCoverageReports,
+  collectCoverage,
+  formatCoverageDetail,
+  formatCoverageSummary,
+} from "./lib/coverage-report.mjs";
 
 // ---------------------------------------------------------------------------
 // Step definitions
@@ -26,8 +36,12 @@ const STEPS = [
   { name: "lint", phase: 1, args: ["run", "lint"] },
   { name: "typecheck", phase: 1, args: ["run", "typecheck"] },
   { name: "check-web", phase: 1, args: ["-w", "web", "run", "check"] },
-  { name: "unit-api", phase: 1, args: ["run", "test:unit"] },
-  { name: "unit-web", phase: 1, args: ["-w", "web", "run", "test:unit"] },
+  { name: "unit-api", phase: 1, args: ["run", "test:unit:coverage"] },
+  {
+    name: "unit-web",
+    phase: 1,
+    args: ["-w", "web", "run", "test:unit:coverage"],
+  },
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
 
   // Phase 2 — each starts a server on the worktree's port, so serial
@@ -130,12 +144,16 @@ console.log(`\n=== Test Gate ===`);
 console.log(`Log directory: ${runDir}`);
 console.log("");
 
+clearCoverageReports(process.cwd());
+
 const results = [];
 const totalStart = performance.now();
 
 // --- Phase 1: parallel ---
 const phase1Steps = STEPS.filter((s) => s.phase === 1);
-console.log(`--- Phase 1 (parallel): ${phase1Steps.map((s) => s.name).join(", ")} ---\n`);
+console.log(
+  `--- Phase 1 (parallel): ${phase1Steps.map((s) => s.name).join(", ")} ---\n`,
+);
 
 const phase1Results = await Promise.all(
   phase1Steps.map((step) => runStep(step, runDir)),
@@ -174,7 +192,6 @@ if (phase1Failed.length > 0) {
       break;
     }
   }
-
 }
 
 const totalMs = performance.now() - totalStart;
@@ -204,7 +221,17 @@ const lines = [
   "",
 ];
 
-const summary = lines.join("\n");
+// --- Coverage ---
+// Reported after the verdict, deliberately: the first question anyone asks a
+// gate log is what failed, and coverage only becomes the interesting number
+// once the answer is "nothing".
+const coverage = collectCoverage({ repoRoot: process.cwd(), results });
+fs.writeFileSync(
+  path.join(runDir, "coverage.log"),
+  formatCoverageDetail(coverage),
+);
+
+const summary = `${lines.join("\n")}\n${formatCoverageSummary(coverage)}`;
 console.log(`\n${summary}`);
 fs.writeFileSync(path.join(runDir, "summary.log"), summary);
 

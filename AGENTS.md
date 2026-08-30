@@ -1,20 +1,14 @@
 # AI Agent Operations Guide
 
-This file operationalizes `.specify/memory/constitution.md`. If this file
-conflicts with the Constitution, the Constitution wins.
-
 ## Required Reading
 
 For any significant task, review these core docs first:
 
+- `docs/constitution.md`
 - `docs/architecture.md`
 - `docs/game.md`
 - `docs/project-structure.md`
 - `docs/testing.md`
-
-When the task changes governance, templates, or compliance checks, also review:
-
-- `.specify/memory/constitution.md`
 
 Treat these documents as both guardrails and low-cost project context. Pull the
 relevant facts and constraints forward into specs, plans, tasks, and final

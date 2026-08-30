@@ -15,6 +15,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
@@ -22,6 +23,7 @@ import { npmBin } from "./process.mjs";
 
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
+const PORT_PROBE_TIMEOUT_MS = 1_000;
 
 /** A disposable config root: the run's database lives here and nowhere else. */
 export function createTestConfigRoot() {
@@ -40,18 +42,55 @@ function buildWebApp(repoRoot) {
   }
 }
 
+/** Resolves true if anything accepts a connection on the port right now. */
+function isPortInUse(host, port) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host, port });
+    const settle = (inUse) => {
+      socket.destroy();
+      resolve(inUse);
+    };
+    socket.setTimeout(PORT_PROBE_TIMEOUT_MS);
+    socket.once("connect", () => settle(true));
+    socket.once("timeout", () => settle(false));
+    socket.once("error", () => settle(false));
+  });
+}
+
+/**
+ * Refuses to start when the port is taken.
+ *
+ * This has to be a check of its own, before the server is spawned, because it
+ * cannot be inferred afterwards: the process already holding the port answers
+ * the readiness poll immediately, while our child takes a moment to die of
+ * EADDRINUSE. The readiness loop wins that race, and the suite then runs
+ * against a stale server whose config root has usually already been deleted —
+ * failing in a scatter of 404s and missing-database errors that look like
+ * product bugs. Asking the port directly is deterministic.
+ */
+export async function assertPortIsFree(host, port) {
+  if (await isPortInUse(host, port)) {
+    throw new Error(
+      `Something is already listening on ${host}:${port}. That is usually another ` +
+        `test run or a dev server in this worktree — stop it and try again. Test ` +
+        `suites within a checkout share one port and must not run concurrently.`,
+    );
+  }
+}
+
 async function waitForReady(url, hasExited) {
   const deadline = Date.now() + READY_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
-    // Checked first, and this matters: if the server died on startup — most
-    // often EADDRINUSE because one was left running — something else is
-    // answering on that port, and polling would happily "succeed" against it.
-    // The suite would then run against a stale server with a stale database,
-    // and fail in ways that look like product bugs.
+    // A genuine startup crash: the port was free when we probed it, so nothing
+    // else can answer the poll, and waiting out the timeout would only delay
+    // the failure. (A port already taken is caught before spawning — see
+    // `assertPortIsFree`; it cannot be detected here, because the process
+    // holding the port answers the poll long before our child dies of
+    // EADDRINUSE.)
     if (hasExited()) {
       throw new Error(
-        `Test server exited during startup. Is something already listening on ${url}?`,
+        "Test server exited during startup. See its output above.",
       );
     }
 
@@ -74,8 +113,11 @@ async function waitForReady(url, hasExited) {
 export async function startTestServer({ repoRoot, port, env = {} }) {
   buildWebApp(repoRoot);
 
+  const host = "127.0.0.1";
+  await assertPortIsFree(host, port);
+
   const configRoot = createTestConfigRoot();
-  const url = `http://127.0.0.1:${port}`;
+  const url = `http://${host}:${port}`;
 
   const child = spawn("node", ["build/index.js"], {
     cwd: path.join(repoRoot, "web"),
@@ -84,7 +126,7 @@ export async function startTestServer({ repoRoot, port, env = {} }) {
       ...process.env,
       ...env,
       PORT: String(port),
-      HOST: "127.0.0.1",
+      HOST: host,
       MYSTERY_CONFIG_ROOT: configRoot,
       MYSTERY_REPO_ROOT: repoRoot,
     },

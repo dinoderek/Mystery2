@@ -22,7 +22,14 @@ const vitestTarget =
 console.log(`Running ${suite} tests in "mock" AI mode...`);
 
 const { ports } = resolveWorktreePorts(repoRoot);
-const server = await startTestServer({ repoRoot, port: ports.web });
+const server = await startTestServer({ repoRoot, port: ports.web }).catch(
+  (error) => {
+    // Every failure here is operator-facing — the port is taken, the build
+    // broke, the server never answered — so print the message, not a stack.
+    console.error(`\n${error.message}\n`);
+    process.exit(1);
+  },
+);
 
 try {
   runCommand(npmBin, ["exec", "--", "vitest", "run", vitestTarget], {

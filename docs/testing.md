@@ -91,9 +91,11 @@ alone silences the check without fixing the doc. See
 (`scripts/run-mock-tests.mjs`):
 
 1. build the web app (`npm -w web run build`)
-2. start `node build/index.js` against a temporary config root, on the
-   worktree's port
-3. wait for it to answer, failing fast if something else holds the port
+2. fail if anything already holds the worktree's port — checked by connecting
+   to it, before the server is started, because the process holding it would
+   otherwise answer the readiness poll and the suite would run against it
+3. start `node build/index.js` against a temporary config root on that port,
+   and wait for it to answer
 4. run Vitest, passing `MYSTERY_TEST_API_URL` and `MYSTERY_TEST_CONFIG_ROOT`
 5. stop the server and delete the config root
 

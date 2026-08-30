@@ -1,32 +1,3 @@
-<!-- Sync Impact Report:
-Version change: 1.3.0 -> 2.0.0
-Rationale: MAJOR. Principle IV named a specific hosted platform as the approved
-architecture. The game now runs as one local Node process over SQLite and the
-filesystem, so the principle is redefined rather than clarified, and this
-document's own versioning policy calls that MAJOR.
-Principles:
-- I. Documentation First — unchanged
-- II. Test Everything You Build (NON-NEGOTIABLE) — amended: the boundary list
-  now names the engine, the API and the database
-- III. Run Quality Gates — unchanged
-- IV. Architecture & Security Constraints — REDEFINED
-- V. Context-Specific Conventions — amended: pointer updated to the engine
-- VI. Observability and Logging — amended: rationale no longer cites
-  distributed services
-Added sections: None
-Removed sections: None
-Templates requiring updates:
-- ✅ .specify/templates/plan-template.md
-- ✅ .specify/templates/agent-file-template.md
-- ✅ .specify/templates/constitution-template.md
-- ✅ .specify/templates/spec-template.md
-- ✅ .specify/templates/tasks-template.md
-Operational guidance updated:
-- ✅ AGENTS.md
-- ✅ docs/architecture.md, docs/testing.md, docs/backend-conventions.md,
-     docs/local-infrastructure.md, QUICKSTART.md
-Follow-up TODOs: None
--->
 # Mystery Game Constitution
 
 ## What we are building

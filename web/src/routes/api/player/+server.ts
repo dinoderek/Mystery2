@@ -7,8 +7,7 @@
 // another's, not to keep anyone out.
 
 import { json } from '@sveltejs/kit';
-import { PLAYER_COOKIE } from '../../../hooks.server';
-import { getEngine } from '$lib/server/engine';
+import { getEngine, playerCookie } from '$lib/server/engine';
 import type { RequestHandler } from './$types';
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
@@ -26,7 +25,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 	const player = getEngine().players.ensure(name);
 
-	cookies.set(PLAYER_COOKIE, player.id, {
+	cookies.set(playerCookie(), player.id, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
@@ -37,6 +36,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 };
 
 export const DELETE: RequestHandler = ({ cookies }) => {
-	cookies.delete(PLAYER_COOKIE, { path: '/' });
+	cookies.delete(playerCookie(), { path: '/' });
 	return json({ player: null });
 };

@@ -25,7 +25,10 @@
 
   async function enterNewGameFlow() {
     view = 'new-game';
-    if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status === 'idle') {
+    // Retry after a failed load, not just from `idle`. A failure leaves
+    // `status` at `error`, so gating on `idle` meant nothing ever asked again
+    // and the view stayed empty until the page was reloaded.
+    if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status !== 'loading') {
       await gameSessionStore.loadBlueprints();
     }
   }
@@ -133,10 +136,17 @@
           </p>
         {/if}
       {:else}
+        <!--
+          The error sits above the list rather than in place of it. A failed
+          start is worth retrying from the same screen, and replacing the cases
+          left going back and coming in again — which clears `error` — as the
+          only way to reach them.
+        -->
+        {#if gameSessionStore.error}
+          <p class="text-t-error mb-4">Error: {gameSessionStore.error}</p>
+        {/if}
         {#if gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length === 0}
           <TerminalSpinner text="Loading available blueprints..." />
-        {:else if gameSessionStore.error}
-          <p class="text-t-error">Error: {gameSessionStore.error}</p>
         {:else if gameSessionStore.blueprints.length === 0}
           <p>No blueprints available.</p>
         {:else}

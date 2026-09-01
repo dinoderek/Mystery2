@@ -4,6 +4,7 @@ export {
 	API_URL,
 	BASE_URL,
 	TEST_CONFIG_ROOT,
+	playerCookie,
 	removeTestImage,
 	seedTestImage,
 	testDatabase,

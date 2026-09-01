@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { openDatabase, type Db } from '../../../packages/game-engine/src/db/client.ts';
+import { playerCookieName } from '../../../packages/game-engine/src/player-cookie.ts';
 import { TEST_DATABASE, resolveDatabaseFile } from '../../../lib/database-target.mjs';
 
 function required(name: string): string {
@@ -33,6 +34,21 @@ export const TEST_CONFIG_ROOT = required('MYSTERY_TEST_CONFIG_ROOT');
 
 /** The game API, e.g. `http://127.0.0.1:51006/api`. */
 export const API_URL = `${BASE_URL}/api`;
+
+/** The run's database file — the server resolves the same path at startup. */
+function testDatabaseFile(): string {
+	return resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {});
+}
+
+/**
+ * The profile cookie the server under test sets.
+ *
+ * Derived from the database rather than hard-coded, the same way the server
+ * derives it, so the suite cannot drift from the name it actually uses.
+ */
+export function playerCookie(): string {
+	return playerCookieName(testDatabaseFile());
+}
 
 export interface TestPlayer {
 	id: string;
@@ -66,7 +82,7 @@ export async function createTestPlayer(tag: string): Promise<TestPlayer> {
 		name: player.name,
 		headers: {
 			'Content-Type': 'application/json',
-			Cookie: `mystery-player-id=${player.id}`,
+			Cookie: `${playerCookie()}=${player.id}`,
 		},
 	};
 }
@@ -86,7 +102,7 @@ let database: Db | null = null;
  * from the cause, so it fails here instead.
  */
 export function testDatabase(): Db {
-	const file = resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {});
+	const file = testDatabaseFile();
 	if (!fs.existsSync(file)) {
 		throw new Error(
 			`No database at ${file}. The server under test creates it at startup, so ` +

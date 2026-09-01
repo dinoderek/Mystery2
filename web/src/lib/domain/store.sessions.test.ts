@@ -347,6 +347,75 @@ describe('session catalog helpers', () => {
       'Failed to load transcript. Return to the mystery list and reopen the case.',
     );
   });
+
+  it('clears a stale error when blueprints load', async () => {
+    // `error` renders beside the case list, so a failure left set outlived the
+    // request that replaced it: the cases were loaded but hidden behind a
+    // message about a call that had already been retried.
+    const store = new GameSessionStore();
+    store.error = 'Not signed in';
+    invokeMock.mockResolvedValue({
+      error: null,
+      data: {
+        blueprints: [
+          { id: 'bp-1', title: 'A Case', one_liner: 'Someone did it.', target_age: 7 },
+        ],
+      },
+    });
+
+    await store.loadBlueprints();
+
+    expect(store.status).toBe('idle');
+    expect(store.error).toBeNull();
+    expect(store.blueprints).toHaveLength(1);
+  });
+
+  it('clears a stale error when a game starts', async () => {
+    const store = new GameSessionStore();
+    store.error = 'Not signed in';
+    invokeMock.mockResolvedValue({
+      error: null,
+      data: {
+        game_id: 'game-1',
+        state: createGameState({
+          locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
+          characters: [],
+          time_remaining: 3,
+        }),
+        narration_events: [],
+      },
+    });
+
+    await store.startGame('bp-1');
+
+    expect(store.status).toBe('active');
+    expect(store.error).toBeNull();
+  });
+
+  it('keeps the case list when starting a game fails', async () => {
+    // The list is what the player retries from, so a failed start must leave
+    // it loaded rather than reporting the error in its place.
+    const store = new GameSessionStore();
+    invokeMock.mockResolvedValueOnce({
+      error: null,
+      data: {
+        blueprints: [
+          { id: 'bp-1', title: 'A Case', one_liner: 'Someone did it.', target_age: 7 },
+        ],
+      },
+    });
+    await store.loadBlueprints();
+
+    invokeMock.mockResolvedValueOnce({
+      error: { message: 'Not signed in', status: 401 },
+      data: null,
+    });
+    await store.startGame('bp-1');
+
+    expect(store.status).toBe('error');
+    expect(store.error).toBe('Not signed in');
+    expect(store.blueprints).toHaveLength(1);
+  });
 });
 
 describe('mystery title from blueprint lookup', () => {

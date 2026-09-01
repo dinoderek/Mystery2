@@ -364,6 +364,10 @@ export class GameSessionStore {
 
   async loadBlueprints() {
     this.status = 'loading';
+    // The failure a request replaces must not outlive it. `error` is rendered
+    // beside the blueprint list, so leaving a stale one set showed a message
+    // about a request that had already been superseded.
+    this.error = null;
     const { data, error } = await callApi('blueprints-list');
     if (error) {
       this.error = error.message;
@@ -423,6 +427,7 @@ export class GameSessionStore {
 
   async startGame(blueprintId: string) {
     this.status = 'loading';
+    this.error = null;
     const { data, error } = await callApi('game-start', { blueprint_id: blueprintId });
     if (error) {
       this.error = error.message;

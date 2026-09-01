@@ -3,6 +3,7 @@ import {
   API_URL,
   BASE_URL,
   MOCK_BLUEPRINT_ID,
+  playerCookie,
   seedTestImage,
   setupApiTestAuth,
   type ApiAuthContext,
@@ -12,9 +13,11 @@ import {
 // carries a cookie naming a profile that exists, or it does not.
 const COVER_IMAGE_ID = "mock-blueprint.blueprint.png";
 
+// The server's own cookie name, so this stays a test of an id that names no
+// profile rather than of a cookie the server never looks at.
 const UNKNOWN_PROFILE_HEADERS = {
   "Content-Type": "application/json",
-  Cookie: "mystery-player-id=00000000-0000-4000-8000-000000000000",
+  Cookie: `${playerCookie()}=00000000-0000-4000-8000-000000000000`,
 };
 
 describe("requests without a profile", () => {

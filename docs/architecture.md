@@ -48,8 +48,8 @@ served by a process that also answers its API calls.
 | `src/routes/api/images/[blueprint]/[image]/+server.ts` | Serves blueprint artwork off disk, gated on a signed-in profile and on the image being referenced by the blueprint. |
 | `src/routes/api/player/+server.ts` | The current profile: read it, sign in, sign out. |
 | `src/routes/api/players/+server.ts` | Every profile on this machine, for the picker. |
-| `src/hooks.server.ts` | Resolves the `mystery-player-id` cookie into `locals.player`. |
-| `src/lib/server/engine.ts` | Opens the engine once for the process. |
+| `src/hooks.server.ts` | Resolves the profile cookie into `locals.player`. |
+| `src/lib/server/engine.ts` | Opens the engine once for the process, and names the profile cookie for the database it opened. |
 
 The browser talks to all of it through `src/lib/api/client.ts` — `callApi(name,
 body)` returning `{ data, error }`. Same origin, so there is no CORS, no bearer

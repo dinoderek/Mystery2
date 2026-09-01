@@ -6,7 +6,7 @@
 // nothing else.
 
 import path from 'node:path';
-import { createLocalEngine, type LocalEngine } from '@my2/game-engine';
+import { createLocalEngine, playerCookieName, type LocalEngine } from '@my2/game-engine';
 
 let engine: LocalEngine | null = null;
 
@@ -30,4 +30,15 @@ function resolveRepoRoot(): string {
 export function getEngine(): LocalEngine {
 	engine ??= createLocalEngine({ repoRoot: resolveRepoRoot() });
 	return engine;
+}
+
+/**
+ * The profile cookie for the database this server opened.
+ *
+ * Derived rather than fixed because cookies are not isolated by port: two
+ * servers on `localhost` share a jar, and each worktree has its own database.
+ * `player-cookie.ts` in the engine has the rest.
+ */
+export function playerCookie(): string {
+	return playerCookieName(getEngine().databasePath);
 }

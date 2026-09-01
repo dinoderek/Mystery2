@@ -55,6 +55,12 @@
   <div class="flex-1 min-h-0 overflow-y-auto border border-t-muted/30 p-4">
     {#if gameSessionStore.sessionCatalogStatus === 'loading' && sessions.length === 0}
       <p>Loading completed sessions...</p>
+    {:else if gameSessionStore.sessionCatalogStatus === 'error' && sessions.length === 0}
+      <p class="text-t-warning">
+        Session list unavailable{gameSessionStore.sessionCatalogError
+          ? `: ${gameSessionStore.sessionCatalogError}`
+          : ''}.
+      </p>
     {:else if sessions.length === 0}
       <p class="text-t-muted/80">No completed sessions found.</p>
     {:else}

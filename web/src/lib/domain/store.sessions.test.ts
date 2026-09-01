@@ -15,13 +15,48 @@ vi.mock('../api/client', () => ({
 import { normalizeSessionCatalog, normalizeSessionSummary, sortSessionSummaries } from './store.svelte';
 import { GameSessionStore } from './store.svelte';
 import type { SessionSummary } from '../types/game';
+import type { ApiResult } from '../api/client';
 import {
   NARRATOR_SPEAKER,
   characterSpeaker,
   createSessionSummary,
+  createSessionCatalog,
   createNarrationEvent,
   createGameState,
 } from '../../../../tests/testkit/src/fixtures';
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}
+
+/** A response the test decides the timing of, so two can be raced deliberately. */
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
+/** A catalog payload whose only interesting property is its counts. */
+function catalogWith(inProgress: number, completed: number) {
+  const rows = (count: number, mode: 'explore' | 'ended') =>
+    Array.from({ length: count }, (_, index) =>
+      createSessionSummary({
+        game_id: `00000000-0000-0000-0000-0000000${mode === 'ended' ? 'e' : 'a'}000${index}`,
+        mode,
+        time_remaining: mode === 'ended' ? 0 : 5,
+        outcome: mode === 'ended' ? 'win' : null,
+      }) as SessionSummary,
+    );
+
+  return createSessionCatalog({
+    in_progress: rows(inProgress, 'explore'),
+    completed: rows(completed, 'ended'),
+    counts: { in_progress: inProgress, completed: completed },
+  });
+}
 
 describe('session catalog helpers', () => {
   beforeEach(() => {
@@ -222,6 +257,75 @@ describe('session catalog helpers', () => {
         ],
       },
     ]);
+  });
+
+  it('reissues a forced reload while an earlier request is still in flight', async () => {
+    const store = new GameSessionStore();
+    const first = deferred<ApiResult>();
+    const second = deferred<ApiResult>();
+    invokeMock.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    void store.loadSessionCatalog(true);
+    void store.loadSessionCatalog(true);
+
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+
+    second.resolve({ error: null, data: catalogWith(2, 1) });
+    first.resolve({ error: null, data: catalogWith(9, 9) });
+    await Promise.resolve();
+
+    expect(store.sessionCatalogStatus).toBe('ready');
+    expect(store.sessionCatalog.counts).toEqual({ in_progress: 2, completed: 1 });
+  });
+
+  it('does not let a failure that lost the race stick to the screen', async () => {
+    // The landing-page regression: the first request went out signed-out and
+    // came back 401 slowly, after signing in had already remounted the page and
+    // asked again. Its error must not land on the answer that replaced it.
+    const store = new GameSessionStore();
+    const signedOut = deferred<ApiResult>();
+    const signedIn = deferred<ApiResult>();
+    invokeMock.mockReturnValueOnce(signedOut.promise).mockReturnValueOnce(signedIn.promise);
+
+    void store.loadSessionCatalog(true);
+    void store.loadSessionCatalog(true);
+
+    signedIn.resolve({ error: null, data: catalogWith(1, 0) });
+    await Promise.resolve();
+    signedOut.resolve({ error: { message: 'Not signed in', status: 401 }, data: null });
+    await Promise.resolve();
+
+    expect(store.sessionCatalogStatus).toBe('ready');
+    expect(store.sessionCatalogError).toBeNull();
+    expect(store.sessionCatalog.counts).toEqual({ in_progress: 1, completed: 0 });
+  });
+
+  it('keeps the underlying cause when the catalog fails', async () => {
+    const store = new GameSessionStore();
+    invokeMock.mockResolvedValue({ error: { message: 'Not signed in', status: 401 }, data: null });
+
+    await store.loadSessionCatalog(true);
+
+    expect(store.sessionCatalogStatus).toBe('error');
+    expect(store.sessionCatalogError).toBe('Not signed in');
+    expect(store.sessionCatalog.counts).toEqual({ in_progress: 0, completed: 0 });
+  });
+
+  it('joins an in-flight request rather than reissuing when not forced', async () => {
+    const store = new GameSessionStore();
+    const pending = deferred<ApiResult>();
+    invokeMock.mockReturnValueOnce(pending.promise);
+
+    void store.loadSessionCatalog(true);
+    void store.loadSessionCatalog();
+
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+
+    pending.resolve({ error: null, data: catalogWith(0, 3) });
+    await Promise.resolve();
+
+    expect(store.sessionCatalogStatus).toBe('ready');
+    expect(store.sessionCatalog.counts).toEqual({ in_progress: 0, completed: 3 });
   });
 
   it('surfaces transcript recovery guidance when resume fails', async () => {

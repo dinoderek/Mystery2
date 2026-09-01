@@ -127,7 +127,9 @@
           </div>
         {:else if gameSessionStore.sessionCatalogStatus === 'error'}
           <p class="mt-6 text-xs text-t-warning">
-            Session catalog unavailable. In-progress and completed options stay disabled.
+            Session catalog unavailable{gameSessionStore.sessionCatalogError
+              ? `: ${gameSessionStore.sessionCatalogError}`
+              : ''}. In-progress and completed options stay disabled.
           </p>
         {/if}
       {:else}

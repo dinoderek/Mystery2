@@ -44,6 +44,30 @@ test.describe('Local profiles', () => {
 		await expect(page).toHaveURL(/\/$/);
 	});
 
+	test('makes no signed-out API calls on the way to the picker', async ({ page }) => {
+		// The landing page used to render for a tick before `goto('/login')`
+		// resolved, and its `onMount` fired `game-sessions-list` without a
+		// profile. The 401 that came back left "Session catalog unavailable" on
+		// the menu after signing in.
+		const unauthenticated: string[] = [];
+		page.on('response', (response) => {
+			if (response.status() === 401) unauthenticated.push(response.url());
+		});
+
+		await page.goto('/');
+		await expect(page).toHaveURL(/\/login$/);
+		await expect(page.getByText('Who is playing?')).toBeVisible();
+
+		expect(unauthenticated).toEqual([]);
+	});
+
+	test('shows a working session catalog straight after signing in', async ({ page }) => {
+		await signInThroughPicker(page, 'catalog');
+
+		await expect(page.getByText(/Session catalog unavailable/)).toHaveCount(0);
+		await expect(page.getByText('2. View in-progress games')).toBeVisible();
+	});
+
 	test('signs in without the picker when the cookie is already set', async ({ page }) => {
 		await signInAsTestProfile(page);
 

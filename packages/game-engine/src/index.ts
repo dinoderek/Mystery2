@@ -3,7 +3,7 @@
 // The engine is the game: the state machine, the clue graph, the AI provider
 // and prompt assembly, the twelve endpoint handlers, and the SQLite +
 // filesystem adapter they run against. What it deliberately does not contain
-// is a server — `EngineContext` is handed in, and `web/src/routes/api/` is the
+// is a server — the context is handed in, and `web/src/routes/api/` is the
 // only thing that knows about HTTP routing, cookies and the process.
 
 // --- the boundary ---
@@ -11,6 +11,7 @@ export {
   DEFAULT_AI_PROFILE_ID,
   type AIProfileStore,
   type BlueprintSummaryEntry,
+  type CatalogContext,
   type ContentStore,
   type EngineAIProfile,
   type EngineContext,
@@ -29,8 +30,11 @@ export {
 export {
   ENDPOINTS,
   findEndpoint,
+  type CatalogEndpoint,
+  type EndpointAccess,
   type EndpointDefinition,
   type EndpointMethod,
+  type ProfileEndpoint,
 } from "./endpoints/index.ts";
 
 // --- the local implementation of the boundary ---

@@ -1,9 +1,11 @@
-import type { EngineContext } from "../context.ts";
+import type { CatalogContext } from "../context.ts";
 import { createRequestLogger } from "../logging.ts";
 
+// The catalog is the same for everybody, so this runs without a profile — see
+// the access note in `index.ts`.
 export async function handle(
   req: Request,
-  ctx: EngineContext,
+  ctx: CatalogContext,
 ): Promise<Response> {
   const logger = createRequestLogger(req, "blueprints-list");
 

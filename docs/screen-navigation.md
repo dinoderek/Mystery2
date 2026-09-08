@@ -8,7 +8,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 
 - **NO Server Routes**: Do not use `+page.server.ts` or `+layout.server.ts`.
 - **Client Loading**: Initialize data fetching in `+page.ts` (with `export const ssr = false;`).
-- **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen local profile for all app routes except `/login`.
+- **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen local profile for all app routes except `/login`. This is a UI decision — you cannot play without a profile — not the server's access rule; see "Identity and access" in `docs/architecture.md`.
 
 ## Current Routes
 

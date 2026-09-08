@@ -56,7 +56,10 @@ calls to OpenRouter. Three constraints follow and MUST hold:
    server from the environment and never reaches the client.
 2. **Ownership is enforced in the engine's repositories.** Every session and
    event query MUST be scoped to the requesting profile. There is no database
-   layer underneath to catch a query that forgets.
+   layer underneath to catch a query that forgets. Profiles are separation, not
+   protection: an endpoint runs as one only when it manages or plays a game
+   session, and an endpoint over shared content MUST NOT require one. See
+   "Identity and access" in `docs/architecture.md`.
 3. **The engine does not know how it is hosted.** Handlers reach the outside
    world only through `EngineContext`; anything that reaches past it — a file
    path, a driver, an HTTP detail — belongs in an adapter.
@@ -66,7 +69,10 @@ the source and the running game is a deviation and MUST be recorded in the
 implementation plan before work begins. Rationale: the whole value of this
 architecture is that it is small enough to hold in your head and runs with one
 command; drift back toward a platform is expensive to undo, and a leaked key or
-an unscoped query has no second line of defence.
+an unscoped query has no second line of defence. Gating shared content on a
+profile is the same drift in the other direction — it buys nothing on a machine
+the player already owns, and it makes the one rule that does matter harder to
+see.
 
 ### V. Context-Specific Conventions
 

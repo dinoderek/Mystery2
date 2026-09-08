@@ -35,7 +35,7 @@ export async function handle(req: Request, ctx: EngineContext): Promise<Response
 ```
 
 and `web/src/routes/api/[endpoint]/+server.ts` does the rest once for all of
-them: check the method, resolve the profile, build the context, delegate.
+them: check the method, build the context, delegate.
 
 `EngineContext` (`src/context.ts`) is the engine's whole boundary against its
 host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
@@ -58,6 +58,28 @@ second adapter can be written and tested alongside the first, with the handlers
 unable to tell which they have. Treat a direct file or driver reference in a
 handler as a bug.
 
+### Access
+
+There are two contexts, because the server has two behaviours — see "Identity
+and access" in `docs/architecture.md` for why. An endpoint declares which one it
+runs under in `src/endpoints/index.ts`:
+
+- `access: "profile"` gets an `EngineContext`, and the route refuses the
+  request without a profile.
+- `access: "catalog"` gets a `CatalogContext` — content, and nothing owned by
+  anybody — and the route does not ask for a profile at all.
+
+The criterion is ownership: **does the endpoint touch somebody's sessions?** If
+it does it is `"profile"`, and if it does not it needs none. Decide that when
+you add the endpoint; it is a claim about what the handler reaches, so nothing
+can infer it for you. Write the narrower type in the handler's signature and
+let the compiler hold you to it — a `"catalog"` handler that later needs a
+session will not compile until somebody changes its access on purpose.
+
+`tests/api/unit/endpoint-access.test.ts` holds the registry to the criterion,
+and `tests/api/integration/unauthenticated.test.ts` proves both behaviours over
+HTTP. A new endpoint fails both until it is listed.
+
 ## 3. The Database
 
 Six tables, defined once in `packages/game-engine/src/db/schema.ts`: three for
@@ -66,7 +88,10 @@ play, three for AI configuration.
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
   and `db/events.ts` is scoped to one player. There is no row-level security
   underneath to catch a query that forgets, so a repository method without a
-  `player_id` filter is a security bug, not a style problem.
+  `player_id` filter is a bug that crosses profiles, not a style problem. This
+  is why the two contexts are separate types rather than one with a nullable
+  player: a handler that runs without a profile has no session store to reach
+  for, so there is no scoped query for it to get wrong.
 - **One driver import.** `db/client.ts` is the only file that imports
   `better-sqlite3`, and it loads it through `createRequire` so no bundler can
   inline a native addon. Repositories receive a `Db` interface.

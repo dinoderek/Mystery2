@@ -19,7 +19,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 - `tests/`: Development and Test-only TS code (Node.js/Vitest environment) that is never bundled into production.
   - `api/`: Contains all backend-focused testing tiers (Unit, Integration, and E2E) run via Vitest.
   - `testkit/`: Highly reusable test helpers (e.g., seeding users, auth handling, test assertions).
-- `web/src/lib/`: Browser-domain state, transcript hydration, and authenticated image-link handling for session start/resume flows.
+- `web/src/lib/`: Browser-domain state, transcript hydration, and image-link handling for session start/resume flows.
 
 ## Configuration Files
 - `package.json`: Main workspace root defining all top-level scripts like test coordination.
@@ -37,7 +37,7 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 ## Feature Additions (Static Blueprint Images)
 
-- `web/src/routes/api/images/[blueprint]/[image]/+server.ts`: Serves blueprint artwork off disk, gated on a signed-in profile and on the blueprint referencing the image.
+- `web/src/routes/api/images/[blueprint]/[image]/+server.ts`: Serves blueprint artwork off disk, confined to images the blueprint references. Artwork is shared content, so it needs no profile.
 - `packages/game-engine/src/images.ts`: Canonical image ID validation and storage-key helpers.
 - `scripts/generate-blueprint-images.mjs`: Local operator image generation + selective blueprint patching CLI.
 

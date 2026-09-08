@@ -11,6 +11,7 @@ import { createLocalContentStore } from "./content.ts";
 import type {
   AIProfileStore,
   AISettingsStore,
+  CatalogContext,
   ContentStore,
   EngineContext,
   EnginePlayer,
@@ -64,6 +65,8 @@ export interface LocalEngineOptions {
 /** Everything the server needs, opened once at startup. */
 export interface LocalEngine {
   db: Db;
+  /** The file `db` was opened from. Scopes the profile cookie to it. */
+  databasePath: string;
   players: PlayerStore;
   content: ContentStore;
   aiProfiles: AIProfileStore;
@@ -76,6 +79,8 @@ export interface LocalEngine {
   /** Directory image bytes are served from. */
   imagesDir: string;
   contextFor(player: EnginePlayer): EngineContext;
+  /** The context an endpoint that runs without a profile is given. */
+  catalogContext(): CatalogContext;
   close(): void;
 }
 
@@ -85,9 +90,8 @@ export function createLocalEngine(
   const repoRoot = options.repoRoot ?? process.cwd();
   const env = options.env ?? process.env;
 
-  const db = openDatabase({
-    path: options.databasePath ?? resolveDatabasePath(repoRoot, env),
-  });
+  const databasePath = options.databasePath ?? resolveDatabasePath(repoRoot, env);
+  const db = openDatabase({ path: databasePath });
   const imagesDir = resolveBlueprintImagesDir(repoRoot, env);
   const content = createLocalContentStore({
     blueprintDirs: resolveBlueprintDirs(repoRoot, env),
@@ -109,12 +113,14 @@ export function createLocalEngine(
 
   return {
     db,
+    databasePath,
     players: createPlayerStore(db),
     aiSettings,
     content,
     aiProfiles,
     imagesDir,
     contextFor: (player) => createLocalContext(player, { db, content, aiProfiles }),
+    catalogContext: () => ({ content }),
     close: () => db.close(),
   };
 }

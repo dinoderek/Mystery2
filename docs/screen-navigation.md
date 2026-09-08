@@ -12,10 +12,14 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   local profile for every route except the public ones. The redirect runs in an
   effect and `goto()` is async, so the layout renders nothing on a protected
   route until a profile exists — otherwise a page would mount and fire its
-  `onMount` fetches signed out, and every game endpoint answers 401 without a
-  profile. The public list is `PUBLIC_PATHS` in that file: `/login` and
-  `/settings`. A route added there must be served by an endpoint that does not
-  require a profile, or it will render and immediately 401.
+  `onMount` fetches signed out, and every endpoint that manages or plays a
+  session answers 401 without a profile. The public list is `PUBLIC_PATHS` in
+  that file: `/login` and `/settings`.
+  This gate is a UI decision — you cannot play without a profile — and is
+  deliberately stricter than the server, which asks for one only where a
+  session is involved; see "Identity and access" in `docs/architecture.md`.
+  A route added to `PUBLIC_PATHS` therefore has to be served by endpoints on
+  the permissive side of that line, or it will render and immediately 401.
 
 ## Current Routes
 
@@ -28,7 +32,9 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - `3. View completed games`
 - **State Dependencies**:
   - Fetches `sessionCatalog` (`game-sessions-list`) to enable/disable options 2/3.
-  - Loads `Blueprints` only after entering the new-game sub-flow.
+  - Loads `Blueprints` only after entering the new-game sub-flow, and asks
+    again on re-entry whenever the list is still empty — including after a
+    failed load, which leaves `status` at `error`.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
   - Blueprint cards optionally render cover images from `/api/images/<blueprint>/<image>`.
@@ -43,6 +49,10 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
     (`sessionCatalogError`) rather than only saying it is unavailable.
   - Option 2 (`/sessions/in-progress`) and option 3 (`/sessions/completed`) are disabled when counts are zero.
   - In the new-game sub-flow, `b` returns to the root three-option menu.
+  - In the new-game sub-flow, a failed load or a failed start renders above the
+    case list rather than in place of it, so the player can retry from the same
+    screen. `loadBlueprints` and `startGame` each clear `error` as they begin,
+    so the message never outlives the request that replaced it.
 
 ### `/sessions/in-progress` (In-Progress List)
 

@@ -1,9 +1,12 @@
 // Blueprint artwork, served straight off disk.
 //
 // The path is stable and derivable from a blueprint id and an image id, so
-// there is nothing for the client to fetch first and nothing to expire. Two
-// access rules apply: you have to be signed in, and the image has to be one
-// the blueprint actually references.
+// there is nothing for the client to fetch first and nothing to expire.
+//
+// Artwork is content, not anybody's session, so this needs no profile. The one
+// rule left is a containment rule rather than an access one: the id has to be
+// canonical and the blueprint has to actually reference it, so the route can
+// only ever serve files this catalog names.
 
 import { error } from '@sveltejs/kit';
 import fs from 'node:fs/promises';
@@ -21,9 +24,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 const SILENT_LOGGER = { log: () => {}, logError: () => {} };
 
-export const GET: RequestHandler = async ({ params, locals }) => {
-	if (!locals.player) error(401, 'Not signed in');
-
+export const GET: RequestHandler = async ({ params }) => {
 	const imageId = ensureCanonicalImageId(params.image);
 	if (!imageId) error(400, 'Invalid image id');
 

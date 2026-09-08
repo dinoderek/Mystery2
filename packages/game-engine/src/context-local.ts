@@ -9,6 +9,7 @@ import { createLocalAIProfileStore } from "./ai-profile.ts";
 import { createLocalContentStore } from "./content.ts";
 import type {
   AIProfileStore,
+  CatalogContext,
   ContentStore,
   EngineContext,
   EnginePlayer,
@@ -69,6 +70,8 @@ export interface LocalEngine {
   /** Directory image bytes are served from. */
   imagesDir: string;
   contextFor(player: EnginePlayer): EngineContext;
+  /** The context an endpoint that runs without a profile is given. */
+  catalogContext(): CatalogContext;
   close(): void;
 }
 
@@ -95,6 +98,7 @@ export function createLocalEngine(
     aiProfiles,
     imagesDir,
     contextFor: (player) => createLocalContext(player, { db, content, aiProfiles }),
+    catalogContext: () => ({ content }),
     close: () => db.close(),
   };
 }

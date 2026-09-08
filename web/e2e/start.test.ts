@@ -241,7 +241,7 @@ test.describe('US1 - Start Screen', () => {
     await navPromise;
   });
 
-  test('renders blueprint cover image when an authenticated link is issued', async ({ page }) => {
+  test('renders blueprint cover image from its derivable link', async ({ page }) => {
     await signInAsTestProfile(page);
     await mockEmptyCatalog(page);
 

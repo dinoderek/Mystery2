@@ -256,15 +256,18 @@ Fixtures are typed against the Zod schemas in
 ### Boundaries that must stay proven
 
 Ownership is enforced in the engine's repositories, with no database layer
-underneath to catch a query that forgets. Integration must prove at minimum:
+underneath to catch a query that forgets, and the two access behaviours
+(`docs/architecture.md`) are a property of the endpoint registry that nothing
+else checks. Integration must prove at minimum:
 
 - profile A can create and read its own sessions
 - profile B can neither read nor mutate profile A's session, through any
   endpoint taking a `game_id`
-- image bytes are served only to a signed-in profile, and only for an image the
-  blueprint references
-- every endpoint rejects a missing cookie, and a cookie naming a profile that
-  does not exist
+- every endpoint that manages or plays a session rejects a missing cookie, and
+  a cookie naming a profile that does not exist
+- every endpoint over shared content answers without a cookie at all
+- image bytes are served for an image the blueprint references, and only for
+  those
 
 That bar lives in `tests/api/integration/session-ownership.test.ts` and
 `unauthenticated.test.ts`.

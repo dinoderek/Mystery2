@@ -1,30 +1,25 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   BASE_URL,
   MOCK_BLUEPRINT_ID,
   removeTestImage,
   seedTestImage,
-  setupApiTestAuth,
   STUB_PNG,
-  type ApiAuthContext,
 } from "./helpers";
 import { collectBlueprintImageReferences } from "../../../scripts/lib/blueprint-image-manifest.mjs";
 import { buildImageStorageKey } from "../../../packages/game-engine/src/images.ts";
 
 // The contract: the image ids a blueprint names are the files the server
 // serves, at the path `blueprintImageUrl()` builds — and only those.
+//
+// Artwork is content, so none of this runs as a profile; that these requests
+// carry no cookie is part of what they assert.
 
 describe("blueprint images", () => {
-  let auth: ApiAuthContext;
-
-  beforeEach(async () => {
-    auth = await setupApiTestAuth("blueprint-images");
-  });
-
   async function mockBlueprint() {
     return JSON.parse(
       await fs.readFile(path.resolve(process.cwd(), "blueprints/mock-blueprint.json"), "utf-8"),
@@ -42,9 +37,7 @@ describe("blueprint images", () => {
 
     for (const reference of references) {
       const key = buildImageStorageKey(MOCK_BLUEPRINT_ID, reference.imageFilename);
-      const bytesRes = await fetch(`${BASE_URL}/api/images/${key}`, {
-        headers: { Cookie: auth.headers.Cookie },
-      });
+      const bytesRes = await fetch(`${BASE_URL}/api/images/${key}`);
 
       expect(bytesRes.status, key).toBe(200);
       expect(bytesRes.headers.get("content-type")).toBe("image/png");
@@ -53,13 +46,12 @@ describe("blueprint images", () => {
   });
 
   it("404s an image the blueprint does not reference, even when the file exists", async () => {
-    // The private bucket's read policy became this check: being signed in is
-    // not enough, the blueprint has to name the image.
+    // The private bucket's read policy became this check, and it is the whole
+    // of what confines the route: the blueprint has to name the image.
     seedTestImage("mock-blueprint.unreferenced.png");
 
     const bytesRes = await fetch(
       `${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/mock-blueprint.unreferenced.png`,
-      { headers: { Cookie: auth.headers.Cookie } },
     );
     expect(bytesRes.status).toBe(404);
   });
@@ -69,19 +61,18 @@ describe("blueprint images", () => {
     const coverId: string = blueprint.metadata.image_id;
 
     // An earlier test in this file may have seeded it; the case under test is
-    // a blueprint that names an image nobody has generated yet.
+    // a blueprint that names an image nobody has generated yet. The cover is
+    // this file's to delete — suites in a run share one image directory, so no
+    // other suite may seed it.
     removeTestImage(coverId);
 
-    const bytesRes = await fetch(`${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/${coverId}`, {
-      headers: { Cookie: auth.headers.Cookie },
-    });
+    const bytesRes = await fetch(`${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/${coverId}`);
     expect(bytesRes.status).toBe(404);
   });
 
   it("rejects an image id that is not a canonical filename", async () => {
     const bytesRes = await fetch(
       `${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/${encodeURIComponent("../secrets.png")}`,
-      { headers: { Cookie: auth.headers.Cookie } },
     );
     expect(bytesRes.status).toBe(400);
   });

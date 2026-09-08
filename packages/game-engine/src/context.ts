@@ -1,11 +1,13 @@
 // The engine's boundary against its host platform.
 //
-// Endpoint handlers and shared helpers reach the outside world only through
-// `EngineContext`. Nothing below this file knows where the game's state is
-// kept; `context-local.ts` is the implementation, over SQLite and the
-// filesystem. Keeping the surface narrow — ~15 named operations, not a query
-// builder — is what would let the state live somewhere else without touching
-// a line of game logic.
+// Endpoint handlers and shared helpers reach the outside world only through a
+// context. There are two: `EngineContext` for a handler that runs as a
+// profile, and `CatalogContext` — content only — for one that does not.
+// Nothing below this file knows where the game's state is kept;
+// `context-local.ts` is the implementation, over SQLite and the filesystem.
+// Keeping the surface narrow — ~15 named operations, not a query builder — is
+// what would let the state live somewhere else without touching a line of game
+// logic.
 //
 // Error convention, uniform across every method: a genuine backend failure
 // throws, and "the thing does not exist" is a `null`/empty return. Handlers
@@ -144,11 +146,27 @@ export interface AIProfileStore {
   getById(profileId: string): Promise<EngineAIProfile | null>;
 }
 
-/** Everything an endpoint handler is allowed to touch outside its own logic. */
-export interface EngineContext {
+/**
+ * What a handler can reach when it runs without a profile: the shared content
+ * catalog, and nothing that belongs to anybody.
+ *
+ * There is no owned state on it *by construction* — a handler given this
+ * cannot forget to scope a query, because it has nothing to query.
+ */
+export interface CatalogContext {
+  content: ContentStore;
+}
+
+/**
+ * Everything an endpoint handler is allowed to touch outside its own logic,
+ * for a handler that runs as a profile.
+ *
+ * It extends `CatalogContext`, so a handler written against the narrower one
+ * also accepts this; the reverse is a type error, which is the point.
+ */
+export interface EngineContext extends CatalogContext {
   player: EnginePlayer;
   sessions: SessionStore;
   events: EventStore;
-  content: ContentStore;
   aiProfiles: AIProfileStore;
 }

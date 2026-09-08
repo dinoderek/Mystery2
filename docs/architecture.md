@@ -12,7 +12,8 @@ cloud backend, no container, and no separate API service.
   against.
 - **Database**: SQLite (`better-sqlite3`), one file.
 - **Content**: blueprints and images read off disk.
-- **Identity**: local profiles. A name, an id, and a cookie. No passwords.
+- **Identity**: local profiles. A name, an id, and a cookie. No passwords —
+  signing in exists to *create and pick a profile*, not to keep anyone out.
 - **Model provider**: OpenRouter, called from the server with a key that never
   reaches the browser.
 
@@ -31,7 +32,9 @@ Non-goals:
   single deployable server if that changes.
 - Offline play. Live narration still calls OpenRouter.
 - Multi-user access control. Profiles separate one person's cases from
-  another's on a shared machine; they are not a security boundary.
+  another's on a shared machine; they are not a security boundary, and there is
+  nothing on the other side of them to protect — the database is a file the
+  player owns and the content is a directory they can read.
 
 ---
 
@@ -44,8 +47,8 @@ served by a process that also answers its API calls.
 
 | Route | Responsibility |
 |---|---|
-| `src/routes/api/[endpoint]/+server.ts` | Dispatches to the engine's endpoint registry: checks the method, resolves the profile, builds an `EngineContext`, delegates. |
-| `src/routes/api/images/[blueprint]/[image]/+server.ts` | Serves blueprint artwork off disk, gated on a signed-in profile and on the image being referenced by the blueprint. |
+| `src/routes/api/[endpoint]/+server.ts` | Dispatches to the engine's endpoint registry: checks the method, builds the context the endpoint's access calls for, delegates. |
+| `src/routes/api/images/[blueprint]/[image]/+server.ts` | Serves blueprint artwork off disk, confined to images the blueprint references. |
 | `src/routes/api/player/+server.ts` | The current profile: read it, sign in, sign out. |
 | `src/routes/api/players/+server.ts` | Every profile on this machine, for the picker. |
 | `src/hooks.server.ts` | Resolves the profile cookie into `locals.player`. |
@@ -54,6 +57,38 @@ served by a process that also answers its API calls.
 The browser talks to all of it through `src/lib/api/client.ts` — `callApi(name,
 body)` returning `{ data, error }`. Same origin, so there is no CORS, no bearer
 token, and no base URL to configure.
+
+### Identity and access
+
+Signing in is naming a profile. It is created if it does not exist, the answer
+is a cookie holding its id, and there is no password — because there is nothing
+a password would be protecting. The game is one process on the player's own
+machine, over a database file and a content directory they already own. A
+profile is how one person's cases stay separate from another's on a shared
+machine, and that is the whole of what it is for.
+
+So the server has **two behaviours**, and every route picks one:
+
+- **Per profile.** The request manages or plays a game session, so it has to
+  run as somebody. Without a profile it is refused; with one it is handed a
+  context whose session and event stores are scoped to that profile and cannot
+  reach past it.
+- **No profile.** The request only reads content every profile shares. It is
+  served to anyone, and the context it is given holds nothing owned, so there
+  is no scope to get wrong.
+
+**The criterion is ownership, not secrecy:** does this touch somebody's
+sessions? If it does, it is per profile; if it does not, it needs none. The
+question is never how sensitive the data looks — shared content stays shared
+even when it would be tidier to gate it, and a session stays scoped even when
+its contents are dull.
+
+Endpoints declare which they are in the engine's registry
+(`packages/game-engine/src/endpoints/index.ts`), which is the one place the
+split is written down; `docs/backend-conventions.md` covers how to add one.
+The browser is stricter than the server on purpose: the app still sends you to
+the profile picker before you can play, because playing needs a profile, not
+because reading the case list does.
 
 ### The engine (`packages/game-engine/`)
 
@@ -137,8 +172,9 @@ A turn, end to end:
 
 1. The browser calls `POST /api/game-move` with the session cookie.
 2. `hooks.server.ts` resolves the cookie into `locals.player`.
-3. `api/[endpoint]` finds `game-move` in the registry, checks the method,
-   builds an `EngineContext` scoped to that player, and calls its handler.
+3. `api/[endpoint]` finds `game-move` in the registry, checks the method, sees
+   it runs per profile, builds an `EngineContext` scoped to that player, and
+   calls its handler.
 4. The handler loads the session (scoped), validates the transition, loads the
    blueprint from disk, assembles the prompt, and calls the AI provider.
 5. It appends a `game_events` row and updates the session in the same database

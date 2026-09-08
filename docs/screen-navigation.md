@@ -12,8 +12,12 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   local profile for all app routes except `/login`. The redirect runs in an
   effect and `goto()` is async, so the layout renders nothing on a protected
   route until a profile exists — otherwise a page would mount and fire its
-  `onMount` fetches signed out, and every game endpoint answers 401 without a
-  profile. `/login` is the one route rendered with `player` null.
+  `onMount` fetches signed out, and every endpoint that manages or plays a
+  session answers 401 without a profile. `/login` is the one route rendered
+  with `player` null.
+  This gate is a UI decision — you cannot play without a profile — and is
+  deliberately stricter than the server, which asks for one only where a
+  session is involved; see "Identity and access" in `docs/architecture.md`.
 
 ## Current Routes
 

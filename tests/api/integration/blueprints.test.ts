@@ -1,22 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import {
-  API_URL,
-  setupApiTestAuth,
-  type ApiAuthContext,
-} from "./helpers";
+import { describe, expect, it } from "vitest";
+import { API_URL } from "./helpers";
+
+// The catalog belongs to nobody, so these requests carry no cookie.
 
 describe("blueprints-list endpoint", () => {
-  let auth: ApiAuthContext;
-
-  beforeEach(async () => {
-    auth = await setupApiTestAuth("blueprints");
-  });
-
-
   it("returns available mock blueprint", async () => {
-    const res = await fetch(`${API_URL}/blueprints-list`, {
-      headers: auth.headers,
-    });
+    const res = await fetch(`${API_URL}/blueprints-list`);
     expect(res.status).toBe(200);
     const data = await res.json();
 

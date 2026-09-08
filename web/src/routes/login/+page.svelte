@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import ProfilePicker from '$lib/ui/ProfilePicker.svelte';
 </script>
 
@@ -14,5 +15,17 @@
 		<p class="mt-6 text-center text-t-dim text-xs">
 			[ PROFILES ARE LOCAL TO THIS MACHINE ]
 		</p>
+
+		<div class="mt-4 text-center">
+			<button
+				type="button"
+				data-testid="settings-link"
+				onclick={() => goto('/settings')}
+				class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted
+					hover:border-t-primary hover:text-t-primary focus:outline-none"
+			>
+				[ AI SETTINGS ]
+			</button>
+		</div>
 	</div>
 </main>

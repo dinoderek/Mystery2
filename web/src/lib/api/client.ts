@@ -74,6 +74,21 @@ export async function callApiGet<T = unknown>(
 	}
 }
 
+/** DELETE an endpoint, with the query it reads off the URL. */
+export async function callApiDelete<T = unknown>(
+	endpoint: string,
+	query: Record<string, string> = {},
+): Promise<ApiResult<T>> {
+	const search = new URLSearchParams(query).toString();
+	const url = search ? `${API_BASE}/${endpoint}?${search}` : `${API_BASE}/${endpoint}`;
+
+	try {
+		return await readResult<T>(await fetch(url, { method: 'DELETE' }));
+	} catch (thrown) {
+		return asFailure(thrown);
+	}
+}
+
 /** URL the browser fetches a blueprint image from. */
 export function blueprintImageUrl(blueprintId: string, imageId: string): string {
 	return `${API_BASE}/images/${encodeURIComponent(blueprintId)}/${encodeURIComponent(imageId)}`;

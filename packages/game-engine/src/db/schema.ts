@@ -10,9 +10,10 @@
 export const SCHEMA_SQL = `
 -- Local SQLite schema for the mystery engine.
 --
--- This is the whole database: three tables, no migration chain. It was derived
--- as an end state rather than replayed from a chain of migrations: this is the
--- shape the game needs, not a record of how it got here.
+-- Six tables: three for play (players, sessions, events) and three for AI
+-- configuration (keys, models, and the single settings row that selects among
+-- them). The shape below is the current end state, not a replay of how it got
+-- here.
 --
 -- Applied only to a fresh database. Once a database exists it is upgraded by
 -- the numbered steps in \`client.ts\`'s MIGRATIONS array, keyed on
@@ -24,6 +25,9 @@ export const SCHEMA_SQL = `
 --   ids         TEXT holding a uuid (crypto.randomUUID())
 --   timestamps  TEXT holding an ISO-8601 UTC instant
 --   structures  TEXT holding JSON
+--
+-- The ai_keys / ai_models tables below deliberately break the id convention and
+-- key on \`label\` instead; the reason is written out above those tables.
 --
 -- \`foreign_keys\` is OFF by default in SQLite and is enabled per connection in
 -- \`client.ts\`; the game_events cascade below depends on it.
@@ -81,4 +85,49 @@ create table game_events (
 
 create unique index game_events_session_sequence_idx
     on game_events(session_id, sequence);
+
+-- --------------------------------------------------------------------------
+-- AI configuration
+-- --------------------------------------------------------------------------
+--
+-- \`label\` is the primary key here, against the id convention above, because
+-- every \`source = 'env'\` row is deleted and re-inserted on each startup from
+-- the environment files (see ../ai-settings-env.ts). A uuid would be a
+-- different value after every restart, so a foreign key from app_settings would
+-- be cleared by the delete half of that reseed and the player's selection would
+-- evaporate on every boot. The label is what the environment matches on and
+-- what the player picked, so it is the real identity.
+--
+-- \`source\` records who owns a row. 'env' rows are rewritten from the
+-- filesystem on startup and are read-only in the UI; 'user' rows were typed
+-- into the settings page and are only ever touched from there.
+
+create table ai_keys (
+    label       text primary key,
+    api_key     text not null,
+    source      text not null check (source in ('env', 'user')),
+    created_at  text not null,
+    updated_at  text not null
+);
+
+create table ai_models (
+    label       text primary key,
+    model_id    text not null,
+    source      text not null check (source in ('env', 'user')),
+    created_at  text not null,
+    updated_at  text not null
+);
+
+-- Exactly one row, id 'singleton'. The selections are labels rather than
+-- foreign keys and are allowed to dangle: a label removed from the environment
+-- disappears on the next reseed, and the selection pointing at it is resolved
+-- as "nothing selected" at read time rather than being repaired by a
+-- constraint. See ../ai-settings.ts.
+create table app_settings (
+    id              text primary key check (id = 'singleton'),
+    ai_mode         text not null default 'mock' check (ai_mode in ('mock', 'openrouter')),
+    ai_key_label    text,
+    ai_model_label  text,
+    updated_at      text not null
+);
 `;

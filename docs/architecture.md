@@ -78,13 +78,22 @@ which they have.
 
 ### Data
 
-Three tables, no migration chain. `packages/game-engine/src/db/schema.ts` is
-the whole schema; existing databases move forward through numbered steps keyed
-on `PRAGMA user_version`.
+Six tables. `packages/game-engine/src/db/schema.ts` is the whole schema, always
+describing the current end state; existing databases move forward through
+numbered steps keyed on `PRAGMA user_version`.
+
+Play:
 
 - `players` — id, name. This is the whole of identity.
 - `game_sessions` — one per case played, owned by a player.
 - `game_events` — the append-only transcript, unique on `(session_id, sequence)`.
+
+AI configuration, which is per-installation rather than per-player:
+
+- `ai_keys`, `ai_models` — labelled OpenRouter keys and models, either typed on
+  the settings page or re-read from the environment on every start.
+- `app_settings` — one row, holding the mock/live choice and which key and model
+  it selects. See `docs/ai-configuration.md`.
 
 **Ownership lives in the repositories.** Every session and event statement is
 scoped to one player. There is no row-level security underneath to catch a

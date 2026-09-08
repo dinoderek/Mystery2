@@ -12,6 +12,7 @@
 // therefore map a thrown error to 500 and a null to 404/400.
 
 import type { BlueprintV2 } from "../../shared/src/blueprint-schema-v2.ts";
+import type { AIEnvSettings } from "./ai-settings-env.ts";
 import type { LogWriter } from "./logging.ts";
 import type { NarrationPart } from "./narration.ts";
 import type { GameMode } from "./state-machine.ts";
@@ -142,6 +143,98 @@ export const DEFAULT_AI_PROFILE_ID = "default";
 export interface AIProfileStore {
   /** Returns null when no profile with that id is configured. */
   getById(profileId: string): Promise<EngineAIProfile | null>;
+}
+
+/** Where a key or model row came from, and therefore who may edit it. */
+export type AISettingsSource = "env" | "user";
+
+/** A row of `ai_keys`. Carries the secret; never serialise one straight out. */
+export interface AIKeyRecord {
+  label: string;
+  api_key: string;
+  source: AISettingsSource;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A row of `ai_models`. */
+export interface AIModelRecord {
+  label: string;
+  model_id: string;
+  source: AISettingsSource;
+  created_at: string;
+  updated_at: string;
+}
+
+/** The single `app_settings` row, as stored. Selections may dangle. */
+export interface AISettingsRecord {
+  ai_mode: "mock" | "openrouter";
+  ai_key_label: string | null;
+  ai_model_label: string | null;
+  updated_at: string;
+}
+
+/** A partial update to the settings row. Only provided fields are written. */
+export interface AISettingsUpdate {
+  ai_mode?: "mock" | "openrouter";
+  ai_key_label?: string | null;
+  ai_model_label?: string | null;
+}
+
+/**
+ * The stored settings with their labels looked up.
+ *
+ * `mode` is what the runtime should actually do; `stored_mode` is what the
+ * player last chose. They differ only when a selection dangles — a label the
+ * last environment reseed removed — in which case the missing label is reported
+ * so the settings page can explain why narration fell back to mock.
+ */
+export interface ResolvedAISettings {
+  mode: "mock" | "openrouter";
+  stored_mode: "mock" | "openrouter";
+  key: AIKeyRecord | null;
+  model: AIModelRecord | null;
+  missing_key_label: string | null;
+  missing_model_label: string | null;
+}
+
+/**
+ * Labelled AI keys and models, plus the selection among them.
+ *
+ * App-global rather than player-scoped: the settings page is reachable before a
+ * profile is picked, so there is no player to scope to. Synchronous like
+ * `PlayerStore`, because it is SQLite and the callers are not endpoint handlers.
+ */
+export interface AISettingsStore {
+  listKeys(): AIKeyRecord[];
+  /** Returns null when no key has that label. */
+  getKey(label: string): AIKeyRecord | null;
+  listModels(): AIModelRecord[];
+  /** Returns null when no model has that label. */
+  getModel(label: string): AIModelRecord | null;
+
+  /** Creates or updates a `user` key. Throws when the label belongs to `env`. */
+  putKey(label: string, apiKey: string): AIKeyRecord;
+  /** Creates or updates a `user` model. Throws when the label belongs to `env`. */
+  putModel(label: string, modelId: string): AIModelRecord;
+  /** False when nothing had that label. Throws when the row belongs to `env`. */
+  deleteKey(label: string): boolean;
+  /** False when nothing had that label. Throws when the row belongs to `env`. */
+  deleteModel(label: string): boolean;
+
+  /** The settings row, created with its defaults on first read. */
+  getSettings(): AISettingsRecord;
+  /**
+   * Writes the provided fields and returns the result.
+   *
+   * @throws when a selection names a label that does not exist, or when
+   * `openrouter` is asked for without both a key and a model.
+   */
+  updateSettings(update: AISettingsUpdate): AISettingsRecord;
+  /** The settings with labels looked up, and mock substituted for a dangling live choice. */
+  resolve(): ResolvedAISettings;
+  /** Replaces every `env` row with the environment's, dropping labels it no longer names. */
+  replaceEnvRows(env: AIEnvSettings): void;
 }
 
 /** Everything an endpoint handler is allowed to touch outside its own logic. */

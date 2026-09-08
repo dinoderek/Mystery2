@@ -191,6 +191,88 @@ export const SessionCatalogResponseSchema = z.object({
   counts: SessionCountsSchema,
 });
 
+// --- AI settings ---
+//
+// The settings page is reachable before a profile is picked, so these shapes
+// cross the boundary unauthenticated. Note what is *not* here: no schema
+// carries `api_key`. A stored key leaves the server only as `masked`, and the
+// only direction a secret ever travels is inward, on AIKeyUpsertSchema.
+
+export const AISettingsSourceSchema = z.enum(["env", "user"]);
+export const AIModeSchema = z.enum(["mock", "openrouter"]);
+
+export const AIKeySummarySchema = z.object({
+  label: z.string().min(1),
+  source: AISettingsSourceSchema,
+  /** Last four characters, for telling two keys apart. Never the whole secret. */
+  masked: z.string(),
+});
+
+export const AIModelSummarySchema = z.object({
+  label: z.string().min(1),
+  model_id: z.string().min(1),
+  source: AISettingsSourceSchema,
+});
+
+/**
+ * An AI configuration forced by the process environment.
+ *
+ * Provider and model only: the override's key comes from the process
+ * environment and has no label, so there is nothing to mask and nothing worth
+ * showing. Present means the stored choice below is not currently in effect.
+ */
+export const AIOverrideSchema = z.object({
+  provider: AIModeSchema,
+  model: z.string().min(1),
+  source: z.string().min(1),
+});
+
+export const AISettingsStateSchema = z.object({
+  /** What the runtime will actually do, once override and dangling selections are applied. */
+  effective_mode: AIModeSchema,
+  /** What was last chosen on this page. */
+  stored_mode: AIModeSchema,
+  selected_key_label: z.string().nullable(),
+  selected_model_label: z.string().nullable(),
+  /** A selection naming a label the last environment reseed removed. */
+  missing_key_label: z.string().nullable(),
+  missing_model_label: z.string().nullable(),
+  keys: z.array(AIKeySummarySchema),
+  models: z.array(AIModelSummarySchema),
+  override: AIOverrideSchema.nullable(),
+});
+
+export const AISettingsUpdateSchema = z
+  .object({
+    mode: AIModeSchema.optional(),
+    key_label: z.string().min(1).nullable().optional(),
+    model_label: z.string().min(1).nullable().optional(),
+  })
+  .refine(
+    (value) => Object.values(value).some((entry) => entry !== undefined),
+    { message: "Nothing to update" },
+  );
+
+export const AIKeyUpsertSchema = z.object({
+  label: z.string().min(1).max(60),
+  api_key: z.string().min(1),
+});
+
+export const AIModelUpsertSchema = z.object({
+  label: z.string().min(1).max(60),
+  model_id: z.string().min(1),
+});
+
+export type AISettingsSource = z.infer<typeof AISettingsSourceSchema>;
+export type AIMode = z.infer<typeof AIModeSchema>;
+export type AIKeySummary = z.infer<typeof AIKeySummarySchema>;
+export type AIModelSummary = z.infer<typeof AIModelSummarySchema>;
+export type AIOverride = z.infer<typeof AIOverrideSchema>;
+export type AISettingsState = z.infer<typeof AISettingsStateSchema>;
+export type AISettingsUpdate = z.infer<typeof AISettingsUpdateSchema>;
+export type AIKeyUpsert = z.infer<typeof AIKeyUpsertSchema>;
+export type AIModelUpsert = z.infer<typeof AIModelUpsertSchema>;
+
 export type SpeakerKind = z.infer<typeof SpeakerKindSchema>;
 export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;

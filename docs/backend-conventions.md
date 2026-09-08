@@ -60,7 +60,8 @@ handler as a bug.
 
 ## 3. The Database
 
-Three tables, defined once in `packages/game-engine/src/db/schema.ts`.
+Six tables, defined once in `packages/game-engine/src/db/schema.ts`: three for
+play, three for AI configuration.
 
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
   and `db/events.ts` is scoped to one player. There is no row-level security
@@ -82,6 +83,11 @@ Three tables, defined once in `packages/game-engine/src/db/schema.ts`.
 - **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`,
   not a string; `readGameMode()` in `state-machine.ts` is the single place that
   narrows text read back out of storage.
+- **Scope is a decision, not a default.** `db/sessions.ts` and `db/events.ts`
+  are player-scoped; `db/players.ts` and `db/ai-settings.ts` are app-global and
+  hang off `LocalEngine` rather than a request context. Pick one deliberately —
+  an app-global store that should have been scoped is the security bug above,
+  wearing a different hat.
 
 ## 4. Content
 
@@ -91,6 +97,12 @@ catalog. `src/paths.ts` is the only place that decides where they are.
 
 ## 5. AI Profiles
 
-Profiles are environment, not data — see `src/ai-profile.ts` and
-`docs/ai-configuration.md`. A misconfigured profile throws; an unconfigured one
-returns `null`, which handlers turn into `400 Invalid ai_profile`.
+`mock`, `free` and `paid` are environment, not data. `default` — the only one
+the browser ever plays as — is chosen on the settings page and stored in
+`app_settings`, though a process started with `AI_PROVIDER`/`AI_MODEL` still
+outranks it. See `src/ai-profile.ts` and `docs/ai-configuration.md`.
+
+A misconfigured profile throws; an unconfigured one returns `null`, which
+handlers turn into `400 Invalid ai_profile`. A *stored* choice cannot be
+misconfigured: `updateSettings` refuses live narration without both a key and a
+model, so the invariant is kept at the write rather than repaired at the read.

@@ -60,10 +60,11 @@ export interface Db {
 /**
  * The shape `schema.ts` describes. A fresh database is created straight from
  * that file and stamped with this number; an existing one is brought forward
- * by the steps below. There is no migration chain to replay because the
- * shape the game needs is described in one place, not accumulated.
+ * by the steps below. A fresh database never replays the chain — `schema.ts` is
+ * always the current end state, and the steps below only exist to carry files
+ * that already exist up to it.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** One forward step: the SQL, and the version the database is at afterwards. */
 export interface Migration {
@@ -80,7 +81,45 @@ export interface Migration {
  * needs an entry here — `planMigrations()` refuses to upgrade across a gap
  * rather than stamping a version nothing produced.
  */
-const MIGRATIONS: ReadonlyArray<Migration> = [];
+const MIGRATIONS: ReadonlyArray<Migration> = [
+  {
+    // AI configuration moved from environment-only into the database: labelled
+    // OpenRouter keys and models, plus the single row that selects among them
+    // and holds the mock/live choice.
+    //
+    // Deliberately written out rather than importing the statements from
+    // `schema.ts`: a migration is a historical fact, and sharing a constant with
+    // the live schema would let a later edit silently rewrite what this step
+    // did. `local-engine-db.test.ts` diffs an upgraded database against a fresh
+    // one, which is what keeps the duplication honest.
+    to: 2,
+    sql: `
+      create table ai_keys (
+          label       text primary key,
+          api_key     text not null,
+          source      text not null check (source in ('env', 'user')),
+          created_at  text not null,
+          updated_at  text not null
+      );
+
+      create table ai_models (
+          label       text primary key,
+          model_id    text not null,
+          source      text not null check (source in ('env', 'user')),
+          created_at  text not null,
+          updated_at  text not null
+      );
+
+      create table app_settings (
+          id              text primary key check (id = 'singleton'),
+          ai_mode         text not null default 'mock' check (ai_mode in ('mock', 'openrouter')),
+          ai_key_label    text,
+          ai_model_label  text,
+          updated_at      text not null
+      );
+    `,
+  },
+];
 
 /**
  * The steps that take `current` to `target`, in ascending order.

@@ -16,11 +16,13 @@ knows nothing about HTTP, cookies, or the process it runs in — that is
 | `src/context.ts` | `EngineContext` — the boundary. ~15 named operations. |
 | `src/context-local.ts` | `createLocalEngine()` — opens the database and assembles a context per player |
 | `src/endpoints/` | `handle(req, ctx)` per endpoint, and the registry the server dispatches through |
-| `src/db/schema.ts` | the whole database: `players`, `game_sessions`, `game_events` |
+| `src/db/schema.ts` | the whole database: `players`, `game_sessions`, `game_events`, plus `ai_keys`, `ai_models`, `app_settings` |
 | `src/db/client.ts` | the **only** file that imports a SQLite driver |
 | `src/db/{players,sessions,events}.ts` | repositories; ownership checks live here |
+| `src/db/ai-settings.ts` | labelled keys and models, and the row that selects among them |
 | `src/content.ts` | blueprints and images off disk |
-| `src/ai-profile.ts` | AI profiles from the environment |
+| `src/ai-profile.ts` | AI profiles: `mock`/`free`/`paid` from the environment, `default` from the settings row |
+| `src/ai-settings-env.ts` | the labelled keys and models the environment contributes at startup |
 | `src/ai-*.ts`, `src/role-request.ts` | prompt assembly, contracts, provider |
 | `src/state-machine.ts`, `src/clues.ts`, `src/clue-discovery.ts`, `src/forced-endgame.ts`, `src/narration.ts`, `src/speaker.ts` | game rules |
 | `src/paths.ts` | where the database and content live |

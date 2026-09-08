@@ -9,11 +9,13 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **NO Server Routes**: Do not use `+page.server.ts` or `+layout.server.ts`.
 - **Client Loading**: Initialize data fetching in `+page.ts` (with `export const ssr = false;`).
 - **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen
-  local profile for all app routes except `/login`. The redirect runs in an
+  local profile for every route except the public ones. The redirect runs in an
   effect and `goto()` is async, so the layout renders nothing on a protected
   route until a profile exists — otherwise a page would mount and fire its
   `onMount` fetches signed out, and every game endpoint answers 401 without a
-  profile. `/login` is the one route rendered with `player` null.
+  profile. The public list is `PUBLIC_PATHS` in that file: `/login` and
+  `/settings`. A route added there must be served by an endpoint that does not
+  require a profile, or it will render and immediately 401.
 
 ## Current Routes
 
@@ -31,8 +33,8 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
   - Blueprint cards optionally render cover images from `/api/images/<blueprint>/<image>`.
   - Cover-image fetch failures render a placeholder panel without blocking case selection.
-  - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
-  - Includes a sign-out action that clears the profile cookie.
+  - Includes a sign-out action that clears the profile cookie. (Themes are
+    switched with the `theme` command inside a session, not from here.)
   - Forces a fresh session catalog load on route mount to avoid stale in-progress/completed counts after returning from `/session`.
   - A forced load always issues its own request, even while an earlier one is in
     flight, and only the newest request may write the result. Dropping the
@@ -82,6 +84,30 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Lists existing profiles to pick from, and offers a name field for a new one.
   - Refuses an empty name inline.
   - Redirects to the intended target path once a profile is chosen.
+  - Offers `[ AI SETTINGS ]`, which is reachable without a profile.
+
+### `/settings` (AI Settings)
+
+- **Directory**: `src/routes/settings/+page.svelte`
+- **Purpose**: Choose mock vs real narration, and manage the labelled OpenRouter
+  keys and models it picks between. Documented in `docs/ai-configuration.md`.
+- **State Dependencies**:
+  - `aiSettingsStore` (`src/lib/domain/ai-settings-store.svelte.ts`), over
+    `/api/ai-settings`.
+- **Special behavior**:
+  - Public: renders with `player` null, because a machine whose AI is
+    misconfigured is exactly the one a player cannot get past the picker on.
+  - Every mutation adopts the full state the server returns rather than patching
+    a local copy, so a write the server adjusted (a delete that stepped the mode
+    back to mock) is reflected.
+  - Rows sourced from the environment show `[ENV]` and cannot be edited or
+    deleted; the server answers 409.
+  - Real AI is refused until both a key and a model are selected.
+  - Shows a warning banner when the process was started with an
+    `AI_PROVIDER`/`AI_MODEL` override, which outranks the stored choice.
+  - Keys display only their last four characters; the stored value never leaves
+    the server.
+  - Pressing `b` returns to `/login`, ignored while a field has focus.
 
 ### `/session` (Game Page)
 
@@ -131,7 +157,6 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
     the asset is missing, or the image itself does not load.
   - On session end (accusation resolution `win`/`lose` or local `quit`/`exit`), input is replaced by a terminal end-state prompt. `Tab` is the one carve-out from "press any key": it opens the notebook so a finished case can be reviewed, and while the notebook is open no key leaves the session. Any other key returns to `/`.
   - Completed sessions opened from `/sessions/completed` are read-only: command input is blocked and the return prompt is shown immediately.
-  - Includes a sign-out action that clears the profile cookie.
 
 ## Navigation Patterns
 
@@ -141,3 +166,5 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Reaching a protected route with no profile redirects to `/login`, and the
     route's page does not render while that redirect is in flight.
   - Navigating to `/login` with a profile redirects back to the stored intended path (or `/`).
+  - `/settings` is public in both directions: it renders without a profile and
+    is not redirected away from with one.

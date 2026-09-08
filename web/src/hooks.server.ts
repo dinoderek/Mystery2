@@ -6,12 +6,10 @@
 // sets and clears the cookie.
 
 import type { Handle } from '@sveltejs/kit';
-import { getEngine } from '$lib/server/engine';
-
-export const PLAYER_COOKIE = 'mystery-player-id';
+import { getEngine, playerCookie } from '$lib/server/engine';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const playerId = event.cookies.get(PLAYER_COOKIE);
+	const playerId = event.cookies.get(playerCookie());
 
 	// An id that no longer resolves — a profile deleted, or a database started
 	// from scratch — is treated as signed out rather than as an error.

@@ -127,6 +127,73 @@ test.describe('US1 - Start Screen', () => {
     await expect(page).toHaveURL(/.*\/session/);
   });
 
+  test('asks again for the blueprints after a failed load', async ({ page }) => {
+    // A failed load left `status` at `error`, and re-entering the flow only
+    // fetched from `idle` — so nothing ever asked again and the screen stayed
+    // on the message until the page was reloaded.
+    await signInAsTestProfile(page);
+    await mockEmptyCatalog(page);
+
+    let attempts = 0;
+    await page.route('**/api/blueprints-list*', async (route) => {
+      attempts += 1;
+      if (attempts === 1) {
+        await route.fulfill({ status: 401, json: { error: 'Not signed in' } });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          blueprints: [
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+          ],
+        },
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page.getByText('Error: Not signed in')).toBeVisible();
+
+    await page.keyboard.press('b');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+
+    await page.keyboard.press('1');
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+    await expect(page.getByText('Error: Not signed in')).toHaveCount(0);
+  });
+
+  test('keeps the case list on screen when starting a game fails', async ({ page }) => {
+    // The error replaced the list, so the only way back to the cases was to go
+    // back to the menu and come in again — which is what cleared `error`.
+    await signInAsTestProfile(page);
+    await mockEmptyCatalog(page);
+
+    await page.route('**/api/blueprints-list*', async (route) => {
+      await route.fulfill({
+        json: {
+          blueprints: [
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+          ],
+        },
+      });
+    });
+
+    await page.route('**/api/game-start*', async (route) => {
+      await route.fulfill({ status: 401, json: { error: 'Not signed in' } });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+
+    await page.keyboard.press('1');
+    await expect(page.getByText('Error: Not signed in')).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+  });
+
   test('shows centered loading indicator while starting from blueprint selection', async ({ page }) => {
     await signInAsTestProfile(page);
     await mockEmptyCatalog(page);

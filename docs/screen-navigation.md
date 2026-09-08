@@ -8,7 +8,16 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 
 - **NO Server Routes**: Do not use `+page.server.ts` or `+layout.server.ts`.
 - **Client Loading**: Initialize data fetching in `+page.ts` (with `export const ssr = false;`).
-- **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen local profile for all app routes except `/login`. This is a UI decision — you cannot play without a profile — not the server's access rule; see "Identity and access" in `docs/architecture.md`.
+- **Profile Gate**: Root layout (`src/routes/+layout.svelte`) requires a chosen
+  local profile for all app routes except `/login`. The redirect runs in an
+  effect and `goto()` is async, so the layout renders nothing on a protected
+  route until a profile exists — otherwise a page would mount and fire its
+  `onMount` fetches signed out, and every endpoint that manages or plays a
+  session answers 401 without a profile. `/login` is the one route rendered
+  with `player` null.
+  This gate is a UI decision — you cannot play without a profile — and is
+  deliberately stricter than the server, which asks for one only where a
+  session is involved; see "Identity and access" in `docs/architecture.md`.
 
 ## Current Routes
 
@@ -21,7 +30,9 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - `3. View completed games`
 - **State Dependencies**:
   - Fetches `sessionCatalog` (`game-sessions-list`) to enable/disable options 2/3.
-  - Loads `Blueprints` only after entering the new-game sub-flow.
+  - Loads `Blueprints` only after entering the new-game sub-flow, and asks
+    again on re-entry whenever the list is still empty — including after a
+    failed load, which leaves `status` at `error`.
 - **Special behavior**:
   - While selected-game startup is in progress, the screen clears and shows a centered terminal loading spinner.
   - Blueprint cards optionally render cover images from `/api/images/<blueprint>/<image>`.
@@ -29,8 +40,17 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
   - Includes a small theme switcher (`matrix` / `amber`) that updates the global `data-theme` attribute before entering a session.
   - Includes a sign-out action that clears the profile cookie.
   - Forces a fresh session catalog load on route mount to avoid stale in-progress/completed counts after returning from `/session`.
+  - A forced load always issues its own request, even while an earlier one is in
+    flight, and only the newest request may write the result. Dropping the
+    forced call left a failure on screen with nothing to retry it.
+  - When the catalog fails, the warning names the underlying cause
+    (`sessionCatalogError`) rather than only saying it is unavailable.
   - Option 2 (`/sessions/in-progress`) and option 3 (`/sessions/completed`) are disabled when counts are zero.
   - In the new-game sub-flow, `b` returns to the root three-option menu.
+  - In the new-game sub-flow, a failed load or a failed start renders above the
+    case list rather than in place of it, so the player can retry from the same
+    screen. `loadBlueprints` and `startGame` each clear `error` as they begin,
+    so the message never outlives the request that replaced it.
 
 ### `/sessions/in-progress` (In-Progress List)
 
@@ -42,6 +62,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - Numeric row selection resumes the chosen session and navigates to `/session`.
   - Rows display mystery title, turns left, and last played timestamp.
+  - A failed catalog load reads as an error naming its cause, not as an empty list.
   - Forces a fresh catalog read on route mount to avoid stale list data.
   - If a row is not openable (`can_open=false`), selection is blocked with a warning.
   - Pressing `b` returns to `/`.
@@ -56,6 +77,7 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - **Special behavior**:
   - Numeric row selection opens a completed session in `/session`.
   - Rows display mystery title, outcome, and last played timestamp.
+  - A failed catalog load reads as an error naming its cause, not as an empty list.
   - Forces a fresh catalog read on route mount to avoid stale list data.
   - If a row is not openable (`can_open=false`), selection is blocked with a warning.
   - Pressing `b` returns to `/`.
@@ -126,5 +148,6 @@ We use SvelteKit with `adapter-static`. All routing is client-side after the ini
 - Use standard HTML `<a>` tags for standard links to leverage SvelteKit's built-in client-side router.
 - Use `goto('/path')` from `$app/navigation` for programmatic navigation (e.g., redirecting to a game session after clicking "Start").
 - Profile redirect rules:
-  - Reaching a protected route with no profile redirects to `/login`.
+  - Reaching a protected route with no profile redirects to `/login`, and the
+    route's page does not render while that redirect is in flight.
   - Navigating to `/login` with a profile redirects back to the stored intended path (or `/`).

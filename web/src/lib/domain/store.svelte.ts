@@ -224,6 +224,8 @@ export class GameSessionStore {
   sessionCatalog = $state<SessionCatalog>(EMPTY_CATALOG);
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   sessionCatalogError = $state<string | null>(null);
+  /** Which catalog request may write the result. Not reactive — nothing renders it. */
+  private sessionCatalogRequestId = 0;
   viewerMode = $state<SessionViewerMode>('interactive');
   // Clues discovered on the most recent turn — drives the discovery celebration.
   recentlyDiscovered = $state<DiscoveredClue[]>([]);
@@ -362,6 +364,10 @@ export class GameSessionStore {
 
   async loadBlueprints() {
     this.status = 'loading';
+    // The failure a request replaces must not outlive it. `error` is rendered
+    // beside the blueprint list, so leaving a stale one set showed a message
+    // about a request that had already been superseded.
+    this.error = null;
     const { data, error } = await callApi('blueprints-list');
     if (error) {
       this.error = error.message;
@@ -384,18 +390,30 @@ export class GameSessionStore {
     }
   }
 
+  /**
+   * Loads the in-progress/completed catalog.
+   *
+   * `force` means "I need current data" — a route mount, or a return from a
+   * session — so it must issue its own request even while one is in flight.
+   * Dropping it left whatever the older request answered on screen with
+   * nothing to retry it: a failure there was permanent. The request id is what
+   * makes reissuing safe; only the newest request may write the result, so a
+   * slow loser cannot land on top of the answer that replaced it.
+   */
   async loadSessionCatalog(force = false) {
-    if (this.sessionCatalogStatus === 'loading') {
-      return;
-    }
-    if (!force && this.sessionCatalogStatus === 'ready') {
+    if (!force && (this.sessionCatalogStatus === 'loading' || this.sessionCatalogStatus === 'ready')) {
       return;
     }
 
+    const requestId = ++this.sessionCatalogRequestId;
     this.sessionCatalogStatus = 'loading';
     this.sessionCatalogError = null;
 
     const { data, error } = await callApi('game-sessions-list');
+    if (requestId !== this.sessionCatalogRequestId) {
+      return;
+    }
+
     if (error) {
       this.sessionCatalog = EMPTY_CATALOG;
       this.sessionCatalogError = error.message;
@@ -409,6 +427,7 @@ export class GameSessionStore {
 
   async startGame(blueprintId: string) {
     this.status = 'loading';
+    this.error = null;
     const { data, error } = await callApi('game-start', { blueprint_id: blueprintId });
     if (error) {
       this.error = error.message;

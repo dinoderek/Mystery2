@@ -62,6 +62,8 @@ export interface LocalEngineOptions {
 /** Everything the server needs, opened once at startup. */
 export interface LocalEngine {
   db: Db;
+  /** The file `db` was opened from. Scopes the profile cookie to it. */
+  databasePath: string;
   players: PlayerStore;
   content: ContentStore;
   aiProfiles: AIProfileStore;
@@ -79,9 +81,8 @@ export function createLocalEngine(
   const repoRoot = options.repoRoot ?? process.cwd();
   const env = options.env ?? process.env;
 
-  const db = openDatabase({
-    path: options.databasePath ?? resolveDatabasePath(repoRoot, env),
-  });
+  const databasePath = options.databasePath ?? resolveDatabasePath(repoRoot, env);
+  const db = openDatabase({ path: databasePath });
   const imagesDir = resolveBlueprintImagesDir(repoRoot, env);
   const content = createLocalContentStore({
     blueprintDirs: resolveBlueprintDirs(repoRoot, env),
@@ -91,6 +92,7 @@ export function createLocalEngine(
 
   return {
     db,
+    databasePath,
     players: createPlayerStore(db),
     content,
     aiProfiles,

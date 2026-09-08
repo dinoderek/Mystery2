@@ -3,6 +3,7 @@ import {
   API_URL,
   BASE_URL,
   MOCK_BLUEPRINT_ID,
+  playerCookie,
   seedTestImage,
   setupApiTestAuth,
   type ApiAuthContext,
@@ -16,6 +17,7 @@ import {
 // and its artwork. Anything that manages or plays a session needs someone to
 // be, and there is no way to be them without a cookie naming a profile that
 // exists.
+
 // A portrait rather than the cover: `blueprint-images.test.ts` deletes the
 // cover to prove a missing file 404s, and suites in a run share one image
 // directory. Nothing removes this one.
@@ -23,9 +25,11 @@ const REFERENCED_IMAGE_ID = "mock-blueprint.character-char-alice.png";
 
 const NO_PROFILE_HEADERS = { "Content-Type": "application/json" };
 
+// The server's own cookie name, so this stays a test of an id that names no
+// profile rather than of a cookie the server never looks at.
 const UNKNOWN_PROFILE_HEADERS = {
   "Content-Type": "application/json",
-  Cookie: "mystery-player-id=00000000-0000-4000-8000-000000000000",
+  Cookie: `${playerCookie()}=00000000-0000-4000-8000-000000000000`,
 };
 
 describe("requests without a profile", () => {

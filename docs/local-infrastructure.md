@@ -95,6 +95,15 @@ web   51000 + slot     slot = hash(worktree name) % 1000 + 1
 is named from the same worktree, and the two together are the whole of the
 isolation.
 
+The profile cookie is named for the database rather than fixed, because a port
+is not part of a cookie's identity: `localhost:51000` and `localhost:51006`
+share one jar, and so do `npm run dev` and `npm run prod`, which run on the
+same port against different databases. With one fixed name, signing in to
+either overwrote the other, and the loser then answered 401 to every request
+while the page still showed a signed-in menu. Each database now has its own
+cookie, so you stay signed in to all of them at once.
+`packages/game-engine/src/player-cookie.ts` derives the name.
+
 ## Poking at the database
 
 It is a SQLite file, so the usual tools work while the game is running (WAL

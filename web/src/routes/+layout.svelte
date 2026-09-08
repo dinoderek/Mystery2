@@ -42,10 +42,17 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
+<!--
+	The redirect above goes through `goto()`, which is async, so a signed-out
+	visitor is still on the protected route for a tick after `loading` clears.
+	Rendering the page in that tick fired its `onMount` fetches without a
+	profile, and the 401 they came back with stuck to the screen. Only `/login`
+	renders without a profile; everything else waits for the redirect.
+-->
 {#if playerStore.loading}
 	<main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center">
 		<TerminalSpinner text="Loading profiles..." />
 	</main>
-{:else}
+{:else if playerStore.player || $page.url.pathname === '/login'}
 	{@render children()}
 {/if}

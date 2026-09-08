@@ -273,6 +273,9 @@ test.describe('US2/US3 - Narration Rendering', () => {
     });
 
     await page.goto('/sessions/in-progress');
+    // The row has to be on screen before the keypress: the layout holds the
+    // page back until the profile resolves, so `goto` returning is not enough.
+    await expect(page.getByText('B1')).toBeVisible();
     await page.locator('body').click();
     await page.keyboard.press('1');
 

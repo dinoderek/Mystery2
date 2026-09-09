@@ -177,9 +177,29 @@ absence: the suites start the server against a temporary config root with no
 seeded and nothing has to be reset between runs.
 
 The settings row is a singleton — a property of the installation, not of a
-player — so the suites that mutate it (`tests/api/integration/ai-settings.test.ts`,
-`web/e2e/ai-settings.spec.ts`) reset it around each test, and the browser one
-runs serially.
+player — and that breaks the isolation the rest of the suites rely on. They are
+parallel and safe because every test owns a profile and touches only its own
+sessions; the settings row belongs to no profile, so a test that changes it
+changes it for every test sharing that server.
+
+**No suite that shares a server with game-playing tests may switch the mode to
+live.** It was tried: `tests/api/integration/ai-settings.test.ts` set
+`openrouter` with a throwaway key, whichever test started a game in that window
+got a 401 from the real openrouter.ai returned as an unexplained 500, and CI was
+killed at its fifteen-minute cap when the calls hung instead. Locally the files
+had interleaved harmlessly and it passed. Switching to live is asserted in the
+unit suites, where it costs nobody: `tests/api/unit/ai-settings-store.test.ts`
+and `tests/api/unit/local-engine-ai-profile.test.ts`.
+
+The suites that mutate the row (`tests/api/integration/ai-settings.test.ts`,
+`web/e2e/ai-settings.spec.ts`) reset it around each test and leave it on mock;
+the browser one also runs serially within its file.
+
+As a backstop, `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` start
+their server with `OPENROUTER_URL` pointing at a closed port, so a mock-mode
+suite cannot reach a paid API at all. A slip fails in milliseconds with a
+connection error instead of hanging or spending credits — but it still fails,
+which is the point. The backstop is not the rule.
 
 `tests/api/integration/ai-profile-runtime.test.ts` writes a `free` profile into
 that temporary root, plays a turn, breaks the file, and asserts the next turn

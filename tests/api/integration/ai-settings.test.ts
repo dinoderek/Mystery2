@@ -7,6 +7,24 @@
 // The server under test runs against a temporary config root with no env files,
 // so every row these tests see is one they created — there is no `env` row to
 // collide with, and the override block is null.
+//
+// ## Nothing here switches the mode to live
+//
+// The rest of this suite is safe to run in parallel because every test owns a
+// profile and touches only its own sessions. The settings row is not like that:
+// it belongs to the installation, so setting `mode: "openrouter"` here sets it
+// for every test sharing this server. It happened — a throwaway key went to the
+// real openrouter.ai, and whichever test started a game in that window got a
+// 401 back as a 500 it had no way to explain. Locally the files interleaved
+// harmlessly and it passed; on CI they did not.
+//
+// So the accept path is asserted where it costs nobody: `resolve()` returning
+// `openrouter` in `tests/api/unit/ai-settings-store.test.ts`, and `default`
+// following the stored choice in `tests/api/unit/local-engine-ai-profile.test.ts`.
+// What stays here is everything that leaves the server in mock — including the
+// refusal, which is the endpoint-level behaviour worth pinning anyway.
+//
+// If you add a case here, ask what the server is set to when it yields.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { API_URL, setupApiTestAuth } from "./helpers";
@@ -152,39 +170,42 @@ describe("choosing a configuration", () => {
     expect((await post("ai-settings", { key_label: "ghost" })).status).toBe(400);
   });
 
-  it("accepts real AI once both are selected, and persists it", async () => {
+  it("stores a key and model selection, and persists it", async () => {
+    // The mode stays mock, so this leaves the server in a state every other
+    // test can live with. See the note at the top of the file.
     await post("ai-settings/keys", { label: "mine", api_key: "sk-or-v1-abcd" });
     await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
 
     const response = await post("ai-settings", {
-      mode: "openrouter",
       key_label: "mine",
       model_label: "mine",
     });
 
     expect(response.status).toBe(200);
     expect(await state()).toMatchObject({
-      stored_mode: "openrouter",
-      effective_mode: "openrouter",
+      stored_mode: "mock",
       selected_key_label: "mine",
       selected_model_label: "mine",
     });
   });
 
-  it("steps back to mock when the selected model is deleted", async () => {
-    await post("ai-settings/keys", { label: "mine", api_key: "sk-or-v1-abcd" });
+  it("clears a selection when asked with null", async () => {
     await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
-    await post("ai-settings", {
-      mode: "openrouter",
-      key_label: "mine",
-      model_label: "mine",
-    });
+    await post("ai-settings", { model_label: "mine" });
+
+    await post("ai-settings", { model_label: null });
+
+    expect((await state()).selected_model_label).toBeNull();
+  });
+
+  it("drops the selection when the selected model is deleted", async () => {
+    await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
+    await post("ai-settings", { model_label: "mine" });
 
     await remove("ai-settings/models", "mine");
 
     expect(await state()).toMatchObject({
       stored_mode: "mock",
-      effective_mode: "mock",
       selected_model_label: null,
     });
   });

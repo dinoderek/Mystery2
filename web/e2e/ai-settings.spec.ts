@@ -8,9 +8,16 @@ import { expect, test } from '@playwright/test';
 // The settings row is a singleton by design — it is a property of the
 // installation, not of a player — so these tests cannot be isolated from each
 // other the way the rest of the suite is. They run serially against the shared
-// row, and each puts the mode back to mock and removes what it added. The rest
-// of the suite still runs in parallel alongside them; nothing else touches
-// these tables.
+// row, and each puts the mode back to mock and removes what it added.
+//
+// The rest of the suite runs in parallel alongside them, and *that* is why
+// nothing here ever leaves the server in live narration: the specs that play
+// real sessions would resolve the same row, call a provider with a throwaway
+// key, and fail on a 500 with no visible cause. Switching to live is asserted
+// in the unit suites instead — see the note in
+// `tests/api/integration/ai-settings.test.ts`, which hit exactly this on CI.
+// What is checked here is the browser behaviour: the page is public, the
+// selections stick, and asking for live without a key is refused.
 
 const KEY_LABEL = 'e2e-key';
 const MODEL_LABEL = 'e2e-model';
@@ -77,7 +84,7 @@ test.describe('AI settings', () => {
 		await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
 	});
 
-	test('stores a key and a model, and the choice survives a reload', async ({ page }) => {
+	test('stores a key and a model, and the selection survives a reload', async ({ page }) => {
 		await page.goto('/settings');
 
 		await page.getByLabel('New key label').fill(KEY_LABEL);
@@ -92,34 +99,31 @@ test.describe('AI settings', () => {
 		await expect(page.getByTestId('key-option')).toContainText('...1234');
 		await expect(page.getByTestId('key-option')).not.toContainText('abcdefgh');
 
+		// Selecting, but not switching the mode: the server stays mock for every
+		// other spec running alongside this one.
 		await page.getByTestId('key-option').click();
 		await page.getByTestId('model-option').click();
-		await page.getByTestId('mode-openrouter').click();
 
-		await expect(page.getByTestId('mode-openrouter')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByTestId('key-option')).toHaveAttribute('aria-pressed', 'true');
 
 		await page.reload();
 
-		await expect(page.getByTestId('mode-openrouter')).toHaveAttribute('aria-pressed', 'true');
 		await expect(page.getByTestId('key-option')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByTestId('model-option')).toHaveAttribute('aria-pressed', 'true');
 	});
 
-	test('deleting the selected model steps the mode back to mock', async ({ page, request }) => {
-		await request.post('/api/ai-settings/keys', {
-			data: { label: KEY_LABEL, api_key: 'sk-or-v1-abcdefgh1234' }
-		});
+	test('deleting a selected model clears the selection', async ({ page, request }) => {
 		await request.post('/api/ai-settings/models', {
 			data: { label: MODEL_LABEL, model_id: 'vendor/some-model' }
 		});
-		await request.post('/api/ai-settings', {
-			data: { mode: 'openrouter', key_label: KEY_LABEL, model_label: MODEL_LABEL }
-		});
+		await request.post('/api/ai-settings', { data: { model_label: MODEL_LABEL } });
 
 		await page.goto('/settings');
-		await expect(page.getByTestId('mode-openrouter')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByTestId('model-option')).toHaveAttribute('aria-pressed', 'true');
 
 		await page.getByTestId('delete-model').click();
 
+		await expect(page.getByTestId('model-option')).toHaveCount(0);
 		await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
 	});
 });

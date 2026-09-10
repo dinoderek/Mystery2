@@ -15,6 +15,10 @@ import {
   SearchResponseSchema,
   SpeakerSchema,
   TalkAskResponseSchema,
+  AIKeyUpsertSchema,
+  AIModelUpsertSchema,
+  AISettingsStateSchema,
+  AISettingsUpdateSchema,
 } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   NARRATOR_SPEAKER,
@@ -303,4 +307,76 @@ describe("shared mystery API contracts", () => {
     });
   });
 
+});
+
+describe("AI settings", () => {
+  const state = {
+    effective_mode: "openrouter",
+    stored_mode: "openrouter",
+    selected_key_label: "work",
+    selected_model_label: "sonnet",
+    missing_key_label: null,
+    missing_model_label: null,
+    keys: [{ label: "work", source: "user", masked: "...1234" }],
+    models: [{ label: "sonnet", model_id: "vendor/model", source: "env" }],
+    override: null,
+  };
+
+  it("accepts a full settings state", () => {
+    expect(AISettingsStateSchema.parse(state)).toMatchObject({
+      effective_mode: "openrouter",
+    });
+  });
+
+  it("carries no field that could hold a stored key", () => {
+    // The one rule this whole surface exists to keep. A key leaves the server
+    // as `masked` and nothing else, so an added `api_key` here would be the
+    // first sign that something started serialising the real value.
+    const shape = AISettingsStateSchema.parse(state);
+    const keyFields = Object.keys(shape.keys[0]);
+
+    expect(keyFields).toEqual(["label", "source", "masked"]);
+    expect(JSON.stringify(shape)).not.toContain("api_key");
+  });
+
+  it("accepts an override naming only the provider and model", () => {
+    expect(
+      AISettingsStateSchema.parse({
+        ...state,
+        override: { provider: "openrouter", model: "vendor/model", source: "AI_PROVIDER / AI_MODEL" },
+      }).override,
+    ).toEqual({
+      provider: "openrouter",
+      model: "vendor/model",
+      source: "AI_PROVIDER / AI_MODEL",
+    });
+  });
+
+  it("reports a dangling selection rather than hiding it", () => {
+    expect(
+      AISettingsStateSchema.parse({
+        ...state,
+        effective_mode: "mock",
+        missing_key_label: "work",
+        keys: [],
+      }),
+    ).toMatchObject({ effective_mode: "mock", missing_key_label: "work" });
+  });
+
+  it("rejects an unknown mode", () => {
+    expect(() => AISettingsStateSchema.parse({ ...state, stored_mode: "anthropic" })).toThrow();
+  });
+
+  it("treats null as a meaningful update, and an empty one as a mistake", () => {
+    // Clearing a selection is `null`; sending nothing at all is a caller bug.
+    expect(AISettingsUpdateSchema.parse({ key_label: null })).toEqual({ key_label: null });
+    expect(() => AISettingsUpdateSchema.parse({})).toThrow();
+  });
+
+  it("requires a label and a value on both upserts", () => {
+    expect(AISettingsUpdateSchema.parse({ mode: "mock" })).toEqual({ mode: "mock" });
+    expect(() => AIKeyUpsertSchema.parse({ label: "", api_key: "sk" })).toThrow();
+    expect(() => AIKeyUpsertSchema.parse({ label: "work" })).toThrow();
+    expect(() => AIModelUpsertSchema.parse({ label: "sonnet", model_id: "" })).toThrow();
+  });
 });

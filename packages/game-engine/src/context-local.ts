@@ -6,14 +6,17 @@
 // to change to keep the state somewhere else.
 
 import { createLocalAIProfileStore } from "./ai-profile.ts";
+import { readAISettingsEnv } from "./ai-settings-env.ts";
 import { createLocalContentStore } from "./content.ts";
 import type {
   AIProfileStore,
+  AISettingsStore,
   CatalogContext,
   ContentStore,
   EngineContext,
   EnginePlayer,
 } from "./context.ts";
+import { createAISettingsStore } from "./db/ai-settings.ts";
 import { openDatabase, type Db } from "./db/client.ts";
 import { createEventStore } from "./db/events.ts";
 import { createPlayerStore, type PlayerStore } from "./db/players.ts";
@@ -67,6 +70,12 @@ export interface LocalEngine {
   players: PlayerStore;
   content: ContentStore;
   aiProfiles: AIProfileStore;
+  /**
+   * Labelled AI keys and models and the selection among them. App-global, so it
+   * hangs off the engine next to `players` rather than off a request context —
+   * the settings page is reachable before a profile is picked.
+   */
+  aiSettings: AISettingsStore;
   /** Directory image bytes are served from. */
   imagesDir: string;
   contextFor(player: EnginePlayer): EngineContext;
@@ -88,12 +97,25 @@ export function createLocalEngine(
     blueprintDirs: resolveBlueprintDirs(repoRoot, env),
     imagesDir,
   });
-  const aiProfiles = createLocalAIProfileStore({ repoRoot, env });
+  const aiSettings = createAISettingsStore(db);
+
+  // Startup seed: every `env` row is replaced from the filesystem, so a label
+  // removed from a file is gone rather than lingering as a choice that no
+  // longer works. `createLocalEngine` is memoised per process by the server
+  // (web/src/lib/server/engine.ts), so this runs exactly once at boot.
+  aiSettings.replaceEnvRows(readAISettingsEnv(repoRoot, env));
+
+  const aiProfiles = createLocalAIProfileStore({
+    repoRoot,
+    env,
+    settings: aiSettings,
+  });
 
   return {
     db,
     databasePath,
     players: createPlayerStore(db),
+    aiSettings,
     content,
     aiProfiles,
     imagesDir,

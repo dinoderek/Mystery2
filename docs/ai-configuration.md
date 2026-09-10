@@ -1,8 +1,14 @@
 # AI Configuration
 
-AI profiles are **environment, not data**. There is no `ai_profiles` table and
-nothing to seed: `mock` is built in, `free` and `paid` come from their env
-files, and `default` is whatever the running process is configured with.
+There are four profiles. Three of them are **environment, not data** — `mock` is
+built in, `free` and `paid` come from their env files, and there is nothing to
+seed for any of them. The fourth, `default`, is what the browser actually plays
+as, and it is **chosen on the settings page and stored in the database**.
+
+That split is deliberate. `free` and `paid` are named explicitly by the live-AI
+suites and the evaluation harness, so they have to be reproducible from files a
+run can be handed. `default` is what a person picks, so it belongs somewhere a
+person can change without restarting the server.
 
 For day-to-day local setup and profile selection commands, see `../QUICKSTART.md`.
 For the implementation-level matrix of which blueprint fields feed image and
@@ -11,7 +17,8 @@ runtime narration generation, see `docs/blueprint-generation-flows.md`.
 ## Canonical Rules
 
 - Canonical default profile id is `default`.
-- `game-start` uses `default` unless the request body includes `ai_profile`.
+- `game-start` uses `default` unless the request body includes `ai_profile`. The
+  browser never sends one, so every played session is `default`.
 - Existing sessions stay pinned to their stored `ai_profile_id` **label**, and
   that label is resolved again on every request — so a config change takes
   effect mid-session, with no restart.
@@ -75,19 +82,124 @@ This document is the canonical source for:
 - `--import-dir <dir>` overrides the directory to scan (default: `{MYSTERY_CONFIG_ROOT}/blueprint-images`)
 - `--import-images` cannot be combined with `--chat-packets`, `--dry-run`, or `--dry-mode`
 
+## How `default` Resolves
+
+Three sources, in order. The first that describes a usable configuration wins.
+
+1. **The process environment.** `AI_PROVIDER` + `AI_MODEL`, layered over
+   `.env.local`. This is what `npm run dev:ai:free` and `dev:ai:paid` set, and
+   what keeps the mock test server mock by absence. A *broken* override here
+   throws rather than falling through — a typo in an explicit flag must not
+   quietly become something else.
+2. **The settings database.** The mode, key and model last chosen on the
+   settings page. Only reached when the process names nothing.
+3. **Mock.**
+
+Because step 1 outranks step 2, a server started with an override is running
+something other than what the settings page shows as chosen. The page says so:
+it renders a banner naming the provider and model being forced, and explains
+that the stored choice takes effect on the next restart without it. The banner
+and the resolver read the same helper (`readDefaultAIOverride`), so they cannot
+disagree.
+
+`OPENROUTER_API_KEY` on its own is **not** an override. A machine can keep a key
+in `.env.local` and still let the settings page decide; only the two variables
+that select a configuration count.
+
+## The Settings Page
+
+`/settings`, reachable from the profile picker at `/login` and **before a
+profile exists** — a machine whose AI is misconfigured is exactly the one a
+player cannot get past the picker on. It offers:
+
+- **Mock vs Real AI.** Real AI is refused until both a key and a model are
+  selected, so a stored `openrouter` is always something the runtime can call.
+- **Labelled OpenRouter keys**, and **labelled models**. Both are label →
+  value pairs, both support add / replace / delete.
+
+Rows carry a `source`. `env` rows come from the filesystem and are re-read on
+every start, so they are shown with an `[ENV]` badge and refuse edits and
+deletes — an edit the next restart would silently undo is worse than no edit.
+`user` rows were typed in on the page and can be changed freely. A `user` row
+wins over an `env` row of the same label.
+
+A stored key never leaves the server. The page sees only the last four
+characters, and no response shape on this surface has a field that could carry
+the value.
+
+### Seeding from the environment
+
+On startup, every `env` row is **deleted and re-inserted** from the filesystem —
+not upserted — so a label removed from a file disappears rather than lingering
+as a choice that no longer works. Three sources feed it, in increasing
+precedence:
+
+| File | Becomes |
+| --- | --- |
+| `.env.local` `OPENROUTER_API_KEY` | key `default` |
+| `.env.ai.free.local` / `.env.ai.paid.local` | key and model `free` / `paid` |
+| `.env.ai.local` `OPENROUTER_KEY_<LABEL>` / `AI_MODEL_<LABEL>` | key / model `<label>`, lowercased |
+
+The first two exist so a machine already set up for `npm run dev:ai:free` has
+usable choices without editing anything; those files still back the `free` and
+`paid` profiles directly, and this only mirrors them into the picker.
+
+```
+# .env.ai.local
+OPENROUTER_KEY_PERSONAL=sk-or-v1-...
+AI_MODEL_SONNET=anthropic/claude-sonnet-4
+AI_MODEL_LLAMA_FREE=meta-llama/llama-3.3-70b-instruct:free
+```
+
+A selection is stored as a **label**, not a foreign key, and is allowed to
+dangle: if the label it names is gone after a reseed, narration falls back to
+mock and the page says which label went missing. See the comment above the AI
+tables in `packages/game-engine/src/db/schema.ts` for why the tables key on
+`label` rather than a uuid.
+
 ## Local Configuration Summary
 
-- `npm run dev` points `default` to `mock`.
-- `npm run dev:ai:free` / `npm run dev:ai:paid` point `default` to that mode.
-- Switching profile is switching command — there is nothing to seed.
-- gameplay/runtime OpenRouter config stays DB-first; local blueprint/image generation use direct operator env values instead of AI profile rows
+- `npm run dev` plays whatever the settings page last chose, and mock if it has
+  chosen nothing.
+- `npm run dev:ai:free` / `npm run dev:ai:paid` override that for the life of
+  the process, and the settings page shows a banner saying so.
+- Switching the browser's provider no longer needs a restart or a command —
+  it is a choice on `/settings`.
+- Local blueprint and image generation still use direct operator env values, not
+  the settings tables.
 
 ## Testing And Mock Profile Rules
 
 The default automated test path is mock-backed, and it is mock-backed by
 absence: the suites start the server against a temporary config root with no
-`.env.ai.*` files in it, so `default` resolves to the built-in mock provider.
-Nothing is seeded and nothing has to be reset between runs.
+`.env.ai.*` files in it and a database nobody has chosen anything in, so
+`default` falls through both sources to the built-in mock provider. Nothing is
+seeded and nothing has to be reset between runs.
+
+The settings row is a singleton — a property of the installation, not of a
+player — and that breaks the isolation the rest of the suites rely on. They are
+parallel and safe because every test owns a profile and touches only its own
+sessions; the settings row belongs to no profile, so a test that changes it
+changes it for every test sharing that server.
+
+**No suite that shares a server with game-playing tests may switch the mode to
+live.** It was tried: `tests/api/integration/ai-settings.test.ts` set
+`openrouter` with a throwaway key, whichever test started a game in that window
+got a 401 from the real openrouter.ai returned as an unexplained 500, and CI was
+killed at its fifteen-minute cap when the calls hung instead. Locally the files
+had interleaved harmlessly and it passed. Switching to live is asserted in the
+unit suites, where it costs nobody: `tests/api/unit/ai-settings-store.test.ts`
+and `tests/api/unit/local-engine-ai-profile.test.ts`.
+
+The suites that mutate the row (`tests/api/integration/ai-settings.test.ts`,
+`web/e2e/ai-settings.spec.ts`) reset it around each test and leave it on mock;
+the browser one also runs serially within its file.
+
+As a backstop, `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` start
+their server with `OPENROUTER_URL` pointing at a closed port, so a mock-mode
+suite cannot reach a paid API at all. A slip fails in milliseconds with a
+connection error instead of hanging or spending credits — but it still fails,
+which is the point. The backstop is not the rule.
 
 `tests/api/integration/ai-profile-runtime.test.ts` writes a `free` profile into
 that temporary root, plays a turn, breaks the file, and asserts the next turn
@@ -106,9 +218,15 @@ Typical touchpoints include:
 
 - `packages/game-engine/src/ai-provider.ts`
 - `packages/game-engine/src/ai-profile.ts`
+- `packages/game-engine/src/ai-settings-env.ts`
+- `packages/game-engine/src/db/ai-settings.ts`
+- `web/src/routes/api/ai-settings/**` and `web/src/routes/settings/+page.svelte`
 - `tests/api/unit/ai-provider.test.ts`
 - `tests/api/unit/local-engine-ai-profile.test.ts`
+- `tests/api/unit/ai-settings-store.test.ts`
+- `tests/api/unit/ai-settings-env.test.ts`
 - `tests/api/integration/ai-profile-runtime.test.ts`
+- `tests/api/integration/ai-settings.test.ts`
 - `tests/api/e2e/*` when journey assertions depend on mock behavior
 
 ## Blueprint Generation Configuration

@@ -84,8 +84,18 @@ even when it would be tidier to gate it, and a session stays scoped even when
 its contents are dull.
 
 Endpoints declare which they are in the engine's registry
-(`packages/game-engine/src/endpoints/index.ts`), which is the one place the
-split is written down; `docs/backend-conventions.md` covers how to add one.
+(`packages/game-engine/src/endpoints/index.ts`), which is where the split is
+written down for everything the game itself serves;
+`docs/backend-conventions.md` covers how to add one.
+
+A few routes sit outside that registry, as their own files under
+`web/src/routes/api/`: `player` and `players`, which are how you get a profile
+in the first place, and `ai-settings`, which configures the installation rather
+than reading its content. They take no profile, by the same ownership criterion
+— none of them touches anybody's sessions — but none of them fits a
+`CatalogContext` either, which deliberately holds nothing but shared content.
+They reach the engine through `getEngine()` instead. Keep that list short: a
+route here is one the registry cannot express, not a shortcut around it.
 The browser is stricter than the server on purpose: the app still sends you to
 the profile picker before you can play, because playing needs a profile, not
 because reading the case list does.
@@ -113,13 +123,22 @@ which they have.
 
 ### Data
 
-Three tables, no migration chain. `packages/game-engine/src/db/schema.ts` is
-the whole schema; existing databases move forward through numbered steps keyed
-on `PRAGMA user_version`.
+Six tables. `packages/game-engine/src/db/schema.ts` is the whole schema, always
+describing the current end state; existing databases move forward through
+numbered steps keyed on `PRAGMA user_version`.
+
+Play:
 
 - `players` — id, name. This is the whole of identity.
 - `game_sessions` — one per case played, owned by a player.
 - `game_events` — the append-only transcript, unique on `(session_id, sequence)`.
+
+AI configuration, which is per-installation rather than per-player:
+
+- `ai_keys`, `ai_models` — labelled OpenRouter keys and models, either typed on
+  the settings page or re-read from the environment on every start.
+- `app_settings` — one row, holding the mock/live choice and which key and model
+  it selects. See `docs/ai-configuration.md`.
 
 **Ownership lives in the repositories.** Every session and event statement is
 scoped to one player. There is no row-level security underneath to catch a

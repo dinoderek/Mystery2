@@ -9,7 +9,13 @@
 // --- the boundary ---
 export {
   DEFAULT_AI_PROFILE_ID,
+  type AIKeyRecord,
+  type AIModelRecord,
   type AIProfileStore,
+  type AISettingsRecord,
+  type AISettingsSource,
+  type AISettingsStore,
+  type AISettingsUpdate,
   type BlueprintSummaryEntry,
   type CatalogContext,
   type ContentStore,
@@ -23,6 +29,7 @@ export {
   type GameSessionSummaryRow,
   type NewGameEvent,
   type NewGameSession,
+  type ResolvedAISettings,
   type SessionStore,
 } from "./context.ts";
 
@@ -47,10 +54,24 @@ export {
 } from "./context-local.ts";
 export {
   createLocalAIProfileStore,
+  readDefaultAIOverride,
+  readProcessAIOverride,
   resolveAIProfile,
   MOCK_AI_PROFILE_ID,
   type LocalAIProfileOptions,
+  type ProcessAIOverride,
 } from "./ai-profile.ts";
+export {
+  readAISettingsEnv,
+  type AIEnvKey,
+  type AIEnvModel,
+  type AIEnvSettings,
+} from "./ai-settings-env.ts";
+export {
+  createAISettingsStore,
+  EnvRowLockedError,
+  InvalidLabelError,
+} from "./db/ai-settings.ts";
 export {
   createLocalContentStore,
   resolveImageFile,

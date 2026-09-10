@@ -80,6 +80,20 @@ export function getAIEnvPath(
   return resolveLocalConfigPath(`.env.ai.${mode}.local`, repoRoot, env);
 }
 
+/**
+ * Labelled OpenRouter keys and models for the settings page, as
+ * `OPENROUTER_KEY_<LABEL>` / `AI_MODEL_<LABEL>` pairs. Optional: a machine with
+ * no such file still gets choices seeded from `.env.local` and the mode files.
+ *
+ * @param {string} [repoRoot] @param {Env} [env] @returns {string}
+ */
+export function getAISettingsEnvPath(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath(".env.ai.local", repoRoot, env);
+}
+
 /** @param {string} [repoRoot] @param {Env} [env] @returns {string} */
 export function getImagesEnvPath(
   repoRoot = process.cwd(),

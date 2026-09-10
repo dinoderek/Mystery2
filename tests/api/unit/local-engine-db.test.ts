@@ -81,6 +81,9 @@ describe("local database client", () => {
         { name: "players" },
         { name: "game_sessions" },
         { name: "game_events" },
+        { name: "ai_keys" },
+        { name: "ai_models" },
+        { name: "app_settings" },
       ]),
     );
   });
@@ -125,6 +128,160 @@ describe("local database client", () => {
 
     // Reopen something valid so the afterEach close does not double-fail.
     db = openDatabase({ path: path.join(tempDir, "other.db") });
+  });
+});
+
+/**
+ * The shape of a database, as a comparable string: every table with its
+ * columns, types, null-ness, defaults and primary-key position, plus the
+ * indexes.
+ *
+ * Compared instead of `sqlite_master.sql` because that stores the CREATE
+ * statement verbatim, so identical schemas written with different indentation
+ * would not match — and `schema.ts` and the migration are, correctly, written
+ * out separately.
+ */
+function describeShape(db: Db): string {
+  const parts: string[] = [];
+
+  const tables = db
+    .prepare(
+      "select name from sqlite_master where type = 'table' " +
+        "and name not like 'sqlite_%' order by name",
+    )
+    .all();
+
+  for (const table of tables) {
+    const columns = db
+      .prepare(`pragma table_info("${String(table.name)}")`)
+      .all()
+      .map(
+        (column) =>
+          `${String(column.name)} ${String(column.type)} ` +
+          `notnull=${String(column.notnull)} ` +
+          `default=${String(column.dflt_value)} pk=${String(column.pk)}`,
+      );
+    parts.push(`table ${String(table.name)}\n  ${columns.join("\n  ")}`);
+  }
+
+  const indexes = db
+    .prepare(
+      "select name, tbl_name from sqlite_master where type = 'index' " +
+        "and name not like 'sqlite_%' order by name",
+    )
+    .all();
+
+  for (const index of indexes) {
+    parts.push(`index ${String(index.name)} on ${String(index.tbl_name)}`);
+  }
+
+  return parts.join("\n");
+}
+
+// A database at schema version 1, built the way one that shipped was: the
+// three play tables, and nothing else.
+const SCHEMA_V1_SQL = `
+create table players (
+    id          text primary key,
+    name        text not null unique,
+    created_at  text not null,
+    updated_at  text not null
+);
+
+create table game_sessions (
+    id                        text primary key,
+    player_id                 text not null references players(id) on delete cascade,
+    blueprint_id              text not null,
+    ai_profile_id             text not null default 'default',
+    mode                      text not null,
+    current_location_id       text not null,
+    current_talk_character_id text,
+    time_remaining            integer not null,
+    discovered_clues          text not null default '[]',
+    outcome                   text,
+    created_at                text not null,
+    updated_at                text not null
+);
+
+create index game_sessions_player_id_idx on game_sessions(player_id);
+
+create table game_events (
+    id              text primary key,
+    session_id      text not null references game_sessions(id) on delete cascade,
+    sequence        integer not null,
+    event_type      text not null,
+    actor           text not null,
+    payload         text,
+    narration       text not null,
+    narration_parts text not null default '[]'
+                    check (json_valid(narration_parts)
+                           and json_type(narration_parts) = 'array'
+                           and json_array_length(narration_parts) > 0),
+    model           text,
+    created_at      text not null
+);
+
+create unique index game_events_session_sequence_idx
+    on game_events(session_id, sequence);
+`;
+
+// The real upgrade, run end to end against a database that already has data in
+// it. `planMigrations` below covers the planning; this covers the applying, and
+// it is the only thing that can catch `schema.ts` and `MIGRATIONS` drifting
+// apart — every other suite builds from scratch and takes the version-0 branch,
+// so a migration that does not match the schema would never be executed.
+describe("migrating a database that already exists", () => {
+  let upgradedPath: string;
+
+  beforeEach(() => {
+    upgradedPath = path.join(tempDir, "v1", "game.db");
+
+    // Built through `openDatabase` so the file gets the same pragmas a real one
+    // has, then emptied and rewritten to look like version 1. The tables are
+    // dropped by enumeration rather than by name so this keeps working as the
+    // current schema grows.
+    const seeded = openDatabase({ path: upgradedPath });
+    const existing = seeded
+      .prepare(
+        "select name from sqlite_master where type = 'table' " +
+          "and name not like 'sqlite_%'",
+      )
+      .all();
+    seeded.exec("pragma foreign_keys = off");
+    for (const table of existing) {
+      seeded.exec(`drop table "${String(table.name)}"`);
+    }
+    seeded.exec("pragma foreign_keys = on");
+    seeded.exec(SCHEMA_V1_SQL);
+    seeded.exec("pragma user_version = 1");
+    createPlayerStore(seeded).create("Ada");
+    seeded.close();
+  });
+
+  it("brings a version 1 database to the current version", () => {
+    const upgraded = openDatabase({ path: upgradedPath });
+
+    expect(upgraded.prepare("pragma user_version").get()).toEqual({
+      user_version: SCHEMA_VERSION,
+    });
+
+    upgraded.close();
+  });
+
+  it("leaves an upgraded database in the same shape as a fresh one", () => {
+    const upgraded = openDatabase({ path: upgradedPath });
+
+    expect(describeShape(upgraded)).toBe(describeShape(db));
+
+    upgraded.close();
+  });
+
+  it("keeps the data that was already there", () => {
+    const upgraded = openDatabase({ path: upgradedPath });
+
+    expect(createPlayerStore(upgraded).list().map((player) => player.name)).toEqual(["Ada"]);
+
+    upgraded.close();
   });
 });
 

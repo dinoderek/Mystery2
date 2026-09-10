@@ -275,6 +275,21 @@ That bar lives in `tests/api/integration/session-ownership.test.ts` and
 Integration and E2E never call OpenRouter. The server runs the mock provider;
 assert persisted side effects instead.
 
+That used to be true by construction — mock is chosen by absence, and the test
+server gets a config root with no `.env.ai.*` in it. It is no longer only that,
+because the AI mode is now a database row the API can change, and the row
+belongs to the installation rather than to a profile. **A test that switches the
+server to live switches it for every test sharing that server**, and the calls
+go to the real API with whatever throwaway key was stored. When that landed, the
+integration suite failed on an unexplained 500 and the CI job was killed at its
+fifteen-minute cap.
+
+So: no suite that shares a server with game-playing tests may switch the mode to
+live. Assert that in the unit suites instead. As a backstop,
+`scripts/run-mock-tests.mjs` and `web/playwright.config.ts` point
+`OPENROUTER_URL` at a closed port, so a slip fails in milliseconds instead of
+hanging or spending credits. `docs/ai-configuration.md` has the detail.
+
 If you change AI contracts, prompts, runtime context, or provider selection,
 update `tests/api/unit/ai-provider.test.ts` alongside any affected integration
 and API E2E assertions.

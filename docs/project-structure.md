@@ -43,9 +43,11 @@ Rule: keep this document directory-level only. Do not add file-level indexes her
 
 ## Feature Additions (Local Execution)
 
-- `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` — with no migration chain.
+- `packages/game-engine/src/db/schema.ts`: The whole local database — `players`, `game_sessions`, `game_events` for play, and `ai_keys`, `ai_models`, `app_settings` for AI configuration.
 - `packages/game-engine/src/db/client.ts`: The only file that imports a SQLite driver, plus the connection pragmas and the `PRAGMA user_version` schema runner.
-- `web/src/routes/api/`: The server tier — the endpoint dispatcher, image serving, and profile routes.
+- `web/src/routes/api/`: The server tier — the endpoint dispatcher, image serving, and the profile and AI-settings routes.
+- `packages/game-engine/src/db/ai-settings.ts` + `src/ai-settings-env.ts`: Labelled OpenRouter keys and models, the mock/live choice, and the startup reseed from the environment.
+- `web/src/routes/settings/+page.svelte`: The AI settings page, reachable from the picker before a profile exists.
 - `database/`: Gitignored home of the local databases when `MYSTERY_CONFIG_ROOT` is unset; otherwise they live at `$MYSTERY_CONFIG_ROOT/database/`. One directory per database — `main`, `prod`, and one named after each worktree.
 - `lib/database-target.mjs`: Derives which database a checkout talks to, and why it must not be shared.
 - `scripts/db.mjs`: `db:init`, `db:list`, `db:reset`, `db:copy`.

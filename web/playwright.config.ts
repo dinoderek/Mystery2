@@ -70,6 +70,12 @@ export default defineConfig({
       ...process.env,
       MYSTERY_CONFIG_ROOT: E2E_CONFIG_ROOT,
       MYSTERY_DATABASE: TEST_DATABASE,
+      // The browser suite is mock-only, and mock is chosen by absence. Since a
+      // test can now switch the server to live narration for every other test
+      // sharing it, point the provider at a closed port: a slip fails here in
+      // milliseconds instead of calling openrouter.ai with a throwaway key.
+      // `scripts/run-mock-tests.mjs` has the full reasoning.
+      OPENROUTER_URL: 'http://127.0.0.1:9/unreachable',
     },
   },
 });

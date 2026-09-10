@@ -449,11 +449,15 @@ Every AI-narrated event records the model that produced it in the
 - Runtime model selection:
   - `game-start` accepts optional `ai_profile` and persists it on `game_sessions.ai_profile_id`
   - all subsequent AI endpoints resolve provider/model/key from that stored profile id
-  - canonical default profile id is `ai_profiles.id='default'`
+  - canonical default profile id is `default`, resolved per request from the
+    process environment, then the settings database, then mock
 - Provider secrets:
-  - OpenRouter API key is read from `ai_profiles.openrouter_api_key` only
-- Local profile seeding, mock vs live mode behavior, and reseeding rules are
-  owned by [`docs/ai-configuration.md`](ai-configuration.md).
+  - the OpenRouter key reaches the provider as `EngineAIProfile.openrouter_api_key`
+    and is never serialised to the browser — not by a turn response, not by the
+    settings endpoints, which return only the last four characters
+- Local profile resolution, the settings page, mock vs live behavior, and the
+  environment reseed are owned by
+  [`docs/ai-configuration.md`](ai-configuration.md).
 
 ## Change Management
 

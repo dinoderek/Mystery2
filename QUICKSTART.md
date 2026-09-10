@@ -63,7 +63,27 @@ like. `npm run prod` starts the same server against the persistent one instead.
 
 ### Live AI
 
-Create one or both gitignored env files for live provider calls:
+The quickest route is the settings page: `[ AI SETTINGS ]` on the profile
+picker, reachable before you have picked a profile. Add a key and a model, pick
+them, switch to Real AI. The choice is stored and survives a restart.
+
+To have keys and models already there, create the gitignored
+`.env.ai.local` in the config root:
+
+```bash
+OPENROUTER_KEY_PERSONAL="<key>"
+AI_MODEL_SONNET="anthropic/claude-sonnet-4"
+AI_MODEL_LLAMA_FREE="meta-llama/llama-3.3-70b-instruct:free"
+```
+
+Each entry becomes a labelled choice on the settings page — `personal`,
+`sonnet`, `llama_free`. They are re-read on every start, so that file stays the
+place to rotate a key, and a label removed from it disappears from the page.
+
+### The free/paid profiles
+
+Separate from the above, and still file-backed, because the live-AI test suites
+and the evaluation harness name them explicitly.
 
 `.env.ai.free.local` / `.env.ai.paid.local`:
 
@@ -73,18 +93,20 @@ AI_MODEL="<model-id>"
 OPENROUTER_API_KEY="<key>"
 ```
 
-Then:
-
 ```bash
 npm run dev:ai:free   # or dev:ai:paid
 ```
 
+These start the server with an override that outranks whatever the settings
+page has chosen, for the life of the process. The settings page shows a banner
+saying so while it is in effect. Their key and model also appear on the page as
+the labels `free` and `paid`, so they can be picked without the override.
+
 ### Switching model
 
-Stop the server and start the other command. Profiles are environment, not
-database rows, so there is nothing to reseed — and because a session's profile
-is resolved on every request, editing `.env.ai.free.local` takes effect on the
-next turn of a session already in progress.
+Change it on the settings page; no restart. Because a session's profile is
+resolved on every request, the switch takes effect on the next turn of a session
+already in progress.
 
 Existing sessions keep the profile *label* they were started with, which is
 what the evaluation pipeline reads.

@@ -88,6 +88,14 @@ function inspect(file) {
     const countOf = (table) =>
       Number(db.prepare(`select count(*) as n from ${table}`).get()?.n ?? 0);
 
+    // Read-only, so this can be pointed at a database the current engine has
+    // not migrated yet. The AI tables arrived in schema 2; asking an older file
+    // for them would throw rather than report the version it is actually at.
+    const hasTable = (table) =>
+      db
+        .prepare("select 1 as present from sqlite_master where type = 'table' and name = ?")
+        .get(table) !== undefined;
+
     return {
       version,
       counts: {
@@ -95,6 +103,17 @@ function inspect(file) {
         sessions: countOf("game_sessions"),
         events: countOf("game_events"),
       },
+      ai: hasTable("app_settings")
+        ? {
+            // The operator question this answers: "why is my game still mock?"
+            mode: String(
+              db.prepare("select ai_mode from app_settings where id = 'singleton'").get()
+                ?.ai_mode ?? "mock",
+            ),
+            keys: countOf("ai_keys"),
+            models: countOf("ai_models"),
+          }
+        : null,
     };
   } finally {
     db.close();
@@ -113,7 +132,14 @@ function describe(file) {
   if (!details.counts) return `${schema}, empty`;
 
   const { players, sessions, events } = details.counts;
-  return `${schema}, ${players} players, ${sessions} sessions, ${events} events, ${formatSize(totalSizeBytes(file))}`;
+  const ai = details.ai
+    ? `, ai ${details.ai.mode} (${details.ai.keys} keys, ${details.ai.models} models)`
+    : "";
+
+  return (
+    `${schema}, ${players} players, ${sessions} sessions, ${events} events${ai}, ` +
+    formatSize(totalSizeBytes(file))
+  );
 }
 
 function resolveName(argument) {

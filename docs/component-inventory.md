@@ -144,6 +144,25 @@ _(Add components here as they are built. Example format below)_
 
 _(Add layout wrappers here)_
 
+## Form Controls
+
+There is no shared form-control component and no `<select>` anywhere in the app.
+Choices are keyed button lists, and the classes are copied. The canonical
+sources, in order of preference when adding a control:
+
+- **Selectable row**: `ProfilePicker.svelte` (`w-full border border-t-muted/30
+  px-3 py-2 text-left font-mono hover:border-t-primary`). Selected state is
+  `border-t-primary text-t-bright bg-t-primary/10` plus `aria-pressed`, as on
+  `src/routes/settings/+page.svelte`.
+- **Text input**: `ProfilePicker.svelte` (`bg-transparent border
+  border-t-muted/30 px-3 py-2 font-mono focus:border-t-primary`), with either a
+  `<label>` styled `block text-t-muted text-sm mb-1` or an `aria-label`.
+- **Primary button**: `border border-t-primary px-3 py-2 text-t-bright
+  hover:bg-t-primary/10`, labelled in brackets (`[ START ]`).
+- **Ghost button**: `border border-t-muted/40 px-3 py-1 text-xs text-t-muted
+  hover:border-t-primary hover:text-t-primary`, as on the `LOGOUT` and
+  `[ AI SETTINGS ]` buttons.
+
 ## Route-Level Session Screens (Feature-Specific)
 
 These are route components, not shared reusable UI components:

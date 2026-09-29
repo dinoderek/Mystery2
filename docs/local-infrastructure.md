@@ -16,12 +16,16 @@ npm run dev
 Mock narration, no network, no API key. `npm run dev:ai:free` and
 `npm run dev:ai:paid` start the same server with a real model, reading
 `.env.ai.free.local` / `.env.ai.paid.local` from the config root.
+`npm run dev:ai:claude` narrates with Sonnet through the local `claude` CLI and
+its own login instead, with no env file (`CLAUDE_MODEL=haiku` picks another model);
+see `docs/ai-configuration.md`.
 
 Switching between them is switching command. There is nothing to reseed and
 nothing to restart, because a profile is env, not a database row.
 
 `npm run prod` is the same server pointed at the persistent database rather
-than this checkout's, with `prod:ai:free` and `prod:ai:paid` alongside. Model
+than this checkout's, with `prod:ai:free`, `prod:ai:paid` and `prod:ai:claude`
+alongside. Model
 and database are orthogonal: `--db <name>` sets the database for any of them.
 
 ## Where your data lives

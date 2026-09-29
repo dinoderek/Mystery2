@@ -82,6 +82,67 @@ This document is the canonical source for:
 - `--import-dir <dir>` overrides the directory to scan (default: `{MYSTERY_CONFIG_ROOT}/blueprint-images`)
 - `--import-images` cannot be combined with `--chat-packets`, `--dry-run`, or `--dry-mode`
 
+## The claude CLI provider
+
+`AI_PROVIDER=claude-cli` narrates through the local `claude` command-line client
+and its own login, for machines that can reach Anthropic but not OpenRouter
+(a cloud container, for instance). It needs no key and no env file:
+
+```bash
+npm run dev:ai:claude                     # Sonnet
+CLAUDE_MODEL=haiku npm run dev:ai:claude  # any model the CLI accepts
+npm run prod:ai:claude                    # the same, on the prod database
+```
+
+The launcher reads `CLAUDE_MODEL`, not `AI_MODEL`, so a leftover exported
+OpenRouter model id cannot end up passed to the CLI, and it refuses to start
+when `claude` is not installed. Without the launcher, `AI_PROVIDER=claude-cli`
+with `AI_MODEL=<model>` in the process environment selects it the same way.
+
+It is selected only through the process environment, so the settings page shows
+it in the override banner but cannot choose it. Keep it out of the `free` and
+`paid` env files: the settings page seeds their `AI_MODEL` as an OpenRouter
+model.
+
+Each AI call runs one `claude --print` subprocess with the same messages the
+OpenRouter provider sends. Role outputs are constrained with `--json-schema`,
+generated from the role's Zod contract (`roleOutputJsonSchema`). The flags
+`--system-prompt`, `--tools ""`, `--strict-mcp-config`, `--setting-sources ""`
+and `--no-session-persistence` keep Claude Code's own system prompt, tools, MCP
+servers and settings (which include this repo's CLAUDE.md) out of the model's
+context, and the process runs in the OS temp directory. Skipping settings also
+skips a login configured only in `settings.json` (`apiKeyHelper`, Bedrock or
+Vertex env); the CLI then fails to authenticate.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `CLAUDE_CLI_PATH` | `claude` on PATH | The executable to run; a timeout kills its whole process group, so a wrapper script is fine |
+| `AI_CLAUDE_CLI_TIMEOUT_MS` | `120000` | Kill a call that runs longer |
+| `AI_CLAUDE_CLI_MAX_ATTEMPTS` | `3` | Attempts per call, with capped backoff |
+| `AI_CLAUDE_CLI_BASE_BACKOFF_MS` | `750` | First retry delay |
+
+A timeout, a failed run, a reply flagged `is_error`, or a reply missing its
+output is retried and finally surfaces as the usual retriable AI error. A reply
+that parses against the schema but breaks a rule only the parser knows (a
+`continue` judgement without a follow-up prompt) fails at once, as it does for
+OpenRouter. The event's `model` column records the full model id the CLI
+reports, not the alias.
+
+## The AI call log
+
+`AI_CALL_LOG=<file>` appends one JSON line per AI call, whatever the provider:
+the role, the request metadata (game, endpoint, action), the prompt and context
+sent, the output the role's parser was given (null when the call failed before
+that, such as an OpenRouter reply that was not JSON), whether it parsed, latency, and — for the
+claude CLI, which reports them — tokens, cost and attempts. Unset, nothing is
+written. The context carries blueprint content, the solution included for the
+accusation judge, so keep the file somewhere gitignored. The launcher resolves a
+relative path against the repo root; the mock test suites clear the variable.
+
+```bash
+AI_CALL_LOG=/tmp/ai-calls.jsonl npm run dev:ai:claude
+```
+
 ## How `default` Resolves
 
 Three sources, in order. The first that describes a usable configuration wins.
@@ -161,8 +222,9 @@ tables in `packages/game-engine/src/db/schema.ts` for why the tables key on
 
 - `npm run dev` plays whatever the settings page last chose, and mock if it has
   chosen nothing.
-- `npm run dev:ai:free` / `npm run dev:ai:paid` override that for the life of
-  the process, and the settings page shows a banner saying so.
+- `npm run dev:ai:free` / `npm run dev:ai:paid` / `npm run dev:ai:claude`
+  override that for the life of the process, and the settings page shows a
+  banner saying so.
 - Switching the browser's provider no longer needs a restart or a command —
   it is a choice on `/settings`.
 - Local blueprint and image generation still use direct operator env values, not
@@ -196,8 +258,9 @@ The suites that mutate the row (`tests/api/integration/ai-settings.test.ts`,
 the browser one also runs serially within its file.
 
 As a backstop, `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` start
-their server with `OPENROUTER_URL` pointing at a closed port, so a mock-mode
-suite cannot reach a paid API at all. A slip fails in milliseconds with a
+their server with `OPENROUTER_URL` pointing at a closed port and
+`CLAUDE_CLI_PATH` at a file that does not exist, so a mock-mode suite cannot
+reach a paid API at all. A slip fails in milliseconds with a
 connection error instead of hanging or spending credits — but it still fails,
 which is the point. The backstop is not the rule.
 
@@ -222,6 +285,9 @@ Typical touchpoints include:
 - `packages/game-engine/src/db/ai-settings.ts`
 - `web/src/routes/api/ai-settings/**` and `web/src/routes/settings/+page.svelte`
 - `tests/api/unit/ai-provider.test.ts`
+- `tests/api/unit/ai-provider-claude-cli.test.ts` (against
+  `tests/api/unit/fixtures/fake-claude-cli.mjs`, never a real model)
+- `tests/api/unit/ai-call-log.test.ts`
 - `tests/api/unit/local-engine-ai-profile.test.ts`
 - `tests/api/unit/ai-settings-store.test.ts`
 - `tests/api/unit/ai-settings-env.test.ts`

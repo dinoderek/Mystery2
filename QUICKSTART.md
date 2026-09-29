@@ -95,12 +95,14 @@ OPENROUTER_API_KEY="<key>"
 
 ```bash
 npm run dev:ai:free   # or dev:ai:paid
+npm run dev:ai:claude # Sonnet through the local claude CLI, no key or env file
 ```
 
 These start the server with an override that outranks whatever the settings
 page has chosen, for the life of the process. The settings page shows a banner
-saying so while it is in effect. Their key and model also appear on the page as
-the labels `free` and `paid`, so they can be picked without the override.
+saying so while it is in effect. The `free` and `paid` keys and models also
+appear on the page under those labels, so they can be picked without the
+override; the claude CLI cannot be picked there.
 
 ### Switching model
 

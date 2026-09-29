@@ -125,6 +125,9 @@ describe("misconfiguration", () => {
     writeEnv(".env.ai.free.local", ["AI_PROVIDER=anthropic", "AI_MODEL=x"]);
     expect(() => resolve("free")).toThrow(/Invalid AI_PROVIDER/);
 
+    writeEnv(".env.ai.free.local", ["AI_PROVIDER=claude-cli"]);
+    expect(() => resolve("free")).toThrow(/Missing AI_MODEL/);
+
     writeEnv(".env.ai.free.local", ["AI_PROVIDER=openrouter"]);
     expect(() => resolve("free")).toThrow(/Missing AI_MODEL/);
 
@@ -169,6 +172,16 @@ describe("the default profile", () => {
       provider: "openrouter",
       model: "some/free-model:free",
       openrouter_api_key: "sk-free",
+    });
+  });
+
+  it("follows a process that names the claude CLI, which needs no key", () => {
+    // `npm run dev:ai:claude`: the CLI brings the machine's own login.
+    expect(resolve("default", { AI_PROVIDER: "claude-cli", AI_MODEL: "sonnet" })).toEqual({
+      id: "default",
+      provider: "claude-cli",
+      model: "sonnet",
+      openrouter_api_key: null,
     });
   });
 
@@ -245,6 +258,15 @@ describe("readDefaultAIOverride", () => {
         env: { AI_PROVIDER: "openrouter", AI_MODEL: "process/model" },
       }),
     ).toEqual({ provider: "openrouter", model: "process/model" });
+  });
+
+  it("reports a claude CLI override, which the settings page cannot choose", () => {
+    expect(
+      readDefaultAIOverride({
+        repoRoot,
+        env: { AI_PROVIDER: "claude-cli", AI_MODEL: "sonnet" },
+      }),
+    ).toEqual({ provider: "claude-cli", model: "sonnet" });
   });
 
   it("does not treat a bare API key as an override", () => {

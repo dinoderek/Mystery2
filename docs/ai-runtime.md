@@ -22,6 +22,13 @@ Important version note:
   - OpenRouter retry/backoff and timeout controls
   - Structured AI call logs (JSON) with request/action metadata
   - Live-suite helpers (`AI_LIVE`, AI mode labeling)
+  - Wraps the provider in the `AI_CALL_LOG` file writer when that is set
+- `packages/game-engine/src/ai-provider-claude-cli.ts`
+  - The `claude-cli` provider: one `claude --print` subprocess per call, role
+    outputs constrained by `--json-schema`, Claude Code's own context kept out
+    (see `docs/ai-configuration.md`)
+- `packages/game-engine/src/ai-call-log.ts`
+  - `AI_CALL_LOG`: one JSON line per AI call, for reading a game back
 - `packages/game-engine/src/context.ts`
   - `AIProfileStore` — default and per-session profile lookup
 - `packages/game-engine/src/context-local.ts`

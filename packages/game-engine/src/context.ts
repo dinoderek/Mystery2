@@ -134,7 +134,7 @@ export interface ContentStore {
 /** Resolved AI runtime profile, including the provider secret. */
 export interface EngineAIProfile {
   id: string;
-  provider: "mock" | "openrouter";
+  provider: "mock" | "openrouter" | "claude-cli";
   model: string;
   openrouter_api_key: string | null;
 }

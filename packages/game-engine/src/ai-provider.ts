@@ -1,7 +1,12 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
+import { withCallLog } from "./ai-call-log.ts";
+import {
+  ClaudeCliProvider,
+  type ClaudeCliRuntimeConfig,
+} from "./ai-provider-claude-cli.ts";
 import { RetriableAIError } from "./errors.ts";
 
-export type AIProviderName = "mock" | "openrouter";
+export type AIProviderName = "mock" | "openrouter" | "claude-cli";
 
 export interface AIRequestMetadata {
   request_id: string;
@@ -46,11 +51,12 @@ export interface AIRoleOutputRequest<T> {
   metadata?: AIRequestMetadata;
 }
 
-export interface ReasoningEvaluation {
-  resolved: boolean;
-  outcome?: "win" | "lose";
-  narration: string;
-  follow_up_prompt?: string | null;
+/** What the most recent call cost, where the provider reports it. */
+export interface AICallUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number | null;
+  attempts: number;
 }
 
 export interface AIProvider {
@@ -68,12 +74,8 @@ export interface AIProvider {
     metadata?: AIRequestMetadata,
   ): Promise<string>;
   generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T>;
-  evaluateReasoning(context: {
-    history: unknown[];
-    accused_character: string;
-    is_culprit: boolean;
-    player_reasoning: string;
-  }, metadata?: AIRequestMetadata): Promise<ReasoningEvaluation>;
+  /** Usage of the most recent call; only the claude CLI reports it. */
+  readonly lastUsage?: AICallUsage | null;
 }
 
 function getRuntimeEnv(): Record<string, string | undefined> {
@@ -247,6 +249,23 @@ function resolveOpenRouterRuntimeConfig(
   };
 }
 
+const DEFAULT_CLAUDE_CLI_TIMEOUT_MS = 120_000;
+
+function resolveClaudeCliRuntimeConfig(
+  env: Record<string, string | undefined>,
+): ClaudeCliRuntimeConfig {
+  return {
+    binary: env.CLAUDE_CLI_PATH?.trim() || "claude",
+    timeout_ms: parsePositiveInt(
+      env,
+      "AI_CLAUDE_CLI_TIMEOUT_MS",
+      DEFAULT_CLAUDE_CLI_TIMEOUT_MS,
+    ),
+    max_attempts: parsePositiveInt(env, "AI_CLAUDE_CLI_MAX_ATTEMPTS", 3),
+    base_backoff_ms: parsePositiveInt(env, "AI_CLAUDE_CLI_BASE_BACKOFF_MS", 750),
+  };
+}
+
 class MockAIProvider implements AIProvider {
   readonly profile: AIRuntimeProfile;
 
@@ -265,33 +284,6 @@ class MockAIProvider implements AIProvider {
   async generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T> {
     const payload = this.buildPayload(request.role, request.context);
     return request.parse(payload);
-  }
-
-  async evaluateReasoning(context: {
-    history: unknown[];
-    accused_character: string;
-    is_culprit: boolean;
-    player_reasoning: string;
-  }): Promise<ReasoningEvaluation> {
-    const rounds = Array.isArray(context.history) ? context.history.length : 0;
-    if (rounds < 1) {
-      return {
-        resolved: false,
-        narration:
-          "[Mock] That is a bold guess. Which clue shows you are right?",
-        follow_up_prompt:
-          "Which evidence and timeline details most strongly support this accusation?",
-      };
-    }
-
-    return {
-      resolved: true,
-      outcome: context.is_culprit ? "win" : "lose",
-      narration: context.is_culprit
-        ? `[Mock] You solved it. ${context.accused_character} is the culprit.`
-        : `[Mock] The accusation fails. ${context.accused_character} is not the culprit.`,
-      follow_up_prompt: null,
-    };
   }
 
   private buildPayload(
@@ -626,28 +618,6 @@ class OpenRouterProvider implements AIProvider {
     return request.parse(parsed);
   }
 
-  async evaluateReasoning(context: {
-    history: unknown[];
-    accused_character: string;
-    is_culprit: boolean;
-    player_reasoning: string;
-  }, metadata?: AIRequestMetadata): Promise<ReasoningEvaluation> {
-    const rounds = Array.isArray(context.history) ? context.history.length : 0;
-    const resolved = rounds > 0;
-
-    return {
-      resolved,
-      outcome: resolved ? (context.is_culprit ? "win" : "lose") : undefined,
-      narration: await this.generateNarration(
-        `Accused: ${context.accused_character}. Reasoning: ${context.player_reasoning}`,
-        metadata,
-      ),
-      follow_up_prompt: resolved
-        ? null
-        : "Can you cite specific evidence and a timeline to support this accusation?",
-    };
-  }
-
   private async callOpenRouter(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     responseFormat?: { type: "json_object" },
@@ -816,11 +786,25 @@ class OpenRouterProvider implements AIProvider {
   }
 }
 
+/**
+ * Builds the provider a profile names. With `AI_CALL_LOG` set, every call it
+ * makes is also appended to that file (see `ai-call-log.ts`).
+ */
 export function createAIProviderFromProfile(
   profile: AIRuntimeProfile,
   options: AIProviderFactoryOptions = {},
 ): AIProvider {
   const env = options.env ?? getRuntimeEnv();
+  const provider = createProvider(profile, options, env);
+  const callLog = env.AI_CALL_LOG?.trim();
+  return callLog ? withCallLog(provider, callLog) : provider;
+}
+
+function createProvider(
+  profile: AIRuntimeProfile,
+  options: AIProviderFactoryOptions,
+  env: Record<string, string | undefined>,
+): AIProvider {
   if (profile.provider === "openrouter") {
     const openrouterApiKey = options.openrouterApiKey?.trim();
     if (!openrouterApiKey) {
@@ -835,6 +819,10 @@ export function createAIProviderFromProfile(
       runtimeConfig,
       env.OPENROUTER_URL,
     );
+  }
+
+  if (profile.provider === "claude-cli") {
+    return new ClaudeCliProvider(profile, resolveClaudeCliRuntimeConfig(env));
   }
 
   return new MockAIProvider(profile);

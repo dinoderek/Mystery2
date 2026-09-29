@@ -116,8 +116,8 @@
 					{/each}
 				</div>
 				<p class="text-t-dim text-xs mt-2">
-					In effect right now: <strong>{settings.effective_mode}</strong>. Real AI needs both a
-					key and a model selected.
+					In effect right now: <strong>{settings.effective_mode}</strong>. Real AI (OpenRouter)
+					needs both a key and a model selected.
 				</p>
 			</section>
 

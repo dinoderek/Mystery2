@@ -35,8 +35,17 @@ if (suite !== "integration" && suite !== "e2e") {
  *
  * Live-AI runs use `run-live-ai.mjs`, which passes its own env and is not
  * affected.
+ *
+ * `CLAUDE_CLI_PATH` does the same for the claude-cli provider: a stray
+ * `AI_PROVIDER=claude-cli` in the shell fails at once instead of playing every
+ * test through a real model.
  */
-const MOCK_ONLY_ENV = { OPENROUTER_URL: "http://127.0.0.1:9/unreachable" };
+const MOCK_ONLY_ENV = {
+  OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
+  CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-in-mock-tests",
+  // Nor append the suite's calls to a developer's exported call log.
+  AI_CALL_LOG: "",
+};
 
 const repoRoot = process.cwd();
 const vitestTarget =

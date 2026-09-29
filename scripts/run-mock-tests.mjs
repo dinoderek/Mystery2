@@ -43,6 +43,8 @@ if (suite !== "integration" && suite !== "e2e") {
 const MOCK_ONLY_ENV = {
   OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
   CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-in-mock-tests",
+  // Nor append the suite's calls to a developer's exported call log.
+  AI_CALL_LOG: "",
 };
 
 const repoRoot = process.cwd();

@@ -157,8 +157,8 @@ describe("AI call log", () => {
       provider: "claude-cli",
       model: "sonnet",
       resolved_model: "claude-sonnet-test-1",
-      input_tokens: 1015,
-      output_tokens: 42,
+      input_tokens: 1115,
+      output_tokens: 43,
       cost_usd: 0.0123,
       attempts: 1,
     });

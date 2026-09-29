@@ -78,6 +78,7 @@ export default defineConfig({
       OPENROUTER_URL: 'http://127.0.0.1:9/unreachable',
       // The same for the claude-cli provider, which only the environment selects.
       CLAUDE_CLI_PATH: '/nonexistent/claude-cli-disabled-in-mock-tests',
+      AI_CALL_LOG: '',
     },
   },
 });

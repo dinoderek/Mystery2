@@ -131,9 +131,10 @@ describe("claude-cli provider requests", () => {
     await cli.generateRoleOutput(TALK_REQUEST);
 
     expect(cli.resolvedModel).toBe("claude-sonnet-test-1");
+    // Summed over every model the CLI used, as its cost is.
     expect(cli.lastUsage).toEqual({
-      input_tokens: 1015,
-      output_tokens: 42,
+      input_tokens: 1115,
+      output_tokens: 43,
       cost_usd: 0.0123,
       attempts: 1,
     });
@@ -158,6 +159,17 @@ describe("claude-cli provider failures", () => {
 
     expect(recordedCalls()).toHaveLength(2);
     expect(cli.lastUsage?.attempts).toBe(2);
+  });
+
+  it("reports no usage for a failed call, not the previous call's", async () => {
+    const cli = provider({ AI_CLAUDE_CLI_MAX_ATTEMPTS: "1" });
+    await cli.generateRoleOutput(TALK_REQUEST);
+    expect(cli.lastUsage).not.toBeNull();
+
+    vi.stubEnv("FAKE_CLAUDE_BEHAVIOUR", "crash");
+    await expectRetriable(cli.generateRoleOutput(TALK_REQUEST), "CLAUDE_CLI_FAILED");
+
+    expect(cli.lastUsage).toBeNull();
   });
 
   it("gives up after the configured attempts with a retriable error", async () => {

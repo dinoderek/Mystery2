@@ -352,6 +352,19 @@ describe("AI settings", () => {
     });
   });
 
+  it("lets the override and the effective mode name the claude CLI, but not the stored mode", () => {
+    const withCli = AISettingsStateSchema.parse({
+      ...state,
+      effective_mode: "claude-cli",
+      override: { provider: "claude-cli", model: "sonnet", source: "AI_PROVIDER / AI_MODEL" },
+    });
+    expect(withCli.effective_mode).toBe("claude-cli");
+    expect(withCli.override?.provider).toBe("claude-cli");
+
+    // The settings page chooses between mock and OpenRouter only.
+    expect(() => AISettingsStateSchema.parse({ ...state, stored_mode: "claude-cli" })).toThrow();
+  });
+
   it("reports a dangling selection rather than hiding it", () => {
     expect(
       AISettingsStateSchema.parse({

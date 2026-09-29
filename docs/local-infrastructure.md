@@ -17,7 +17,7 @@ Mock narration, no network, no API key. `npm run dev:ai:free` and
 `npm run dev:ai:paid` start the same server with a real model, reading
 `.env.ai.free.local` / `.env.ai.paid.local` from the config root.
 `npm run dev:ai:claude` narrates with Sonnet through the local `claude` CLI and
-its own login instead, with no env file (`AI_MODEL=haiku` picks another model);
+its own login instead, with no env file (`CLAUDE_MODEL=haiku` picks another model);
 see `docs/ai-configuration.md`.
 
 Switching between them is switching command. There is nothing to reseed and

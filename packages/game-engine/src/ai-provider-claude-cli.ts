@@ -51,13 +51,14 @@ interface CliReply {
   result?: unknown;
   structured_output?: unknown;
   total_cost_usd?: number;
-  usage?: {
-    input_tokens?: number;
-    cache_creation_input_tokens?: number;
-    cache_read_input_tokens?: number;
-    output_tokens?: number;
-  };
-  modelUsage?: Record<string, { outputTokens?: number }>;
+  modelUsage?: Record<string, ModelUsage>;
+}
+
+interface ModelUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadInputTokens?: number;
+  cacheCreationInputTokens?: number;
 }
 
 interface CliCall {
@@ -139,6 +140,8 @@ export class ClaudeCliProvider implements AIProvider {
   }
 
   async #call(call: CliCall, metadata?: AIRequestMetadata): Promise<CliReply> {
+    // Cleared first, so a call that fails never reports the one before it.
+    this.#lastUsage = null;
     const baseLogData: Record<string, unknown> = {
       request_id: metadata?.request_id ?? "untracked",
       endpoint: metadata?.endpoint ?? "unknown",
@@ -154,14 +157,14 @@ export class ClaudeCliProvider implements AIProvider {
       try {
         const reply = await this.#runOnce(call);
         call.check(reply);
-        this.#recordReply(reply, attempt);
+        const usage = this.#recordReply(reply, attempt);
         this.#log({
           ...baseLogData,
           outcome: "success",
           attempt,
           latency_ms: Date.now() - startedAt,
           responded_model: this.#resolvedModel,
-          cost_usd: this.#lastUsage?.cost_usd ?? null,
+          cost_usd: usage.cost_usd,
         });
         return reply;
       } catch (error) {
@@ -198,10 +201,13 @@ export class ClaudeCliProvider implements AIProvider {
     ];
 
     return new Promise((resolve, reject) => {
+      // Its own process group, so a timeout can kill everything it started:
+      // CLAUDE_CLI_PATH may name a wrapper script rather than the binary.
       const child = spawn(this.#config.binary, args, {
         cwd: os.tmpdir(),
         env: process.env,
         stdio: ["pipe", "pipe", "pipe"],
+        detached: true,
       });
       let stdout = "";
       let stderr = "";
@@ -214,7 +220,7 @@ export class ClaudeCliProvider implements AIProvider {
       };
 
       const timer = setTimeout(() => {
-        child.kill("SIGKILL");
+        killGroup(child.pid);
         settle(() =>
           reject(
             new RetriableAIError("claude CLI request timed out", {
@@ -260,6 +266,7 @@ export class ClaudeCliProvider implements AIProvider {
             reject(
               new RetriableAIError(`claude CLI reported an error: ${reason}`, {
                 code: "CLAUDE_CLI_ERROR",
+                stderr: stderr.slice(-500),
               }),
             );
           } else if (code !== 0) {
@@ -285,25 +292,31 @@ export class ClaudeCliProvider implements AIProvider {
     });
   }
 
-  #recordReply(reply: CliReply, attempts: number): void {
+  #recordReply(reply: CliReply, attempts: number): AICallUsage {
     // The CLI reports usage per model id. The one that wrote the answer is the
     // one with the most output, and its id is the full name behind an alias
-    // such as "sonnet".
+    // such as "sonnet". Tokens are summed over every model, as the cost is.
     const models = Object.entries(reply.modelUsage ?? {});
     if (models.length > 0) {
       models.sort(([, a], [, b]) => (b.outputTokens ?? 0) - (a.outputTokens ?? 0));
       this.#resolvedModel = models[0][0];
     }
 
-    const usage = reply.usage ?? {};
+    let inputTokens = 0;
+    let outputTokens = 0;
+    for (const [, usage] of models) {
+      inputTokens += (usage.inputTokens ?? 0) +
+        (usage.cacheReadInputTokens ?? 0) +
+        (usage.cacheCreationInputTokens ?? 0);
+      outputTokens += usage.outputTokens ?? 0;
+    }
     this.#lastUsage = {
-      input_tokens: (usage.input_tokens ?? 0) +
-        (usage.cache_creation_input_tokens ?? 0) +
-        (usage.cache_read_input_tokens ?? 0),
-      output_tokens: usage.output_tokens ?? 0,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
       cost_usd: typeof reply.total_cost_usd === "number" ? reply.total_cost_usd : null,
       attempts,
     };
+    return this.#lastUsage;
   }
 
   #log(payload: Record<string, unknown>): void {
@@ -314,6 +327,15 @@ export class ClaudeCliProvider implements AIProvider {
         ...payload,
       }),
     );
+  }
+}
+
+function killGroup(pid: number | undefined): void {
+  if (pid === undefined) return;
+  try {
+    process.kill(-pid, "SIGKILL");
+  } catch {
+    // Already gone.
   }
 }
 

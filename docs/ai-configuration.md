@@ -89,14 +89,20 @@ and its own login, for machines that can reach Anthropic but not OpenRouter
 (a cloud container, for instance). It needs no key and no env file:
 
 ```bash
-npm run dev:ai:claude                 # Sonnet
-AI_MODEL=haiku npm run dev:ai:claude  # any model the CLI accepts
-npm run prod:ai:claude                # the same, on the prod database
+npm run dev:ai:claude                     # Sonnet
+CLAUDE_MODEL=haiku npm run dev:ai:claude  # any model the CLI accepts
+npm run prod:ai:claude                    # the same, on the prod database
 ```
 
-It is selected only through the process environment, like `dev:ai:free`, so the
-settings page shows it in the override banner but cannot choose it. A `free` or
-`paid` env file may also name it (`AI_PROVIDER=claude-cli`, `AI_MODEL=sonnet`).
+The launcher reads `CLAUDE_MODEL`, not `AI_MODEL`, so a leftover exported
+OpenRouter model id cannot end up passed to the CLI, and it refuses to start
+when `claude` is not installed. Without the launcher, `AI_PROVIDER=claude-cli`
+with `AI_MODEL=<model>` in the process environment selects it the same way.
+
+It is selected only through the process environment, so the settings page shows
+it in the override banner but cannot choose it. Keep it out of the `free` and
+`paid` env files: the settings page seeds their `AI_MODEL` as an OpenRouter
+model.
 
 Each AI call runs one `claude --print` subprocess with the same messages the
 OpenRouter provider sends. Role outputs are constrained with `--json-schema`,
@@ -110,7 +116,7 @@ Vertex env); the CLI then fails to authenticate.
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `CLAUDE_CLI_PATH` | `claude` on PATH | The executable to run |
+| `CLAUDE_CLI_PATH` | `claude` on PATH | The executable to run; a timeout kills its whole process group, so a wrapper script is fine |
 | `AI_CLAUDE_CLI_TIMEOUT_MS` | `120000` | Kill a call that runs longer |
 | `AI_CLAUDE_CLI_MAX_ATTEMPTS` | `3` | Attempts per call, with capped backoff |
 | `AI_CLAUDE_CLI_BASE_BACKOFF_MS` | `750` | First retry delay |
@@ -126,10 +132,12 @@ reports, not the alias.
 
 `AI_CALL_LOG=<file>` appends one JSON line per AI call, whatever the provider:
 the role, the request metadata (game, endpoint, action), the prompt and context
-sent, the output before parsing, whether it parsed, latency, and — for the
+sent, the output the role's parser was given (null when the call failed before
+that, such as an OpenRouter reply that was not JSON), whether it parsed, latency, and — for the
 claude CLI, which reports them — tokens, cost and attempts. Unset, nothing is
 written. The context carries blueprint content, the solution included for the
-accusation judge, so keep the file somewhere gitignored.
+accusation judge, so keep the file somewhere gitignored. The launcher resolves a
+relative path against the repo root; the mock test suites clear the variable.
 
 ```bash
 AI_CALL_LOG=/tmp/ai-calls.jsonl npm run dev:ai:claude

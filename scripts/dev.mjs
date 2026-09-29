@@ -5,7 +5,7 @@
  * `npm run dev:ai:free`   the model in .env.ai.free.local
  * `npm run dev:ai:paid`   the model in .env.ai.paid.local
  * `npm run dev:ai:claude` Sonnet through the local `claude` CLI and its login
- *                         (`AI_MODEL=haiku` picks another model); no env file
+ *                         (`CLAUDE_MODEL=haiku` picks another model); no env file
  *
  * The mode's env file is loaded into the process rather than seeded into a
  * database, so switching models is switching command — there is no stack to
@@ -16,6 +16,9 @@
  * one. The AI mode and the database are orthogonal — either can be combined
  * with either.
  */
+
+import { spawnSync } from "node:child_process";
+import path from "node:path";
 
 import { readEnvFile } from "../packages/game-engine/src/env-file.ts";
 import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
@@ -55,9 +58,10 @@ const { mode, database } = parseArgs(process.argv.slice(2));
 const rootDir = process.cwd();
 const baseVars = readEnvFile(getBaseEnvPath(rootDir, process.env));
 // The claude mode has no file: the CLI brings its own login, and the model
-// defaults to Sonnet unless AI_MODEL names another.
+// defaults to Sonnet unless CLAUDE_MODEL names another. Not AI_MODEL, which may
+// still hold an exported OpenRouter model id the CLI would reject every turn.
 const modeVars = mode === "claude"
-  ? { AI_PROVIDER: "claude-cli", AI_MODEL: process.env.AI_MODEL?.trim() || "sonnet" }
+  ? { AI_PROVIDER: "claude-cli", AI_MODEL: process.env.CLAUDE_MODEL?.trim() || "sonnet" }
   : mode
   ? readEnvFile(getAIEnvPath(rootDir, mode, process.env))
   : {};
@@ -69,7 +73,18 @@ if (mode && Object.keys(modeVars).length === 0) {
   process.exit(1);
 }
 
+if (mode === "claude") {
+  const cli = process.env.CLAUDE_CLI_PATH?.trim() || "claude";
+  if (spawnSync(cli, ["--version"], { stdio: "ignore" }).status !== 0) {
+    console.error(`"${cli}" did not run. Install Claude Code and log in, or set CLAUDE_CLI_PATH.`);
+    process.exit(1);
+  }
+}
+
 const env = { ...baseVars, ...modeVars, ...process.env };
+
+// The server runs from web/, so a relative log path would land there.
+if (env.AI_CALL_LOG?.trim()) env.AI_CALL_LOG = path.resolve(env.AI_CALL_LOG.trim());
 
 // Same reasoning as the AI keys below: the flag just typed has to outrank an
 // ambient MYSTERY_DATABASE, or an exported one would silently win.

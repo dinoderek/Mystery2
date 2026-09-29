@@ -45,8 +45,13 @@ function reply(fields) {
         output_tokens: 42,
       },
       modelUsage: {
-        "claude-haiku-helper": { outputTokens: 1 },
-        "claude-sonnet-test-1": { outputTokens: 42 },
+        "claude-haiku-helper": { inputTokens: 100, outputTokens: 1 },
+        "claude-sonnet-test-1": {
+          inputTokens: 10,
+          cacheCreationInputTokens: 1000,
+          cacheReadInputTokens: 5,
+          outputTokens: 42,
+        },
       },
       ...fields,
     }),

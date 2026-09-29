@@ -45,8 +45,8 @@ const ISOLATION_FLAGS = [
 const NARRATION_SYSTEM_PROMPT =
   "You are the narrator for a kids mystery game. Return plain text only.";
 
-/** The fields of the CLI's `--output-format json` reply this provider reads. */
-interface CliReply {
+/** The fields of the CLI's `--output-format json` reply this module reads. */
+export interface ClaudeCliReply {
   is_error?: boolean;
   result?: unknown;
   structured_output?: unknown;
@@ -67,7 +67,7 @@ interface CliCall {
   user: string;
   jsonSchema: Record<string, unknown> | null;
   /** Throws a RetriableAIError when the reply lacks what the caller needs. */
-  check: (reply: CliReply) => void;
+  check: (reply: ClaudeCliReply) => void;
 }
 
 export class ClaudeCliProvider implements AIProvider {
@@ -139,7 +139,7 @@ export class ClaudeCliProvider implements AIProvider {
     return request.parse(reply.structured_output);
   }
 
-  async #call(call: CliCall, metadata?: AIRequestMetadata): Promise<CliReply> {
+  async #call(call: CliCall, metadata?: AIRequestMetadata): Promise<ClaudeCliReply> {
     // Cleared first, so a call that fails never reports the one before it.
     this.#lastUsage = null;
     const baseLogData: Record<string, unknown> = {
@@ -155,7 +155,14 @@ export class ClaudeCliProvider implements AIProvider {
     for (let attempt = 1; attempt <= this.#config.max_attempts; attempt += 1) {
       const startedAt = Date.now();
       try {
-        const reply = await this.#runOnce(call);
+        const reply = await runClaudeCli({
+          binary: this.#config.binary,
+          model: this.profile.model,
+          system: call.system,
+          user: call.user,
+          jsonSchema: call.jsonSchema,
+          timeoutMs: this.#config.timeout_ms,
+        });
         call.check(reply);
         const usage = this.#recordReply(reply, attempt);
         this.#log({
@@ -187,135 +194,10 @@ export class ClaudeCliProvider implements AIProvider {
     throw new Error("claude CLI retry loop exited unexpectedly");
   }
 
-  #runOnce(call: CliCall): Promise<CliReply> {
-    const args = [
-      "--print",
-      "--model",
-      this.profile.model,
-      "--output-format",
-      "json",
-      "--system-prompt",
-      call.system,
-      ...ISOLATION_FLAGS,
-      ...(call.jsonSchema ? ["--json-schema", JSON.stringify(call.jsonSchema)] : []),
-    ];
-
-    return new Promise((resolve, reject) => {
-      // Its own process group, so a timeout can kill everything it started:
-      // CLAUDE_CLI_PATH may name a wrapper script rather than the binary.
-      const child = spawn(this.#config.binary, args, {
-        cwd: os.tmpdir(),
-        env: process.env,
-        stdio: ["pipe", "pipe", "pipe"],
-        detached: true,
-      });
-      let stdout = "";
-      let stderr = "";
-      let settled = false;
-      const settle = (outcome: () => void) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        outcome();
-      };
-
-      const timer = setTimeout(() => {
-        killGroup(child.pid);
-        settle(() =>
-          reject(
-            new RetriableAIError("claude CLI request timed out", {
-              code: "CLAUDE_CLI_TIMEOUT",
-            }),
-          )
-        );
-      }, this.#config.timeout_ms);
-
-      child.stdout.setEncoding("utf8");
-      child.stderr.setEncoding("utf8");
-      child.stdout.on("data", (chunk: string) => {
-        stdout += chunk;
-      });
-      child.stderr.on("data", (chunk: string) => {
-        stderr += chunk;
-      });
-      // A child that exits before reading its input closes the pipe; the exit
-      // code reports that failure, so the pipe error itself is not news.
-      child.stdin.on("error", () => {});
-
-      child.on("error", (error) => {
-        settle(() =>
-          reject(
-            new Error(
-              `Could not run the claude CLI at "${this.#config.binary}": ${error.message}`,
-            ),
-          )
-        );
-      });
-
-      child.on("close", (code) => {
-        settle(() => {
-          let reply: CliReply | null = null;
-          try {
-            reply = JSON.parse(stdout) as CliReply;
-          } catch {
-            // Reported below, with the exit code when there is one.
-          }
-
-          if (reply?.is_error) {
-            const reason = typeof reply.result === "string" ? reply.result : "unknown error";
-            reject(
-              new RetriableAIError(`claude CLI reported an error: ${reason}`, {
-                code: "CLAUDE_CLI_ERROR",
-                stderr: stderr.slice(-500),
-              }),
-            );
-          } else if (code !== 0) {
-            reject(
-              new RetriableAIError(`claude CLI exited with code ${code}`, {
-                code: "CLAUDE_CLI_FAILED",
-                stderr: stderr.slice(-500),
-              }),
-            );
-          } else if (!reply) {
-            reject(
-              new RetriableAIError("claude CLI returned output that is not JSON", {
-                code: "CLAUDE_CLI_BAD_OUTPUT",
-              }),
-            );
-          } else {
-            resolve(reply);
-          }
-        });
-      });
-
-      child.stdin.end(call.user);
-    });
-  }
-
-  #recordReply(reply: CliReply, attempts: number): AICallUsage {
-    // The CLI reports usage per model id. The one that wrote the answer is the
-    // one with the most output, and its id is the full name behind an alias
-    // such as "sonnet". Tokens are summed over every model, as the cost is.
-    const models = Object.entries(reply.modelUsage ?? {});
-    if (models.length > 0) {
-      models.sort(([, a], [, b]) => (b.outputTokens ?? 0) - (a.outputTokens ?? 0));
-      this.#resolvedModel = models[0][0];
-    }
-
-    let inputTokens = 0;
-    let outputTokens = 0;
-    for (const [, usage] of models) {
-      inputTokens += (usage.inputTokens ?? 0) +
-        (usage.cacheReadInputTokens ?? 0) +
-        (usage.cacheCreationInputTokens ?? 0);
-      outputTokens += usage.outputTokens ?? 0;
-    }
-    this.#lastUsage = {
-      input_tokens: inputTokens,
-      output_tokens: outputTokens,
-      cost_usd: typeof reply.total_cost_usd === "number" ? reply.total_cost_usd : null,
-      attempts,
-    };
+  #recordReply(reply: ClaudeCliReply, attempts: number): AICallUsage {
+    const { model, ...usage } = summarizeClaudeCliUsage(reply);
+    if (model) this.#resolvedModel = model;
+    this.#lastUsage = { ...usage, attempts };
     return this.#lastUsage;
   }
 
@@ -328,6 +210,160 @@ export class ClaudeCliProvider implements AIProvider {
       }),
     );
   }
+}
+
+export interface ClaudeCliRun {
+  binary: string;
+  model: string;
+  system: string;
+  user: string;
+  jsonSchema: Record<string, unknown> | null;
+  timeoutMs: number;
+}
+
+/**
+ * One isolated `claude --print` call: the system prompt replaces Claude Code's
+ * own, the user message goes on stdin, and the process runs outside the repo
+ * in a process group of its own. A timeout, failed run, `is_error` reply or
+ * output that is not JSON rejects with a RetriableAIError; a CLI that cannot be
+ * started at all rejects with a plain Error. Retrying is the caller's call.
+ *
+ * Exported for the playtest harness's investigator, which needs the same
+ * isolation for a different prompt.
+ */
+export function runClaudeCli(run: ClaudeCliRun): Promise<ClaudeCliReply> {
+  const args = [
+    "--print",
+    "--model",
+    run.model,
+    "--output-format",
+    "json",
+    "--system-prompt",
+    run.system,
+    ...ISOLATION_FLAGS,
+    ...(run.jsonSchema ? ["--json-schema", JSON.stringify(run.jsonSchema)] : []),
+  ];
+
+  return new Promise((resolve, reject) => {
+    // Its own process group, so a timeout can kill everything it started:
+    // CLAUDE_CLI_PATH may name a wrapper script rather than the binary.
+    const child = spawn(run.binary, args, {
+      cwd: os.tmpdir(),
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
+      detached: true,
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const settle = (outcome: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      outcome();
+    };
+
+    const timer = setTimeout(() => {
+      killGroup(child.pid);
+      settle(() =>
+        reject(
+          new RetriableAIError("claude CLI request timed out", {
+            code: "CLAUDE_CLI_TIMEOUT",
+          }),
+        )
+      );
+    }, run.timeoutMs);
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    // A child that exits before reading its input closes the pipe; the exit
+    // code reports that failure, so the pipe error itself is not news.
+    child.stdin.on("error", () => {});
+
+    child.on("error", (error) => {
+      settle(() =>
+        reject(
+          new Error(`Could not run the claude CLI at "${run.binary}": ${error.message}`),
+        )
+      );
+    });
+
+    child.on("close", (code) => {
+      settle(() => {
+        let reply: ClaudeCliReply | null = null;
+        try {
+          reply = JSON.parse(stdout) as ClaudeCliReply;
+        } catch {
+          // Reported below, with the exit code when there is one.
+        }
+
+        if (reply?.is_error) {
+          const reason = typeof reply.result === "string" ? reply.result : "unknown error";
+          reject(
+            new RetriableAIError(`claude CLI reported an error: ${reason}`, {
+              code: "CLAUDE_CLI_ERROR",
+              stderr: stderr.slice(-500),
+            }),
+          );
+        } else if (code !== 0) {
+          reject(
+            new RetriableAIError(`claude CLI exited with code ${code}`, {
+              code: "CLAUDE_CLI_FAILED",
+              stderr: stderr.slice(-500),
+            }),
+          );
+        } else if (!reply) {
+          reject(
+            new RetriableAIError("claude CLI returned output that is not JSON", {
+              code: "CLAUDE_CLI_BAD_OUTPUT",
+            }),
+          );
+        } else {
+          resolve(reply);
+        }
+      });
+    });
+
+    child.stdin.end(run.user);
+  });
+}
+
+/**
+ * What a reply cost, and which model wrote it. The CLI reports usage per model
+ * id: the one that wrote the answer is the one with the most output, and its id
+ * is the full name behind an alias such as "sonnet". Tokens are summed over
+ * every model, as the cost is.
+ */
+export function summarizeClaudeCliUsage(reply: ClaudeCliReply): {
+  model: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number | null;
+} {
+  const models = Object.entries(reply.modelUsage ?? {});
+  models.sort(([, a], [, b]) => (b.outputTokens ?? 0) - (a.outputTokens ?? 0));
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const [, usage] of models) {
+    inputTokens += (usage.inputTokens ?? 0) +
+      (usage.cacheReadInputTokens ?? 0) +
+      (usage.cacheCreationInputTokens ?? 0);
+    outputTokens += usage.outputTokens ?? 0;
+  }
+
+  return {
+    model: models[0]?.[0] ?? null,
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    cost_usd: typeof reply.total_cost_usd === "number" ? reply.total_cost_usd : null,
+  };
 }
 
 function killGroup(pid: number | undefined): void {

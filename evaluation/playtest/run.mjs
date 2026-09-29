@@ -15,6 +15,9 @@
 // the same inputs. The replay stops where the game no longer matches the
 // recording (another place, mode, or person to talk to) and records where.
 //
+// With --judge, each game is then graded: the trace pipeline's mechanical
+// checks and gm_* judges, and a reading level for every narration.
+//
 // Options:
 //   --blueprint <x>           a blueprint id, file name, title, or path to a JSON file
 //                             (with --replay: default, the script's blueprint)
@@ -27,6 +30,8 @@
 //   --narrator <claude|mock>  the game's narrator (default: claude)
 //   --narrator-model <m>      default: sonnet
 //   --investigator-model <m>  default: sonnet; not with --replay
+//   --judge                   grade each game afterwards (needs
+//                             evaluation/trace/config/cli.json; off by default)
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
 //
@@ -43,6 +48,7 @@ import { TEST_DATABASE, resolveDatabaseFile } from "../../lib/database-target.mj
 import { startTestServer } from "../../scripts/lib/test-server.mjs";
 import { signIn } from "./lib/api.mjs";
 import { listPersonas, modelInvestigator, scriptedInvestigator } from "./lib/investigator.mjs";
+import { extractTrace, gradeGame, judgeSetupProblem, renderGrades } from "./lib/judge.mjs";
 import { writeGameFolder } from "./lib/output.mjs";
 import { DEFAULT_MAX_STEPS, playGame } from "./lib/play.mjs";
 import { loadScript } from "./lib/replay.mjs";
@@ -61,10 +67,12 @@ function parseArgs(argv) {
     narrator: "claude",
     narratorModel: "sonnet",
     investigatorModel: "sonnet",
+    judge: false,
     out: path.join(REPO_ROOT, "evaluation", "playtest", "runs"),
     port: null,
   };
   const numeric = new Set(["games", "concurrency", "maxSteps", "port"]);
+  const flags = new Set(["judge"]);
   const given = new Set();
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -73,6 +81,10 @@ function parseArgs(argv) {
     const key = flag.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
     if (!(key in args)) usage(`Unknown option ${flag}`);
     given.add(key);
+    if (flags.has(key)) {
+      args[key] = true;
+      continue;
+    }
     const value = argv[index + 1];
     if (value === undefined) usage(`${flag} needs a value`);
     index += 1;
@@ -87,6 +99,10 @@ function parseArgs(argv) {
 
   if (args.narrator !== "claude" && args.narrator !== "mock") {
     usage(`--narrator must be claude or mock`);
+  }
+  if (args.judge) {
+    const problem = judgeSetupProblem(REPO_ROOT);
+    if (problem) usage(problem);
   }
   if (args.replay) {
     for (const key of ["persona", "investigatorModel"]) {
@@ -312,5 +328,52 @@ try {
   }
 }
 
+if (args.judge) await judgeGames();
+
 fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);
 console.log(`\nWrote ${path.relative(REPO_ROOT, runDir)}`);
+
+/**
+ * Grades every game that was played, from the run's copy of the database, and
+ * adds the grades to its summary and transcript. A game that cannot be graded
+ * says why in both, and the others carry on.
+ */
+async function judgeGames() {
+  const database = path.join(runDir, "game.db");
+  const games = summaries
+    .map((summary, index) => ({ summary, number: index + 1, dir: path.join(runDir, `game-${index + 1}`) }))
+    .filter((game) => game.summary.game_id);
+  console.log(`\nGrading ${games.length} game(s): trace judges and reading level`);
+
+  // One extraction at a time: it opens the database for writing (it migrates
+  // on open). The judges then work on each game's own trace.json in parallel.
+  for (const game of games) {
+    try {
+      await extractTrace({ repoRoot: REPO_ROOT, database, gameId: game.summary.game_id, gameDir: game.dir });
+    } catch (error) {
+      game.error = error.message;
+    }
+  }
+
+  await mapWithConcurrency(games, args.concurrency, async (game) => {
+    let grades;
+    try {
+      if (game.error) throw new Error(game.error);
+      grades = await gradeGame({
+        repoRoot: REPO_ROOT,
+        gameDir: game.dir,
+        targetAge: blueprint.metadata.target_age,
+      });
+      const verdicts = Object.entries(grades.judges).map(([id, verdict]) => `${id} ${verdict.status}`);
+      console.log(
+        `[game ${game.number}] ${verdicts.join(", ")}; flesch ${grades.readability.pass}/${grades.readability.total}`,
+      );
+    } catch (error) {
+      grades = { error: error.message };
+      console.error(`[game ${game.number}] grading failed: ${error.message}`);
+    }
+    game.summary.grades = grades;
+    fs.writeFileSync(path.join(game.dir, "summary.json"), `${JSON.stringify(game.summary, null, 2)}\n`);
+    fs.appendFileSync(path.join(game.dir, "transcript.md"), renderGrades(grades));
+  });
+}

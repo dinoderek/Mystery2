@@ -24,6 +24,7 @@ const MOCK_BLUEPRINT = JSON.parse(
 
 const INPUTS = [
 	'search',
+	'notebook',
 	'serch the pantry',
 	'search the pantry shelf',
 	'talk to Zed',
@@ -67,7 +68,7 @@ describe('playtest loop', () => {
 
 		expect(game.stopReason).toBe('ended');
 		expect(game.result).toBe('win');
-		expect(game.script).toEqual(INPUTS.slice(0, 11));
+		expect(game.script).toEqual(INPUTS.slice(0, 12));
 
 		const steps: PlayedStep[] = game.steps;
 		const byInput = Object.fromEntries(steps.map((step) => [step.input, step]));
@@ -100,6 +101,12 @@ describe('playtest loop', () => {
 			body: { player_reasoning: 'Alice did it, the crumbs lead to her.' }
 		});
 
+		// It opened as the browser does: the premise, then the arrival.
+		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] Narration for:/);
+		// `notebook` opens a screen in the browser: no echo, no turn.
+		expect(byInput['notebook'].action).toMatchObject({ kind: 'feedback', parse: 'notebook' });
+		expect(game.transcript.some((entry: { text: string }) => entry.text === 'notebook')).toBe(false);
+
 		// Every call succeeded, and the investigator saw the mock narration.
 		expect(steps.every((step) => !step.response || step.response.ok)).toBe(true);
 		expect(steps.at(-1)?.view).toContain('[Mock]');
@@ -130,8 +137,8 @@ describe('playtest loop', () => {
 		expect(summary).toMatchObject({
 			outcome: 'win',
 			stop_reason: 'ended',
-			steps: 11,
-			parser_rejections: 2,
+			steps: 12,
+			parser_rejections: 3,
 			failed_calls: 0,
 			time_budget: MOCK_BLUEPRINT.metadata.time_budget,
 			narrator_cost_usd: null,
@@ -141,9 +148,9 @@ describe('playtest loop', () => {
 		expect(summary.clues_total).toBeGreaterThanOrEqual(summary.clues_found);
 
 		expect(JSON.parse(fs.readFileSync(path.join(dir, 'script.json'), 'utf8')).inputs).toEqual(
-			INPUTS.slice(0, 11)
+			INPUTS.slice(0, 12)
 		);
-		expect(fs.readFileSync(path.join(dir, 'steps.jsonl'), 'utf8').trim().split('\n')).toHaveLength(11);
+		expect(fs.readFileSync(path.join(dir, 'steps.jsonl'), 'utf8').trim().split('\n')).toHaveLength(12);
 		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
 		expect(transcript).toContain('**> talk to alice**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');

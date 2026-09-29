@@ -84,7 +84,12 @@ describe('playtest input routing', () => {
 			kind: 'feedback',
 			text: expect.stringContaining('Commands: move to/go to <location>')
 		});
-		expect(resolveInput('notebook', state(), 'g1')).toMatchObject({ kind: 'feedback' });
+		expect(resolveInput('notebook', state(), 'g1')).toMatchObject({ kind: 'feedback', echo: false });
+		expect(resolveInput('help', state(), 'g1')).toMatchObject({
+			kind: 'feedback',
+			echo: true,
+			text: expect.stringMatching(/^Help menu opened\. Commands: move to\/go to <location>/)
+		});
 		expect(resolveInput('quit', state(), 'g1')).toEqual({ kind: 'quit' });
 	});
 });

@@ -2,8 +2,9 @@
 
 Plays whole games of Mystery2 with an **AI investigator** against the real game
 server, so the narrator can be judged over a full case rather than one turn at a
-time. Each game leaves a readable transcript, a replayable script of the
-investigator's inputs, and every step and narrator call behind it.
+time. Each game leaves a readable transcript, the investigator's inputs as a
+script (for replaying against a changed narrator; the `--replay` option is the
+next task), and every step and narrator call behind it.
 
 This is the fourth harness, beside the blueprint pipeline (`evaluation/`), the
 game-master trace pipeline (`evaluation/trace/`) and the runtime narrator harness
@@ -25,7 +26,7 @@ Read `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 
 | Option | Default | |
 | --- | --- | --- |
-| `--blueprint <x>` | required | A blueprint id, file name, title, or a path to a JSON file (one outside the repo is copied into the throwaway config root) |
+| `--blueprint <x>` | required | An id, file name or title of a blueprint in the repo's `blueprints/`, or a path to any blueprint JSON (copied into the throwaway config root). Blueprints generated into your own config root need the path |
 | `--persona <name>` | `detective` | A file in `personas/` |
 | `--games <n>` | `1` | Games to play |
 | `--concurrency <n>` | `2` | Games at once |
@@ -34,6 +35,7 @@ Read `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 | `--narrator-model <m>` | `sonnet` | |
 | `--investigator-model <m>` | `sonnet` | |
 | `--out <dir>` | `evaluation/playtest/runs` | Gitignored |
+| `--port <n>` | a free port | Where the throwaway server listens |
 
 ## How a turn works
 
@@ -50,21 +52,33 @@ view (what a player sees) ──► investigator (claude -p, persona)
 ```
 
 - **The runner makes no choices.** Every input comes from the investigator
-  after it reads the latest narration.
+  after it reads the latest narration. The one step it takes itself is the
+  browser's: after `game-start` narrates the premise, `game-enter` (the
+  player's "press any key") narrates the arrival.
 - **The investigator sees what a player sees, and no more.** The view
   (`lib/view.mjs`) is the status line plus the notebook's four sections, built
   with the web app's own notebook helpers (`web/src/lib/domain/notebook.ts`),
   and the story so far. It is built from the session state the API returns to
   the browser, never from the blueprint.
 - **Input is handled as the browser handles it.** The line goes through the
-  UI's parser. A line the parser rejects gets the UI's hint and costs no turn.
-  Routing to endpoints (`lib/commands.mjs`) mirrors `getBackendInvocation` in
-  `web/src/lib/domain/store.svelte.ts`, including free text in accuse mode
-  going to `game-accuse` as reasoning. Keep the two in step.
+  UI's parser. A line the parser rejects gets the UI's hint, in the store's
+  exact wording, and costs no turn. Routing to endpoints (`lib/commands.mjs`)
+  mirrors `getBackendInvocation` in `web/src/lib/domain/store.svelte.ts`,
+  including free text in accuse mode going to `game-accuse` as reasoning, and
+  failed calls are retried by the store's own rule
+  (`web/src/lib/domain/store.retry.ts`). Keep the two in step.
+- **Where the browser shows a screen, the view says so in words.** `help`
+  lists the mode's commands, `notebook` points at the notebook sections (and,
+  as in the store, is not echoed), and theme commands only change colours. A
+  response's `follow_up_prompt` is not shown, because the web UI does not show
+  it; it is in `steps.jsonl`.
 - **No hidden memory.** Each investigator call gets the whole view and history,
   so any step can be read back from `steps.jsonl`.
 - **A game stops** when the case ends, the investigator types `quit`, three
-  calls in a row fail, the investigator itself fails, or `--max-steps` runs out.
+  calls in a row fail, the game state cannot be read, the investigator itself
+  fails, or `--max-steps` runs out. Its folder is written either way, with the
+  reason in `summary.json`. The narrator's calls are capped at 90 seconds so a
+  slow turn fails as a turn rather than outlasting the request.
 
 ## A run folder
 

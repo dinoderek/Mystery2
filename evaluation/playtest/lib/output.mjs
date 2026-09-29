@@ -2,7 +2,7 @@
 //
 //   transcript.md   the game as read: inputs with the investigator's plan,
 //                   narration, the game's hints and errors, then a summary
-//   script.json     the investigator's inputs in order, replayable
+//   script.json     the investigator's inputs in order, for replay
 //   steps.jsonl     one line per step: view shown, input, action, response
 //   ai-calls.jsonl  this game's narrator calls, when the server logged them
 //   summary.json    outcome and counts

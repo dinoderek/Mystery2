@@ -1,13 +1,18 @@
 // A small client for the game API, playing as one profile.
 //
 // Signs in the way the browser does (POST /api/player sets the profile
-// cookie) and sends that cookie on every call. Retriable AI failures are
-// retried a couple of times, as the web store does; anything else comes back
-// to the caller as { ok: false } rather than throwing, so a failed turn is
-// recorded instead of ending the game.
+// cookie) and sends that cookie on every call. Failures are retried by the web
+// store's own rule (web/src/lib/domain/store.retry.ts: 5xx, 429, 408 and
+// network errors, three attempts, the same backoff). Anything that still fails
+// comes back as { ok: false } rather than throwing, so a failed turn is
+// recorded instead of losing the game.
 
-const RETRIES = 2;
-const RETRY_DELAY_MS = 1_000;
+import {
+  getBackoffDelayMs,
+  isTransientFailure,
+} from "../../../web/src/lib/domain/store.retry.ts";
+
+const MAX_ATTEMPTS = 3;
 
 export async function signIn(baseUrl, name) {
   const response = await fetch(`${baseUrl}/api/player`, {
@@ -22,17 +27,31 @@ export async function signIn(baseUrl, name) {
   return createApi(baseUrl, cookie);
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function createApi(baseUrl, cookie) {
   async function call(method, endpoint, { body, query } = {}) {
     const url = new URL(`${baseUrl}/api/${endpoint}`);
     for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, value);
 
-    for (let attempt = 0; ; attempt += 1) {
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", cookie },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
+    for (let attempt = 1; ; attempt += 1) {
+      let response;
+      try {
+        response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json", cookie },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      } catch (error) {
+        if (attempt < MAX_ATTEMPTS && isTransientFailure(null, error)) {
+          await wait(getBackoffDelayMs(attempt));
+          continue;
+        }
+        return { ok: false, status: 0, body: { error: `request failed: ${error.message}` } };
+      }
+
       const text = await response.text();
       let payload;
       try {
@@ -42,11 +61,12 @@ function createApi(baseUrl, cookie) {
       }
       if (response.ok) return { ok: true, status: response.status, body: payload };
 
-      const retriable = payload?.details?.retriable === true;
-      if (!retriable || attempt >= RETRIES) {
-        return { ok: false, status: response.status, body: payload };
+      const failure = { status: response.status, message: payload?.error ?? null };
+      if (attempt < MAX_ATTEMPTS && isTransientFailure(failure)) {
+        await wait(getBackoffDelayMs(attempt));
+        continue;
       }
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      return { ok: false, status: response.status, body: payload };
     }
   }
 

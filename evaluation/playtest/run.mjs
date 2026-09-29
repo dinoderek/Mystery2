@@ -6,7 +6,7 @@
 // Starts the game against a throwaway database, then plays whole games with an
 // AI investigator (a `claude` call per turn, playing a persona) while the game
 // narrates through the claude CLI. Each game gets a folder: a readable
-// transcript, the investigator's inputs as a replayable script, every step and
+// transcript, the investigator's inputs as a script for replay, every step and
 // every narrator call. See evaluation/playtest/README.md.
 //
 // Options:
@@ -20,6 +20,9 @@
 //   --investigator-model <m>  default: sonnet
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
+//
+// Blueprints are looked up in the repo's blueprints/ only; one generated into
+// your config root is named by its path.
 
 import fs from "node:fs";
 import net from "node:net";
@@ -150,7 +153,6 @@ const runDir = path.join(
   args.out,
   `${timestampSlug()}-${slug(blueprint.metadata.title)}-${args.persona}`,
 );
-fs.mkdirSync(runDir, { recursive: true });
 const callLogFile = path.join(runDir, "ai-calls.all.jsonl");
 const narratorModel = args.narrator === "mock" ? "mock" : args.narratorModel;
 
@@ -161,7 +163,13 @@ const narratorEnv = args.narrator === "mock"
     OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
     CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-for-mock-narrator",
   }
-  : { AI_PROVIDER: "claude-cli", AI_MODEL: args.narratorModel };
+  : {
+    AI_PROVIDER: "claude-cli",
+    AI_MODEL: args.narratorModel,
+    // Three attempts at 90s stay under the 300s a fetch waits for headers, so
+    // a slow narrator turn fails as a turn instead of dropping the request.
+    AI_CLAUDE_CLI_TIMEOUT_MS: "90000",
+  };
 
 console.log(`Playtest: ${blueprint.metadata.title} as "${args.persona}", ${args.games} game(s)`);
 console.log(`Narrator: ${narratorModel}; investigator: ${args.investigatorModel}`);
@@ -207,6 +215,7 @@ const server = await startTestServer({
   env: { ...narratorEnv, AI_CALL_LOG: callLogFile },
 });
 
+fs.mkdirSync(runDir, { recursive: true });
 let summaries = [];
 try {
   // A blueprint from outside the repo is dropped into the throwaway config
@@ -228,15 +237,23 @@ try {
     }),
   );
 } finally {
-  // Keep the database: a game can be graded or inspected later with
-  // `eval:trace:extract --db <run>/game.db --session <game_id>`.
-  const database = resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
-  if (fs.existsSync(database)) {
-    const source = new Database(database, { readonly: true });
-    await source.backup(path.join(runDir, "game.db"));
-    source.close();
+  try {
+    // Keep the database: a game can be graded or inspected later with
+    // `eval:trace:extract --db <run>/game.db --session <game_id>`. The server's
+    // config root stands in for the repo root here, with no environment, which
+    // is how the server itself resolved it (<root>/database/test/game.db).
+    const database = resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
+    if (fs.existsSync(database)) {
+      const source = new Database(database, { readonly: true });
+      try {
+        await source.backup(path.join(runDir, "game.db"));
+      } finally {
+        source.close();
+      }
+    }
+  } finally {
+    server.stop();
   }
-  server.stop();
 }
 
 fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);

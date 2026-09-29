@@ -1,10 +1,13 @@
 // One game, played through the game API the way the browser plays it.
 //
-// Each step: show the investigator the player's view, take the line it types,
+// It opens as the browser does: game-start narrates the premise, then
+// game-enter (the player's "press any key") narrates the arrival. Each step
+// after that: show the investigator the player's view, take the line it types,
 // run it through the UI's parser, and either call the matching endpoint or
-// show the parser's hint (no turn spent), exactly as the web store does. The
-// game's state is re-read after every call, so the next view is what the
-// server says, not what the runner assumes.
+// show the parser's hint (no turn spent), as the web store does. The game's
+// state is re-read after every call, so the next view is what the server says,
+// not what the runner assumes. What the store does not show a player (a
+// response's `follow_up_prompt`) stays out of the view, in steps.jsonl only.
 
 import { resolveInput } from "./commands.mjs";
 import { buildView } from "./view.mjs";
@@ -22,8 +25,13 @@ function narrationEntries(parts) {
 }
 
 function errorText(response) {
-  const message = response.body?.error ?? "unknown error";
-  return `${response.status} ${message}`;
+  return response.body?.error ?? `status ${response.status}`;
+}
+
+/** What the store adds to the transcript for a successful response. */
+function responseEntries(body) {
+  const parts = narrationEntries(body.narration_parts);
+  return parts.length > 0 ? parts : [{ kind: "narration", speaker: "Narrator", text: "Action completed." }];
 }
 
 /**
@@ -54,7 +62,25 @@ export async function playGame({
   let error = null;
   let consecutiveErrors = 0;
 
-  for (let number = 1; number <= maxSteps; number += 1) {
+  const refreshState = async () => {
+    const current = await api.get("game-get", { game_id: gameId });
+    if (!current.ok) {
+      error = `game-get: ${errorText(current)}`;
+      return false;
+    }
+    state = current.body.state;
+    return true;
+  };
+
+  const entered = await api.post("game-enter", { game_id: gameId });
+  if (entered.ok) {
+    transcript.push(...responseEntries(entered.body));
+  } else {
+    transcript.push({ kind: "error", text: `Request failed: ${errorText(entered)}` });
+  }
+  if (!(await refreshState())) stopReason = "errors";
+
+  for (let number = 1; number <= maxSteps && stopReason === null; number += 1) {
     if (state.mode === "ended") {
       stopReason = "ended";
       break;
@@ -76,9 +102,12 @@ export async function playGame({
     }
 
     script.push(decision.input);
-    transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
-
     const action = resolveInput(decision.input, state, gameId);
+    // The store echoes what was typed, except the lines that only open a
+    // screen (notebook, themes).
+    if (action.kind !== "feedback" || action.echo) {
+      transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
+    }
     const step = {
       step: number,
       mode_before: state.mode,
@@ -114,19 +143,14 @@ export async function playGame({
 
       if (response.ok) {
         consecutiveErrors = 0;
-        transcript.push(...narrationEntries(response.body.narration_parts));
-        if (response.body.follow_up_prompt) {
-          transcript.push({ kind: "feedback", text: response.body.follow_up_prompt });
-        }
+        transcript.push(...responseEntries(response.body));
         if (response.body.result) result = response.body.result;
       } else {
         consecutiveErrors += 1;
-        transcript.push({ kind: "error", text: errorText(response) });
+        transcript.push({ kind: "error", text: `Request failed: ${errorText(response)}` });
       }
 
-      const current = await api.get("game-get", { game_id: gameId });
-      if (!current.ok) throw new Error(`game-get failed: ${errorText(current)}`);
-      state = current.body.state;
+      if (!(await refreshState())) stopReason = "errors";
     }
 
     step.mode_after = state.mode;
@@ -136,7 +160,7 @@ export async function playGame({
 
     if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
       stopReason = "errors";
-      break;
+      error = `${MAX_CONSECUTIVE_ERRORS} calls in a row failed`;
     }
   }
 

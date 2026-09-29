@@ -3,8 +3,13 @@
 // Parsing is the UI's own parser (web/src/lib/domain/parser.ts), imported as is.
 // Routing a parsed command to an endpoint mirrors `getBackendInvocation` in
 // web/src/lib/domain/store.svelte.ts, including its one subtlety: free text in
-// accuse mode parses as `ask` but goes to game-accuse as reasoning. The
-// feedback wording mirrors the store's `format*Message` helpers.
+// accuse mode parses as `ask` but goes to game-accuse as reasoning. Hints for
+// missing, invalid and unrecognised commands use the store's exact wording.
+// Three lines differ, because the browser answers them with a screen rather
+// than text: `help` opens a modal of commands (here: the mode's command list),
+// `notebook` opens the notebook (here: already in every view), and theme
+// commands change colours. The store does not echo `notebook` or theme lines
+// into the transcript, and neither does this (`echo: false`).
 
 import { parseCommand } from "../../../web/src/lib/domain/parser.ts";
 
@@ -26,11 +31,16 @@ function formatSuggestions(suggestions) {
   return suggestions.length > 0 ? suggestions.join(", ") : "none available right now";
 }
 
+/** The command list the help modal shows, as the parser words it per mode. */
+function commandList(state) {
+  return parseCommand("", state.mode, parseContextOf(state)).hint;
+}
+
 /**
  * Turns input into one of:
- *   { kind: "call", endpoint, body, command }  a request to the game API
- *   { kind: "feedback", text, parsed }         what the UI prints instead; no turn
- *   { kind: "quit" }                           the player stopped
+ *   { kind: "call", endpoint, body, command }   a request to the game API
+ *   { kind: "feedback", text, parsed, echo }    what the UI shows instead; no turn
+ *   { kind: "quit" }                            the player stopped
  */
 export function resolveInput(input, state, gameId) {
   const parsed = parseCommand(input, state.mode, parseContextOf(state));
@@ -41,20 +51,22 @@ export function resolveInput(input, state, gameId) {
     case "quit":
       return { kind: "quit" };
     case "help":
-      return { kind: "feedback", parsed, text: "Help menu opened." };
+      return { kind: "feedback", parsed, echo: true, text: `Help menu opened. ${commandList(state)}` };
     case "notebook":
       return {
         kind: "feedback",
         parsed,
-        text: "Your notebook is already shown to you each turn; opening it costs nothing.",
+        echo: false,
+        text: "(The notebook opens: it is the NOTEBOOK sections of your view.)",
       };
     case "theme-list":
     case "theme-set":
-      return { kind: "feedback", parsed, text: "Themes only change colours." };
+      return { kind: "feedback", parsed, echo: false, text: "(Theme commands only change the colours.)" };
     case "missing-target":
       return {
         kind: "feedback",
         parsed,
+        echo: true,
         text: parsed.commandType === "move"
           ? `Where to? Try: ${formatSuggestions(parsed.suggestions)}.`
           : `Who do you want to talk to? Try: ${formatSuggestions(parsed.suggestions)}.`,
@@ -63,14 +75,15 @@ export function resolveInput(input, state, gameId) {
       return {
         kind: "feedback",
         parsed,
+        echo: true,
         text: `"${parsed.attempted}" is not a valid ${
           parsed.commandType === "move" ? "destination" : "character"
         }. Try: ${formatSuggestions(parsed.suggestions)}.`,
       };
     case "unrecognized":
-      return { kind: "feedback", parsed, text: parsed.hint };
+      return { kind: "feedback", parsed, echo: true, text: parsed.hint };
     default:
-      return { kind: "feedback", parsed, text: "Unable to parse command." };
+      return { kind: "feedback", parsed, echo: true, text: "Unable to parse command." };
   }
 }
 

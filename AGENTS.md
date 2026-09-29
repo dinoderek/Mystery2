@@ -99,7 +99,8 @@ Load additional guidance based on the area you are touching:
   `evaluation/runtime/README.md` (runtime narrator harness). The game-master
   judges shared by the last two — their briefs, schemas, subject projection,
   and verdict rule — are documented in `evaluation/judges/README.md`; read it
-  before adding or editing a `gm_*` judge.
+  before adding or editing a `gm_*` judge. Whole games played by an AI
+  investigator (the playtest harness) are in `evaluation/playtest/README.md`.
 
 ## Documentation Maintenance
 

@@ -48,6 +48,12 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 >
 > See `evaluation/trace/README.md` for its design and the "What's next" roadmap for
 > how the two relate.
+>
+> **Playing whole games.** The playtest harness (`evaluation/playtest/`) produces
+> sessions rather than grading them: an AI investigator plays a blueprint end to
+> end through the real server and the UI's parser, with the narrator on the
+> claude CLI, and each game leaves a readable transcript and a replayable script.
+> Its games can be handed to the trace pipeline. See `evaluation/playtest/README.md`.
 
 ## What this is
 

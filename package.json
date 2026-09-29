@@ -31,6 +31,7 @@
         "eval:runtime": "node evaluation/runtime/run.mjs",
         "eval:runtime:rejudge": "node evaluation/runtime/rejudge.mjs",
         "eval:cases-from-trace": "node evaluation/runtime/cases-from-trace.mjs",
+        "eval:playtest": "node evaluation/playtest/run.mjs",
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",

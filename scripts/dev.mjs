@@ -4,6 +4,8 @@
  * `npm run dev`           mock narration, no network
  * `npm run dev:ai:free`   the model in .env.ai.free.local
  * `npm run dev:ai:paid`   the model in .env.ai.paid.local
+ * `npm run dev:ai:claude` Sonnet through the local `claude` CLI and its login
+ *                         (`AI_MODEL=haiku` picks another model); no env file
  *
  * The mode's env file is loaded into the process rather than seeded into a
  * database, so switching models is switching command — there is no stack to
@@ -37,10 +39,10 @@ function parseArgs(argv) {
         console.error(`--db needs a database name (received: "${args.database}")`);
         process.exit(1);
       }
-    } else if (token === "free" || token === "paid") {
+    } else if (token === "free" || token === "paid" || token === "claude") {
       args.mode = token;
     } else {
-      console.error(`Usage: node scripts/dev.mjs [free|paid] [--db <name>]`);
+      console.error(`Usage: node scripts/dev.mjs [free|paid|claude] [--db <name>]`);
       process.exit(1);
     }
   }
@@ -52,7 +54,13 @@ const { mode, database } = parseArgs(process.argv.slice(2));
 
 const rootDir = process.cwd();
 const baseVars = readEnvFile(getBaseEnvPath(rootDir, process.env));
-const modeVars = mode ? readEnvFile(getAIEnvPath(rootDir, mode, process.env)) : {};
+// The claude mode has no file: the CLI brings its own login, and the model
+// defaults to Sonnet unless AI_MODEL names another.
+const modeVars = mode === "claude"
+  ? { AI_PROVIDER: "claude-cli", AI_MODEL: process.env.AI_MODEL?.trim() || "sonnet" }
+  : mode
+  ? readEnvFile(getAIEnvPath(rootDir, mode, process.env))
+  : {};
 
 if (mode && Object.keys(modeVars).length === 0) {
   console.error(

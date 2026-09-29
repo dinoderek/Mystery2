@@ -11,6 +11,8 @@
 
 export type AISettingsSource = 'env' | 'user';
 export type AIMode = 'mock' | 'openrouter';
+/** Every provider the runtime can use; `claude-cli` is only set by the environment. */
+export type AIProvider = AIMode | 'claude-cli';
 
 export interface AIKeySummary {
 	label: string;
@@ -30,14 +32,14 @@ export interface AIModelSummary {
  * Present means the stored choice is not currently in effect.
  */
 export interface AIOverride {
-	provider: AIMode;
+	provider: AIProvider;
 	model: string;
 	source: string;
 }
 
 export interface AISettingsState {
 	/** What the runtime will actually do, override and dangling selections applied. */
-	effective_mode: AIMode;
+	effective_mode: AIProvider;
 	/** What was last chosen on the settings page. */
 	stored_mode: AIMode;
 	selected_key_label: string | null;

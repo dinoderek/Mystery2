@@ -200,6 +200,12 @@ export const SessionCatalogResponseSchema = z.object({
 
 export const AISettingsSourceSchema = z.enum(["env", "user"]);
 export const AIModeSchema = z.enum(["mock", "openrouter"]);
+/**
+ * Every provider the runtime can use. Wider than AIModeSchema, which is what
+ * the settings page can choose: `claude-cli` is only ever selected through the
+ * process environment, so it appears in the override and the effective mode.
+ */
+export const AIProviderSchema = z.enum(["mock", "openrouter", "claude-cli"]);
 
 export const AIKeySummarySchema = z.object({
   label: z.string().min(1),
@@ -222,14 +228,14 @@ export const AIModelSummarySchema = z.object({
  * showing. Present means the stored choice below is not currently in effect.
  */
 export const AIOverrideSchema = z.object({
-  provider: AIModeSchema,
+  provider: AIProviderSchema,
   model: z.string().min(1),
   source: z.string().min(1),
 });
 
 export const AISettingsStateSchema = z.object({
   /** What the runtime will actually do, once override and dangling selections are applied. */
-  effective_mode: AIModeSchema,
+  effective_mode: AIProviderSchema,
   /** What was last chosen on this page. */
   stored_mode: AIModeSchema,
   selected_key_label: z.string().nullable(),
@@ -265,6 +271,7 @@ export const AIModelUpsertSchema = z.object({
 
 export type AISettingsSource = z.infer<typeof AISettingsSourceSchema>;
 export type AIMode = z.infer<typeof AIModeSchema>;
+export type AIProvider = z.infer<typeof AIProviderSchema>;
 export type AIKeySummary = z.infer<typeof AIKeySummarySchema>;
 export type AIModelSummary = z.infer<typeof AIModelSummarySchema>;
 export type AIOverride = z.infer<typeof AIOverrideSchema>;

@@ -53,7 +53,7 @@ export interface LocalAIProfileOptions {
 
 /** An AI configuration forced by the process environment, if there is one. */
 export interface ProcessAIOverride {
-  provider: "mock" | "openrouter";
+  provider: EngineAIProfile["provider"];
   model: string;
 }
 
@@ -91,9 +91,11 @@ function mockProfile(id: string): EngineAIProfile {
   };
 }
 
-function readProvider(value: string | undefined): "mock" | "openrouter" | null {
+function readProvider(value: string | undefined): EngineAIProfile["provider"] | null {
   const trimmed = value?.trim();
-  return trimmed === "mock" || trimmed === "openrouter" ? trimmed : null;
+  return trimmed === "mock" || trimmed === "openrouter" || trimmed === "claude-cli"
+    ? trimmed
+    : null;
 }
 
 /**
@@ -116,14 +118,16 @@ function profileFromVars(
   const provider = readProvider(vars.AI_PROVIDER);
   if (!provider) {
     throw new Error(
-      `Invalid AI_PROVIDER in ${source}. Expected "mock" or "openrouter".`,
+      `Invalid AI_PROVIDER in ${source}. Expected "mock", "openrouter" or "claude-cli".`,
     );
   }
 
   const model = vars.AI_MODEL?.trim();
   if (!model) throw new Error(`Missing AI_MODEL in ${source}.`);
 
-  if (provider === "mock") {
+  // Neither needs a key: mock makes no calls, and the claude CLI uses the
+  // machine's own Claude Code login.
+  if (provider === "mock" || provider === "claude-cli") {
     return { id, provider, model, openrouter_api_key: null };
   }
 

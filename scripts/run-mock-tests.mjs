@@ -63,12 +63,21 @@ const server = await startTestServer({ repoRoot, port: ports.web, env: MOCK_ONLY
   },
 );
 
+// A failing suite must still stop the server: left running, it keeps the port
+// and the test gate's output pipe open, and the gate never finishes.
+let status = 1;
 try {
-  runCommand(npmBin, ["exec", "--", "vitest", "run", vitestTarget], {
-    ...process.env,
-    MYSTERY_TEST_API_URL: server.url,
-    MYSTERY_TEST_CONFIG_ROOT: server.configRoot,
-  });
+  status = runCommand(
+    npmBin,
+    ["exec", "--", "vitest", "run", vitestTarget],
+    {
+      ...process.env,
+      MYSTERY_TEST_API_URL: server.url,
+      MYSTERY_TEST_CONFIG_ROOT: server.configRoot,
+    },
+    true,
+  );
 } finally {
   server.stop();
 }
+process.exit(status);

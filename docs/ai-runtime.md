@@ -28,6 +28,8 @@ Important version note:
   - Profile resolution from the environment, behind `AIProfileStore`
 - `packages/game-engine/src/ai-contracts.ts`
   - Role output parsing and validation before state mutation
+  - One Zod schema per role; `roleOutputJsonSchema(role)` derives the JSON
+    Schema a provider can hand the model from the same schema
 - `packages/game-engine/src/ai-context.ts`
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
@@ -217,6 +219,14 @@ All AI role outputs are validated before any session/event writes:
   `narration` alone.
 
 Invalid output returns a retriable error and does not finalize turn state.
+
+Each contract is a Zod schema in `ai-contracts.ts`, and the parser and the JSON
+Schema come from the same place. The parser is forgiving about noise: a missing
+or non-boolean flag takes its default, non-string entries in an id list are
+dropped, and an omitted `revealed_clue_id` or judge `follow_up_prompt` reads as
+null. `roleOutputJsonSchema(role)` asks the model for the clean shape instead,
+with every field required. Rules that span fields, such as a `continue`
+judgement needing a follow-up prompt, are enforced by the parser only.
 
 ## Clue discovery and gating
 

@@ -102,6 +102,14 @@ because the case fixes the input: both backends see byte-identical input.
     never reached the model. Results produced before that fix are not comparable
     with results after it.
 
+    The same holds for a later fix to the `claude` wrapper. It used to append the
+    role prompt to Claude Code's own system prompt and run with the repo's
+    settings, so the model under test also read this repo's CLAUDE.md and about
+    30k tokens of Claude Code instructions. It now replaces the system prompt
+    and runs with no tools, MCP servers or settings. `cli:claude` narrations and
+    `age_appropriate` verdicts from before that change are not comparable with
+    later ones.
+
 - **Judge** — scores a stored interaction's single response
   (`judge(interaction, { config }) -> { id, status, score, details, parts }`;
   sync or async). Two readability judges:

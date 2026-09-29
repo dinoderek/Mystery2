@@ -77,6 +77,13 @@ stream's final result event — so the pipeline's `extract_path: "result"`
 contract is unchanged. Same machinery as the blueprint pipeline; see
 `evaluation/README.md` (§ Live progress).
 
+The judge sees only the composed judge prompt: the wrapper replaces Claude
+Code's system prompt (`--system-prompt`) and runs with no tools, MCP servers or
+settings, so the repo's CLAUDE.md is not in context. It also strips a ```json
+fence from the verdict, which judges add now and then and the pipeline would
+otherwise reject as "not a JSON object". Verdicts from before these changes were
+made with the extra context and are not comparable with later ones.
+
 The process exits non-zero only when the run itself fails (extraction error,
 etc.), matching the blueprint pipeline. A check or judge **fail** still exits 0
 — the `result.json` summary is the pass/fail signal, so a CI caller should gate

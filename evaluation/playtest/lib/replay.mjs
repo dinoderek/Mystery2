@@ -58,8 +58,8 @@ export function compareCheckpoints(expected, actual) {
 
 /**
  * Reads a script.json. `checkpoints` and `end` are null for a script saved
- * before checkpoints existed; such a script replays without divergence checks,
- * except that a game ending before its script does is still reported.
+ * before checkpoints existed (or written by hand); such a script replays
+ * without divergence checks.
  */
 export function loadScript(file) {
   const script = JSON.parse(fs.readFileSync(file, "utf8"));

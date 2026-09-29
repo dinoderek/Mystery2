@@ -221,9 +221,7 @@ console.log(
     : `Narrator: ${narratorModel}; investigator: ${investigatorModel}`,
 );
 if (script && !script.checkpoints) {
-  console.log(
-    "Warning: the script has no checkpoints, so the replay can only tell that the game diverged if it ends early.",
-  );
+  console.log("Warning: the script has no checkpoints, so the replay cannot tell when the game diverges.");
 }
 console.log(`Run folder: ${path.relative(REPO_ROOT, runDir)}`);
 

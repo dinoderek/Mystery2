@@ -131,12 +131,8 @@ describe('playtest scripted investigator', () => {
 			input: 'Alice did it',
 			differences: { mode: { expected: 'accuse', actual: 'ended' } }
 		});
-		// Without checkpoints, only that the game ended is known.
-		expect(scriptedInvestigator(['search']).finish(ended)).toEqual({
-			step: 1,
-			input: 'search',
-			differences: { mode: { expected: null, actual: 'ended' } }
-		});
+		// A script without checkpoints (a hand-written one) may run past the end.
+		expect(scriptedInvestigator(['search']).finish(ended)).toBeNull();
 	});
 
 	it('compares where the game stands after the last input with the recorded end', async () => {

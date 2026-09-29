@@ -141,12 +141,12 @@ export function scriptedInvestigator(inputs, { checkpoints = null, end = null } 
       index += 1;
       return { input, plan: "", model: null, cost_usd: null, attempts: 1 };
     },
-    /** The game has ended: a divergence if the script had more to type. */
+    /** The game has ended: a divergence if the recording had more to type. */
     finish(checkpoint) {
-      if (index >= inputs.length) return null;
       const expected = expectedAt(index);
-      const blocking = expected ? compareCheckpoints(expected, checkpoint).blocking : null;
-      return divergenceAt(blocking ?? { mode: { expected: expected?.mode ?? null, actual: checkpoint.mode } });
+      if (index >= inputs.length || !expected) return null;
+      const blocking = compareCheckpoints(expected, checkpoint).blocking;
+      return divergenceAt(blocking ?? { mode: { expected: expected.mode, actual: checkpoint.mode } });
     },
   };
   return investigator;

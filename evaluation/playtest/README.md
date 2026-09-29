@@ -124,9 +124,9 @@ checkpoint with the live game, and after the last input it compares `end`:
 - If only the clues differ (a clue came a turn earlier or later), it carries
   on. The first such step is `clue_drift` in `summary.json`.
 
-A script saved before checkpoints existed replays with a warning; of the
-checks, only a game that ends early is caught. A replay writes its own
-`script.json`, of the inputs it played.
+A script without checkpoints (saved before they existed, or written by hand)
+replays with a warning and no checks. A replay writes its own `script.json`, of
+the inputs it played.
 
 ## Grading
 

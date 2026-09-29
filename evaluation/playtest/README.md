@@ -101,8 +101,8 @@ runs/<timestamp>-<blueprint>-<persona>/
     └── with --judge:
         ├── trace.json        the session, as eval:trace:extract writes it
         ├── result.json       the trace pipeline's verdicts, with the judges' findings
-        ├── readability.json  every narration's reading grade
-        ├── judge/            the trace pipeline's own run folder (prompts, logs)
+        ├── readability.json  every narration's reading grade, sentence by sentence
+        ├── judge/            the trace pipeline's run folder, <date>/<time>/run-trace-trace/
         └── judge.log         both commands' output
 ```
 
@@ -138,26 +138,29 @@ the inputs it played.
 
 ## Grading
 
-Off by default: the transcript is written to be read. `--judge` grades each
-game once every game has been played, with the trace pipeline unchanged
-(`evaluation/trace/README.md`), run on the run's copy of the database:
+Off by default: the transcript is written to be read. With `--judge`, each game
+is graded as soon as it ends, while the next ones play. The trace pipeline runs
+unchanged (`evaluation/trace/README.md`) on a copy of the database taken then:
 
 ```bash
-npm run eval:trace:extract -- --db <run>/game.db --session <game_id> --out <game>/trace.json
+npm run eval:trace:extract -- --db <copy> --session <game_id> --out <game>/trace.json
 npm run eval:trace -- --trace <game>/trace.json --output-root <game>/judge
 ```
 
 That gives the mechanical checks (`clue_accounting`, `spoiler_leak`) and the
-four `gm_*` judges, each one Opus call over the whole game. Every narration,
-the opening included, is then scored with the runtime harness's `flesch` judge
-(`evaluation/runtime/lib/judges/flesch.mjs`, no model call) against the
-blueprint's `target_age`: a narration passes at or under grade
-`target_age - 5 + 2`.
+four `gm_*` judges: one Opus call each over the whole game, and one retry for a
+call that fails. Games are graded one at a time, so at most four judge calls
+run at once. Every narration, the opening included, is then scored with the
+runtime harness's `flesch` judge (`evaluation/runtime/lib/judges/flesch.mjs`,
+no model call) against the blueprint's `target_age`: a narration passes at or
+under reading grade `max(0, target_age - 5) + 2`.
 
 The verdicts go into the game's `summary.json` as `grades`, with the judges'
 cost, and at the foot of `transcript.md`; the judges' findings are in
-`result.json`. A game that cannot be graded says why there, and the others are
-still graded.
+`result.json`, and each narration's grade, sentence by sentence, in
+`readability.json`. A game that cannot be graded says why there, and the others
+are still graded. The run's `summary.json` is written when play ends and again
+when the last grades are in.
 
 The judges need `evaluation/trace/config/cli.json`:
 
@@ -166,8 +169,8 @@ cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
 ```
 
 Without it `--judge` stops before playing, rather than grading with the
-mechanical checks alone. The same two commands grade a game from an earlier
-run by hand.
+mechanical checks alone. A game from an earlier run is graded by hand with the
+same two commands, run on `<run>/game.db`.
 
 ## Personas
 

@@ -120,5 +120,21 @@ describe('playtest grading', () => {
 		expect(result.session_id).toBe(game.gameId);
 
 		expect(renderGrades(grades)).toContain('- gm_spoiler: pass (0 major, 0 minor)');
+
+		// A judge that fails is reported as such, and the rest still grade.
+		process.env.MOCK_JUDGE_MODE = 'crash';
+		try {
+			const crashed = await gradeGame({
+				repoRoot: REPO_ROOT,
+				gameDir,
+				targetAge: MOCK_BLUEPRINT.metadata.target_age,
+				judgeTraceArgs: ['--config', config]
+			});
+			expect(crashed.judges.gm_spoiler).toEqual({ status: 'error', major: null, minor: null });
+			expect(crashed.mechanical).toEqual(grades.mechanical);
+			expect(renderGrades(crashed)).toContain('- gm_spoiler: error\n');
+		} finally {
+			delete process.env.MOCK_JUDGE_MODE;
+		}
 	});
 });

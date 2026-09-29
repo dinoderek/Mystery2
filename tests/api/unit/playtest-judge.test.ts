@@ -1,6 +1,6 @@
 // Grading a playtest: the setup check that keeps --judge from quietly running
-// without judges, the reading-level score of each narration, and the grades
-// section of the transcript.
+// without judges, the reading-level score of each narration, the judges' cost,
+// what is kept when the trace pipeline stops, and the transcript's grades.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,6 +9,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
+	gradeGame,
+	judgeCost,
 	judgeSetupProblem,
 	renderGrades,
 	scoreReadability
@@ -65,6 +67,42 @@ describe('playtest reading level', () => {
 			[3, 'fail']
 		]);
 		expect(score.max_grade).toBeGreaterThan(score.threshold);
+	});
+});
+
+describe('playtest judge cost', () => {
+	it('adds every call the wrapper streamed, retries included, and ignores cut-off lines', () => {
+		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-judge-cost-'));
+		const result = (cost: number) => JSON.stringify({ type: 'result', result: '{}', total_cost_usd: cost });
+		fs.writeFileSync(
+			path.join(scratch, 'judge-gm_spoiler.attempt-1.stream.jsonl'),
+			[JSON.stringify({ type: 'assistant' }), result(0.25)].join('\n')
+		);
+		fs.writeFileSync(path.join(scratch, 'judge-gm_spoiler.attempt-2.stream.jsonl'), `${result(0.5)}\n`);
+		fs.writeFileSync(path.join(scratch, 'judge-gm_roleplay.stream.jsonl'), '{"type":"result","total_cost');
+		fs.writeFileSync(path.join(scratch, 'judge-gm_roleplay.stdout.log'), result(9));
+
+		expect(judgeCost(scratch)).toBe(0.75);
+		expect(judgeCost(path.join(scratch, 'missing'))).toBeNull();
+	});
+});
+
+describe('playtest grading when the trace pipeline stops', () => {
+	it('keeps its result.json, the reason, and the reading levels', async () => {
+		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-judge-run-error-'));
+		// Readable narration, but not a trace the pipeline accepts.
+		fs.writeFileSync(
+			path.join(scratch, 'trace.json'),
+			JSON.stringify({ events: [event(1, 'start', 'The cat sat.')] })
+		);
+
+		const grades = await gradeGame({ repoRoot: process.cwd(), gameDir: scratch, targetAge: 7 });
+
+		expect(grades.run_error).toMatchObject({ message: expect.any(String) });
+		expect(grades.judges).toEqual({});
+		expect(grades.readability).toMatchObject({ pass: 1, total: 1 });
+		expect(fs.existsSync(path.join(scratch, 'result.json'))).toBe(true);
+		expect(renderGrades(grades)).toContain('- The trace pipeline stopped');
 	});
 });
 

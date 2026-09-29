@@ -1,16 +1,17 @@
 // Grading played games, when a run asks for it (--judge).
 //
-// The trace pipeline runs unchanged, as a person would run it on the run's
-// database:
-//   eval:trace:extract --db <run>/game.db --session <id> --out <game>/trace.json
+// The trace pipeline runs unchanged, as a person would run it on a copy of the
+// run's database taken when the game ended:
+//   eval:trace:extract --db <copy> --session <id> --out <game>/trace.json
 //   eval:trace --trace <game>/trace.json --output-root <game>/judge
 // which gives the mechanical checks and the four gm_* judges (one model call
-// each). Then every narration in the trace is scored by the runtime harness's
-// `flesch` judge against the blueprint's target_age, with no model call.
+// each, plus a retry when one fails). Then every narration in the trace is
+// scored by the runtime harness's `flesch` judge against the blueprint's
+// target_age, with no model call.
 //
 // Each game folder gains trace.json, result.json (the trace pipeline's
-// envelope, copied out of its run folder under judge/), readability.json and
-// judge.log (both commands' output).
+// envelope, copied out of its run folder, judge/<date>/<time>/run-trace-trace/),
+// readability.json and judge.log (both commands' output).
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -42,19 +43,23 @@ export function judgeSetupProblem(repoRoot) {
   return null;
 }
 
-function runNode(repoRoot, args, logFile) {
+function runNode(repoRoot, args, logFile, env = {}) {
   return new Promise((resolve, reject) => {
     const log = fs.openSync(logFile, "a");
     fs.writeSync(log, `$ node ${args.join(" ")}\n`);
-    const child = spawn(process.execPath, args, { cwd: repoRoot, stdio: ["ignore", log, log] });
+    const child = spawn(process.execPath, args, {
+      cwd: repoRoot,
+      env: { ...process.env, ...env },
+      stdio: ["ignore", log, log],
+    });
     child.once("error", (error) => {
       fs.closeSync(log);
       reject(error);
     });
-    child.once("exit", (code) => {
+    child.once("exit", (code, signal) => {
       fs.closeSync(log);
       if (code === 0) resolve();
-      else reject(new Error(`${args[0]} exited ${code}; see ${logFile}`));
+      else reject(new Error(`${args[0]} exited ${code ?? signal}; see ${logFile}`));
     });
   });
 }
@@ -72,8 +77,12 @@ function findFile(dir, name) {
   return null;
 }
 
-/** What the judge CLI reported spending, from the event streams its wrapper keeps. */
-function judgeCost(logDir) {
+/**
+ * What the judge CLI reported spending, from the event streams its wrapper
+ * keeps: one per call, retries included. A call killed by its timeout reports
+ * nothing, so its cost is missing.
+ */
+export function judgeCost(logDir) {
   if (!fs.existsSync(logDir)) return null;
   let total = null;
   for (const name of fs.readdirSync(logDir).filter((entry) => entry.endsWith(".stream.jsonl"))) {
@@ -109,6 +118,7 @@ export function scoreReadability(trace, targetAge) {
         words: verdict.details.words ?? null,
         preview: verdict.details.preview ?? null,
         threshold: verdict.details.threshold ?? null,
+        parts: verdict.parts,
       };
     });
   const grades = narrations.map((entry) => entry.grade).filter((grade) => grade !== null);
@@ -143,8 +153,12 @@ export function summarizeResult(result) {
   };
 }
 
-/** Pulls one game's trace out of the run's database into its folder. */
-export async function extractTrace({ repoRoot, database, gameId, gameDir }) {
+/**
+ * Pulls one game's trace out of a copy of the run's database into its folder.
+ * `configRoot` is the server's, where a blueprint from outside the repo was
+ * copied; extraction looks for the game's blueprint there as well.
+ */
+export async function extractTrace({ repoRoot, database, gameId, gameDir, configRoot = null }) {
   await runNode(
     repoRoot,
     [
@@ -157,6 +171,7 @@ export async function extractTrace({ repoRoot, database, gameId, gameDir }) {
       path.join(gameDir, "trace.json"),
     ],
     path.join(gameDir, "judge.log"),
+    configRoot ? { MYSTERY_CONFIG_ROOT: configRoot } : {},
   );
 }
 
@@ -170,22 +185,31 @@ export async function gradeGame({ repoRoot, gameDir, targetAge, judgeTraceArgs =
   const readability = scoreReadability(JSON.parse(fs.readFileSync(tracePath, "utf8")), targetAge);
   fs.writeFileSync(path.join(gameDir, "readability.json"), `${JSON.stringify(readability, null, 2)}\n`);
 
+  // Cleared first, so the result.json found below is this grading's.
   const judgeRoot = path.join(gameDir, "judge");
-  await runNode(
-    repoRoot,
-    [
-      "evaluation/trace/run.mjs",
-      "--trace",
-      tracePath,
-      "--output-root",
-      judgeRoot,
-      "--quiet",
-      ...judgeTraceArgs,
-    ],
-    path.join(gameDir, "judge.log"),
-  );
+  fs.rmSync(judgeRoot, { recursive: true, force: true });
+  let failure = null;
+  try {
+    await runNode(
+      repoRoot,
+      [
+        "evaluation/trace/run.mjs",
+        "--trace",
+        tracePath,
+        "--output-root",
+        judgeRoot,
+        "--quiet",
+        ...judgeTraceArgs,
+      ],
+      path.join(gameDir, "judge.log"),
+    );
+  } catch (error) {
+    // eval:trace exits 1 on a run error but still writes result.json, which
+    // says what went wrong; without one there is nothing to report but this.
+    failure = error;
+  }
   const resultPath = findFile(judgeRoot, "result.json");
-  if (!resultPath) throw new Error(`eval:trace wrote no result.json under ${judgeRoot}`);
+  if (!resultPath) throw failure ?? new Error(`eval:trace wrote no result.json under ${judgeRoot}`);
   fs.copyFileSync(resultPath, path.join(gameDir, "result.json"));
   const result = JSON.parse(fs.readFileSync(resultPath, "utf8"));
 
@@ -203,6 +227,9 @@ export function renderGrades(grades) {
   if (grades.error) {
     lines.push(`- Grading failed: ${grades.error}`, "");
     return lines.join("\n");
+  }
+  if (grades.run_error) {
+    lines.push(`- The trace pipeline stopped (${grades.run_error.stage}): ${grades.run_error.message}`);
   }
   for (const [id, status] of Object.entries(grades.mechanical)) lines.push(`- ${id}: ${status}`);
   for (const [id, verdict] of Object.entries(grades.judges)) {

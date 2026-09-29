@@ -15,8 +15,9 @@
 // the same inputs. The replay stops where the game no longer matches the
 // recording (another place, mode, or person to talk to) and records where.
 //
-// With --judge, each game is then graded: the trace pipeline's mechanical
-// checks and gm_* judges, and a reading level for every narration.
+// With --judge, each game is graded as soon as it ends, while the next ones
+// play: the trace pipeline's mechanical checks and gm_* judges, and a reading
+// level for every narration.
 //
 // Options:
 //   --blueprint <x>           a blueprint id, file name, title, or path to a JSON file
@@ -40,6 +41,7 @@
 
 import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 
 import Database from "better-sqlite3";
@@ -278,7 +280,73 @@ async function playOne(number) {
   console.log(
     `[game ${number}] ${summary.outcome ?? summary.stop_reason}: ${summary.clues_found}/${summary.clues_total} clues, ${summary.turns_used}/${summary.time_budget} turns`,
   );
+  if (args.judge) await queueGrading({ number, summary, dir: path.join(runDir, `game-${number}`) });
   return summary;
+}
+
+/** The database the server is writing, under its throwaway config root. */
+function liveDatabase() {
+  // The config root stands in for the repo root here, with no environment,
+  // which is how the server itself resolved it (<root>/database/test/game.db).
+  return resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
+}
+
+// Games are graded one at a time, in the order they end, so at most four
+// judge calls run at once however many games play.
+let grading = Promise.resolve();
+
+/**
+ * Extracts a game that has just ended, from a copy of the database taken now
+ * (extraction opens its file for writing, so never the server's own), and
+ * queues its grading. A game that cannot be graded says why in its summary and
+ * transcript; the others carry on.
+ */
+async function queueGrading(game) {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-playtest-grade-"));
+  try {
+    const database = path.join(scratch, "game.db");
+    const source = new Database(liveDatabase(), { readonly: true });
+    try {
+      await source.backup(database);
+    } finally {
+      source.close();
+    }
+    await extractTrace({
+      repoRoot: REPO_ROOT,
+      database,
+      gameId: game.summary.game_id,
+      gameDir: game.dir,
+      configRoot: server.configRoot,
+    });
+  } catch (error) {
+    game.error = error.message;
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+  grading = grading.then(() => gradeOne(game));
+}
+
+async function gradeOne(game) {
+  let grades;
+  try {
+    if (game.error) throw new Error(game.error);
+    grades = await gradeGame({
+      repoRoot: REPO_ROOT,
+      gameDir: game.dir,
+      targetAge: blueprint.metadata.target_age,
+    });
+    const verdicts = Object.entries(grades.judges).map(([id, verdict]) => `${id} ${verdict.status}`);
+    console.log(
+      `[game ${game.number}] graded: ${verdicts.join(", ") || "no judges"}; ` +
+        `flesch ${grades.readability.pass}/${grades.readability.total}`,
+    );
+  } catch (error) {
+    grades = { error: error.message };
+    console.error(`[game ${game.number}] grading failed: ${error.message}`);
+  }
+  game.summary.grades = grades;
+  fs.writeFileSync(path.join(game.dir, "summary.json"), `${JSON.stringify(game.summary, null, 2)}\n`);
+  fs.appendFileSync(path.join(game.dir, "transcript.md"), renderGrades(grades));
 }
 
 const server = await startTestServer({
@@ -311,10 +379,8 @@ try {
 } finally {
   try {
     // Keep the database: a game can be graded or inspected later with
-    // `eval:trace:extract --db <run>/game.db --session <game_id>`. The server's
-    // config root stands in for the repo root here, with no environment, which
-    // is how the server itself resolved it (<root>/database/test/game.db).
-    const database = resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
+    // `eval:trace:extract --db <run>/game.db --session <game_id>`.
+    const database = liveDatabase();
     if (fs.existsSync(database)) {
       const source = new Database(database, { readonly: true });
       try {
@@ -328,52 +394,12 @@ try {
   }
 }
 
-if (args.judge) await judgeGames();
-
-fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);
-console.log(`\nWrote ${path.relative(REPO_ROOT, runDir)}`);
-
-/**
- * Grades every game that was played, from the run's copy of the database, and
- * adds the grades to its summary and transcript. A game that cannot be graded
- * says why in both, and the others carry on.
- */
-async function judgeGames() {
-  const database = path.join(runDir, "game.db");
-  const games = summaries
-    .map((summary, index) => ({ summary, number: index + 1, dir: path.join(runDir, `game-${index + 1}`) }))
-    .filter((game) => game.summary.game_id);
-  console.log(`\nGrading ${games.length} game(s): trace judges and reading level`);
-
-  // One extraction at a time: it opens the database for writing (it migrates
-  // on open). The judges then work on each game's own trace.json in parallel.
-  for (const game of games) {
-    try {
-      await extractTrace({ repoRoot: REPO_ROOT, database, gameId: game.summary.game_id, gameDir: game.dir });
-    } catch (error) {
-      game.error = error.message;
-    }
-  }
-
-  await mapWithConcurrency(games, args.concurrency, async (game) => {
-    let grades;
-    try {
-      if (game.error) throw new Error(game.error);
-      grades = await gradeGame({
-        repoRoot: REPO_ROOT,
-        gameDir: game.dir,
-        targetAge: blueprint.metadata.target_age,
-      });
-      const verdicts = Object.entries(grades.judges).map(([id, verdict]) => `${id} ${verdict.status}`);
-      console.log(
-        `[game ${game.number}] ${verdicts.join(", ")}; flesch ${grades.readability.pass}/${grades.readability.total}`,
-      );
-    } catch (error) {
-      grades = { error: error.message };
-      console.error(`[game ${game.number}] grading failed: ${error.message}`);
-    }
-    game.summary.grades = grades;
-    fs.writeFileSync(path.join(game.dir, "summary.json"), `${JSON.stringify(game.summary, null, 2)}\n`);
-    fs.appendFileSync(path.join(game.dir, "transcript.md"), renderGrades(grades));
-  });
+const writeRunSummary = () =>
+  fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);
+writeRunSummary();
+if (args.judge) {
+  console.log("\nWaiting for the last grades...");
+  await grading;
+  writeRunSummary();
 }
+console.log(`\nWrote ${path.relative(REPO_ROOT, runDir)}`);

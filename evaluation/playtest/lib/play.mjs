@@ -8,8 +8,12 @@
 // state is re-read after every call, so the next view is what the server says,
 // not what the runner assumes. What the store does not show a player (a
 // response's `follow_up_prompt`) stays out of the view, in steps.jsonl only.
+//
+// Each input is kept with a checkpoint of the game just before it, so a
+// replay of the script can tell when the game has diverged (./replay.mjs).
 
 import { resolveInput } from "./commands.mjs";
+import { checkpointOf } from "./replay.mjs";
 import { buildView } from "./view.mjs";
 
 export const DEFAULT_MAX_STEPS = 60;
@@ -55,11 +59,13 @@ export async function playGame({
     narrationEntries(event.narration_parts)
   );
   const script = [];
+  const checkpoints = [];
   const steps = [];
   let state = started.body.state;
   let result = null;
   let stopReason = null;
   let error = null;
+  let divergence = null;
   let consecutiveErrors = 0;
 
   const refreshState = async () => {
@@ -87,9 +93,10 @@ export async function playGame({
     }
 
     const view = buildView({ title: blueprint.title, state, transcript });
+    const checkpoint = checkpointOf(state);
     let decision;
     try {
-      decision = await investigator.next(view);
+      decision = await investigator.next(view, { checkpoint });
     } catch (failure) {
       // Ends this game, not the run: what was played so far is still written.
       error = `investigator: ${failure instanceof Error ? failure.message : String(failure)}`;
@@ -100,8 +107,14 @@ export async function playGame({
       stopReason = "no-more-input";
       break;
     }
+    if (decision.divergence) {
+      divergence = decision.divergence;
+      stopReason = "diverged";
+      break;
+    }
 
     script.push(decision.input);
+    checkpoints.push(checkpoint);
     const action = resolveInput(decision.input, state, gameId);
     // The store echoes what was typed, except the lines that only open a
     // screen (notebook, themes).
@@ -114,6 +127,7 @@ export async function playGame({
       time_before: state.time_remaining,
       input: decision.input,
       plan: decision.plan,
+      checkpoint,
       investigator: {
         model: decision.model,
         cost_usd: decision.cost_usd,
@@ -166,5 +180,16 @@ export async function playGame({
 
   if (stopReason === null) stopReason = state.mode === "ended" ? "ended" : "step-cap";
 
-  return { gameId, result, stopReason, error, transcript, script, steps, finalState: state };
+  return {
+    gameId,
+    result,
+    stopReason,
+    error,
+    divergence,
+    transcript,
+    script,
+    checkpoints,
+    steps,
+    finalState: state,
+  };
 }

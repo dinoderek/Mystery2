@@ -3,8 +3,8 @@
 Plays whole games of Mystery2 with an **AI investigator** against the real game
 server, so the narrator can be judged over a full case rather than one turn at a
 time. Each game leaves a readable transcript, the investigator's inputs as a
-script (for replaying against a changed narrator; the `--replay` option is the
-next task), and every step and narrator call behind it.
+script (for replaying against a changed narrator with `--replay`), and every
+step and narrator call behind it.
 
 This is the fourth harness, beside the blueprint pipeline (`evaluation/`), the
 game-master trace pipeline (`evaluation/trace/`) and the runtime narrator harness
@@ -16,6 +16,7 @@ narrator turn; this one produces the sessions.
 ```bash
 npm run eval:playtest -- --blueprint the-missing-heartwood
 npm run eval:playtest -- --blueprint the-missing-heartwood --persona kid-7 --games 3
+npm run eval:playtest -- --replay evaluation/playtest/runs/<run>/game-1/script.json
 ```
 
 Needs a logged-in `claude` CLI (both the narrator and the investigator run
@@ -26,14 +27,15 @@ Read `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 
 | Option | Default | |
 | --- | --- | --- |
-| `--blueprint <x>` | required | An id, file name or title of a blueprint in the repo's `blueprints/`, or a path to any blueprint JSON (copied into the throwaway config root). Blueprints generated into your own config root need the path |
-| `--persona <name>` | `detective` | A file in `personas/` |
-| `--games <n>` | `1` | Games to play |
+| `--blueprint <x>` | required, unless `--replay` | An id, file name or title of a blueprint in the repo's `blueprints/`, or a path to any blueprint JSON (copied into the throwaway config root). Blueprints generated into your own config root need the path. With `--replay`, the script's blueprint |
+| `--replay <script.json>` | | Replay a recorded game's inputs instead of asking an investigator; see [Replay](#replay) |
+| `--persona <name>` | `detective` | A file in `personas/`. Not with `--replay` |
+| `--games <n>` | `1` | Games to play (with `--replay`, the same script N times) |
 | `--concurrency <n>` | `2` | Games at once |
-| `--max-steps <n>` | `60` | Inputs per game before giving up |
+| `--max-steps <n>` | `60`; the script's length with `--replay` | Inputs per game before giving up |
 | `--narrator <claude\|mock>` | `claude` | `mock` for plumbing checks only |
 | `--narrator-model <m>` | `sonnet` | |
-| `--investigator-model <m>` | `sonnet` | |
+| `--investigator-model <m>` | `sonnet` | Not with `--replay` |
 | `--out <dir>` | `evaluation/playtest/runs` | Gitignored |
 | `--port <n>` | a free port | Where the throwaway server listens |
 
@@ -76,7 +78,8 @@ view (what a player sees) ──► investigator (claude -p, persona)
   so any step can be read back from `steps.jsonl`.
 - **A game stops** when the case ends, the investigator types `quit`, three
   calls in a row fail, the game state cannot be read, the investigator itself
-  fails, or `--max-steps` runs out. Its folder is written either way, with the
+  fails, `--max-steps` runs out, or a replay runs out of script
+  (`no-more-input`) or diverges. Its folder is written either way, with the
   reason in `summary.json`. The narrator's calls are capped at 90 seconds so a
   slow turn fails as a turn rather than outlasting the request.
 
@@ -89,11 +92,38 @@ runs/<timestamp>-<blueprint>-<persona>/
 ├── summary.json          one summary per game
 └── game-<n>/
     ├── transcript.md     the game as read, with the investigator's plan in italics
-    ├── script.json       the investigator's inputs, in order
+    ├── script.json       the investigator's inputs, in order, each with a checkpoint
     ├── steps.jsonl       per step: view shown, input, action, API response
     ├── ai-calls.jsonl    this game's narrator calls
     └── summary.json      outcome, stop reason, turns used, clues found of total, costs
 ```
+
+## Replay
+
+`--replay <script.json>` types a recorded game's inputs again, with no
+investigator calls, so a narrator or prompt change can be compared with the
+original on the same inputs. Set the change up (an edited prompt, another
+`--narrator-model`), replay, and read the two `transcript.md` files side by
+side. Replaying one script with `--games 3` shows how much the narration varies
+on its own.
+
+Narration differs from run to run, so a replay can reach a point where an input
+no longer means what it did. Each input in `script.json` is saved with a
+checkpoint of the game just before it was typed: the mode, the place, who is
+being talked to, the people there, and the clues found so far. Before each input
+the replay compares the checkpoint with the live game:
+
+- If the mode, place, talk partner or people there differ, the replay stops
+  with `stop_reason: "diverged"`. `summary.json` has `divergence`: the step, the
+  input it did not type, and each field as recorded and as found. The
+  transcript's footer says the same.
+- If only the clues differ (a clue came a turn earlier or later), it carries
+  on. The first such step is `clue_drift` in `summary.json`.
+
+A script saved before checkpoints existed replays with a warning and no
+checks. A replay writes its own `script.json`, of the inputs it played.
+
+## Grading
 
 A game can be graded later with the trace pipeline:
 
@@ -132,6 +162,8 @@ the first run's figure before playing many games.
 ## Tests
 
 - `tests/api/unit/playtest-view.test.ts`: input routing and the player view.
+- `tests/api/unit/playtest-replay.test.ts`: checkpoints, divergence, script files.
 - `tests/api/integration/playtest.test.ts`: a scripted investigator plays the
-  mock blueprint to a win on the suite's mock server, and the run folder is
-  written. No model is called.
+  mock blueprint to a win on the suite's mock server, the run folder is
+  written, and the game replays: unchanged to the same end, and, with an
+  edited checkpoint, to a divergence. No model is called.

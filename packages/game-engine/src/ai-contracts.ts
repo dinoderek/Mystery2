@@ -117,7 +117,7 @@ const idList = z.preprocess(
     Array.isArray(value)
       ? value.filter((id): id is string => typeof id === "string" && id.length > 0)
       : [],
-  z.array(z.string()),
+  z.array(z.string().min(1)),
 );
 
 const TalkStartOutputSchema = roleObject({

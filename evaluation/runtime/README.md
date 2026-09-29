@@ -106,7 +106,10 @@ because the case fixes the input: both backends see byte-identical input.
     role prompt to Claude Code's own system prompt and run with the repo's
     settings, so the model under test also read this repo's CLAUDE.md and about
     30k tokens of Claude Code instructions. It now replaces the system prompt
-    and runs with no tools, MCP servers or settings. `cli:claude` narrations and
+    and runs with no tools, MCP servers or settings; the CLI still adds a short
+    environment note (date, working directory, model). Skipping settings also
+    skips a login set only in `settings.json` (`apiKeyHelper`, Bedrock or
+    Vertex env). `cli:claude` narrations and
     `age_appropriate` verdicts from before that change are not comparable with
     later ones.
 

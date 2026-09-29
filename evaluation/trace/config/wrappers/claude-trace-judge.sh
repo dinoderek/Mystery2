@@ -22,10 +22,12 @@
 # assistant's final text — the verdict JSON — from the stream's last
 # type:"result" event and re-emit it in the { result } envelope.
 #
-# The judge sees only the composed judge prompt. `--system-prompt` replaces
-# Claude Code's own system prompt instead of appending to it, and the remaining
-# flags keep out its tools, MCP servers and settings, which include this repo's
-# CLAUDE.md. The runtime harness wrapper
+# `--system-prompt` replaces Claude Code's own system prompt instead of
+# appending to it, and the remaining flags keep out its tools, MCP servers and
+# settings, which include this repo's CLAUDE.md. The CLI still adds a short
+# environment note (date, working directory, model). Because user settings are
+# skipped too, a login configured only in settings.json (apiKeyHelper, Bedrock or
+# Vertex env) is not picked up. The runtime harness wrapper
 # (evaluation/runtime/config/wrappers/claude-runtime.sh) uses the same flags.
 
 set -euo pipefail

@@ -61,7 +61,7 @@ const server = await startTestServer({
 });
 
 // A failing suite must still stop the server (see run-mock-tests.mjs).
-let status = 1;
+let status;
 try {
   status = runCommand(
     npmBin,
@@ -78,6 +78,6 @@ try {
     true,
   );
 } finally {
-  server.stop();
+  await server.stop();
 }
 process.exit(status);

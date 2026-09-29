@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 export type AIRoleName =
   | "talk_start"
   | "talk_conversation"
@@ -59,165 +62,209 @@ export interface AccusationJudgeOutput {
   follow_up_prompt: string | null;
 }
 
+// Each role's output contract is one Zod schema doing two jobs:
+//
+//   - Parsing. The `parse*Output` functions validate what the model returned
+//     and normalise it. They forgive noise a model produces (junk entries in
+//     an id list are dropped, a missing flag takes its default) and reject what
+//     the game cannot do without (no narration, an unknown resolution).
+//   - Asking. `roleOutputJsonSchema` turns the same schema into the JSON Schema
+//     a provider hands the model, so what we ask for and what we accept cannot
+//     drift apart. The forgiving steps are `z.preprocess`, which the conversion
+//     looks through, so the model is asked for the clean shape.
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function requireString(
-  value: Record<string, unknown>,
-  field: string,
+function roleObject<T extends z.ZodRawShape>(shape: T) {
+  return z.object(shape, {
+    required_error: "expected object",
+    invalid_type_error: "expected object",
+  });
+}
+
+function nonEmptyString(field: string) {
+  const message = `"${field}" must be a non-empty string`;
+  return z
+    .string({ required_error: message, invalid_type_error: message })
+    .trim()
+    .min(1, message);
+}
+
+// Required in the schema, so the model always states it; an omitted value
+// still parses as null.
+function nullableNonEmptyString(field: string) {
+  const message = `"${field}" must be a non-empty string or null`;
+  return z.preprocess(
+    (value) => (value === undefined ? null : value),
+    z.string({ invalid_type_error: message }).trim().min(1, message).nullable(),
+  );
+}
+
+// A flag the model should always state; anything but a boolean falls back.
+function flagDefaultingTo(fallback: boolean) {
+  return z.preprocess(
+    (value) => (typeof value === "boolean" ? value : fallback),
+    z.boolean(),
+  );
+}
+
+// A list of ids the model should always state; a missing list is empty and
+// entries that are not non-empty strings are dropped.
+const idList = z.preprocess(
+  (value) =>
+    Array.isArray(value)
+      ? value.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [],
+  z.array(z.string().min(1)),
+);
+
+const TalkStartOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+});
+
+const TalkConversationOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+  revealed_clue_ids: idList,
+  revealed_off_script: idList,
+  input_understood: flagDefaultingTo(true),
+}).transform((output): TalkConversationOutput => {
+  // An unintelligible turn never reveals clues, regardless of what the model put
+  // in revealed_clue_ids.
+  const revealedClueIds = output.input_understood ? output.revealed_clue_ids : [];
+  const revealedSet = new Set(revealedClueIds);
+  return {
+    narration: output.narration,
+    revealed_clue_ids: revealedClueIds,
+    // Off-script ids must be a subset of what was actually revealed this turn.
+    revealed_off_script: output.revealed_off_script.filter((id) =>
+      revealedSet.has(id)
+    ),
+    input_understood: output.input_understood,
+  };
+});
+
+const TalkEndOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+});
+
+const SearchOutputSchema = z.preprocess(
+  // An unintelligible search reveals nothing, so whatever the model put in
+  // revealed_clue_id is not held against it.
+  (value) =>
+    isRecord(value) && value.input_understood === false
+      ? { ...value, revealed_clue_id: null }
+      : value,
+  roleObject({
+    narration: nonEmptyString("narration"),
+    revealed_clue_id: nullableNonEmptyString("revealed_clue_id"),
+    costs_turn: flagDefaultingTo(true),
+    input_understood: flagDefaultingTo(true),
+  }).transform((output): SearchOutput => ({
+    ...output,
+    // An unintelligible search never charges a turn.
+    costs_turn: output.input_understood ? output.costs_turn : false,
+  })),
+);
+
+const AccusationStartOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+  follow_up_prompt: nonEmptyString("follow_up_prompt"),
+});
+
+const ACCUSATION_RESOLUTION_MESSAGE =
+  `"accusation_resolution" must be win, lose, or continue`;
+
+const AccusationJudgeOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+  accusation_resolution: z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z.enum(["win", "lose", "continue"], {
+      errorMap: () => ({ message: ACCUSATION_RESOLUTION_MESSAGE }),
+    }),
+  ),
+  follow_up_prompt: nullableNonEmptyString("follow_up_prompt"),
+}).superRefine((output, context) => {
+  if (
+    output.accusation_resolution === "continue" &&
+    output.follow_up_prompt === null
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["follow_up_prompt"],
+      message: `"follow_up_prompt" is required when resolution is continue`,
+    });
+  }
+});
+
+const ROLE_OUTPUT_SCHEMAS = {
+  talk_start: TalkStartOutputSchema,
+  talk_conversation: TalkConversationOutputSchema,
+  talk_end: TalkEndOutputSchema,
+  search: SearchOutputSchema,
+  accusation_start: AccusationStartOutputSchema,
+  accusation_judge: AccusationJudgeOutputSchema,
+} satisfies Record<AIRoleName, z.ZodTypeAny>;
+
+function parseRoleOutput<S extends z.ZodTypeAny>(
   role: AIRoleName,
-): string {
-  const parsed = value[field];
-  if (typeof parsed !== "string" || parsed.trim().length === 0) {
-    throw new Error(
-      `Invalid AI ${role} output: "${field}" must be a non-empty string`,
-    );
+  schema: S,
+  value: unknown,
+): z.output<S> {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    const reason = result.error.issues[0]?.message ?? "does not match the contract";
+    throw new Error(`Invalid AI ${role} output: ${reason}`);
   }
-
-  return parsed.trim();
+  return result.data;
 }
 
-function requireOptionalNullableString(
-  value: Record<string, unknown>,
-  field: string,
-  role: AIRoleName,
-): string | null {
-  const parsed = value[field];
-  if (parsed === undefined || parsed === null) {
-    return null;
-  }
-
-  if (typeof parsed !== "string" || parsed.trim().length === 0) {
-    throw new Error(
-      `Invalid AI ${role} output: "${field}" must be a non-empty string or null`,
-    );
-  }
-
-  return parsed.trim();
-}
-
-function readOptionalBoolean(
-  value: Record<string, unknown>,
-  field: string,
-  fallback: boolean,
-): boolean {
-  const parsed = value[field];
-  return typeof parsed === "boolean" ? parsed : fallback;
-}
-
-function requireRoleObject(value: unknown, role: AIRoleName): Record<string, unknown> {
-  if (!isRecord(value)) {
-    throw new Error(`Invalid AI ${role} output: expected object`);
-  }
-
-  return value;
+/**
+ * The JSON Schema of what a role asks the model to return, for providers that
+ * can constrain output to a schema. Generated from the same Zod schema the
+ * role's parser uses.
+ *
+ * Every field is required here, including the ones the parser defaults: the
+ * conversion reads a field that tolerates omission as optional, but the model
+ * should always state it. Rules that span fields (a `continue` judgement needs
+ * a follow-up prompt) stay with the parser.
+ */
+export function roleOutputJsonSchema(role: AIRoleName): Record<string, unknown> {
+  const schema = zodToJsonSchema(ROLE_OUTPUT_SCHEMAS[role], {
+    target: "jsonSchema7",
+    $refStrategy: "none",
+  }) as Record<string, unknown>;
+  const properties = schema.properties as Record<string, unknown>;
+  return { ...schema, required: Object.keys(properties) };
 }
 
 export function parseTalkStartOutput(value: unknown): TalkStartOutput {
-  const parsed = requireRoleObject(value, "talk_start");
-  return { narration: requireString(parsed, "narration", "talk_start") };
+  return parseRoleOutput("talk_start", TalkStartOutputSchema, value);
 }
 
 export function parseTalkConversationOutput(
   value: unknown,
 ): TalkConversationOutput {
-  const parsed = requireRoleObject(value, "talk_conversation");
-  const inputUnderstood = readOptionalBoolean(parsed, "input_understood", true);
-  const rawIds = parsed.revealed_clue_ids;
-  // An unintelligible turn never reveals clues, regardless of what the model put
-  // in revealed_clue_ids.
-  const revealedClueIds: string[] =
-    inputUnderstood && Array.isArray(rawIds)
-      ? rawIds.filter((id): id is string => typeof id === "string" && id.length > 0)
-      : [];
-  const revealedSet = new Set(revealedClueIds);
-  const rawOffScript = parsed.revealed_off_script;
-  // Off-script ids must be a subset of what was actually revealed this turn.
-  const revealedOffScript: string[] = Array.isArray(rawOffScript)
-    ? rawOffScript.filter(
-        (id): id is string => typeof id === "string" && revealedSet.has(id),
-      )
-    : [];
-  return {
-    narration: requireString(parsed, "narration", "talk_conversation"),
-    revealed_clue_ids: revealedClueIds,
-    revealed_off_script: revealedOffScript,
-    input_understood: inputUnderstood,
-  };
+  return parseRoleOutput("talk_conversation", TalkConversationOutputSchema, value);
 }
 
 export function parseTalkEndOutput(value: unknown): TalkEndOutput {
-  const parsed = requireRoleObject(value, "talk_end");
-  return { narration: requireString(parsed, "narration", "talk_end") };
+  return parseRoleOutput("talk_end", TalkEndOutputSchema, value);
 }
 
 export function parseSearchOutput(value: unknown): SearchOutput {
-  const parsed = requireRoleObject(value, "search");
-  const inputUnderstood = readOptionalBoolean(parsed, "input_understood", true);
-  const revealedClueId = inputUnderstood
-    ? requireOptionalNullableString(parsed, "revealed_clue_id", "search")
-    : null;
-  const costsTurn = parsed.costs_turn;
-  return {
-    narration: requireString(parsed, "narration", "search"),
-    revealed_clue_id: revealedClueId,
-    // An unintelligible search never charges a turn.
-    costs_turn: !inputUnderstood
-      ? false
-      : typeof costsTurn === "boolean"
-      ? costsTurn
-      : true,
-    input_understood: inputUnderstood,
-  };
+  return parseRoleOutput("search", SearchOutputSchema, value);
 }
 
 export function parseAccusationStartOutput(
   value: unknown,
 ): AccusationStartOutput {
-  const parsed = requireRoleObject(value, "accusation_start");
-  return {
-    narration: requireString(parsed, "narration", "accusation_start"),
-    follow_up_prompt: requireString(
-      parsed,
-      "follow_up_prompt",
-      "accusation_start",
-    ),
-  };
+  return parseRoleOutput("accusation_start", AccusationStartOutputSchema, value);
 }
 
 export function parseAccusationJudgeOutput(
   value: unknown,
 ): AccusationJudgeOutput {
-  const parsed = requireRoleObject(value, "accusation_judge");
-  const narration = requireString(parsed, "narration", "accusation_judge");
-  const resolution = requireString(
-    parsed,
-    "accusation_resolution",
-    "accusation_judge",
-  );
-
-  if (resolution !== "win" && resolution !== "lose" && resolution !== "continue") {
-    throw new Error(
-      `Invalid AI accusation_judge output: "accusation_resolution" must be win, lose, or continue`,
-    );
-  }
-
-  const followUpPrompt = requireOptionalNullableString(
-    parsed,
-    "follow_up_prompt",
-    "accusation_judge",
-  );
-
-  if (resolution === "continue" && followUpPrompt === null) {
-    throw new Error(
-      `Invalid AI accusation_judge output: "follow_up_prompt" is required when resolution is continue`,
-    );
-  }
-
-  return {
-    narration,
-    accusation_resolution: resolution,
-    follow_up_prompt: followUpPrompt,
-  };
+  return parseRoleOutput("accusation_judge", AccusationJudgeOutputSchema, value);
 }

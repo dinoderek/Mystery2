@@ -28,6 +28,8 @@ Important version note:
   - Profile resolution from the environment, behind `AIProfileStore`
 - `packages/game-engine/src/ai-contracts.ts`
   - Role output parsing and validation before state mutation
+  - One Zod schema per role; `roleOutputJsonSchema(role)` derives the JSON
+    Schema a provider can hand the model from the same schema
 - `packages/game-engine/src/ai-context.ts`
   - Role-specific context builders
   - Non-accusation ground-truth guardrails
@@ -204,8 +206,8 @@ Every runtime prompt carries a `{{style_guidance}}` slot that
 All AI role outputs are validated before any session/event writes:
 
 - Talk start/end roles: require non-empty `narration`.
-- Talk conversation role: requires non-empty `narration` plus `revealed_clue_ids` (string array, may be empty), `revealed_off_script` (string array, a subset of `revealed_clue_ids` — clues granted off-script via the brilliance override), and `input_understood` (boolean, defaults to `true` when omitted). The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting, and intersects `revealed_off_script` with the validated reveals. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces both arrays empty so a confused turn can never leak a clue.
-- Search role: requires non-empty `narration`, plus `revealed_clue_id` (string or null), `costs_turn` (boolean), and `input_understood` (boolean, defaults to `true`). Backend validates the AI's clue choice before persisting. Only `search_targeted` can set `input_understood: false` (bare searches have no free text); the parser then forces `revealed_clue_id` null and `costs_turn` false so unintelligible searches reveal nothing and cost no turn.
+- Talk conversation role: requires non-empty `narration`, and asks for `revealed_clue_ids` (string array, may be empty), `revealed_off_script` (string array, a subset of `revealed_clue_ids` — clues granted off-script via the brilliance override), and `input_understood` (boolean). An omitted list parses as empty and an omitted `input_understood` as `true`. The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting, and intersects `revealed_off_script` with the validated reveals. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces both arrays empty so a confused turn can never leak a clue.
+- Search role: requires non-empty `narration`, and asks for `revealed_clue_id` (string or null, omitted reads as null), `costs_turn` (boolean, defaults to `true`), and `input_understood` (boolean, defaults to `true`). Backend validates the AI's clue choice before persisting. Only `search_targeted` can set `input_understood: false` (bare searches have no free text); the parser then forces `revealed_clue_id` null and `costs_turn` false so unintelligible searches reveal nothing and cost no turn.
 - `accusation_start`: requires `narration` + `follow_up_prompt`.
 - `accusation_judge`: requires:
   - `narration`
@@ -217,6 +219,14 @@ All AI role outputs are validated before any session/event writes:
   `narration` alone.
 
 Invalid output returns a retriable error and does not finalize turn state.
+
+Each contract is a Zod schema in `ai-contracts.ts`, and the parser and the JSON
+Schema come from the same place. The parser is forgiving about noise: a missing
+or non-boolean flag takes its default, non-string entries in an id list are
+dropped, and an omitted `revealed_clue_id` or judge `follow_up_prompt` reads as
+null. `roleOutputJsonSchema(role)` asks the model for the clean shape instead,
+with every field required. Rules that span fields, such as a `continue`
+judgement needing a follow-up prompt, are enforced by the parser only.
 
 ## Clue discovery and gating
 

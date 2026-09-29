@@ -50,7 +50,7 @@ The OpenRouter request has three important parts:
 
 1. `system` message:
    the full contents of
-   `packages/game-engine/src/blueprints/generator-prompt.md`, followed by
+   `packages/blueprint-generator/src/generator-prompt.md`, followed by
    `renderGenerationGuidance(targetAge)` from
    `packages/shared/src/age-profile.ts` — the same single source of truth the
    runtime narrator's `{{age_guidance}}` comes from

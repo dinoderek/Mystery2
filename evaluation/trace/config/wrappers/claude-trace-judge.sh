@@ -21,6 +21,14 @@
 # logs/<step>.stream.jsonl). Because there is no disk artifact, we recover the
 # assistant's final text — the verdict JSON — from the stream's last
 # type:"result" event and re-emit it in the { result } envelope.
+#
+# `--system-prompt` replaces Claude Code's own system prompt instead of
+# appending to it, and the remaining flags keep out its tools, MCP servers and
+# settings, which include this repo's CLAUDE.md. The CLI still adds a short
+# environment note (date, working directory, model). Because user settings are
+# skipped too, a login configured only in settings.json (apiKeyHelper, Bedrock or
+# Vertex env) is not picked up. The runtime harness wrapper
+# (evaluation/runtime/config/wrappers/claude-runtime.sh) uses the same flags.
 
 set -euo pipefail
 
@@ -33,7 +41,11 @@ mkdir -p "$(dirname "$STREAM_FILE")"
 claude --print \
        --output-format stream-json --verbose \
        --model opus \
-       --append-system-prompt "$(cat "$SYSTEM_PROMPT_FILE")" \
+       --system-prompt "$(cat "$SYSTEM_PROMPT_FILE")" \
+       --tools "" \
+       --strict-mcp-config \
+       --setting-sources "" \
+       --no-session-persistence \
        < "$USER_MESSAGE_FILE" \
        > "$STREAM_FILE"
 
@@ -55,5 +67,8 @@ node -e '
     process.stderr.write("trace judge: no result event found in stream\n");
     process.exit(4);
   }
+  // Judges sometimes wrap the verdict in a ```json fence, which the pipeline
+  // would reject as "not a JSON object". Strip it; the JSON inside is the verdict.
+  result = result.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   process.stdout.write(JSON.stringify({ result }));
 ' "$STREAM_FILE"

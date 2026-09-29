@@ -1,6 +1,7 @@
 // A playtest replay types a recorded game's inputs again, and stops where the
 // game no longer matches the recording: another mode, place, person being
-// talked to, or people in the room. Found clues may differ without stopping it.
+// talked to, or people in the room, or a game that ends sooner or later than
+// the recording. Found clues may differ without stopping it.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -117,6 +118,40 @@ describe('playtest scripted investigator', () => {
 			await investigator.next('', { checkpoint: checkpointOf(state({ mode: 'ended' })) })
 		).toMatchObject({ input: 'go to living room' });
 	});
+
+	it('reports a game that ended while the script had more to type', async () => {
+		const recorded = [checkpointOf(state()), checkpointOf(state({ mode: 'accuse' }))];
+		const investigator = scriptedInvestigator(['accuse', 'Alice did it'], { checkpoints: recorded });
+		const ended = checkpointOf(state({ mode: 'ended' }));
+
+		expect(investigator.finish(ended)).toMatchObject({ step: 1, input: 'accuse' });
+		await investigator.next('', { checkpoint: checkpointOf(state()) });
+		expect(investigator.finish(ended)).toEqual({
+			step: 2,
+			input: 'Alice did it',
+			differences: { mode: { expected: 'accuse', actual: 'ended' } }
+		});
+		// Without checkpoints, only that the game ended is known.
+		expect(scriptedInvestigator(['search']).finish(ended)).toEqual({
+			step: 1,
+			input: 'search',
+			differences: { mode: { expected: null, actual: 'ended' } }
+		});
+	});
+
+	it('compares where the game stands after the last input with the recorded end', async () => {
+		const accusing = checkpointOf(state({ mode: 'accuse' }));
+		const investigator = scriptedInvestigator(['accuse'], {
+			checkpoints: [checkpointOf(state())],
+			end: checkpointOf(state({ mode: 'ended' }))
+		});
+
+		await investigator.next('', { checkpoint: checkpointOf(state()) });
+		expect(await investigator.next('', { checkpoint: accusing })).toEqual({
+			divergence: { step: 2, input: null, differences: { mode: { expected: 'ended', actual: 'accuse' } } }
+		});
+		expect(investigator.finish(checkpointOf(state({ mode: 'ended' })))).toBeNull();
+	});
 });
 
 describe('playtest script files', () => {
@@ -131,10 +166,14 @@ describe('playtest script files', () => {
 		const checkpoint = checkpointOf(state());
 		expect(
 			loadScript(write({ blueprint_id: 'bp', persona: 'kid-7', inputs: ['search'], checkpoints: [checkpoint] }))
-		).toEqual({ blueprintId: 'bp', persona: 'kid-7', inputs: ['search'], checkpoints: [checkpoint] });
+		).toEqual({ blueprintId: 'bp', persona: 'kid-7', inputs: ['search'], checkpoints: [checkpoint], end: null });
+		expect(
+			loadScript(write({ blueprint_id: 'bp', inputs: ['search'], checkpoints: [checkpoint], end: checkpoint })).end
+		).toEqual(checkpoint);
 		expect(loadScript(write({ blueprint_id: 'bp', inputs: ['search'] }))).toMatchObject({
 			persona: 'unknown',
-			checkpoints: null
+			checkpoints: null,
+			end: null
 		});
 	});
 

@@ -32,7 +32,7 @@ Read `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 | `--persona <name>` | `detective` | A file in `personas/`. Not with `--replay` |
 | `--games <n>` | `1` | Games to play (with `--replay`, the same script N times) |
 | `--concurrency <n>` | `2` | Games at once |
-| `--max-steps <n>` | `60`; the script's length with `--replay` | Inputs per game before giving up |
+| `--max-steps <n>` | `60`; the whole script with `--replay` | Inputs per game before giving up |
 | `--narrator <claude\|mock>` | `claude` | `mock` for plumbing checks only |
 | `--narrator-model <m>` | `sonnet` | |
 | `--investigator-model <m>` | `sonnet` | Not with `--replay` |
@@ -79,7 +79,7 @@ view (what a player sees) ──► investigator (claude -p, persona)
 - **A game stops** when the case ends, the investigator types `quit`, three
   calls in a row fail, the game state cannot be read, the investigator itself
   fails, `--max-steps` runs out, or a replay runs out of script
-  (`no-more-input`) or diverges. Its folder is written either way, with the
+  (`no-more-input`) or diverges (`diverged`). Its folder is written either way, with the
   reason in `summary.json`. The narrator's calls are capped at 90 seconds so a
   slow turn fails as a turn rather than outlasting the request.
 
@@ -93,7 +93,7 @@ runs/<timestamp>-<blueprint>-<persona>/
 └── game-<n>/
     ├── transcript.md     the game as read, with the investigator's plan in italics
     ├── script.json       the investigator's inputs, in order, each with a checkpoint
-    ├── steps.jsonl       per step: view shown, input, action, API response
+    ├── steps.jsonl       per step: view shown, checkpoint, input, action, API response
     ├── ai-calls.jsonl    this game's narrator calls
     └── summary.json      outcome, stop reason, turns used, clues found of total, costs
 ```
@@ -110,18 +110,23 @@ on its own.
 Narration differs from run to run, so a replay can reach a point where an input
 no longer means what it did. Each input in `script.json` is saved with a
 checkpoint of the game just before it was typed: the mode, the place, who is
-being talked to, the people there, and the clues found so far. Before each input
-the replay compares the checkpoint with the live game:
+being talked to, the people there, and the clues found so far. `end` is one
+more, of the game when play stopped. Before each input the replay compares the
+checkpoint with the live game, and after the last input it compares `end`:
 
 - If the mode, place, talk partner or people there differ, the replay stops
   with `stop_reason: "diverged"`. `summary.json` has `divergence`: the step, the
-  input it did not type, and each field as recorded and as found. The
-  transcript's footer says the same.
+  input it did not type (`null` after the last one), and each field as recorded
+  and as found. The transcript's footer says the same.
+- A game that ends while the script has more to type has diverged too: the
+  accusation was settled in fewer rounds. One that is still going when the
+  script runs out shows up in the comparison with `end`.
 - If only the clues differ (a clue came a turn earlier or later), it carries
   on. The first such step is `clue_drift` in `summary.json`.
 
-A script saved before checkpoints existed replays with a warning and no
-checks. A replay writes its own `script.json`, of the inputs it played.
+A script saved before checkpoints existed replays with a warning; of the
+checks, only a game that ends early is caught. A replay writes its own
+`script.json`, of the inputs it played.
 
 ## Grading
 
@@ -165,5 +170,6 @@ the first run's figure before playing many games.
 - `tests/api/unit/playtest-replay.test.ts`: checkpoints, divergence, script files.
 - `tests/api/integration/playtest.test.ts`: a scripted investigator plays the
   mock blueprint to a win on the suite's mock server, the run folder is
-  written, and the game replays: unchanged to the same end, and, with an
-  edited checkpoint, to a divergence. No model is called.
+  written, and the game replays: unchanged to the same end; with an edited
+  checkpoint, to a divergence; and to a divergence when the game ends before
+  the script does, or the script before the game. No model is called.

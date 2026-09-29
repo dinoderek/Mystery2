@@ -123,7 +123,8 @@ function describeDivergence({ step, input, differences }) {
       `${field} was ${JSON.stringify(expected)}, now ${JSON.stringify(actual)}`
     )
     .join("; ");
-  return `before step ${step} (\`${input}\`): ${fields}`;
+  const where = input === null ? "after the last input" : `before step ${step} (\`${input}\`)`;
+  return `${where}: ${fields}`;
 }
 
 function formatCost(value) {
@@ -162,7 +163,13 @@ export function writeGameFolder({
   fs.writeFileSync(
     path.join(dir, "script.json"),
     `${JSON.stringify(
-      { blueprint_id: blueprint.id, persona, inputs: game.script, checkpoints: game.checkpoints },
+      {
+        blueprint_id: blueprint.id,
+        persona,
+        inputs: game.script,
+        checkpoints: game.checkpoints,
+        end: game.endCheckpoint,
+      },
       null,
       2,
     )}\n`,

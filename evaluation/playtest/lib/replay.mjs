@@ -1,13 +1,16 @@
 // Replaying a recorded game's inputs, and noticing when the game has moved on.
 //
 // Every input in a script.json is saved with a checkpoint: where the game stood
-// just before it was typed. A replay compares each checkpoint with the live
-// game before typing its input. When the mode, the place, the person being
-// talked to or the people in the room differ, the input no longer means what
-// it meant (the character to talk to may not be here), so the replay stops
-// there and records what differed. Found clues can differ without changing
-// what an input means (a narrator reveals in a different turn); the first such
-// difference is recorded, and the replay carries on.
+// just before it was typed, and `end` is where it stood when play stopped. A
+// replay compares each checkpoint with the live game before typing its input,
+// and `end` once the script is used up. When the mode, the place, the person
+// being talked to or the people in the room differ, the input no longer means
+// what it meant (the character to talk to may not be here), so the replay
+// stops there and records what differed. A game that ends before its script
+// does has diverged too (the accusation was settled in fewer rounds). Found
+// clues can differ without changing what an input means (a narrator reveals in
+// a different turn); the first such difference is recorded, and the replay
+// carries on.
 
 import fs from "node:fs";
 
@@ -23,7 +26,8 @@ export function checkpointOf(state) {
   const here = buildPlacesView(normalized).find((place) => place.isCurrent);
   return {
     mode: normalized.mode,
-    location: normalized.location,
+    // The place's id: the state names it by id or by name.
+    location: here?.id ?? normalized.location,
     talk_character: normalized.current_talk_character ?? null,
     people_here: [...(here?.people ?? [])].sort(),
     clues: normalized.discovered_clues.map((clue) => clue.id).sort(),
@@ -53,8 +57,9 @@ export function compareCheckpoints(expected, actual) {
 }
 
 /**
- * Reads a script.json. `checkpoints` is null for a script saved before
- * checkpoints existed; such a script replays without divergence checks.
+ * Reads a script.json. `checkpoints` and `end` are null for a script saved
+ * before checkpoints existed; such a script replays without divergence checks,
+ * except that a game ending before its script does is still reported.
  */
 export function loadScript(file) {
   const script = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -73,5 +78,6 @@ export function loadScript(file) {
     persona: script.persona ?? "unknown",
     inputs: script.inputs,
     checkpoints,
+    end: checkpoints && script.end ? script.end : null,
   };
 }

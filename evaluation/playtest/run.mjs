@@ -23,7 +23,7 @@
 //   --games <n>               games to play (default: 1)
 //   --concurrency <n>         games at once (default: 2)
 //   --max-steps <n>           investigator inputs per game before giving up
-//                             (default: 60; with --replay, the script's length)
+//                             (default: 60; with --replay, the whole script)
 //   --narrator <claude|mock>  the game's narrator (default: claude)
 //   --narrator-model <m>      default: sonnet
 //   --investigator-model <m>  default: sonnet; not with --replay
@@ -134,7 +134,12 @@ function findBlueprint(query) {
       return { file, blueprint };
     }
   }
-  usage(`No blueprint matches "${query}" (looked for a file, and in ${REPO_BLUEPRINTS}).`);
+  usage(
+    `No blueprint matches "${query}" (looked for a file, and in ${REPO_BLUEPRINTS}).` +
+      (args.replay && !args.blueprint
+        ? " A script played on a blueprint outside the repo needs --blueprint <path>."
+        : ""),
+  );
 }
 
 function freePort() {
@@ -216,7 +221,9 @@ console.log(
     : `Narrator: ${narratorModel}; investigator: ${investigatorModel}`,
 );
 if (script && !script.checkpoints) {
-  console.log("Warning: the script has no checkpoints, so the replay cannot tell when the game diverges.");
+  console.log(
+    "Warning: the script has no checkpoints, so the replay can only tell that the game diverged if it ends early.",
+  );
 }
 console.log(`Run folder: ${path.relative(REPO_ROOT, runDir)}`);
 
@@ -224,7 +231,7 @@ async function playOne(number) {
   const started = Date.now();
   const api = await signIn(server.url, `playtest-${slug(persona)}-${number}`);
   const investigator = script
-    ? scriptedInvestigator(script.inputs, { checkpoints: script.checkpoints })
+    ? scriptedInvestigator(script.inputs, { checkpoints: script.checkpoints, end: script.end })
     : modelInvestigator({
       persona,
       model: investigatorModel,
@@ -234,7 +241,8 @@ async function playOne(number) {
     api,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title },
     investigator,
-    maxSteps: args.maxSteps ?? (script ? script.inputs.length : DEFAULT_MAX_STEPS),
+    // One step past the script, to compare where the game ended up.
+    maxSteps: args.maxSteps ?? (script ? script.inputs.length + 1 : DEFAULT_MAX_STEPS),
     onStep: (step) =>
       console.log(
         `[game ${number}] step ${step.step} (${step.mode_before}, ${step.time_before} left) > ${step.input}`,

@@ -9,8 +9,9 @@
 // not what the runner assumes. What the store does not show a player (a
 // response's `follow_up_prompt`) stays out of the view, in steps.jsonl only.
 //
-// Each input is kept with a checkpoint of the game just before it, so a
-// replay of the script can tell when the game has diverged (./replay.mjs).
+// Each input is kept with a checkpoint of the game just before it, and the
+// game's end with one more, so a replay of the script can tell when the game
+// has diverged (./replay.mjs).
 
 import { resolveInput } from "./commands.mjs";
 import { checkpointOf } from "./replay.mjs";
@@ -88,7 +89,9 @@ export async function playGame({
 
   for (let number = 1; number <= maxSteps && stopReason === null; number += 1) {
     if (state.mode === "ended") {
-      stopReason = "ended";
+      // A replay whose game ended before its script did has diverged.
+      divergence = investigator.finish?.(checkpointOf(state)) ?? null;
+      stopReason = divergence ? "diverged" : "ended";
       break;
     }
 
@@ -189,6 +192,7 @@ export async function playGame({
     transcript,
     script,
     checkpoints,
+    endCheckpoint: checkpointOf(state),
     steps,
     finalState: state,
   };

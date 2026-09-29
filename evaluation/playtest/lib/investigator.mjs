@@ -1,10 +1,12 @@
 // Who chooses the next input: a model playing a persona, or a fixed script.
 //
 // Both answer `next(view, { checkpoint })` with { input, plan } or null when
-// they have nothing more to say; a script can also answer { divergence }. The model investigator is one isolated `claude` call
-// per turn (the same `runClaudeCli` the narrator provider uses), given the whole
-// view each time, so it keeps no hidden memory and any step can be replayed
-// from the run's files.
+// they have nothing more to say; a script can also answer { divergence }, and
+// says through `finish(checkpoint)` whether a game that ended has diverged.
+// The model investigator is one isolated `claude` call per turn (the same
+// `runClaudeCli` the narrator provider uses), given the whole view each time,
+// so it keeps no hidden memory and any step can be replayed from the run's
+// files.
 //
 // The reply field is `plan`, a note for the log, and not `thinking`: asking
 // for the model's reasoning as output reads to the API's safeguards as
@@ -106,33 +108,45 @@ export function modelInvestigator({ persona, model, binary = "claude", timeoutMs
 /**
  * Plays a fixed list of inputs in order, then stops.
  *
- * Given `checkpoints` (from a recorded script.json, one per input), it checks
- * each against the live game before typing the input, and answers
- * { divergence } instead of an input when the game has moved on
- * (./replay.mjs). The first difference in found clues alone is kept in
- * `clueDrift` and does not stop it.
+ * Given `checkpoints` (from a recorded script.json, one per input) and `end`,
+ * it checks each against the live game before typing the input, and `end`
+ * once the inputs are used up, and answers { divergence } instead when the
+ * game has moved on (./replay.mjs). The first difference in found clues alone
+ * is kept in `clueDrift` and does not stop it.
  */
-export function scriptedInvestigator(inputs, { checkpoints = null } = {}) {
+export function scriptedInvestigator(inputs, { checkpoints = null, end = null } = {}) {
   let index = 0;
+  const expectedAt = (position) => position < inputs.length ? checkpoints?.[position] : end;
+  const divergenceAt = (differences) => ({
+    step: index + 1,
+    input: index < inputs.length ? inputs[index] : null,
+    differences,
+  });
+
   const investigator = {
     kind: "script",
     totals: { calls: 0, cost_usd: 0, input_tokens: 0, output_tokens: 0 },
     clueDrift: null,
     async next(_view, { checkpoint } = {}) {
-      if (index >= inputs.length) return null;
-      const input = inputs[index];
-      const expected = checkpoints?.[index];
+      const expected = expectedAt(index);
       if (expected && checkpoint) {
         const difference = compareCheckpoints(expected, checkpoint);
-        if (difference.blocking) {
-          return { divergence: { step: index + 1, input, differences: difference.blocking } };
-        }
-        if (difference.clues && !investigator.clueDrift) {
-          investigator.clueDrift = { step: index + 1, input, ...difference.clues };
+        if (difference.blocking) return { divergence: divergenceAt(difference.blocking) };
+        if (difference.clues && !investigator.clueDrift && index < inputs.length) {
+          investigator.clueDrift = { step: index + 1, input: inputs[index], ...difference.clues };
         }
       }
+      if (index >= inputs.length) return null;
+      const input = inputs[index];
       index += 1;
       return { input, plan: "", model: null, cost_usd: null, attempts: 1 };
+    },
+    /** The game has ended: a divergence if the script had more to type. */
+    finish(checkpoint) {
+      if (index >= inputs.length) return null;
+      const expected = expectedAt(index);
+      const blocking = expected ? compareCheckpoints(expected, checkpoint).blocking : null;
+      return divergenceAt(blocking ?? { mode: { expected: expected?.mode ?? null, actual: checkpoint.mode } });
     },
   };
   return investigator;

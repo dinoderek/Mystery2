@@ -101,6 +101,50 @@ describe("game-search endpoint", () => {
     });
   });
 
+  it("does not count a search that found nothing as having found a clue", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+    const { game_id } = await startRes.json();
+    await fetch(`${API_URL}/game-move`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
+    });
+
+    // The bookshelf holds no clue: the search finds nothing.
+    const emptyRes = await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, search_query: "behind the bookshelf" }),
+    });
+    expect(emptyRes.status).toBe(200);
+    expect((await emptyRes.json()).revealed_clues).toEqual([]);
+
+    // So the next search reveals the room's first clue, and only that one.
+    const nextRes = await fetch(`${API_URL}/game-search`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id }),
+    });
+    const next = await nextRes.json();
+    expect(next.revealed_clues.map((clue: { id: string }) => clue.id)).toEqual(["clue-wrapper"]);
+
+    const searchEvents = readStoredEvents(game_id).filter(
+      (entry) => entry.event_type === "search",
+    );
+    expect(searchEvents[1]?.payload).toMatchObject({
+      revealed_clue_id: "clue-wrapper",
+      revealed_clue_ids: ["clue-wrapper"],
+    });
+
+    const stateRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, { headers: auth.headers });
+    const { state } = await stateRes.json();
+    expect(state.discovered_clues.map((clue: { id: string }) => clue.id)).toEqual(["clue-wrapper"]);
+  });
+
   it("persists forced endgame when search consumes the final turn", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",

@@ -1,7 +1,7 @@
 # `@my2/game-engine`
 
 The game: the state machine, the clue graph, prompt assembly, the AI provider,
-the twelve endpoint handlers, and the SQLite + filesystem adapter they run
+the endpoint handlers, and the SQLite + filesystem adapter they run
 against.
 
 What it deliberately does not contain is a server. Handlers take an

@@ -1,131 +1,62 @@
 # Mystery Game Constitution
 
-## What we are building
+A text-based, AI-narrated mystery game for young children. Every change keeps
+the player promise in `docs/game.md`: typed investigation, coherent narration,
+fidelity to the blueprint, and a child-friendly experience.
 
-We are building a text-based, AI-driven interactive mystery game for young
-children. Every change MUST preserve the core player promise documented in
-`docs/game.md`: typed investigation, coherent narration, blueprint fidelity,
-and a child-friendly experience. Rationale: product changes are easy to blur in
-an AI-heavy stack, so the user-facing game contract must stay explicit.
+This document wins over any other guidance in the repo. `AGENTS.md` adds how
+agents work; it may not weaken anything here.
 
-## Core Principles
+## I. Documentation ships with the change
 
-### I. Documentation First
+Read the core docs listed in `AGENTS.md` before significant work, and the
+area docs it names for the surface you touch. A change to behaviour, workflow,
+commands or setup updates the doc that owns that topic in the same change. Each
+topic has one owning doc; others link to it rather than restate it.
 
-Before starting any significant task, contributors MUST read
-`docs/architecture.md`, `docs/game.md`, `docs/project-structure.md`, and
-`docs/testing.md`. When work touches a specialized area, contributors MUST also
-load the relevant repo conventions and schema references for that surface area.
-These critical documents are not reference-only: contributors MUST carry the
-relevant rules, constraints, and project knowledge forward into specifications,
-plans, task lists, and implementation summaries. Documentation updates MUST
-ship with behavior or workflow changes and MUST keep commands, links, and setup
-steps current. Rationale: shared context prevents incorrect implementations and
-stale operator guidance, and low-cost project knowledge is only useful if it is
-propagated through the delivery workflow.
+## II. Test what you build (non-negotiable)
 
-### II. Test Everything You Build (NON-NEGOTIABLE)
+Every change carries tests at the boundary it affects, per `docs/testing.md`:
+unit for logic, integration against a running server for endpoints, ownership,
+profiles and content loading, E2E for journeys. The game is one process over a
+real database and real files; regressions at those boundaries show only when
+each is exercised.
 
-Every change MUST include a concrete test plan aligned with `docs/testing.md`.
-Public logic MUST have unit coverage; the engine's endpoints, profile
-resolution, session ownership, and content loading MUST have integration
-coverage against a running server; critical user journeys, API-backed flows,
-and visual flows MUST have E2E or browser coverage as appropriate. Documentation-only changes MAY skip code tests only when they
-do not alter runtime code, tooling, migrations, tests, or environment
-contracts. Rationale: the game is one process over a real database and real files, and
-regressions at those boundaries are only visible when each is exercised.
+## III. Run the gate
 
-### III. Run Quality Gates
+A change is finished when `npm test` passes. Documentation-only changes still
+validate commands, paths and links, and pass the curated-docs check when they
+touch a source it tracks.
 
-Before finalizing any non-documentation change, contributors MUST run the
-quality gates defined in `docs/testing.md`: linting/formatting, type checking,
-unit tests, integration tests, E2E tests, and documentation sync. For
-documentation-only changes, contributors MUST still validate command accuracy,
-cross-document consistency, and link/path correctness before completion.
-Rationale: one consistent release bar is simpler to enforce than per-author
-exceptions.
+## IV. Keep the architecture small
 
-### IV. Architecture & Security Constraints
+The game runs as one local Node process — SvelteKit serving the SPA and its
+`/api`, over SQLite and the filesystem (`docs/architecture.md`). Three
+constraints hold:
 
-Changes MUST preserve the approved architecture in `docs/architecture.md`: the
-game runs as **one local Node process** — a SvelteKit server that serves both
-the SPA and its `/api`, over SQLite and the filesystem, with server-side AI
-calls to OpenRouter. Three constraints follow and MUST hold:
-
-1. **Secrets stay out of the browser.** The OpenRouter key is read by the
-   server from the environment and never reaches the client.
+1. **Secrets stay on the server.** An AI key never reaches the browser.
 2. **Ownership is enforced in the engine's repositories.** Every session and
-   event query MUST be scoped to the requesting profile. There is no database
-   layer underneath to catch a query that forgets. Profiles are separation, not
-   protection: an endpoint runs as one only when it manages or plays a game
-   session, and an endpoint over shared content MUST NOT require one. See
-   "Identity and access" in `docs/architecture.md`.
+   event query is scoped to the requesting profile; nothing underneath catches
+   one that forgets. An endpoint runs as a profile only when it manages or plays
+   a session; one over shared content must not require a profile.
 3. **The engine does not know how it is hosted.** Handlers reach the outside
-   world only through `EngineContext`; anything that reaches past it — a file
-   path, a driver, an HTTP detail — belongs in an adapter.
+   world only through `EngineContext`.
 
-Reintroducing a hosted backend, a container dependency, or a build step between
-the source and the running game is a deviation and MUST be recorded in the
-implementation plan before work begins. Rationale: the whole value of this
-architecture is that it is small enough to hold in your head and runs with one
-command; drift back toward a platform is expensive to undo, and a leaked key or
-an unscoped query has no second line of defence. Gating shared content on a
-profile is the same drift in the other direction — it buys nothing on a machine
-the player already owns, and it makes the one rule that does matter harder to
-see.
+Reintroducing a hosted backend, a container, or a build step between source and
+running game is a deviation, and is agreed before work starts.
 
-### V. Context-Specific Conventions
+## V. Follow the existing conventions
 
-Contributors MUST load the repo guidance that governs the surface area they are
-editing before implementation. This includes `docs/styling-conventions.md` for
-SvelteKit styling/theme work, `docs/component-inventory.md` for UI reuse,
-`docs/screen-navigation.md` for routing/page architecture,
-`docs/backend-conventions.md` for the engine, API contracts, and database
-changes, and `packages/shared/src/blueprint-schema-v2.ts` for
-structural mystery data-model changes. Plans, specs, and tasks MUST reflect
-those conventions instead of inventing parallel patterns. Rationale: shared
-conventions keep generated work compatible with the existing repo structure and
-review expectations.
+Use the conventions of the area you are editing instead of inventing parallel
+ones. Complexity that departs from them is justified in the change.
 
-### VI. Observability and Logging
+## VI. Failures are visible
 
-Every materially changed feature MUST define how failures are surfaced and
-debugged. Errors MUST be logged or otherwise captured at least once with enough
-context to diagnose the failing request, session, or blueprint state, and
-user-facing flows MUST not silently swallow failures. When work introduces new
-operator workflows or debugging steps, the relevant docs MUST be updated in the
-same change. Rationale: AI-backed gameplay is
-non-deterministic, and a bad turn is only diagnosable from what the request
-logged while it happened.
+A changed feature logs its failures once, with enough context — request,
+session, blueprint — to diagnose them, and no user-facing flow swallows an
+error silently. AI turns are non-deterministic; what was logged at the time is
+the only way to explain a bad one.
 
-## Development Workflow
+---
 
-- All work MUST comply with this Constitution. `AGENTS.md` MAY add operational
-  workflow details for agents, but it MUST not redefine or weaken these rules.
-- Plans, specs, and task lists MUST record how documentation, testing,
-  architecture, conventions, and observability are satisfied.
-- Critical document knowledge MUST be reflected through the Constitution ->
-  Spec -> Plan -> Task flow, with `AGENTS.md` reinforcing the same reading and
-  update expectations during agent execution.
-- Changes MUST be summarized clearly for user review, including any skipped
-  gates or deferred follow-up.
-- Complexity MUST be justified and documented explicitly before deviating from
-  standard architectural patterns.
-
-## Governance
-
-This Constitution supersedes conflicting local practice documents. Amendments
-MUST include the updated constitution text, a Sync Impact Report, a semantic
-version decision, and same-change updates to affected templates or guidance
-files. Versioning policy is semantic: MAJOR for backward-incompatible
-governance changes or principle removal/redefinition, MINOR for new principles
-or materially expanded guidance, and PATCH for clarifications or wording-only
-refinements. Compliance reviews for plans, specs, task lists, pull requests,
-and final delivery summaries MUST verify documentation, testing, quality gates,
-architecture/security constraints, context-specific conventions, and
-observability against this Constitution. If `AGENTS.md` or any other local
-guidance conflicts with this Constitution, this Constitution wins. Use
-`AGENTS.md` for agent workflow details and `docs/` for project/runtime
-guidance.
-
-**Version**: 2.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-08-29
+**Version**: 3.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-09-30

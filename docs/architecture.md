@@ -8,14 +8,14 @@ cloud backend, no container, and no separate API service.
 - **Server**: SvelteKit on `adapter-node`. The same process serves the SPA and
   its `/api` routes.
 - **Engine**: `packages/game-engine/` — the state machine, clue graph, prompt
-  assembly, AI provider, twelve endpoint handlers, and the adapter they run
+  assembly, AI provider, endpoint handlers, and the adapter they run
   against.
 - **Database**: SQLite (`better-sqlite3`), one file.
 - **Content**: blueprints and images read off disk.
 - **Identity**: local profiles. A name, an id, and a cookie. No passwords —
   signing in exists to *create and pick a profile*, not to keep anyone out.
-- **Model provider**: OpenRouter, called from the server with a key that never
-  reaches the browser.
+- **Model provider**: OpenRouter, or the local `claude` CLI, called from the
+  server; a key never reaches the browser.
 
 Primary goals:
 
@@ -37,6 +37,20 @@ Non-goals:
   player owns and the content is a directory they can read.
 
 ---
+
+## Repository layout
+
+| Directory | Holds |
+|---|---|
+| `web/` | The SvelteKit server and SPA (`docs/ui.md`) |
+| `packages/game-engine/` | The game (`packages/game-engine/README.md`) |
+| `packages/shared/` | Zod schemas both sides import: the blueprint and the API contracts |
+| `packages/blueprint-generator/` | Blueprint generation, used by the operator scripts |
+| `blueprints/` | Committed blueprints, including the fixtures the suites play |
+| `scripts/`, `lib/` | Starting the game, the test runners, databases, generation |
+| `tests/` | API unit, integration and E2E suites, and `testkit/` |
+| `evaluation/` | Blueprint and game-master evaluation (`docs/evaluation-pipeline.md`) |
+| `database/` | Local databases, gitignored (`docs/local-infrastructure.md`) |
 
 ## Components and responsibilities
 
@@ -60,12 +74,10 @@ token, and no base URL to configure.
 
 ### Identity and access
 
-Signing in is naming a profile. It is created if it does not exist, the answer
-is a cookie holding its id, and there is no password — because there is nothing
-a password would be protecting. The game is one process on the player's own
-machine, over a database file and a content directory they already own. A
-profile is how one person's cases stay separate from another's on a shared
-machine, and that is the whole of what it is for.
+Signing in is naming a profile: it is created if it does not exist, the answer
+is a cookie holding its id, and there is no password, because there is nothing
+to protect — the player owns the machine, the database file and the content. A
+profile keeps one person's cases apart from another's, and that is all.
 
 So the server has **two behaviours**, and every route picks one:
 
@@ -88,38 +100,21 @@ Endpoints declare which they are in the engine's registry
 written down for everything the game itself serves;
 `docs/backend-conventions.md` covers how to add one.
 
-A few routes sit outside that registry, as their own files under
-`web/src/routes/api/`: `player` and `players`, which are how you get a profile
-in the first place, and `ai-settings`, which configures the installation rather
-than reading its content. They take no profile, by the same ownership criterion
-— none of them touches anybody's sessions — but none of them fits a
-`CatalogContext` either, which deliberately holds nothing but shared content.
-They reach the engine through `getEngine()` instead. Keep that list short: a
-route here is one the registry cannot express, not a shortcut around it.
-The browser is stricter than the server on purpose: the app still sends you to
-the profile picker before you can play, because playing needs a profile, not
-because reading the case list does.
+A few routes sit outside the registry under `web/src/routes/api/`: `player`
+and `players` (how you get a profile) and `ai-settings` (installation
+configuration). They take no profile by the same criterion, but need more than
+a `CatalogContext` holds, so they reach the engine through `getEngine()`. Keep
+that list short: a route here is one the registry cannot express, not a
+shortcut around it. The browser is stricter than the server on purpose
+(`docs/ui.md`).
 
 ### The engine (`packages/game-engine/`)
 
 The engine is the game. It does not know how it is hosted: handlers take an
-`EngineContext` and reach the outside world only through it.
-
-```
-src/context.ts          EngineContext — the boundary. ~15 named operations.
-src/context-local.ts    The implementation: SQLite + the filesystem.
-src/endpoints/          handle(req, ctx) per endpoint, plus the registry.
-src/db/                 schema.ts, client.ts (the only driver import), repositories.
-src/content.ts          Blueprints and images off disk.
-src/ai-profile.ts       AI profiles resolved from the environment.
-src/ai-*.ts             Prompt assembly, contracts, provider.
-src/state-machine.ts    Legal transitions.
-src/clues.ts, clue-discovery.ts, forced-endgame.ts, narration.ts, speaker.ts
-```
-
-That boundary is what makes the storage substitutable: an adapter can be
-written and tested alongside the current one, and the handlers cannot tell
-which they have.
+`EngineContext` and reach the outside world only through it. That boundary is
+what makes the storage substitutable — an adapter can be written and tested
+alongside the current one, and the handlers cannot tell which they have. The
+package README maps its files.
 
 ### Data
 
@@ -140,23 +135,12 @@ AI configuration, which is per-installation rather than per-player:
 - `app_settings` — one row, holding the mock/live choice and which key and model
   it selects. See `docs/ai-configuration.md`.
 
-**Ownership lives in the repositories.** Every session and event statement is
-scoped to one player. There is no row-level security underneath to catch a
-query that forgets, which is why `docs/backend-conventions.md` treats a
-repository method without a `player_id` filter as a bug.
+Ownership is enforced in the session and event repositories, with nothing
+underneath to catch a query that forgets (`docs/backend-conventions.md`).
 
-Three connection pragmas are load-bearing: `journal_mode = WAL` so a reader
-does not block the running game, `foreign_keys = ON` because SQLite defaults it
-off and the `game_events` cascade depends on it, and `busy_timeout = 5000`.
-
-**Where the database lives:** `<config root>/database/<name>/game.db`, where the
-config root is `$MYSTERY_CONFIG_ROOT` when set and the repo root otherwise, and
-the name is this worktree's — `main` in the main checkout, `prod` under
-`npm run prod`. Blueprints and images stay shared across worktrees; the database
-does not, because it is the one thing here carrying a schema version, and a
-branch that bumps `SCHEMA_VERSION` upgrades a file no other branch can then
-open. Tests never touch any of them: they are given an explicit path under a
-temporary directory.
+The database is `<config root>/database/<name>/game.db`, one per worktree plus
+`prod`; content is shared across worktrees. `docs/local-infrastructure.md`
+explains why and how to manage them. Tests never touch any of them.
 
 ### Content
 
@@ -170,18 +154,12 @@ one bad file must not take the whole list down.
 
 ### AI
 
-Profiles come from the environment, not a database:
-
-| Profile | Source |
-|---|---|
-| `mock` | Built in. No configuration, no network. |
-| `free` / `paid` | `.env.ai.<mode>.local` in the config root. |
-| `default` | Whatever the running process is configured with, falling back to mock. |
-
-`npm run dev:ai:free` is therefore a different command, not a different
-database state — switching models needs no seeding and no restart. A session
-records the profile *label* it was started with for provenance; the model
-actually used is on each event's `model` column.
+Four profiles. `mock` is built in; `free` and `paid` are `.env.ai.<mode>.local`
+files in the config root; `default` — the only one the browser plays as —
+resolves per request from `AI_PROVIDER`/`AI_MODEL` in the process environment,
+then the choice stored on the settings page, then mock. A session records the
+profile *label* it started with; the model actually used is on each event's
+`model` column. `docs/ai-configuration.md` owns the detail.
 
 ---
 

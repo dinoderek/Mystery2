@@ -123,10 +123,19 @@ When time is exhausted:
 - Narrator responds _as that character_, consistent with blueprint.
 - Character should remember prior interactions in the same game (continuity).
 - Backend accepts free-form question payloads (`player_input`).
+- In talk mode every line is said to the character, except `help`, `quit` /
+  `exit`, `notebook` / `n`, the theme commands and the end-talk words below.
+  That includes `accuse …`: **accusing is not available during a conversation,
+  by design.** "I think you took it!" is something to say to a suspect's face,
+  and the character answers it in character; the accusation itself is a
+  separate phase. To accuse, leave the conversation first (`bye`), then type
+  `accuse` in explore mode.
 
 **Exit Talk Mode**
 
-- Example: `end` or `exit` (exact keyword TBD, but should be consistent and discoverable).
+- The end-talk words: `bye`, `goodbye`, `see you`, `leave` or `end`, typed on
+  its own (`web/src/lib/domain/parser.ts`). `exit` is not one of them: it quits
+  the game.
 
 **Time model**
 
@@ -279,7 +288,9 @@ still work, and `Esc` also closes.
 
 ## Accuse (Endgame)
 
-**Command:** `accuse [statement]`
+**Command:** `accuse [statement]`, in explore mode. It is not a command in talk
+mode, where it is said to the character (see Talk above); leave the conversation
+first.
 
 ### Endgame Flow
 

@@ -39,6 +39,18 @@ describe('collectRevealedClueIds', () => {
 		expect(collectRevealedClueIds(history, 'lab', CLUES)).toEqual([]);
 	});
 
+	it('counts an event that records only a null revealed_clue_id as finding nothing', () => {
+		const history = [search({ revealed_clue_id: null })];
+
+		expect(collectRevealedClueIds(history, 'lab', CLUES)).toEqual([]);
+	});
+
+	it('trusts the record once any search at the location keeps one', () => {
+		const history = [search({}), search({ revealed_clue_id: null, revealed_clue_ids: [] })];
+
+		expect(collectRevealedClueIds(history, 'lab', CLUES)).toEqual([]);
+	});
+
 	it('still infers from the count for events that record no reveals at all', () => {
 		const history = [search({}), search({})];
 

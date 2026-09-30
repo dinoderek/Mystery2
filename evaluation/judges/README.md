@@ -28,7 +28,7 @@ model or a changed prompt — without replaying a game.
 
 The dimensions are deliberately narrow and separate rather than one
 "blueprint adherence" judge — the same reasoning as the blueprint battery
-(`docs/evaluation-pipeline.md` → "Why one judge per dimension"): they run in
+(`docs/evaluation-pipeline.md` → "Three tiers of check"): they run in
 parallel, editing the roleplay brief cannot regress spoiler scores, and a schema
 failure retries one judge instead of all four. Each brief states its boundaries
 with its siblings so the same defect is not reported four times.

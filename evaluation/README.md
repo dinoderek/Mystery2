@@ -233,14 +233,13 @@ Three result kinds, one envelope (rationale in `docs/evaluation-pipeline.md`
   mismatch is a `judge_parse` error.
 
 A dimension's `overall` is `pass` only if every sub-result it produced is
-`pass`; see `docs/evaluation-pipeline.md` → "Combining results" for the full
+`pass`; see `docs/evaluation-pipeline.md` → "Three tiers of check" for the full
 pass / fail / error / skipped rules.
 
 ## Enabled dimensions
 
 Eight dimensions run on every blueprint (defined in `dimensions/registry.json`).
-For what each one asks, see the dimension table in
-`docs/evaluation-pipeline.md` → "Dimensions":
+Each one's full question is its brief in `dimensions/<id>.md`:
 
 - `solve_depth` — solvable, deep enough (brief `minPathLength` floor, else
   registry `min_clues`, else 3), and every suspect has a measured elimination
@@ -351,9 +350,9 @@ can exceed the sum of the per-attempt `duration_ms` values under
 
 ## What's next
 
-Roadmap lives in `docs/evaluation-pipeline.md` → "Intentionally out of scope
-(for now)": run storage/visualizer, Tier 2 dimensions, K-run aggregation, and
-judge self-consistency sampling.
+See `docs/evaluation-pipeline.md` → "Deliberately not done yet": run storage,
+further dimensions, several blueprints per brief, and judge self-consistency
+sampling.
 
 The `npm run eval` script wraps `node evaluation/pipeline/run.mjs`; pass
 pipeline flags after `--`.

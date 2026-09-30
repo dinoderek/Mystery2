@@ -149,6 +149,35 @@ function resolveBriefFile(filePath, env = process.env) {
   return filePath;
 }
 
+export const BLUEPRINT_USAGE = `Usage: npm run generate:blueprint -- --brief-file <path> [options]
+
+Turns story briefs into Blueprint V2 JSON through OpenRouter, then runs the
+evaluation pipeline's mechanical checks on each result and writes them beside it
+as <blueprint>.verification.json. A blueprint that fails its schema is still
+written, with the failure recorded in the verification file.
+
+  --brief-file <path>          Brief JSON. Repeatable. Looked up in
+                               <config root>/briefs/ first.
+  --model <id>                 OpenRouter model. Repeatable; comma lists allowed.
+                               Default: OPENROUTER_BLUEPRINT_MODEL, then AI_MODEL.
+                               Every brief is generated with every model.
+  --output <path>              Write one job to exactly this file.
+  --output-file <path>         Write each job to <path>.<model>.<brief>.json.
+                               Default: <config root>/blueprints/blueprint
+  --chat-packet                Write a copy-paste prompt packet per brief instead
+                               of calling OpenRouter (<path>.<brief>.chat.md,
+                               default under chat-gen-prompts/). --model is
+                               ignored, and no key is needed.
+  --parallel                   Run all jobs at once.
+  --parallelism <n>            Run at most n jobs at once.
+  --openrouter-api-key <key>   Default: OPENROUTER_API_KEY.
+  -h, --help                   Show this help.
+
+The config root is $MYSTERY_CONFIG_ROOT, or the repo when unset. Environment
+is read from the shell, then .env.local in the config root.
+AI_OPENROUTER_TIMEOUT_MS sets the request timeout (default 120000).
+`;
+
 export function parseGenerateBlueprintArgs(argv, env = process.env) {
   const options = {
     briefFiles: [],
@@ -217,7 +246,7 @@ export function parseGenerateBlueprintArgs(argv, env = process.env) {
       continue;
     }
 
-    throw new Error(`Unknown option: ${token}`);
+    throw new Error(`Unknown option: ${token} (see --help)`);
   }
 
   if (options.briefFiles.length === 0) {
@@ -912,9 +941,14 @@ export async function runBlueprintGenerationCli(options, dependencies = {}) {
 }
 
 async function main() {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(BLUEPRINT_USAGE);
+    return;
+  }
   try {
     const env = await loadBlueprintGenerationEnv();
-    const options = parseGenerateBlueprintArgs(process.argv.slice(2), env);
+    const options = parseGenerateBlueprintArgs(argv, env);
     const result = await runBlueprintGenerationCli(options);
 
     if (options.output || options.outputFile) {

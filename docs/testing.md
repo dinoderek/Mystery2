@@ -284,27 +284,33 @@ else checks. Integration must prove at minimum:
 That bar lives in `tests/api/integration/session-ownership.test.ts` and
 `unauthenticated.test.ts`.
 
-Integration and E2E never call OpenRouter. The server runs the mock provider;
+Integration and E2E never call a real model. The server runs the mock provider;
 assert persisted side effects instead.
 
-That used to be true by construction — mock is chosen by absence, and the test
-server gets a config root with no `.env.ai.*` in it. It is no longer only that,
-because the AI mode is now a database row the API can change, and the row
-belongs to the installation rather than to a profile. **A test that switches the
-server to live switches it for every test sharing that server**, and the calls
-go to the real API with whatever throwaway key was stored. When that landed, the
-integration suite failed on an unexplained 500 and the CI job was killed at its
+Mock is chosen by absence — the server's config root has no `.env.ai.*` and
+its settings row is empty — but the settings row can be changed over the API,
+and it belongs to the installation, not a profile. **A test that switches the
+server to live switches it for every test sharing that server**, and their
+calls go to the real API with whatever throwaway key was stored. When that
+happened, the integration suite failed on an unexplained 500 and CI hit its
 fifteen-minute cap.
 
-So: no suite that shares a server with game-playing tests may switch the mode to
-live. Assert that in the unit suites instead. As a backstop,
+So no suite that shares a server with game-playing tests may switch the mode to
+live; assert that in the unit suites (`ai-settings-store.test.ts`,
+`local-engine-ai-profile.test.ts`). The suites that do change the row
+(`tests/api/integration/ai-settings.test.ts`, `web/e2e/ai-settings.spec.ts`)
+reset it around each test and leave it on mock. As a backstop,
 `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` point
-`OPENROUTER_URL` at a closed port, so a slip fails in milliseconds instead of
-hanging or spending credits. `docs/ai-configuration.md` has the detail.
+`OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a file that does not
+exist, so a slip fails in milliseconds instead of hanging or spending credits.
 
-If you change AI contracts, prompts, runtime context, or provider selection,
-update `tests/api/unit/ai-provider.test.ts` alongside any affected integration
-and API E2E assertions.
+`tests/api/integration/ai-profile-runtime.test.ts` proves profiles are resolved
+per request: it writes a `free` profile, plays a turn, breaks the file, and
+asserts the next turn fails.
+
+Changing an AI contract, prompt, context or provider selection updates the mock
+provider and its tests in the same change ("The mock provider" in
+`docs/ai-runtime.md`).
 
 ## CI
 

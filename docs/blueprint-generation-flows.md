@@ -217,6 +217,12 @@ advertises); a target that exceeds the cap logs a warning and sends the first
 | Location scene image | `scripts/generate-blueprint-images.mjs` -> `buildImagePrompt(..., { targetType: "location" })`  | `metadata.visual_direction` (falls back to `metadata.art_style`), `world.locations[].name`, `world.locations[].description`. Portrait reference images attached for characters present at the location.                          | Resulting `image_id` is patched back to `world.locations[].location_image_id`  | Generated in phase 2 with portrait references for character consistency. |
 <!-- /extract:image-generation -->
 
+Aspect-ratio support varies by model, and the CLI checks a ratio only against
+the full list OpenRouter documents; `openai/gpt-image-1`, for one, accepts only
+`1:1`, `3:2`, `2:3` and `auto`. A
+failed or cancelled generation comes back as a 502 and is not billed. The run
+continues past a failed target, so re-run just those targets.
+
 ## Gameplay Narration
 <!-- extract:gameplay-narration -->
 

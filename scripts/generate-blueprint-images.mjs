@@ -95,6 +95,50 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
   }
 }
 
+export const IMAGE_USAGE = `Usage: npm run generate:images -- --blueprint-path <path> [targets] [options]
+
+Generates a blueprint's artwork through OpenRouter's Images API and patches the
+new image ids into the blueprint. Portraits come first, then locations (given
+the portraits as references), then the cover (given both).
+
+  --blueprint-path <path>      Blueprint JSON. Looked up in
+                               <config root>/blueprints/ first.
+
+Targets (default: --all). Keys are character or location ids, any case.
+  --all                        Cover, every portrait and every location.
+  --blueprint                  The cover only.
+  --characters <id,id>         Only these portraits.
+  --locations <id,id>          Only these locations.
+  --character <id>             Repeatable, and combinable with --location.
+  --location <id>              The cover is included, and a kind with no id
+                               named is included in full.
+
+Options
+  --model <id>                 Default: OPENROUTER_IMAGE_MODEL, then ${DEFAULT_IMAGE_MODEL}.
+  --aspect-ratio <r>           Sent to the API and written into the prompt.
+                               Default: OPENROUTER_IMAGE_ASPECT_RATIO, then ${DEFAULT_IMAGE_ASPECT_RATIO}.
+                               Support varies by model: GET
+                               https://openrouter.ai/api/v1/images/models
+  --output-dir <dir>           Default: <config root>/blueprint-images/
+  --parallel                   Generate each phase's targets at once.
+  --dry-run                    List what would be generated; call nothing.
+  --dry-mode                   Print each request (key redacted); send nothing.
+  --chat-packets               Write one copy-paste prompt packet per target
+                               instead of calling the API (default dir
+                               chat-gen-prompts/images). Never patches ids.
+  --chat-packets-combined      The same, all targets in one file.
+  --import-images              Patch the blueprint from PNGs already saved under
+                               their expected names.
+  --import-dir <dir>           Where to look. Default: the images directory.
+  -h, --help                   Show this help.
+
+Chat packets and --import-images exclude --dry-run and --dry-mode, and each
+other. The config root is $MYSTERY_CONFIG_ROOT, or the repo when unset.
+Environment is read from the shell, then .env.images.local, then
+.env.local in the config root. AI_OPENROUTER_TIMEOUT_MS sets the timeout
+(default 120000).
+`;
+
 export function parseGenerateImageArgs(argv, env = process.env) {
   const options = {
     blueprintPath: "",
@@ -197,7 +241,7 @@ export function parseGenerateImageArgs(argv, env = process.env) {
       continue;
     }
 
-    throw new Error(`Unknown option: ${token}`);
+    throw new Error(`Unknown option: ${token} (see --help)`);
   }
 
   if (options.importImages && !options.importDir) {
@@ -998,8 +1042,13 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
 }
 
 async function main() {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(IMAGE_USAGE);
+    return;
+  }
   const env = await loadImageGenerationEnv();
-  const options = parseGenerateImageArgs(process.argv.slice(2), env);
+  const options = parseGenerateImageArgs(argv, env);
   const output = await runImageGeneration(options, { env });
   console.log(JSON.stringify(output, null, 2));
 }

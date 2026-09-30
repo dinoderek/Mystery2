@@ -4,7 +4,8 @@
 // and deterministically. It proves the pieces a real playtest relies on: the
 // UI's parser decides what each line does, rejected lines cost no turn, free
 // text in accuse mode becomes reasoning, the loop stops when the case ends,
-// and the run folder records it all.
+// the run folder records it all, and a recorded game replays until the game
+// no longer matches the recording.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -147,12 +148,110 @@ describe('playtest loop', () => {
 		expect(summary.clues_found).toBeGreaterThan(0);
 		expect(summary.clues_total).toBeGreaterThanOrEqual(summary.clues_found);
 
-		expect(JSON.parse(fs.readFileSync(path.join(dir, 'script.json'), 'utf8')).inputs).toEqual(
-			INPUTS.slice(0, 12)
-		);
+		const script = JSON.parse(fs.readFileSync(path.join(dir, 'script.json'), 'utf8'));
+		expect(script.inputs).toEqual(INPUTS.slice(0, 12));
+		expect(script.checkpoints).toHaveLength(12);
+		expect(script.checkpoints[0]).toMatchObject({ mode: 'explore', talk_character: null });
 		expect(fs.readFileSync(path.join(dir, 'steps.jsonl'), 'utf8').trim().split('\n')).toHaveLength(12);
 		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
 		expect(transcript).toContain('**> talk to alice**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');
+	});
+
+	it('replays a recorded game, and stops where the game no longer matches', async () => {
+		const original = await playGame({
+			api: await signIn(BASE_URL, 'playtest-replay-original'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: scriptedInvestigator(INPUTS)
+		});
+
+		const replayer = scriptedInvestigator(original.script, {
+			checkpoints: original.checkpoints,
+			end: original.endCheckpoint
+		});
+		const replay = await playGame({
+			api: await signIn(BASE_URL, 'playtest-replay-same'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: replayer
+		});
+		expect(replay).toMatchObject({ stopReason: 'ended', result: 'win', divergence: null });
+		expect(replay.script).toEqual(original.script);
+		expect(replay.checkpoints).toEqual(original.checkpoints);
+		expect(replay.endCheckpoint).toEqual(original.endCheckpoint);
+		expect(replayer.clueDrift).toBeNull();
+
+		// As if the recorded game had been talking to Bob, not Alice, before `bye`.
+		const byeIndex = original.script.indexOf('bye');
+		const tampered = original.checkpoints.map((checkpoint: Record<string, unknown>, index: number) =>
+			index === byeIndex ? { ...checkpoint, talk_character: 'char-bob' } : checkpoint
+		);
+		const diverged = await playGame({
+			api: await signIn(BASE_URL, 'playtest-replay-diverged'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: scriptedInvestigator(original.script, { checkpoints: tampered })
+		});
+		expect(diverged.stopReason).toBe('diverged');
+		expect(diverged.script).toEqual(original.script.slice(0, byeIndex));
+		expect(diverged.divergence).toEqual({
+			step: byeIndex + 1,
+			input: 'bye',
+			differences: { talk_character: { expected: 'char-bob', actual: 'char-alice' } }
+		});
+
+		// The game is settled while the script has more to say...
+		const endedEarly = await playGame({
+			api: await signIn(BASE_URL, 'playtest-replay-ended-early'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: scriptedInvestigator([...original.script, 'Bob helped her.'], {
+				checkpoints: [...original.checkpoints, { ...original.endCheckpoint, mode: 'accuse' }]
+			})
+		});
+		expect(endedEarly).toMatchObject({ stopReason: 'diverged', result: 'win' });
+		expect(endedEarly.divergence).toEqual({
+			step: original.script.length + 1,
+			input: 'Bob helped her.',
+			differences: { mode: { expected: 'accuse', actual: 'ended' } }
+		});
+
+		// ...or the script runs out before the game is settled.
+		const accusing = original.script.length - 1;
+		const unsettled = await playGame({
+			api: await signIn(BASE_URL, 'playtest-replay-unsettled'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: scriptedInvestigator(original.script.slice(0, accusing), {
+				checkpoints: original.checkpoints.slice(0, accusing),
+				end: original.endCheckpoint
+			})
+		});
+		expect(unsettled.stopReason).toBe('diverged');
+		expect(unsettled.divergence).toEqual({
+			step: accusing + 1,
+			input: null,
+			differences: { mode: { expected: 'ended', actual: 'accuse' } }
+		});
+
+		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-'));
+		const dir = path.join(scratch, 'game-1');
+		const summary = writeGameFolder({
+			dir,
+			game: diverged,
+			blueprint: MOCK_BLUEPRINT,
+			persona: 'scripted',
+			narratorModel: 'mock',
+			investigatorModel: 'replay',
+			callLogFile: null,
+			wallMs: 1000,
+			replay: { of: 'runs/x/game-1/script.json', clueDrift: null }
+		});
+		expect(summary).toMatchObject({
+			stop_reason: 'diverged',
+			replay_of: 'runs/x/game-1/script.json',
+			divergence: diverged.divergence
+		});
+		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
+		expect(transcript).toContain('Replay of `runs/x/game-1/script.json`.');
+		expect(transcript).toContain(
+			`- Diverged: before step ${byeIndex + 1} (\`bye\`): talk_character was "char-bob", now "char-alice"`
+		);
 	});
 });

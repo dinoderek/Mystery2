@@ -2,6 +2,7 @@
 // Playtest harness — entrypoint.
 //
 //   npm run eval:playtest -- --blueprint the-missing-heartwood [options]
+//   npm run eval:playtest -- --replay <run>/game-1/script.json [options]
 //
 // Starts the game against a throwaway database, then plays whole games with an
 // AI investigator (a `claude` call per turn, playing a persona) while the game
@@ -9,15 +10,23 @@
 // transcript, the investigator's inputs as a script for replay, every step and
 // every narrator call. See evaluation/playtest/README.md.
 //
+// With --replay, the inputs come from a recorded game's script.json instead,
+// with no investigator calls, so a narrator or prompt change can be compared on
+// the same inputs. The replay stops where the game no longer matches the
+// recording (another place, mode, or person to talk to) and records where.
+//
 // Options:
 //   --blueprint <x>           a blueprint id, file name, title, or path to a JSON file
-//   --persona <name>          a file in personas/ (default: detective)
+//                             (with --replay: default, the script's blueprint)
+//   --replay <script.json>    replay a recorded game's inputs
+//   --persona <name>          a file in personas/ (default: detective; not with --replay)
 //   --games <n>               games to play (default: 1)
 //   --concurrency <n>         games at once (default: 2)
-//   --max-steps <n>           investigator inputs per game before giving up (default: 60)
+//   --max-steps <n>           investigator inputs per game before giving up
+//                             (default: 60; with --replay, the whole script)
 //   --narrator <claude|mock>  the game's narrator (default: claude)
 //   --narrator-model <m>      default: sonnet
-//   --investigator-model <m>  default: sonnet
+//   --investigator-model <m>  default: sonnet; not with --replay
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
 //
@@ -33,9 +42,10 @@ import Database from "better-sqlite3";
 import { TEST_DATABASE, resolveDatabaseFile } from "../../lib/database-target.mjs";
 import { startTestServer } from "../../scripts/lib/test-server.mjs";
 import { signIn } from "./lib/api.mjs";
-import { listPersonas, modelInvestigator } from "./lib/investigator.mjs";
+import { listPersonas, modelInvestigator, scriptedInvestigator } from "./lib/investigator.mjs";
 import { writeGameFolder } from "./lib/output.mjs";
 import { DEFAULT_MAX_STEPS, playGame } from "./lib/play.mjs";
+import { loadScript } from "./lib/replay.mjs";
 
 const REPO_ROOT = process.cwd();
 const REPO_BLUEPRINTS = path.join(REPO_ROOT, "blueprints");
@@ -43,10 +53,11 @@ const REPO_BLUEPRINTS = path.join(REPO_ROOT, "blueprints");
 function parseArgs(argv) {
   const args = {
     blueprint: null,
+    replay: null,
     persona: "detective",
     games: 1,
     concurrency: 2,
-    maxSteps: DEFAULT_MAX_STEPS,
+    maxSteps: null,
     narrator: "claude",
     narratorModel: "sonnet",
     investigatorModel: "sonnet",
@@ -54,12 +65,14 @@ function parseArgs(argv) {
     port: null,
   };
   const numeric = new Set(["games", "concurrency", "maxSteps", "port"]);
+  const given = new Set();
 
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     if (!flag.startsWith("--")) usage(`Unexpected argument "${flag}"`);
     const key = flag.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
     if (!(key in args)) usage(`Unknown option ${flag}`);
+    given.add(key);
     const value = argv[index + 1];
     if (value === undefined) usage(`${flag} needs a value`);
     index += 1;
@@ -72,14 +85,24 @@ function parseArgs(argv) {
     }
   }
 
-  if (!args.blueprint) usage("--blueprint is required");
   if (args.narrator !== "claude" && args.narrator !== "mock") {
     usage(`--narrator must be claude or mock`);
   }
+  if (args.replay) {
+    for (const key of ["persona", "investigatorModel"]) {
+      if (given.has(key)) usage(`--replay takes its inputs from the script; drop --${kebab(key)}`);
+    }
+    return args;
+  }
+  if (!args.blueprint) usage("--blueprint or --replay is required");
   if (!listPersonas().includes(args.persona)) {
     usage(`Unknown persona "${args.persona}". Known: ${listPersonas().join(", ")}`);
   }
   return args;
+}
+
+function kebab(key) {
+  return key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
 function usage(message) {
@@ -111,7 +134,12 @@ function findBlueprint(query) {
       return { file, blueprint };
     }
   }
-  usage(`No blueprint matches "${query}" (looked for a file, and in ${REPO_BLUEPRINTS}).`);
+  usage(
+    `No blueprint matches "${query}" (looked for a file, and in ${REPO_BLUEPRINTS}).` +
+      (args.replay && !args.blueprint
+        ? " A script played on a blueprint outside the repo needs --blueprint <path>."
+        : ""),
+  );
 }
 
 function freePort() {
@@ -147,11 +175,26 @@ async function mapWithConcurrency(items, limit, fn) {
   return results;
 }
 
+function readScript(file) {
+  try {
+    return loadScript(file);
+  } catch (error) {
+    usage(`Cannot replay ${file}: ${error.message}`);
+  }
+}
+
 const args = parseArgs(process.argv.slice(2));
-const { file: blueprintFile, blueprint } = findBlueprint(args.blueprint);
+const replayFile = args.replay ? path.resolve(args.replay) : null;
+const script = replayFile ? readScript(replayFile) : null;
+const { file: blueprintFile, blueprint } = findBlueprint(args.blueprint ?? script.blueprintId);
+if (script && blueprint.id !== script.blueprintId) {
+  usage(`The script was played on "${script.blueprintId}", not "${blueprint.id}".`);
+}
+const persona = script ? script.persona : args.persona;
+const investigatorModel = script ? "replay" : args.investigatorModel;
 const runDir = path.join(
   args.out,
-  `${timestampSlug()}-${slug(blueprint.metadata.title)}-${args.persona}`,
+  `${timestampSlug()}-${slug(blueprint.metadata.title)}-${script ? "replay-" : ""}${slug(persona)}`,
 );
 const callLogFile = path.join(runDir, "ai-calls.all.jsonl");
 const narratorModel = args.narrator === "mock" ? "mock" : args.narratorModel;
@@ -171,23 +214,33 @@ const narratorEnv = args.narrator === "mock"
     AI_CLAUDE_CLI_TIMEOUT_MS: "90000",
   };
 
-console.log(`Playtest: ${blueprint.metadata.title} as "${args.persona}", ${args.games} game(s)`);
-console.log(`Narrator: ${narratorModel}; investigator: ${args.investigatorModel}`);
+console.log(`Playtest: ${blueprint.metadata.title} as "${persona}", ${args.games} game(s)`);
+console.log(
+  script
+    ? `Narrator: ${narratorModel}; replaying ${script.inputs.length} inputs from ${path.relative(REPO_ROOT, replayFile)}`
+    : `Narrator: ${narratorModel}; investigator: ${investigatorModel}`,
+);
+if (script && !script.checkpoints) {
+  console.log("Warning: the script has no checkpoints, so the replay cannot tell when the game diverges.");
+}
 console.log(`Run folder: ${path.relative(REPO_ROOT, runDir)}`);
 
 async function playOne(number) {
   const started = Date.now();
-  const api = await signIn(server.url, `playtest-${args.persona}-${number}`);
-  const investigator = modelInvestigator({
-    persona: args.persona,
-    model: args.investigatorModel,
-    binary: process.env.CLAUDE_CLI_PATH?.trim() || "claude",
-  });
+  const api = await signIn(server.url, `playtest-${slug(persona)}-${number}`);
+  const investigator = script
+    ? scriptedInvestigator(script.inputs, { checkpoints: script.checkpoints, end: script.end })
+    : modelInvestigator({
+      persona,
+      model: investigatorModel,
+      binary: process.env.CLAUDE_CLI_PATH?.trim() || "claude",
+    });
   const game = await playGame({
     api,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title },
     investigator,
-    maxSteps: args.maxSteps,
+    // One step past the script, to compare where the game ended up.
+    maxSteps: args.maxSteps ?? (script ? script.inputs.length + 1 : DEFAULT_MAX_STEPS),
     onStep: (step) =>
       console.log(
         `[game ${number}] step ${step.step} (${step.mode_before}, ${step.time_before} left) > ${step.input}`,
@@ -197,11 +250,14 @@ async function playOne(number) {
     dir: path.join(runDir, `game-${number}`),
     game,
     blueprint,
-    persona: args.persona,
+    persona,
     narratorModel,
-    investigatorModel: args.investigatorModel,
+    investigatorModel,
     callLogFile,
     wallMs: Date.now() - started,
+    replay: script
+      ? { of: path.relative(REPO_ROOT, replayFile), clueDrift: investigator.clueDrift }
+      : null,
   });
   console.log(
     `[game ${number}] ${summary.outcome ?? summary.stop_reason}: ${summary.clues_found}/${summary.clues_total} clues, ${summary.turns_used}/${summary.time_budget} turns`,

@@ -2,7 +2,8 @@
 //
 //   transcript.md   the game as read: inputs with the investigator's plan,
 //                   narration, the game's hints and errors, then a summary
-//   script.json     the investigator's inputs in order, for replay
+//   script.json     the investigator's inputs in order, each with a checkpoint
+//                   of the game before it, for replay (./replay.mjs)
 //   steps.jsonl     one line per step: view shown, input, action, response
 //   ai-calls.jsonl  this game's narrator calls, when the server logged them
 //   summary.json    outcome and counts
@@ -36,7 +37,16 @@ function sum(values) {
   return values.reduce((total, value) => total + (typeof value === "number" ? value : 0), 0);
 }
 
-export function summarizeGame({ game, blueprint, persona, narratorModel, investigatorModel, calls, wallMs }) {
+export function summarizeGame({
+  game,
+  blueprint,
+  persona,
+  narratorModel,
+  investigatorModel,
+  calls,
+  wallMs,
+  replay = null,
+}) {
   const found = game.finalState.discovered_clues ?? [];
   return {
     game_id: game.gameId,
@@ -47,6 +57,9 @@ export function summarizeGame({ game, blueprint, persona, narratorModel, investi
     outcome: game.result ?? null,
     stop_reason: game.stopReason,
     error: game.error ?? null,
+    replay_of: replay?.of ?? null,
+    divergence: game.divergence ?? null,
+    clue_drift: replay?.clueDrift ?? null,
     final_mode: game.finalState.mode,
     steps: game.steps.length,
     turns_used: blueprint.metadata.time_budget - game.finalState.time_remaining,
@@ -70,6 +83,7 @@ function renderTranscript(game, summary) {
     `# ${summary.blueprint.title}: ${summary.persona}`,
     "",
     `Game \`${summary.game_id}\`. Narrator ${summary.narrator_model}, investigator ${summary.investigator_model}.`,
+    ...(summary.replay_of ? ["", `Replay of \`${summary.replay_of}\`.`] : []),
     "",
   ];
 
@@ -89,6 +103,10 @@ function renderTranscript(game, summary) {
     "",
     `- Outcome: ${summary.outcome ?? "none"} (stopped: ${summary.stop_reason})`,
     ...(summary.error ? [`- Error: ${summary.error}`] : []),
+    ...(summary.divergence ? [`- Diverged: ${describeDivergence(summary.divergence)}`] : []),
+    ...(summary.clue_drift
+      ? [`- Clues first differed before step ${summary.clue_drift.step} (\`${summary.clue_drift.input}\`)`]
+      : []),
     `- Turns used: ${summary.turns_used} of ${summary.time_budget}; steps: ${summary.steps}` +
       ` (${summary.parser_rejections} not understood by the parser, ${summary.failed_calls} failed calls)`,
     `- Clues found: ${summary.clues_found} of ${summary.clues_total}`,
@@ -99,12 +117,35 @@ function renderTranscript(game, summary) {
   return lines.join("\n");
 }
 
+function describeDivergence({ step, input, differences }) {
+  const fields = Object.entries(differences)
+    .map(([field, { expected, actual }]) =>
+      `${field} was ${JSON.stringify(expected)}, now ${JSON.stringify(actual)}`
+    )
+    .join("; ");
+  const where = input === null ? "after the last input" : `before step ${step} (\`${input}\`)`;
+  return `${where}: ${fields}`;
+}
+
 function formatCost(value) {
   return value === null ? "n/a" : `$${value.toFixed(3)}`;
 }
 
-/** Writes one game's folder and returns its summary. */
-export function writeGameFolder({ dir, game, blueprint, persona, narratorModel, investigatorModel, callLogFile, wallMs }) {
+/**
+ * Writes one game's folder and returns its summary. `replay` is
+ * { of: <script path>, clueDrift } when the game replayed a script.
+ */
+export function writeGameFolder({
+  dir,
+  game,
+  blueprint,
+  persona,
+  narratorModel,
+  investigatorModel,
+  callLogFile,
+  wallMs,
+  replay = null,
+}) {
   fs.mkdirSync(dir, { recursive: true });
   const calls = readCallLog(callLogFile, game.gameId);
   const summary = summarizeGame({
@@ -115,12 +156,23 @@ export function writeGameFolder({ dir, game, blueprint, persona, narratorModel, 
     investigatorModel,
     calls,
     wallMs,
+    replay,
   });
 
   fs.writeFileSync(path.join(dir, "transcript.md"), renderTranscript(game, summary));
   fs.writeFileSync(
     path.join(dir, "script.json"),
-    `${JSON.stringify({ blueprint_id: blueprint.id, persona, inputs: game.script }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        blueprint_id: blueprint.id,
+        persona,
+        inputs: game.script,
+        checkpoints: game.checkpoints,
+        end: game.endCheckpoint,
+      },
+      null,
+      2,
+    )}\n`,
   );
   fs.writeFileSync(
     path.join(dir, "steps.jsonl"),

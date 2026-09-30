@@ -40,7 +40,7 @@ describe("extractRefs", () => {
 
   it("drops a line suffix and an anchor", () => {
     const md = "`docs/game.md:12` `docs/game.md#talking`";
-    expect(extractRefs(md).map((r) => r.value)).toEqual(["docs/game.md", "docs/game.md"]);
+    expect(extractRefs(md).map((r: { value: string }) => r.value)).toEqual(["docs/game.md", "docs/game.md"]);
   });
 });
 

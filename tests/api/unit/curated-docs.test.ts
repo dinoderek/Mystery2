@@ -49,7 +49,7 @@ describe("parsePins", () => {
       `> Source git blob hash: \`${SHA}\``,
       `> - \`docs/other.md\` — \`${"c".repeat(40)}\``,
     ].join("\n");
-    expect(parsePins(header).map((p) => p.pin)).toEqual(["docs/other.md", "docs/game.md"]);
+    expect(parsePins(header).map((p: { pin: string }) => p.pin)).toEqual(["docs/other.md", "docs/game.md"]);
   });
 });
 

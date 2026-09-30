@@ -123,7 +123,7 @@ describe("game-search endpoint", () => {
     const searchData = await searchRes.json();
     expect(searchData.mode).toBe("accuse");
     expect(searchData.time_remaining).toBe(0);
-    expect(searchData.follow_up_prompt).toBeTruthy();
+    expect(searchData).not.toHaveProperty("follow_up_prompt");
     expect(searchData.narration_parts).toHaveLength(2);
     expect(
       searchData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),

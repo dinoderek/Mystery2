@@ -6,8 +6,7 @@
 // run it through the UI's parser, and either call the matching endpoint or
 // show the parser's hint (no turn spent), as the web store does. The game's
 // state is re-read after every call, so the next view is what the server says,
-// not what the runner assumes. What the store does not show a player (a
-// response's `follow_up_prompt`) stays out of the view, in steps.jsonl only.
+// not what the runner assumes.
 //
 // Each input is kept with a checkpoint of the game just before it, and the
 // game's end with one more, so a replay of the script can tell when the game

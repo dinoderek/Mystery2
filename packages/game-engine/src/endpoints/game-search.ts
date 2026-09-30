@@ -308,7 +308,6 @@ export async function handle(
 
     const searchParts = [createNarrationPart(searchOutput.narration, NARRATOR_SPEAKER)];
     let combinedParts = [...searchParts];
-    let followUpPrompt: string | null = null;
     let forcedParts: typeof searchParts = [];
     let forcedModel: string | null = null;
 
@@ -329,7 +328,6 @@ export async function handle(
         log,
       });
       if (!result.ok) return result.response;
-      followUpPrompt = result.follow_up_prompt;
       forcedParts = result.narration_parts;
       forcedModel = result.model;
       combinedParts = [...searchParts, ...forcedParts];
@@ -407,7 +405,6 @@ export async function handle(
           location_name: currentLocation.name,
         },
         narration_parts: forcedParts,
-        follow_up_prompt: followUpPrompt,
         model: forcedModel,
         time_before: session.time_remaining,
         time_after: newTime,
@@ -439,7 +436,6 @@ export async function handle(
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character: null,
-        follow_up_prompt: followUpPrompt,
         // Clue(s) revealed by this action, for the in-game notebook to merge
         // (rich records: thread membership, origin, off-script flag).
         revealed_clues: discoveredThisTurn,

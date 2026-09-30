@@ -31,7 +31,6 @@ export async function generateForcedAccusationStartNarration(input: {
 }): Promise<{
   narration: string;
   narration_parts: NarrationPart[];
-  follow_up_prompt: string;
   model: string;
 }> {
   const { prompt, context: aiContext } = await buildRoleRequest({
@@ -89,7 +88,6 @@ export async function tryGenerateForcedEndgame(input: {
 }): Promise<
   | {
     ok: true;
-    follow_up_prompt: string;
     narration_parts: NarrationPart[];
     model: string;
   }
@@ -109,7 +107,6 @@ export async function tryGenerateForcedEndgame(input: {
     });
     return {
       ok: true,
-      follow_up_prompt: output.follow_up_prompt,
       narration_parts: output.narration_parts,
       model: output.model,
     };
@@ -151,7 +148,6 @@ export async function insertForcedEndgameEvent(
     action_sequence: number;
     payload: Record<string, unknown>;
     narration_parts: NarrationPart[];
-    follow_up_prompt: string | null;
     model?: string | null;
     time_before: number;
     time_after: number;
@@ -167,7 +163,6 @@ export async function insertForcedEndgameEvent(
       role: "accusation_start",
       ...input.payload,
       trigger: "timeout",
-      follow_up_prompt: input.follow_up_prompt,
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: input.narration_parts,

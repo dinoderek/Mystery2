@@ -15,7 +15,7 @@ Defines the reasoning-first accusation lifecycle used by `game-accuse`, includin
 1. Explore mode, no `player_reasoning`:
    - Runs `accusation_start`.
    - Transitions session to `mode='accuse'`.
-   - Returns narration + `follow_up_prompt`.
+   - Returns narration that ends by asking for the accusation.
 2. Explore mode, with `player_reasoning`:
    - Runs first `accusation_judge` round immediately.
    - Judge returns `continue|win|lose` directly.
@@ -43,8 +43,10 @@ this from making the game stricter.
   Substance beats wording, but a name-only lucky guess is not a win.
 - Wrong or under-supported accusations are rejected with encouragement:
   - `accusation_resolution='continue'`
-  - a warm, retry-inviting `follow_up_prompt` that hints at what KIND of fact
-    is missing without revealing the answer.
+  - warm narration that hints at what KIND of fact is missing without revealing
+    the answer, and ends with one short question inviting another try. The
+    player is still accusing, so the question is about what they know or can
+    reason out, never about somewhere to look.
 - From round 3 onward a still-failing accusation resolves
   `accusation_resolution='lose'` with a gentle reveal, so a session always
   terminates.
@@ -52,7 +54,7 @@ this from making the game stricter.
 - The mock provider mirrors these semantics deterministically (wrong suspect →
   `continue` until round 3, then `lose`; true culprit → `win` from round 1). It
   does not re-implement the evidence check, but it does read `path_coverage` to
-  point its rejection `follow_up_prompt` at an unfinished solution path.
+  point its rejection's closing question at an unfinished solution path.
 
 ## Timeout Forced Endgame
 

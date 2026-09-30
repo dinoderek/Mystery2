@@ -453,7 +453,6 @@ test.describe('Command Input', () => {
           json: createAccuseResponse({
             narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
             mode: 'accuse',
-            follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
             time_remaining: 8,
           }),
@@ -465,7 +464,6 @@ test.describe('Command Input', () => {
       await route.fulfill({
         json: createAccuseResponse({
           narration_parts: narrationResponse('Case closed.', narratorSpeaker).narration_parts,
-          follow_up_prompt: null,
           time_remaining: 8,
         }),
       });
@@ -505,7 +503,6 @@ test.describe('Command Input', () => {
           json: createAccuseResponse({
             narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
             mode: 'accuse',
-            follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
             time_remaining: 8,
           }),
@@ -517,7 +514,6 @@ test.describe('Command Input', () => {
         json: createAccuseResponse({
           narration_parts: narrationResponse('The accusation fails.', narratorSpeaker).narration_parts,
           result: 'lose',
-          follow_up_prompt: null,
           time_remaining: 8,
         }),
       });
@@ -581,7 +577,6 @@ test.describe('Command Input', () => {
           mode: 'accuse',
           time_remaining: 0,
           current_talk_character: null,
-          follow_up_prompt: 'Why do you think Mayor Fox did it?',
         }),
       });
     });
@@ -591,7 +586,6 @@ test.describe('Command Input', () => {
       await route.fulfill({
         json: createAccuseResponse({
           narration_parts: narrationResponse('Your reasoning is noted.', narratorSpeaker).narration_parts,
-          follow_up_prompt: null,
           time_remaining: 0,
         }),
       });
@@ -663,7 +657,6 @@ test.describe('Command Input', () => {
           json: createAccuseResponse({
             narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
             mode: 'accuse',
-            follow_up_prompt: 'Why do you think Mayor Fox did it?',
             result: null,
             time_remaining: 8,
           }),
@@ -676,7 +669,6 @@ test.describe('Command Input', () => {
           json: createAccuseResponse({
             narration_parts: narrationResponse('I need stronger evidence. Keep explaining.', narratorSpeaker).narration_parts,
             mode: 'accuse',
-            follow_up_prompt: 'What clue ties the suspect to the scene?',
             result: null,
             time_remaining: 8,
           }),
@@ -687,7 +679,6 @@ test.describe('Command Input', () => {
       await route.fulfill({
         json: createAccuseResponse({
           narration_parts: narrationResponse('Final verdict reached.', narratorSpeaker).narration_parts,
-          follow_up_prompt: null,
           time_remaining: 8,
         }),
       });

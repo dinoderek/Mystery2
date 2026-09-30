@@ -70,7 +70,7 @@ describe("game-talk endpoint", () => {
     const talkData = await talkRes.json();
     expect(talkData.mode).toBe("accuse");
     expect(talkData.time_remaining).toBe(0);
-    expect(talkData.follow_up_prompt).toBeTruthy();
+    expect(talkData).not.toHaveProperty("follow_up_prompt");
     expect(talkData.narration_parts).toHaveLength(2);
     expect(
       talkData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),

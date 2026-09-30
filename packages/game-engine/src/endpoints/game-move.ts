@@ -144,7 +144,6 @@ export async function handle(
     ];
 
     let combinedParts = [...moveParts];
-    let followUpPrompt: string | null = null;
     let forcedParts: typeof moveParts = [];
     let forcedModel: string | null = null;
 
@@ -167,7 +166,6 @@ export async function handle(
         log,
       });
       if (!result.ok) return result.response;
-      followUpPrompt = result.follow_up_prompt;
       forcedParts = result.narration_parts;
       forcedModel = result.model;
       combinedParts = [...moveParts, ...forcedParts];
@@ -228,7 +226,6 @@ export async function handle(
           location_image_id: destLoc.location_image_id ?? null,
         },
         narration_parts: forcedParts,
-        follow_up_prompt: followUpPrompt,
         model: forcedModel,
         time_before: session.time_remaining,
         time_after: newTime,
@@ -254,7 +251,6 @@ export async function handle(
         time_remaining: newTime,
         mode: nextMode,
         current_talk_character: null,
-        follow_up_prompt: followUpPrompt,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

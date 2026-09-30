@@ -42,7 +42,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseRoundOneRes.status).toBe(200);
     const accuseRoundOneData = await accuseRoundOneRes.json();
     expect(accuseRoundOneData.mode).toBe("accuse");
-    expect(accuseRoundOneData.follow_up_prompt).toBeTruthy();
+    expect(accuseRoundOneData).not.toHaveProperty("follow_up_prompt");
     expect(accuseRoundOneData.result ?? null).toBeNull();
     expect(accuseRoundOneData.narration_parts[0].speaker.kind).toBe("narrator");
 
@@ -95,7 +95,7 @@ describe("game-accuse endpoint", () => {
     const accuseStartData = await accuseStartRes.json();
     expect(accuseStartData.mode).toBe("accuse");
     expect(accuseStartData.result ?? null).toBeNull();
-    expect(accuseStartData.follow_up_prompt).toBeTruthy();
+    expect(accuseStartData).not.toHaveProperty("follow_up_prompt");
     expect(accuseStartData.narration_parts[0].speaker.kind).toBe("narrator");
 
     const roundOneRes = await fetch(`${API_URL}/game-accuse`, {
@@ -165,7 +165,7 @@ describe("game-accuse endpoint", () => {
     expect(accuseRes.status).toBe(200);
     const accuseData = await accuseRes.json();
     expect(accuseData.mode).toBe("accuse");
-    expect(accuseData.follow_up_prompt).toBeTruthy();
+    expect(accuseData).not.toHaveProperty("follow_up_prompt");
     expect(accuseData.narration_parts[0].speaker.kind).toBe("narrator");
   });
 
@@ -193,7 +193,7 @@ describe("game-accuse endpoint", () => {
       const roundData = await roundRes.json();
       expect(roundData.mode).toBe("accuse");
       expect(roundData.result).toBeNull();
-      expect(roundData.follow_up_prompt).toBeTruthy();
+      expect(roundData).not.toHaveProperty("follow_up_prompt");
     }
 
     // Round 3: a still-wrong accusation finally resolves to lose.

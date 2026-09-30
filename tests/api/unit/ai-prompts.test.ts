@@ -92,10 +92,12 @@ describe("ai-prompts", () => {
     expect(styled).toContain("where the two pull apart, the reading level wins");
   });
 
-  it("tells the accusation roles that follow_up_prompt is player-facing too", async () => {
+  it("has the accusation roles ask their question in the narration", async () => {
+    // The player sees only the narration, so the question belongs there.
     for (const role of ["accusation_start", "accusation_judge"] as const) {
       const template = await loadPromptTemplate(role, 10);
-      expect(template).toContain('"follow_up_prompt" is shown to the player as well');
+      expect(template).toContain("one short, direct question");
+      expect(template).not.toContain("follow_up_prompt");
     }
   });
 

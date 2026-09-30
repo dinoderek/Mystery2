@@ -53,13 +53,11 @@ export interface SearchOutput {
 
 export interface AccusationStartOutput {
   narration: string;
-  follow_up_prompt: string;
 }
 
 export interface AccusationJudgeOutput {
   narration: string;
   accusation_resolution: AccusationResolution;
-  follow_up_prompt: string | null;
 }
 
 // Each role's output contract is one Zod schema doing two jobs:
@@ -170,7 +168,6 @@ const SearchOutputSchema = z.preprocess(
 
 const AccusationStartOutputSchema = roleObject({
   narration: nonEmptyString("narration"),
-  follow_up_prompt: nonEmptyString("follow_up_prompt"),
 });
 
 const ACCUSATION_RESOLUTION_MESSAGE =
@@ -184,18 +181,6 @@ const AccusationJudgeOutputSchema = roleObject({
       errorMap: () => ({ message: ACCUSATION_RESOLUTION_MESSAGE }),
     }),
   ),
-  follow_up_prompt: nullableNonEmptyString("follow_up_prompt"),
-}).superRefine((output, context) => {
-  if (
-    output.accusation_resolution === "continue" &&
-    output.follow_up_prompt === null
-  ) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["follow_up_prompt"],
-      message: `"follow_up_prompt" is required when resolution is continue`,
-    });
-  }
 });
 
 const ROLE_OUTPUT_SCHEMAS = {

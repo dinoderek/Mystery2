@@ -111,7 +111,7 @@ describe("game-move endpoint", () => {
     const moveData = await moveRes.json();
     expect(moveData.mode).toBe("accuse");
     expect(moveData.time_remaining).toBe(0);
-    expect(moveData.follow_up_prompt).toBeTruthy();
+    expect(moveData).not.toHaveProperty("follow_up_prompt");
     expect(moveData.narration_parts).toHaveLength(2);
     expect(
       moveData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),

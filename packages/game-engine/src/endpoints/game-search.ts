@@ -72,7 +72,16 @@ function collectAllLocationClueIds(
   return ids;
 }
 
-function collectRevealedClueIds(
+/**
+ * The clue ids earlier searches at this location revealed, in order. Every
+ * search event records `revealed_clue_ids` and `revealed_clue_id`, even when it
+ * found nothing, and those records are the answer. Only when no search at the
+ * location records them (events from before they existed) are the location's
+ * first clues assumed found, one per search. A search that found nothing must
+ * not count as having found one: that credited the next clue without
+ * narration, and past its `requires` gate.
+ */
+export function collectRevealedClueIds(
   historyRows: Array<{
     event_type: string;
     payload?: Record<string, unknown> | null;
@@ -111,13 +120,16 @@ function collectRevealedClueIds(
     }
   }
 
-  if (explicitRevealedIds.length > 0) {
+  const recordsReveals = locationSearchEvents.some((event) =>
+    event.payload != null &&
+    ("revealed_clue_ids" in event.payload || "revealed_clue_id" in event.payload)
+  );
+  if (recordsReveals || explicitRevealedIds.length > 0) {
     return explicitRevealedIds;
   }
 
-  // Fallback: infer from event count (location-level clues only, for legacy compat)
-  const locationLevelIds = allCanonicalClueIds.slice(0, locationSearchEvents.length);
-  return locationLevelIds;
+  // Legacy events, which do not record reveals: infer from their count.
+  return allCanonicalClueIds.slice(0, locationSearchEvents.length);
 }
 
 export async function handle(

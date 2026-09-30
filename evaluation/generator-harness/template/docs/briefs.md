@@ -1,13 +1,11 @@
 # Story brief reference
 
 > **CURATED EXTRACT — do not edit casually.**
-> Sources: `packages/blueprint-generator/src/story-brief.ts`, sizing notes from
-> `docs/blueprint-generation-flows.md`
-> Source git blob hashes:
+> Pinned sources:
 > - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
-> - `docs/blueprint-generation-flows.md` — `fa27c0e509f7ab73fe80f56048b73cb78ff35feb`
-> Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
-> If sources change in ways that affect brief interpretation, regenerate this file.
+> - `docs/blueprint-generation-flows.md#story-brief` — `968cacb353c26545be28e208a7bd9d95c929b304`
+> Verifier: `npm run check:curated-docs`
+> A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 
 Your input arrives as a validated `story_brief` JSON object in `./brief.json`
 under the `story_brief` key. Every field below is what you should read

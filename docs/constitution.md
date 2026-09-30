@@ -25,8 +25,8 @@ each is exercised.
 ## III. Run the gate
 
 A change is finished when `npm test` passes. Documentation-only changes still
-validate commands, paths and links, and pass the curated-docs check when they
-touch a source it tracks.
+pass the gate's doc checks (`check:curated-docs`, `check:doc-refs`) and have
+their commands checked by hand.
 
 ## IV. Keep the architecture small
 
@@ -59,4 +59,4 @@ the only way to explain a bad one.
 
 ---
 
-**Version**: 3.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-09-30
+**Version**: 3.0.1 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-09-30

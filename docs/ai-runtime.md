@@ -80,6 +80,7 @@ LLM verifier and no extra network call.
 Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
 
 ## Roles and Prompt Responsibilities
+<!-- extract:roles -->
 
 - `talk_start`
   - Starts conversation tone and character entry
@@ -111,6 +112,7 @@ Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
     (`continue`, with narration that ends in one retry-inviting question); from
     round 3 onward a still-failing accusation resolves `lose` with a gentle
     reveal.
+<!-- /extract:roles -->
 
 ## Why assembly is shared
 
@@ -137,6 +139,7 @@ local CLI replay) is layered on top rather than duplicating the logic.
 asserts the assembled prompt carries the blueprint's age and voice.
 
 ## Narration Style
+<!-- extract:narration-style -->
 
 Every runtime prompt carries a `{{style_guidance}}` slot that
 `loadPromptTemplate` always fills (`buildStyleGuidance` in `ai-prompts.ts`):
@@ -155,8 +158,10 @@ Every runtime prompt carries a `{{style_guidance}}` slot that
   the reading level wins. The generator prompt enforces the same rule at the
   authoring end: `narration_style` may direct tone, mood, and imagery only, and
   must not call for archaic, ornate, technical, or heavily figurative diction.
+<!-- /extract:narration-style -->
 
 ## Context Boundaries
+<!-- extract:context-boundaries -->
 
 - All roles receive shared, player-safe context:
   - `target_age` only
@@ -208,6 +213,7 @@ Every runtime prompt carries a `{{style_guidance}}` slot that
 - Full blueprint context is excluded for all non-judge roles.
 - Only `accusation_judge` context includes the full blueprint.
 - Guardrails are enforced in `assertRoleContextSafety`.
+<!-- /extract:context-boundaries -->
 
 ## Output Contracts
 
@@ -234,6 +240,7 @@ clean shape instead, with every field required. Rules that span fields, such as
 an unintelligible search never costing a turn, are applied by the parser only.
 
 ## Clue discovery and gating
+<!-- extract:clue-gating -->
 
 Discovery is event-sourced. A clue is "discovered" once a `search` or `ask` event
 records its id; `packages/game-engine/src/clue-discovery.ts` is the single place
@@ -286,6 +293,7 @@ only, and the client groups by `origin`. `mapClueToThreads` still exists but is
 deliberately unused by any player-facing path — its labels ("Main solution",
 "Red herring: <payoff>") name the answer, so they may only ever appear after the
 case resolves.
+<!-- /extract:clue-gating -->
 
 ## Failure and Retry Model
 
@@ -351,6 +359,7 @@ For `game-start`:
    notebook can render it. See [game.md](game.md) (Notebook).
 
 For `game-enter` (arrival at the starting location, once per session):
+<!-- extract:game-enter -->
 
 1. Reject unless the session's only event is `start` — the endpoint is valid
    exactly once, right after `game-start`, and the guard is what stops a double
@@ -366,6 +375,7 @@ For `game-enter` (arrival at the starting location, once per session):
 that `readNarrationEvent` reconstructs for real moves — the player confirmed a
 prompt, they did not type a command, and a replayed transcript must not invent
 one.
+<!-- /extract:game-enter -->
 
 For `game-move`:
 

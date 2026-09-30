@@ -406,7 +406,7 @@ Read \`path_coverage\` to gauge how strong their case is:
 - Little found on any path → they are guessing rather than reasoning.
 
 Three rules about this data:
-- \`missing_clue_ids\` exists to help you ASK A BETTER FOLLOW-UP. It is never a
+- \`missing_clue_ids\` exists to help you ASK A BETTER QUESTION. It is never a
   checklist to reject against. A player does not need every clue on a path.
 - These are the clues they can CITE as evidence — not a fence around what they
   are allowed to think. A child who reasons their way to a fact nobody handed
@@ -444,6 +444,7 @@ and the accusation is not accepted.
 - The provided round counts the player's completed reasoning attempts. From
   round 3 onward, if the accusation still fails, return "lose" with a gentle,
   hopeful closing that kindly reveals the truth.
+- On "win" or "lose" the case is over: do not end with a question.
 - Use suspect_elimination_paths to check whether the player ruled out innocent
   suspects, and red_herrings to recognize when they were misled — being misled
   earns an encouraging nudge, not punishment.

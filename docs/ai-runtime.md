@@ -262,7 +262,7 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   - The discovered set constrains the **evidence-chain** win route only. The
     "true account" route and a confession earned by confrontation do not require
     discovered clues, so a child who intuits the answer can still win.
-  - `missing_clue_ids` steers the *follow-up question*; it is explicitly not a
+  - `missing_clue_ids` steers the *closing question*; it is explicitly not a
     checklist to reject against. A player need not hold every clue on a path.
   - The set is what the player may **cite as evidence**, not a fence around what
     they may reason. A correctly deduced fact they were never handed is credited.
@@ -273,9 +273,9 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   clue, and on a sentinel in the player input ("aha"/"i bet") grants the first
   locked clue off-script — so tests exercise both paths deterministically. The
   mock `accusation_judge` keeps its own resolution rule (correct culprit wins
-  from round 1) but reads `path_coverage` to aim its rejection follow-up at an
-  unfinished solution path. Mock narration is also written at the target reading
-  age: it is a fixture no child ever sees, but the runtime eval harness grades
+  from round 1) but reads `path_coverage` to aim its rejection's closing
+  question at an unfinished solution path. Mock narration is also written at the
+  target reading age: it is a fixture no child ever sees, but the runtime eval harness grades
   whatever the provider returns, so adult-register mock text would show up as a
   permanent false failure in the coverage sweep.
 

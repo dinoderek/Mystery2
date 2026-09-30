@@ -212,8 +212,8 @@ function parseRoleOutput<S extends z.ZodTypeAny>(
  *
  * Every field is required here, including the ones the parser defaults: the
  * conversion reads a field that tolerates omission as optional, but the model
- * should always state it. Rules that span fields (a `continue` judgement needs
- * a follow-up prompt) stay with the parser.
+ * should always state it. Rules the schema cannot express (a narration of only
+ * spaces) stay with the parser.
  */
 export function roleOutputJsonSchema(role: AIRoleName): Record<string, unknown> {
   const schema = zodToJsonSchema(ROLE_OUTPUT_SCHEMAS[role], {

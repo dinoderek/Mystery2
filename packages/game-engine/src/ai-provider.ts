@@ -464,7 +464,7 @@ class MockAIProvider implements AIProvider {
           ? "Time is up. You must make your accusation now."
           : "The final accusation begins.";
         return {
-          narration: `[Mock] ${stagePrompt} Tell me who did it, and how you know.`,
+          narration: `[Mock] ${stagePrompt} Who did it, and how do you know?`,
         };
       }
       case "accusation_judge": {
@@ -480,7 +480,7 @@ class MockAIProvider implements AIProvider {
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
           return {
-            narration: "[Mock] I am not sure yet. Name one person, and one clue.",
+            narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
             accusation_resolution: "continue",
           };
         }
@@ -522,10 +522,10 @@ class MockAIProvider implements AIProvider {
               : accusationResolution === "lose"
               ? "[Mock] The case ends here. This time the answer got away."
               : round < 1
-              ? "[Mock] I need one more clue before I can be sure."
+              ? "[Mock] I need one more clue before I can be sure. What else do you know?"
               : unfinishedSolutionPath?.summary
-              ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. Which evidence directly connects this suspect to the event?`
-              : "[Mock] Not yet. Look at your clues again and have another go.",
+              ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. What clue shows it was them?`
+              : "[Mock] Not yet. Look at your clues again. Do you want to have another go?",
           accusation_resolution: accusationResolution,
         };
       }

@@ -142,29 +142,10 @@ npm run generate:blueprint -- \
   --model openai/gpt-4.1-mini
 ```
 
-Key flags:
-
-| Flag | Purpose |
-|------|---------|
-| `--openrouter-api-key <key>` | Explicit key (falls back to `OPENROUTER_API_KEY` env) |
-| `--output <path>` | Write single job to exact file (stdout otherwise) |
-| `--output-file <prefix>` | Write composed filenames `<prefix>.<model>.<brief>.json` |
-| `--parallel` / `--parallelism <n>` | Concurrent jobs |
-
-Repeat `--brief-file` and/or `--model` for multi-job runs (requires
-`--output-file`). Set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to avoid
+Each blueprint is written with a sibling `.verification.json`: the evaluation
+pipeline's mechanical checks, run offline. For a full evaluation run
+`npm run eval`. Set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to stop
 repeating `--model`.
-
-Both the blueprint and a sibling `.verification.json` file are written on
-completion. Verification is a purely structural, offline check that runs the
-shared deterministic checks (schema validity, culprit/location/character/
-red-herring counts vs. the brief, orphan clues, and a satisfiable clue graph)
-against the just-written blueprint — no verifier model and no extra network
-call. The `.verification.json` record reports `passed`, the individual `checks`,
-and any `failed_checks`. Schema or structural-check failures are reported in the
-summary without failing the process. For deeper semantic evaluation
-(brief-alignment, dead-ends, fairness), run the evaluation pipeline (`npm run
-eval`).
 
 ### Export chat packets (no API key needed)
 
@@ -174,14 +155,13 @@ npm run generate:blueprint -- \
   --chat-packet
 ```
 
-Builds the full generation prompt as a Markdown file you can paste into any
-chat UI. No `--model` or API key required. Output defaults to
-`$MYSTERY_CONFIG_ROOT/chat-gen-prompts/` (or `chat-gen-prompts/` under repo
-root). Override with `--output` or `--output-file`.
+Writes the full generation prompt as Markdown to paste into any chat UI.
+
+Every flag, default and file location: `node scripts/generate-blueprint.mjs --help`.
 
 ## Evaluation Pipelines
 
-Three peer evaluation pipelines score different artifacts. Each is driven by npm
+Four evaluation pipelines, each for a different subject. Each is driven by npm
 scripts and documented next to its code. Pass-through flags go after `--`.
 
 | Pipeline | What it evaluates | npm scripts |
@@ -189,12 +169,14 @@ scripts and documented next to its code. Pass-through flags go after `--`.
 | Blueprint | Generated mystery blueprints | `npm run eval` |
 | Trace | Played game-master traces | `npm run eval:trace`, `npm run eval:trace:extract` |
 | Runtime | Live narrator responses to a single action | `npm run eval:runtime`, `npm run eval:runtime:rejudge`, `npm run eval:cases-from-trace` |
+| Playtest | Whole games played by an AI investigator | `npm run eval:playtest` |
 
 Start with [`docs/evaluation-pipeline.md`](docs/evaluation-pipeline.md) for the
 shared design, then the per-pipeline runbooks:
 [`evaluation/README.md`](evaluation/README.md) (blueprint),
 [`evaluation/trace/README.md`](evaluation/trace/README.md) (trace), and
-[`evaluation/runtime/README.md`](evaluation/runtime/README.md) (runtime).
+[`evaluation/runtime/README.md`](evaluation/runtime/README.md) (runtime), and
+[`evaluation/playtest/README.md`](evaluation/playtest/README.md) (playtest).
 
 ```bash
 npm run eval -- --help                       # blueprint eval
@@ -207,55 +189,16 @@ npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a
 
 ## Image Generation
 
-Env file: copy `.env.images.example` to `.env.images.local`.
-
-Supported keys: `OPENROUTER_API_KEY`, optional `OPENROUTER_IMAGE_MODEL`
-(default: `openai/gpt-image-2`), optional `OPENROUTER_IMAGE_ASPECT_RATIO`
-(default: `4:3`).
-
-### Generate images (calls the OpenRouter Images API)
+Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.
 
 ```bash
-npm run generate:images -- \
-  --blueprint-path spring-treats-6yo.json \
-  --model openai/gpt-image-2 \
-  --all
+npm run generate:images -- --blueprint-path spring-treats-6yo.json --all
+npm run generate:images -- --blueprint-path spring-treats-6yo.json --characters <character-id>
+npm run generate:images -- --blueprint-path spring-treats-6yo.json --all --chat-packets  # no key needed
 ```
 
-Key flags:
-
-| Flag | Purpose |
-|------|---------|
-| `--all` | All targets |
-| `--blueprint` | Blueprint-level image only |
-| `--characters "A,B"` / `--character "A"` | Character subset |
-| `--locations "X,Y"` / `--location "X"` | Location subset |
-| `--model <id>` | Override the image model |
-| `--aspect-ratio <ratio>` | Output aspect ratio (default `4:3`; must be supported by the model) |
-| `--output-dir <dir>` | Override output directory |
-| `--dry-mode` | Print the Images API request (base64 redacted) without calling it |
-
-Aspect-ratio support varies by model — `openai/gpt-image-1` accepts only
-`1:1`, `3:2`, `2:3`, and `auto`, so pass `--aspect-ratio 3:2` if you pin it.
-`curl https://openrouter.ai/api/v1/images/models` (public, no auth) lists each
-model's `supported_parameters`.
-
-`--blueprint-path` resolves from `$MYSTERY_CONFIG_ROOT/blueprints/` first, then
-falls back to the literal path. `--output-dir` defaults to
-`$MYSTERY_CONFIG_ROOT/blueprint-images/` (or `blueprint-images/`).
-
-### Export image chat packets (no API key needed)
-
-```bash
-npm run generate:images -- \
-  --blueprint-path spring-treats-6yo.json \
-  --all \
-  --chat-packets
-```
-
-Writes Markdown prompt files instead of calling OpenRouter. Output defaults to
-`$MYSTERY_CONFIG_ROOT/chat-gen-prompts/images/`. Cannot combine with
-`--dry-mode` or `--dry-run`.
+Every flag, default and file location: `node scripts/generate-blueprint-images.mjs --help`.
+Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## Running The Game
 

@@ -59,8 +59,8 @@ Final summaries state which gates ran, and why anything was skipped.
   reaches `prod` the first time any branch opens it and cannot be undone
   (`docs/backend-conventions.md`).
 - **AI changes.** Changing contracts, prompts, runtime context or provider
-  selection means updating the mock provider and its tests in the same change;
-  the touchpoints are listed in `docs/ai-configuration.md`.
+  selection means updating the mock provider and its tests in the same change
+  ("The mock provider" in `docs/ai-runtime.md`).
 - **Docs are checked by the gate.** Editing a section marked
   `<!-- extract:<id> -->` fails `curated-docs` until the extract pinned to it is
   reviewed and its hash updated; naming a path or script that does not exist

@@ -123,10 +123,9 @@ Vertex env); the CLI then fails to authenticate.
 
 A timeout, a failed run, a reply flagged `is_error`, or a reply missing its
 output is retried and finally surfaces as the usual retriable AI error. A reply
-that parses against the schema but breaks a rule only the parser knows (a
-`continue` judgement without a follow-up prompt) fails at once, as it does for
-OpenRouter. The event's `model` column records the full model id the CLI
-reports, not the alias.
+that matches the schema but breaks a rule only the parser knows (a narration of
+only spaces) fails at once, as it does for OpenRouter. The event's `model`
+column records the full model id the CLI reports, not the alias.
 
 ## The AI call log
 

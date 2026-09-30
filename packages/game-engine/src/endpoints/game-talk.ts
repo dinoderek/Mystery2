@@ -143,7 +143,6 @@ export async function handle(
     const isForcedEndgame = newTime === 0;
     const nextMode = isForcedEndgame ? "accuse" : "talk";
     let combinedParts = [...talkParts];
-    let followUpPrompt: string | null = null;
     let forcedParts: typeof talkParts = [];
     let forcedModel: string | null = null;
 
@@ -165,7 +164,6 @@ export async function handle(
         log,
       });
       if (!result.ok) return result.response;
-      followUpPrompt = result.follow_up_prompt;
       forcedParts = result.narration_parts;
       forcedModel = result.model;
       combinedParts = [...talkParts, ...forcedParts];
@@ -227,7 +225,6 @@ export async function handle(
           location_id: session.current_location_id,
         },
         narration_parts: forcedParts,
-        follow_up_prompt: followUpPrompt,
         model: forcedModel,
         time_before: session.time_remaining,
         time_after: newTime,
@@ -244,7 +241,6 @@ export async function handle(
         current_talk_character: isForcedEndgame
           ? null
           : activeCharacter.id,
-        follow_up_prompt: followUpPrompt,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -73,7 +73,6 @@ export const TurnResponseBaseSchema = z.object({
   time_remaining: z.number().int().nonnegative(),
   mode: ModeSchema,
   current_talk_character: z.string().nullable().optional(),
-  follow_up_prompt: z.string().nullable().optional(),
   result: OutcomeSchema.nullable().optional(),
   // Clue(s) revealed by this action, for the in-game notebook to merge. Only
   // search/ask actions populate this; other turns omit it.
@@ -113,7 +112,6 @@ export const MoveResponseSchema = TurnResponseBaseSchema.extend({
 
 export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["accuse", "ended"]),
-  follow_up_prompt: z.string().nullable().optional(),
   result: OutcomeSchema.nullable().optional(),
 });
 

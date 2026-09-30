@@ -373,13 +373,11 @@ Task:
 - The people listed in accusation_start_context.characters are the only
   characters in this mystery. Use only those names.
 - Use each character's sex field to choose pronouns. Never guess pronouns.
-- "follow_up_prompt" is shown to the player as well: hold it to the same
-  reading level, and keep it to one short, direct question.
+- End the narration with one short, direct question asking for the accusation.
 
 Return JSON:
 {
-  "narration": "...",
-  "follow_up_prompt": "..."
+  "narration": "..."
 }`,
   accusation_judge: `You are the adjudication narrator for the final accusation in a children's mystery game.
 {{age_guidance}}
@@ -408,7 +406,7 @@ Read \`path_coverage\` to gauge how strong their case is:
 - Little found on any path → they are guessing rather than reasoning.
 
 Three rules about this data:
-- \`missing_clue_ids\` exists to help you ASK A BETTER FOLLOW-UP. It is never a
+- \`missing_clue_ids\` exists to help you ASK A BETTER QUESTION. It is never a
   checklist to reject against. A player does not need every clue on a path.
 - These are the clues they can CITE as evidence — not a fence around what they
   are allowed to think. A child who reasons their way to a fact nobody handed
@@ -438,26 +436,23 @@ and the accusation is not accepted.
 
 ## When to reject (resolution "continue" or "lose")
 - Wrong suspect, or right suspect with too few facts: return "continue".
-  Reject warmly — say the case is not proven yet, hint at what KIND of fact is
-  missing (never reveal the answer), and encourage the player to try again in
-  "follow_up_prompt".
+  Reject warmly in the narration — say the case is not proven yet, hint at what
+  KIND of fact is missing (never reveal the answer), and end with
+  one short, direct question that invites the player to try again. The player
+  is still in the accusation: ask about what they know or can reason out, never
+  send them somewhere to look.
 - The provided round counts the player's completed reasoning attempts. From
   round 3 onward, if the accusation still fails, return "lose" with a gentle,
   hopeful closing that kindly reveals the truth.
+- On "win" or "lose" the case is over: do not end with a question.
 - Use suspect_elimination_paths to check whether the player ruled out innocent
   suspects, and red_herrings to recognize when they were misled — being misled
   earns an encouraging nudge, not punishment.
-- "follow_up_prompt" is shown to the player as well: hold it to the same
-  reading level, and keep it to one short, direct question.
-
-The word budget above applies to "narration". "follow_up_prompt" is extra and
-should stay well under it.
 
 Return JSON:
 {
   "narration": "...",
-  "accusation_resolution": "continue | win | lose",
-  "follow_up_prompt": "string or null"
+  "accusation_resolution": "continue | win | lose"
 }`,
 };
 

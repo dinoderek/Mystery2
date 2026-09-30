@@ -47,13 +47,13 @@ const MINIMAL_OUTPUTS: Record<
     parse: parseSearchOutput,
   },
   accusation_start: {
-    fields: ["narration", "follow_up_prompt"],
-    sample: { narration: "Really?", follow_up_prompt: "Why?" },
+    fields: ["narration"],
+    sample: { narration: "Really? Who did it?" },
     parse: parseAccusationStartOutput,
   },
   accusation_judge: {
-    fields: ["narration", "accusation_resolution", "follow_up_prompt"],
-    sample: { narration: "Yes.", accusation_resolution: "win", follow_up_prompt: null },
+    fields: ["narration", "accusation_resolution"],
+    sample: { narration: "Yes.", accusation_resolution: "win" },
     parse: parseAccusationJudgeOutput,
   },
 };
@@ -100,8 +100,8 @@ describe("role output parsing tolerance", () => {
   });
 
   it("names the role and field in errors", () => {
-    expect(() => parseAccusationStartOutput({ narration: "Hm." })).toThrow(
-      'Invalid AI accusation_start output: "follow_up_prompt" must be a non-empty string',
+    expect(() => parseAccusationStartOutput({ narration: " " })).toThrow(
+      'Invalid AI accusation_start output: "narration" must be a non-empty string',
     );
     expect(() => parseSearchOutput({ narration: "Hm.", revealed_clue_id: 42 })).toThrow(
       '"revealed_clue_id" must be a non-empty string or null',
@@ -156,14 +156,7 @@ describe("role output parsing tolerance", () => {
       parseAccusationJudgeOutput({
         narration: "Yes.",
         accusation_resolution: " lose ",
-        follow_up_prompt: null,
       }).accusation_resolution,
     ).toBe("lose");
-  });
-
-  it("treats a missing judge follow-up as null", () => {
-    expect(
-      parseAccusationJudgeOutput({ narration: "Yes.", accusation_resolution: "win" }),
-    ).toEqual({ narration: "Yes.", accusation_resolution: "win", follow_up_prompt: null });
   });
 });

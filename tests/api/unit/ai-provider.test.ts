@@ -262,7 +262,7 @@ describe("ai-provider mock role output", () => {
       parse: parseAccusationJudgeOutput,
     });
     expect(firstRound.accusation_resolution).toBe("continue");
-    expect(firstRound.follow_up_prompt).toBeTruthy();
+    expect(firstRound).not.toHaveProperty("follow_up_prompt");
 
     const secondRound = await provider.generateRoleOutput({
       role: "accusation_judge",
@@ -284,7 +284,7 @@ describe("ai-provider mock role output", () => {
       parse: parseAccusationJudgeOutput,
     });
     expect(secondRound.accusation_resolution).toBe("win");
-    expect(secondRound.follow_up_prompt).toBeNull();
+    expect(secondRound).not.toHaveProperty("follow_up_prompt");
   });
 
   it("rejects a wrong accusation with encouragement, losing only from round 3", async () => {
@@ -316,7 +316,7 @@ describe("ai-provider mock role output", () => {
       parse: parseAccusationJudgeOutput,
     });
     expect(earlyRound.accusation_resolution).toBe("continue");
-    expect(earlyRound.follow_up_prompt).toBeTruthy();
+    expect(earlyRound).not.toHaveProperty("follow_up_prompt");
     expect(earlyRound.narration).toContain("have another go");
 
     // From round 3 a still-wrong accusation finally resolves to lose.
@@ -327,7 +327,29 @@ describe("ai-provider mock role output", () => {
       parse: parseAccusationJudgeOutput,
     });
     expect(finalRound.accusation_resolution).toBe("lose");
-    expect(finalRound.follow_up_prompt).toBeNull();
+    expect(finalRound).not.toHaveProperty("follow_up_prompt");
+  });
+
+  it("points a rejection's closing question at an unfinished solution path", async () => {
+    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+    const round = await provider.generateRoleOutput({
+      role: "accusation_judge",
+      prompt: "prompt",
+      context: {
+        player_input: "It was Bob.",
+        accusation_judge_context: {
+          round: 1,
+          full_blueprint: {
+            world: { characters: [{ first_name: "Alice", is_culprit: true }, { first_name: "Bob" }] },
+          },
+          path_coverage: [{ kind: "solution", summary: "the missing cookies", missing_clue_ids: ["c1"] }],
+        },
+      },
+      parse: parseAccusationJudgeOutput,
+    });
+    expect(round.accusation_resolution).toBe("continue");
+    expect(round.narration).toContain("There is more to know about the missing cookies.");
+    expect(round.narration).toMatch(/\?$/);
   });
 
   it("generates search narration from location context only", async () => {

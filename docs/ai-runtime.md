@@ -108,8 +108,9 @@ Both the evaluation pipeline and the gameplay runtime target Blueprint V2.
     confrontation can earn a confession, but only when the player already has
     most of the facts right.
   - Rejects wrong or under-supported accusations with warm encouragement
-    (`continue` + retry-inviting `follow_up_prompt`); from round 3 onward a
-    still-failing accusation resolves `lose` with a gentle reveal.
+    (`continue`, with narration that ends in one retry-inviting question); from
+    round 3 onward a still-failing accusation resolves `lose` with a gentle
+    reveal.
 
 ## Why assembly is shared
 
@@ -215,25 +216,22 @@ All AI role outputs are validated before any session/event writes:
 - Talk start/end roles: require non-empty `narration`.
 - Talk conversation role: requires non-empty `narration`, and asks for `revealed_clue_ids` (string array, may be empty), `revealed_off_script` (string array, a subset of `revealed_clue_ids` — clues granted off-script via the brilliance override), and `input_understood` (boolean). An omitted list parses as empty and an omitted `input_understood` as `true`. The AI reports which character clues it revealed; the backend validates IDs against the active character's clue list before persisting, and intersects `revealed_off_script` with the validated reveals. When `input_understood` is `false` (the player's message was gibberish), the narration is an in-character "what?" beat and the contract parser forces both arrays empty so a confused turn can never leak a clue.
 - Search role: requires non-empty `narration`, and asks for `revealed_clue_id` (string or null, omitted reads as null), `costs_turn` (boolean, defaults to `true`), and `input_understood` (boolean, defaults to `true`). Backend validates the AI's clue choice before persisting. Only `search_targeted` can set `input_understood: false` (bare searches have no free text); the parser then forces `revealed_clue_id` null and `costs_turn` false so unintelligible searches reveal nothing and cost no turn.
-- `accusation_start`: requires `narration` + `follow_up_prompt`.
-- `accusation_judge`: requires:
-  - `narration`
-  - `accusation_resolution` in `win|lose|continue`
-  - `follow_up_prompt` required when resolution is `continue`
-- `follow_up_prompt` is the prompt shown to the player when they need to add
-  more to their accusation. It is player-facing, so it is held to the same
-  reading level and kept to one short question; the role's word budget governs
-  `narration` alone.
+- `accusation_start`: requires `narration`, which ends by asking for the
+  accusation.
+- `accusation_judge`: requires `narration` and `accusation_resolution` in
+  `win|lose|continue`. On `continue`, the narration ends with one short question
+  inviting the player to try again. There is no separate follow-up field: the
+  player sees the narration only.
 
 Invalid output returns a retriable error and does not finalize turn state.
 
 Each contract is a Zod schema in `ai-contracts.ts`, and the parser and the JSON
 Schema come from the same place. The parser is forgiving about noise: a missing
 or non-boolean flag takes its default, non-string entries in an id list are
-dropped, and an omitted `revealed_clue_id` or judge `follow_up_prompt` reads as
-null. `roleOutputJsonSchema(role)` asks the model for the clean shape instead,
-with every field required. Rules that span fields, such as a `continue`
-judgement needing a follow-up prompt, are enforced by the parser only.
+dropped, an omitted `revealed_clue_id` reads as null, and a field the contract
+does not name is dropped. `roleOutputJsonSchema(role)` asks the model for the
+clean shape instead, with every field required. Rules that span fields, such as
+an unintelligible search never costing a turn, are applied by the parser only.
 
 ## Clue discovery and gating
 
@@ -264,7 +262,7 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   - The discovered set constrains the **evidence-chain** win route only. The
     "true account" route and a confession earned by confrontation do not require
     discovered clues, so a child who intuits the answer can still win.
-  - `missing_clue_ids` steers the *follow-up question*; it is explicitly not a
+  - `missing_clue_ids` steers the *closing question*; it is explicitly not a
     checklist to reject against. A player need not hold every clue on a path.
   - The set is what the player may **cite as evidence**, not a fence around what
     they may reason. A correctly deduced fact they were never handed is credited.
@@ -275,9 +273,9 @@ Gating uses each clue's optional `requires` (`{ clue_ids, rationale }`):
   clue, and on a sentinel in the player input ("aha"/"i bet") grants the first
   locked clue off-script — so tests exercise both paths deterministically. The
   mock `accusation_judge` keeps its own resolution rule (correct culprit wins
-  from round 1) but reads `path_coverage` to aim its rejection follow-up at an
-  unfinished solution path. Mock narration is also written at the target reading
-  age: it is a fixture no child ever sees, but the runtime eval harness grades
+  from round 1) but reads `path_coverage` to aim its rejection's closing
+  question at an unfinished solution path. Mock narration is also written at the
+  target reading age: it is a fixture no child ever sees, but the runtime eval harness grades
   whatever the provider returns, so adult-register mock text would show up as a
   permanent false failure in the coverage sweep.
 

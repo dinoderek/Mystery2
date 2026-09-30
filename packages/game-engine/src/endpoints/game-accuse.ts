@@ -165,7 +165,6 @@ export async function handle(
             role: "accusation_judge",
             player_reasoning: playerReasoning,
             judge_result: "continue",
-            follow_up_prompt: judgeOutput.follow_up_prompt,
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
@@ -191,7 +190,6 @@ export async function handle(
             mode: "accuse",
             current_talk_character: null,
             result: null,
-            follow_up_prompt: judgeOutput.follow_up_prompt,
           }),
           { headers: { "Content-Type": "application/json" } },
         );
@@ -265,7 +263,6 @@ export async function handle(
           mode: "ended",
           current_talk_character: null,
           result: outcome,
-          follow_up_prompt: null,
         }),
         { headers: { "Content-Type": "application/json" } },
       );
@@ -350,7 +347,6 @@ export async function handle(
           payload: {
             role: "accusation_start",
             trigger: "player",
-            follow_up_prompt: startOutput.follow_up_prompt,
             speaker: NARRATOR_SPEAKER,
           },
           narration_parts: narrationParts,
@@ -376,7 +372,6 @@ export async function handle(
             mode: "accuse",
             current_talk_character: null,
             result: null,
-            follow_up_prompt: startOutput.follow_up_prompt,
           }),
           { headers: { "Content-Type": "application/json" } },
         );

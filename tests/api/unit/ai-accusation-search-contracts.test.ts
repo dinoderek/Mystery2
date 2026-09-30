@@ -35,42 +35,32 @@ describe("search and accusation AI output contracts", () => {
 
   it("accepts valid accusation start output", () => {
     expect(
-      parseAccusationStartOutput({
-        narration: "You accuse Alice.",
-        follow_up_prompt: "Explain your theory.",
-      }),
-    ).toEqual({
-      narration: "You accuse Alice.",
-      follow_up_prompt: "Explain your theory.",
-    });
+      parseAccusationStartOutput({ narration: "You accuse Alice. Who did it?" }),
+    ).toEqual({ narration: "You accuse Alice. Who did it?" });
   });
 
-  it("accepts accusation judge continue output with follow-up", () => {
+  it("accepts accusation judge output for every resolution", () => {
+    for (const resolution of ["continue", "win", "lose"]) {
+      expect(
+        parseAccusationJudgeOutput({
+          narration: "Case notes.",
+          accusation_resolution: resolution,
+        }),
+      ).toEqual({ narration: "Case notes.", accusation_resolution: resolution });
+    }
+  });
+
+  it("drops a follow_up_prompt a model still sends", () => {
     expect(
       parseAccusationJudgeOutput({
         narration: "I need more detail.",
         accusation_resolution: "continue",
         follow_up_prompt: "Which clue proves motive?",
       }),
-    ).toEqual({
-      narration: "I need more detail.",
-      accusation_resolution: "continue",
-      follow_up_prompt: "Which clue proves motive?",
-    });
-  });
-
-  it("accepts accusation judge terminal output with null follow-up", () => {
+    ).toEqual({ narration: "I need more detail.", accusation_resolution: "continue" });
     expect(
-      parseAccusationJudgeOutput({
-        narration: "Case closed.",
-        accusation_resolution: "win",
-        follow_up_prompt: null,
-      }),
-    ).toEqual({
-      narration: "Case closed.",
-      accusation_resolution: "win",
-      follow_up_prompt: null,
-    });
+      parseAccusationStartOutput({ narration: "Begin.", follow_up_prompt: "Who?" }),
+    ).toEqual({ narration: "Begin." });
   });
 
   it("rejects invalid accusation outputs", () => {
@@ -82,19 +72,7 @@ describe("search and accusation AI output contracts", () => {
     ).toThrow("accusation_resolution");
 
     expect(() =>
-      parseAccusationJudgeOutput({
-        narration: "Need more detail",
-        accusation_resolution: "continue",
-        follow_up_prompt: null,
-      }),
-    ).toThrow("follow_up_prompt");
-
-    expect(() =>
-      parseAccusationJudgeOutput({
-        narration: "Resolved and final",
-        accusation_resolution: "lose",
-        follow_up_prompt: null,
-      }),
-    ).not.toThrow();
+      parseAccusationJudgeOutput({ narration: "", accusation_resolution: "continue" }),
+    ).toThrow("narration");
   });
 });

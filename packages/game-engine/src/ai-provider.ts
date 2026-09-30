@@ -464,9 +464,7 @@ class MockAIProvider implements AIProvider {
           ? "Time is up. You must make your accusation now."
           : "The final accusation begins.";
         return {
-          narration: `[Mock] ${stagePrompt} Tell me who did it, and how you know.`,
-          follow_up_prompt:
-            "Who do you accuse, and what evidence, timeline, and motive support your case?",
+          narration: `[Mock] ${stagePrompt} Who did it, and how do you know?`,
         };
       }
       case "accusation_judge": {
@@ -482,10 +480,8 @@ class MockAIProvider implements AIProvider {
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
           return {
-            narration: "[Mock] I am not sure yet. Name one person, and one clue.",
+            narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
             accusation_resolution: "continue",
-            follow_up_prompt:
-              "State the suspect's name clearly, then explain why the evidence supports that accusation.",
           };
         }
 
@@ -512,8 +508,8 @@ class MockAIProvider implements AIProvider {
           : "continue";
 
         // Mirrors the live judge's use of path_coverage: on a rejection, steer
-        // the follow-up at a solution path the investigator has not finished,
-        // rather than asking a generic question.
+        // the closing question at a solution path the investigator has not
+        // finished, rather than asking a generic one.
         const unfinishedSolutionPath = accusationJudgeContext?.path_coverage?.find(
           (entry) =>
             entry?.kind === "solution" && (entry.missing_clue_ids?.length ?? 0) > 0,
@@ -526,15 +522,11 @@ class MockAIProvider implements AIProvider {
               : accusationResolution === "lose"
               ? "[Mock] The case ends here. This time the answer got away."
               : round < 1
-              ? "[Mock] I need one more clue before I can be sure."
-              : "[Mock] Not yet. Look at your clues again and have another go.",
+              ? "[Mock] I need one more clue before I can be sure. What else do you know?"
+              : unfinishedSolutionPath?.summary
+              ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. What clue shows it was them?`
+              : "[Mock] Not yet. Look at your clues again. Do you want to have another go?",
           accusation_resolution: accusationResolution,
-          follow_up_prompt:
-            accusationResolution === "continue"
-              ? unfinishedSolutionPath?.summary
-                ? `There is more to find about ${unfinishedSolutionPath.summary}. Which evidence directly connects this suspect to the event?`
-                : "Which evidence directly connects this suspect to the event?"
-              : null,
         };
       }
     }

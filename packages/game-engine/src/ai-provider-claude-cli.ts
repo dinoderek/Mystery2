@@ -134,7 +134,7 @@ export class ClaudeCliProvider implements AIProvider {
       request.metadata,
     );
     // A reply that fits the schema but breaks a rule the schema cannot express
-    // (a `continue` judgement with no follow-up) fails here, unretried, the
+    // (a narration of only spaces) fails here, unretried, the
     // same as an OpenRouter reply that fails its parser.
     return request.parse(reply.structured_output);
   }

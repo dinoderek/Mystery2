@@ -213,9 +213,8 @@ describe("claude-cli provider failures", () => {
     vi.stubEnv(
       "FAKE_CLAUDE_OUTPUT",
       JSON.stringify({
-        narration: "Hmm.",
+        narration: "   ",
         accusation_resolution: "continue",
-        follow_up_prompt: null,
       }),
     );
 
@@ -230,7 +229,7 @@ describe("claude-cli provider failures", () => {
 
     expect(error).toBeInstanceOf(Error);
     expect(error).not.toBeInstanceOf(RetriableAIError);
-    expect(String(error)).toContain("follow_up_prompt");
+    expect(String(error)).toContain("narration");
     expect(recordedCalls()).toHaveLength(1);
   });
 

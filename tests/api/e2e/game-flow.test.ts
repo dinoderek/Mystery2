@@ -189,7 +189,7 @@ describe("Full E2E API Investigation Flow", () => {
 
     expect(moveData.mode).toBe("accuse");
     expect(moveData.time_remaining).toBe(0);
-    expect(moveData.follow_up_prompt).toBeTruthy();
+    expect(moveData).not.toHaveProperty("follow_up_prompt");
     expect(moveData.narration_parts).toHaveLength(2);
     expect(
       moveData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
@@ -220,7 +220,7 @@ describe("Full E2E API Investigation Flow", () => {
 
     expect(searchData.mode).toBe("accuse");
     expect(searchData.time_remaining).toBe(0);
-    expect(searchData.follow_up_prompt).toBeTruthy();
+    expect(searchData).not.toHaveProperty("follow_up_prompt");
     expect(searchData.narration_parts).toHaveLength(2);
     expect(
       searchData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
@@ -251,7 +251,7 @@ describe("Full E2E API Investigation Flow", () => {
 
     expect(talkData.mode).toBe("accuse");
     expect(talkData.time_remaining).toBe(0);
-    expect(talkData.follow_up_prompt).toBeTruthy();
+    expect(talkData).not.toHaveProperty("follow_up_prompt");
     expect(talkData.narration_parts).toHaveLength(2);
     expect(
       talkData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),

@@ -351,7 +351,6 @@ function sanitizePayload(
     "player_input",
     "revealed_clue_text",
     "revealed_clue_id",
-    "follow_up_prompt",
   ];
 
   for (const field of stringFields) {

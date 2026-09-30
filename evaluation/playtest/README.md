@@ -72,9 +72,7 @@ view (what a player sees) ──► investigator (claude -p, persona)
   (`web/src/lib/domain/store.retry.ts`). Keep the two in step.
 - **Where the browser shows a screen, the view says so in words.** `help`
   lists the mode's commands, `notebook` points at the notebook sections (and,
-  as in the store, is not echoed), and theme commands only change colours. A
-  response's `follow_up_prompt` is not shown, because the web UI does not show
-  it; it is in `steps.jsonl`.
+  as in the store, is not echoed), and theme commands only change colours.
 - **No hidden memory.** Each investigator call gets the whole view and history,
   so any step can be read back from `steps.jsonl`.
 - **A game stops** when the case ends, the investigator types `quit`, three

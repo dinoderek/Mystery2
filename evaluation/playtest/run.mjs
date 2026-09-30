@@ -308,7 +308,7 @@ try {
       }
     }
   } finally {
-    server.stop();
+    await server.stop();
   }
 }
 

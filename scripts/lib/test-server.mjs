@@ -25,6 +25,7 @@ import { TEST_DATABASE } from "../../lib/database-target.mjs";
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
 const PORT_PROBE_TIMEOUT_MS = 1_000;
+const STOP_GRACE_MS = 5_000;
 
 /** A disposable config root: the run's database lives here and nowhere else. */
 export function createTestConfigRoot() {
@@ -137,19 +138,32 @@ export async function startTestServer({ repoRoot, port, env = {} }) {
   });
 
   let exited = false;
-  child.on("exit", () => {
-    exited = true;
+  const exit = new Promise((resolve) => {
+    child.on("exit", () => {
+      exited = true;
+      resolve();
+    });
   });
 
-  const stop = () => {
+  // Resolves once the server has gone. On SIGTERM adapter-node stops taking
+  // requests but then waits for the event loop to drain, which pending work
+  // can hold open for good; a server outliving its runner keeps the port and
+  // the test gate's output pipe, and the gate never finishes. So it is killed
+  // if it has not gone within STOP_GRACE_MS.
+  const stop = async () => {
+    if (!exited) {
+      child.kill("SIGTERM");
+      const kill = setTimeout(() => child.kill("SIGKILL"), STOP_GRACE_MS);
+      await exit;
+      clearTimeout(kill);
+    }
     fs.rmSync(configRoot, { recursive: true, force: true });
-    if (!exited) child.kill("SIGTERM");
   };
 
   try {
     await waitForReady(url, () => exited);
   } catch (error) {
-    stop();
+    await stop();
     throw error;
   }
 

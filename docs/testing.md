@@ -97,7 +97,8 @@ alone silences the check without fixing the doc. See
 3. start `node build/index.js` against a temporary config root on that port,
    and wait for it to answer
 4. run Vitest, passing `MYSTERY_TEST_API_URL` and `MYSTERY_TEST_CONFIG_ROOT`
-5. stop the server and delete the config root
+5. stop the server, whether or not the suite passed, and delete the config
+   root; a server still running 5 seconds after SIGTERM is killed
 
 The production build is used rather than the dev server so that a bundling
 failure is caught here.

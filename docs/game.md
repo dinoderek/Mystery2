@@ -124,16 +124,18 @@ When time is exhausted:
 - Character should remember prior interactions in the same game (continuity).
 - Backend accepts free-form question payloads (`player_input`).
 - In talk mode every line is said to the character, except `help`, `quit` /
-  `exit`, `notebook`, the theme commands and the exit words below. That includes `accuse …`: **accusing is not available
-  during a conversation, by design.** "I think you took it!" is something to say
-  to a suspect's face, and the character answers it in character; the
-  accusation itself is a separate phase. To accuse, leave the conversation
-  first (`bye`), then type `accuse` in explore mode.
+  `exit`, `notebook` / `n`, the theme commands and the end-talk words below.
+  That includes `accuse …`: **accusing is not available during a conversation,
+  by design.** "I think you took it!" is something to say to a suspect's face,
+  and the character answers it in character; the accusation itself is a
+  separate phase. To accuse, leave the conversation first (`bye`), then type
+  `accuse` in explore mode.
 
 **Exit Talk Mode**
 
-- `bye`, `goodbye`, `see you`, `leave` or `end`, typed on its own
-  (`web/src/lib/domain/parser.ts`). `exit` is not one of them: it quits the game.
+- The end-talk words: `bye`, `goodbye`, `see you`, `leave` or `end`, typed on
+  its own (`web/src/lib/domain/parser.ts`). `exit` is not one of them: it quits
+  the game.
 
 **Time model**
 

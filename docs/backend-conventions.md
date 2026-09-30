@@ -18,8 +18,8 @@ the engine's endpoints**.
 
 All game logic runs in the engine, imported by the SvelteKit server.
 
-- Endpoint handlers live in `src/endpoints/<name>.ts` and are listed in
-  `src/endpoints/index.ts`. An unlisted name is a 404.
+- Endpoint handlers live in `packages/game-engine/src/endpoints/<name>.ts` and are listed in
+  `packages/game-engine/src/endpoints/index.ts`. An unlisted name is a 404.
 - The engine wraps the AI provider (OpenRouter) using a server-side key. The UI
   never calls OpenRouter directly.
 - The engine imports `packages/shared` directly. There is no mirroring, no
@@ -37,9 +37,9 @@ export async function handle(req: Request, ctx: EngineContext): Promise<Response
 and `web/src/routes/api/[endpoint]/+server.ts` does the rest once for all of
 them: check the method, build the context, delegate.
 
-`EngineContext` (`src/context.ts`) is the engine's whole boundary against its
+`EngineContext` (`packages/game-engine/src/context.ts`) is the engine's whole boundary against its
 host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
-`ctx.player`. `src/context-local.ts` is the implementation, and it is the only
+`ctx.player`. `packages/game-engine/src/context-local.ts` is the implementation, and it is the only
 file that knows the state is a SQLite file and the content is two directories.
 
 Rules:
@@ -50,7 +50,7 @@ Rules:
 - Error convention: a genuine backend failure **throws**, and "does not exist"
   returns `null`/empty. Handlers map a throw to `500` and a `null` to
   `404`/`400`.
-- Register the endpoint's allowed methods in `src/endpoints/index.ts`. The
+- Register the endpoint's allowed methods in `packages/game-engine/src/endpoints/index.ts`. The
   route returns `405` from that list; handlers do not re-check.
 
 This exists so the engine can be re-hosted without touching game logic: a
@@ -62,7 +62,7 @@ handler as a bug.
 
 There are two contexts, because the server has two behaviours — see "Identity
 and access" in `docs/architecture.md` for why. An endpoint declares which one it
-runs under in `src/endpoints/index.ts`:
+runs under in `packages/game-engine/src/endpoints/index.ts`:
 
 - `access: "profile"` gets an `EngineContext`, and the route refuses the
   request without a profile.
@@ -116,16 +116,16 @@ play, three for AI configuration.
 
 ## 4. Content
 
-Blueprints and images are files. `src/content.ts` reads them, caches on mtime
+Blueprints and images are files. `packages/game-engine/src/content.ts` reads them, caches on mtime
 and size, and skips-and-logs anything unparseable rather than failing a whole
-catalog. `src/paths.ts` is the only place that decides where they are.
+catalog. `packages/game-engine/src/paths.ts` is the only place that decides where they are.
 
 ## 5. AI Profiles
 
 `mock`, `free` and `paid` are environment, not data. `default` — the only one
 the browser ever plays as — is chosen on the settings page and stored in
 `app_settings`, though a process started with `AI_PROVIDER`/`AI_MODEL` still
-outranks it. See `src/ai-profile.ts` and `docs/ai-configuration.md`.
+outranks it. See `packages/game-engine/src/ai-profile.ts` and `docs/ai-configuration.md`.
 
 A misconfigured profile throws; an unconfigured one returns `null`, which
 handlers turn into `400 Invalid ai_profile`. A *stored* choice cannot be

@@ -37,16 +37,29 @@ overwritten or deleted.
 
 ## Curated docs sync
 
-Each curated doc carries the git blob hash of every source it was derived from.
-`npm run check:curated-docs` recomputes those hashes and fails on drift. It runs
-as part of Phase 1 of the `npm test` gate, so a source edit that outdates a
-curated extract fails the gate.
+Each curated doc pins the sources it was derived from. A pin is either a whole
+file (its git blob hash) or one marked section of a doc:
 
-When it reports drift, **regenerate the affected extract against its current
-source and update the hash together**. Bumping the hash alone is not a fix — the
-header's claim is "this extract was derived from the source at this blob", so a
-refreshed hash over stale prose turns a true positive into a permanent silent
-false negative.
+```
+> - `docs/game.md#commands` — `<sha>`
+```
+
+pins only the text between `<!-- extract:commands -->` and
+`<!-- /extract:commands -->` in `docs/game.md`, hashed with whitespace
+collapsed, so an edit elsewhere in the doc — or a re-wrap — does not count.
+`npm run check:curated-docs` recomputes every pin as part of phase 1 of the
+`npm test` gate. It also fails on a malformed marker, or a marked section no
+extract pins.
+
+On drift it prints the last commit at which the pin held; review
+`git diff <commit> -- <source>` against the extract, **update the extract if it
+no longer holds**, then record the new hash. Bumping the hash alone is not a
+fix — the pin's claim is "this extract was checked against the source as it is
+now", so a refreshed hash over stale prose turns a true positive into a
+permanent silent false negative.
+
+To pin a new part of a doc, wrap it in a marker pair with a new id and add the
+pin to the extract's header.
 
 ## Pruning
 

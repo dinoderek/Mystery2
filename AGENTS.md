@@ -61,10 +61,10 @@ Final summaries state which gates ran, and why anything was skipped.
 - **AI changes.** Changing contracts, prompts, runtime context or provider
   selection means updating the mock provider and its tests in the same change;
   the touchpoints are listed in `docs/ai-configuration.md`.
-- **Curated extracts.** Editing `docs/game.md`, `docs/ai-runtime.md` or
-  `docs/blueprint-generation-flows.md` fails the gate's `curated-docs` step
-  until the extracts in `evaluation/generator-harness/template/docs/` are
-  reviewed against the change and their hashes updated (`docs/testing.md`).
+- **Docs are checked by the gate.** Editing a section marked
+  `<!-- extract:<id> -->` fails `curated-docs` until the extract pinned to it is
+  reviewed and its hash updated; naming a path or script that does not exist
+  fails `doc-refs` (`docs/testing.md`).
 
 ## Documentation
 

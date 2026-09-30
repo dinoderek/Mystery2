@@ -2,7 +2,7 @@
  * Test gate orchestrator — replaces the chained && in `npm test`.
  *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
- *                     drift check
+ *                     drift check, doc reference check
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
@@ -43,6 +43,7 @@ const STEPS = [
     args: ["-w", "web", "run", "test:unit:coverage"],
   },
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
+  { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
 
   // Phase 2 — each starts a server on the worktree's port, so serial
   { name: "integration", phase: 2, args: ["run", "test:integration"] },

@@ -1,10 +1,16 @@
 # Game overview (what your blueprint becomes at play time)
 
 > **CURATED EXTRACT — do not edit casually.**
-> Source: `docs/game.md`
-> Source git blob hash: `826fe427d7dd61d2e155de42dec4338fcd48e1e5`
-> Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
-> If the source changes in ways that affect blueprint authoring, regenerate this file.
+> Pinned sources:
+> - `docs/game.md#starting` — `fbb3445847cfa7cdcd303a96b4b228854d6e87c8`
+> - `docs/game.md#commands` — `8accfbf88c797801cbefa9737e15df73d91b62f1`
+> - `docs/game.md#talking` — `5476986f341023cf862ed51db98c31d8c7cc8891`
+> - `docs/game.md#searching` — `569d2c609bcb535d1bc3c8f1c6fd810121b75314`
+> - `docs/game.md#moving` — `da36d9c4d8be3b68a4aeae1d6c0d66fa9c7b050e`
+> - `docs/game.md#notebook` — `712576263594de7b4a572a69cd0e483159cbf3e0`
+> - `docs/game.md#accusation` — `9fdf410a153a4b20c85b4e756c3bee8ffd8305d8`
+> Verifier: `npm run check:curated-docs`
+> A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 
 This summarizes how a Blueprint V2 file becomes a playable mystery. Read it
 before drafting — it explains why the schema looks the way it does.

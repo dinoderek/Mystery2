@@ -58,13 +58,14 @@ Phase 1, parallel:
 4. `npm run test:unit:coverage`
 5. `npm -w web run test:unit:coverage`
 6. `npm run check:curated-docs`
+7. `npm run check:doc-refs`
 
 Phase 2, serial (each starts a server on the worktree's port), and only if all
 of phase 1 passed:
 
-7. `npm run test:integration`
-8. `npm run test:e2e`
-9. `npm -w web run test:e2e`
+8. `npm run test:integration`
+9. `npm run test:e2e`
+10. `npm -w web run test:e2e`
 
 **Every step runs in every environment.** The gate needs nothing beyond this
 repo — no Docker, no CLI, no seeding — so there is no waiver and no condition
@@ -78,12 +79,22 @@ edit after it passes.
 Nothing needs restarting after an engine edit: the phase 2 scripts rebuild
 before each run, and the browser suite's dev server reloads.
 
-`check:curated-docs` verifies that the curated extracts in
-`evaluation/generator-harness/template/docs/` still match the git blob hashes of
-the docs they came from. On drift, regenerate the affected extract against its
-current source and update the hash in the same change — refreshing the hash
-alone silences the check without fixing the doc. See
-`evaluation/generator-harness/template/README.md`.
+Two steps check the docs rather than the code:
+
+- `check:curated-docs` holds the curated extracts in
+  `evaluation/generator-harness/template/docs/` to the sources they were written
+  from. An extract pins either a whole file or one `<!-- extract:<id> -->`
+  section of a doc, so only an edit to what it actually summarises fails the
+  step. On drift it names the last commit at which the pin held; review that
+  diff against the extract, fix the extract if it no longer holds, then record
+  the new hash. Refreshing the hash alone silences the check without fixing the
+  doc. See `evaluation/generator-harness/template/README.md`.
+- `check:doc-refs` fails when `AGENTS.md`, `QUICKSTART.md`, `docs/` or a README
+  names a repo path, an `npm run` script or a relative link that does not
+  exist. A code span counts as a path only when its first segment is a real
+  directory, so model ids and `a/b` enums are left alone; gitignored paths are
+  runtime output and are skipped. `docs/design/` and the harness templates are
+  not checked.
 
 ### What the suite scripts do
 
@@ -308,9 +319,7 @@ coverage reports under `coverage/` are not uploaded.
 
 ## Documentation-Only Changes
 
-If a change touches only documentation, the code suites are optional locally.
-Validate command accuracy, paths and links, and consistency with the doc that
-owns each topic. CI still runs the whole gate, and its `curated-docs` step fails
-on any edit to a doc an extract is pinned to (`docs/game.md`,
-`docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`): run
-`npm run check:curated-docs` before pushing.
+If a change touches only documentation, the code suites are optional locally,
+but run `npm run check:curated-docs` and `npm run check:doc-refs`: CI runs the
+whole gate, and both fail it. Check the rest by hand — command accuracy, and
+consistency with the doc that owns each topic.

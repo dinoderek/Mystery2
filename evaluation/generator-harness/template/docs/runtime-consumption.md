@@ -1,12 +1,17 @@
 # Runtime consumption (how the narrator AI uses your blueprint)
 
 > **CURATED EXTRACT — do not edit casually.**
-> Sources: `docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`
-> Source git blob hashes:
-> - `docs/ai-runtime.md` — `599d2760ad96101191084455c8d13cf54a0432db`
-> - `docs/blueprint-generation-flows.md` — `fa27c0e509f7ab73fe80f56048b73cb78ff35feb`
-> Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
-> If sources change in ways that affect blueprint authoring, regenerate this file.
+> Pinned sources:
+> - `docs/ai-runtime.md#roles` — `cb0766b56f62eede535cd071b21d1e22537aaa69`
+> - `docs/ai-runtime.md#narration-style` — `a960c547505de0c9b8a29e0bb60a275d3f6ba7d4`
+> - `docs/ai-runtime.md#context-boundaries` — `3666d69bde82e4e9920ed406657c8c735958ec0e`
+> - `docs/ai-runtime.md#clue-gating` — `bc41e999c0c881c0f561b17bd08459b77902757c`
+> - `docs/ai-runtime.md#game-enter` — `ffa04d544177d25fb6720671e960e9f29a02acb3`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `e32fd672af48fda45a5ec11e6cae3d9b89fe84f0`
+> - `docs/blueprint-generation-flows.md#generator-prompt` — `a8bbd422151ddd54f5b5807bf60401a07e7df7da`
+> - `docs/blueprint-generation-flows.md#image-generation` — `97b3ce98ab7dc2aa9e00147d8a2aaf256c39243c`
+> Verifier: `npm run check:curated-docs`
+> A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 
 This is what your blueprint is *actually used for* by the runtime AI. Each
 narrator role only gets a slice of the blueprint — never the whole thing,

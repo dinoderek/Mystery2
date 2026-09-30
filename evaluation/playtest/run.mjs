@@ -15,6 +15,10 @@
 // the same inputs. The replay stops where the game no longer matches the
 // recording (another place, mode, or person to talk to) and records where.
 //
+// With --judge, each game is graded as soon as it ends, while the next ones
+// play: the trace pipeline's mechanical checks and gm_* judges, and a reading
+// level for every narration.
+//
 // Options:
 //   --blueprint <x>           a blueprint id, file name, title, or path to a JSON file
 //                             (with --replay: default, the script's blueprint)
@@ -27,6 +31,8 @@
 //   --narrator <claude|mock>  the game's narrator (default: claude)
 //   --narrator-model <m>      default: sonnet
 //   --investigator-model <m>  default: sonnet; not with --replay
+//   --judge                   grade each game afterwards (needs
+//                             evaluation/trace/config/cli.json; off by default)
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
 //
@@ -35,6 +41,7 @@
 
 import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 
 import Database from "better-sqlite3";
@@ -43,6 +50,7 @@ import { TEST_DATABASE, resolveDatabaseFile } from "../../lib/database-target.mj
 import { startTestServer } from "../../scripts/lib/test-server.mjs";
 import { signIn } from "./lib/api.mjs";
 import { listPersonas, modelInvestigator, scriptedInvestigator } from "./lib/investigator.mjs";
+import { extractTrace, gradeGame, judgeSetupProblem, renderGrades } from "./lib/judge.mjs";
 import { writeGameFolder } from "./lib/output.mjs";
 import { DEFAULT_MAX_STEPS, playGame } from "./lib/play.mjs";
 import { loadScript } from "./lib/replay.mjs";
@@ -61,10 +69,12 @@ function parseArgs(argv) {
     narrator: "claude",
     narratorModel: "sonnet",
     investigatorModel: "sonnet",
+    judge: false,
     out: path.join(REPO_ROOT, "evaluation", "playtest", "runs"),
     port: null,
   };
   const numeric = new Set(["games", "concurrency", "maxSteps", "port"]);
+  const flags = new Set(["judge"]);
   const given = new Set();
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -73,6 +83,10 @@ function parseArgs(argv) {
     const key = flag.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
     if (!(key in args)) usage(`Unknown option ${flag}`);
     given.add(key);
+    if (flags.has(key)) {
+      args[key] = true;
+      continue;
+    }
     const value = argv[index + 1];
     if (value === undefined) usage(`${flag} needs a value`);
     index += 1;
@@ -87,6 +101,10 @@ function parseArgs(argv) {
 
   if (args.narrator !== "claude" && args.narrator !== "mock") {
     usage(`--narrator must be claude or mock`);
+  }
+  if (args.judge) {
+    const problem = judgeSetupProblem(REPO_ROOT);
+    if (problem) usage(problem);
   }
   if (args.replay) {
     for (const key of ["persona", "investigatorModel"]) {
@@ -262,7 +280,73 @@ async function playOne(number) {
   console.log(
     `[game ${number}] ${summary.outcome ?? summary.stop_reason}: ${summary.clues_found}/${summary.clues_total} clues, ${summary.turns_used}/${summary.time_budget} turns`,
   );
+  if (args.judge) await queueGrading({ number, summary, dir: path.join(runDir, `game-${number}`) });
   return summary;
+}
+
+/** The database the server is writing, under its throwaway config root. */
+function liveDatabase() {
+  // The config root stands in for the repo root here, with no environment,
+  // which is how the server itself resolved it (<root>/database/test/game.db).
+  return resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
+}
+
+// Games are graded one at a time, in the order they end, so at most four
+// judge calls run at once however many games play.
+let grading = Promise.resolve();
+
+/**
+ * Extracts a game that has just ended, from a copy of the database taken now
+ * (extraction opens its file for writing, so never the server's own), and
+ * queues its grading. A game that cannot be graded says why in its summary and
+ * transcript; the others carry on.
+ */
+async function queueGrading(game) {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-playtest-grade-"));
+  try {
+    const database = path.join(scratch, "game.db");
+    const source = new Database(liveDatabase(), { readonly: true });
+    try {
+      await source.backup(database);
+    } finally {
+      source.close();
+    }
+    await extractTrace({
+      repoRoot: REPO_ROOT,
+      database,
+      gameId: game.summary.game_id,
+      gameDir: game.dir,
+      configRoot: server.configRoot,
+    });
+  } catch (error) {
+    game.error = error.message;
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+  grading = grading.then(() => gradeOne(game));
+}
+
+async function gradeOne(game) {
+  let grades;
+  try {
+    if (game.error) throw new Error(game.error);
+    grades = await gradeGame({
+      repoRoot: REPO_ROOT,
+      gameDir: game.dir,
+      targetAge: blueprint.metadata.target_age,
+    });
+    const verdicts = Object.entries(grades.judges).map(([id, verdict]) => `${id} ${verdict.status}`);
+    console.log(
+      `[game ${game.number}] graded: ${verdicts.join(", ") || "no judges"}; ` +
+        `flesch ${grades.readability.pass}/${grades.readability.total}`,
+    );
+  } catch (error) {
+    grades = { error: error.message };
+    console.error(`[game ${game.number}] grading failed: ${error.message}`);
+  }
+  game.summary.grades = grades;
+  fs.writeFileSync(path.join(game.dir, "summary.json"), `${JSON.stringify(game.summary, null, 2)}\n`);
+  fs.appendFileSync(path.join(game.dir, "transcript.md"), renderGrades(grades));
 }
 
 const server = await startTestServer({
@@ -295,10 +379,8 @@ try {
 } finally {
   try {
     // Keep the database: a game can be graded or inspected later with
-    // `eval:trace:extract --db <run>/game.db --session <game_id>`. The server's
-    // config root stands in for the repo root here, with no environment, which
-    // is how the server itself resolved it (<root>/database/test/game.db).
-    const database = resolveDatabaseFile(TEST_DATABASE, server.configRoot, {});
+    // `eval:trace:extract --db <run>/game.db --session <game_id>`.
+    const database = liveDatabase();
     if (fs.existsSync(database)) {
       const source = new Database(database, { readonly: true });
       try {
@@ -312,5 +394,12 @@ try {
   }
 }
 
-fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);
+const writeRunSummary = () =>
+  fs.writeFileSync(path.join(runDir, "summary.json"), `${JSON.stringify(summaries, null, 2)}\n`);
+writeRunSummary();
+if (args.judge) {
+  console.log("\nWaiting for the last grades...");
+  await grading;
+  writeRunSummary();
+}
 console.log(`\nWrote ${path.relative(REPO_ROOT, runDir)}`);

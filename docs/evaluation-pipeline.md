@@ -50,12 +50,14 @@ shaped the way it is. For how to run it, see `evaluation/README.md`.
 > how the two relate.
 >
 > **Playing whole games.** The playtest harness (`evaluation/playtest/`) produces
-> sessions rather than grading them: an AI investigator plays a blueprint end to
-> end through the real server and the UI's parser, with the narrator on the
-> claude CLI, and each game leaves a readable transcript and a replayable script.
+> sessions: an AI investigator plays a blueprint end to end through the real
+> server and the UI's parser, with the narrator on the claude CLI, and each game
+> leaves a readable transcript and a replayable script.
 > `--replay` plays a script again, with no investigator, against a changed
-> narrator, and stops where the game diverges. Its games can be handed to the
-> trace pipeline. See `evaluation/playtest/README.md`.
+> narrator, and stops where the game diverges. It produces sessions rather than
+> grading them, unless asked: `--judge` hands each game to the trace pipeline
+> and scores every narration's reading level. See
+> `evaluation/playtest/README.md`.
 
 ## What this is
 

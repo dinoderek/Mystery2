@@ -36,6 +36,7 @@ Read `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 | `--narrator <claude\|mock>` | `claude` | `mock` for plumbing checks only |
 | `--narrator-model <m>` | `sonnet` | |
 | `--investigator-model <m>` | `sonnet` | Not with `--replay` |
+| `--judge` | off | Grade each game after the run; see [Grading](#grading) |
 | `--out <dir>` | `evaluation/playtest/runs` | Gitignored |
 | `--port <n>` | a free port | Where the throwaway server listens |
 
@@ -95,7 +96,14 @@ runs/<timestamp>-<blueprint>-<persona>/
     ├── script.json       the investigator's inputs, in order, each with a checkpoint
     ├── steps.jsonl       per step: view shown, checkpoint, input, action, API response
     ├── ai-calls.jsonl    this game's narrator calls
-    └── summary.json      outcome, stop reason, turns used, clues found of total, costs
+    ├── summary.json      outcome, stop reason, turns used, clues found of total, costs
+    │                     (and, with --judge, `grades`)
+    └── with --judge:
+        ├── trace.json        the session, as eval:trace:extract writes it
+        ├── result.json       the trace pipeline's verdicts, with the judges' findings
+        ├── readability.json  every narration's reading grade, sentence by sentence
+        ├── judge/            the trace pipeline's run folder, <date>/<time>/run-trace-trace/
+        └── judge.log         both commands' output
 ```
 
 ## Replay
@@ -130,12 +138,39 @@ the inputs it played.
 
 ## Grading
 
-A game can be graded later with the trace pipeline:
+Off by default: the transcript is written to be read. With `--judge`, each game
+is graded as soon as it ends, while the next ones play. The trace pipeline runs
+unchanged (`evaluation/trace/README.md`) on a copy of the database taken then:
 
 ```bash
-npm run eval:trace:extract -- --db <run>/game.db --session <game_id> --out trace.json
-npm run eval:trace -- --trace trace.json
+npm run eval:trace:extract -- --db <copy> --session <game_id> --out <game>/trace.json
+npm run eval:trace -- --trace <game>/trace.json --output-root <game>/judge
 ```
+
+That gives the mechanical checks (`clue_accounting`, `spoiler_leak`) and the
+four `gm_*` judges: one Opus call each over the whole game, and one retry for a
+call that fails. Games are graded one at a time, so at most four judge calls
+run at once. Every narration, the opening included, is then scored with the
+runtime harness's `flesch` judge (`evaluation/runtime/lib/judges/flesch.mjs`,
+no model call) against the blueprint's `target_age`: a narration passes at or
+under reading grade `max(0, target_age - 5) + 2`.
+
+The verdicts go into the game's `summary.json` as `grades`, with the judges'
+cost, and at the foot of `transcript.md`; the judges' findings are in
+`result.json`, and each narration's grade, sentence by sentence, in
+`readability.json`. A game that cannot be graded says why there, and the others
+are still graded. The run's `summary.json` is written when play ends and again
+when the last grades are in.
+
+The judges need `evaluation/trace/config/cli.json`:
+
+```bash
+cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
+```
+
+Without it `--judge` stops before playing, rather than grading with the
+mechanical checks alone. A game from an earlier run is graded by hand with the
+same two commands, run on `<run>/game.db`.
 
 ## Personas
 
@@ -168,6 +203,10 @@ the first run's figure before playing many games.
 
 - `tests/api/unit/playtest-view.test.ts`: input routing and the player view.
 - `tests/api/unit/playtest-replay.test.ts`: checkpoints, divergence, script files.
+- `tests/api/unit/playtest-judge.test.ts`: the `--judge` setup check, reading
+  levels, the transcript's grades.
+- `tests/api/integration/playtest-judge.test.ts`: a mock game graded through
+  the real trace pipeline, with the trace tests' stub judge in place of Opus.
 - `tests/api/integration/playtest.test.ts`: a scripted investigator plays the
   mock blueprint to a win on the suite's mock server, the run folder is
   written, and the game replays: unchanged to the same end; with an edited

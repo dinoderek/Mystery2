@@ -1,7 +1,11 @@
 # Character Conversation Agendas
 
-**Status:** Design
+**Status:** Implemented — historical design record, not maintained
 **Last updated:** 2026-03-27
+
+Current behaviour is in `packages/shared/src/blueprint-schema-v2.ts` (agendas,
+tells) and `docs/ai-runtime.md` (how the narrator uses them). Where this
+document disagrees with them, it is out of date.
 
 ## Problem
 

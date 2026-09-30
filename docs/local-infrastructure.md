@@ -20,8 +20,9 @@ Mock narration, no network, no API key. `npm run dev:ai:free` and
 its own login instead, with no env file (`CLAUDE_MODEL=haiku` picks another model);
 see `docs/ai-configuration.md`.
 
-Switching between them is switching command. There is nothing to reseed and
-nothing to restart, because a profile is env, not a database row.
+`npm run dev` plays whatever the settings page last chose (mock if nothing);
+the `dev:ai:*` commands override that for the life of the process. Nothing is
+seeded. See `docs/ai-configuration.md`.
 
 `npm run prod` is the same server pointed at the persistent database rather
 than this checkout's, with `prod:ai:free`, `prod:ai:paid` and `prod:ai:claude`
@@ -41,6 +42,9 @@ and database are orthogonal: `--db <name>` sets the database for any of them.
 repo, so several clones and worktrees share one set of blueprints and images
 and survive a checkout being deleted. Unset, everything resolves from the repo
 root.
+
+Machine-specific files carry a `.local` suffix and are gitignored; when a
+template is useful it is committed without the suffix (`.env.images.example`).
 
 Nothing in the tests writes to your databases. The suites start the server
 against a temporary config root and delete it afterwards.

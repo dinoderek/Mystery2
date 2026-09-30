@@ -4,7 +4,6 @@
 
 This document defines how AI-assisted narration is executed in the game server for talk, search, and accusation flows, while keeping state transitions predictable and spoiler boundaries intact.
 
-For accusation lifecycle specifics, see `docs/accusation-flow.md`.
 For profile/deploy configuration, see `docs/ai-configuration.md`.
 For a field-by-field map of which blueprint data reaches each generated output,
 see `docs/blueprint-generation-flows.md`.
@@ -31,8 +30,9 @@ Important version note:
   - `AI_CALL_LOG`: one JSON line per AI call, for reading a game back
 - `packages/game-engine/src/context.ts`
   - `AIProfileStore` — default and per-session profile lookup
-- `packages/game-engine/src/context-local.ts`
-  - Profile resolution from the environment, behind `AIProfileStore`
+- `packages/game-engine/src/ai-profile.ts`
+  - Profile resolution — environment, then the settings database, then mock —
+    behind `AIProfileStore` (see `docs/ai-configuration.md`)
 - `packages/game-engine/src/ai-contracts.ts`
   - Role output parsing and validation before state mutation
   - One Zod schema per role; `roleOutputJsonSchema(role)` derives the JSON
@@ -301,17 +301,12 @@ case resolves.
 - Output-contract failures are also returned as retriable AI failures.
 - Web UI retry logic remains the owner of retry policy.
 - `game-start` and `game-move` now map retriable provider failures to the same structured `503` shape used by other AI endpoints.
-- Blueprint reads are also resilient: the per-session turn endpoints load the
-  blueprint via `ctx.content.loadBlueprint()`, whose implementation
-  (`packages/game-engine/src/context-local.ts`) retries transient
-  `blueprints` bucket download failures with a short backoff (3 attempts) before
-  giving up. Storage reads can blip under concurrent load even when the object
-  exists; the retry prevents a player-visible `500 Blueprint missing` mid-session.
-  JSON/schema parse failures are deterministic and are not retried.
+- A blueprint that cannot be read or parsed is logged (`blueprint.read_failed`,
+  `blueprint.parse_failed`) and treated as missing; it is not retried.
 
 ## Structured AI and Request Logs
 
-- AI calls emit JSON logs to edge runtime stdout with:
+- AI calls emit JSON logs to the server's stdout with:
   - `request_id`, `endpoint`, `action`, optional `game_id`
   - `role`, `provider`, `model` (the requested model)
   - `responded_model` on success — the model the provider reported serving the
@@ -323,12 +318,8 @@ case resolves.
   - `request.invalid` for validation and mode-transition failures
   - `request.ai_retriable` for retriable AI/provider/output failures
   - `request.unhandled_error` for unexpected failures
-- Blueprint loads emit:
-  - `blueprint.download_retry` (warn-level info) per transient retry attempt
-  - `blueprint.download_failed` once all attempts are exhausted
-  - `blueprint.parse_failed` for a malformed/invalid blueprint (not retried)
-- For local development, tail these logs via:
-  - `npm run logs:edge`
+- `AI_CALL_LOG=<file>` additionally records every prompt and output
+  (`docs/ai-configuration.md`).
 
 ## Serving Request Flow
 
@@ -342,7 +333,7 @@ For endpoints using AI roles (`game-talk`, `game-ask`, `game-end-talk`, `game-se
    - search => location-relative only
    - accuse => all or none (mode-controlled)
 5. Render prompt template for the role.
-6. Resolve the session AI profile and build provider (`mock` or `openrouter`) via `createAIProviderFromProfile`.
+6. Resolve the session AI profile and build its provider (`mock`, `openrouter` or `claude-cli`) via `createAIProviderFromProfile`.
 7. Parse and validate role output contract.
 8. If validation/provider fails, return retriable error and skip state mutation.
 9. If valid, persist session/event changes and return API payload.
@@ -384,7 +375,7 @@ For `game-move`:
 4. Pass destination character public summaries including `sex` so the narrator
    can use grounded pronouns when describing who is present.
 
-For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk`, `game-ask` when time reaches zero):
+For timeout-forced endgame transitions (`game-move`, `game-search`, `game-talk` when time reaches zero):
 
 1. Validate request payload and mode transition.
 2. Build `accusation_start` context with `forced_by_timeout=true`.
@@ -424,23 +415,29 @@ not by parsing narration:
 
 ## Accusation Round Lifecycle
 
-1. `game-accuse` from `explore`:
-   - with no `player_reasoning`: enters `accuse` mode and emits `accuse_start`
-   - with `player_reasoning`: runs immediate judge round and can emit `accuse_round` or `accuse_resolved`
-2. `game-accuse` from `accuse` with reasoning:
-   - emits `accuse_round` when resolution is `continue`
-   - emits `accuse_resolved` and transitions to `ended` on `win|lose`
-3. Judge semantics: wrong or under-supported accusations return `continue` with
-   encouragement to try again; `win` requires the true culprit plus a valid
-   evidence chain or a correct account of events (or a confession earned by
-   confronting with most facts right); from round 3 a still-failing accusation
-   resolves `lose`. The mock provider mirrors this (wrong suspect → `continue`
-   until round 3, then `lose`).
+`game-accuse` takes `game_id` and `player_reasoning`, which is optional only
+when entering accuse mode.
+
+1. From `explore` without reasoning: `accusation_start` narration, mode becomes
+   `accuse`, event `accuse_start`.
+2. From `explore` with reasoning, or from `accuse`: an `accusation_judge` round.
+   `continue` stays in `accuse` (event `accuse_round`); `win`/`lose` moves to
+   `ended` with that outcome (event `accuse_resolved`). Terminal outcomes are
+   authoritative.
+3. Time reaching zero during `move`, `search` or `talk`: the action's own event
+   is stored and returned first, then a `forced_endgame` event with urgent
+   `accusation_start` narration, and the session enters `accuse` with
+   `time_remaining = 0` and no talk target. `ask` and `end_talk` cost no time,
+   so they never trigger it.
+
+Judge semantics are under Roles above. Narration-bearing events carry
+`payload.diagnostics` (session, order, time) so ordering and resume defects can
+be traced from the log alone.
 
 ## Per-Event Model Attribution
 
 Every AI-narrated event records the model that produced it in the
-`game_events.model` column (migration `0013_game_events_model.sql`):
+`game_events.model` column:
 
 - Providers expose `resolvedModel` (`packages/game-engine/src/ai-provider.ts`).
   For OpenRouter it is the model reported in the API response (`payload.model`),
@@ -480,7 +477,6 @@ When changing role output contracts, prompt/context shape, provider selection,
 or session/profile resolution:
 
 - update the mock provider behavior and unit coverage
-- update any integration or API E2E assertions that depend on the seeded
-  `default` mock profile
-- update [`docs/ai-configuration.md`](ai-configuration.md) if seeded profile
-  behavior or local profile workflow changed
+- update any integration or API E2E assertions that depend on mock narration
+- update [`docs/ai-configuration.md`](ai-configuration.md) if profile
+  resolution or the local profile workflow changed

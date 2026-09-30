@@ -308,8 +308,9 @@ coverage reports under `coverage/` are not uploaded.
 
 ## Documentation-Only Changes
 
-If a change touches only documentation and does not affect runtime code,
-tooling, migrations, tests, or environment contracts, the code quality gates are
-optional. Validate instead: command accuracy, path and link correctness,
-cross-document consistency, and stale references to old suite names or
-locations.
+If a change touches only documentation, the code suites are optional locally.
+Validate command accuracy, paths and links, and consistency with the doc that
+owns each topic. CI still runs the whole gate, and its `curated-docs` step fails
+on any edit to a doc an extract is pinned to (`docs/game.md`,
+`docs/ai-runtime.md`, `docs/blueprint-generation-flows.md`): run
+`npm run check:curated-docs` before pushing.

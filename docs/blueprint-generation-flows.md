@@ -27,18 +27,9 @@ use IDs (`character_id`, `destination` as location ID).
 
 - "Generation input" means blueprint data sent into the AI prompt or context.
 - "Attached after generation" means the generated text is paired with an
-  existing `image_id`, but that image ID did not shape the text output.
-- Shared runtime context is intentionally narrow and now contains only
-  `target_age`.
-- Runtime narration uses two different patterns today:
-  - `game-start` and `game-move` build ad hoc prompts directly in the function.
-  - `game-search`, `game-talk`, `game-ask`, `game-end-talk`, and
-    `game-accuse` use prompt templates plus `ai-context.ts`.
-- When narrator behavior or blueprint-fed AI inputs change, update this file and
-  `docs/ai-runtime.md` together so the field map and runtime behavior stay in
-  sync.
-- When evaluator assumptions or blueprint-quality contracts change, also update
-  `docs/evaluation-pipeline.md`.
+  existing `image_id` that did not shape it.
+- Every runtime prompt is assembled in `role-request.ts` (`docs/ai-runtime.md`);
+  the only context shared by all roles is `target_age`.
 
 ## Blueprint Generation Prompt Structure
 
@@ -62,10 +53,10 @@ The OpenRouter request has three important parts:
    ID fields removed before submission
 
 When the local operator CLI `scripts/generate-blueprint.mjs` writes blueprint
-files, it immediately performs a second OpenRouter verification pass against the
-generated Blueprint V2 and writes a sibling verification artifact next to each
-blueprint JSON file. Verification uses the shared evaluator prompt/schema and
-does not block the blueprint file from being written first.
+files, it runs the evaluation pipeline's mechanical checks
+(`evaluation/checks/mechanical.mjs`) in-process — no model call — and writes the
+result to a sibling `*.verification.json`. A failing check does not stop the
+blueprint file being written.
 
 The same CLI also supports `--chat-packet` export mode. In that branch it does
 not call OpenRouter; instead it renders a markdown packet from the same
@@ -234,169 +225,22 @@ Blueprint V2.
 | Ask response narration            | `game-ask` with role `talk_conversation`                                                                                | Same talk context as talk-start. Character knowledge is split into mystery `clues` (with roles) and `flavor_knowledge`. `actual_actions` provides an ordered timeline of what the character really did                                                                                                                                                             | Same-character conversation history, including prior `player_input` payloads and latest `player_input` | Active character `world.characters[].portrait_image_id` attached as the narration part image | Speaker is the in-world character, not the narrator. Flavor knowledge is shared freely; mystery clues only on relevant questions.                                                                                                                            |
 | Talk-end narration                | `game-end-talk` with role `talk_end`                                                                                    | Same talk context as talk-start                                                                                                                                                                                                                                                                                                                                   | Same-character conversation history, including prior `player_input` payloads                           | Nothing                                                                                      | Closes conversation and returns the session to explore mode. Prompt also instructs the model to use provided `sex` for pronouns.                                                                                                                             |
 | Accusation-start narration        | `game-accuse` with role `accusation_start`                                                                              | Shared context: `metadata.target_age` only. Role-specific accusation-start location/timing context plus the spoiler-safe public character roster (`id`, names, `sex`, `appearance`, `public_summary`) so the narrator can name suspects with grounded pronouns                                                                                                    | Full prior event history by default, unless `accusation_history_mode` is set to `none`                 | Nothing                                                                                      | This path stays spoiler-safe and does not receive the full blueprint.                                                                                                                                                                                        |
-| Forced accusation-start narration | `generateForcedAccusationStartNarration(...)` used by `game-move`, `game-search`, and `game-ask` when time reaches zero | Same blueprint-driven context as accusation-start                                                                                                                                                                                                                                                                                                                 | Full prior event history plus a function-supplied `scene_summary`, with `forced_by_timeout=true`       | Nothing                                                                                      | This is appended after the action narration that consumed the last turn. Prompt guidance also forbids guessing pronouns and expects use of provided character `sex` from history/full context when relevant.                                                 |
+| Forced accusation-start narration | `generateForcedAccusationStartNarration(...)` used by `game-move`, `game-search`, and `game-talk` when time reaches zero | Same blueprint-driven context as accusation-start                                                                                                                                                                                                                                                                                                                 | Full prior event history plus a function-supplied `scene_summary`, with `forced_by_timeout=true`       | Nothing                                                                                      | This is appended after the action narration that consumed the last turn. Prompt guidance also forbids guessing pronouns and expects use of provided character `sex` from history/full context when relevant.                                                 |
 | Accusation judge narration        | `game-accuse` with role `accusation_judge`                                                                              | Shared context: `metadata.target_age` only. Role-specific `accusation_judge_context` contains the full blueprint: `metadata`, `narrative`, `world`, `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths`                                                                                                                                  | Full prior event history by default, current `player_reasoning`, accusation round count                | Nothing                                                                                      | The judge accepts (`win`) only when the player names the true culprit AND either follows a `solution_paths` evidence chain or correctly tells the story of what happened (culprit + sequence of events + motive vs `ground_truth`); a confrontation can earn a confession only when most facts are already right. Wrong or under-supported accusations are rejected with encouragement (`continue`); from round 3 a still-failing accusation resolves `lose`.                                                                        |
 
-## Blueprint Field Usage Map
+## Where each field is used
 
-This section flips the view: instead of starting from each generated output, it
-starts from each **Blueprint V2** schema field and lists where that field is
-consumed today.
+Not mapped here: search the code for the field name. The tables above are the
+view that code cannot give you — which fields shape each generated output. Two
+rules the tables imply:
 
-Scope notes:
+- Only `accusation_judge` receives the full blueprint; every other narrator role
+  gets a slice, and `assertRoleContextSafety` enforces it.
+- Image ids (`metadata.image_id`, `location_image_id`, `portrait_image_id`) are
+  stripped from generator output and patched in later by the image CLI; they
+  never shape generated text.
 
-- "Used" includes prompt/context input, player-facing API shaping, image-link
-  validation, operator tooling, and storage seeding.
-- `game-accuse` judge mode receives the full blueprint in
-  `accusation_judge_context`, so all leaf fields are available there even when a
-  row below calls out narrower consumers separately.
-- All runtime lookups are ID-based (location by `id`, character by `id`,
-  clue by `id`).
+## Evaluation
 
-### Root
-
-| Field            | Where used now                                                                                                                                                                                                                                                                                                                              | Notes                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `schema_version` | `BlueprintV2Schema.parse()` validates this is `"v2"` on every endpoint                                                                                                                                                                                                                                                                     | Required discriminator for V2 parsing.                                           |
-| `id`             | `game-start` persists `game_sessions.blueprint_id`; `blueprints-list` returns it to the UI; `game-sessions-list` uses it to map session rows back to mystery titles; `generate-blueprint-images.mjs` (`createImageId`) uses it as a fallback image-ID prefix when `metadata.title` is absent; `scripts/seed-storage.ts` uploads blueprint JSON as `<id>.json` | Primary external identifier for blueprint files, sessions, and generated assets. |
-
-### `metadata`
-
-| Field                  | Where used now                                                                                                                                                                                                                                  | Notes                                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `metadata.title`       | `blueprints-list`; `game-sessions-list`; cover-image prompt generation                                                                                                                                                                          | Player-facing mystery name plus operator image prompt input.                            |
-| `metadata.one_liner`   | `blueprints-list` / landing page summary                                                                                                                                                                                                        | Player-facing list summary. No longer used for cover art (replaced by `cover_image.description`). |
-| `metadata.target_age`  | Blueprint generator prompt; `game-start`; `game-move`; `game-search`; `game-talk`; `game-ask`; `game-end-talk`; `game-accuse`                                                                                                                   | Shared age-appropriateness input across all runtime narration flows.                    |
-| `metadata.time_budget` | `game-start` initializes `game_sessions.time_remaining`; start-event diagnostics                                                                                                                                                                | Determines the initial turn budget.                                                     |
-| `metadata.narration_style` | Every runtime narration prompt (`game-start`, `game-move`, `game-search`, `game-talk`, `game-ask`, `game-end-talk`, `game-accuse`, forced endgame) via `buildStyleGuidance(...)`                                                             | Optional narration voice for this mystery, layered on top of the standard narrator style. Omitted → standard style alone. |
-| `metadata.visual_direction` | `buildImagePrompt(...)` for blueprint, character, and location images                                                                                                                                                                      | Structured visual direction (art style, color palette, mood, lighting, texture) — applied to every generated image. `portrait_background` is the one portrait-only subfield: consumed solely by the character-portrait prompt and required to stay abstract and location-agnostic. Takes precedence over `art_style`. |
-| `metadata.art_style`   | `buildImagePrompt(...)` legacy fallback when `visual_direction` is absent                                                                                                                                                                       | Deprecated single-string visual direction. Kept for backwards compatibility.            |
-| `metadata.image_id`    | `blueprints-list` exposes it as `blueprint_image_id`; `game-start` attaches it to the first narration part and persists it on the `start` event payload; `blueprint-image-link` validates it; `scripts/seed-storage.ts` seeds referenced assets | Also stripped out of AI blueprint-generation output and patched later by image tooling. |
-
-### `narrative`
-
-| Field                          | Where used now                                                                                  | Notes                                                                 |
-| ------------------------------ | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `narrative.premise`            | `game-start` opening narration prompt; also returned on `state.premise` (game-start/game-get) for the notebook's case-facts section | Main hook for story opening. No longer used for cover art (replaced by `cover_image.description`). |
-| `narrative.starting_knowledge` | `game-start` and `game-get` surface it as structured `state` fields for the in-game notebook: `state.mystery_summary` plus a `summary` on each `state.locations[]` / `state.characters[]` entry (matched by id). It is no longer formatted into narration. `starting_knowledge.characters[].summary` is also the `public_summary` in every AI character roster (talk public summaries, move destination characters, accusation-start roster) — the only cross-character knowledge shared by default. | Structured object with `mystery_summary`, `locations[]` (referencing `world.locations[].id`), and `characters[]` (referencing `world.characters[].id`). Optional; fields are `null` when absent. |
-
-### `world`
-
-| Field                        | Where used now                                                                            | Notes                                         |
-| ---------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `world.starting_location_id` | `game-start` sets initial `current_location_id`; returned in the initial `state.location` | Starting point for the session state machine. |
-
-### `cover_image`
-
-| Field                      | Where used now                                                                                                                                  | Notes                                                                                           |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `cover_image.description`  | `buildImagePrompt(...)` for blueprint cover images                                                                                              | AI-authored creative direction for the cover illustration. Generated by the blueprint generator. |
-| `cover_image.location_ids` | `buildImagePrompt(...)` for blueprint cover images — location scene references are attached when available                                      | References existing location ids. Can be empty for abstract covers.                             |
-| `cover_image.character_ids`| `buildImagePrompt(...)` for blueprint cover images — portrait references are attached when available                                            | References existing character ids. Can be empty for setting/mood-focused covers.                |
-
-### `world.locations[]`
-
-| Field                                 | Where used now                                                                                                                                                                                                  | Notes                                                                            |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `world.locations[].id`                | All location lookups (`findLocationById`); `game-move` destination validation; `game-search` location matching; session DB `current_location_id`; event payloads                                                | Primary location identifier across all runtime flows.                            |
-| `world.locations[].name`              | `game-start` / `game-get` state location lists; `game-move` narration; `game-search` context; talk-context location grounding; location image prompt generation                                                 | Human-readable location label.                                                   |
-| `world.locations[].description`       | `game-move` narration; `game-search` search context; talk-context location grounding; accusation-start location context; location image prompt generation                                                       | Shared descriptive text for movement, searching, and conversation framing.       |
-| `world.locations[].location_image_id` | `game-move` attaches it to move narration and persists it on move/forced-endgame payloads; `blueprint-image-link` validates it; `scripts/seed-storage.ts` seeds referenced assets                               | Stripped from AI blueprint-generation output and patched later by image tooling. |
-| `world.locations[].clues`             | `game-search` location-level clue progression (structured `{id, text, role}`, ID-based tracking of revealed clues, next unrevealed clue for bare search); also available to accusation judging via full blueprint context             | Location-level clues revealed by bare search. At most 1 per location recommended. Roles enable tonal calibration. |
-| `world.locations[].sub_locations`     | `game-search` targeted search context (each sub-location provides `id`, `name`, `hint`, `clues` with unrevealed filtering); `game-move` narration (sub-location names passed to prompt so narrator describes searchable areas on arrival); also available to accusation judging via full blueprint context | Searchable areas within each location. Each has a narrator-only `hint` and at most 1 clue. Defaults to `[]` for backward compatibility. |
-
-### `world.characters[]`
-
-| Field                                                      | Where used now                                                                                                                                                                                                                            | Notes                                                                                             |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `world.characters[].id`                                    | All character lookups (`findCharacterById`); `game-talk` character validation; session DB `current_talk_character_id`; event payloads; `game-start` / `game-get` state character lists                                                    | Primary character identifier across all runtime flows.                                            |
-| `world.characters[].first_name`                            | `game-start` / `game-get` player-visible character lists; `game-move` destination character summaries and `visible_characters`; `game-talk` / `game-ask` speaker labels; character portrait prompt generation                             | Human-readable character label.                                                                   |
-| `world.characters[].last_name`                             | `game-start` / `game-get` player-visible character lists; `game-move` destination character summaries and `visible_characters`; talk-context grounded public character summaries                                                          | Used for public-facing naming.                                                                    |
-| `world.characters[].location_id`                           | `game-start` / `game-get` player-visible character positions; `game-move` destination filtering; `game-talk` location validation; talk-context grounded public character summaries                                                        | ID-based link between characters and locations.                                                   |
-| `world.characters[].sex`                                   | `game-start` / `game-get` player-visible character lists; `game-move` destination character summaries and `visible_characters`; talk-context grounded public/private character summaries; accusation judging via full blueprint context   | Used to ground narrator/character pronouns and now present on player-visible character summaries. |
-| `world.characters[].appearance`                            | `game-move` destination character summaries; talk-context public/private character summaries; character portrait prompt generation                                                                                                        | Public descriptive input for both narration and portraits.                                        |
-| `world.characters[].background`                            | Talk private-character context (active character only)                                                                                                                                                                                    | Private authored backstory. No longer shared in public character summaries (talk roster, move, accusation start) — those carry `starting_knowledge` summaries instead.                                  |
-| `world.characters[].personality`                           | Talk private-character context; character portrait prompt generation                                                                                                                                                                      | Shapes roleplay and portrait vibe.                                                                |
-| `world.characters[].initial_attitude_towards_investigator` | Talk private-character context                                                                                                                                                                                                            | Used to ground conversation stance.                                                               |
-| `world.characters[].stated_alibi`                          | Talk private-character context; blueprint generator prompt/checks; also available to accusation judging via full blueprint context                                                                                                        | Public claim used to support contradiction-based mysteries.                                       |
-| `world.characters[].motive`                                | Talk private-character context; blueprint generator prompt/checks; also available to accusation judging via full blueprint context                                                                                                        | Supports both red herrings and final reasoning.                                                   |
-| `world.characters[].is_culprit`                            | Blueprint generator critical check; available to accusation judging via full blueprint context; used by mock accusation evaluation helpers                                                                                                | Runtime narration does not expose this directly to the player.                                    |
-| `world.characters[].portrait_image_id`                     | `game-talk` and `game-ask` attach it to narration parts and persist it on event payloads; `blueprint-image-link` validates it; `scripts/seed-storage.ts` seeds referenced assets                                                          | Stripped from AI blueprint-generation output and patched later by image tooling.                  |
-| `world.characters[].clues`                                 | Talk private-character context (structured `{id, text, role}`); also available to accusation judging via full blueprint context; referenced by `solution_paths` and `suspect_elimination_paths`                                            | Character-specific mystery clues shared only when relevant topics arise.                          |
-| `world.characters[].flavor_knowledge`                      | Talk private-character context; shared freely in conversation to add personality and depth                                                                                                                                                 | Non-mystery worldbuilding facts that enrich roleplay.                                             |
-| `world.characters[].actual_actions`                        | Talk private-character context (ordered `{sequence, summary}` timeline); also available to accusation judging via full blueprint context                                                                                                  | Hidden timeline used for character consistency and endgame reasoning.                             |
-| `world.characters[].agendas`                               | Talk private-character context; shapes how the narrator AI filters responses through behavioral directives (self-protection, protect-other, implicate-other, conditional-reveal)                                                           | Defaults to `[]` (cooperative witness). Gated clues require specific player actions to unlock.    |
-| `world.characters[].tells`                                 | Talk private-character context; authored behavioral cues, each with a `trigger` (`always`, `condition` with free text, or `clue` referencing `clue_ids`) so tells surface reactively instead of every turn                                  | Defaults to `[]`. A `clue` trigger fires when the player brings up the referenced clue and is believed (holds the clue or bluffs convincingly); a `condition` trigger fires when its narrative condition is met. |
-| `world.characters[].clues[].about_character_id`            | Metadata for cross-character clue roles (`alibi_knowledge`, `witness_testimony`, `motive_knowledge`); used by narrator and evaluator                                                                                                     | Optional. References the character the clue is about.                                             |
-| `world.characters[].clues[].hint_location_id`              | Metadata for `location_hint` clue role; used by narrator and evaluator                                                                                                                                                                    | Optional. References the location the clue points to.                                             |
-
-### `ground_truth`
-
-| Field                          | Where used now                                                                                     | Notes                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `ground_truth.what_happened`   | Available to accusation judging via full blueprint context                                         | Not used in explore/talk/search flows.            |
-| `ground_truth.why_it_happened` | Blueprint generator prompt constraints; available to accusation judging via full blueprint context | Canonical explanation of the culprit's reason.    |
-| `ground_truth.timeline`        | Blueprint generator prompt/checks; available to accusation judging via full blueprint context      | Endgame reasoning relies on timeline consistency. |
-
-### `solution_paths`
-
-| Field                                    | Where used now                                                                                             | Notes                                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `solution_paths[].id`                    | Available to accusation judging via full blueprint context                                                 | Unique identifier for each valid solution chain.                           |
-| `solution_paths[].summary`               | Available to accusation judging via full blueprint context                                                 | Human-readable description of the reasoning chain.                         |
-| `solution_paths[].location_clue_ids`     | Available to accusation judging via full blueprint context; references `world.locations[].clues[].id`      | Links solution paths to specific location-based clues.                     |
-| `solution_paths[].character_clue_ids`    | Available to accusation judging via full blueprint context; references `world.characters[].clues[].id`     | Links solution paths to specific character-based clues.                    |
-
-### `red_herrings`
-
-| Field                                | Where used now                                                                                         | Notes                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| `red_herrings[].id`                  | Available to accusation judging via full blueprint context                                             | Unique identifier for each red herring path.                    |
-| `red_herrings[].summary`             | Available to accusation judging via full blueprint context                                             | Describes why this evidence trail is misleading.                |
-| `red_herrings[].location_clue_ids`   | Available to accusation judging via full blueprint context; references `world.locations[].clues[].id`  | Links red herrings to specific misleading location clues.       |
-| `red_herrings[].character_clue_ids`  | Available to accusation judging via full blueprint context; references `world.characters[].clues[].id` | Links red herrings to specific misleading character clues.      |
-
-### `suspect_elimination_paths`
-
-| Field                                              | Where used now                                                                                         | Notes                                                                    |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `suspect_elimination_paths[].id`                   | Available to accusation judging via full blueprint context                                             | Unique identifier for each suspect elimination path.                     |
-| `suspect_elimination_paths[].summary`              | Available to accusation judging via full blueprint context                                             | Describes the evidence chain that clears an innocent suspect.            |
-| `suspect_elimination_paths[].location_clue_ids`    | Available to accusation judging via full blueprint context; references `world.locations[].clues[].id`  | Links elimination paths to specific location clues.                      |
-| `suspect_elimination_paths[].character_clue_ids`   | Available to accusation judging via full blueprint context; references `world.characters[].clues[].id` | Links elimination paths to specific character clues.                     |
-
-## Current-State Takeaways
-
-- Everything runs on Blueprint V2 with ID-based lookups throughout.
-- Shared runtime context is intentionally minimal: only `target_age`.
-- Search narration supports two modes: bare search (sequential location-level
-  clues) and targeted search (player-guided freeform text judged against
-  sub-locations by the AI with GM leeway). Clue roles (`{id, text, role}`)
-  enable the narrator to calibrate significance. Sub-locations provide
-  narrator-only hints for steering players toward discoverable clues.
-- Move narration receives grounded public character summaries (with `id` and
-  `location_id`) for the destination location.
-- Talk-family endpoints receive the broader location list plus private
-  active-character context including structured `clues`, `flavor_knowledge`,
-  `actual_actions`, `agendas`, and `player_known_clues` (reconstructed from
-  search and ask event payloads across the full game history).
-- Character `sex` flows into public character summaries and runtime AI
-  contexts so narrator-facing prompts can instruct the model to use grounded
-  pronouns instead of inferring them.
-- `game-start` remains AI-backed, but `starting_knowledge` (a structured object
-  with mystery summary, location summaries, and character summaries) is
-  formatted and appended as a non-generated narrator block.
-- Accusation framing stays spoiler-safe; accusation judging receives the full
-  blueprint including `solution_paths`, `red_herrings`, and
-  `suspect_elimination_paths` for evaluating player reasoning quality.
-- Session DB stores location and character IDs, not names. Client API requests
-  use `character_id` and location ID as `destination`.
-
-## Evaluation Assets And Follow-Up Design Ideas
-
-Blueprint evaluation lives in the evaluation pipeline at `evaluation/`, which
-targets Blueprint V2. It combines always-on mechanical checks
-(`evaluation/checks/mechanical.mjs`) with one LLM judge per dimension.
-
-See `docs/evaluation-pipeline.md` for the design and `evaluation/README.md` for
-how to run it.
+Generated blueprints are judged by the pipeline in `evaluation/`
+(`docs/evaluation-pipeline.md`).

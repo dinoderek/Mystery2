@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Source: `docs/game.md`
-> Source git blob hash: `a18e89d5486cbe81ee5a2af8ac89096250a24376`
+> Source git blob hash: `826fe427d7dd61d2e155de42dec4338fcd48e1e5`
 > Verifier: `node evaluation/generator-harness/scripts/check-curated-docs.mjs`
 > If the source changes in ways that affect blueprint authoring, regenerate this file.
 
@@ -18,8 +18,8 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 ## The player loop (per turn)
 
 - `move to <location>` — narrator describes arrival; costs 1 turn
-- `talk to <character>` — enters talk mode (free); each follow-up question
-  costs 1 turn; ends free
+- `talk to <character>` — enters talk mode; costs 1 turn; questions and
+  ending the conversation are free
 - `search` (bare) — reveals the next location-level clue in sequence; 1 turn
 - `search <free text>` (targeted) — player describes where/what to look at; AI
   judges whether it matches a sub-location and reveals that sub-location's clue

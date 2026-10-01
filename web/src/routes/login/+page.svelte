@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import ProfilePicker from '$lib/ui/ProfilePicker.svelte';
+	import ProfilePicker from '$lib/components/ProfilePicker.svelte';
 </script>
 
 <main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center p-8">

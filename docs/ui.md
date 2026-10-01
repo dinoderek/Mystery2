@@ -21,8 +21,7 @@ props, and the command grammar live in the code; do not mirror them here.
 - Logic goes in plain `.ts` beside the stores (`parser.ts`, `session-pages.ts`,
   `notebook.ts`, `store.retry.ts`), not in components. That is what the web unit
   suite covers; components are covered only by browser E2E.
-- Components are in `src/lib/components/` (the session screen) and
-  `src/lib/ui/` (`ProfilePicker`). Look in both before adding one.
+- Components are all in `src/lib/components/`. Look there before adding one.
 
 | Route | Screen |
 |---|---|
@@ -66,15 +65,17 @@ it. `docs/game.md` describes commands at the player level only.
 
 - Tailwind utilities only. No CSS modules; a `<style>` block only for what
   Tailwind cannot express, scoped to the component.
-- Colours only through the theme tokens — `text-t-primary`, `bg-t-bg`,
+- Colours only through the tokens — `text-t-primary`, `bg-t-bg`,
   `border-t-muted/30` — never a palette colour like `text-green-400`. Borders,
   hovers and subtle backgrounds are opacity modifiers on a token.
+- There is one palette, green on black, and no theme switching. The tokens are
+  CSS variables on `:root` in `src/routes/layout.css`, mapped to Tailwind
+  through `@theme`; a colour change is an edit there and nowhere else.
 - The tokens are `bg`, `primary`, `bright`, `muted`, `dim`, `dialogue`,
-  `error`, `warning`, plus `glow` (the muted colour at 30%, for shadows).
-  `src/routes/layout.css` maps them to Tailwind through `@theme`.
-- Themes are the `THEMES` array in `src/lib/domain/theme-store.svelte.ts`;
-  adding an entry is all it takes. Players switch with `themes` /
-  `theme <name>`, and the choice is kept in `localStorage`.
+  `error`, `warning`, plus `glow` (the muted colour at 30%, for shadows). The
+  transcript's speakers have their own: each kind has a label colour and a
+  paler text colour, reusing `bright` and `dialogue` where they fit.
+  `text-shadow-glow` and `text-shadow-glow-soft` give transcript text its glow.
 - There is no shared form-control component. Copy the classes: selectable rows
   and text inputs from `ProfilePicker.svelte`, the selected state
   (`aria-pressed`) from `src/routes/settings/+page.svelte`. Buttons are

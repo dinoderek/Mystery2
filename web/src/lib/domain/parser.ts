@@ -28,8 +28,6 @@ export type ParseResult =
   | { type: 'unrecognized'; raw: string; hint: string }
   | { type: 'help' }
   | { type: 'quit' }
-  | { type: 'theme-list' }
-  | { type: 'theme-set'; themeName: string }
   | { type: 'notebook'; section: NotebookSection | null };
 
 const MOVE_ALIASES = ['head towards', 'travel to', 'move to', 'go to', 'move', 'go'] as const;
@@ -41,8 +39,6 @@ const CHARACTER_LIST_ALIASES = ['who is here', 'characters'] as const;
 const HELP_ALIASES = ['help'] as const;
 const QUIT_ALIASES = ['quit', 'exit'] as const;
 const END_TALK_ALIASES = ['goodbye', 'see you', 'leave', 'bye', 'end'] as const;
-const THEME_LIST_ALIASES = ['themes'] as const;
-const THEME_SET_PREFIX = 'theme' as const;
 const NOTEBOOK_ALIASES = ['notebook', 'n'] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
@@ -340,17 +336,6 @@ export function normalizeInput(rawInput: string): string {
 }
 
 function parseGlobalCommand(text: string): ParseResult | null {
-  if (isAliasExact(text, THEME_LIST_ALIASES)) {
-    return { type: 'theme-list' };
-  }
-
-  if (isAliasPrefix(text, THEME_SET_PREFIX)) {
-    const target = extractAliasTarget(text, THEME_SET_PREFIX);
-    if (target !== '') {
-      return { type: 'theme-set', themeName: target };
-    }
-  }
-
   if (isAliasExact(text, NOTEBOOK_ALIASES)) {
     return { type: 'notebook', section: null };
   }

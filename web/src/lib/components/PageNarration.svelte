@@ -40,7 +40,7 @@
 >
   <div class="space-y-4">
     {#each lines as line}
-      <TerminalMessage text={line.text} speaker={line.speaker} theme={gameSessionStore.theme} />
+      <TerminalMessage text={line.text} speaker={line.speaker} />
     {/each}
 
     {#if gameSessionStore.status === 'loading' && gameSessionStore.isOnLivePage}

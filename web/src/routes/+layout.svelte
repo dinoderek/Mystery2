@@ -4,7 +4,6 @@
 	import { page } from '$app/stores';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { themeStore } from '$lib/domain/theme-store.svelte';
 	import { gameSessionStore } from '$lib/domain/store.svelte';
 	import { playerStore } from '$lib/domain/player-store.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
@@ -12,8 +11,6 @@
 	let { children } = $props();
 
 	onMount(() => {
-		themeStore.init();
-		gameSessionStore.initializeTheme();
 		playerStore.init();
 	});
 

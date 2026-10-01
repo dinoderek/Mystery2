@@ -3,8 +3,8 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/game.md#starting` — `fbb3445847cfa7cdcd303a96b4b228854d6e87c8`
-> - `docs/game.md#commands` — `8accfbf88c797801cbefa9737e15df73d91b62f1`
-> - `docs/game.md#talking` — `5476986f341023cf862ed51db98c31d8c7cc8891`
+> - `docs/game.md#commands` — `ef885086ce83226ee0d329bfb329d4f51bc10cb0`
+> - `docs/game.md#talking` — `2ab4fb1e31dd9f8a88f758bc6811043ef06b4c62`
 > - `docs/game.md#searching` — `569d2c609bcb535d1bc3c8f1c6fd810121b75314`
 > - `docs/game.md#moving` — `da36d9c4d8be3b68a4aeae1d6c0d66fa9c7b050e`
 > - `docs/game.md#notebook` — `712576263594de7b4a572a69cd0e483159cbf3e0`

@@ -249,7 +249,7 @@ test.describe('Command Input', () => {
     await expect(page.getByText('Mayor Fox answers your question.')).toBeVisible();
     const characterLine = page.locator('[data-speaker-kind="character"]').last();
     await expect(characterLine).toContainText('Mayor:');
-    await expect(characterLine).toHaveClass(/speaker-character-generic/);
+    await expect(characterLine).toHaveClass(/text-t-dialogue-text/);
 
     expect(talkCalls).toBe(1);
     expect(askCalls).toBe(1);
@@ -427,7 +427,7 @@ test.describe('Command Input', () => {
     const mayorClass = await characterRow.getAttribute('class');
 
     expect(rosieClass).toBe(mayorClass);
-    expect(rosieClass).toContain('speaker-character-generic');
+    expect(rosieClass).toContain('text-t-dialogue-text');
   });
 
   test('routes accuse-mode free text to game-accuse reasoning (not game-ask)', async ({ page }) => {

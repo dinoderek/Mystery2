@@ -24,16 +24,15 @@ blueprints committed in `blueprints/`, which are deterministic fixtures.
   AI-provider helpers; blueprint generation, evaluation, and image helpers; the
   local adapter (repositories, content loading, profile resolution, schema);
   mock provider behavior → **API/shared unit**
-- parser and command normalization; retry classification; store and theme-store
-  behavior; speaker mapping and other client-only transcript transforms →
-  **web unit**
+- parser and command normalization; retry classification; store behavior;
+  speaker mapping and other client-only transcript transforms → **web unit**
 - endpoints, profile gating, session ownership, schema, content loading, API
   contracts, AI profile resolution and provider selection → **integration**
 - multi-endpoint player journeys; session start/resume/endgame lifecycle →
   **API E2E**
 - route protection and the profile picker; terminal rendering, command entry,
-  loading states, retries; session list navigation; theme commands and
-  persistence; image rendering and its failure UX → **browser E2E**
+  loading states, retries; session list navigation; speaker colours; image
+  rendering and its failure UX → **browser E2E**
 
 A change that crosses boundaries updates every affected suite. An AI output
 contract change, for example, touches unit

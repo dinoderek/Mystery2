@@ -40,7 +40,7 @@ describes arrival at the starting location.
 | `accuse [statement]` | Start the accusation | 0 |
 | `notebook`, `n`, `Tab` | Open the case notebook | 0 |
 | `locations`, `characters` | Open the notebook at Places or People | 0 |
-| `help`, `themes`, `theme <name>` | Help; change colours | 0 |
+| `help` | Help | 0 |
 | `quit`, `exit` | Leave the case | — |
 
 When the budget reaches zero, the action that spent the last turn still
@@ -58,7 +58,7 @@ what they were really doing, and any deception the blueprint gives them. They
 remember earlier questions in the same game.
 
 While talking, every line is said to the character except the end-talk words,
-`help`, `quit`/`exit`, `notebook`/`n` and the theme commands. That includes
+`help`, `quit`/`exit` and `notebook`/`n`. That includes
 `accuse …`: "I think you took it!" is said to the suspect's face and answered in
 character. To accuse, say `bye` first.
 

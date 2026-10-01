@@ -18,7 +18,7 @@ npm run eval:playtest -- --blueprint the-missing-heartwood --judge
 Needs a logged-in `claude` CLI (both the narrator and the investigator run
 through it) and nothing else: no API key, no env file. It builds the web app,
 starts it on a free port against a throwaway database, and never touches yours.
-Run it with no arguments for the full option list; `--narrator mock` is for
+Run it with `--help` for the full option list; `--narrator mock` is for
 plumbing checks only. Read
 `evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
 

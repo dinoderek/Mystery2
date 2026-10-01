@@ -35,6 +35,7 @@
 //                             evaluation/trace/config/cli.json; off by default)
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
+//   -h, --help                show this help
 //
 // Blueprints are looked up in the repo's blueprints/ only; one generated into
 // your config root is named by its path.
@@ -123,14 +124,19 @@ function kebab(key) {
   return key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
+/** The header comment above, without its comment markers. */
+function usageText() {
+  const lines = fs.readFileSync(new URL(import.meta.url), "utf8").split("\n").slice(1);
+  const end = lines.findIndex((line) => !line.startsWith("//"));
+  return lines
+    .slice(0, end)
+    .map((line) => line.replace(/^\/\/ ?/, ""))
+    .join("\n");
+}
+
 function usage(message) {
   console.error(`${message}\n`);
-  const header = fs.readFileSync(new URL(import.meta.url), "utf8")
-    .split("\n")
-    .slice(1)
-    .filter((line) => line.startsWith("//"))
-    .map((line) => line.replace(/^\/\/ ?/, ""));
-  console.error(header.join("\n"));
+  console.error(usageText());
   process.exit(1);
 }
 
@@ -201,7 +207,12 @@ function readScript(file) {
   }
 }
 
-const args = parseArgs(process.argv.slice(2));
+const argv = process.argv.slice(2);
+if (argv.includes("--help") || argv.includes("-h")) {
+  process.stdout.write(`${usageText()}\n`);
+  process.exit(0);
+}
+const args = parseArgs(argv);
 const replayFile = args.replay ? path.resolve(args.replay) : null;
 const script = replayFile ? readScript(replayFile) : null;
 const { file: blueprintFile, blueprint } = findBlueprint(args.blueprint ?? script.blueprintId);

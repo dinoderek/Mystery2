@@ -3,7 +3,6 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `packages/blueprint-generator/src/story-brief.ts` — `163a7631efa92fcb7f85101c0cc2040b65a11744`
-> - `docs/blueprint-generation-flows.md#story-brief` — `968cacb353c26545be28e208a7bd9d95c929b304`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 

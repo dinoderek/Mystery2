@@ -43,7 +43,7 @@ Non-goals:
 | Directory | Holds |
 |---|---|
 | `web/` | The SvelteKit server and SPA (`docs/ui.md`) |
-| `packages/game-engine/` | The game (`packages/game-engine/README.md`) |
+| `packages/game-engine/` | The game (`docs/backend-conventions.md`) |
 | `packages/shared/` | Zod schemas both sides import: the blueprint and the API contracts |
 | `packages/blueprint-generator/` | Blueprint generation, used by the operator scripts |
 | `blueprints/` | Committed blueprints, including the fixtures the suites play |
@@ -113,8 +113,8 @@ shortcut around it. The browser is stricter than the server on purpose
 The engine is the game. It does not know how it is hosted: handlers take an
 `EngineContext` and reach the outside world only through it. That boundary is
 what makes the storage substitutable — an adapter can be written and tested
-alongside the current one, and the handlers cannot tell which they have. The
-package README maps its files.
+alongside the current one, and the handlers cannot tell which they have. How
+to work inside it is `docs/backend-conventions.md`.
 
 ### Data
 

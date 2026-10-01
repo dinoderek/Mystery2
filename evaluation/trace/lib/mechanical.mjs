@@ -275,9 +275,8 @@ function checkSpoilerLeak(rawTrace, minRun = DEFAULT_SPOILER_MIN_RUN) {
 // the game master granted off-script (listed in the event payload's
 // `revealed_off_script`) are intentional brilliance bypasses and are exempt.
 //
-// This proves the runtime actually HONORS the discovery graph, so it is opt-in via
-// context.enforce_requires (default off): until the runtime gating lands, the
-// engine reveals gated clues freely and this check would fail real traces.
+// This proves the runtime actually HONORS the discovery graph. It is opt-in via
+// context.enforce_requires (default off).
 function checkClueRequiresViolation(rawTrace) {
   const blueprint = rawTrace.blueprint;
   const clues = collectClues(blueprint);

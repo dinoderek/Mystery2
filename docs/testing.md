@@ -48,75 +48,39 @@ browser-specific journeys.
 
 ### The gate
 
-`npm test` (alias `npm run test:gate`) runs `scripts/run-test-gate.mjs`.
-
-Phase 1, parallel:
-
-1. `npm run lint`
-2. `npm run typecheck`
-3. `npm -w web run check`
-4. `npm run test:unit:coverage`
-5. `npm -w web run test:unit:coverage`
-6. `npm run check:curated-docs`
-7. `npm run check:doc-refs`
-
-Phase 2, serial (each starts a server on the worktree's port), and only if all
-of phase 1 passed:
-
-8. `npm run test:integration`
-9. `npm run test:e2e`
-10. `npm -w web run test:e2e`
+`npm test` runs `scripts/run-test-gate.mjs`, whose `STEPS` list is the
+definitive set. Phase 1 runs in parallel: lint, typecheck, `svelte-check`, both
+unit suites with coverage, and the two doc checks. Phase 2 runs only if all of
+phase 1 passed, one step at a time because each starts a server on the
+worktree's port: integration, API E2E, browser E2E.
 
 **Every step runs in every environment.** The gate needs nothing beyond this
 repo — no Docker, no CLI, no seeding — so there is no waiver and no condition
 under which a suite may be reported as skipped. A suite that cannot start is a
-bug to fix, not a partial run to report.
+bug to fix, not a partial run to report. Focused scripts are for iteration;
+re-run the gate if you edit after it passes.
 
-Focused sub-scripts are for iteration only; they do not replace the gate. Run
-the gate before finalizing any non-documentation change, and re-run it if you
-edit after it passes.
+Integration and API E2E run against the production build (`node build/index.js`),
+not the dev server, so a bundling failure is caught. Before starting it, the
+runner fails if anything already holds the port: otherwise that process would
+answer the readiness poll and the suite would test the wrong server. The
+browser suite starts `vite dev` through Playwright's `webServer`. Each gets a
+config root of its own, deleted afterwards, so nothing needs restarting after
+an engine edit.
 
-Nothing needs restarting after an engine edit: the phase 2 scripts rebuild
-before each run, and the browser suite's dev server reloads.
-
-Two steps check the docs rather than the code:
+The two doc checks:
 
 - `check:curated-docs` holds the curated extracts in
-  `evaluation/generator-harness/template/docs/` to the sources they were written
-  from. An extract pins either a whole file or one `<!-- extract:<id> -->`
-  section of a doc, so only an edit to what it actually summarises fails the
-  step. On drift it names the last commit at which the pin held; review that
-  diff against the extract, fix the extract if it no longer holds, then record
-  the new hash. Refreshing the hash alone silences the check without fixing the
-  doc. See `evaluation/generator-harness/template/README.md`.
+  `evaluation/generator-harness/template/docs/` to the doc sections they
+  summarise. On drift it names the commit to diff against; fix the extract if
+  it no longer holds, then record the new hash — a refreshed hash over stale
+  prose silences the check without fixing anything. Details:
+  `evaluation/generator-harness/template/README.md`.
 - `check:doc-refs` fails when `AGENTS.md`, `QUICKSTART.md`, `docs/` or a README
-  names a repo path, an `npm run` script or a relative link that does not
-  exist. A code span counts as a path only when its first segment is a real
-  directory, so model ids and `a/b` enums are left alone; gitignored paths are
-  runtime output and are skipped. `docs/design/` and the harness templates are
-  not checked.
-
-### What the suite scripts do
-
-`npm run test:integration` and `npm run test:e2e`
-(`scripts/run-mock-tests.mjs`):
-
-1. build the web app (`npm -w web run build`)
-2. fail if anything already holds the worktree's port — checked by connecting
-   to it, before the server is started, because the process holding it would
-   otherwise answer the readiness poll and the suite would run against it
-3. start `node build/index.js` against a temporary config root on that port,
-   and wait for it to answer
-4. run Vitest, passing `MYSTERY_TEST_API_URL` and `MYSTERY_TEST_CONFIG_ROOT`
-5. stop the server, whether or not the suite passed, and delete the config
-   root; a server still running 5 seconds after SIGTERM is killed
-
-The production build is used rather than the dev server so that a bundling
-failure is caught here.
-
-`npm -w web run test:e2e` starts the dev server through Playwright's
-`webServer` against a config root of its own, which `web/e2e/global-setup.ts`
-empties first and `global-teardown.ts` removes.
+  names a path, an `npm run` script or a relative link that does not exist. A
+  code span counts as a path only when its first segment is a real directory;
+  gitignored paths are skipped; `docs/design/` and the harness templates are not
+  checked.
 
 ### Concurrency
 
@@ -156,86 +120,35 @@ tolerance of retriable `503`s. There is no profile to seed —
 
 ## Reading The Results
 
-Each `npm test` run writes `test-results/<timestamp>/`, keeping the last 5:
+Each `npm test` run writes `test-results/<timestamp>/` (the last five are
+kept): one log per step, `summary.log`, and `coverage.log`. In `summary.log`,
+the `Total` line is the verdict; the coverage section after it is information
+and never changes the exit code. Read the file, not console scrollback.
 
-- one log per step — `lint.log`, `typecheck.log`, `unit-api.log`, and so on
-- `summary.log` — per-step status and timing, the `Total` verdict, then
-  coverage
-- `coverage.log` — the full per-file coverage breakdown
-
-```
-lint               4.2s  PASS
-typecheck          8.1s  PASS
-unit-api           2.3s  PASS
-integration       18.4s  PASS
-─────────────────────────────
-Total             45.1s  PASS
-
-=== Coverage ===
-
-api   stmts 55.0%  branch 50.6%  funcs 72.4%
-      14 file(s) at or below 60% statements:
-    0.0%   128 uncovered  packages/game-engine/src/endpoints/game-search.ts
-      ...and 13 more — see coverage.log
-web   stmts 50.7%  branch 47.4%  funcs 56.1%
-      no file at or below 60% statements
-```
-
-`Total` is the verdict. Everything below it is information; no coverage number
-changes the exit code. Read this file rather than console scrollback.
-
-For failures, also: the per-step log; the server's stdout, which the runner
-inherits and which logs structured JSON per request; `readStoredSession()` and
-`readStoredEvents()` for what was actually persisted; and, for Playwright,
-`web/playwright-report/` and `web/test-results/` (`screenshot:
-'only-on-failure'`, `trace: 'retain-on-failure'`).
+For a failure, also look at the server's stdout (structured JSON per request),
+`readStoredSession()` and `readStoredEvents()` in
+`tests/api/integration/helpers.ts` for what was actually persisted, and for
+Playwright `web/playwright-report/` and `web/test-results/` (screenshots and
+traces are kept on failure).
 
 ## Coverage
 
-Measured on every gate run, never enforced. You do not run anything extra: if
-you ran `npm test`, you have it.
-
-Machine-readable output, in the istanbul summary shape (`total` plus one entry
-per absolute file path, each with `statements` / `branches` / `functions` /
-`lines` carrying `total`, `covered`, `pct`):
-
-- `coverage/api/coverage-summary.json`
-- `web/coverage/coverage-summary.json`
-
-`coverage/api/index.html` and `web/coverage/index.html` are the browsable
-reports.
-
-What is measured, per the `coverage.include` arrays in `vitest.config.ts` and
-`web/vite.config.ts`:
-
-- `packages/game-engine/src/**/*.ts`, `packages/shared/src/**/*.ts`
-- `web/src/lib/**/*.ts`, `web/src/lib/**/*.svelte`
-
-A new source directory outside those globs is invisible until it is added.
-
-Files are listed at or below `LOW_FILE_THRESHOLD` in
-`scripts/lib/coverage-report.mjs` (60% of statements), ranked by **uncovered
-statements, not percentage**. A project whose unit step did not pass reads
-`not measured` with the reason, never partial numbers; the gate deletes both
-report directories before starting, so a missing report stays visibly missing.
+Measured on every gate run, never enforced. The measured globs are the
+`coverage.include` arrays in `vitest.config.ts` and `web/vite.config.ts`; a new
+source directory outside them is invisible until added. `summary.log` lists
+files at or below `LOW_FILE_THRESHOLD` (`scripts/lib/coverage-report.mjs`),
+ranked by uncovered statements, not percentage. A project whose unit step
+failed reads `not measured`, never partial numbers.
 
 **The numbers come from the unit suites alone.** Integration and E2E drive a
-separate server process over HTTP, which this instrumentation does not observe.
-So every file under `packages/game-engine/src/endpoints/` sits at 0% and is not
-untested — the API E2E suite exercises all of them, as the browser E2E suite
-does for `web/src/lib/components/*.svelte`. A file on the list is a reason to
-act only when its boundary is unit; check [Which Suite To
-Update](#which-suite-to-update) first.
+separate server process, which this instrumentation does not see, so every file
+under `packages/game-engine/src/endpoints/` reads 0% while API E2E exercises all
+of them — as browser E2E does for `web/src/lib/components/`. A listed file is a
+reason to act only when its boundary is unit ([Which Suite To
+Update](#which-suite-to-update)).
 
-To iterate without a full gate run:
-
-```bash
-npm run test:unit:coverage          # → coverage/api/
-npm -w web run test:unit:coverage   # → web/coverage/
-```
-
-These write the directories the gate reads, so a stale hand-run report can be
-picked up by a later inspection. The gate itself is immune; it clears them.
+`npm run test:unit:coverage` and `npm -w web run test:unit:coverage` write the
+same reports (`coverage/api/`, `web/coverage/`) for iteration.
 
 ## Writing Tests
 
@@ -314,14 +227,9 @@ provider and its tests in the same change ("The mock provider" in
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pushes to `main` and PRs targeting it. One
-job, **gate**, running `npm test`; `concurrency.cancel-in-progress` cancels
-stale runs on the same branch.
-
-It uploads `test-results/` on every run — per-step logs, `summary.log`, and
-`coverage.log`, so a run's coverage is readable from its artifacts — and
-Playwright's HTML report on failure. Retention is 14 days. The browsable HTML
-coverage reports under `coverage/` are not uploaded.
+`.github/workflows/ci.yml` runs the gate on pushes to `main` and on pull
+requests, and uploads `test-results/` (with the coverage summary) on every run
+and Playwright's report on failure.
 
 ## Documentation-Only Changes
 

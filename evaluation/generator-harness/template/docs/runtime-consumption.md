@@ -7,9 +7,9 @@
 > - `docs/ai-runtime.md#context-boundaries` — `cf07884817cd1b6178cf039d4cc925cd4b2fe10e`
 > - `docs/ai-runtime.md#clue-gating` — `67622ab93c84182f14c516a21e2cd22a2917d545`
 > - `docs/ai-runtime.md#game-enter` — `47c1a658181f8f0855d984670ababab4ba1001a5`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `e32fd672af48fda45a5ec11e6cae3d9b89fe84f0`
-> - `docs/blueprint-generation-flows.md#generator-prompt` — `a8bbd422151ddd54f5b5807bf60401a07e7df7da`
-> - `docs/blueprint-generation-flows.md#image-generation` — `97b3ce98ab7dc2aa9e00147d8a2aaf256c39243c`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `c1b2efd3aadfaae3c359c5ebfb9b81cd4d4b2799`
+> - `docs/blueprint-generation-flows.md#generator-prompt` — `2c2b13565da8c585f668b493d99776ae200f94f0`
+> - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 

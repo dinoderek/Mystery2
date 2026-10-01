@@ -200,55 +200,18 @@ npm run generate:images -- --blueprint-path spring-treats-6yo.json --all --chat-
 Every flag, default and file location: `node scripts/generate-blueprint-images.mjs --help`.
 Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
-## Running The Game
+## Your data
 
-There is no stack to start, restart, reset, or garbage-collect. `vite dev`
-reloads the engine like any other source file.
-
-### Worktrees
-
-Each worktree gets its own port (`51000 + slot`) and its own database
-(`database/<worktree name>/game.db`), so two checkouts can run side by side.
-Nothing else needs isolating.
-
-### Looking at your data
-
-`npm run db:list` shows every database with its row counts and path;
-`db:init`, `db:reset`, and `db:copy` create, empty, and snapshot them. Each is
-a SQLite file, readable while the game is running:
-
-```bash
-sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/database/prod/game.db" "select outcome, count(*) from game_sessions group by 1;"
-```
-
-To pull one session out as a self-contained artifact for the trace pipeline:
-
-```bash
-npm run eval:trace:extract -- --session <id>
-```
-
-See [`docs/local-infrastructure.md`](docs/local-infrastructure.md) for the full
-runbook and troubleshooting.
+Each worktree runs on its own port and database; `npm run prod` uses the
+persistent one. `npm run db:list` shows them all, and each is a SQLite file you
+can query while the game runs. `docs/local-infrastructure.md` has the runbook
+and troubleshooting.
 
 ## Testing
-
-Full quality gate:
 
 ```bash
 npm test
 ```
 
-Individual tiers:
-
-```bash
-npm run test:unit
-npm run test:integration
-npm run test:e2e
-npm -w web run test:e2e
-```
-
-See [`docs/testing.md`](docs/testing.md) for suite ownership and guidance.
-
-The suites start the game themselves against a temporary database, so there is
-nothing to have running first — and nothing they can do to the sessions you
-have played.
+The whole gate; it starts everything it needs against a throwaway database.
+Suites, focused scripts and how to read the result: `docs/testing.md`.

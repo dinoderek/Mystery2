@@ -1,170 +1,107 @@
 # Game-master trace evaluation pipeline
 
-A harness for judging how well the AI **game master** played a mystery, using
-the same machinery as the blueprint evaluation pipeline (`evaluation/`) but with
-a played *trace* as the subject instead of a generated blueprint.
-
-**Status:** walking skeleton. Extraction + reconstruction + two checks
-(`clue_accounting`, `spoiler_leak` — mechanical) + the four-judge game-master
-adherence battery (`gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`,
-`gm_spoiler`). Those judges are **shared** with the runtime harness — the briefs
-and schemas live in `evaluation/judges/` and grade a single replayed interaction
-just as well as a whole session (see `evaluation/judges/README.md`). The
-remaining judges (search adjudication, accusation correctness, tone) and the
-failure→fixture replay loop are designed-for but not yet built.
+Judges how well the AI **game master** played a mystery, with a played *trace*
+as the subject instead of a generated blueprint. How it shares machinery with
+the blueprint pipeline and the runtime harness is in
+`docs/evaluation-pipeline.md`; the four `gm_*` judges it runs are owned by
+`evaluation/judges/README.md`.
 
 ## Why this exists
 
-The game runtime already persists every played session for the
-resume feature: a `game_sessions` snapshot plus an append-only `game_events`
-log. That is a complete trace of what the game master did. This pipeline turns
-that data into a quality signal — where did the game master fabricate, leak the
-solution, or mis-handle clues — and a durable artifact you can replay when you
-switch models or iterate on a prompt.
+The game already persists every played session for resume: a `game_sessions`
+snapshot plus an append-only `game_events` log. That is a complete trace of
+what the game master did. This pipeline turns it into a quality signal (where
+did the game master fabricate, leak the solution, or mishandle clues) and a
+durable artifact to re-run when you switch models or change a prompt.
 
 ## The two stages
 
 ```
 extract.mjs        run.mjs
-  game.db  ──►  raw trace JSON  ──►  reconstruct (run-time)  ──►  checks + judges  ──►  result.json
+  game.db  ──►  raw trace JSON  ──►  reconstruct  ──►  checks + judges  ──►  result.json
 ```
 
-1. **Extract** (`extract.mjs`) pulls a session out of `game.db` — snapshot,
-   ordered events, the driving blueprint, and non-secret AI-profile metadata —
-   and writes a **raw** trace artifact. Raw is deliberate: it is a faithful
+1. **Extract** pulls a session out of `game.db` (snapshot, ordered events, the
+   blueprint, non-secret AI-profile metadata) into a **raw** trace: a faithful
    dump with no derived fields.
-2. **Run** (`run.mjs`) takes a raw trace (pre-extracted via `--trace`, or
-   extracted inline via `--session`), **reconstructs** what the game master saw
-   each turn by replaying the events through the real runtime context builders
-   (`packages/game-engine/src/ai-context.ts`), runs the always-on mechanical
-   checks and the judge battery, and writes a `result.json` envelope.
+2. **Run** takes a raw trace, **reconstructs** what the game master saw each
+   turn by replaying the events through the real context builders
+   (`packages/game-engine/src/ai-context.ts`), then runs the mechanical checks
+   and the judges.
 
-Reconstruction is a run-time step, not baked into the stored artifact, so the
-reconstruction logic stays versioned with the code rather than frozen into old
-data. (We deliberately do **not** stamp a context version onto traces: the
-builders aren't versioned, and a stamp couldn't reproduce a historical prompt
-anyway. Re-running always reflects current game-master logic, and the raw trace
-is preserved so a re-run is always possible.)
+Reconstruction happens at run time, not in the stored artifact, so it stays
+versioned with the code instead of frozen into old data. Traces carry no
+context version: the builders are not versioned, and a stamp could not
+reproduce a historical prompt anyway. A re-run always reflects the current
+game-master logic, and the raw trace keeps a re-run possible.
 
-## Quick start
+## Running it
 
 ```bash
-# 1. (Optional) configure an LLM CLI for the judges. Without this, only the
-#    mechanical checks run.
+# Optional: bind a CLI for the judges. Without it, only the mechanical checks run.
 cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
 
-# 2a. Extract a played session to a raw trace artifact:
 npm run eval:trace:extract -- --session <session-id> --out trace.json
-
-# 2b. Evaluate a pre-extracted trace:
 npm run eval:trace -- --trace trace.json
 
-# Or do both in one step (extract inline, then evaluate):
+# Or extract and evaluate in one step:
 npm run eval:trace -- --session <session-id>
 ```
 
-Each run writes a self-contained directory under `$MYSTERYEVALS_DIR` (default
-`~/mysteryevals`): `result.json`, `reconstruction.json`, the inline-extracted
-`trace.json` (when `--session` is used), and per-judge `logs/`.
+Both commands take `--help`. Extraction reads the database file directly, so
+the game need not be running; which database it reads is in
+`docs/local-infrastructure.md`. Each run writes a self-contained directory
+under `$MYSTERYEVALS_DIR` (default `~/mysteryevals`) with `result.json`,
+`reconstruction.json` and per-judge logs. Progress reporting works as in the
+blueprint pipeline (`evaluation/README.md` → "Live progress").
 
-While the judges run, the pipeline prints progress (a `logs:` hint, a
-`tail -f …/logs/judge-*.stream.jsonl` hint, and a batched tick on an interval —
-`done/total` plus a short per-judge block of token total and recent messages);
-`--quiet` suppresses it. The trace judge wrapper runs
-`claude --output-format stream-json --verbose`, writes the live event stream to
-`logs/<step>.stream.jsonl` (tailable), and recovers the verdict from the
-stream's final result event — so the pipeline's `extract_path: "result"`
-contract is unchanged. Same machinery as the blueprint pipeline; see
-`evaluation/README.md` (§ Live progress).
+**The exit code is not the verdict.** The process exits non-zero only when the
+run itself fails (an extraction error, say). A failing check or judge still
+exits 0, so a CI caller gates on `summary.mechanical.fail` and
+`summary.dimensions.fail` in `result.json`.
 
-The wrapper replaces Claude Code's system prompt (`--system-prompt`) and runs
-with no tools, MCP servers or settings, so neither that prompt nor the repo's
-CLAUDE.md is in the judge's context; the CLI still adds a short environment note
-(date, working directory, model). Skipping settings also skips a login set only
-in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env), so the wrapper then
-fails to authenticate. It also strips a ```json
-fence from the verdict, which judges add now and then and the pipeline would
-otherwise reject as "not a JSON object". Verdicts from before these changes were
-made with the extra context and are not comparable with later ones.
+## The judge wrapper
 
-The process exits non-zero only when the run itself fails (extraction error,
-etc.), matching the blueprint pipeline. A check or judge **fail** still exits 0
-— the `result.json` summary is the pass/fail signal, so a CI caller should gate
-on `summary.mechanical.fail` / `summary.dimensions.fail`, not the exit code.
+`config/wrappers/claude-trace-judge.sh` calls `claude` with `--system-prompt`
+(replacing Claude Code's own) and no tools, MCP servers or settings, so neither
+that prompt nor the repo's `CLAUDE.md` reaches the judge; the CLI still adds a
+short environment note. Two consequences:
 
-## Layout
-
-```
-evaluation/trace/
-├── extract.mjs              # CLI: stored session → raw trace artifact
-├── run.mjs                  # CLI: raw trace → reconstruct → checks + judges → envelope
-├── lib/
-│   ├── normalize.mjs        # pure: rows → canonical raw trace artifact
-│   ├── datasource.mjs       # database read (injectable; pure orchestration over 4 methods)
-│   ├── reconstruct.mjs      # run-time: fold session state + per-turn context via real builders
-│   ├── mechanical.mjs       # always-on deterministic checks (clue_accounting, spoiler_leak)
-│   ├── envelope.mjs         # trace-shaped result envelope (reuses combineDimension)
-│   └── load.mjs             # dimension registry + definition loaders
-├── dimensions/
-│   └── registry.json        # which judges make up this pipeline's battery
-└── config/
-    ├── cli.example.json     # copy to cli.json
-    └── wrappers/            # bundled judge CLI wrapper (invokes `claude`)
-```
-
-## Reuse of the blueprint pipeline
-
-The subject-agnostic machinery is imported, not forked:
-
-- `evaluation/pipeline/cli-runner.mjs` — SDK-free subprocess model calls.
-- `evaluation/pipeline/timing.mjs` — monotonic-clock stage/dimension timing.
-- `evaluation/pipeline/envelope.mjs` → `combineDimension` — the per-dimension
-  pass/fail/error/skipped semantics.
-
-The judge battery itself is shared in the other direction, with the **runtime**
-harness: `evaluation/judges/` holds the briefs, the output schemas, the
-evaluator preamble, the subject projection, and the `major`-finding verdict
-rule, and `evaluation/runtime/` runs the very same judges over a single replayed
-interaction.
-
-Trace-specific pieces (a trace has no generate stage; the subject already
-exists) live under `evaluation/trace/`. Dimensions follow the same convention as
-the blueprint battery: one `<id>.md` prose contract + one `<id>.schema.ts` Zod
-schema, picked up by id from `registry.json`. `loadTraceDimensionDefinition`
-resolves shared ids from `evaluation/judges/` first, then this pipeline's own
-`dimensions/` directory — so a trace-only dimension is still just two files
-dropped in here.
+- **Settings-only logins fail.** Skipping settings also skips a login set only
+  in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env), so the wrapper
+  cannot authenticate.
+- **Fenced verdicts are unwrapped.** Judges sometimes wrap the verdict in a
+  `json` code fence, which the pipeline would reject as "not a JSON object";
+  the wrapper strips it.
 
 ## Checks and dimensions
 
-| Check / dimension | Tier       | Asks |
-|-------------------|------------|------|
-| `clue_accounting` | mechanical | Every revealed clue id is real and in scope; each bare search reveals the next not-yet-revealed location clue that is *unlocked* (its `requires` prerequisites are already revealed), skipping locked clues — the unlocked subsequence, not a strict array prefix — with no repeats. |
-| `spoiler_leak`    | mechanical | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only (high contiguous-word threshold); paraphrase leakage is a judge's job. |
-| `clue_requires_violation` | mechanical (opt-in) | A clue gated by `requires` was not revealed until its prerequisites were already revealed earlier in the trace (off-script grants, listed in the event's `revealed_off_script`, are exempt). **Off by default** — set `enforce_requires: true` in the registry mechanical context to enable. It proves the runtime honors the discovery graph; until the runtime gating is in place a real trace would fail it. |
-| `gm_roleplay`     | judge (shared) | Does the game master perform the authored character — persona, alibi, agendas, tells, knowledge boundary — and the required narrator voice? |
-| `gm_clue_discipline` | judge (shared) | Were the right clues released, at the right time, and recorded? Catches narration/record mismatches and `requires` gates opened early. |
-| `gm_fabrication`  | judge (shared) | Did the game master invent material facts the blueprint does not support? |
-| `gm_spoiler`      | judge (shared) | Did pre-accusation narration give away ground truth — culprit, motive, or mechanism — by paraphrase or confirmation? The judge half of `spoiler_leak`. |
+The mechanical checks live in `lib/mechanical.mjs`; the first two run on every
+trace:
+
+| Check | Asks |
+|---|---|
+| `clue_accounting` | Every revealed clue id is real and in scope, with no repeats. Each bare search reveals the next unrevealed location clue that is *unlocked* (its `requires` already revealed), skipping locked ones. |
+| `spoiler_leak` | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only, so it stays precise; paraphrase is `gm_spoiler`'s job. |
+| `clue_requires_violation` | No `requires`-gated clue is revealed before its prerequisites, unless the event lists it in `revealed_off_script`. **Off by default**: set `enforce_requires: true` in `mechanical_context` in `dimensions/registry.json`. |
+
+The judges are listed in `dimensions/registry.json`: today the four shared
+`gm_*` judges, one model call each, run in parallel. A dimension id is looked
+up in `evaluation/judges/` first, then in `dimensions/`, so a trace-only
+dimension is a brief and a schema dropped in there, named as in
+`evaluation/judges/README.md` → "Adding a judge", and added to the registry.
+
+To re-judge a single turn against another model or prompt, turn the trace into
+runtime cases with `npm run eval:cases-from-trace` (`evaluation/runtime/README.md`).
 
 ## Tests
 
-The pipeline is unit-tested under `tests/api/unit/trace-*.test.ts` (normalize,
-reconstruct, mechanical, envelope, run orchestration with a mock judge CLI).
-They use injected fixtures and a mock CLI, so they need neither a database nor an
-LLM and run in the standard unit gate.
+`tests/api/unit/trace-*.test.ts` cover normalisation, reconstruction, the
+checks, the envelope and a run with a mock judge CLI. They need no database
+and no model.
 
-A run costs one model call per judge dimension — four with today's battery,
-running in parallel, so wall-clock is the slowest judge rather than their sum.
+## Not built yet
 
-## Roadmap
-
-- More judges: search adjudication, accusation correctness, tone. (Per-event
-  age-appropriateness is already judgeable by converting trace events into
-  runtime-harness cases with `evaluation/runtime/cases-from-trace.mjs` and
-  running the `flesch` + `age_appropriate` judges there — and those same cases
-  now carry the `gm_*` battery with them.)
-- Failure → fixture: freeze a flagged turn's reconstructed context as a golden
-  fixture and replay it against a different model/prompt to confirm a fix — the
-  "switch the model or iterate on the prompt" loop.
-- Batch extraction (query a set of sessions) and run-history storage.
+- More judges: search adjudication, accusation correctness, tone.
+- Extracting a batch of sessions at once, and run history beyond the run
+  directories.

@@ -1,9 +1,9 @@
 # Mystery Blueprint Generator — Harness Workspace
 
 You are running in a one-shot generator workspace. Your only job is to produce
-**one** Blueprint V2 JSON file that passes the validator. Stop when validation
-passes. Do not commit, do not run tests, do not touch any files outside this
-workspace.
+**one** Blueprint V2 JSON file that passes the validator and your own
+consistency review. Do not commit, do not run tests, do not touch any files
+outside this workspace.
 
 ## Files in this workspace
 
@@ -34,13 +34,30 @@ workspace.
 3. **Validate.** Run `node scripts/validate-blueprint.mjs ./blueprint.json`.
 4. **If validation fails:** read every reported issue, edit `./blueprint.json`
    in place, re-run the validator. Repeat until it passes.
-5. **When validation passes:** stop. The harness reads `./blueprint.json`
-   after you exit.
+5. **Consistency review.** Once the validator passes, review the blueprint
+   against **Physical consistency** in `prompts/generator-prompt.md` — the
+   validator cannot see this, so read the file, don't recall your draft:
+   - For each clue, write down every physical claim it makes: where an object
+     is, what state it is in, what a character looks like or carries.
+   - Check every other field against those claims: other clues,
+     `actual_actions`, location `description`s, sub-location names and hints,
+     `appearance`, `tells`, `flavor_knowledge`, the `starting_knowledge`
+     summaries, `premise`, `one_liner`, `ground_truth`.
+   - Anything the player sees before the clue is found (`appearance`, location
+     descriptions, sub-location names, summaries, `always` tells) must not show
+     or contradict the clue's evidence.
+   - A character's authored lie (a false `stated_alibi`, a clue spoken under an
+     agenda) is not a contradiction; a narrated fact that disagrees is.
+6. **If the review finds anything:** fix `./blueprint.json`, re-run the
+   validator, and review the changed fields again.
+7. **When validation passes and the review is clean:** stop. The harness reads
+   `./blueprint.json` after you exit.
 
 ## Success criterion
 
-Validator exit code 0. Nothing else counts. Do not stop because you "think"
-the blueprint is correct.
+Validator exit code 0 on the blueprint you reviewed last. Do not stop because
+you "think" the blueprint is correct, and do not skip the consistency review
+because the validator passed.
 
 ## Hard rules
 

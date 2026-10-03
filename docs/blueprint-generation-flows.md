@@ -34,7 +34,8 @@ What the generator prompt asks for, in short:
 
 - A complete, solvable children's mystery, built in a fixed order: hidden
   truth, what each character actually did, solution paths, red herrings,
-  suspect-elimination paths, clue placement, then flavour.
+  suspect-elimination paths, clue placement, flavour, then a consistency
+  pass.
 - Text at the target age on two dials that mirror the narrator's:
   **complexity** (sentence length, vocabulary) and **length** (a per-age word
   budget for the one-liner, premise, every `starting_knowledge` summary, every
@@ -48,6 +49,12 @@ What the generator prompt asks for, in short:
 - A clue discovery graph through `requires`: mostly ungated, acyclic, every
   solution clue reachable from an ungated root. The schema's `superRefine` and
   the `clue_graph` dimension enforce it.
+- Physical consistency: where an object is, what state it is in, and what a
+  character looks like or carries agree across clues, `actual_actions`,
+  descriptions, `appearance`, `flavor_knowledge` and summaries. Nothing the
+  player sees before a clue is found — `appearance`, location descriptions,
+  `starting_knowledge` — shows or contradicts that clue's evidence. The
+  `knowledge_coherence` dimension judges it.
 - Exactly one culprit and a consistent timeline; `cover_image` direction; no
   image ids.
 <!-- /extract:generator-prompt -->

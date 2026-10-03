@@ -69,7 +69,7 @@
       {
         "id": "glimmerbank_landing",
         "name": "Glimmerbank Landing",
-        "description": "A wide, mossy clearing where the sparkly river bends. A wooden diving dock reaches out over the water. Tall reeds grow in the shallow water. Cheer flags flap between the trees. This is where all of Arbrum meets this morning, feeling worried.",
+        "description": "A wide, mossy clearing where the sparkly river bends. A wooden diving dock reaches out over the water. Tall reeds grow in the shallow water. Cheer flags flap between the trees. This morning the river's sparkle looks dim.",
         "clues": [],
         "sub_locations": [
           {
@@ -206,7 +206,7 @@
         "clues": [
           {
             "id": "clue_half_hung_banners",
-            "text": "Big flags hang half way up, flapping in the wind. A ladder still leans against them. A note says 'finish hanging these before the race!' Someone was putting them up all night."
+            "text": "A note on the ladder says, 'Hang these before the race!' Below it is a list of flags. Each one has a tick and a time. The times go all night."
           }
         ],
         "sub_locations": [
@@ -248,7 +248,7 @@
         "clues": [
           {
             "id": "clue_sophie_splinter",
-            "text": "I couldn't sleep, so I was playing in the reeds. I found a pretty golden piece floating in the water and held it. That is why my paws glow! Sam was diving right there the whole time. He saw me."
+            "text": "I couldn't sleep, so I was playing in the reeds. I found a pretty golden piece floating in the water. I held it, then let it float away. That is why my paws glow! Sam was diving right there the whole time. He saw me."
           }
         ],
         "flavor_knowledge": [
@@ -269,7 +269,7 @@
           },
           {
             "sequence": 2,
-            "summary": "Found a floating golden splinter and picked it up, making her paws glow."
+            "summary": "Found a floating golden splinter and held it, making her paws glow, then let it drift back among the reeds."
           },
           {
             "sequence": 3,
@@ -294,7 +294,7 @@
         "last_name": "Nutwood",
         "location_id": "eva_leaf_lab",
         "sex": "female",
-        "appearance": "A sleek silver-grey squirrel with a big bushy tail, bright curious eyes, and tiny gardening gloves tucked into her belt.",
+        "appearance": "A sleek silver-grey squirrel with a big bushy tail, bright curious eyes, and a pencil tucked behind one ear.",
         "background": "Arbrum's plant scientist, who knows every leaf, root, and beetle, and studies how the forest's magic grows.",
         "personality": "Clever, quiet, and secretive; kind, but quite sure she always knows best.",
         "initial_attitude_towards_investigator": "Calm and helpful on the surface, but tense and carefully guarded.",
@@ -332,7 +332,7 @@
           },
           {
             "sequence": 5,
-            "summary": "Hid the trunk behind the curtain in her back-nook and pretended to have been asleep."
+            "summary": "Dropped her glowing gloves on the workbench, hid the trunk behind the curtain in her back-nook, and pretended to have been asleep."
           }
         ],
         "agendas": [
@@ -340,7 +340,7 @@
             "type": "self_protect",
             "strategy": "maintain_false_alibi",
             "priority": "high",
-            "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook. Only crumbles and admits she 'only borrowed' the Heartwood if shown both her still-glowing gloves and that the trail leads to her grove."
+            "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook. Only crumbles and admits she 'only borrowed' the Heartwood if shown both her still-glowing gloves and that the trail leads up to her lab."
           }
         ],
         "tells": [
@@ -471,7 +471,7 @@
           },
           {
             "sequence": 3,
-            "summary": "Finished at dawn and flew off to check on the fading glitter."
+            "summary": "Finished at dawn and saw the glitter fading from the trees."
           }
         ],
         "agendas": [
@@ -527,7 +527,7 @@
           },
           {
             "sequence": 3,
-            "summary": "Slipped away briefly to bury the team's trophy in plain dirt for safekeeping."
+            "summary": "Near dawn, buried the team's shiny cup in plain dirt by the pom-pom pile for safekeeping."
           }
         ],
         "agendas": [
@@ -575,16 +575,16 @@
       "Sophie can't sleep and goes to play in the reed shallows; Sam is on night watch, diving after a stuck glimmer-turtle.",
       "Just before 2 o'clock, Eva slips down to Heartwood Hollow carrying her digging trowel.",
       "At about 2 o'clock, Eva pulls the Heartwood Trunk free — the pit and her footprints glow, and the forest's glitter flickers.",
-      "Eva carries the trunk uphill on foot to her Leaf-Lab, getting glow-dust on her gloves, and hides it behind the back-nook curtain.",
+      "Eva carries the trunk uphill on foot to her Leaf-Lab, getting glow-dust on her gloves. She drops the gloves on her workbench and hides the trunk behind the back-nook curtain.",
       "A stray golden splinter of Heartwood drifts down the river; Sophie finds it and her paws glow.",
-      "By morning the forest's glitter is fading, and everyone gathers at Glimmerbank Landing, worried."
+      "By morning the forest's glitter is fading, and everyone in Arbrum is worried."
     ]
   },
   "solution_paths": [
     {
       "id": "sp_follow_the_glow",
       "summary": "The thief walked (glowing footprints) on small, clawed feet — so not the flying pigeon, not the big bear, not the webbed-footed otter. Sam vouches Sophie was at the river; Toby vouches he and Alexandra were together all night. That clears everyone but Eva.",
-      "description": "The necessary chain is three narrowings: the small prints rule out big Sam; the clawed (not webbed) prints rule out otter Sophie; and Toby's testimony that he and Alexandra were together through 2am rules out both of them. Only Eva remains — confirmed by her still-glowing gloves and the trail leading up to her grove.",
+      "description": "The necessary chain is three narrowings: the small prints rule out big Sam; the clawed (not webbed) prints rule out otter Sophie; and Toby's testimony that he and Alexandra were together through 2am rules out both of them. Only Eva remains — confirmed by her still-glowing gloves and the trail leading up to her lab.",
       "location_clue_ids": [
         "clue_footprint_trail",
         "clue_prints_small",

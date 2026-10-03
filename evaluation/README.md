@@ -145,8 +145,9 @@ Each dimension's full question is its brief, `evaluation/dimensions/<id>.md`:
 - `fairness` — the evidence points uniquely at the culprit.
 - `timeline_coherence` — positions around the crime are consistent
   (`actual_actions` authoritative).
-- `knowledge_coherence` — what each character could observe, and the integrity
-  of their deceptions.
+- `knowledge_coherence` — what each character could observe, the integrity
+  of their deceptions, and whether every physical fact agrees across fields
+  with nothing given away before its clue is found.
 - `character_grounding` — enough authored material that the narrator need not
   fabricate.
 - `path_payoff` — every authored path pays off.

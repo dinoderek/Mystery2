@@ -67,12 +67,20 @@ describe("interactions and explicit word budgets (length dial)", () => {
     }
   });
 
-  it("the verdict is the most generous interaction; the farewell the leanest", () => {
-    for (const age of [MIN_TARGET_AGE, MAX_TARGET_AGE]) {
+  it("the verdict and the arrival are the most generous interactions; the farewell the leanest", () => {
+    for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age++) {
       const budgets = allInteractions().map((i) => wordBudget(i.id, age));
-      expect(wordBudget("accusation_verdict", age)).toBe(Math.max(...budgets));
+      expect(
+        Math.max(wordBudget("accusation_verdict", age), wordBudget("ambience", age)),
+      ).toBe(Math.max(...budgets));
       expect(wordBudget("talk_farewell", age)).toBe(Math.min(...budgets));
     }
+  });
+
+  it("gives arrival room for the place, its searchable areas and whoever is there", () => {
+    const byAge = [6, 7, 8, 9, 10, 11].map((age) => wordBudget("ambience", age));
+    expect(byAge).toEqual([30, 36, 44, 52, 60, 70]);
+    expect(renderLengthGuidance("ambience", 7)).toContain("about 36 words");
   });
 
   it("clamps the age before reading a budget", () => {

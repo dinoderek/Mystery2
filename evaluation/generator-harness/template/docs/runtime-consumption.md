@@ -4,10 +4,10 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#roles` — `40866e8705d609293acf2c706f6b6f23b000d540`
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `cca3459f88b6d7c50c6f068b407a20148e079b59`
+> - `docs/ai-runtime.md#context-boundaries` — `14076c2ede57c653097ce7f81256c9e8317d0d3d`
 > - `docs/ai-runtime.md#clue-gating` — `74c7f26858a60fde72a3f2751dfcc66019916273`
-> - `docs/ai-runtime.md#game-enter` — `47c1a658181f8f0855d984670ababab4ba1001a5`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `c1b2efd3aadfaae3c359c5ebfb9b81cd4d4b2799`
+> - `docs/ai-runtime.md#game-enter` — `ed918f6bb6b0936a009c84020f0dcceb305a272b`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `73dd510a6fc320cd3af078a6a17e71d781122852`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `5361c3c95c349855e79f49db05adce1317ce671c`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -23,7 +23,7 @@ except the accusation judge.
 |---|---|---|
 | `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is not used for narration — it is surfaced verbatim (not generated) as the player's in-game notebook (case facts, people, places). |
 | `game-enter` | arrival at the **starting** location, once, after the player confirms the opening | same slice as `game-move` for `world.starting_location_id`, with no prior history. Your starting location's `description`, sub-locations, and characters are therefore read out at the very start of play, not first seen on a return visit. |
-| `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus **public-only** summaries of characters currently at that location (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`). Plus prior history at that location. |
+| `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
 | `game-search` (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
 | `game-search` (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |
 | `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `clues` (each with `requires_rationale`, `prereqs_met` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
@@ -40,8 +40,9 @@ a character.
 Everything else you author on a character — `background`, `personality`,
 `stated_alibi`, `motive`, `clues`, `agendas`, `tells`, `actual_actions`,
 `flavor_knowledge` — reaches the narrator **only** on that character's own talk
-turn. Notably `background` is private: arrival narration and the
-accusation-start roster never see it.
+turn and when the player arrives where that character is. Notably `background`
+is private: other characters' scenes and the accusation-start roster never see
+it.
 
 Knowledge about other characters therefore travels **exclusively via explicit
 clues** with `about_character_id`. Authoring "Maya suspects the harbormaster"
@@ -176,6 +177,13 @@ place.
 
 Every character has `sex`. The narrator uses it instead of guessing. Missing
 or null `sex` causes pronoun drift in talk and move narration.
+
+### `initial_attitude_towards_investigator` sets the first impression
+
+A character is first met on arrival, before any conversation. Arrival plays
+them in this attitude and lets their agendas shape their manner, so a guarded
+suspect who should keep visitors away from somewhere does so from the moment
+the player walks in.
 
 ## Generation contract reminders
 

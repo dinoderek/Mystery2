@@ -98,7 +98,7 @@ const PROFILES: Record<number, AgeProfile> = {
  */
 export type InteractionId =
   | "intro" // game-start: opening narration
-  | "ambience" // game-move: arriving at / describing a place
+  | "ambience" // game-move, game-enter: arriving at a place and whoever is there
   | "search_empty" // game-search (bare): a dead-end search
   | "search_find" // game-search (targeted): a clue reveal
   | "talk_greeting" // game-talk: begin a conversation
@@ -116,7 +116,7 @@ export interface Interaction {
 
 const INTERACTIONS: Record<InteractionId, Interaction> = {
   intro: { id: "intro", label: "Opening narration", role: "buildGameStartPrompt" },
-  ambience: { id: "ambience", label: "Ambience / movement", role: "buildGameMovePrompt" },
+  ambience: { id: "ambience", label: "Arrival at a location", role: "buildGameMovePrompt" },
   search_empty: { id: "search_empty", label: "Search — nothing found", role: "search_bare" },
   search_find: { id: "search_find", label: "Search — clue found", role: "search_targeted" },
   talk_greeting: { id: "talk_greeting", label: "Conversation — greeting", role: "talk_start" },
@@ -129,13 +129,14 @@ const INTERACTIONS: Record<InteractionId, Interaction> = {
 /**
  * Explicit target word budget per (interaction, age). Read directly — no
  * multiplier. Budgets rise with age and with how much the moment needs to say;
- * the verdict (the payoff) is the most generous, the farewell the leanest.
+ * the verdict (the payoff) and the arrival (the place, its searchable areas,
+ * and whoever is there) are the most generous, the farewell the leanest.
  * All values are soft targets, biased short, with no minimum.
  */
 const WORD_BUDGET: Record<InteractionId, Record<number, number>> = {
   //                     age:  6    7    8    9   10   11
   intro: { 6: 25, 7: 30, 8: 35, 9: 40, 10: 45, 11: 50 },
-  ambience: { 6: 15, 7: 18, 8: 22, 9: 26, 10: 30, 11: 35 },
+  ambience: { 6: 30, 7: 36, 8: 44, 9: 52, 10: 60, 11: 70 },
   search_empty: { 6: 10, 7: 12, 8: 15, 9: 18, 10: 20, 11: 25 },
   search_find: { 6: 15, 7: 20, 8: 25, 9: 30, 10: 35, 11: 40 },
   talk_greeting: { 6: 10, 7: 12, 8: 14, 9: 16, 10: 18, 11: 20 },

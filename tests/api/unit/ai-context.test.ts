@@ -434,7 +434,7 @@ describe("ai-context guardrails", () => {
     ).toMatchObject({ id: clueId, known_to_player: true });
   });
 
-  it("builds move context with public summaries for destination characters", () => {
+  it("builds move context with each present character's private pack", () => {
     const history: ConversationFragment[] = [
       {
         sequence: 1,
@@ -461,6 +461,7 @@ describe("ai-context guardrails", () => {
       conversation_history: history,
     });
 
+    expect(moveContext.role_name).toBe("ambience");
     expect(moveContext.shared_mystery_context).toEqual({ target_age: 9 });
     expect(moveContext.move_context).toMatchObject({
       destination_id: "loc-kitchen",
@@ -476,6 +477,25 @@ describe("ai-context guardrails", () => {
           sex: "female",
           appearance: "red hair",
           public_summary: "The baker; was in the kitchen.",
+          background: "the baker",
+          personality: "nervous",
+          initial_attitude_towards_investigator: "wary",
+          stated_alibi: "I was reading",
+          motive: "hungry",
+          flavor_knowledge: ["Alice loves baking."],
+          actual_actions: [{ sequence: 1, summary: "stole the pie" }],
+          agendas: [],
+          tells: [],
+          clues: [
+            {
+              id: "clue-alice-bob",
+              text: "Bob was in the garden.",
+              requires_rationale: null,
+              prereqs_met: true,
+              known_to_player: false,
+            },
+          ],
+          player_known_clues: [],
         },
       ],
     });
@@ -483,6 +503,73 @@ describe("ai-context guardrails", () => {
       1,
       2,
     ]);
+  });
+
+  it("gives arrival the same pack a conversation gets, and nothing about absent characters", () => {
+    const history: ConversationFragment[] = [
+      {
+        sequence: 1,
+        event_type: "ask",
+        actor: "char-bob",
+        narration: "Bob told you.",
+        payload: { character_id: "char-bob", revealed_clue_ids: ["clue-bob-alice"] },
+      },
+    ];
+    const arrival = buildMoveContext({
+      game_id: "game-1",
+      session: { ...session, mode: "explore", current_talk_character_id: null },
+      blueprint,
+      destination_id: "loc-kitchen",
+      has_visited_before: false,
+      conversation_history: history,
+    });
+    const talk = buildTalkConversationContext({
+      game_id: "game-1",
+      session: { ...session, mode: "talk", current_talk_character_id: "char-alice" },
+      blueprint,
+      character_id: "char-alice",
+      location_id: "loc-kitchen",
+      player_input: "Hello",
+      conversation_history: history,
+    });
+
+    expect(arrival.move_context?.destination_characters).toEqual([
+      talk.talk_context?.active_character,
+    ]);
+    // Bob is in the garden: nothing of his private pack reaches the kitchen.
+    const serialized = JSON.stringify(arrival.move_context);
+    expect(serialized).not.toContain("watering flowers");
+    expect(serialized).not.toContain("Bob is visiting for the weekend.");
+  });
+
+  it("leaves an arrival with nobody present without characters", () => {
+    const withEmptyRoom: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        locations: [
+          ...blueprint.world.locations,
+          { id: "loc-attic", name: "Attic", description: "A dusty attic", clues: [] },
+        ],
+      },
+    };
+    const arrival = buildMoveContext({
+      game_id: "game-1",
+      session: { ...session, mode: "explore", current_talk_character_id: null },
+      blueprint: withEmptyRoom,
+      destination_id: "loc-attic",
+      has_visited_before: false,
+      conversation_history: [],
+    });
+
+    expect(arrival.move_context).toEqual({
+      destination_id: "loc-attic",
+      destination_name: "Attic",
+      destination_description: "A dusty attic",
+      has_visited_before: false,
+      destination_history: [],
+      destination_characters: [],
+    });
   });
 
   it("keeps accusation_start spoiler-safe and gives accusation_judge the full blueprint", () => {

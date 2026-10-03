@@ -40,7 +40,7 @@ describe("game-move endpoint", () => {
 
     expect(data.current_location).toBe("loc-living-room");
     expect(data.time_remaining).toBe(9);
-    expect(data.narration_parts[0].text).toContain("[Mock]");
+    expect(data.narration_parts[0].text).toBe("[Mock] You arrive at Living Room. Bob is here.");
     expect(data.visible_characters).toContainEqual({
       id: "char-bob",
       first_name: "Bob",

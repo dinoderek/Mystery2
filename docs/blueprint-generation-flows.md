@@ -98,7 +98,7 @@ Every row also receives `metadata.target_age` and `metadata.narration_style`.
 | Output | Endpoint (role) | Blueprint input | Other input | Attached |
 |---|---|---|---|---|
 | Opening | `game-start` | `narrative.premise` | — | `metadata.image_id` |
-| Arrival | `game-move`, `game-enter` (`ambience`) | The destination's `name`, `description`, sub-location names; the public face of each character there | History at that location, whether it was visited before | `location_image_id` |
+| Arrival | `game-move`, `game-enter` (`ambience`) | The destination's `name`, `description`, sub-location names; for each character there, the same private fields a conversation gets | History at that location, whether it was visited before; `player_known_clues` | `location_image_id` |
 | Search | `game-search` (`search_bare`, `search_targeted`) | The location's `description` and `clues`; each sub-location's `name`, `hint` and unlocked clues | History at that location; the player's `search_query` | — |
 | Conversation | `game-talk`, `game-ask`, `game-end-talk` (`talk_*`) | Location summaries; every character's public face; the active character's private fields — `clues`, `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, alibi, motive, personality, attitude | History with that character; `player_known_clues` | `portrait_image_id` (start, ask) |
 | Accusation start | `game-accuse` (`accusation_start`), or a forced endgame | Location and timing; the public roster | All history, or none | — |
@@ -106,7 +106,8 @@ Every row also receives `metadata.target_age` and `metadata.narration_style`.
 
 A character's **public face** is `first_name`, `last_name`, `sex`,
 `appearance`, and the `starting_knowledge` summary for that character. Private
-fields never reach another character's scene; knowledge about other characters
+fields reach only that character's own conversation and arrivals where they are
+present, never another character's scene; knowledge about other characters
 travels only through clues with `about_character_id`.
 
 `narrative.starting_knowledge` is never narrated: `game-start` and `game-get`

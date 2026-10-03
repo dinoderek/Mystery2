@@ -11,7 +11,6 @@ import {
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
-import { selectLocationConversationHistory } from "../ai-context.ts";
 import { tryGenerateForcedEndgame, insertForcedEndgameEvent } from "../forced-endgame.ts";
 import { createRequestLogger, withLogContext } from "../logging.ts";
 import {
@@ -84,46 +83,15 @@ export async function handle(
     const nextMode = isForcedEndgame ? "accuse" : "explore";
 
     const historyRows = await ctx.events.listBySession(game_id);
-    const locationHistory = selectLocationConversationHistory(
-      historyRows ?? [],
-      destLoc.id,
-    );
-    const hasVisitedBefore = locationHistory.length > 0;
-    const locationHistoryJson = JSON.stringify(locationHistory);
-    // Public-knowledge summaries only: identity, visible appearance, and the
-    // player-facing starting_knowledge summary. Private authored material
-    // (background, alibi, motive, ...) never reaches move narration.
-    const publicSummaryByCharacterId = new Map(
-      (blueprint.narrative.starting_knowledge?.characters ?? []).map(
-        (entry) => [entry.character_id, entry.summary] as const,
-      ),
-    );
-    const destinationCharactersJson = JSON.stringify(
-      blueprint.world.characters
-        .filter((character) => character.location_id === destLoc.id)
-        .map((character) => ({
-          id: character.id,
-          first_name: character.first_name,
-          last_name: character.last_name,
-          sex: character.sex,
-          appearance: character.appearance,
-          public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
-        })),
-    );
-
-    const subLocations = (destLoc.sub_locations ?? []).map((sl) => ({
-      name: sl.name,
-    }));
+    // The arrival prompt derives everything else from the session's history:
+    // whether this is a return visit, what happened here, and the private pack
+    // of each character present.
     const aiPrompt = buildNarrationPrompt({
       role: "ambience",
       game_id: game_id,
       blueprint,
       destination_id: destLoc.id,
-      has_visited_before: hasVisitedBefore,
-      destination_history_json: locationHistoryJson,
-      destination_characters_json: destinationCharactersJson,
-      destination_sub_locations_json:
-        subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
+      conversation_history: historyRows ?? [],
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

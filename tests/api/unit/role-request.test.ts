@@ -54,14 +54,7 @@ function inputFor(role: RoleRequestName): any {
     case "intro":
       return { ...common, role };
     case "ambience":
-      return {
-        ...common,
-        role,
-        destination_id: locationId,
-        has_visited_before: false,
-        destination_history_json: "[]",
-        destination_characters_json: "[]",
-      };
+      return { ...common, role, destination_id: locationId };
     case "talk_start":
     case "talk_end":
       return {
@@ -230,5 +223,100 @@ describe("search word budget follows the outcome the backend already knows", () 
     ).prompt;
 
     expect(wordTarget(withClue)).toBeGreaterThan(wordTarget(empty));
+  });
+});
+
+describe("arrival (ambience) derives its inputs from the session history", () => {
+  // The prompt carries the character list as one JSON line.
+  function charactersIn(prompt: string): Array<Record<string, unknown>> {
+    const line = prompt.split("\n").find((l) => l.startsWith("Characters at destination: "));
+    return JSON.parse(line!.slice("Characters at destination: ".length));
+  }
+
+  it("sends each present character's private pack and nothing about absent ones", () => {
+    const prompt = buildNarrationPrompt({
+      role: "ambience",
+      game_id: "case",
+      blueprint,
+      destination_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    const characters = charactersIn(prompt);
+    expect(characters.map((c) => c.id)).toEqual(["char-alice"]);
+    expect(characters[0]).toMatchObject({
+      initial_attitude_towards_investigator:
+        blueprint.world.characters[0].initial_attitude_towards_investigator,
+      motive: blueprint.world.characters[0].motive,
+      clues: [expect.objectContaining({ prereqs_met: true, known_to_player: false })],
+    });
+    expect(prompt).not.toContain(blueprint.world.characters[1].background);
+    expect(prompt).toContain("## Characters present");
+    expect(prompt).toContain("Arrival reveals no clues");
+    expect(prompt).toContain("never surfaces on arrival");
+  });
+
+  it("marks clues the player already holds", () => {
+    const clueId = blueprint.world.characters[0].clues[0].id;
+    const prompt = buildNarrationPrompt({
+      role: "ambience",
+      game_id: "case",
+      blueprint,
+      destination_id: "loc-kitchen",
+      conversation_history: [
+        {
+          sequence: 1,
+          event_type: "ask",
+          actor: "char-alice",
+          narration: "told",
+          payload: { character_id: "char-alice", revealed_clue_ids: [clueId] },
+        },
+      ],
+    });
+    expect(charactersIn(prompt)[0].clues).toEqual([
+      expect.objectContaining({ id: clueId, known_to_player: true }),
+    ]);
+  });
+
+  it("leaves an empty location with no characters and no character rules", () => {
+    const prompt = buildNarrationPrompt({
+      role: "ambience",
+      game_id: "case",
+      blueprint: { ...blueprint, world: { ...blueprint.world, characters: [] } },
+      destination_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    expect(charactersIn(prompt)).toEqual([]);
+    expect(prompt).not.toContain("## Characters present");
+    expect(prompt).toContain("Do not invent extra characters");
+  });
+
+  it("names the searchable areas and recognises a return visit", () => {
+    const first = buildNarrationPrompt({
+      role: "ambience",
+      game_id: "case",
+      blueprint,
+      destination_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    expect(first).toContain("the pantry shelf");
+    expect(first).toContain("arriving here for the first time");
+
+    const back = buildNarrationPrompt({
+      role: "ambience",
+      game_id: "case",
+      blueprint,
+      destination_id: "loc-kitchen",
+      conversation_history: [
+        {
+          sequence: 1,
+          event_type: "move",
+          actor: "system",
+          narration: "You step into the kitchen.",
+          payload: { destination: "loc-kitchen", location_id: "loc-kitchen" },
+        },
+      ],
+    });
+    expect(back).toContain("acknowledge the return visit");
+    expect(back).toContain("You step into the kitchen.");
   });
 });

@@ -134,31 +134,6 @@ export const ACTIONS = {
       game_id: "case",
       blueprint: bp,
       destination_id: a.destination,
-      // The handler derives these from the destination's own history; a case
-      // fixes the history, so derive them the same way from `given`.
-      has_visited_before: history.some(
-        (e) => (e.payload?.location_id ?? e.payload?.destination) === a.destination,
-      ),
-      destination_history_json: JSON.stringify(
-        history.filter(
-          (e) => (e.payload?.location_id ?? e.payload?.destination) === a.destination,
-        ),
-      ),
-      destination_characters_json: JSON.stringify(
-        (bp.world.characters ?? [])
-          .filter((c) => c.location_id === a.destination)
-          .map((c) => ({
-            id: c.id,
-            first_name: c.first_name,
-            last_name: c.last_name,
-            sex: c.sex,
-            appearance: c.appearance,
-            public_summary:
-              (bp.narrative?.starting_knowledge?.characters ?? []).find(
-                (entry) => entry.character_id === c.id,
-              )?.summary ?? null,
-          })),
-      ),
       conversation_history: history,
     }),
     speaker: () => narratorSpeaker(),

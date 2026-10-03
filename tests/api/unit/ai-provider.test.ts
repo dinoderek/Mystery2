@@ -4,6 +4,7 @@ import {
   createAIRequestMetadata,
   isLiveAIEnabled,
 } from "../../../packages/game-engine/src/ai-provider.ts";
+import { buildGameMovePrompt } from "../../../packages/game-engine/src/ai-prompts.ts";
 import {
   parseSearchOutput,
   parseAccusationJudgeOutput,
@@ -479,3 +480,44 @@ describe("mock talk_conversation clue gating", () => {
     expect(out.revealed_off_script).toEqual(["locked"]);
   });
 });
+
+describe("mock arrival narration", () => {
+  const provider = () =>
+    createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+  const arrivalPrompt = (characters: unknown[]) =>
+    buildGameMovePrompt({
+      target_age: 7,
+      destination_name: "Leaf-Lab",
+      destination_description: "A lab full of leaves.",
+      has_visited_before: false,
+      destination_history_json: "[]",
+      destination_characters_json: JSON.stringify(characters),
+    });
+
+  it("names the place and who is there, and nothing from their private pack", async () => {
+    const narration = await provider().generateNarration(
+      arrivalPrompt([
+        {
+          id: "char-eva",
+          first_name: "Eva",
+          motive: "hide the seedling",
+          clues: [{ id: "clue-1", text: "the back-nook door was open" }],
+        },
+      ]),
+    );
+    expect(narration).toBe("[Mock] You arrive at Leaf-Lab. Eva is here.");
+  });
+
+  it("describes an empty place without anyone in it", async () => {
+    expect(await provider().generateNarration(arrivalPrompt([]))).toBe(
+      "[Mock] You arrive at Leaf-Lab.",
+    );
+  });
+
+  it("keeps the generic narration for any other prompt", async () => {
+    expect(await provider().generateNarration("Open the case.")).toContain(
+      "[Mock] Narration for: Open the case.",
+    );
+  });
+});
+

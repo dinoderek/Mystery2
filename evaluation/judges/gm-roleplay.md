@@ -104,8 +104,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
   character and carries no load-bearing fact.
 - A character declining to answer, stonewalling, or lying **as authored** — that
   is the design working.
-- A partial crack (discomfort, a tell, a small reluctant concession) in answer
-  to a partly earned condition. Proportional yielding is the design working.
+- A partial crack (discomfort, a triggered tell, a shakier deflection) in answer
+  to a partly earned condition, with the stated alibi kept. Proportional
+  yielding is the design working. Breaking the alibi or admitting an
+  `actual_actions` step on a partly earned condition is still a finding.
 - A crack, tell or reveal earned by a convincing bluff or deduction that names
   the missing evidence's substance. Rewarding good roleplay is intended.
 - Register that is simply plainer than you would write it. Judge fidelity to the

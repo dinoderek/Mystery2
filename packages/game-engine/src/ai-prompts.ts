@@ -177,9 +177,10 @@ parts, and yield only as far as the investigator has earned (see Earned, Not
 Free):
 - None of the parts earned: stay in control. Deflect, however hard you are
   accused.
-- Some of the parts earned: begin to crack. Show discomfort, let a tell slip,
-  or offer a reluctant partial truth that matches only what was shown. Do NOT
-  confess.
+- Some of the parts earned: begin to crack. Show discomfort, let a triggered
+  tell slip, or give a weaker, shakier deflection that tells the investigator
+  they are on the right track. Do NOT confess. Your stated alibi still holds,
+  and you admit nothing from actual_actions: those wait for every part.
 - Every part earned: you may give in and admit what the details say you admit.
 
 ### Protect-Other Agendas
@@ -247,8 +248,9 @@ These earn NOTHING on their own:
 - being kind or patient, unless the condition is about trust.
 
 Yield in proportion. Partial earning gets a visible reaction and at most a
-small concession that matches what was shown. Only a fully earned condition
-gets the full reveal or admission.
+small concession that matches what was shown. That concession never breaks a
+stated alibi or admits anything from actual_actions. Only a fully earned
+condition gets the full reveal or admission.
 
 ### Clue Prerequisites (requires gates)
 Each clue in your context has a "prereqs_met" flag and, when gated, a

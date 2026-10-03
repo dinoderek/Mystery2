@@ -140,8 +140,11 @@ describe("ai-prompts", () => {
     expect(talk).toContain("naming you as the culprit");
     // Cracks are proportional; a confession needs the whole condition.
     expect(talk).toContain("Some of the parts earned: begin to crack");
-    expect(talk).toContain("Do NOT\n  confess");
+    expect(talk).toContain("Do NOT confess");
     expect(talk).toContain("Every part earned");
+    // A partial crack points the way without breaking the alibi.
+    expect(talk).toContain("Your stated alibi still holds");
+    expect(talk).toContain("never breaks a\nstated alibi or admits anything from actual_actions");
     expect(talk).toContain("never a\nfull confession");
     // A clue tell needs that clue, not a general accusation.
     expect(talk).toContain("It must be THAT clue's substance");

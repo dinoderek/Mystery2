@@ -131,7 +131,8 @@ The narrator reads an agenda's crack condition (in `details`, and
 `yields_to_clue_ids`) as a list of parts, and yields only as far as the player
 has earned. A part is earned by evidence the player holds and uses, or by a
 convincing bluff or deduction that names its substance. Part of the condition
-earns a nervous slip; only all of it earns a confession. So write the condition
+earns a nervous slip, with the alibi still standing; only all of it earns a
+confession. So write the condition
 as concrete, nameable evidence ("shown both her glowing gloves and the trail
 leading to her lab"), not a mood ("if pressed hard enough"). A clever player
 can then bluff their way to a part they have not found, but cannot skip one.

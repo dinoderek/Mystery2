@@ -215,8 +215,9 @@ conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
   insisting, repeating a demand, asking to look, or a strong case built only on
   the other parts.
 - **The character yields in proportion.** Part of a condition earns a visible
-  crack and at most a matching concession; only the whole condition earns a
-  confession. The repeated-asking fallback that keeps a case solvable can give
+  crack and a shakier deflection that tells the player they are on the right
+  track. The stated alibi holds, and nothing from `actual_actions` is admitted
+  until the whole condition is earned; only then does a confession come. The repeated-asking fallback that keeps a case solvable can give
   up a partial truth or a gated clue, never a confession.
 - **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
   for "her tail puffs up" still leaks the tell, so greetings and improvised

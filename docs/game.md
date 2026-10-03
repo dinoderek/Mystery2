@@ -67,6 +67,11 @@ withholds it until the player has found them, but the narrator may give it up
 early for a genuinely clever question or a convincing bluff — only when the gate
 is social or about knowledge, never physical. Such a reveal counts as a real
 discovery, so a clever player is never stuck.
+
+A suspect's cover gives way only as far as the player has earned it, with
+evidence they hold or a convincing bluff or deduction that names what the
+evidence would show. Accusing them, however confidently, earns nothing on its
+own, and half the evidence gets a nervous slip rather than a confession.
 <!-- /extract:talking -->
 
 ## Searching

@@ -120,6 +120,22 @@ Task:
   from the character. Example: {{character_name}} looked up from the counter.
   "Oh, hello there. Can I help you with something?"
 
+## Nothing is given away in a greeting
+The investigator has walked up but has not said anything yet, so nothing has
+been earned this turn.
+- Do not reveal or hint at any of the character's clues, and do not confess,
+  crack, or drop the stated alibi.
+- Tells: the character context's "tells" array decides what may show.
+  - trigger.kind = "always": may surface naturally.
+  - trigger.kind = "condition": only if the conversation history already shows
+    the condition met in an earlier visit.
+  - trigger.kind = "clue": NEVER in a greeting. It needs the investigator to
+    raise that clue, and they have not said anything yet.
+  A guarded or nervous character shows it through their authored attitude, not
+  through a tell that has not been triggered. An untriggered tell's cue is off
+  limits even in a milder form: if a clue tell says "her tail puffs up", no tail
+  puffing at all. Pick different body language.
+
 Return JSON:
 {
   "narration": "..."
@@ -155,10 +171,17 @@ Agendas shape HOW you respond, not WHETHER you respond.
 
 ### Self-Protection Agendas
 When active, avoid incriminating yourself. Deflect, reinforce your stated
-alibi, change the subject, or become evasive. If the player references
-evidence that matches a yields_to clue (compare their words against the
-clue text in player_known_clues), begin to crack — show discomfort,
-offer reluctant partial truths.
+alibi, change the subject, or become evasive. The agenda's details and its
+yields_to_clue_ids say what it takes to make you crack. Treat that as a list of
+parts, and yield only as far as the investigator has earned (see Earned, Not
+Free):
+- None of the parts earned: stay in control. Deflect, however hard you are
+  accused.
+- Some of the parts earned: begin to crack. Show discomfort, let a triggered
+  tell slip, or give a weaker, shakier deflection that tells the investigator
+  they are on the right track. Do NOT confess. Your stated alibi still holds,
+  and you admit nothing from actual_actions: those wait for every part.
+- Every part earned: you may give in and admit what the details say you admit.
 
 ### Protect-Other Agendas
 When active, avoid volunteering information that implicates the target
@@ -201,6 +224,33 @@ guidance on what this character specifically needs to hear.
 
 For pressure: sustained, direct confrontation across multiple turns.
 Do not yield on the first attempt.
+
+### Earned, Not Free
+Good roleplay by the investigator should be rewarded, but nothing is given away
+for free. This applies to every gate below: an agenda's crack or reveal
+condition, a gated clue, and a clue-triggered tell.
+
+A part of a condition is EARNED when the investigator puts its substance in
+front of you in one of these ways:
+- Evidence: they use a clue they hold (semantic match against
+  player_known_clues), not just possess it.
+- Roleplay: a specific, plausible bluff or deduction that states the substance
+  of that part ("your gloves are covered in fresh glowing sparkle"), which this
+  character would believe given what is in front of them. Good roleplay can
+  stand in for evidence the player has not found. It cannot skip a part it
+  never names.
+
+These earn NOTHING on their own:
+- naming you as the culprit, or "I know you did it", however confident;
+- a strong case built only on other parts of the condition;
+- demanding, insisting, or repeating the same push;
+- asking to look somewhere, or to be let in;
+- being kind or patient, unless the condition is about trust.
+
+Yield in proportion. Partial earning gets a visible reaction and at most a
+small concession that matches what was shown. That concession never breaks a
+stated alibi or admits anything from actual_actions. Only a fully earned
+condition gets the full reveal or admission.
 
 ### Clue Prerequisites (requires gates)
 Each clue in your context has a "prereqs_met" flag and, when gated, a
@@ -251,12 +301,16 @@ decides WHEN it surfaces:
   actually holds that clue (semantic match against player_known_clues) OR the
   player makes a convincing, plausible bluff about it. If the player neither
   holds the clue nor bluffs convincingly, the character does NOT believe them
-  and this tell stays hidden.
+  and this tell stays hidden. It must be THAT clue's substance: a general
+  accusation, or a case built on other clues, does not trigger it.
 
 When a tell fires, express its "text" cue. If no authored tell applies but the
 player's message genuinely lands on something sensitive (an agenda's subject, a
 person/place the character protects), you may improvise a fitting reaction
-(hesitation, a glance, an over-emphatic denial, visible discomfort). If the
+(hesitation, a glance, an over-emphatic denial, visible discomfort). An
+improvised reaction must never reuse the cue of a tell whose trigger has not
+fired, even in a milder form ("one quick puff" for "her tail puffs up"): that
+leaks the tell. Pick different body language. If the
 latest message is small talk, unrelated, or comfortable ground, answer plainly
 with NO tell. Vary tells and escalate with pressure — do NOT repeat a tell you
 already showed earlier in this conversation.
@@ -271,7 +325,8 @@ when that person is mentioned, even if they won't reveal the clue yet.
 If the player has asked about a gated topic 3+ times across separate
 conversation visits with different approaches, you may begin to crack
 even without the designed unlock condition. Mysteries must remain
-solvable.
+solvable. Beginning to crack means a partial truth or a gated clue, never a
+full confession: that still needs its whole condition earned.
 
 ### General Knowledge Rules
 - Answer the question the player actually asked. Do NOT volunteer clues,

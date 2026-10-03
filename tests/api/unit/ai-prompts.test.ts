@@ -119,6 +119,38 @@ describe("ai-prompts", () => {
     expect(talkEnd).toContain("Do not invent extra people, places, or world facts.");
   });
 
+  it("keeps a greeting from firing tells or cracks the investigator has not earned", async () => {
+    const talkStart = await loadPromptTemplate("talk_start", 10);
+
+    expect(talkStart).toContain("Nothing is given away in a greeting");
+    expect(talkStart).toContain('trigger.kind = "clue": NEVER in a greeting');
+    expect(talkStart).toContain("history already shows");
+    expect(talkStart).toContain("do not confess");
+    // A softened version of an untriggered tell still leaks it.
+    expect(talkStart).toContain("off\n  limits even in a milder form");
+  });
+
+  it("rewards good roleplay in conversation but gives nothing away for free", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+
+    // Roleplay can stand in for evidence, but only by naming its substance.
+    expect(talk).toContain("### Earned, Not Free");
+    expect(talk).toContain("Good roleplay can");
+    expect(talk).toContain("It cannot skip a part it");
+    expect(talk).toContain("naming you as the culprit");
+    // Cracks are proportional; a confession needs the whole condition.
+    expect(talk).toContain("Some of the parts earned: begin to crack");
+    expect(talk).toContain("Do NOT confess");
+    expect(talk).toContain("Every part earned");
+    // A partial crack points the way without breaking the alibi.
+    expect(talk).toContain("Your stated alibi still holds");
+    expect(talk).toContain("never breaks a\nstated alibi or admits anything from actual_actions");
+    expect(talk).toContain("never a\nfull confession");
+    // A clue tell needs that clue, not a general accusation.
+    expect(talk).toContain("It must be THAT clue's substance");
+    expect(talk).toContain("must never reuse the cue of a tell whose trigger has not\nfired, even in a milder form");
+  });
+
   it("builds a game-start prompt with target age and premise", () => {
     const prompt = buildGameStartPrompt({
       target_age: 8,

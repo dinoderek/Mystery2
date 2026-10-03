@@ -72,18 +72,6 @@
         </section>
 
         <section>
-          <h3 class="text-t-primary font-bold mb-1">THEMES</h3>
-          <ul class="list-disc list-inside pl-4 space-y-1">
-            <li>
-              <span class="text-t-bright">themes</span> - List available color themes
-            </li>
-            <li>
-              <span class="text-t-bright">theme [name]</span> - Switch to a color theme
-            </li>
-          </ul>
-        </section>
-
-        <section>
           <h3 class="text-t-primary font-bold mb-1">GENERAL</h3>
           <ul class="list-disc list-inside pl-4 space-y-1">
             <li><span class="text-t-bright">Tab / notebook / n</span> - Open and close your case notebook: what you know, who you have met, and every clue you have found. Inside it, left/right arrows change section, up/down arrows scroll, 1-4 jump straight to a section</li>

@@ -29,7 +29,6 @@ import {
   type InvokeFailure,
 } from './store.retry';
 import { buildSessionPages, type SessionPage } from './session-pages';
-import { themeStore } from './theme-store.svelte';
 import { DEFAULT_NOTEBOOK_SECTION, type NotebookSection } from './notebook';
 
 interface BackendInvocation {
@@ -43,11 +42,8 @@ interface BackendInvocation {
   eventType: string;
 }
 
-export type ThemeName = 'matrix' | 'amber';
 export type SessionViewerMode = 'interactive' | 'read_only_completed';
 
-const THEME_STORAGE_KEY = 'mystery-theme';
-const THEME_NAMES: ThemeName[] = ['matrix', 'amber'];
 const EMPTY_CATALOG: SessionCatalog = {
   in_progress: [],
   completed: [],
@@ -59,10 +55,6 @@ const EMPTY_CATALOG: SessionCatalog = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isThemeName(value: unknown): value is ThemeName {
-  return typeof value === 'string' && THEME_NAMES.includes(value as ThemeName);
 }
 
 function readString(value: unknown, fallback = ''): string {
@@ -220,7 +212,6 @@ export class GameSessionStore {
   lastFailedInput = $state<string | null>(null);
   accusationOutcome = $state<'win' | 'lose' | null>(null);
   awaitingReturnToList = $state(false);
-  theme = $state<ThemeName>('matrix');
   sessionCatalog = $state<SessionCatalog>(EMPTY_CATALOG);
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   sessionCatalogError = $state<string | null>(null);
@@ -328,38 +319,6 @@ export class GameSessionStore {
   nextPage() {
     const current = this.activePageIndex ?? this.pages.length - 1;
     this.goToPage(current + 1);
-  }
-
-  initializeTheme() {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (isThemeName(saved)) {
-      this.theme = saved;
-    } else {
-      this.theme = themeStore.getActiveTheme().id === 'amber' ? 'amber' : 'matrix';
-    }
-
-    this.applyTheme();
-  }
-
-  setTheme(theme: ThemeName, syncPalette = true) {
-    this.theme = theme;
-    if (syncPalette) {
-      themeStore.setTheme(theme === 'amber' ? 'amber' : 'classic');
-    }
-    this.applyTheme();
-  }
-
-  private applyTheme() {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
-      return;
-    }
-
-    document.documentElement.setAttribute('data-theme', this.theme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, this.theme);
   }
 
   async loadBlueprints() {
@@ -520,26 +479,6 @@ export class GameSessionStore {
     const parsed = parseCommand(input, this.state.mode, parseContext);
 
     this.error = null;
-
-    if (parsed.type === 'theme-list') {
-      const names = themeStore.getThemeList().map((t) => t.name).join(', ');
-      const active = themeStore.getActiveThemeName();
-      this.appendSystemFeedback(`Themes: ${names}. Active: ${active}.`);
-      return;
-    }
-
-    if (parsed.type === 'theme-set') {
-      const success = themeStore.setTheme(parsed.themeName);
-      if (success) {
-        const activeThemeId = themeStore.getActiveTheme().id;
-        this.setTheme(activeThemeId === 'amber' ? 'amber' : 'matrix', false);
-        this.appendSystemFeedback(`Theme: ${themeStore.getActiveThemeName()}.`);
-      } else {
-        const names = themeStore.getThemeList().map((t) => t.name.toLowerCase()).join(', ');
-        this.appendSystemFeedback(`Unknown theme "${parsed.themeName}". Available: ${names}.`);
-      }
-      return;
-    }
 
     // Above the input echo on purpose: opening the notebook costs no turn and
     // leaves no trace in the transcript.

@@ -5,11 +5,11 @@
 // web/src/lib/domain/store.svelte.ts, including its one subtlety: free text in
 // accuse mode parses as `ask` but goes to game-accuse as reasoning. Hints for
 // missing, invalid and unrecognised commands use the store's exact wording.
-// Three lines differ, because the browser answers them with a screen rather
+// Two lines differ, because the browser answers them with a screen rather
 // than text: `help` opens a modal of commands (here: the mode's command list),
-// `notebook` opens the notebook (here: already in every view), and theme
-// commands change colours. The store does not echo `notebook` or theme lines
-// into the transcript, and neither does this (`echo: false`).
+// and `notebook` opens the notebook (here: already in every view). The store
+// does not echo `notebook` into the transcript, and neither does this
+// (`echo: false`).
 
 import { parseCommand } from "../../../web/src/lib/domain/parser.ts";
 
@@ -59,9 +59,6 @@ export function resolveInput(input, state, gameId) {
         echo: false,
         text: "(The notebook opens: it is the NOTEBOOK sections of your view.)",
       };
-    case "theme-list":
-    case "theme-set":
-      return { kind: "feedback", parsed, echo: false, text: "(Theme commands only change the colours.)" };
     case "missing-target":
       return {
         kind: "feedback",

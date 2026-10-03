@@ -130,7 +130,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
     expect(scrollInfo.scrollTop + scrollInfo.clientHeight).toBeGreaterThanOrEqual(scrollInfo.scrollHeight - 5);
   });
 
-  test('applies speaker-kind styles across theme switches', async ({ page }) => {
+  test('colours each speaker kind from its theme tokens', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
@@ -138,19 +138,37 @@ test.describe('US2/US3 - Narration Rendering', () => {
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
 
+    // An unknown command answers as the system.
     const input = page.locator('input[type="text"]');
-
-    // Switch to amber theme via terminal command
-    await input.fill('theme amber');
+    await input.fill('xyzzy');
     await input.press('Enter');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'amber');
-    await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/amber-body/);
 
-    // Switch to classic theme (maps to data-theme="matrix" internally)
-    await input.fill('theme classic');
-    await input.press('Enter');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix');
-    await expect(page.locator('[data-speaker-kind="narrator"]').first()).toHaveClass(/matrix-body/);
+    const speakers = [
+      { kind: 'narrator', label: '--t-narrator', body: '--t-narrator-text' },
+      { kind: 'system', label: '--t-system', body: '--t-system-text' },
+    ];
+    for (const speaker of speakers) {
+      const row = page.locator(`[data-speaker-kind="${speaker.kind}"]`).first();
+      const { label, body, expected } = await row.evaluate((el, { label, body }) => {
+        // Resolve each token through a probe, so the comparison is colour to colour.
+        const probe = document.createElement('span');
+        document.body.append(probe);
+        const resolve = (token: string) => {
+          probe.style.color = `var(${token})`;
+          return getComputedStyle(probe).color;
+        };
+        const expected = { label: resolve(label), body: resolve(body) };
+        probe.remove();
+        return {
+          label: getComputedStyle(el.firstElementChild!).color,
+          body: getComputedStyle(el).color,
+          expected,
+        };
+      }, speaker);
+      expect(label).toBe(expected.label);
+      expect(body).toBe(expected.body);
+      expect(label).not.toBe(body);
+    }
   });
 
   test('shows the active page image in the scene pane and swaps it when paging', async ({ page }) => {

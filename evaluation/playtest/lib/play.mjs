@@ -118,8 +118,8 @@ export async function playGame({
     script.push(decision.input);
     checkpoints.push(checkpoint);
     const action = resolveInput(decision.input, state, gameId);
-    // The store echoes what was typed, except the lines that only open a
-    // screen (notebook, themes).
+    // The store echoes what was typed, except the line that only opens a
+    // screen (notebook).
     if (action.kind !== "feedback" || action.echo) {
       transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
     }

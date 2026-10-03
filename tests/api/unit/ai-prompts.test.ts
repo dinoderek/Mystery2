@@ -126,6 +126,8 @@ describe("ai-prompts", () => {
     expect(talkStart).toContain('trigger.kind = "clue": NEVER in a greeting');
     expect(talkStart).toContain("history already shows");
     expect(talkStart).toContain("do not confess");
+    // A softened version of an untriggered tell still leaks it.
+    expect(talkStart).toContain("off\n  limits even in a milder form");
   });
 
   it("rewards good roleplay in conversation but gives nothing away for free", async () => {
@@ -143,6 +145,7 @@ describe("ai-prompts", () => {
     expect(talk).toContain("never a\nfull confession");
     // A clue tell needs that clue, not a general accusation.
     expect(talk).toContain("It must be THAT clue's substance");
+    expect(talk).toContain("must never reuse the cue of a tell whose trigger has not\nfired, even in a milder form");
   });
 
   it("builds a game-start prompt with target age and premise", () => {

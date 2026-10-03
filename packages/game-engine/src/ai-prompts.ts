@@ -132,7 +132,9 @@ been earned this turn.
   - trigger.kind = "clue": NEVER in a greeting. It needs the investigator to
     raise that clue, and they have not said anything yet.
   A guarded or nervous character shows it through their authored attitude, not
-  through a tell that has not been triggered.
+  through a tell that has not been triggered. An untriggered tell's cue is off
+  limits even in a milder form: if a clue tell says "her tail puffs up", no tail
+  puffing at all. Pick different body language.
 
 Return JSON:
 {
@@ -303,7 +305,10 @@ decides WHEN it surfaces:
 When a tell fires, express its "text" cue. If no authored tell applies but the
 player's message genuinely lands on something sensitive (an agenda's subject, a
 person/place the character protects), you may improvise a fitting reaction
-(hesitation, a glance, an over-emphatic denial, visible discomfort). If the
+(hesitation, a glance, an over-emphatic denial, visible discomfort). An
+improvised reaction must never reuse the cue of a tell whose trigger has not
+fired, even in a milder form ("one quick puff" for "her tail puffs up"): that
+leaks the tell. Pick different body language. If the
 latest message is small talk, unrelated, or comfortable ground, answer plainly
 with NO tell. Vary tells and escalate with pressure — do NOT repeat a tell you
 already showed earlier in this conversation.

@@ -218,6 +218,9 @@ conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
   crack and at most a matching concession; only the whole condition earns a
   confession. The repeated-asking fallback that keeps a case solvable can give
   up a partial truth or a gated clue, never a confession.
+- **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
+  for "her tail puffs up" still leaks the tell, so greetings and improvised
+  reactions use different body language.
 
 The proportion rule matters most. Without it, a confident accusation backed
 by half the evidence draws a full confession, and the culprit's admission hands

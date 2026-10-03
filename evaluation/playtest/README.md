@@ -13,14 +13,15 @@ npm run eval:playtest -- --blueprint the-missing-heartwood
 npm run eval:playtest -- --blueprint the-missing-heartwood --persona kid-7 --games 3
 npm run eval:playtest -- --replay evaluation/playtest/runs/<run>/game-1/script.json
 npm run eval:playtest -- --blueprint the-missing-heartwood --judge
+npm run eval:playtest:report -- evaluation/playtest/runs/<run>
 ```
 
 Needs a logged-in `claude` CLI (both the narrator and the investigator run
 through it) and nothing else: no API key, no env file. It builds the web app,
 starts it on a free port against a throwaway database, and never touches yours.
 Run it with `--help` for the full option list; `--narrator mock` is for
-plumbing checks only. Read
-`evaluation/playtest/runs/<run>/game-<n>/transcript.md`.
+plumbing checks only. Open `evaluation/playtest/runs/<run>/report.html`, or
+read one game's `game-<n>/transcript.md`.
 
 ## How a turn works
 
@@ -54,6 +55,14 @@ a turn rather than outlasting the request.
 `transcript.md` (with the investigator's plan in italics), the `script.json`
 to replay, `steps.jsonl`, and a `summary.json` of outcome, stop reason, clues
 found and costs.
+
+`report.html` puts every game on one page that opens from disk: the verdicts
+side by side, then each game turn by turn, with every judge finding beside the
+turn it cites, the clues each turn recorded and each narration's reading level.
+Its turns come from `game.db`, numbered as the judges cite them, and each
+input and plan is matched from `steps.jsonl` by the narration it got back; a
+line the parser rejected shows where it was typed. The run writes it last.
+`eval:playtest:report` rebuilds it, for a run graded by hand afterwards.
 
 ## Replay
 
@@ -100,7 +109,7 @@ cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
 
 Without it `--judge` stops before playing, rather than grading with the
 mechanical checks alone. A game from an earlier run is graded by hand with the
-same two commands, run on `<run>/game.db`.
+same two commands, run on `<run>/game.db`; then rebuild its report.
 
 ## Personas
 
@@ -132,6 +141,6 @@ the first run's figure before playing many games.
 ## Tests
 
 `tests/api/unit/playtest-*.test.ts` and
-`tests/api/integration/playtest*.test.ts`. The integration tests play, replay
-and grade a mock game end to end with a scripted investigator and a stub judge;
-no model is called.
+`tests/api/integration/playtest*.test.ts`. The integration tests play, replay,
+grade and report a mock game end to end with a scripted investigator and a stub
+judge; no model is called.

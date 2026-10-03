@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__REPORT_TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a reading column of turns with a judge margin beside it; the margin folds under each turn at phone width. */
+:root {
+  --bg: #eef2ef;
+  --surface: #ffffff;
+  --ink: #18231e;
+  --muted: #5a6a62;
+  --line: #d5ddd8;
+  --accent: #23695a;
+  --accent-soft: #dcebe5;
+  --major: #b3261e;
+  --major-soft: #fbe7e5;
+  --minor: #9a6200;
+  --minor-soft: #fbf0d9;
+  --mech: #4f53b8;
+  --mech-soft: #e7e8fb;
+  --clue: #276e47;
+  --clue-soft: #e1f2e7;
+  --esc: #9b2c6f;
+  --esc-soft: #f7e3ef;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --read: "Literata", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101613; --surface: #171f1b; --ink: #e2eae5; --muted: #93a39a; --line: #29352f;
+    --accent: #72c4a8; --accent-soft: #1d3029;
+    --major: #ff8f86; --major-soft: #3a1d1b; --minor: #e7b54f; --minor-soft: #352a14;
+    --mech: #a9acff; --mech-soft: #24254a; --clue: #80d6a0; --clue-soft: #17301f;
+    --esc: #f08cc6; --esc-soft: #3a1a2c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101613; --surface: #171f1b; --ink: #e2eae5; --muted: #93a39a; --line: #29352f;
+  --accent: #72c4a8; --accent-soft: #1d3029;
+  --major: #ff8f86; --major-soft: #3a1d1b; --minor: #e7b54f; --minor-soft: #352a14;
+  --mech: #a9acff; --mech-soft: #24254a; --clue: #80d6a0; --clue-soft: #17301f;
+  --esc: #f08cc6; --esc-soft: #3a1a2c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+h1, h2 { text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+h2 { font-size: 1.25rem; font-weight: 700; }
+.eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+.mono { font-family: var(--mono); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+header { display: grid; gap: 10px; }
+header p { margin: 0; color: var(--muted); max-width: 70ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.85rem; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+.overview { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .overview { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.panel p { margin: 0; max-width: 68ch; }
+.majors { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.majors li { display: grid; gap: 2px; font-size: 0.88rem; }
+.majors .where { font-size: 0.78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.majors .where a { font-family: var(--mono); }
+.majors .why { overflow-wrap: anywhere; }
+
+.matrix-wrap { overflow-x: auto; }
+table.matrix { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.matrix th, .matrix td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.matrix thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.matrix td.check { font-family: var(--mono); font-size: 0.8rem; }
+.matrix tr:last-child td { border-bottom: 0; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; line-height: 1.5; background: var(--bg); color: var(--muted); }
+.pill.fail { background: var(--major-soft); color: var(--major); }
+.pill.pass { background: var(--clue-soft); color: var(--clue); }
+.pill .n { font-weight: 400; opacity: 0.85; }
+
+.tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.tab { appearance: none; text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; display: grid; gap: 6px; }
+.tab:hover { border-color: var(--accent); }
+.tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.tab .t1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.tab .t1 strong { font-size: 1.05rem; }
+.tab .t2 { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 0.86rem; color: var(--muted); }
+.toolbar label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.transcript { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.turn { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, 340px); border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+.turn:first-child { border-top: 0; }
+.turn.flag-major { box-shadow: inset 3px 0 0 var(--major); }
+.turn.flag-minor { box-shadow: inset 3px 0 0 var(--minor); }
+.turn.flag-mechanical { box-shadow: inset 3px 0 0 var(--mech); }
+.turn:target { background: var(--accent-soft); }
+.gutter { padding: 16px 0 16px 12px; font-family: var(--mono); font-size: 0.74rem; color: var(--muted); display: grid; align-content: start; gap: 4px; font-variant-numeric: tabular-nums; }
+.gutter a { color: inherit; text-decoration: none; }
+.gutter a:hover { color: var(--accent); }
+.body { padding: 14px 18px 16px 6px; display: grid; gap: 10px; min-width: 0; }
+.margin { padding: 14px 14px 14px 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.margin:empty { display: none; }
+@media (max-width: 900px) {
+  .turn { grid-template-columns: 48px minmax(0, 1fr); }
+  .margin { grid-column: 2; padding: 0 16px 16px 6px; }
+}
+
+.plan { font-size: 0.84rem; color: var(--muted); font-style: italic; border-left: 2px solid var(--line); padding-left: 10px; max-width: 70ch; }
+.plan::before { content: "Investigator's plan · "; font-style: normal; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; }
+body.hide-plans .plan { display: none; }
+.input { font-family: var(--mono); font-size: 0.86rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; overflow-wrap: anywhere; }
+.input::before { content: "> "; color: var(--accent); font-weight: 600; }
+.input .route { font-family: var(--display); font-size: 0.72rem; color: var(--muted); margin-left: 8px; }
+.note { font-size: 0.86rem; color: var(--muted); font-style: italic; }
+.note.error { color: var(--major); }
+.part { display: grid; gap: 4px; }
+.speaker { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--muted); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.speaker.character { color: var(--accent); }
+.speaker .grade { font-family: var(--mono); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.speaker .grade.over { color: var(--major); }
+.narr { font-family: var(--read); font-size: 1.02rem; line-height: 1.65; max-width: 66ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.esc { font-family: var(--mono); font-size: 0.8em; background: var(--esc-soft); color: var(--esc); border-radius: 3px; padding: 0 2px; }
+.clue { display: grid; gap: 2px; background: var(--clue-soft); border-radius: 6px; padding: 7px 10px; font-size: 0.84rem; max-width: 66ch; }
+.clue .cid { font-family: var(--mono); font-size: 0.74rem; color: var(--clue); font-weight: 600; }
+
+.finding { border-radius: 8px; padding: 9px 11px; font-size: 0.83rem; display: grid; gap: 5px; }
+.finding.major { background: var(--major-soft); }
+.finding.minor { background: var(--minor-soft); }
+.finding.mechanical { background: var(--mech-soft); }
+.finding .fh { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.finding .sev { font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.finding.major .sev { color: var(--major); }
+.finding.minor .sev { color: var(--minor); }
+.finding.mechanical .sev { color: var(--mech); }
+.finding .j { font-family: var(--mono); font-size: 0.74rem; }
+.finding .k { color: var(--muted); font-size: 0.74rem; }
+.finding p { margin: 0; overflow-wrap: anywhere; }
+.finding blockquote { margin: 0; font-family: var(--read); font-style: italic; color: var(--muted); overflow-wrap: anywhere; }
+body.majors-only .finding.minor { display: none; }
+body.flagged-only .turn:not(.flagged) { display: none; }
+
+.foot { font-size: 0.84rem; color: var(--muted); margin: 0; }
+.foot code { font-family: var(--mono); font-size: 0.8rem; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow">Playtest</div>
+    <h1 id="title">Playtest</h1>
+    <p id="lede"></p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="overview">
+    <div class="panel">
+      <h2>Major findings</h2>
+      <ul class="majors" id="majors"></ul>
+    </div>
+    <div class="panel">
+      <h2>Verdicts</h2>
+      <div class="matrix-wrap"><table class="matrix" id="matrix"></table></div>
+      <p class="foot" id="matrix-foot">A judge fails when it reports at least one major finding.</p>
+    </div>
+  </section>
+
+  <section style="display:grid; gap:14px">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="opt-plans" checked> Investigator plans</label>
+      <label><input type="checkbox" id="opt-majors"> Major findings only</label>
+      <label><input type="checkbox" id="opt-flagged"> Only turns with findings</label>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--major)"></i>major</span>
+        <span><i class="sw" style="background:var(--minor)"></i>minor</span>
+        <span><i class="sw" style="background:var(--mech)"></i>mechanical check</span>
+        <span><i class="sw" style="background:var(--clue)"></i>clue found</span>
+      </div>
+    </div>
+    <div class="transcript" id="transcript" role="tabpanel"></div>
+    <p class="foot" id="source"></p>
+  </section>
+</div>
+
+<script type="application/json" id="data">__REPORT_DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const GAMES = DATA.games;
+const SEVERITY_ORDER = { major: 0, mechanical: 1, minor: 2 };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const money = (n) => (typeof n === "number" ? "$" + n.toFixed(2) : "n/a");
+const sum = (values) => values.reduce((a, v) => a + (typeof v === "number" ? v : 0), 0);
+const gameCost = (g) => sum([g.cost.narrator, g.cost.investigator, g.cost.judges]);
+const anchor = (n, seq) => `g${n}-s${seq}`;
+
+// Literal backslash escapes the narrator left in its text are shown as such.
+function narration(text) {
+  return esc(text).replace(/\\(n|&quot;)/g, (m) => `<span class="esc" title="Literal escape in the stored narration">${m.replace("&quot;", '"')}</span>`);
+}
+function pill(status, extra) {
+  return `<span class="pill ${esc(status)}">${esc(status)}${extra ? ` <span class="n">${esc(extra)}</span>` : ""}</span>`;
+}
+
+// Header
+const graded = GAMES.filter((g) => g.judges || g.mechanical);
+const outcomes = {};
+for (const g of GAMES) outcomes[g.outcome ?? g.stopReason ?? "unknown"] = (outcomes[g.outcome ?? g.stopReason ?? "unknown"] ?? 0) + 1;
+document.getElementById("title").textContent = `${DATA.title}: ${GAMES.length} game${GAMES.length === 1 ? "" : "s"}`;
+document.getElementById("eyebrow").textContent = ["Playtest", DATA.persona && `${DATA.persona} persona`].filter(Boolean).join(" · ");
+document.getElementById("lede").textContent =
+  `An AI investigator played ${DATA.title} through the real game server and parser. ` +
+  `Narrator: ${DATA.narratorModel ?? "unknown"}. Investigator: ${DATA.investigatorModel ?? "unknown"}. ` +
+  (graded.length ? `${graded.length} of ${GAMES.length} games were graded by the trace pipeline.` : "The games were not graded (run with --judge).");
+document.getElementById("meta").innerHTML = [
+  `<span>Run <b class="mono">${esc(DATA.run)}</b></span>`,
+  `<span>${Object.entries(outcomes).map(([k, v]) => `<b>${v}</b> ${esc(k)}`).join(", ")}</span>`,
+  `<span>Total cost <b>${money(sum(GAMES.map(gameCost)))}</b></span>`,
+  ...DATA.failed.map((f) => `<span>Game ${f.number} did not start: ${esc(f.error)}</span>`),
+].join("");
+
+// Major findings, across games
+const majors = GAMES.flatMap((g) => g.findings.filter((f) => f.severity === "major").map((f) => ({ ...f, game: g.number })));
+document.getElementById("majors").innerHTML = majors.length
+  ? majors.map((f) => `<li><span class="where"><a href="#${anchor(f.game, f.sequence)}">Game ${f.game} · #${f.sequence}</a><span class="mono">${esc(f.check)}</span><span>${esc(f.kind)}</span></span><span class="why">${esc(f.why)}</span></li>`).join("")
+  : `<li>${graded.length ? "No judge reported a major finding." : "No grades: run eval:playtest with --judge to grade the games."}</li>`;
+
+// Verdict matrix
+const checks = [...new Set(GAMES.flatMap((g) => [...Object.keys(g.judges ?? {}), ...Object.keys(g.mechanical ?? {})]))];
+const row = (label, fn) => `<tr><td class="check">${esc(label)}</td>${GAMES.map((g) => `<td>${fn(g)}</td>`).join("")}</tr>`;
+const verdict = (g, id) => {
+  if (g.judges?.[id]) return pill(g.judges[id].status, `${g.judges[id].major}M · ${g.judges[id].minor}m`);
+  if (g.mechanical?.[id]) return pill(g.mechanical[id]);
+  return "—";
+};
+document.getElementById("matrix").innerHTML =
+  `<thead><tr><th>Check</th>${GAMES.map((g) => `<th>Game ${g.number}</th>`).join("")}</tr></thead><tbody>` +
+  checks.map((id) => row(id, (g) => verdict(g, id))).join("") +
+  (graded.length ? row("reading level", (g) => (g.readability ? `${g.readability.pass}/${g.readability.total}` : "—")) : "") +
+  row("outcome", (g) => esc(g.outcome ?? g.stopReason ?? "—")) +
+  row("clues found", (g) => (g.cluesFound != null ? `${g.cluesFound}/${g.cluesTotal}` : "—")) +
+  row("turns used", (g) => (g.turnsUsed != null ? `${g.turnsUsed}/${g.timeBudget}` : "—")) +
+  row("cost", (g) => money(gameCost(g))) +
+  `</tbody>`;
+if (DATA.targetAge != null) {
+  document.getElementById("matrix-foot").textContent +=
+    ` Reading level counts narrations at or under the Flesch–Kincaid grade for age ${DATA.targetAge}.`;
+}
+
+// Game tabs
+const tabs = document.getElementById("tabs");
+tabs.innerHTML = GAMES.map((g) => {
+  const fails = Object.entries(g.judges ?? {}).filter(([, v]) => v.status === "fail").map(([id]) => id);
+  const majorCount = g.findings.filter((f) => f.severity === "major").length;
+  const status = g.outcome === "win" ? "pass" : g.outcome ? "fail" : "";
+  return `<button class="tab" role="tab" aria-controls="transcript" data-game="${g.number}">
+    <span class="t1"><strong>Game ${g.number}</strong>${pill(status, g.outcome ?? g.stopReason ?? "")}</span>
+    <span class="t2">${g.cluesFound ?? "?"}/${g.cluesTotal ?? "?"} clues · ${g.turnsUsed ?? "?"}/${g.timeBudget ?? "?"} turns${g.judges ? ` · ${majorCount} major` : ""}</span>
+    <span class="chips">${fails.map((id) => `<span class="pill fail">${esc(id.replace(/^gm_/, ""))}</span>`).join("")}</span>
+  </button>`;
+}).join("");
+
+function renderTurn(g, t, bySeq, seen) {
+  const fs = t.seq == null ? [] : (bySeq.get(t.seq) ?? []).sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  const id = t.seq == null ? "" : ` id="${anchor(g.number, t.seq)}"`;
+  const gutter = t.seq == null
+    ? `<span>—</span><span>${esc(t.type)}</span>`
+    : `<a href="#${anchor(g.number, t.seq)}" title="Event sequence, as the judges cite it">#${t.seq}</a><span>${esc(t.type.replace(/_/g, " "))}</span>`;
+  const clues = t.clues.map((c) => {
+    const again = seen.has(c.id);
+    seen.add(c.id);
+    return `<div class="clue"><span class="cid">${again ? "Clue recorded again" : "Clue found"} · ${esc(c.id)}</span>${c.text ? esc(c.text) : ""}</div>`;
+  }).join("");
+  const parts = t.parts.map((p, i) => {
+    const grade = i === 0 && t.grade ? `<span class="grade${t.grade.pass ? "" : " over"}" title="Flesch–Kincaid grade">FK ${t.grade.value.toFixed(1)}</span>` : "";
+    return `<div class="part"><div class="speaker${p.character ? " character" : ""}">${esc(p.speaker)}${grade}</div><div class="narr">${narration(p.text)}</div></div>`;
+  }).join("");
+  return `<article class="turn${fs.length ? ` flagged flag-${fs[0].severity}` : ""}"${id}>
+    <div class="gutter">${gutter}${t.turnsLeft != null ? `<span title="Turns left after this">${t.turnsLeft} left</span>` : ""}</div>
+    <div class="body">
+      ${t.plan ? `<div class="plan">${esc(t.plan)}</div>` : ""}
+      ${t.input ? `<div class="input">${esc(t.input)}${t.asDialogue ? `<span class="route">sent to the character as dialogue</span>` : ""}</div>` : ""}
+      ${t.note ? `<div class="note ${t.note.kind}">${esc(t.note.text)}</div>` : ""}
+      ${parts}${clues}
+    </div>
+    <div class="margin">${fs.map((f) => `<div class="finding ${esc(f.severity)}">
+      <div class="fh"><span class="sev">${esc(f.severity)}</span><span class="j">${esc(f.check)}</span>${f.kind ? `<span class="k">${esc(f.kind)}</span>` : ""}</div>
+      ${f.quote ? `<blockquote>“${esc(f.quote)}”</blockquote>` : ""}
+      <p>${esc(f.why)}</p></div>`).join("")}</div>
+  </article>`;
+}
+
+function renderGame(n) {
+  const g = GAMES.find((x) => x.number === n);
+  if (!g) return;
+  for (const b of tabs.querySelectorAll(".tab")) b.setAttribute("aria-selected", String(Number(b.dataset.game) === n));
+  const bySeq = new Map();
+  for (const f of g.findings) {
+    if (!bySeq.has(f.sequence)) bySeq.set(f.sequence, []);
+    bySeq.get(f.sequence).push(f);
+  }
+  const seen = new Set();
+  document.getElementById("transcript").innerHTML = g.turns.length
+    ? g.turns.map((t) => renderTurn(g, t, bySeq, seen)).join("")
+    : `<article class="turn"><div class="gutter"></div><div class="body"><div class="note">No turns recorded for this game.</div></div></article>`;
+  const facts = [
+    g.gameId && `Game <code>${esc(g.gameId)}</code>`,
+    `${g.steps} investigator steps`,
+    g.wallSeconds != null && `${g.wallSeconds}s wall time`,
+    g.stopReason && `stopped: ${esc(g.stopReason)}`,
+    g.replayOf && `replay of <code>${esc(g.replayOf)}</code>`,
+    g.error && `error: ${esc(g.error)}`,
+  ].filter(Boolean);
+  document.getElementById("source").innerHTML = `${facts.join(" · ")}. Files: <code>${esc(DATA.run)}/game-${g.number}/</code>.`;
+}
+
+function fromHash() {
+  const m = /^#g(\d+)(?:-s(\d+))?$/.exec(location.hash);
+  const n = m && GAMES.some((g) => g.number === Number(m[1])) ? Number(m[1]) : GAMES[0]?.number;
+  renderGame(n);
+  if (m && m[2]) document.getElementById(anchor(n, m[2]))?.scrollIntoView();
+}
+tabs.addEventListener("click", (e) => {
+  const b = e.target.closest(".tab");
+  if (!b) return;
+  history.replaceState(null, "", `#g${b.dataset.game}`);
+  renderGame(Number(b.dataset.game));
+});
+window.addEventListener("hashchange", fromHash);
+
+const OPTIONS = { "opt-plans": ["hide-plans", false], "opt-majors": ["majors-only", true], "opt-flagged": ["flagged-only", true] };
+for (const [id, [cls, whenChecked]] of Object.entries(OPTIONS)) {
+  const el = document.getElementById(id);
+  const apply = () => document.body.classList.toggle(cls, whenChecked ? el.checked : !el.checked);
+  el.addEventListener("change", apply);
+  apply();
+}
+fromHash();
+</script>
+</body>
+</html>

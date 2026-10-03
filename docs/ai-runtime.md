@@ -87,8 +87,8 @@ other role.
   `agendas`, `tells`, and `player_known_clues`. Knowledge about *other*
   characters travels only through explicit clues (`about_character_id`).
   - Each clue carries its gate's `requires_rationale` (the in-fiction reason it
-    is withheld) and a precomputed `prereqs_met`; the prerequisite ids are not
-    sent.
+    is withheld), a precomputed `prereqs_met`, and `known_to_player`; the
+    prerequisite ids are not sent.
   - Each tell has visible `text` and a `trigger`: `always`, `condition` (free
     text the narrator judges), or `clue` (fires only when the player raises the
     referenced `clue_ids` and is believed — they hold the clue or bluff well).
@@ -145,6 +145,13 @@ event records its id. `packages/game-engine/src/clue-discovery.ts` is the only
 place that knows how a reveal is recorded and whether a gate is met.
 `game_sessions.discovered_clues` is a cache; `game-get` rebuilds the notebook
 from history.
+
+A clue is discovered once. A narrator's reveal list names only clues the turn
+reveals for the first time: a character may restate or elaborate on a clue the
+player already holds (the talk context marks it `known_to_player`), but does
+not list it again. `game-ask` and `game-search` both drop an id the session has
+already discovered before recording the event or answering, and log it
+(`ask.clue_already_discovered`, `search.clue_validation_failed`).
 
 Gates use each clue's optional `requires` (`{ clue_ids, rationale }`):
 
@@ -219,7 +226,7 @@ same paths deterministically:
 
 - `talk_conversation` reveals the first clue whose `prereqs_met` holds, and on
   "aha" or "i bet" in the player's input grants the first locked clue
-  off-script.
+  off-script. It never reports a clue marked `known_to_player`.
 - `accusation_judge` wins on the true culprit from round 1, otherwise
   `continue` until round 3 and then `lose`; it reads `path_coverage` to aim its
   closing question at an unfinished solution path.

@@ -283,7 +283,10 @@ export async function handle(
     const aiClueId = searchOutput.revealed_clue_id;
     if (aiClueId !== null) {
       const clue = allClueMap.get(aiClueId);
-      if (clue && !revealedClueIds.includes(aiClueId)) {
+      // Already discovered anywhere in the session, not only by a search here.
+      const alreadyRevealed =
+        revealedClueIds.includes(aiClueId) || discoveredGlobal.has(aiClueId);
+      if (clue && !alreadyRevealed) {
         // Deterministic backstop: a clue whose prerequisites are not all
         // discovered cannot be revealed by search (search gates are hard — there
         // is no brilliance override here, unlike conversation).
@@ -302,7 +305,7 @@ export async function handle(
           game_id: gameId,
           ai_clue_id: aiClueId,
           exists: !!clue,
-          already_revealed: revealedClueIds.includes(aiClueId),
+          already_revealed: alreadyRevealed,
         });
       }
     }

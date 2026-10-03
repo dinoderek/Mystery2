@@ -21,6 +21,38 @@ import {
 import {
   createCharacterSpeaker,
 } from "../speaker.ts";
+import { buildDiscoveredClueIdSet } from "../clue-discovery.ts";
+
+export interface FirstTimeReveals {
+  revealed_clue_ids: string[];
+  revealed_off_script: string[];
+  // The character's own clue ids the narrator re-listed though the player
+  // already holds them.
+  repeated_clue_ids: string[];
+}
+
+// Narrow the narrator's reported reveals to what this turn discovers: clues the
+// active character holds that the player has not discovered yet. A character
+// may restate a clue the player already has, but that is not a new discovery.
+// Off-script flags survive only on ids that are kept.
+export function selectFirstTimeReveals(
+  output: { revealed_clue_ids: string[]; revealed_off_script: string[] },
+  characterClueIds: Set<string>,
+  discovered: Set<string>,
+): FirstTimeReveals {
+  const characterIds = output.revealed_clue_ids.filter((id) =>
+    characterClueIds.has(id)
+  );
+  const revealed = characterIds.filter((id) => !discovered.has(id));
+  const revealedSet = new Set(revealed);
+  return {
+    revealed_clue_ids: revealed,
+    revealed_off_script: output.revealed_off_script.filter((id) =>
+      revealedSet.has(id)
+    ),
+    repeated_clue_ids: characterIds.filter((id) => discovered.has(id)),
+  };
+}
 
 export async function handle(
   req: Request,
@@ -132,18 +164,22 @@ export async function handle(
       });
     }
 
-    const validCharacterClueIds = new Set(
-      activeCharacter.clues.map((c) => c.id),
+    // Off-script grants are still real discoveries; only kept ids are flagged
+    // for the notebook badge.
+    const reveals = selectFirstTimeReveals(
+      talkOutput,
+      new Set(activeCharacter.clues.map((c) => c.id)),
+      buildDiscoveredClueIdSet(historyRows ?? []),
     );
-    const validatedRevealedClueIds = talkOutput.revealed_clue_ids.filter(
-      (id) => validCharacterClueIds.has(id),
-    );
-    // Off-script grants are still real discoveries; only kept ids that actually
-    // survived validation are flagged for the notebook badge.
-    const validatedRevealedSet = new Set(validatedRevealedClueIds);
-    const validatedOffScript = talkOutput.revealed_off_script.filter((id) =>
-      validatedRevealedSet.has(id),
-    );
+    if (reveals.repeated_clue_ids.length > 0) {
+      log("ask.clue_already_discovered", {
+        game_id: gameId,
+        character_id: activeCharacter.id,
+        clue_ids: reveals.repeated_clue_ids,
+      });
+    }
+    const validatedRevealedClueIds = reveals.revealed_clue_ids;
+    const validatedOffScript = reveals.revealed_off_script;
 
     const narrationParts = [
       createNarrationPart(

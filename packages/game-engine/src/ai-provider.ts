@@ -327,6 +327,7 @@ class MockAIProvider implements AIProvider {
                 id?: string;
                 text?: string;
                 prereqs_met?: boolean;
+                known_to_player?: boolean;
               }>;
             };
           }
@@ -343,7 +344,10 @@ class MockAIProvider implements AIProvider {
             input_understood: false,
           };
         }
-        const clues = talkCtx?.active_character?.clues ?? [];
+        // Clues the player already holds are never reported again.
+        const clues = (talkCtx?.active_character?.clues ?? []).filter(
+          (c) => c.known_to_player !== true,
+        );
         // Deterministic brilliance trigger: a whole-word sentinel in the player's
         // input ("aha"/"i bet") unlocks the first gated clue off-script. Word
         // boundaries avoid matching inside ordinary words (e.g. "Sahara").

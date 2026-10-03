@@ -192,10 +192,11 @@ export interface TalkCharacterPublicSummary {
 }
 
 // A character clue as presented to the narrator during conversation. Carries the
-// gate's `requires_rationale` (the in-fiction reason it is withheld) and a
-// precomputed `prereqs_met` flag so the model does not have to do set math. Clue
-// ids of prerequisites are intentionally NOT sent — the rationale + flag are
-// enough for the narrator to gate (and to judge an off-script unlock).
+// gate's `requires_rationale` (the in-fiction reason it is withheld) and
+// precomputed `prereqs_met` / `known_to_player` flags so the model does not have
+// to do set math. Clue ids of prerequisites are intentionally NOT sent — the
+// rationale + flag are enough for the narrator to gate (and to judge an
+// off-script unlock).
 export interface TalkClueContext {
   id: string;
   text: string;
@@ -203,6 +204,8 @@ export interface TalkClueContext {
   hint_location_id?: string;
   requires_rationale: string | null;
   prereqs_met: boolean;
+  // The player already discovered this clue; restating it reveals nothing new.
+  known_to_player: boolean;
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
@@ -498,6 +501,7 @@ function buildTalkCharacterPrivateContext(
     hint_location_id: clue.hint_location_id,
     requires_rationale: clue.requires?.rationale ?? null,
     prereqs_met: isClueUnlocked(clue, discoveredSet),
+    known_to_player: discoveredSet.has(clue.id),
   }));
 
   return {

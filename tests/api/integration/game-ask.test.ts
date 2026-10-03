@@ -85,6 +85,44 @@ describe("game-ask endpoint", () => {
     });
   });
 
+  it("never records a clue the player already holds", async () => {
+    const startRes = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+    expect(startRes.status).toBe(200);
+    const { game_id } = await startRes.json();
+
+    const talkRes = await fetch(`${API_URL}/game-talk`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id, character_id: "char-alice" }),
+    });
+    expect(talkRes.status).toBe(200);
+
+    const ask = async (player_input: string) => {
+      const res = await fetch(`${API_URL}/game-ask`, {
+        method: "POST",
+        headers: auth.headers,
+        body: JSON.stringify({ game_id, player_input }),
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      return (data.revealed_clues as Array<{ id: string }>).map((c) => c.id);
+    };
+
+    const first = await ask("What did you see?");
+    expect(first.length).toBeGreaterThan(0);
+    const second = await ask("Where exactly did you see it?");
+    expect(second.filter((id) => first.includes(id))).toEqual([]);
+
+    const recorded = (readStoredEvents(game_id) ?? [])
+      .filter((entry) => entry.event_type === "ask")
+      .flatMap((entry) => (entry.payload?.revealed_clue_ids as string[]) ?? []);
+    expect(new Set(recorded).size).toBe(recorded.length);
+  });
+
   it("does not consume a turn on ask", async () => {
     const startRes = await fetch(`${API_URL}/game-start`, {
       method: "POST",

@@ -4,8 +4,8 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#roles` — `40866e8705d609293acf2c706f6b6f23b000d540`
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `cf07884817cd1b6178cf039d4cc925cd4b2fe10e`
-> - `docs/ai-runtime.md#clue-gating` — `67622ab93c84182f14c516a21e2cd22a2917d545`
+> - `docs/ai-runtime.md#context-boundaries` — `cca3459f88b6d7c50c6f068b407a20148e079b59`
+> - `docs/ai-runtime.md#clue-gating` — `74c7f26858a60fde72a3f2751dfcc66019916273`
 > - `docs/ai-runtime.md#game-enter` — `47c1a658181f8f0855d984670ababab4ba1001a5`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `c1b2efd3aadfaae3c359c5ebfb9b81cd4d4b2799`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `2c2b13565da8c585f668b493d99776ae200f94f0`
@@ -26,7 +26,7 @@ except the accusation judge.
 | `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus **public-only** summaries of characters currently at that location (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`). Plus prior history at that location. |
 | `game-search` (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
 | `game-search` (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |
-| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `clues` (each with `requires_rationale` + `prereqs_met`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
+| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `clues` (each with `requires_rationale`, `prereqs_met` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
 | `accusation_start` | scene-setting for accusation | spoiler-safe context only (no ground truth, no solution paths), plus the public character roster (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`) so suspects can be named with grounded pronouns. |
 | `accusation_judge` | adjudicates player reasoning | **the full blueprint**, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` — plus `player_known_clues` (what the investigator actually discovered) and `path_coverage` (per path: `found_clue_ids` / `missing_clue_ids`), so it credits an evidence chain only from clues the player really holds. |
 
@@ -84,7 +84,8 @@ each `rationale`:
   color the deflection — but it MAY grant an off-script reveal for a clever
   question or convincing bluff **when the rationale implies a social or knowledge
   gate that cleverness could bypass**. Off-script reveals are recorded as real
-  discoveries.
+  discoveries. A clue the player already holds is marked `known_to_player`: the
+  character may restate it, but it is never discovered twice.
 
 So the rationale is doing double duty: flavor for the deflection, and the signal
 the narrator uses to decide whether cleverness may substitute. Make the

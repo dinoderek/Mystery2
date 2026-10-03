@@ -8,7 +8,8 @@
 // AI investigator (a `claude` call per turn, playing a persona) while the game
 // narrates through the claude CLI. Each game gets a folder: a readable
 // transcript, the investigator's inputs as a script for replay, every step and
-// every narrator call. See evaluation/playtest/README.md.
+// every narrator call; the run gets report.html, every game on one page. See
+// evaluation/playtest/README.md.
 //
 // With --replay, the inputs come from a recorded game's script.json instead,
 // with no investigator calls, so a narrator or prompt change can be compared on
@@ -53,6 +54,7 @@ import { signIn } from "./lib/api.mjs";
 import { listPersonas, modelInvestigator, scriptedInvestigator } from "./lib/investigator.mjs";
 import { extractTrace, gradeGame, judgeSetupProblem, renderGrades } from "./lib/judge.mjs";
 import { writeGameFolder } from "./lib/output.mjs";
+import { writeReport } from "./lib/report.mjs";
 import { DEFAULT_MAX_STEPS, playGame } from "./lib/play.mjs";
 import { loadScript } from "./lib/replay.mjs";
 
@@ -412,5 +414,11 @@ if (args.judge) {
   console.log("\nWaiting for the last grades...");
   await grading;
   writeRunSummary();
+}
+try {
+  console.log(`\nReport: ${path.relative(REPO_ROOT, writeReport(runDir, { repoRoot: REPO_ROOT }))}`);
+} catch (error) {
+  // The games and their files are already written; only the page is missing.
+  console.error(`\nCould not write the report: ${error.message}`);
 }
 console.log(`\nWrote ${path.relative(REPO_ROOT, runDir)}`);

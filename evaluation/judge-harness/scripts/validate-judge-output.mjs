@@ -13,7 +13,8 @@
 //                       shortest_path_id is one of the enumerated paths (or null)
 //        - fairness:    every non_culprits[].character_id is a real non-culprit; cover all
 //        - timeline_coherence:  none (issues' `subject` is free text)
-//        - knowledge_coherence: none (issues' `subject` is free text)
+//        - knowledge_coherence: every issues[].clue_ids[] is a real blueprint
+//                               clue id; a pre_discovery_leak names ≥1 clue
 //        - character_grounding: every characters[].character_id is real;
 //                               first_name matches blueprint; cover every
 //                               blueprint character; every topics[].topic is
@@ -32,6 +33,7 @@
 //   3 — usage error
 
 import { spawnSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -261,10 +263,30 @@ function semanticChecksCharacterGrounding(verdict, blueprint, context) {
   return issues;
 }
 
-// timeline_coherence / knowledge_coherence: no mechanical reference checks
-// (issues' `subject` is free text — character id, clue id, "crime", etc.)
+// timeline_coherence: no mechanical reference checks (issues' `subject` is
+// free text — character id, "culprit", "crime", etc.)
 function semanticChecksNoop() {
   return [];
+}
+
+// knowledge_coherence: `subject` stays free text, but `clue_ids` must name
+// real clues, and a leak must name the clue it gives away.
+export function semanticChecksKnowledgeCoherence(verdict, blueprint) {
+  const issues = [];
+  const clueIds = collectClueIds(blueprint);
+  (verdict.issues ?? []).forEach((issue, i) => {
+    for (const clueId of issue.clue_ids ?? []) {
+      if (!clueIds.has(clueId)) {
+        issues.push(`issues[${i}].clue_ids references unknown clue id "${clueId}"`);
+      }
+    }
+    if (issue.kind === "pre_discovery_leak" && (issue.clue_ids ?? []).length === 0) {
+      issues.push(
+        `issues[${i}] is a pre_discovery_leak but clue_ids is empty (name the clue it gives away)`,
+      );
+    }
+  });
+  return issues;
 }
 
 // age_appropriate: target_age must match the blueprint, and every finding's
@@ -301,7 +323,7 @@ const SEMANTIC = {
   solve_depth: semanticChecksSolveDepth,
   fairness: semanticChecksFairness,
   timeline_coherence: semanticChecksNoop,
-  knowledge_coherence: semanticChecksNoop,
+  knowledge_coherence: semanticChecksKnowledgeCoherence,
   character_grounding: semanticChecksCharacterGrounding,
   age_appropriate: semanticChecksAgeAppropriate,
 };
@@ -370,7 +392,13 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
-  process.stderr.write(`fatal: ${err.message ?? err}\n`);
-  process.exit(2);
-});
+// Guarded so a unit test can import the semantic checks without running the CLI.
+// Workspaces invoke this through a symlink, and import.meta.url is the
+// resolved path, so compare against the resolved argv[1].
+const invokedPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
+if (import.meta.url === url.pathToFileURL(invokedPath).href) {
+  main().catch((err) => {
+    process.stderr.write(`fatal: ${err.message ?? err}\n`);
+    process.exit(2);
+  });
+}

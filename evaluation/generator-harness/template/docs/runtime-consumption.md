@@ -8,7 +8,7 @@
 > - `docs/ai-runtime.md#clue-gating` — `74c7f26858a60fde72a3f2751dfcc66019916273`
 > - `docs/ai-runtime.md#game-enter` — `47c1a658181f8f0855d984670ababab4ba1001a5`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `c1b2efd3aadfaae3c359c5ebfb9b81cd4d4b2799`
-> - `docs/blueprint-generation-flows.md#generator-prompt` — `2c2b13565da8c585f668b493d99776ae200f94f0`
+> - `docs/blueprint-generation-flows.md#generator-prompt` — `5361c3c95c349855e79f49db05adce1317ce671c`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
@@ -194,6 +194,11 @@ or null `sex` causes pronoun drift in talk and move narration.
   it to `null`) to fall back to the default bokeh wash.
 - `metadata.narration_style` is optional. Omit it entirely if you have no
   voice direction to give — do not set it to `null`.
+- `appearance`, location `description`s, sub-location names and the
+  `starting_knowledge` summaries reach the player before any clue is found.
+  They must never show or contradict a clue's evidence, and every physical fact
+  must agree across fields (**Physical consistency** in
+  `prompts/generator-prompt.md`; the `knowledge_coherence` judge checks it).
 - `narrative.starting_knowledge` needs an entry for **every** location and
   character; the schema rejects missing or duplicated ids. The character entries
   are also what become `public_summary` at runtime, so a thin summary here means

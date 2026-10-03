@@ -32,7 +32,8 @@ brief and honor every field:
 ## Objectives
 
 **Coherence.** Everything must agree with the hidden truth
-(`ground_truth.what_happened`, `why_it_happened`, `timeline`).
+(`ground_truth.what_happened`, `why_it_happened`, `timeline`), and every
+physical fact agrees across fields (see **Physical consistency**).
 Every location clue and character clue must be intentionally authored.
 Every location clue and character clue must belong to at least one authored
 reasoning path. Player-facing text (premise, one-liner, starting knowledge) may
@@ -183,6 +184,40 @@ Plan with these steps; do not output them.
 11. Final flavor pass: sharpen descriptions, backgrounds, and personalities;
     compose `metadata.visual_direction` and `cover_image`; keep every addition
     consistent with the locked facts.
+12. **Consistency pass (last, after every flavor addition).** The narrator is
+    handed descriptive fields and clues separately and cannot honor both when
+    they disagree. See **Physical consistency**.
+    - For each clue, list the physical facts it states: where each object is,
+      what state it is in, what a character looks like or carries.
+    - Check every other field against that list: other clues, every
+      `actual_actions` entry, location `description`, sub-location `name` and
+      `hint`, character `appearance`, `tells`, `flavor_knowledge`,
+      `starting_knowledge` summaries, `premise`, `one_liner`, and
+      `ground_truth`.
+    - Fix every disagreement, then re-run step 10's checks on anything you
+      changed.
+
+## Physical consistency
+
+Every physical fact the blueprint states agrees across fields.
+
+- **One place, one state.** An object is in one place and one condition at a
+  time. If it moves or changes, an `actual_actions` entry says when, and every
+  field describing it afterwards agrees.
+- **Looks and belongings agree.** A character's `appearance`, `tells`, and
+  every clue about them describe the same body, clothes, and things carried.
+- **Nothing gives a clue away before it is found.** `appearance`, location
+  `description`, sub-location names, the `starting_knowledge` summaries,
+  `premise`, `one_liner`, and `always` tells reach the player before any search
+  or question. They must never show or contradict a clue's evidence. A culprit
+  whose `appearance` has them wearing the muddy boots a clue later finds by the
+  back door breaks both rules at once: the evidence is in plain sight from the
+  first greeting, and it is in two places. Scenery a clue builds on is fine;
+  the clue's own finding stays hidden until the clue is discovered.
+- **Lies are not inconsistencies.** A false `stated_alibi`, or a clue a
+  character speaks under an agenda, may contradict the facts on purpose.
+  Narrated facts — location `description`s, location clue text,
+  `appearance`, `actual_actions`, `ground_truth` — may not.
 
 ## Challenge Calibration
 
@@ -292,6 +327,8 @@ alibis, actions, and the final reasoning).
   sub-floor subset of clues identifies the culprit.
 - Every suspect has an elimination path; none cleared by a blanket shared trait.
 - `flavor_knowledge` never substitutes for clues.
+- Every physical fact agrees across fields, and nothing player-visible before
+  discovery shows or contradicts a clue's evidence (**Physical consistency**).
 - All ids resolve: `starting_location_id` and `location_id`; clue
   `about_character_id` / `hint_location_id`; agenda `target_character_id` (a
   *different* character) / `gated_clue_id` (same character's clue) /

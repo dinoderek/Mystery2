@@ -159,7 +159,7 @@
       {
         "id": "eva_leaf_lab",
         "name": "Eva's Leaf-Lab",
-        "description": "Eva the squirrel's cosy treehouse science room, uphill among the tall trees. Shelves are lined with glowing leaf jars. The walls are covered in careful beetle drawings. A workbench holds tiny tools. At the back, a curtain is pulled shut across a small back room. Something behind it hums softly.",
+        "description": "Eva the squirrel's cosy treehouse science room, uphill among the tall trees. Shelves are lined with glowing leaf jars. The walls are covered in careful beetle drawings. A workbench holds tiny tools. At the back, a curtain is pulled shut across a small back room.",
         "clues": [
           {
             "id": "clue_eva_gloves_glow",
@@ -206,7 +206,7 @@
         "clues": [
           {
             "id": "clue_half_hung_banners",
-            "text": "A note on the ladder says, 'Hang these before the race!' Below it is a list of flags. Each one has a tick and a time. The times go all night."
+            "text": "A note on the ladder says, 'Hang these before the race!' Below it, someone wrote down each flag they put up, and the time. They worked all night."
           }
         ],
         "sub_locations": [
@@ -471,7 +471,7 @@
           },
           {
             "sequence": 3,
-            "summary": "Finished at dawn and saw the glitter fading from the trees."
+            "summary": "Stopped at dawn with a few flags still half up, and saw the glitter fading from the trees."
           }
         ],
         "agendas": [

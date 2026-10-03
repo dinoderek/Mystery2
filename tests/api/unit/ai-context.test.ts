@@ -407,6 +407,33 @@ describe("ai-context guardrails", () => {
     expect(after.talk_context?.active_character.clues[0]?.prereqs_met).toBe(true);
   });
 
+  it("marks character clues the player already discovered as known_to_player", () => {
+    const clueId = blueprint.world.characters[0].clues[0].id;
+    const build = (conversation_history: ConversationFragment[]) =>
+      buildTalkConversationContext({
+        game_id: "game-1",
+        session,
+        blueprint,
+        character_id: "char-alice",
+        player_input: "Where exactly?",
+        location_id: "loc-kitchen",
+        conversation_history,
+      }).talk_context?.active_character.clues[0];
+
+    expect(build([])).toMatchObject({ id: clueId, known_to_player: false });
+    expect(
+      build([
+        {
+          sequence: 1,
+          event_type: "ask",
+          actor: "system",
+          narration: "told",
+          payload: { character_id: "char-alice", revealed_clue_ids: [clueId] },
+        },
+      ]),
+    ).toMatchObject({ id: clueId, known_to_player: true });
+  });
+
   it("builds move context with public summaries for destination characters", () => {
     const history: ConversationFragment[] = [
       {

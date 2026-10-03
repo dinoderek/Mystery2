@@ -439,6 +439,29 @@ describe("mock talk_conversation clue gating", () => {
     expect(out.revealed_off_script).toEqual([]);
   });
 
+  it("skips clues the player already holds", async () => {
+    const out = await askWith(
+      [
+        { id: "known", text: "old news", prereqs_met: true, known_to_player: true },
+        { id: "open", text: "open clue", prereqs_met: true, known_to_player: false },
+      ],
+      "Where exactly did you find it?",
+    );
+    expect(out.revealed_clue_ids).toEqual(["open"]);
+  });
+
+  it("reveals nothing once the player holds every clue", async () => {
+    const out = await askWith(
+      [
+        { id: "known", text: "old news", prereqs_met: true, known_to_player: true },
+        { id: "granted", text: "secret", prereqs_met: false, known_to_player: true },
+      ],
+      "Aha — I bet you know more!",
+    );
+    expect(out.revealed_clue_ids).toEqual([]);
+    expect(out.revealed_off_script).toEqual([]);
+  });
+
   it("withholds clues whose prerequisites are not met", async () => {
     const out = await askWith(
       [{ id: "locked", text: "secret", prereqs_met: false }],

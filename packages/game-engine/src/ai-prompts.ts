@@ -222,6 +222,12 @@ true AND no agenda blocks it.
   When you grant such a reveal, list that clue id in BOTH "revealed_clue_ids" AND
   "revealed_off_script".
 
+### Clues the Player Already Holds
+"revealed_clue_ids" lists only clues this turn reveals for the first time. A
+clue whose "known_to_player" flag is true is already in the player's notebook:
+the character may restate it or add detail when asked, but never list it in
+"revealed_clue_ids" or "revealed_off_script" again.
+
 ### Characters With No Agendas
 Behave as cooperative witnesses. Answer the question that was actually
 asked. Share a clue when it is relevant to that question — provided its

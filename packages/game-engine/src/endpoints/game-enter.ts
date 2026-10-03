@@ -100,45 +100,14 @@ export async function handle(
       return internalError("Starting location missing from blueprint");
     }
 
-    // Public-knowledge summaries only: identity, visible appearance, and the
-    // player-facing starting_knowledge summary. Private authored material
-    // (background, alibi, motive, ...) never reaches arrival narration.
-    const publicSummaryByCharacterId = new Map(
-      (blueprint.narrative.starting_knowledge?.characters ?? []).map(
-        (entry) => [entry.character_id, entry.summary] as const,
-      ),
-    );
-    const charactersJson = JSON.stringify(
-      blueprint.world.characters
-        .filter((character) => character.location_id === location.id)
-        .map((character) => ({
-          id: character.id,
-          first_name: character.first_name,
-          last_name: character.last_name,
-          sex: character.sex,
-          appearance: character.appearance,
-          public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
-        })),
-    );
-
-    const subLocations = (location.sub_locations ?? []).map((sl) => ({
-      name: sl.name,
-    }));
-
     // Empty history: this is the first thing that happens in the case, so
-    // nothing has happened here before. It has to be the empty array rather
-    // than omitted — the prompt interpolates the value, and leaving it out put
-    // the literal string "undefined" in front of the narrator.
+    // nothing has happened here before and the player holds no clues.
     const aiPrompt = buildNarrationPrompt({
       role: "ambience",
       game_id: gameId,
       blueprint,
       destination_id: location.id,
-      has_visited_before: false,
-      destination_history_json: "[]",
-      destination_characters_json: charactersJson,
-      destination_sub_locations_json:
-        subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
+      conversation_history: [],
     });
     const aiMetadata = createAIRequestMetadata(req, {
       request_id: requestId,

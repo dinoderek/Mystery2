@@ -93,7 +93,8 @@ Authoring rules the schema and the `clue_graph` eval dimension enforce:
   see "Public vs. private" below.
 - `world.characters[].background / personality /
   initial_attitude_towards_investigator`
-  → private; shapes how the character roleplays during talk
+  → private; shapes how the character roleplays during talk and when the
+  player first walks in on them
 - `world.characters[].stated_alibi / motive` → the character's own claim plus
   their hidden motive; both surface during talk and contradiction-finding. Both
   are private *data* — "public claim" means what the character says out loud on
@@ -124,10 +125,12 @@ is the most common way to waste effort:
 
 - **Public** — identity (`first_name`, `last_name`), `sex`, visible
   `appearance`, and the character's `starting_knowledge` summary. This is all
-  that arrival narration and the accusation-start roster ever see.
+  other characters' scenes and the accusation-start roster ever see.
 - **Private** — `background`, `personality`, `stated_alibi`, `motive`, `clues`,
   `agendas`, `tells`, `actual_actions`, `flavor_knowledge`. These reach the
-  narrator **only** on the character's own talk turn.
+  narrator **only** on the character's own talk turn and on an arrival where
+  that character is present, to keep them in character, but are never stated
+  on arrival.
 
 Knowledge about *other* characters travels exclusively through explicit clues
 carrying `about_character_id`. If you want the player to be able to learn

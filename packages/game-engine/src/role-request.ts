@@ -33,6 +33,7 @@ import {
   type BlueprintContext,
   buildAccusationJudgeContext,
   buildAccusationStartContext,
+  buildPresentCharacterContexts,
   buildSearchContext,
   buildTalkConversationContext,
   buildTalkEndContext,
@@ -40,6 +41,7 @@ import {
   type ConversationFragment,
   findCharacterById,
   findLocationById,
+  selectLocationConversationHistory,
   type SessionSnapshot,
 } from "./ai-context.ts";
 import {
@@ -98,14 +100,11 @@ interface SearchInputFields extends SessionInput {
 
 export type RoleRequestInput =
   | ({ role: "intro" } & CommonInput)
-  | ({
-    role: "ambience";
-    destination_id: string;
-    has_visited_before: boolean;
-    destination_history_json: string;
-    destination_characters_json: string;
-    destination_sub_locations_json?: string;
-  } & CommonInput)
+  // Everything else an arrival needs — whether the place was visited before,
+  // what happened there, who is present and what the player already holds — is
+  // derived from `conversation_history` (the whole session's events; empty for
+  // `game-enter`), so the endpoints and the eval harness cannot disagree on it.
+  | ({ role: "ambience"; destination_id: string } & CommonInput)
   | ({ role: "talk_start"; character_id: string; location_id: string } & SessionInput)
   | ({
     role: "talk_conversation";
@@ -204,14 +203,20 @@ const REGISTRY: Record<RoleRequestName, any> = {
       if (!destination) {
         throw new Error(`Location ${input.destination_id} not found in blueprint`);
       }
+      const history = input.conversation_history ?? [];
+      const destinationHistory = selectLocationConversationHistory(history, destination.id);
+      const subLocations = (destination.sub_locations ?? []).map((sl) => ({ name: sl.name }));
       return buildGameMovePrompt({
         target_age: input.blueprint.metadata.target_age,
         destination_name: destination.name,
         destination_description: destination.description,
-        has_visited_before: input.has_visited_before,
-        destination_history_json: input.destination_history_json,
-        destination_characters_json: input.destination_characters_json,
-        destination_sub_locations_json: input.destination_sub_locations_json,
+        has_visited_before: destinationHistory.length > 0,
+        destination_history_json: JSON.stringify(destinationHistory),
+        destination_characters_json: JSON.stringify(
+          buildPresentCharacterContexts(input.blueprint, destination.id, history),
+        ),
+        destination_sub_locations_json:
+          subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
         narration_style: input.blueprint.metadata.narration_style ?? null,
       });
     },

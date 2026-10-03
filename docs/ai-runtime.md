@@ -80,7 +80,8 @@ other role.
 
 - **A character's public face** is identity, `sex`, visible `appearance`, and
   the `public_summary` from `narrative.starting_knowledge`. That is all any
-  scene sees of a character, except that character's own talk turn.
+  scene sees of a character, except that character's own talk turn and an
+  arrival where they are present.
 - **Talk roles** get location summaries, every character's public face, and the
   active character's private roleplay context: `background`, `personality`,
   attitude, alibi, motive, clues, `flavor_knowledge`, `actual_actions`,
@@ -94,6 +95,20 @@ other role.
     referenced `clue_ids` and is believed — they hold the clue or bluff well).
     Tells are reactions, not defaults: a cue surfaces only when its trigger
     fires, or, with none authored, when the player touches something sensitive.
+- **Arrival** (`ambience`, from `game-move` and `game-enter`) gets the
+  destination's name, description and sub-location names, its history, and,
+  for each character present, the same private pack a talk turn gives its
+  active character (`buildPresentCharacterContexts`). Absent characters are not
+  sent at all. Without the pack the narrator greets as a generic host, whatever
+  the character's authored attitude and agendas. The prompt plays each
+  character in that attitude, lets agendas shape their manner, and allows one
+  short line. It reveals no clue, never states the private fields, and limits
+  tells to `always`, or `condition` when the history already meets it; a
+  `clue` tell never fires, since nobody has raised a clue. Arrival derives all
+  of this from the session's history inside `role-request.ts`, so the
+  endpoints and the eval harness cannot disagree on it. Its word budget
+  (`ambience` in `packages/shared/src/age-profile.ts`) is as roomy as the
+  verdict's: it covers the place, its searchable areas and whoever is there.
 - **Search** gets the location, its clue progression, each sub-location with
   its narrator-only hint and unrevealed clues, and the player's `search_query`
   for a targeted search. Locked clues are filtered out, so their text can never
@@ -193,8 +208,9 @@ confirms the opening:
 
 1. It is refused unless the session's only event is `start`, which is what
    stops a double confirmation narrating the arrival twice.
-2. It generates `ambience` narration for the starting location with
-   `has_visited_before: false` and no history — the same call `game-move` makes.
+2. It generates `ambience` narration for the starting location with an empty
+   history — a first visit, with no clues held — the same call `game-move`
+   makes.
 3. It persists a `move` event with `role: "enter"` and the location image, but
    changes no session state: entering costs no turn and moves no one.
 
@@ -227,6 +243,8 @@ same paths deterministically:
 - `talk_conversation` reveals the first clue whose `prereqs_met` holds, and on
   "aha" or "i bet" in the player's input grants the first locked clue
   off-script. It never reports a clue marked `known_to_player`.
+- An arrival (`ambience`) names the place and the first name of each
+  character present, and nothing from their private packs.
 - `accusation_judge` wins on the true culprit from round 1, otherwise
   `continue` until round 3 and then `lose`; it reads `path_coverage` to aim its
   closing question at an unfinished solution path.

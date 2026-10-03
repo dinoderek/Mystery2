@@ -1,5 +1,6 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
 import { withCallLog } from "./ai-call-log.ts";
+import { readArrivalPrompt } from "./ai-prompts.ts";
 import {
   ClaudeCliProvider,
   type ClaudeCliRuntimeConfig,
@@ -278,6 +279,13 @@ class MockAIProvider implements AIProvider {
   }
 
   async generateNarration(prompt: string): Promise<string> {
+    // An arrival names the place and who is there — names only, so nothing
+    // from a present character's private pack ever reaches the transcript.
+    const arrival = readArrivalPrompt(prompt);
+    if (arrival) {
+      const present = arrival.character_names.map((name) => ` ${name} is here.`).join("");
+      return `[Mock] You arrive at ${arrival.destination_name}.${present}`;
+    }
     return `[Mock] Narration for: ${prompt.slice(0, 70)}...`;
   }
 

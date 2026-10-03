@@ -14,10 +14,10 @@
 // Event types with no game-master AI role (e.g. the opening "start" block) map
 // to null and get a turn record without a reconstructed context.
 //
-// Note: "move" is an internal label for selecting buildMoveContext. The real
-// runtime stamps move narration with role_name "search" (buildMoveContext in
-// ai-context.ts), but a distinct "move" label reads more clearly in turn
-// records and judge projections; it never reaches a builder as a role string.
+// Note: "move" is an internal label for selecting buildMoveContext, which stamps
+// its context with role_name "ambience" (the arrival narration role); "move"
+// reads more clearly in turn records and judge projections, and never reaches a
+// builder as a role string.
 export const EVENT_ROLE = {
   move: "move",
   search: "search",

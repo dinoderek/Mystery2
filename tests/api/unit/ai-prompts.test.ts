@@ -149,6 +149,13 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("Never guess pronouns");
     expect(prompt).toContain("Do not invent extra characters");
     expect(prompt).toContain("Narration style");
+    // Characters are present, so the arrival plays them as authored without
+    // giving anything away.
+    expect(prompt).toContain("initial_attitude_towards_investigator");
+    expect(prompt).toContain("Arrival reveals no clues");
+    expect(prompt).toContain("never state them");
+    expect(prompt).toContain('A "clue" tell never surfaces on arrival');
+    expect(prompt).toContain("about 52 words"); // ambience@9
   });
 
   it("includes the standard style (and optional blueprint voice) in start/move prompts", () => {
@@ -170,5 +177,7 @@ describe("ai-prompts", () => {
     });
     expect(move).toContain("Narration style");
     expect(move).not.toContain("This mystery's own voice");
+    // Nobody here: no character rules.
+    expect(move).not.toContain("## Characters present");
   });
 });

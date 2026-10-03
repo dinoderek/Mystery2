@@ -531,6 +531,24 @@ export function buildGameStartPrompt(input: {
   ].join("\n");
 }
 
+// Who is present on arrival comes with each character's full private pack (the
+// one a conversation gets), so the narrator can play them as authored. Arrival
+// is not a conversation: nobody has asked anything, so no clue changes hands,
+// secrets stay unspoken, and only tells that need no player prompt can surface.
+const ARRIVAL_CHARACTER_RULES = [
+  "## Characters present",
+  "Each character here comes with private notes so you can play them as authored. They are for consistency only.",
+  "- Play each character in their initial_attitude_towards_investigator, personality and background. A guarded character stays guarded; a nervous one shows it.",
+  "- Let their agendas shape their manner, in priority order. Someone protecting a place or a person might hover near it, change the subject, or steer the investigator elsewhere.",
+  "- A character may react or say one short line in the first person. They do not start a conversation or volunteer information; the investigator has not asked them anything yet.",
+  "- Arrival reveals no clues. Never state, hint at, or paraphrase any character's clues, even ones marked known_to_player.",
+  "- motive, actual_actions, stated_alibi, flavor_knowledge and background are private: never state them. Use them only to keep the character consistent.",
+  "- Tells: a tell with trigger.kind \"always\" may surface. A \"condition\" tell surfaces only if the destination history already shows its condition met. A \"clue\" tell never surfaces on arrival: nobody has raised a clue.",
+].join("\n");
+
+const ARRIVAL_HEADLINE = /^Describe the player arriving at (.+)\.$/m;
+const ARRIVAL_CHARACTERS_PREFIX = "Characters at destination: ";
+
 export function buildGameMovePrompt(input: {
   target_age: number;
   destination_name: string;
@@ -544,6 +562,7 @@ export function buildGameMovePrompt(input: {
   const revisitInstruction = input.has_visited_before
     ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
     : "The player is arriving here for the first time in this session.";
+  const hasCharacters = input.destination_characters_json.trim() !== "[]";
 
   return [
     "You are the narrator for a children's mystery game.",
@@ -552,10 +571,11 @@ export function buildGameMovePrompt(input: {
     renderLengthGuidance("ambience", input.target_age),
     buildStyleGuidance(input.narration_style),
     revisitInstruction,
-    "Base the description on the provided destination description, destination-specific history, and the public summaries of characters currently present.",
-    "If characters are present, mention who is visibly here using only the provided names and descriptions.",
+    "Base the description on the provided destination description, destination-specific history, and the characters currently present.",
+    "If characters are present, mention who is visibly here using only the provided names and appearances.",
     "Use each character's sex field to choose pronouns. Never guess pronouns.",
     "Do not invent extra characters or character details.",
+    ...(hasCharacters ? [ARRIVAL_CHARACTER_RULES] : []),
     ...(input.destination_sub_locations_json
       ? [
           "When describing the location, prominently mention the searchable areas so the player knows what they can investigate. Weave them naturally into the description.",
@@ -563,7 +583,35 @@ export function buildGameMovePrompt(input: {
         ]
       : []),
     `Destination description: ${input.destination_description}`,
-    `Characters at destination: ${input.destination_characters_json}`,
+    `${ARRIVAL_CHARACTERS_PREFIX}${input.destination_characters_json}`,
     `Destination history: ${input.destination_history_json}`,
   ].join("\n");
+}
+
+/**
+ * Read the place and the present characters' names back out of an arrival
+ * prompt, or null for any other prompt. Narration has no context object, so
+ * this is how the mock provider recognises an arrival; it lives beside
+ * `buildGameMovePrompt` so the two cannot drift.
+ */
+export function readArrivalPrompt(
+  prompt: string,
+): { destination_name: string; character_names: string[] } | null {
+  const headline = ARRIVAL_HEADLINE.exec(prompt);
+  if (!headline) return null;
+  const charactersLine = prompt
+    .split("\n")
+    .find((line) => line.startsWith(ARRIVAL_CHARACTERS_PREFIX));
+  let characters: Array<{ first_name?: unknown }>;
+  try {
+    characters = JSON.parse(charactersLine?.slice(ARRIVAL_CHARACTERS_PREFIX.length) ?? "[]");
+  } catch {
+    characters = [];
+  }
+  return {
+    destination_name: headline[1],
+    character_names: characters
+      .map((c) => c.first_name)
+      .filter((name): name is string => typeof name === "string"),
+  };
 }

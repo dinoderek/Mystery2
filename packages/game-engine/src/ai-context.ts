@@ -137,13 +137,20 @@ export interface SharedMysteryContext {
   target_age: number;
 }
 
+// The role a context is built for: an output-contract role, or `ambience` —
+// arrival narration, which has no output contract but does have a context.
+export type ContextRoleName = AIRoleName | "ambience";
+
 export interface MoveContext {
   destination_id: string;
   destination_name: string;
   destination_description: string;
   has_visited_before: boolean;
   destination_history: ConversationFragment[];
-  destination_characters: TalkCharacterPublicSummary[];
+  // Every character standing at the destination, with the same private pack a
+  // conversation gives its active character, so arrival plays them in their
+  // authored attitude rather than as a generic greeter.
+  destination_characters: TalkCharacterPrivateContext[];
 }
 
 export interface SubLocationContext {
@@ -259,7 +266,7 @@ export interface AccusationJudgeContext {
 // `Record<string, unknown>` to serialise.
 export type AIContext = {
   game_id: string;
-  role_name: AIRoleName;
+  role_name: ContextRoleName;
   mode: SessionSnapshot["mode"];
   forced_by_timeout: boolean;
   location_id: string | null;
@@ -276,7 +283,7 @@ export type AIContext = {
 
 interface BuildContextInput {
   game_id: string;
-  role_name: AIRoleName;
+  role_name: ContextRoleName;
   session: SessionSnapshot;
   forced_by_timeout?: boolean;
   blueprint: BlueprintContext;
@@ -527,6 +534,27 @@ function buildTalkCharacterPrivateContext(
   };
 }
 
+/**
+ * The private pack of every character standing at a location — what arrival
+ * narration needs to play whoever is there. Same builder as a conversation's
+ * active character, so the two never disagree about what a character is.
+ */
+export function buildPresentCharacterContexts(
+  blueprint: BlueprintContext,
+  locationId: string,
+  conversationHistory: ConversationFragment[],
+): TalkCharacterPrivateContext[] {
+  const present = blueprint.world.characters.filter(
+    (character) => character.location_id === locationId,
+  );
+  if (present.length === 0) return [];
+
+  const playerKnownClues = buildPlayerKnownClues(blueprint, conversationHistory);
+  return present.map((character) =>
+    buildTalkCharacterPrivateContext(blueprint, character.id, playerKnownClues)
+  );
+}
+
 function buildTalkContext(
   blueprint: BlueprintContext,
   locationId: string,
@@ -589,7 +617,7 @@ function selectConversationHistoryForRole(
     return selectCharacterConversationHistory(conversationHistory, characterId);
   }
 
-  if (input.role_name === "search") {
+  if (input.role_name === "search" || input.role_name === "ambience") {
     const locationId =
       input.location_id ?? input.session.current_location_id;
     if (!locationId) {
@@ -811,13 +839,15 @@ export function buildMoveContext(input: {
     input.conversation_history ?? [],
     input.destination_id,
   );
-  const destinationCharacters = buildTalkCharacterPublicSummaries(
+  const destinationCharacters = buildPresentCharacterContexts(
     input.blueprint,
-  ).filter((character) => character.location_id === location.id);
+    location.id,
+    input.conversation_history ?? [],
+  );
 
   return buildContext({
     game_id: input.game_id,
-    role_name: "search",
+    role_name: "ambience",
     session: input.session,
     blueprint: input.blueprint,
     location_id: input.destination_id,
@@ -895,7 +925,7 @@ export function buildAccusationJudgeContext(input: {
 }
 
 export function assertRoleContextSafety(
-  role: AIRoleName,
+  role: ContextRoleName,
   context: AIContext,
 ): void {
   if (role === "accusation_judge") {

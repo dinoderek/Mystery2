@@ -31,8 +31,12 @@ iteration. The gate takes about a minute; run it in the background into a file
 and read the file when the completion notification arrives:
 
 ```bash
-( npm test; echo "GATE_EXIT=$?" ) > /tmp/gate.log 2>&1
+( npm test; echo "GATE_EXIT=$?" ) > "/tmp/gate-$(basename "$PWD").log" 2>&1
 ```
+
+The log is named after the worktree because sessions in other worktrees run
+their gates at the same time. A shared `/tmp/gate.log` gets overwritten
+mid-run, and you end up reading another worktree's verdict.
 
 Never block on `tail -f` or a `while sleep` loop: `tail -f` keeps following the
 file after the command ends, so the call hangs until killed. (`timeout` is not

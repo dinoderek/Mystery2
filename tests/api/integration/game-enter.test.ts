@@ -56,7 +56,9 @@ describe("game-enter endpoint", () => {
       speaker: NARRATOR_SPEAKER,
       image_id: STARTING_LOCATION_IMAGE,
     });
-    expect(data.narration_parts[0].text).toContain("[Mock]");
+    // Alice is in the kitchen: the arrival names her, and the mock never
+    // repeats anything from her private pack.
+    expect(data.narration_parts[0].text).toBe("[Mock] You arrive at Kitchen. Alice is here.");
   });
 
   it("persists the arrival as a move event the transcript can replay", async () => {

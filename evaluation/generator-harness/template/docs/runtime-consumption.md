@@ -4,7 +4,7 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#roles` — `40866e8705d609293acf2c706f6b6f23b000d540`
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `14076c2ede57c653097ce7f81256c9e8317d0d3d`
+> - `docs/ai-runtime.md#context-boundaries` — `37fc9b7a3a0bf8b035437ce94886c9e05a86476f`
 > - `docs/ai-runtime.md#clue-gating` — `74c7f26858a60fde72a3f2751dfcc66019916273`
 > - `docs/ai-runtime.md#game-enter` — `ed918f6bb6b0936a009c84020f0dcceb305a272b`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `73dd510a6fc320cd3af078a6a17e71d781122852`
@@ -127,6 +127,15 @@ character's responses — they're what makes the mystery feel like a mystery
 during talk. Agenda types are constrained by the schema; do not invent new
 ones.
 
+The narrator reads an agenda's crack condition (in `details`, and
+`yields_to_clue_ids`) as a list of parts, and yields only as far as the player
+has earned. A part is earned by evidence the player holds and uses, or by a
+convincing bluff or deduction that names its substance. Part of the condition
+earns a nervous slip; only all of it earns a confession. So write the condition
+as concrete, nameable evidence ("shown both her glowing gloves and the trail
+leading to her lab"), not a mood ("if pressed hard enough"). A clever player
+can then bluff their way to a part they have not found, but cannot skip one.
+
 ### `tells` are reactions, not ambience
 
 `tells` is a first-class array on the character, separate from `agendas`. Each
@@ -141,7 +150,9 @@ tightens") with a `trigger` that decides when it surfaces:
   convincingly
 
 The `talk_conversation` prompt treats tells as reactions: a cue surfaces only
-when its trigger fires. A character with no authored tells simply reacts to what
+when its trigger fires. The `talk_start` greeting comes before the player has
+said anything, so a `clue` tell never fires there, and a `condition` tell only
+if an earlier visit already met it. A character with no authored tells simply reacts to what
 the player says. Author tells that are specific and earned — a well-triggered
 tell is the player's reward for pressing the right thread.
 

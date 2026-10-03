@@ -95,6 +95,9 @@ other role.
     referenced `clue_ids` and is believed — they hold the clue or bluff well).
     Tells are reactions, not defaults: a cue surfaces only when its trigger
     fires, or, with none authored, when the player touches something sensitive.
+    A `talk_start` greeting comes before the player says anything, so a `clue`
+    tell never fires there, and a `condition` tell fires only if an earlier
+    visit already met it.
 - **Arrival** (`ambience`, from `game-move` and `game-enter`) gets the
   destination's name, description and sub-location names, its history, and,
   for each character present, the same private pack a talk turn gives its
@@ -195,6 +198,32 @@ may use it before the case resolves: its labels ("Red herring: …") name the
 answer.
 <!-- /extract:clue-gating -->
 
+## Earned, not free
+
+The talk prompt rewards good roleplay without giving anything away. One rule
+covers every conversational gate: a self-protection agenda's crack, a
+conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
+
+- **The condition is a list of parts.** These are the agenda's `details` and
+  `yields_to_clue_ids`, or the gate's clues.
+- **A part is earned** when the player puts its substance in front of the
+  character. Using a clue they hold does it. So does a specific, plausible
+  bluff or deduction that names the substance, which this character would
+  believe. Roleplay can stand in for evidence the player has not found, but it
+  cannot skip a part it never names.
+- **Some things never earn a part:** naming the character as culprit,
+  insisting, repeating a demand, asking to look, or a strong case built only on
+  the other parts.
+- **The character yields in proportion.** Part of a condition earns a visible
+  crack and at most a matching concession; only the whole condition earns a
+  confession. The repeated-asking fallback that keeps a case solvable can give
+  up a partial truth or a gated clue, never a confession.
+
+The proportion rule matters most. Without it, a confident accusation backed
+by half the evidence draws a full confession, and the culprit's admission hands
+over the answer before the player has earned it. `gm_roleplay` judges against
+the same definition of earned.
+
 `game-start` and `game-get` return the notebook's case facts as structured
 `state` (`mystery_summary`, `premise`, a `summary` per location and character);
 `game-search` and `game-ask` return the turn's `revealed_clues` so the notebook
@@ -240,6 +269,8 @@ ordering and resume defects can be traced from the log alone.
 The default for `npm run dev` and every automated suite. It must exercise the
 same paths deterministically:
 
+- `talk_start` shows only an `always` tell, never one with a `condition` or
+  `clue` trigger.
 - `talk_conversation` reveals the first clue whose `prereqs_met` holds, and on
   "aha" or "i bet" in the player's input grants the first locked clue
   off-script. It never reports a clue marked `known_to_player`.

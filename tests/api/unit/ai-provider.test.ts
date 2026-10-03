@@ -521,3 +521,39 @@ describe("mock arrival narration", () => {
   });
 });
 
+describe("mock greeting tells", () => {
+  const greet = async (tells: unknown[]) => {
+    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+    const output = await provider.generateRoleOutput({
+      role: "talk_start",
+      prompt: "prompt",
+      context: {
+        talk_context: {
+          active_character: { first_name: "Eva", sex: "female", appearance: "neat", tells },
+          active_location_name: "Leaf-Lab",
+        },
+      },
+      parse: parseTalkStartOutput,
+    });
+    return output.narration;
+  };
+
+  it("shows an always tell, never one the investigator has to earn", async () => {
+    const narration = await greet([
+      { id: "t1", text: "tail puffs up", trigger: { kind: "clue", clue_ids: ["c1"] } },
+      { id: "t2", text: "hums a nervous tune", trigger: { kind: "condition", condition: "x" } },
+      { id: "t3", text: "taps her tiny tools", trigger: { kind: "always" } },
+    ]);
+    expect(narration).toContain("taps her tiny tools");
+    expect(narration).not.toContain("tail puffs up");
+    expect(narration).not.toContain("hums a nervous tune");
+  });
+
+  it("shows no tell when none is ambient", async () => {
+    const narration = await greet([
+      { id: "t1", text: "tail puffs up", trigger: { kind: "clue", clue_ids: ["c1"] } },
+    ]);
+    expect(narration).toBe("[Mock] You walk up to Eva in Leaf-Lab. she looks neat.");
+  });
+});
+

@@ -46,10 +46,17 @@ Walk the judged turns in order. For each, apply the checks that fit its
    is a finding. Pronouns must follow the character's `sex` field.
 3. **Alibi and stance.** A character does not contradict their own
    `stated_alibi`, and the culprit does not drop their cover, unless the
-   conversation earned it — the player used the substance of a clue named in an
-   agenda's `yields_to_clue_ids`, met an authored `condition`, or sustained the
-   pressure an agenda calls for. An unearned collapse is `major`; so is a
-   character who has clearly been beaten and carries on as if nothing landed.
+   conversation earned it. Read the agenda's `details`, `condition` and
+   `yields_to_clue_ids` as a list of parts. A part is earned when the player
+   puts its substance in front of the character, either by using a clue they
+   hold or through roleplay: a specific, plausible bluff or deduction that
+   names it, which this character would believe. Sustained pressure counts only
+   where the agenda calls for it. Naming the character as culprit, insisting,
+   or a strong case that never touches a part earns nothing toward that part.
+   The yield should match what was earned. A full collapse or confession with
+   any part unearned is `major`, including after a strong case built on the
+   other parts. So is a character who has clearly been beaten and carries on as
+   if nothing landed.
 4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
    - `self_protect` — deflect, reinforce the alibi, get evasive under
      incriminating pressure.
@@ -66,6 +73,9 @@ Walk the judged turns in order. For each, apply the checks that fit its
 5. **Tells.** A tell fires only when its `trigger` allows: `always` may surface
    naturally, `condition` only once the free-text condition is met, `clue` only
    when the player raised that clue's substance and the character believes them.
+   A `talk_start` greeting comes before the player says anything, so a `clue`
+   tell there is always early, and a `condition` tell is early unless an earlier
+   visit already met the condition.
    Inventing a tell for a character who has none is not a finding — improvised
    reactions are permitted — but firing an authored `condition`/`clue` tell
    before its trigger is met is `major`, and repeating the same tell every turn
@@ -94,6 +104,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
   character and carries no load-bearing fact.
 - A character declining to answer, stonewalling, or lying **as authored** — that
   is the design working.
+- A partial crack (discomfort, a tell, a small reluctant concession) in answer
+  to a partly earned condition. Proportional yielding is the design working.
+- A crack, tell or reveal earned by a convincing bluff or deduction that names
+  the missing evidence's substance. Rewarding good roleplay is intended.
 - Register that is simply plainer than you would write it. Judge fidelity to the
   authored character, not literary quality.
 

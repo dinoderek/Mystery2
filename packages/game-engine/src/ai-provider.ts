@@ -307,6 +307,7 @@ class MockAIProvider implements AIProvider {
               appearance?: string | null;
               background?: string | null;
               sex?: unknown;
+              tells?: Array<{ text?: string; trigger?: { kind?: string } }>;
             };
             active_location_name?: string | null;
           }
@@ -321,9 +322,15 @@ class MockAIProvider implements AIProvider {
         const pronoun = pronounForSex(
           readCharacterSex(talkContext?.active_character?.sex),
         );
+        // A greeting has no player message, so only an `always` tell can
+        // show; condition- and clue-triggered tells are never earned here.
+        const ambientTell = talkContext?.active_character?.tells?.find(
+          (tell) => tell.trigger?.kind === "always" && tell.text,
+        );
         return {
           narration:
-            `[Mock] You walk up to ${characterName} in ${locationName}. ${pronoun} looks ${appearance}.`,
+            `[Mock] You walk up to ${characterName} in ${locationName}. ${pronoun} looks ${appearance}.` +
+            (ambientTell ? ` (${ambientTell.text})` : ""),
         };
       }
       case "talk_conversation": {

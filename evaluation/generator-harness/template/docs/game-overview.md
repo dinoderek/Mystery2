@@ -4,7 +4,7 @@
 > Pinned sources:
 > - `docs/game.md#starting` — `fbb3445847cfa7cdcd303a96b4b228854d6e87c8`
 > - `docs/game.md#commands` — `ef885086ce83226ee0d329bfb329d4f51bc10cb0`
-> - `docs/game.md#talking` — `2ab4fb1e31dd9f8a88f758bc6811043ef06b4c62`
+> - `docs/game.md#talking` — `8a762a5410550196e60467742dcb68dc5ab824a6`
 > - `docs/game.md#searching` — `569d2c609bcb535d1bc3c8f1c6fd810121b75314`
 > - `docs/game.md#moving` — `da36d9c4d8be3b68a4aeae1d6c0d66fa9c7b050e`
 > - `docs/game.md#notebook` — `712576263594de7b4a572a69cd0e483159cbf3e0`
@@ -54,6 +54,10 @@ This is what turns a flat clue list into a discovery-driven investigation.
   prove you saw her at the dock" vs. "the safe cannot be opened without the key").
 - Off-script reveals are recorded as real discoveries, so a clever player is
   never hard-stuck on the critical path.
+- **A suspect's cover gives way in proportion.** It cracks only as far as the
+  player has earned, with evidence they hold or a convincing bluff or deduction
+  that names what the evidence would show. Accusing them earns nothing on its
+  own, and half the evidence gets a nervous slip rather than a confession.
 
 Authoring rules the schema and the `clue_graph` eval dimension enforce:
 

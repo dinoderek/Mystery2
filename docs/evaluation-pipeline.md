@@ -113,6 +113,11 @@ iterates until its output validates.
   mistakes before the pipeline sees them, so a retry exercises a real failure.
 - **Reproducibility.** A workspace is a complete record of what the agent saw;
   a bug reproduces by re-running it.
+- **The generator's prompt.** `prompts/generator-prompt.md` is the prompt the
+  pipeline rendered, the canonical generator prompt plus the age guidance for
+  the brief's `targetAge`, as the standalone generator sends it. Only a hand run
+  without a rendered prompt falls back to the canonical file, which lacks the
+  age section, and the wrapper warns.
 
 The generator workspace gets **curated extracts** of the repo docs rather than
 the docs, pinned to the sections they summarise and checked by the gate

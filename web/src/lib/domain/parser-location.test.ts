@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCommand, type ParseContext } from "../../../web/src/lib/domain/parser";
+import { parseCommand, type ParseContext } from "./parser";
 
 const CONTEXT: ParseContext = {
   locations: [

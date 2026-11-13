@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     setupFiles: ["./tests/setup-env.ts"],
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/api/**/*.test.ts"],
     exclude: [".claude/**", "**/node_modules/**", "**/dist/**"],
     testTimeout: 15_000,
     hookTimeout: 15_000,

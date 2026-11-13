@@ -49,7 +49,7 @@ browser-specific journeys.
 
 `npm test` runs `scripts/run-test-gate.mjs`; the `GATE_STEPS` list in
 `scripts/lib/gate-steps.mjs` is the definitive set. Phase 1 runs in parallel:
-lint, typecheck, `svelte-check`, both unit suites with coverage, the two doc
+lint, typecheck, `svelte-check`, both unit suites with coverage, the three doc
 checks, and `gate-coverage` (below). Phase 2 runs only if all of
 phase 1 passed, one step at a time because each starts a server on the
 worktree's port: integration, API E2E, browser E2E.
@@ -83,7 +83,7 @@ it, or add a step. `integration` and `e2e-api` hand their roots to
 `testDir` in `web/playwright.config.ts`, and the patterns with each runner's
 include.
 
-The two doc checks:
+The three doc checks:
 
 - `check:curated-docs` holds the curated extracts in
   `evaluation/generator-harness/template/docs/` to the doc sections they
@@ -95,6 +95,14 @@ The two doc checks:
   names a path, an `npm run` script or a relative link that does not exist. A
   code span counts as a path only when its first segment is a real directory;
   gitignored paths are skipped; the harness templates are not checked.
+- `check:word-budgets` fails when a tracked Markdown file is over its word
+  budget, has no row in `docs/word-budgets.tsv`, or a row names a file that is
+  no longer tracked. Every tracked `.md` counts, including the harness
+  templates, judges, personas and prompts, because each run reads them. Words
+  are counted as `wc -w` counts them; symlinks such as `CLAUDE.md` are skipped
+  and answer to their target's row. Budgets sit at each file's count when set,
+  rounded up to the next 50. Raising a budget is the operator's decision, not
+  an executor's: trim the doc, or ask the operator to raise its row.
 
 ### Concurrency
 
@@ -248,6 +256,7 @@ and Playwright's report on failure.
 ## Documentation-Only Changes
 
 If a change touches only documentation, the code suites are optional locally,
-but run `npm run check:curated-docs` and `npm run check:doc-refs`: CI runs the
-whole gate, and both fail it. Check the rest by hand — command accuracy, and
-consistency with the doc that owns each topic.
+but run `npm run check:curated-docs`, `npm run check:doc-refs` and `npm run
+check:word-budgets`: CI runs the whole gate, and all three fail it. Check the
+rest by hand — command accuracy, and consistency with the doc that owns each
+topic.

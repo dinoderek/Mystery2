@@ -15,7 +15,7 @@ overwritten or deleted.
 ├── brief.json                      Written by the harness: story_brief + instructions
 ├── blueprint.json                  Written by the agent: the generated blueprint
 ├── prompts/
-│   └── generator-prompt.md         Symlink to repo: authoritative creative prompt
+│   └── generator-prompt.md         Copy of the prompt the pipeline rendered: canonical creative prompt + age guidance
 ├── schema/
 │   └── blueprint-schema-v2.ts      Symlink to repo: authoritative Zod schema
 ├── docs/
@@ -28,9 +28,13 @@ overwritten or deleted.
 
 ## What lives here vs in the repo
 
-- **Symlinked from the repo:** schema, prompt, validator. These are the
+- **Symlinked from the repo:** schema, validator. These are the
   authoritative artifacts. Edits to them in the repo flow into all subsequent
   workspaces.
+- **Written per run:** `prompts/generator-prompt.md` is a copy of the prompt the
+  pipeline rendered for the brief's `targetAge`, so it holds the age section.
+  Run by hand without a rendered prompt, the wrapper leaves a symlink to the
+  canonical prompt, which lacks that section.
 - **Copied from `evaluation/generator-harness/template/`:** `CLAUDE.md`,
   `README.md`, and `docs/`. These are workspace-static, so an in-flight
   workspace is unaffected if you edit the template mid-run.

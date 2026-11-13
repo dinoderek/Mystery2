@@ -6,14 +6,15 @@
 #     CLAUDE.md                       (copied)
 #     README.md                       (copied)
 #     docs/*.md                       (copied)
-#     prompts/generator-prompt.md     (symlink -> repo)
+#     prompts/generator-prompt.md     (symlink -> repo; the wrapper replaces it
+#                                      with the pipeline's rendered prompt)
 #     schema/blueprint-schema-v2.ts   (symlink -> repo)
 #     scripts/validate-blueprint.mjs  (symlink -> repo)
 #
 # The wrapper then writes <target-dir>/brief.json before invoking claude.
 #
-# Symlinks ensure prompt + schema + validator stay in lockstep with the repo
-# (so a prompt edit is visible to the very next eval run). Copies of CLAUDE.md
+# Symlinks ensure schema + validator (and the prompt, for a hand run) stay in
+# lockstep with the repo (so an edit is visible to the very next eval run). Copies of CLAUDE.md
 # and the curated docs make in-flight workspaces immune to mid-run edits.
 
 set -euo pipefail

@@ -2,9 +2,12 @@
 # Wrapper invoked by the evaluation pipeline for the "generate" step.
 #
 # Contract with the pipeline:
-#   $1 — path to the rendered generator system prompt (IGNORED in this wrapper;
-#        the agent reads the canonical prompt from disk via the workspace
-#        symlink, so the pipeline's rendered copy is not used)
+#   $1 — path to the rendered generator system prompt: the canonical prompt
+#        plus the age-specific guidance for the brief's targetAge. It is copied
+#        into the workspace as prompts/generator-prompt.md, so the agent reads
+#        exactly what the standalone generator would send. Without it (a hand
+#        run) the workspace keeps the link to the canonical prompt, which has no
+#        age section, and the wrapper warns on stderr.
 #   $2 — path to the user message JSON ({ story_brief, instructions })
 #
 #   stdout — must be a single JSON object whose extract_path resolves to a
@@ -26,6 +29,7 @@
 
 set -euo pipefail
 
+SYSTEM_PROMPT_FILE="${1:-}"
 USER_MESSAGE_FILE="${2:?missing user message file path}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -46,6 +50,16 @@ if [[ -e "$WORKSPACE" ]]; then
   WORKSPACE="${WORKSPACE}-retry-$(openssl rand -hex 3)"
 fi
 "$REPO_ROOT/evaluation/generator-harness/setup-workspace.sh" "$WORKSPACE" >&2
+
+# Replace the link to the canonical prompt with the prompt the pipeline
+# rendered, which adds the age section the canonical prompt refers to. Remove
+# the link first: copying onto it would write through to the repo's prompt.
+if [[ -n "$SYSTEM_PROMPT_FILE" && -f "$SYSTEM_PROMPT_FILE" ]]; then
+  rm "$WORKSPACE/prompts/generator-prompt.md"
+  cp "$SYSTEM_PROMPT_FILE" "$WORKSPACE/prompts/generator-prompt.md"
+else
+  echo "warning: no rendered system prompt (arg 1: '${SYSTEM_PROMPT_FILE}'); the workspace keeps the canonical generator prompt without age-specific guidance" >&2
+fi
 
 # Write the brief into the workspace, pretty-printed when it is JSON.
 node -e '

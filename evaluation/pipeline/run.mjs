@@ -264,10 +264,10 @@ async function runPipeline({
       buildBlueprintGenerationChatInput(brief),
     );
     const userMessage = chatInput.userMessageContent;
-    // The agent-based wrapper ignores the pipeline-rendered system prompt and
-    // reads the canonical generator prompt + schema from disk via the
-    // workspace. We still pass `chatInput.systemPrompt` so the contract with
-    // any non-agent wrapper still works.
+    // `chatInput.systemPrompt` is the canonical generator prompt plus the age
+    // guidance for the brief. The agent-based wrapper copies it into the
+    // workspace as the agent's prompt; a non-agent wrapper sends it as the
+    // system message.
     //
     // The wrapper builds its generator workspace at <EVAL_RUN_DIR>/generator/,
     // keeping the agent workspace inside this run's output directory.

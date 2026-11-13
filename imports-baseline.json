@@ -1,0 +1,15 @@
+[
+  "browser-code-avoids-engine-and-server: web/src/app.d.ts -> packages/game-engine/src/index.ts",
+  "db-only-from-context-local: packages/game-engine/src/index.ts -> packages/game-engine/src/db/ai-settings.ts",
+  "db-only-from-context-local: packages/game-engine/src/index.ts -> packages/game-engine/src/db/client.ts",
+  "db-only-from-context-local: packages/game-engine/src/index.ts -> packages/game-engine/src/db/events.ts",
+  "db-only-from-context-local: packages/game-engine/src/index.ts -> packages/game-engine/src/db/players.ts",
+  "db-only-from-context-local: packages/game-engine/src/index.ts -> packages/game-engine/src/db/sessions.ts",
+  "engine-imports-engine-and-shared: packages/game-engine/src/ai-profile.ts -> scripts/local-config.mjs",
+  "engine-imports-engine-and-shared: packages/game-engine/src/ai-settings-env.ts -> scripts/local-config.mjs",
+  "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> lib/database-target.mjs",
+  "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> scripts/local-config.mjs",
+  "no-cycles: packages/game-engine/src/ai-call-log.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-call-log.ts)",
+  "no-cycles: packages/game-engine/src/ai-provider-claude-cli.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-provider-claude-cli.ts)",
+  "no-cycles: packages/game-engine/src/context.ts -> packages/game-engine/src/narration.ts (via packages/game-engine/src/narration.ts > packages/game-engine/src/context.ts)"
+]

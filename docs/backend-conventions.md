@@ -92,11 +92,11 @@ play, three for AI configuration.
   is why the two contexts are separate types rather than one with a nullable
   player: a handler that runs without a profile has no session store to reach
   for, so there is no scoped query for it to get wrong.
-- **One driver import.** `db/client.ts` is the only file that imports
-  `better-sqlite3`, and it loads it through `createRequire` so no bundler can
-  inline a native addon. Repositories receive a `Db` interface, so the intended
-  move to `node:sqlite` (once it stops emitting `ExperimentalWarning`) touches
-  that file only.
+- **One driver import.** Only `db/client.ts` imports `better-sqlite3` (via
+  `createRequire`, so no bundler can inline a native addon), and only
+  `context-local.ts` and `db/` import `db/`; the `imports` gate step checks
+  both. Repositories receive a `Db` interface, so a move to
+  `node:sqlite` touches that file only.
 - **`schema.ts`, not `schema.sql`.** The engine loads identically under Vite's
   SSR bundle, vitest and plain `node`, and only a module works in all three: a
   bundled chunk cannot read a sibling `.sql` file, and `?raw` is Vite-only.

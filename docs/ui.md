@@ -58,8 +58,9 @@ Two keyboard rules are easy to break:
 - `HelpModal` and `NotebookPanel` both sit at `z-50` with no stacking
   coordination; `openNotebook()` closing help is what keeps the notebook on top.
 
-`parser.ts` is the command grammar and `HelpModal` is the player's reference to
-it. `docs/game.md` describes commands at the player level only.
+The command grammar is `command-grammar.ts` in the engine; `parser.ts` is the
+browser's copy, which must match it. `HelpModal` is the player's reference.
+`docs/game.md` describes commands at the player level only.
 
 ## Styling
 

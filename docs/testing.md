@@ -20,11 +20,12 @@ blueprints committed in `blueprints/`, which are deterministic fixtures.
 
 ## Which Suite To Update
 
-- shared contracts and schema validation; prompt construction, parsing, and
+- shared contracts and schema validation; the command grammar (parser and
+  command normalization); prompt construction, parsing, and
   AI-provider helpers; blueprint generation, evaluation, and image helpers; the
   local adapter (repositories, content loading, profile resolution, schema);
   mock provider behavior → **API/shared unit**
-- parser and command normalization; retry classification; store behavior;
+- retry classification; store behavior;
   speaker mapping and other client-only transcript transforms → **web unit**
 - endpoints, profile gating, session ownership, schema, content loading, API
   contracts, AI profile resolution and provider selection → **integration**
@@ -49,8 +50,8 @@ browser-specific journeys.
 
 `npm test` runs `scripts/run-test-gate.mjs`; the `GATE_STEPS` list in
 `scripts/lib/gate-steps.mjs` is the definitive set. Phase 1 runs in parallel:
-lint, typecheck, `svelte-check`, both unit suites with coverage, the three doc
-checks, and `gate-coverage` (below). Phase 2 runs only if all of
+lint, typecheck, `svelte-check`, `quality` and `imports` (below), both unit
+suites with coverage, the three doc checks, and `gate-coverage` (below). Phase 2 runs only if all of
 phase 1 passed, one step at a time because each starts a server on the
 worktree's port: integration, API E2E, browser E2E.
 
@@ -72,17 +73,23 @@ an engine edit.
 **Every test file runs in the gate.** `scripts/lib/gate-steps.mjs` is the one
 list of where tests live: each step that runs tests names its `roots` and the
 `files` pattern its runner collects, and the Vitest steps build their command
-from the roots. The gate runs `gate-coverage` with phase 1, listing test files
-from git (tracked, plus untracked files git does not ignore, so an uncommitted
-one is caught) and failing, by name, on any that sits under no step's roots or
-matches no step's pattern (a `.spec.ts` under a Vitest root, say, which Vitest
-would not collect). A file placed anywhere else would pass when run by hand and
-never run here. It checks against every step, even when named alone (`./dev
-test gate-coverage`). To add a suite, add its root to the step that runs it, or
+from the roots. `gate-coverage` lists test files from git (tracked, plus
+untracked files git does not ignore) and fails, by name, on any under no step's
+roots or matching no step's pattern (a `.spec.ts` under a Vitest root, say): it
+would pass by hand and never run here. It checks every step, even when named
+alone (`./dev test gate-coverage`). To add a suite, add its root to a step or
 add a step. `integration` and `e2e-api` hand their roots to
 `scripts/run-mock-tests.mjs`; keep the `e2e-browser` root in step with the
 `testDir` in `web/playwright.config.ts`, and the patterns with each runner's
 include.
+
+**Quality limits and layer rules.** `quality` holds each function in engine,
+shared and web TypeScript (not tests or `.svelte`) to cognitive complexity 25,
+200 lines, nesting 4 and 5 parameters; `imports` holds the rules in
+`scripts/lib/import-rules.mjs`. Pre-existing offenders sit in
+`quality-baseline.json` and `imports-baseline.json`, which only shrink: a new
+offender fails, and so does a stale entry. After a fix, `npm run check:quality
+-- --prune` or `npm run check:imports -- --prune` drops it.
 
 The three doc checks:
 
@@ -109,8 +116,7 @@ The three doc checks:
 ### Concurrency
 
 Integration, API E2E, and browser E2E share the worktree's port, so run only
-one at a time within a checkout — a second fails fast rather than testing
-against the first one's server. Across worktrees they can run concurrently;
+one at a time within a checkout; a second fails fast. Across worktrees they can run concurrently;
 each worktree gets its own port. See
 [`docs/local-infrastructure.md`](local-infrastructure.md). Unit suites
 parallelize safely.
@@ -123,10 +129,9 @@ Install once per machine, and again after any `@playwright/test` version bump:
 npx playwright install chromium
 ```
 
-Binaries are keyed to the Playwright version, so a bump invalidates them and
-every browser test fails with `browserType.launch: Executable doesn't exist at
-...`. CI reinstalls automatically — its cache key hashes `package-lock.json`
-and `web/package.json`.
+Binaries are keyed to the Playwright version: after a bump every browser test
+fails with `browserType.launch: Executable doesn't exist at ...`. CI reinstalls
+itself (its cache key hashes `package-lock.json` and `web/package.json`).
 
 ### Live-AI suites (opt-in)
 
@@ -181,8 +186,7 @@ same reports (`coverage/api/`, `web/coverage/`) for iteration.
 Each API suite run gets its own database in a temporary config root, deleted
 afterwards. Within a run tests share it, so each must create its own profile
 via `setupApiTestAuth(tag)`, scope assertions to its own identifiers, and avoid
-unscoped global count assertions. There is no cleanup step because nothing is
-left behind.
+unscoped global count assertions.
 
 Anything that opens a database directly must be given an explicit path — never
 `resolveDatabasePath()`, which points at the database you play on.
@@ -228,9 +232,7 @@ Mock is chosen by absence — the server's config root has no `.env.ai.*` and
 its settings row is empty — but the settings row can be changed over the API,
 and it belongs to the installation, not a profile. **A test that switches the
 server to live switches it for every test sharing that server**, and their
-calls go to the real API with whatever throwaway key was stored. When that
-happened, the integration suite failed on an unexplained 500 and CI hit its
-fifteen-minute cap.
+calls go to the real API with whatever throwaway key was stored.
 
 So no suite that shares a server with game-playing tests may switch the mode to
 live; assert that in the unit suites (`ai-settings-store.test.ts`,

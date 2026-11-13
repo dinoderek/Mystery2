@@ -1,0 +1,78 @@
+{
+  "packages/game-engine/src/ai-provider.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/db/ai-settings.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-accuse.ts": {
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-ask.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-move.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-search.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-start.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "packages/game-engine/src/endpoints/game-talk.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "packages/shared/src/blueprint-schema-v2.ts": {
+    "max-depth": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "web/src/lib/domain/parser.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "web/src/lib/domain/store.svelte.ts": {
+    "max-depth": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  }
+}

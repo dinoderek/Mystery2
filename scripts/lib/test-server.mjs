@@ -20,7 +20,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { npmBin } from "./process.mjs";
-import { TEST_DATABASE } from "../../lib/database-target.mjs";
+import { TEST_DATABASE, resolveDatabasesRoot } from "../../lib/database-target.mjs";
 
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
@@ -34,13 +34,28 @@ export function createTestConfigRoot() {
   return root;
 }
 
-function buildWebApp(repoRoot) {
-  const result = spawnSync(npmBin, ["-w", "web", "run", "build"], {
+/**
+ * Builds the app with the run's config root as its own, then fails if the
+ * build opened a database there. The build prerenders pages through the server
+ * hook, so a build that opens the engine would otherwise create or migrate the
+ * developer's database (`database/main` in the main checkout) on every run.
+ */
+export function buildWebApp(repoRoot, configRoot, run = spawnSync) {
+  const result = run(npmBin, ["-w", "web", "run", "build"], {
     cwd: repoRoot,
     stdio: "inherit",
+    env: { ...process.env, MYSTERY_CONFIG_ROOT: configRoot },
   });
   if ((result.status ?? 1) !== 0) {
     throw new Error("Failed to build the web app for the test run");
+  }
+  const databases = resolveDatabasesRoot(repoRoot, { MYSTERY_CONFIG_ROOT: configRoot });
+  if (fs.existsSync(databases)) {
+    throw new Error(
+      `Building the web app opened a database (${databases}). Building must not ` +
+        "open the engine: the server hook skips it while `building` " +
+        "(`$app/environment`), and nothing else may open it at import time.",
+    );
   }
 }
 
@@ -113,12 +128,16 @@ async function waitForReady(url, hasExited) {
  * lives in, and a `stop()` that shuts it down and removes the root.
  */
 export async function startTestServer({ repoRoot, port, env = {} }) {
-  buildWebApp(repoRoot);
-
-  const host = "127.0.0.1";
-  await assertPortIsFree(host, port);
-
   const configRoot = createTestConfigRoot();
+  const host = "127.0.0.1";
+  try {
+    buildWebApp(repoRoot, configRoot);
+    await assertPortIsFree(host, port);
+  } catch (error) {
+    fs.rmSync(configRoot, { recursive: true, force: true });
+    throw error;
+  }
+
   const url = `http://${host}:${port}`;
 
   const child = spawn("node", ["build/index.js"], {

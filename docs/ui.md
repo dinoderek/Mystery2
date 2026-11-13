@@ -59,7 +59,8 @@ Two keyboard rules are easy to break:
   coordination; `openNotebook()` closing help is what keeps the notebook on top.
 
 The command grammar is `command-grammar.ts` in the engine; `parser.ts` is the
-browser's copy, which must match it. `HelpModal` is the player's reference. `docs/game.md` describes commands at the player level only.
+browser's copy, which must match it. `HelpModal` is the player's reference.
+`docs/game.md` describes commands at the player level only.
 
 ## Styling
 

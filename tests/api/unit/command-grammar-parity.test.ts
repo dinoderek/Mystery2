@@ -4,8 +4,8 @@ import { interpretLine } from "../../../packages/game-engine/src/command-grammar
 import type { GameMode } from "../../../packages/game-engine/src/state-machine.ts";
 import { BASE_GAME_STATE } from "../../testkit/src/fixtures.ts";
 
-// The browser still parses lines itself. Until it sends them to the engine,
-// both grammars must answer every line the same way, hint for hint.
+// The browser parses lines itself, so both grammars must answer every line the
+// same way, hint for hint.
 
 const MODES: GameMode[] = ["explore", "talk", "accuse", "ended"];
 const PLACES = ["Kitchen", "Barn", "loc-barn", ""];

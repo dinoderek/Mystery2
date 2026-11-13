@@ -257,7 +257,7 @@ describe("interpretLine - hints for unrecognised lines", () => {
     expect(commandHint("ended")).toBe(ENDED_HINT);
   });
 
-  it("no longer recognises the retired 'zoom' command in explore mode", () => {
+  it("does not recognise 'zoom' in explore mode", () => {
     expect(interpret("zoom").kind).toBe("refused");
     expect(interpret("ZOOM").kind).toBe("refused");
   });

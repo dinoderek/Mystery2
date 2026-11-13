@@ -20,11 +20,12 @@ blueprints committed in `blueprints/`, which are deterministic fixtures.
 
 ## Which Suite To Update
 
-- shared contracts and schema validation; prompt construction, parsing, and
+- shared contracts and schema validation; the command grammar (parser and
+  command normalization); prompt construction, parsing, and
   AI-provider helpers; blueprint generation, evaluation, and image helpers; the
   local adapter (repositories, content loading, profile resolution, schema);
   mock provider behavior → **API/shared unit**
-- parser and command normalization; retry classification; store behavior;
+- retry classification; store behavior;
   speaker mapping and other client-only transcript transforms → **web unit**
 - endpoints, profile gating, session ownership, schema, content loading, API
   contracts, AI profile resolution and provider selection → **integration**

@@ -108,3 +108,14 @@ export {
 export { createRequestLogger, type LogWriter, type RequestLogger } from "./logging.ts";
 export type { NarrationPart } from "./narration.ts";
 export { readGameMode, type GameMode } from "./state-machine.ts";
+export {
+  commandHint,
+  interpretLine,
+  normalizeInput,
+  type GameAction,
+  type GrammarState,
+  type GrammarView,
+  type Interpretation,
+  type NotebookSection,
+  type RefusalKind,
+} from "./command-grammar.ts";

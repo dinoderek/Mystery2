@@ -2,7 +2,8 @@
  * Test gate orchestrator — replaces the chained && in `npm test`.
  *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
- *                     drift check, doc reference check
+ *                     drift check, doc reference check, and the gate-coverage
+ *                     check (every test file sits under a step's roots)
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
@@ -20,36 +21,18 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { npmBin } from "./lib/process.mjs";
+import { STEPS } from "./lib/gate-steps.mjs";
+import {
+  describeUncovered,
+  findUncoveredTestFiles,
+  listTestFiles,
+} from "./lib/gate-coverage.mjs";
 import {
   clearCoverageReports,
   collectCoverage,
   formatCoverageDetail,
   formatCoverageSummary,
 } from "./lib/coverage-report.mjs";
-
-// ---------------------------------------------------------------------------
-// Step definitions
-// ---------------------------------------------------------------------------
-
-const STEPS = [
-  // Phase 1 — independent, run in parallel
-  { name: "lint", phase: 1, args: ["run", "lint"] },
-  { name: "typecheck", phase: 1, args: ["run", "typecheck"] },
-  { name: "check-web", phase: 1, args: ["-w", "web", "run", "check"] },
-  { name: "unit-api", phase: 1, args: ["run", "test:unit:coverage"] },
-  {
-    name: "unit-web",
-    phase: 1,
-    args: ["-w", "web", "run", "test:unit:coverage"],
-  },
-  { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
-  { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
-
-  // Phase 2 — each starts a server on the worktree's port, so serial
-  { name: "integration", phase: 2, args: ["run", "test:integration"] },
-  { name: "e2e-api", phase: 2, args: ["run", "test:e2e"] },
-  { name: "e2e-browser", phase: 2, args: ["-w", "web", "run", "test:e2e"] },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -133,6 +116,36 @@ function runStep(step, logDir) {
   });
 }
 
+/**
+ * The gate-coverage check, run in-process: a test file no step runs fails the
+ * gate and is named in the log. Returns a result shaped like a step's.
+ */
+async function runGateCoverage(logDir) {
+  const logPath = path.join(logDir, "gate-coverage.log");
+  const start = performance.now();
+  let report;
+  try {
+    report = describeUncovered(
+      findUncoveredTestFiles(listTestFiles(process.cwd()), STEPS),
+      STEPS,
+    );
+  } catch (error) {
+    report = `gate-coverage could not list test files: ${error.message}`;
+  }
+  fs.writeFileSync(logPath, `${report ?? "every test file is under a gate step"}\n`);
+  if (report) {
+    for (const line of report.split("\n")) {
+      console.error(`[gate-coverage] error: ${line}`);
+    }
+  }
+  return {
+    name: "gate-coverage",
+    passed: report === null,
+    durationMs: performance.now() - start,
+    logPath,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -156,9 +169,10 @@ console.log(
   `--- Phase 1 (parallel): ${phase1Steps.map((s) => s.name).join(", ")} ---\n`,
 );
 
-const phase1Results = await Promise.all(
-  phase1Steps.map((step) => runStep(step, runDir)),
-);
+const phase1Results = await Promise.all([
+  ...phase1Steps.map((step) => runStep(step, runDir)),
+  runGateCoverage(runDir),
+]);
 results.push(...phase1Results);
 
 const phase1Failed = phase1Results.filter((r) => !r.passed);

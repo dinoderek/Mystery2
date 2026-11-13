@@ -47,7 +47,7 @@ browser-specific journeys.
 
 ### The gate
 
-`npm test` runs `scripts/run-test-gate.mjs`, whose `STEPS` list is the
+`npm test` runs `scripts/run-test-gate.mjs`, whose `STEPS` list (in `scripts/lib/gate-steps.mjs`) is the
 definitive set. Phase 1 runs in parallel: lint, typecheck, `svelte-check`, both
 unit suites with coverage, and the two doc checks. Phase 2 runs only if all of
 phase 1 passed, one step at a time because each starts a server on the
@@ -66,6 +66,17 @@ answer the readiness poll and the suite would test the wrong server. The
 browser suite starts `vite dev` through Playwright's `webServer`. Each gets a
 config root of its own, deleted afterwards, so nothing needs restarting after
 an engine edit.
+
+**Every test file runs in the gate.** `scripts/lib/gate-steps.mjs` is the one
+list of where tests live: each step that runs tests names its `roots`, and the
+Vitest steps build their command from them. The gate runs `gate-coverage` with
+phase 1, listing test files from git (tracked, plus untracked files git does
+not ignore, so an uncommitted one is caught) and failing, by name, on any that
+sits under no step's roots. A file placed anywhere else would pass when run by
+hand and never run here. To add a suite, add its root to the step that runs it,
+or add a step; `integration`, `e2e-api` and `e2e-browser` hand their paths to
+`scripts/run-mock-tests.mjs` and `web/playwright.config.ts`, so keep a root
+there in step with the script's own path.
 
 The two doc checks:
 
@@ -95,7 +106,7 @@ parallelize safely.
 Install once per machine, and again after any `@playwright/test` version bump:
 
 ```bash
-npx playwright install chromium webkit
+npx playwright install chromium
 ```
 
 Binaries are keyed to the Playwright version, so a bump invalidates them and

@@ -79,7 +79,14 @@ describe("listTestFiles", () => {
     fs.writeFileSync(path.join(repo, "tests/gone.test.ts"), "");
     git("add", ".");
     git(
-      "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init",
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@t",
+      "commit",
+      "-q",
+      "-m",
+      "init",
     );
     fs.rmSync(path.join(repo, "tests/gone.test.ts"));
     fs.writeFileSync(path.join(repo, "tests/untracked.test.ts"), "");

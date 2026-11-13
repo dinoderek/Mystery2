@@ -88,7 +88,9 @@ export function isPortFree(port) {
 async function chromiumInstalled(root) {
   try {
     const resolved = createRequire(path.join(root, "web", "package.json")).resolve("@playwright/test");
-    const { chromium } = await import(resolved);
+    // Playwright is CommonJS, so its exports may arrive under `default`.
+    const playwright = await import(resolved);
+    const chromium = playwright.chromium ?? playwright.default?.chromium;
     return fs.existsSync(chromium.executablePath());
   } catch {
     return false;

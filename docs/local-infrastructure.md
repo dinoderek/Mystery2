@@ -5,10 +5,8 @@ allocator beyond one port per worktree.
 
 ## Prerequisites
 
-Node 24 (`.nvmrc`), and `npm ci`. That is the list. `./dev doctor` checks the
-Node version, runs `npm ci` when dependencies are missing or older than
-`package-lock.json`, installs Playwright's chromium if it is missing, and
-reports whether this worktree's port is free.
+Node 24 (`.nvmrc`), and `npm ci`. That is the list; `./dev doctor` checks it and
+installs what is missing (stale dependencies, Playwright's chromium).
 
 ## Starting it
 
@@ -96,9 +94,8 @@ is writing. `cp` is not: committed transactions may still be in the `-wal`.
 
 ## Worktrees
 
-`./dev` is the one entry point; with no verb it lists them. `./dev run` and
-`./dev test` hand their arguments to the game starter and the gate runner that
-`npm run dev` and `npm test` use, and `./dev test lint doc-refs` runs only the
+`./dev` with no verb lists its verbs. `run` and `test` hand their arguments to
+what `npm run dev` and `npm test` use; `./dev test lint doc-refs` runs only the
 steps named.
 
 ```bash
@@ -108,8 +105,8 @@ steps named.
 
 `create` fetches, then branches from the remote's default branch, or checks out
 an existing local branch as it is, at `<clone>-worktrees/task-my-change` (the
-branch with `/` replaced by `-`). It then runs `npm ci`; run again, it finds the
-worktree and only refreshes stale dependencies. `release` removes that worktree
+branch with `/` replaced by `-`). It then runs `npm ci`; run again, it only
+refreshes stale dependencies. `release` removes that worktree
 and the development database named after it, and nothing else: the branch stays,
 `prod` and `main` are refused, and a worktree with uncommitted changes is
 refused as `git worktree remove` refuses it. Releasing twice is fine. Engine

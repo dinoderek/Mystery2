@@ -64,6 +64,7 @@ export const GATE_STEPS = [
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
   { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
   { name: "word-budgets", phase: 1, args: ["run", "check:word-budgets"] },
+  { name: "gate-coverage", phase: 1, args: ["run", "check:gate-coverage"] },
 
   // Phase 2: each starts a server on the worktree's port, so serial
   {

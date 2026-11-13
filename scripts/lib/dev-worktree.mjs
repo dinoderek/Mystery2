@@ -110,6 +110,41 @@ function listWorktrees(cwd) {
     });
 }
 
+/** How many times `fetchOrigin` tries, and what it waits between tries. */
+const FETCH_ATTEMPTS = 3;
+const FETCH_RETRY_MS = { min: 500, max: 1500 };
+
+/** What git says when another process holds a ref's lock file. */
+const REF_LOCK_FAILURE = /cannot lock ref|unable to create '[^']+\.lock'/i;
+
+/** Blocks for a random time between the two waits; worktree creation is synchronous throughout. */
+function jitteredSleep() {
+  const ms = FETCH_RETRY_MS.min + Math.random() * (FETCH_RETRY_MS.max - FETCH_RETRY_MS.min);
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * `git fetch origin`, retried when it fails on a ref lock. Worktrees created at
+ * the same moment fetch into the same clone, and a fetch that finds another
+ * one's lock on a ref fails rather than waiting. The wait is jittered so the
+ * retries do not collide again. Any other failure is thrown at once.
+ *
+ * @param {string} cloneRoot
+ * @param {{ wait?: (attempt: number) => void }} [options]
+ */
+export function fetchOrigin(cloneRoot, { wait = jitteredSleep } = {}) {
+  for (let attempt = 1; ; attempt += 1) {
+    const result = git(["fetch", "origin"], cloneRoot);
+    if (result.status === 0) return;
+    const message = result.stderr || result.stdout;
+    if (attempt === FETCH_ATTEMPTS || !REF_LOCK_FAILURE.test(message)) {
+      const tries = attempt === 1 ? "" : ` (after ${attempt} tries)`;
+      throw new DevError(`git fetch origin failed${tries}: ${message}`);
+    }
+    wait(attempt);
+  }
+}
+
 /** `origin/<default branch>`, from the clone's own record, else from the remote. */
 function resolveDefaultBranch(cwd) {
   const local = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
@@ -149,7 +184,7 @@ export function createWorktree(branch, { cwd, log = console.log, install = insta
     if (fs.existsSync(target)) {
       throw new DevError(`${target} exists but is not a worktree of this clone; move it aside`);
     }
-    mustGit(["fetch", "origin"], cloneRoot);
+    fetchOrigin(cloneRoot);
     const hasLocal = git(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`], cloneRoot).status === 0;
     const hasRemote =
       git(["show-ref", "--verify", "--quiet", `refs/remotes/origin/${branch}`], cloneRoot).status === 0;

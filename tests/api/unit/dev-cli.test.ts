@@ -20,6 +20,7 @@ import {
 import {
   DevError,
   createWorktree,
+  fetchOrigin,
   releaseWorktree,
   worktreePathFor,
 } from "../../../scripts/lib/dev-worktree.mjs";
@@ -160,6 +161,53 @@ describe("./dev test and ./dev run", () => {
       "doc-refs",
     ]);
     expect(() => selectSteps(GATE_STEPS, ["lint", "nope"])).toThrow(/Unknown gate step: nope/);
+  });
+
+  it("selects every check by name, including the doc checks and gate-coverage", () => {
+    for (const name of ["curated-docs", "doc-refs", "word-budgets", "gate-coverage"]) {
+      expect(selectSteps(GATE_STEPS, [name]).map((step: { name: string }) => step.name)).toEqual([name]);
+    }
+  });
+});
+
+describe("./dev worktree create's fetch", () => {
+  /** Moves origin on, so the clone's next fetch has to update its ref, and holds that ref's lock. */
+  function lockOriginMain() {
+    const other = path.join(sandbox, "other");
+    git(sandbox, "clone", origin, other);
+    const tip = commit(other, "later.txt", "later");
+    git(other, "push", "origin", "HEAD:main");
+    const lock = path.join(clone, ".git", "refs", "remotes", "origin", "main.lock");
+    fs.writeFileSync(lock, "");
+    return { tip, lock };
+  }
+
+  it("retries when another fetch holds a ref lock, and succeeds once it is released", () => {
+    const { tip, lock } = lockOriginMain();
+    const waits: number[] = [];
+
+    fetchOrigin(clone, { wait: (attempt: number) => (waits.push(attempt), fs.rmSync(lock)) });
+
+    expect(waits).toEqual([1]);
+    expect(git(clone, "rev-parse", "origin/main")).toBe(tip);
+  });
+
+  it("gives up after a bounded number of tries while the lock stays", () => {
+    lockOriginMain();
+    const waits: number[] = [];
+
+    expect(() => fetchOrigin(clone, { wait: (attempt: number) => waits.push(attempt) })).toThrow(
+      /git fetch origin failed \(after 3 tries\): .*cannot lock ref/s,
+    );
+    expect(waits).toEqual([1, 2]);
+  });
+
+  it("does not retry a failure that is not a ref lock", () => {
+    git(clone, "remote", "set-url", "origin", path.join(sandbox, "missing.git"));
+    const waits: number[] = [];
+
+    expect(() => fetchOrigin(clone, { wait: (attempt: number) => waits.push(attempt) })).toThrow(DevError);
+    expect(waits).toEqual([]);
   });
 });
 

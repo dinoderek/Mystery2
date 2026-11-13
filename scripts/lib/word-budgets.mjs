@@ -1,8 +1,8 @@
 /**
- * Word budgets for tracked Markdown docs: every doc has a row in one registry,
- * and a doc over its row fails the gate. Every generation and judging run reads
- * the agent workspace templates, judges and prompts, and pays for their length,
- * so their size is kept in view here rather than left to drift.
+ * Word budgets for the repo's Markdown docs: every doc has a row in one
+ * registry, and a doc over its row fails the gate. Every generation and judging
+ * run reads the agent workspace templates, judges and prompts, and pays for
+ * their length, so their size is kept in view here rather than left to drift.
  *
  * The registry is `docs/word-budgets.tsv`: a header line, then one
  * `path<TAB>budget` row per doc. Budgets are multiples of BUDGET_STEP.
@@ -15,7 +15,6 @@ import path from "node:path";
 export const REGISTRY_PATH = "docs/word-budgets.tsv";
 export const BUDGET_STEP = 50;
 const HEADER = "path\tbudget";
-const REGULAR_FILE_MODES = new Set(["100644", "100755"]);
 
 /**
  * Whitespace-separated words, as `wc -w` counts them. Anyone can reproduce a
@@ -64,13 +63,14 @@ export function parseRegistry(text) {
 }
 
 /**
- * The problems with `docs` (`{ path, words }` for each tracked regular Markdown
- * file) against `registry` (a Map from `parseRegistry`). Each problem is
- * `{ kind, path, words?, budget? }` with kind `over`, `no-row` or `stale-row`.
+ * The problems with `docs` (`{ path, words }` for each regular Markdown file,
+ * from `listMarkdownDocs`) against `registry` (a Map from `parseRegistry`).
+ * Each problem is `{ kind, path, words?, budget? }` with kind `over`, `no-row`
+ * or `stale-row`.
  */
 export function checkWordBudgets(docs, registry) {
   const problems = [];
-  const tracked = new Set(docs.map((doc) => doc.path));
+  const present = new Set(docs.map((doc) => doc.path));
   for (const doc of docs) {
     if (!registry.has(doc.path)) {
       problems.push({ kind: "no-row", path: doc.path, words: doc.words });
@@ -84,7 +84,7 @@ export function checkWordBudgets(docs, registry) {
     }
   }
   for (const docPath of registry.keys()) {
-    if (!tracked.has(docPath)) {
+    if (!present.has(docPath)) {
       problems.push({ kind: "stale-row", path: docPath });
     }
   }
@@ -100,7 +100,7 @@ export function describeProblems(problems) {
       case "no-row":
         return `NO ROW ${problem.path}: ${problem.words} words, and no row in ${REGISTRY_PATH}`;
       default:
-        return `STALE ROW ${problem.path}: in ${REGISTRY_PATH}, but no tracked Markdown file exists at that path`;
+        return `STALE ROW ${problem.path}: in ${REGISTRY_PATH}, but no Markdown file exists at that path`;
     }
   });
   return [
@@ -111,28 +111,35 @@ export function describeProblems(problems) {
 }
 
 /**
- * Every tracked Markdown file in the repo, as `{ path, words }`, sorted by path.
- * Symlinks and submodules are skipped: a symlink such as `CLAUDE.md` answers to
- * its target's row. Read from git, not from a directory walk, so a file git does
- * not track never counts.
+ * Every Markdown file in the repo, as `{ path, words }`, sorted by path: tracked,
+ * plus untracked files git does not ignore (so a doc that is not yet added
+ * fails here, not first in CI), minus tracked files deleted from the working
+ * tree. Symlinks and submodules are skipped: a symlink such as `CLAUDE.md`
+ * answers to its target's row. Read from git, not from a directory walk, so an
+ * ignored file never counts.
  */
-export function trackedMarkdownDocs(repoRoot) {
-  return execFileSync("git", ["ls-files", "-s", "--", "*.md"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  })
+export function listMarkdownDocs(repoRoot) {
+  const paths = execFileSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "--", "*.md"],
+    { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  )
     .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const tab = line.indexOf("\t");
-      return { mode: line.slice(0, tab).split(" ")[0], path: line.slice(tab + 1) };
-    })
-    .filter((entry) => REGULAR_FILE_MODES.has(entry.mode))
-    .filter((entry) => fs.existsSync(path.join(repoRoot, entry.path)))
-    .map((entry) => ({
-      path: entry.path,
-      words: countWords(fs.readFileSync(path.join(repoRoot, entry.path), "utf8")),
+    .filter(Boolean);
+  return [...new Set(paths)]
+    .filter((docPath) => isRegularFile(path.join(repoRoot, docPath)))
+    .map((docPath) => ({
+      path: docPath,
+      words: countWords(fs.readFileSync(path.join(repoRoot, docPath), "utf8")),
     }))
     .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
+/** False for a missing path, a symlink, or a directory (a submodule). */
+function isRegularFile(filePath) {
+  try {
+    return fs.lstatSync(filePath).isFile();
+  } catch {
+    return false;
+  }
 }

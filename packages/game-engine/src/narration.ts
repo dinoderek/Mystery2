@@ -5,7 +5,7 @@ import {
   type Speaker,
 } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
-import type { EventStore, NewGameEvent } from "./context.ts";
+import type { EventStore, SaveEvent } from "./context.ts";
 
 export interface NarrationPart {
   text: string;
@@ -224,14 +224,11 @@ export function readNarrationEvent(row: EventRow): NarrationEventRecord {
   };
 }
 
-/** An event ready to save: everything but the session and sequence the save assigns. */
-export type NarrationEventDraft = Omit<NewGameEvent, "session_id" | "sequence">;
-
 /** Builds the event `insertNarrationEvent` would write at `sequence`, without writing it. */
 export function buildNarrationEvent(
   input: InsertNarrationEventInput,
   sequence: number,
-): NarrationEventDraft {
+): SaveEvent {
   const payload = input.payload ? { ...input.payload } : {};
 
   if (input.diagnostics) {

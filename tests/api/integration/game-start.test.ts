@@ -42,7 +42,6 @@ describe("game-start endpoint", () => {
         "AI_PROVIDER=openrouter",
         "OPENROUTER_API_KEY=test-key",
         "AI_MODEL=test/unreachable",
-        "AI_OPENROUTER_MAX_ATTEMPTS=1",
       ].join("\n") + "\n",
     );
 
@@ -52,7 +51,7 @@ describe("game-start endpoint", () => {
       body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID, ai_profile: "paid" }),
     });
 
-    expect(res.status).toBeGreaterThanOrEqual(500);
+    expect(res.status).toBe(500);
     expect(storedSessionCount()).toBe(0);
     const orphanEvents = testDatabase()
       .prepare(

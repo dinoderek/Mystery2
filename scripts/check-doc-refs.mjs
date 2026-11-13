@@ -4,9 +4,8 @@
  * that does not exist. Part of phase 1 of the gate (`npm run check:doc-refs`).
  *
  * Checked: `AGENTS.md`, `QUICKSTART.md`, `docs/`, and every package or
- * pipeline README. Not checked: `docs/design/` (historical records, kept as
- * they were written) and the generator/judge harness templates, whose paths
- * are relative to a workspace that only exists at run time. Paths git ignores
+ * pipeline README. Not checked: the generator/judge harness templates, whose
+ * paths are relative to a workspace that only exists at run time. Paths git ignores
  * are runtime output — a database, a coverage report — and are skipped.
  */
 
@@ -20,7 +19,7 @@ import { candidateBases, checkPath, extractRefs, readScripts } from "./lib/doc-r
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
 
-const EXCLUDED = [/^docs\/design\//, /^evaluation\/[\w-]+-harness\/template\//];
+const EXCLUDED = [/^evaluation\/[\w-]+-harness\/template\//];
 
 function docsToCheck() {
   return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "*.md"], {

@@ -78,8 +78,7 @@ The two doc checks:
 - `check:doc-refs` fails when `AGENTS.md`, `QUICKSTART.md`, `docs/` or a README
   names a path, an `npm run` script or a relative link that does not exist. A
   code span counts as a path only when its first segment is a real directory;
-  gitignored paths are skipped; `docs/design/` and the harness templates are not
-  checked.
+  gitignored paths are skipped; the harness templates are not checked.
 
 ### Concurrency
 

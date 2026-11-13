@@ -61,7 +61,8 @@ bug to fix, not a partial run to report. Focused scripts are for iteration;
 re-run the gate if you edit after it passes.
 
 Integration and API E2E run against the production build (`node build/index.js`),
-not the dev server, so a bundling failure is caught. Before starting it, the
+not the dev server, so a bundling failure is caught. The build gets the run's
+config root too, and fails the step if it opens a database. Before starting it, the
 runner fails if anything already holds the port: otherwise that process would
 answer the readiness poll and the suite would test the wrong server. The
 browser suite starts `vite dev` through Playwright's `webServer`. Each gets a

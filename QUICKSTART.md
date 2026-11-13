@@ -39,8 +39,14 @@ worktree gets its own, and `npm run prod` opens the persistent `prod` one. See
 **Bootstrap:**
 
 ```bash
-npm ci
+./dev doctor
 ```
+
+It checks the Node version, runs `npm ci` when dependencies are missing or
+stale, installs Playwright's chromium for the browser tests, and reports whether
+this checkout's port is free. For a second checkout, `./dev worktree create
+<branch>` adds one beside this clone with dependencies installed; see
+`docs/local-infrastructure.md`.
 
 There is nothing to seed. The database is created on first run, and blueprints
 are read off disk — the two committed in `blueprints/` are enough to play.

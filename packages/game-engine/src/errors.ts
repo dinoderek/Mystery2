@@ -29,6 +29,10 @@ export function internalError(msg: string, details?: ErrorDetails): Response {
   return jsonError(500, msg, details);
 }
 
+export function conflict(msg: string, details?: ErrorDetails): Response {
+  return jsonError(409, msg, details);
+}
+
 export function aiRetriableError(
   msg = "AI request failed; safe to retry",
   details?: ErrorDetails,
@@ -66,4 +70,29 @@ export class RetriableAIError extends Error {
       ...details,
     };
   }
+}
+
+/**
+ * A save found the game's events no longer end where the turn expected: another
+ * write for the same game got there first, and nothing was written.
+ */
+export class SaveConflictError extends Error {
+  readonly gameId: string;
+  readonly expectedSequence: number;
+
+  constructor(gameId: string, expectedSequence: number) {
+    super(
+      `Game ${gameId} changed while this turn was in progress ` +
+        `(expected to write sequence ${expectedSequence})`,
+    );
+    this.name = "SaveConflictError";
+    this.gameId = gameId;
+    this.expectedSequence = expectedSequence;
+  }
+}
+
+export function asConflictResponse(error: unknown): Response | null {
+  return error instanceof SaveConflictError
+    ? conflict(error.message, { code: "SAVE_CONFLICT" })
+    : null;
 }

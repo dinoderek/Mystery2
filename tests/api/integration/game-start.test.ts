@@ -1,18 +1,66 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   readStoredSession,
   setupApiTestAuth,
+  TEST_CONFIG_ROOT,
+  testDatabase,
   type ApiAuthContext,
 } from "./helpers";
 
 describe("game-start endpoint", () => {
   let auth: ApiAuthContext;
 
+  const PAID_ENV_PATH = path.join(TEST_CONFIG_ROOT, ".env.ai.paid.local");
+
   beforeEach(async () => {
     auth = await setupApiTestAuth("game-start");
+  });
+
+  afterEach(() => {
+    fs.rmSync(PAID_ENV_PATH, { force: true });
+  });
+
+  function storedSessionCount(): number {
+    const row = testDatabase()
+      .prepare("select count(*) as n from game_sessions where player_id = ?")
+      .get(auth.id);
+    return Number(row?.n);
+  }
+
+  it("leaves no session and no events behind when the model call fails", async () => {
+    // A live profile pointed at the suite's unreachable OpenRouter URL: the
+    // narration call fails after the request has been accepted.
+    fs.writeFileSync(
+      PAID_ENV_PATH,
+      [
+        "AI_PROVIDER=openrouter",
+        "OPENROUTER_API_KEY=test-key",
+        "AI_MODEL=test/unreachable",
+        "AI_OPENROUTER_MAX_ATTEMPTS=1",
+      ].join("\n") + "\n",
+    );
+
+    const res = await fetch(`${API_URL}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID, ai_profile: "paid" }),
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(500);
+    expect(storedSessionCount()).toBe(0);
+    const orphanEvents = testDatabase()
+      .prepare(
+        `select count(*) as n from game_events
+          where session_id not in (select id from game_sessions)`,
+      )
+      .get();
+    expect(Number(orphanEvents?.n)).toBe(0);
   });
 
 

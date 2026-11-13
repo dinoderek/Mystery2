@@ -42,7 +42,10 @@ export interface DbStatement {
 export interface Db {
   prepare(sql: string): DbStatement;
   exec(sql: string): void;
-  /** Runs `work` in a transaction, rolling back if it throws. */
+  /**
+   * Runs `work` in a transaction, rolling back if it throws. It takes the
+   * write lock up front, so what `work` reads cannot change before it writes.
+   */
   transaction<T>(work: () => T): T;
   /**
    * Writes a consistent snapshot to `destinationPath`, safe to call while the
@@ -214,7 +217,7 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
     exec: (sql) => {
       database.exec(sql);
     },
-    transaction: <T>(work: () => T): T => database.transaction(work)(),
+    transaction: <T>(work: () => T): T => database.transaction(work).immediate(),
     backup: async (destinationPath: string) => {
       fs.mkdirSync(path.dirname(path.resolve(destinationPath)), {
         recursive: true,

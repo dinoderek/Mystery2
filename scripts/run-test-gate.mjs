@@ -3,7 +3,8 @@
  *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
  *                     drift check, doc reference check, and the gate-coverage
- *                     check (every test file sits under a step's roots)
+ *                     check (every test file sits under a step's roots
+ *                     and matches its file pattern)
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
@@ -132,7 +133,10 @@ async function runGateCoverage(logDir) {
   } catch (error) {
     report = `gate-coverage could not list test files: ${error.message}`;
   }
-  fs.writeFileSync(logPath, `${report ?? "every test file is under a gate step"}\n`);
+  fs.writeFileSync(
+    logPath,
+    `${report ?? "every test file is under a gate step"}\n`,
+  );
   if (report) {
     for (const line of report.split("\n")) {
       console.error(`[gate-coverage] error: ${line}`);

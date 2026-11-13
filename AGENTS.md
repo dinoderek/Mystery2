@@ -24,10 +24,21 @@ final summaries.
   `evaluation/runtime/README.md`, `evaluation/playtest/README.md`). Read
   `evaluation/judges/README.md` before adding or editing a `gm_*` judge.
 
+## Workflow
+
+- A single task, issue or change goes through the engine plugin's `build`
+  skill (`engine:build`). `.claude/settings.json` enables the plugin in this
+  repo. The default mode here is hands-off: merge on a green gate and green CI
+  without asking.
+- Create a worktree with `./dev worktree create <branch>` and release it with
+  `./dev worktree release <branch>`.
+- Pull requests open from `.github/pull_request_template.md`. Merge them with
+  squash.
+
 ## The gate
 
 Any non-documentation change finishes with `npm test`. Focused scripts are for
-iteration. The gate takes about a minute; run it in the background into a file
+iteration. The gate takes about 20 seconds; run it in the background into a file
 and read the file when the completion notification arrives:
 
 ```bash

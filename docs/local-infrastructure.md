@@ -104,13 +104,13 @@ steps named.
 ```
 
 `create` fetches, then branches from the remote's default branch, or checks out
-an existing local branch as it is, at `<clone>-worktrees/task-my-change` (the
-branch with `/` replaced by `-`). It then runs `npm ci`; run again, it only
-refreshes stale dependencies. `release` removes that worktree
-and the development database named after it, and nothing else: the branch stays,
-`prod` and `main` are refused, and a worktree with uncommitted changes is
-refused as `git worktree remove` refuses it. Releasing twice is fine. Engine
-calls both verbs.
+an existing local branch as it is (one only origin has, from origin), at
+`<clone>-worktrees/task-my-change` (the branch with `/` replaced by `-`). It
+then runs `npm ci`; run again, it only refreshes stale dependencies. `release`
+removes that worktree and the development database named after it, and nothing
+else: the branch stays, `prod` and `main` are refused (also for `create`), and a
+worktree with uncommitted changes is refused as `git worktree remove` refuses
+it. Releasing twice is fine. Engine calls both verbs.
 
 Each worktree gets its own port so two checkouts can run side by side:
 

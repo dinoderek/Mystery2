@@ -249,6 +249,13 @@ describe("./dev worktree create", () => {
     }
   });
 
+  it("will not make a worktree named for prod or main", () => {
+    const { install } = recordingInstall();
+    for (const branch of ["prod", "Main"]) {
+      expect(() => createWorktree(branch, { cwd: clone, log: () => {}, install })).toThrow(/refusing/);
+    }
+  });
+
   it("refuses a path that is there but is not this clone's worktree", () => {
     fs.mkdirSync(worktreePathFor(clone, "task/squatter"), { recursive: true });
     const { install } = recordingInstall();
@@ -293,11 +300,19 @@ describe("./dev worktree release", () => {
 
   it("refuses prod and main", () => {
     const { env } = setUp("task/safe");
-    for (const name of ["prod", "main"]) {
+    // Case too: on a case-insensitive file system `Prod` is the prod database.
+    for (const name of ["prod", "main", "Prod", "MAIN"]) {
       expect(() => releaseWorktree(name, { cwd: clone, env, log: () => {} })).toThrow(/refusing/);
     }
     expect(fs.existsSync(path.join(configRoot, "database", "prod", "game.db"))).toBe(true);
     expect(fs.existsSync(path.join(configRoot, "database", "main", "game.db"))).toBe(true);
+  });
+
+  it("will not release the worktree of another branch that shares its path", () => {
+    const { env } = setUp("task/a-b");
+    expect(() => releaseWorktree("task-a/b", { cwd: clone, env, log: () => {} })).toThrow(/not task-a\/b/);
+    expect(fs.existsSync(worktreePathFor(clone, "task/a-b"))).toBe(true);
+    expect(fs.existsSync(path.join(configRoot, "database", "task-a-b", "game.db"))).toBe(true);
   });
 
   it("refuses a worktree with uncommitted changes, and leaves it and its database", () => {

@@ -23,8 +23,20 @@ import { dependenciesStale, installDependencies } from "./dev-doctor.mjs";
 /** A failure with a message meant for the person running the command. */
 export class DevError extends Error {}
 
-/** Names no release may touch: the persistent database and the main checkout's. */
+/**
+ * Names no worktree may take: the persistent database and the main checkout's.
+ * Compared in lower case, because on a case-insensitive file system `Prod` is
+ * the `prod` database directory.
+ */
 const PROTECTED_NAMES = new Set([PROD_DATABASE, MAIN_DATABASE]);
+
+/** @param {string} branch */
+function assertNotProtected(branch, verb) {
+  const lower = (branch ?? "").toLowerCase();
+  if (PROTECTED_NAMES.has(lower) || PROTECTED_NAMES.has(worktreeDirName(lower))) {
+    throw new DevError(`refusing to ${verb} "${branch}": that name is the persistent or main checkout's`);
+  }
+}
 
 /** @typedef {{ cwd: string, env?: Record<string, string | undefined>, log?: (line: string) => void }} Context */
 
@@ -121,6 +133,7 @@ function resolveDefaultBranch(cwd) {
  * @param {Context & { install?: (worktreePath: string) => number }} context
  */
 export function createWorktree(branch, { cwd, log = console.log, install = installDependencies }) {
+  assertNotProtected(branch, "create a worktree for");
   assertBranchName(branch, cwd);
   const cloneRoot = resolveCloneRoot(cwd);
   const target = worktreePathFor(cloneRoot, branch);
@@ -168,20 +181,23 @@ export function createWorktree(branch, { cwd, log = console.log, install = insta
  * @param {Context} context
  */
 export function releaseWorktree(branch, { cwd, env = process.env, log = console.log }) {
-  const name = worktreeDirName(branch ?? "");
-  if (PROTECTED_NAMES.has(branch) || PROTECTED_NAMES.has(name)) {
-    throw new DevError(`refusing to release "${branch}": that name is the persistent or main checkout's`);
-  }
+  assertNotProtected(branch, "release");
   assertBranchName(branch, cwd);
+  const name = worktreeDirName(branch);
   if (!isValidDatabaseName(name)) throw new DevError(`"${branch}" does not make a worktree name`);
 
   const cloneRoot = resolveCloneRoot(cwd);
   const target = worktreePathFor(cloneRoot, branch);
 
   git(["worktree", "prune"], cloneRoot);
-  if (!listWorktrees(cloneRoot).some((entry) => entry.path === target)) {
+  const existing = listWorktrees(cloneRoot).find((entry) => entry.path === target);
+  if (!existing) {
     log(`No worktree for ${branch}; nothing to release`);
     return;
+  }
+  // `task/a-b` and `task-a/b` share a path: never release one for the other.
+  if (existing.branch !== branch) {
+    throw new DevError(`${target} is a worktree on ${existing.branch ?? "a detached HEAD"}, not ${branch}`);
   }
 
   const removed = git(["worktree", "remove", target], cloneRoot);

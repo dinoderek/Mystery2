@@ -109,4 +109,17 @@ describe("quality limits", () => {
     expect(runQuality({ cwd: root, baseline, prune: true }).status).toBe(0);
     expect(runQuality({ cwd: root, baseline }).status).toBe(0);
   });
+
+  it("fails a baseline count above what still occurs", () => {
+    const root = path.join(dir, "under");
+    const baseline = path.join(baselines, "count.json");
+    fs.writeFileSync(path.join(root, UNDER), tooManyParams);
+    fs.writeFileSync(
+      baseline,
+      JSON.stringify({ [UNDER]: { "max-params": { count: 2 } } }),
+    );
+    const { status, output } = runQuality({ cwd: root, baseline });
+    expect(status).not.toBe(0);
+    expect(output).toContain("do not occur anymore");
+  });
 });

@@ -96,7 +96,7 @@ play, three for AI configuration.
   `createRequire`, so no bundler can inline a native addon), and only
   `context-local.ts` and `db/` import `db/`; the `imports` gate step checks
   both. Repositories receive a `Db` interface, so a move to
-  `node:sqlite` touches that file only.
+  `node:sqlite` touches `db/client.ts` only.
 - **`schema.ts`, not `schema.sql`.** The engine loads identically under Vite's
   SSR bundle, vitest and plain `node`, and only a module works in all three: a
   bundled chunk cannot read a sibling `.sql` file, and `?raw` is Vite-only.

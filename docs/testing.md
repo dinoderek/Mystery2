@@ -47,7 +47,7 @@ browser-specific journeys.
 
 ### The gate
 
-`npm test` runs `scripts/run-test-gate.mjs`; the `STEPS` list in
+`npm test` runs `scripts/run-test-gate.mjs`; the `GATE_STEPS` list in
 `scripts/lib/gate-steps.mjs` is the definitive set. Phase 1 runs in parallel:
 lint, typecheck, `svelte-check`, both unit suites with coverage, the two doc
 checks, and `gate-coverage` (below). Phase 2 runs only if all of
@@ -74,7 +74,7 @@ list of where tests live: each step that runs tests names its `roots` and the
 from the roots. The gate runs `gate-coverage` with
 phase 1, listing test files from git (tracked, plus untracked files git does
 not ignore, so an uncommitted one is caught) and failing, by name, on any that
-sits under no step's roots or matches no step's pattern (a `.spec.ts` under a
+sits under no step's roots or matches no step's pattern. It checks against every step, so naming steps (`./dev test lint`) does not change it (a `.spec.ts` under a
 Vitest root, say, which Vitest would not collect). A file placed anywhere else would pass when run by
 hand and never run here. To add a suite, add its root to the step that runs it,
 or add a step. `integration` and `e2e-api` hand their roots to

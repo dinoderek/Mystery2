@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+// The entry point for provisioning a worktree, checking a host, running the
+// game and running the gate. `./dev` with no verb prints what it can do.
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { main } from "./scripts/dev-cli.mjs";
+
+const root = path.dirname(fileURLToPath(import.meta.url));
+process.exitCode = await main(process.argv.slice(2), { root });

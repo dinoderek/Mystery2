@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { STEPS } from "../../../scripts/lib/gate-steps.mjs";
+import { GATE_STEPS } from "../../../scripts/lib/gate-steps.mjs";
 import {
   describeUncovered,
   findUncoveredTestFiles,
@@ -71,9 +71,13 @@ describe("findUncoveredTestFiles", () => {
 
 describe("the gate's real steps", () => {
   it("build the Vitest commands from the declared roots", () => {
-    const web = STEPS.find((s: { name: string }) => s.name === "unit-web")!;
+    const web = GATE_STEPS.find(
+      (s: { name: string }) => s.name === "unit-web",
+    )!;
     expect(web.args).toContain("src/lib/domain");
-    const api = STEPS.find((s: { name: string }) => s.name === "unit-api")!;
+    const api = GATE_STEPS.find(
+      (s: { name: string }) => s.name === "unit-api",
+    )!;
     expect(api.args).toContain("tests/api/unit");
   });
 });

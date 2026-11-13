@@ -1,6 +1,8 @@
 /**
  * Test gate orchestrator — replaces the chained && in `npm test`.
  *
+ * `node scripts/run-test-gate.mjs [step ...]` runs only the named steps.
+ *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
  *                     drift check, doc reference check, and the gate-coverage
  *                     check (every test file sits under a step's roots
@@ -21,8 +23,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { GATE_STEPS, selectSteps } from "./lib/gate-steps.mjs";
 import { npmBin } from "./lib/process.mjs";
-import { STEPS } from "./lib/gate-steps.mjs";
 import {
   describeUncovered,
   findUncoveredTestFiles,
@@ -34,6 +36,19 @@ import {
   formatCoverageDetail,
   formatCoverageSummary,
 } from "./lib/coverage-report.mjs";
+
+// ---------------------------------------------------------------------------
+// Step definitions
+// ---------------------------------------------------------------------------
+
+let STEPS;
+try {
+  // `./dev test lint doc-refs` runs only those steps; no names runs them all.
+  STEPS = selectSteps(GATE_STEPS, process.argv.slice(2));
+} catch (error) {
+  console.error(error.message);
+  process.exit(2);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -119,7 +134,9 @@ function runStep(step, logDir) {
 
 /**
  * The gate-coverage check, run in-process: a test file no step runs fails the
- * gate and is named in the log. Returns a result shaped like a step's.
+ * gate and is named in the log. It checks against every gate step, not the ones
+ * selected, so `./dev test lint` does not read every test file as uncovered.
+ * Returns a result shaped like a step's.
  */
 async function runGateCoverage(logDir) {
   const logPath = path.join(logDir, "gate-coverage.log");
@@ -127,8 +144,8 @@ async function runGateCoverage(logDir) {
   let report;
   try {
     report = describeUncovered(
-      findUncoveredTestFiles(listTestFiles(process.cwd()), STEPS),
-      STEPS,
+      findUncoveredTestFiles(listTestFiles(process.cwd()), GATE_STEPS),
+      GATE_STEPS,
     );
   } catch (error) {
     report = `gate-coverage could not list test files: ${error.message}`;

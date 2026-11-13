@@ -10,9 +10,9 @@ import {
   checkWordBudgets,
   countWords,
   describeProblems,
+  listMarkdownDocs,
   parseRegistry,
   suggestBudget,
-  trackedMarkdownDocs,
 } from "../../../scripts/lib/word-budgets.mjs";
 
 /**
@@ -148,7 +148,7 @@ describe("the committed registry", () => {
   });
 });
 
-describe("trackedMarkdownDocs", () => {
+describe("listMarkdownDocs", () => {
   let repo: string;
 
   const git = (...args: string[]) =>
@@ -162,7 +162,10 @@ describe("trackedMarkdownDocs", () => {
     fs.mkdirSync(path.join(repo, "docs"));
     fs.writeFileSync(path.join(repo, "AGENTS.md"), "one two three\n");
     fs.writeFileSync(path.join(repo, "docs", "a.md"), "four five\n");
-    fs.writeFileSync(path.join(repo, "docs", "untracked.md"), "not counted\n");
+    fs.writeFileSync(path.join(repo, ".gitignore"), "ignored/\n");
+    fs.mkdirSync(path.join(repo, "ignored"));
+    fs.writeFileSync(path.join(repo, "ignored", "out.md"), "not counted\n");
+    fs.writeFileSync(path.join(repo, "docs", "untracked.md"), "not yet added\n");
     fs.writeFileSync(path.join(repo, "notes.txt"), "not markdown\n");
     fs.symlinkSync("AGENTS.md", path.join(repo, "CLAUDE.md"));
     git("add", "AGENTS.md", "docs/a.md", "CLAUDE.md", "notes.txt");
@@ -172,15 +175,27 @@ describe("trackedMarkdownDocs", () => {
     fs.rmSync(repo, { recursive: true, force: true });
   });
 
-  it("lists tracked regular Markdown files with their word counts, skipping symlinks and untracked files", () => {
-    expect(trackedMarkdownDocs(repo)).toEqual([
+  it("lists regular Markdown files with their word counts, tracked or not yet added, skipping symlinks and ignored files", () => {
+    expect(listMarkdownDocs(repo)).toEqual([
       { path: "AGENTS.md", words: 3 },
       { path: "docs/a.md", words: 2 },
+      { path: "docs/untracked.md", words: 3 },
+    ]);
+  });
+
+  it("gives a doc that is not yet added no row, so the check fails before CI does", () => {
+    const registry = new Map([
+      ["AGENTS.md", 50],
+      ["docs/a.md", 50],
+    ]);
+    expect(checkWordBudgets(listMarkdownDocs(repo), registry)).toEqual([
+      { kind: "no-row", path: "docs/untracked.md", words: 3 },
     ]);
   });
 
   it("skips a tracked file deleted from the working tree", () => {
     fs.rmSync(path.join(repo, "docs", "a.md"));
-    expect(trackedMarkdownDocs(repo)).toEqual([{ path: "AGENTS.md", words: 3 }]);
+    fs.rmSync(path.join(repo, "docs", "untracked.md"));
+    expect(listMarkdownDocs(repo)).toEqual([{ path: "AGENTS.md", words: 3 }]);
   });
 });

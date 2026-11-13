@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Fails when a tracked Markdown doc is over its word budget, or has no row in
- * `docs/word-budgets.tsv`, or a row names a doc that is no longer tracked.
+ * Fails when a Markdown doc is over its word budget, or has no row in
+ * `docs/word-budgets.tsv`, or a row names a doc that does not exist.
  * Part of phase 1 of the gate (`npm run check:word-budgets`).
  */
 
@@ -14,15 +14,15 @@ import {
   REGISTRY_PATH,
   checkWordBudgets,
   describeProblems,
+  listMarkdownDocs,
   parseRegistry,
-  trackedMarkdownDocs,
 } from "./lib/word-budgets.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
 
 function main() {
   const registry = parseRegistry(fs.readFileSync(path.join(REPO_ROOT, REGISTRY_PATH), "utf8"));
-  const docs = trackedMarkdownDocs(REPO_ROOT);
+  const docs = listMarkdownDocs(REPO_ROOT);
   const problems = checkWordBudgets(docs, registry);
 
   if (problems.length === 0) {

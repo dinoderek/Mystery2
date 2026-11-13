@@ -77,9 +77,9 @@ from git (tracked, plus untracked files git does not ignore, so an uncommitted
 one is caught) and failing, by name, on any that sits under no step's roots or
 matches no step's pattern (a `.spec.ts` under a Vitest root, say, which Vitest
 would not collect). A file placed anywhere else would pass when run by hand and
-never run here. The check measures every step, so naming steps (`./dev test
-lint`) does not change it. To add a suite, add its root to the step that runs
-it, or add a step. `integration` and `e2e-api` hand their roots to
+never run here. It checks against every step, even when named alone (`./dev
+test gate-coverage`). To add a suite, add its root to the step that runs it, or
+add a step. `integration` and `e2e-api` hand their roots to
 `scripts/run-mock-tests.mjs`; keep the `e2e-browser` root in step with the
 `testDir` in `web/playwright.config.ts`, and the patterns with each runner's
 include.
@@ -96,14 +96,15 @@ The three doc checks:
   names a path, an `npm run` script or a relative link that does not exist. A
   code span counts as a path only when its first segment is a real directory;
   gitignored paths are skipped; the harness templates are not checked.
-- `check:word-budgets` fails when a tracked Markdown file is over its word
-  budget, has no row in `docs/word-budgets.tsv`, or a row names a file that is
-  no longer tracked. Every tracked `.md` counts, including the harness
-  templates, judges, personas and prompts, because each run reads them. Words
-  are counted as `wc -w` counts them; symlinks such as `CLAUDE.md` are skipped
-  and answer to their target's row. Budgets sit at each file's count when set,
-  rounded up to the next 50. Raising a budget is the operator's decision, not
-  an executor's: trim the doc, or ask the operator to raise its row.
+- `check:word-budgets` fails when a Markdown file is over its word budget, has
+  no row in `docs/word-budgets.tsv`, or a row names a file that does not exist.
+  It lists files as `gate-coverage` does, so a doc not yet added counts. Every
+  `.md` counts, including the harness templates, judges, personas and prompts,
+  because each run reads them. Words are counted as `wc -w` counts them;
+  symlinks such as `CLAUDE.md` are skipped and answer to their target's row.
+  Budgets sit at each file's count when set, rounded up to the next 50. Raising
+  a budget is the operator's decision, not an executor's: trim the doc, or ask
+  the operator to raise its row.
 
 ### Concurrency
 

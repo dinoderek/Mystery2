@@ -13,6 +13,7 @@
  */
 import type { EngineContext } from "../context.ts";
 import {
+  asConflictResponse,
   asRetriableAIResponse,
   badRequest,
   internalError,
@@ -26,8 +27,9 @@ import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, withLogContext } from "../logging.ts";
 import {
   createNarrationDiagnostics,
+  buildNarrationEvent,
   createNarrationPart,
-  insertNarrationEvent,
+  logNarrationEventSaved,
 } from "../narration.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 
@@ -125,7 +127,7 @@ export async function handle(
       ),
     ];
 
-    await insertNarrationEvent(ctx.events, {
+    const enterEvent = {
       session_id: gameId,
       event_type: "move",
       actor: "system",
@@ -151,7 +153,17 @@ export async function handle(
         trigger: "player",
       }),
       logger: narrationLogger,
+    };
+
+    // The arrival costs no turn, so the session patch is empty; the save still
+    // refuses a second arrival that raced this one.
+    const sequence = events.length + 1;
+    await ctx.sessions.saveTurn({
+      game_id: gameId,
+      expected_sequence: sequence,
+      events: [buildNarrationEvent(enterEvent, sequence)],
     });
+    logNarrationEventSaved(enterEvent, sequence);
 
     const visible_characters = blueprint.world.characters
       .filter((c) => c.location_id === location.id)
@@ -184,6 +196,11 @@ export async function handle(
     }
     const aiResponse = asRetriableAIResponse(err);
     if (aiResponse) return aiResponse;
+    const conflictResponse = asConflictResponse(err);
+    if (conflictResponse) {
+      log("request.conflict", { error: String(err) });
+      return conflictResponse;
+    }
     if (err instanceof Error && err.name === "BadRequestError") {
       log("request.invalid", {
         reason: "bad_request_error",

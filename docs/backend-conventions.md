@@ -50,13 +50,16 @@ Rules:
 - Error convention: a genuine backend failure **throws**, and "does not exist"
   returns `null`/empty. Handlers map a throw to `500` and a `null` to
   `404`/`400`.
+- A turn is saved by one operation, `ctx.sessions.saveTurn`: the session change
+  and every event in one `Db.transaction`, sequences assigned inside it, after
+  the model has answered. A stale expected sequence writes nothing and throws
+  `SaveConflictError`. Never write a session and its events separately.
 - Register the endpoint's allowed methods in `packages/game-engine/src/endpoints/index.ts`. The
   route returns `405` from that list; handlers do not re-check.
 
-This exists so the engine can be re-hosted without touching game logic: a
-second adapter can be written and tested alongside the first, with the handlers
-unable to tell which they have. Treat a direct file or driver reference in a
-handler as a bug.
+This lets the engine be re-hosted without touching game logic: a second adapter
+can sit beside the first, and handlers cannot tell which they have. A direct
+file or driver reference in a handler is a bug.
 
 ### Access
 
@@ -70,11 +73,10 @@ runs under in `packages/game-engine/src/endpoints/index.ts`:
   anybody — and the route does not ask for a profile at all.
 
 The criterion is ownership: **does the endpoint touch somebody's sessions?** If
-it does it is `"profile"`, and if it does not it needs none. Decide that when
-you add the endpoint; it is a claim about what the handler reaches, so nothing
-can infer it for you. Write the narrower type in the handler's signature and
-let the compiler hold you to it — a `"catalog"` handler that later needs a
-session will not compile until somebody changes its access on purpose.
+so it is `"profile"`; otherwise it needs none. Decide when you add the endpoint;
+nothing can infer it. Write the narrower type in the handler's signature: a
+`"catalog"` handler that later needs a session will not compile until somebody
+changes its access on purpose.
 
 `tests/api/unit/endpoint-access.test.ts` holds the registry to the criterion,
 and `tests/api/integration/unauthenticated.test.ts` proves both behaviours over
@@ -113,9 +115,8 @@ play, three for AI configuration.
   scratch and never take the upgrade path. A bump reaches the `prod` database
   the first time any branch opens it and cannot be undone, so take a copy first
   (`npm run db:copy -- prod prod-backup`).
-- **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`,
-  not a string; `readGameMode()` in `state-machine.ts` is the single place that
-  narrows text read back out of storage.
+- **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`;
+  `readGameMode()` in `state-machine.ts` alone narrows stored text.
 - **Scope is a decision, not a default.** `db/sessions.ts` and `db/events.ts`
   are player-scoped; `db/players.ts` and `db/ai-settings.ts` are app-global and
   hang off `LocalEngine` rather than a request context. Pick one deliberately —

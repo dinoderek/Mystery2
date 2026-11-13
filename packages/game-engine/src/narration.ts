@@ -5,7 +5,7 @@ import {
   type Speaker,
 } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
-import type { EventStore } from "./context.ts";
+import type { EventStore, SaveEvent } from "./context.ts";
 
 export interface NarrationPart {
   text: string;
@@ -34,7 +34,7 @@ export interface NarrationDiagnostics {
   related_sequence?: number | null;
 }
 
-interface InsertNarrationEventInput {
+export interface InsertNarrationEventInput {
   session_id: string;
   event_type: string;
   actor: string;
@@ -224,12 +224,11 @@ export function readNarrationEvent(row: EventRow): NarrationEventRecord {
   };
 }
 
-export async function insertNarrationEvent(
-  events: EventStore,
+/** Builds the event `insertNarrationEvent` would write at `sequence`, without writing it. */
+export function buildNarrationEvent(
   input: InsertNarrationEventInput,
-): Promise<number> {
-  const sequence = await events.nextSequence(input.session_id);
-  const narration = narrationTextFromParts(input.narration_parts);
+  sequence: number,
+): SaveEvent {
   const payload = input.payload ? { ...input.payload } : {};
 
   if (input.diagnostics) {
@@ -242,16 +241,40 @@ export async function insertNarrationEvent(
     };
   }
 
+  return {
+    event_type: input.event_type,
+    actor: input.actor,
+    payload: Object.keys(payload).length > 0 ? payload : null,
+    narration: narrationTextFromParts(input.narration_parts),
+    narration_parts: input.narration_parts,
+    model: input.model ?? null,
+  };
+}
+
+export function logNarrationEventSaved(
+  input: InsertNarrationEventInput,
+  sequence: number,
+): void {
+  input.logger?.log("narration_event.persisted", {
+    session_id: input.session_id,
+    event_type: input.event_type,
+    sequence,
+    part_count: input.narration_parts.length,
+    ...(input.diagnostics ? createNarrationDiagnostics(input.diagnostics) : {}),
+  });
+}
+
+export async function insertNarrationEvent(
+  events: EventStore,
+  input: InsertNarrationEventInput,
+): Promise<number> {
+  const sequence = await events.nextSequence(input.session_id);
+
   try {
     await events.insert({
       session_id: input.session_id,
       sequence,
-      event_type: input.event_type,
-      actor: input.actor,
-      payload: Object.keys(payload).length > 0 ? payload : null,
-      narration,
-      narration_parts: input.narration_parts,
-      model: input.model ?? null,
+      ...buildNarrationEvent(input, sequence),
     });
   } catch (error) {
     const message =
@@ -265,13 +288,7 @@ export async function insertNarrationEvent(
     throw new Error(message, { cause: error });
   }
 
-  input.logger?.log("narration_event.persisted", {
-    session_id: input.session_id,
-    event_type: input.event_type,
-    sequence,
-    part_count: input.narration_parts.length,
-    ...(input.diagnostics ? createNarrationDiagnostics(input.diagnostics) : {}),
-  });
+  logNarrationEventSaved(input, sequence);
 
   return sequence;
 }

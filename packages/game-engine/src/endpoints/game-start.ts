@@ -15,8 +15,9 @@ import { createRequestLogger } from "../logging.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
+  buildNarrationEvent,
   createNarrationPart,
-  insertNarrationEvent,
+  logNarrationEventSaved,
 } from "../narration.ts";
 
 // Shown once at the start of every case. The mystery facts, people, places, and
@@ -90,25 +91,9 @@ export async function handle(
 
     const startLocId = blueprint.world.starting_location_id;
 
-    // Insert game_session (owned by the authenticated player)
-    let sessionId: string;
-    try {
-      sessionId = await ctx.sessions.create({
-        player_id: ctx.player.id,
-        blueprint_id: blueprint.id,
-        ai_profile_id: aiProfile.id,
-        mode: "explore",
-        current_location_id: startLocId,
-        time_remaining: blueprint.metadata.time_budget,
-      });
-    } catch (error) {
-      logError("request.error", {
-        reason: "session_create_failed",
-        blueprint_id: blueprint.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return internalError("Failed to create session");
-    }
+    // The id exists before the session does: nothing is written until the
+    // narration has, so a failed model call leaves no game behind.
+    const sessionId = crypto.randomUUID();
 
     // Generate opening narration
     const aiProvider = createAIProviderFromProfile(aiProfile, {
@@ -137,40 +122,55 @@ export async function handle(
       createNarrationPart(NOTEBOOK_GUIDANCE, NARRATOR_SPEAKER),
     ];
 
-    // Insert start event
+    const startEvent = {
+      session_id: sessionId,
+      event_type: "start",
+      actor: "system",
+      payload: {
+        speaker: NARRATOR_SPEAKER,
+        blueprint_image_id: blueprint.metadata.image_id ?? null,
+        starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
+      },
+      narration_parts: narrationParts,
+      model: aiProvider.resolvedModel,
+      diagnostics: createNarrationDiagnostics({
+        action: "start",
+        event_category: "start",
+        mode: "explore",
+        resulting_mode: "explore",
+        time_before: blueprint.metadata.time_budget,
+        time_after: blueprint.metadata.time_budget,
+        time_consumed: false,
+        forced_endgame: false,
+        trigger: "player",
+      }),
+      logger,
+    };
+
     try {
-      await insertNarrationEvent(ctx.events, {
-        session_id: sessionId,
-        event_type: "start",
-        actor: "system",
-        payload: {
-          speaker: NARRATOR_SPEAKER,
-          blueprint_image_id: blueprint.metadata.image_id ?? null,
-          starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
-        },
-        narration_parts: narrationParts,
-        model: aiProvider.resolvedModel,
-        diagnostics: createNarrationDiagnostics({
-          action: "start",
-          event_category: "start",
-          mode: "explore",
-          resulting_mode: "explore",
-          time_before: blueprint.metadata.time_budget,
-          time_after: blueprint.metadata.time_budget,
-          time_consumed: false,
-          forced_endgame: false,
-          trigger: "player",
-        }),
-        logger,
-      });
-    } catch (eventError) {
-      logError("request.error", {
-        reason: "event_insert_failed",
+      await ctx.sessions.saveTurn({
         game_id: sessionId,
-        error: eventError instanceof Error ? eventError.message : String(eventError),
+        expected_sequence: 1,
+        start: {
+          player_id: ctx.player.id,
+          blueprint_id: blueprint.id,
+          ai_profile_id: aiProfile.id,
+          mode: "explore",
+          current_location_id: startLocId,
+          time_remaining: blueprint.metadata.time_budget,
+        },
+        events: [buildNarrationEvent(startEvent, 1)],
       });
-      return internalError("Failed to record start event");
+    } catch (saveError) {
+      logError("request.error", {
+        reason: "start_save_failed",
+        game_id: sessionId,
+        blueprint_id: blueprint.id,
+        error: saveError instanceof Error ? saveError.message : String(saveError),
+      });
+      return internalError("Failed to start game");
     }
+    logNarrationEventSaved(startEvent, 1);
 
     const startingKnowledge = blueprint.narrative.starting_knowledge;
     const locationSummaries = new Map(

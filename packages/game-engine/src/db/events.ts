@@ -43,6 +43,27 @@ function toEventRow(row: Record<string, unknown>): GameEventRow {
   };
 }
 
+/** Writes one event row. Callers establish ownership of the session first. */
+export function insertEventRow(db: Db, event: NewGameEvent): void {
+  db.prepare(
+    `insert into game_events (
+       id, session_id, sequence, event_type, actor,
+       payload, narration, narration_parts, model, created_at
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    crypto.randomUUID(),
+    event.session_id,
+    event.sequence,
+    event.event_type,
+    event.actor,
+    event.payload === null ? null : JSON.stringify(event.payload),
+    event.narration,
+    JSON.stringify(event.narration_parts),
+    event.model ?? null,
+    new Date().toISOString(),
+  );
+}
+
 export function createEventStore(db: Db, playerId: string): EventStore {
   function assertOwnedSession(sessionId: string): void {
     const row = db
@@ -85,23 +106,7 @@ export function createEventStore(db: Db, playerId: string): EventStore {
       // append to another's session.
       assertOwnedSession(event.session_id);
 
-      db.prepare(
-        `insert into game_events (
-           id, session_id, sequence, event_type, actor,
-           payload, narration, narration_parts, model, created_at
-         ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).run(
-        crypto.randomUUID(),
-        event.session_id,
-        event.sequence,
-        event.event_type,
-        event.actor,
-        event.payload === null ? null : JSON.stringify(event.payload),
-        event.narration,
-        JSON.stringify(event.narration_parts),
-        event.model ?? null,
-        new Date().toISOString(),
-      );
+      insertEventRow(db, event);
     },
   };
 }

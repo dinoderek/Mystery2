@@ -98,11 +98,34 @@ export interface NewGameEvent {
   model: string | null;
 }
 
+/** An event to save: the save assigns its session and sequence. */
+export type SaveEvent = Omit<NewGameEvent, "session_id" | "sequence">;
+
+/** One turn's whole write: the session change and the events it produced. */
+export interface TurnSave {
+  game_id: string;
+  /**
+   * The sequence the turn expects its first event to take, one past the last
+   * event it read. Events take consecutive numbers from here.
+   */
+  expected_sequence: number;
+  /** Inserts the session, under `game_id`, before the events: a game's first save. */
+  start?: NewGameSession;
+  patch?: GameSessionPatch;
+  events: SaveEvent[];
+}
+
 export interface SessionStore {
   /** Returns null when no session with that id is visible to the player. */
   getById(gameId: string): Promise<GameSessionRow | null>;
   create(session: NewGameSession): Promise<string>;
   update(gameId: string, patch: GameSessionPatch): Promise<void>;
+  /**
+   * Writes a turn's session change and events in one transaction. Throws
+   * `SaveConflictError`, writing nothing, when the game's events no longer
+   * end just before `expected_sequence`; any other failure also writes nothing.
+   */
+  saveTurn(save: TurnSave): Promise<void>;
   /** Every session visible to the player, for the catalog endpoint. */
   listForPlayer(): Promise<GameSessionSummaryRow[]>;
 }

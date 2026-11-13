@@ -8,6 +8,7 @@
 import { npmBin, runCommand } from "./lib/process.mjs";
 import { startTestServer } from "./lib/test-server.mjs";
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
+import { E2E_API_ROOTS, INTEGRATION_ROOTS } from "./lib/gate-steps.mjs";
 
 const suite = process.argv[2];
 if (suite !== "integration" && suite !== "e2e") {
@@ -48,8 +49,7 @@ const MOCK_ONLY_ENV = {
 };
 
 const repoRoot = process.cwd();
-const vitestTarget =
-  suite === "integration" ? "tests/api/integration" : "tests/api/e2e";
+const vitestTargets = suite === "integration" ? INTEGRATION_ROOTS : E2E_API_ROOTS;
 
 console.log(`Running ${suite} tests in "mock" AI mode...`);
 
@@ -69,7 +69,7 @@ let status;
 try {
   status = runCommand(
     npmBin,
-    ["exec", "--", "vitest", "run", vitestTarget],
+    ["exec", "--", "vitest", "run", ...vitestTargets],
     {
       ...process.env,
       MYSTERY_TEST_API_URL: server.url,

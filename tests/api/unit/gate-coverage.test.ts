@@ -13,15 +13,19 @@ import {
 
 const steps = [
   { name: "lint", args: ["run", "lint"] },
-  { name: "unit", roots: ["tests/api/unit"] },
-  { name: "web", roots: ["web/src/lib/domain/"] },
+  { name: "unit", roots: ["tests/api/unit"], files: /\.test\.ts$/ },
+  {
+    name: "browser",
+    roots: ["web/e2e/"],
+    files: /\.(test|spec)\.[cm]?[jt]sx?$/,
+  },
 ];
 
 describe("findUncoveredTestFiles", () => {
   it("passes when every test file is under a step's roots", () => {
     expect(
       findUncoveredTestFiles(
-        ["tests/api/unit/a.test.ts", "web/src/lib/domain/b.spec.ts"],
+        ["tests/api/unit/a.test.ts", "web/e2e/b.spec.ts"],
         steps,
       ),
     ).toEqual([]);
@@ -43,6 +47,15 @@ describe("findUncoveredTestFiles", () => {
       "packages/x/src/y.test.ts",
       "tests/api/unit-other/z.test.ts",
     ]);
+  });
+
+  it("names a file under a root that the step's runner would not collect", () => {
+    expect(
+      findUncoveredTestFiles(
+        ["tests/api/unit/a.spec.ts", "tests/api/unit/b.test.tsx"],
+        steps,
+      ),
+    ).toEqual(["tests/api/unit/a.spec.ts", "tests/api/unit/b.test.tsx"]);
   });
 
   it("ignores files that are not test files", () => {

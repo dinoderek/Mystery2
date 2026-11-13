@@ -29,13 +29,18 @@ export function listTestFiles(repoRoot) {
     .sort();
 }
 
-/** The test files in `files` that no step's roots contain. */
+/**
+ * The test files in `files` that no step runs: a step runs a file when it is
+ * under one of the step's roots and matches the step's `files` pattern.
+ */
 export function findUncoveredTestFiles(files, steps) {
-  const roots = steps.flatMap((step) => step.roots ?? []);
+  const runs = (step, file) =>
+    step.files?.test(path.posix.basename(file)) &&
+    (step.roots ?? []).some((root) =>
+      file.startsWith(`${root.replace(/\/+$/, "")}/`),
+    );
   return files.filter(
-    (file) =>
-      TEST_FILE.test(file) &&
-      !roots.some((root) => file.startsWith(`${root.replace(/\/+$/, "")}/`)),
+    (file) => TEST_FILE.test(file) && !steps.some((step) => runs(step, file)),
   );
 }
 

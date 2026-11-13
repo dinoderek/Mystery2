@@ -54,6 +54,8 @@ export const GATE_STEPS = [
   { name: "lint", phase: 1, args: ["run", "lint"] },
   { name: "typecheck", phase: 1, args: ["run", "typecheck"] },
   { name: "check-web", phase: 1, args: ["-w", "web", "run", "check"] },
+  { name: "quality", phase: 1, args: ["run", "check:quality"] },
+  { name: "imports", phase: 1, args: ["run", "check:imports"] },
   vitestStep({ name: "unit-api", phase: 1, roots: ["tests/api/unit"] }),
   vitestStep({
     name: "unit-web",

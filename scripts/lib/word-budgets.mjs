@@ -100,7 +100,7 @@ export function describeProblems(problems) {
       case "no-row":
         return `NO ROW ${problem.path}: ${problem.words} words, and no row in ${REGISTRY_PATH}`;
       default:
-        return `STALE ROW ${problem.path}: in ${REGISTRY_PATH}, but no tracked Markdown file has that path`;
+        return `STALE ROW ${problem.path}: in ${REGISTRY_PATH}, but no tracked Markdown file exists at that path`;
     }
   });
   return [

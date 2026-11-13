@@ -257,5 +257,6 @@ and Playwright's report on failure.
 
 If a change touches only documentation, the code suites are optional locally,
 but run `npm run check:curated-docs`, `npm run check:doc-refs` and `npm run
-check:word-budgets`: CI runs the whole gate, and all three fail it. Check the rest by hand — command accuracy, and
-consistency with the doc that owns each topic.
+check:word-budgets`: CI runs the whole gate, and all three fail it. Check the
+rest by hand — command accuracy, and consistency with the doc that owns each
+topic.

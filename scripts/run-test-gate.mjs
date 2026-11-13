@@ -1,6 +1,8 @@
 /**
  * Test gate orchestrator — replaces the chained && in `npm test`.
  *
+ * `node scripts/run-test-gate.mjs [step ...]` runs only the named steps.
+ *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
  *                     drift check, doc reference check
  * Phase 2 (serial):   integration, API e2e, browser e2e
@@ -19,6 +21,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { GATE_STEPS, selectSteps } from "./lib/gate-steps.mjs";
 import { npmBin } from "./lib/process.mjs";
 import {
   clearCoverageReports,
@@ -31,25 +34,14 @@ import {
 // Step definitions
 // ---------------------------------------------------------------------------
 
-const STEPS = [
-  // Phase 1 — independent, run in parallel
-  { name: "lint", phase: 1, args: ["run", "lint"] },
-  { name: "typecheck", phase: 1, args: ["run", "typecheck"] },
-  { name: "check-web", phase: 1, args: ["-w", "web", "run", "check"] },
-  { name: "unit-api", phase: 1, args: ["run", "test:unit:coverage"] },
-  {
-    name: "unit-web",
-    phase: 1,
-    args: ["-w", "web", "run", "test:unit:coverage"],
-  },
-  { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
-  { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
-
-  // Phase 2 — each starts a server on the worktree's port, so serial
-  { name: "integration", phase: 2, args: ["run", "test:integration"] },
-  { name: "e2e-api", phase: 2, args: ["run", "test:e2e"] },
-  { name: "e2e-browser", phase: 2, args: ["-w", "web", "run", "test:e2e"] },
-];
+let STEPS;
+try {
+  // `./dev test lint doc-refs` runs only those steps; no names runs them all.
+  STEPS = selectSteps(GATE_STEPS, process.argv.slice(2));
+} catch (error) {
+  console.error(error.message);
+  process.exit(2);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers

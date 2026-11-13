@@ -5,7 +5,8 @@ allocator beyond one port per worktree.
 
 ## Prerequisites
 
-Node 24 (`.nvmrc`), and `npm ci`. That is the list.
+Node 24 (`.nvmrc`), and `npm ci`. That is the list; `./dev doctor` checks it and
+installs what is missing (stale dependencies, Playwright's chromium).
 
 ## Starting it
 
@@ -92,6 +93,24 @@ forward-only, and there is nothing to undo one with.
 is writing. `cp` is not: committed transactions may still be in the `-wal`.
 
 ## Worktrees
+
+`./dev` with no verb lists its verbs. `run` and `test` hand their arguments to
+what `npm run dev` and `npm test` use; `./dev test lint doc-refs` runs only the
+steps named.
+
+```bash
+./dev worktree create task/my-change   # beside the clone, deps installed
+./dev worktree release task/my-change
+```
+
+`create` fetches, then branches from the remote's default branch, or checks out
+an existing local branch as it is (one only origin has, from origin), at
+`<clone>-worktrees/task-my-change` (the branch with `/` replaced by `-`). It
+then runs `npm ci`; run again, it only refreshes stale dependencies. `release`
+removes that worktree and the development database named after it, and nothing
+else: the branch stays, `prod` and `main` are refused (also for `create`), and a
+worktree with uncommitted changes is refused as `git worktree remove` refuses
+it. Releasing twice is fine. Engine calls both verbs.
 
 Each worktree gets its own port so two checkouts can run side by side:
 

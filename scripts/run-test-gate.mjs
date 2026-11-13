@@ -4,7 +4,9 @@
  * `node scripts/run-test-gate.mjs [step ...]` runs only the named steps.
  *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, curated-doc
- *                     drift check, doc reference check
+ *                     drift check, doc reference check, and the gate-coverage
+ *                     check (every test file sits under a step's roots
+ *                     and matches its file pattern)
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
@@ -23,6 +25,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { GATE_STEPS, selectSteps } from "./lib/gate-steps.mjs";
 import { npmBin } from "./lib/process.mjs";
+import {
+  describeUncovered,
+  findUncoveredTestFiles,
+  listTestFiles,
+} from "./lib/gate-coverage.mjs";
 import {
   clearCoverageReports,
   collectCoverage,
@@ -125,6 +132,41 @@ function runStep(step, logDir) {
   });
 }
 
+/**
+ * The gate-coverage check, run in-process: a test file no step runs fails the
+ * gate and is named in the log. It checks against every gate step, not the ones
+ * selected, so `./dev test lint` does not read every test file as uncovered.
+ * Returns a result shaped like a step's.
+ */
+async function runGateCoverage(logDir) {
+  const logPath = path.join(logDir, "gate-coverage.log");
+  const start = performance.now();
+  let report;
+  try {
+    report = describeUncovered(
+      findUncoveredTestFiles(listTestFiles(process.cwd()), GATE_STEPS),
+      GATE_STEPS,
+    );
+  } catch (error) {
+    report = `gate-coverage could not list test files: ${error.message}`;
+  }
+  fs.writeFileSync(
+    logPath,
+    `${report ?? "every test file is under a gate step"}\n`,
+  );
+  if (report) {
+    for (const line of report.split("\n")) {
+      console.error(`[gate-coverage] error: ${line}`);
+    }
+  }
+  return {
+    name: "gate-coverage",
+    passed: report === null,
+    durationMs: performance.now() - start,
+    logPath,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -148,9 +190,10 @@ console.log(
   `--- Phase 1 (parallel): ${phase1Steps.map((s) => s.name).join(", ")} ---\n`,
 );
 
-const phase1Results = await Promise.all(
-  phase1Steps.map((step) => runStep(step, runDir)),
-);
+const phase1Results = await Promise.all([
+  ...phase1Steps.map((step) => runStep(step, runDir)),
+  runGateCoverage(runDir),
+]);
 results.push(...phase1Results);
 
 const phase1Failed = phase1Results.filter((r) => !r.passed);

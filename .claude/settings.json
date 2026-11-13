@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "engine": { "source": { "source": "github", "repo": "dinoderek/engine" } }
+  },
+  "enabledPlugins": { "engine@engine": true }
+}

@@ -53,9 +53,10 @@ holds each function (not tests or `.svelte`) to cognitive complexity 25, 200
 lines, nesting 4 and 5 parameters. `imports` enforces
 `scripts/lib/import-rules.mjs`, among it what `evaluation/` may import, that only
 the evaluation core starts a model subprocess and that only the trace extractor
-resolves the play database path. Offenders sit in `quality-baseline.json` and `imports-baseline.json`, which only
-shrink: a new offender fails, and so does a stale entry. After a fix, run
-`npm run check:quality -- --prune` or `npm run check:imports -- --prune`.
+resolves the play database path. Offenders sit in `quality-baseline.json` and
+`imports-baseline.json`, which only shrink: a new offender fails, and so does a
+stale entry. After a fix, run `npm run check:quality -- --prune` or
+`npm run check:imports -- --prune`.
 
 **Doc checks**, all failing the gate:
 

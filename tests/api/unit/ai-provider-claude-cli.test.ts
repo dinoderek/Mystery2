@@ -141,6 +141,38 @@ describe("claude-cli provider requests", () => {
   });
 });
 
+describe("claude-cli provider stdin", () => {
+  // The user message is the whole role context and can outgrow a pipe buffer;
+  // the CLI must get all of it in one attempt.
+  it("sends a message larger than a pipe buffer whole, in one attempt", async () => {
+    const prompt = "The kitchen is dusty. ".repeat(50_000);
+    const cli = provider();
+
+    await cli.generateRoleOutput({ ...TALK_REQUEST, prompt });
+
+    const calls = recordedCalls();
+    expect(calls).toHaveLength(1);
+    expect(JSON.parse(calls[0].stdin).prompt).toBe(prompt);
+    expect(cli.lastUsage?.attempts).toBe(1);
+  });
+
+  // A busy worker can leave the pipe open, unclosed, after the CLI has started
+  // reading: the CLI waits for the rest rather than failing the attempt.
+  it("makes one attempt when the caller stalls before closing stdin", async () => {
+    const cli = provider();
+
+    const pending = cli.generateRoleOutput(TALK_REQUEST);
+    const until = Date.now() + 500;
+    while (Date.now() < until) {
+      // Hold the event loop, as a stalled worker does.
+    }
+    await pending;
+
+    expect(recordedCalls()).toHaveLength(1);
+    expect(cli.lastUsage?.attempts).toBe(1);
+  });
+});
+
 describe("claude-cli provider failures", () => {
   async function expectRetriable(promise: Promise<unknown>, code: string) {
     const error = await promise.then(

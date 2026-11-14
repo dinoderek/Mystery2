@@ -4,7 +4,9 @@
  * test can run a whole command on stub bindings.
  *
  * With no command, or `--help`, it lists the commands and exits 0. An unknown
- * command exits 1. `<command> --help` prints that command's help. A command
+ * command exits 1. `<command> --help` prints that command's help; a `--help`
+ * later in the arguments is the command's to read (`common.help` from
+ * `parseCommandArgs`), since only it knows which arguments are values. A command
  * returns its own exit code (`exitCodeFor` in `result.ts`); one that throws
  * broke the run, which is exit code 1.
  */
@@ -77,7 +79,7 @@ export async function runEval(
     return EXIT_RUN_BROKE;
   }
   const { command, rest } = found;
-  if (rest.includes("--help") || rest.includes("-h")) {
+  if (isHelp(rest[0]) && rest[0] !== "help") {
     context.out(command.help);
     return EXIT_PASSED;
   }

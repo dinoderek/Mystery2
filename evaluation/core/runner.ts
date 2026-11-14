@@ -19,13 +19,19 @@
  * `.invocation.json` in the log folder, written as the wrapper runs.
  *
  * Cost is read from `total_cost_usd` at the top of the wrapper's JSON stdout,
- * where the Claude CLI's `--output-format json` envelope puts it. A wrapper
- * whose CLI reports no cost, or that prints the answer bare, records null.
+ * where the Claude CLI's `--output-format json` envelope puts it, else from the
+ * last `result` event in the attempt's stream file, where `--output-format
+ * stream-json` puts it. A wrapper whose CLI reports neither records null.
+ *
+ * Each wrapper runs in its own process group, so a timeout kills the CLI it
+ * started too. While any wrapper runs, an interrupt (SIGINT, SIGTERM, SIGHUP)
+ * or the process exiting kills every running group first; the signal is then
+ * raised again.
  */
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
@@ -93,6 +99,39 @@ function killGroup(pid: number | undefined): void {
   }
 }
 
+const liveGroups = new Set<number>();
+const STOP_SIGNALS: readonly NodeJS.Signals[] = ["SIGINT", "SIGTERM", "SIGHUP"];
+
+function killLiveGroups(): void {
+  for (const pid of liveGroups) killGroup(pid);
+  liveGroups.clear();
+}
+
+function onStopSignal(signal: NodeJS.Signals): void {
+  killLiveGroups();
+  releaseSignals();
+  process.kill(process.pid, signal);
+}
+
+function releaseSignals(): void {
+  for (const signal of STOP_SIGNALS) process.off(signal, onStopSignal);
+  process.off("exit", killLiveGroups);
+}
+
+function holdGroup(pid: number | undefined): void {
+  if (pid === undefined) return;
+  if (liveGroups.size === 0) {
+    for (const signal of STOP_SIGNALS) process.on(signal, onStopSignal);
+    process.on("exit", killLiveGroups);
+  }
+  liveGroups.add(pid);
+}
+
+function releaseGroup(pid: number | undefined): void {
+  if (pid === undefined || !liveGroups.delete(pid)) return;
+  if (liveGroups.size === 0) releaseSignals();
+}
+
 async function startWrapper(
   binding: ResolvedBinding,
   args: string[],
@@ -106,6 +145,7 @@ async function startWrapper(
   const outcome = await new Promise<Omit<Spawned, "stdout" | "stderr">>((resolve) => {
     let timedOut = false;
     const child = spawn(binding.command, args, { stdio: ["ignore", "pipe", "pipe"], env, detached: true });
+    holdGroup(child.pid);
     const timer = setTimeout(() => {
       timedOut = true;
       killGroup(child.pid);
@@ -120,10 +160,12 @@ async function startWrapper(
     });
     child.on("error", (error) => {
       clearTimeout(timer);
+      releaseGroup(child.pid);
       resolve({ exitCode: null, timedOut, spawnError: error });
     });
     child.on("close", (code) => {
       clearTimeout(timer);
+      releaseGroup(child.pid);
       resolve({ exitCode: code, timedOut, spawnError: null });
     });
   });
@@ -147,6 +189,25 @@ function walk(value: unknown, dotted: string): unknown {
 function reportedCost(parsed: unknown): number | null {
   const cost = walk(parsed, "total_cost_usd");
   return typeof cost === "number" && Number.isFinite(cost) && cost >= 0 ? cost : null;
+}
+
+/** The cost on the last `result` event of a stream file, or null. */
+function streamedCost(streamFile: string): number | null {
+  let lines: string[];
+  try {
+    lines = readFileSync(streamFile, "utf8").trim().split("\n").reverse();
+  } catch {
+    return null;
+  }
+  for (const line of lines) {
+    try {
+      const event = JSON.parse(line);
+      if (event?.type === "result") return reportedCost(event);
+    } catch {
+      // A partial or non-JSON line: keep looking.
+    }
+  }
+  return null;
 }
 
 /** The answer in the wrapper's stdout, and the cost it reports. Throws an `AttemptFailure`. */
@@ -214,7 +275,7 @@ async function runAttempt<T>(
   let costUsd: number | null = null;
   try {
     const read = readAnswer(binding, run, request.output ?? "json");
-    costUsd = read.costUsd;
+    costUsd = read.costUsd ?? streamedCost(streamFile);
     let value: T;
     try {
       value = request.parse ? request.parse(read.answer) : (read.answer as T);
@@ -229,7 +290,7 @@ async function runAttempt<T>(
         attempt,
         outcome: error.outcome,
         duration_ms: durationMs,
-        cost_usd: error.costUsd ?? costUsd,
+        cost_usd: error.costUsd ?? costUsd ?? streamedCost(streamFile),
         error: error.message.slice(0, 500),
       },
     };

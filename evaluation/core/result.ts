@@ -217,11 +217,12 @@ export const EXIT_VERDICT_FAILED = 2;
 
 /**
  * The exit code for a run, the same for every command: 1 when the run broke
- * (any result has `run_error`), else 2 when a check or judge failed or could
- * not be judged, else 0. `skipped` counts as neither, since only a flag skips.
+ * (any result has `run_error`, or there is no result at all), else 2 when a
+ * check or judge failed or could not be judged, else 0. `skipped` counts as
+ * neither, since only a flag skips.
  */
 export function exitCodeFor(results: readonly Pick<Result, "summary" | "run_error">[]): number {
-  if (results.some((result) => result.run_error !== null)) return EXIT_RUN_BROKE;
+  if (results.length === 0 || results.some((result) => result.run_error !== null)) return EXIT_RUN_BROKE;
   if (results.some((result) => result.summary.counts.fail > 0 || result.summary.counts.error > 0)) {
     return EXIT_VERDICT_FAILED;
   }

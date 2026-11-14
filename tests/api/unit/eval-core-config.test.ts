@@ -186,5 +186,7 @@ describe("parseModelOverrides", () => {
   it("refuses a value without a binding and a model", () => {
     expect(() => parseModelOverrides(["opus"])).toThrow(UsageError);
     expect(() => parseModelOverrides(["a="])).toThrow(/needs <binding>=<model>/);
+    expect(() => parseModelOverrides(["a=  "])).toThrow(/needs <binding>=<model>/);
+    expect(() => parseModelOverrides([" =opus"])).toThrow(/needs <binding>=<model>/);
   });
 });

@@ -175,6 +175,14 @@ describe("runEval", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it("leaves a --help after the first argument to the command, which knows its values", async () => {
+    const seen: string[][] = [];
+    const context = capture();
+    await runEval(["play", "--config", "-h"], context, [command("play", async (argv) => (seen.push(argv), 0))]);
+    expect(seen).toEqual([["--config", "-h"]]);
+    expect(context.stdout).toEqual([]);
+  });
+
   it.each([
     [new UsageError("bad flag"), "eval play: bad flag\n\nhelp for play"],
     [new ConfigError("no binding"), "eval play: no binding"],

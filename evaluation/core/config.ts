@@ -12,7 +12,7 @@
  * - `extract_path`: the dotted path to the model's answer inside the JSON the
  *   wrapper prints, or null when the whole of stdout is the answer.
  * - `model`: handed to the wrapper as `EVAL_MODEL`; null when the wrapper
- *   calls no model (the stubs).
+ *   calls no model (the stubs), or the command must be given one.
  * - `timeout_ms`, `retries`: per attempt, and how many more attempts after the
  *   first.
  *
@@ -171,11 +171,12 @@ export function resolveBinding(
 export function parseModelOverrides(values: readonly string[]): Record<string, string> {
   const overrides: Record<string, string> = {};
   for (const value of values) {
-    const match = /^([^=]+)=(.+)$/.exec(value);
-    if (!match) {
+    const match = /^([^=]*)=(.*)$/.exec(value);
+    const [binding, model] = match ? [match[1].trim(), match[2].trim()] : ["", ""];
+    if (!binding || !model) {
       throw new UsageError(`--model-override needs <binding>=<model>, got "${value}"`);
     }
-    overrides[match[1].trim()] = match[2].trim();
+    overrides[binding] = model;
   }
   return overrides;
 }

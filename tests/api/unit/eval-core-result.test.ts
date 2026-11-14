@@ -142,6 +142,10 @@ describe("exitCodeFor", () => {
     expect(exitCodeFor([withStatuses("fail"), broke])).toBe(EXIT_RUN_BROKE);
   });
 
+  it("is 1 when there is no result at all", () => {
+    expect(exitCodeFor([])).toBe(EXIT_RUN_BROKE);
+  });
+
   it("is 2 when any one of several results failed", () => {
     expect(exitCodeFor([withStatuses("pass"), withStatuses("skipped"), withStatuses("error")])).toBe(EXIT_VERDICT_FAILED);
     expect(exitCodeFor([withStatuses("pass"), withStatuses("skipped")])).toBe(EXIT_PASSED);

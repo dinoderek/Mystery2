@@ -12,8 +12,11 @@
 //   exit      writes to stderr and exits 3
 //   not_json  prints something that is not JSON
 //   no_path   prints JSON without the extract path
-//   hang      starts a child that holds stdout open, then waits forever
+//   hang      starts a child that holds stdout open, then waits forever; with
+//             FAKE_WRAPPER_PIDS set, writes its own and the child's pid there
 //   stream    writes two events to EVAL_STREAM_FILE, then behaves as ok
+//   streamed_cost  writes a result event with a cost to EVAL_STREAM_FILE and
+//             prints an envelope without one, as the stream-json wrappers do
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -71,8 +74,15 @@ switch (step) {
     process.stdout.write(JSON.stringify({ other: 1 }));
     break;
   case "hang":
-    spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: ["ignore", "inherit", "inherit"] });
-    setTimeout(() => {}, 60_000);
+    {
+      const child = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], {
+        stdio: ["ignore", "inherit", "inherit"],
+      });
+      if (process.env.FAKE_WRAPPER_PIDS) {
+        fs.writeFileSync(process.env.FAKE_WRAPPER_PIDS, JSON.stringify([process.pid, child.pid]));
+      }
+      setTimeout(() => {}, 60_000);
+    }
     break;
   case "stream":
     fs.appendFileSync(
@@ -81,6 +91,13 @@ switch (step) {
         `${JSON.stringify({ type: "system", subtype: "thinking_tokens", estimated_tokens_delta: 1500 })}\n`,
     );
     process.stdout.write(JSON.stringify({ result: answer(42), total_cost_usd: 0.25 }));
+    break;
+  case "streamed_cost":
+    fs.appendFileSync(
+      process.env.EVAL_STREAM_FILE,
+      `${JSON.stringify({ type: "result", num_turns: 2, total_cost_usd: 1.5 })}\n{"type":`,
+    );
+    process.stdout.write(JSON.stringify({ result: answer(42) }));
     break;
   default:
     process.stderr.write(`unknown step ${step}\n`);

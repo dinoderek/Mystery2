@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -199,6 +200,48 @@ describe("runModel", () => {
     expect(result.ok).toBe(false);
     expect(result.call.attempts[0]).toMatchObject({ outcome: "exit" });
     expect(result.call.attempts[0].error).toMatch(/could not start/);
+  });
+
+  it("reads the cost from the stream's result event when stdout carries none", async () => {
+    const result = await call("streamed_cost");
+    expect(result.call.cost_usd).toBe(1.5);
+
+    fs.rmSync(path.join(dir, "counter"));
+    const rejected = await call("streamed_cost", { parse: () => { throw new Error("no"); } });
+    expect(rejected.call.attempts[0]).toMatchObject({ outcome: "invalid", cost_usd: 1.5 });
+  });
+
+  it("kills every running wrapper and its children when the process is interrupted", async () => {
+    const pidsFile = path.join(dir, "pids.json");
+    const script = `
+      const { runModel } = await import(${JSON.stringify(path.resolve(__dirname, "../../../evaluation/core/runner.ts"))});
+      await runModel({
+        binding: ${JSON.stringify(binding({ timeout_ms: 60_000 }))},
+        step: "hang", systemPrompt: "s", userMessage: "u", logDir: ${JSON.stringify(logDir())},
+        env: { FAKE_WRAPPER_STEPS: "hang", FAKE_WRAPPER_PIDS: ${JSON.stringify(pidsFile)} },
+      });`;
+    const runner = spawn(process.execPath, ["--input-type=module", "-e", script], { stdio: "ignore" });
+    const alive = (pid: number) => {
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const until = async (check: () => boolean) => {
+      for (let i = 0; i < 100 && !check(); i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
+      return check();
+    };
+
+    expect(await until(() => fs.existsSync(pidsFile) && fs.statSync(pidsFile).size > 0)).toBe(true);
+    const pids: number[] = JSON.parse(fs.readFileSync(pidsFile, "utf8"));
+    expect(pids.every(alive)).toBe(true);
+
+    const exited = new Promise<NodeJS.Signals | null>((resolve) => runner.on("exit", (_code, signal) => resolve(signal)));
+    runner.kill("SIGINT");
+    expect(await exited).toBe("SIGINT");
+    expect(await until(() => !pids.some(alive))).toBe(true);
   });
 
   it("lets the wrapper stream events to the file it was given", async () => {

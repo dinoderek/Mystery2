@@ -73,7 +73,7 @@ describe("quality limits", () => {
   it("covers the JavaScript under evaluation/, scripts/ and lib/", () => {
     const root = path.join(dir, "js");
     const files = [
-      "evaluation/pipeline/over.mjs",
+      "evaluation/pipeline/over.ts",
       "scripts/lib/over.mjs",
       "lib/over.mjs",
     ];
@@ -89,7 +89,7 @@ describe("quality limits", () => {
   it("passes JavaScript at the limits under those roots", () => {
     const root = path.join(dir, "js-under");
     setUp(root, {
-      "evaluation/pipeline/under.mjs": atTheLimits,
+      "evaluation/pipeline/under.ts": atTheLimits,
       "scripts/under.mjs": atTheLimits,
       "lib/under.mjs": atTheLimits,
     });

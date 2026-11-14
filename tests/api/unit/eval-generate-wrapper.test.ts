@@ -75,6 +75,7 @@ async function runWrapper(options: { renderedPrompt?: string | null }) {
     env: {
       ...process.env,
       PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
+      EVAL_MODEL: "stand-in-model",
       EVAL_RUN_DIR: runDir,
       EVAL_STREAM_FILE: path.join(runDir, "logs", "generate.stream.jsonl"),
     },

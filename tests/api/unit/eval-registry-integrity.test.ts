@@ -57,7 +57,7 @@ describe("blueprint battery", () => {
       .filter((j) => j.analyzer)
       .map((j) => path.basename(j.analyzer!.module))
       .sort();
-    expect(named).toEqual(files.filter((f) => f.endsWith(".mjs")).sort());
+    expect(named).toEqual(files.filter((f) => f.endsWith(".ts")).sort());
     expect(await loadAnalyzer("clue_graph")).not.toBeNull();
   });
 });

@@ -32,7 +32,7 @@ How they connect:
 
 Every reader of a played game's events (trace, runtime cases, playtest) skips
 `no_turn_line`, the event a refused line or `help` is saved as, with the shared
-filter `playedEvents` in `evaluation/lib/game-events.mjs`.
+filter `playedEvents` in `evaluation/lib/game-events.ts`.
 
 The rest of this doc is the blueprint pipeline's design, which the others inherit.
 
@@ -57,8 +57,8 @@ cheap to change:
 
 | Tier | What | Where | Runs |
 |---|---|---|---|
-| Mechanical | Deterministic structural checks | `evaluation/checks/mechanical.mjs` | Always |
-| Analyzer | Deterministic, per dimension | `evaluation/checks/analyzers/<id>.mjs` | If the dimension has one |
+| Mechanical | Deterministic structural checks | `evaluation/checks/mechanical.ts` | Always |
+| Analyzer | Deterministic, per dimension | `evaluation/checks/analyzers/<id>.ts` | If the dimension has one |
 | Judge | One LLM call per dimension | `evaluation/dimensions/<id>.md` + `<id>.schema.ts` | Per registered dimension |
 
 Both lessons come from the single-prompt evaluator this replaced:
@@ -139,7 +139,7 @@ registry entry; `evaluation/README.md` lists what each asks:
   appended to the prompt as JSON Schema and validates the answer; where brief
   and schema disagree, the schema wins.
 - The registry entry: its context, verdict rule, optional analyzer
-  (`evaluation/checks/analyzers/<id>.mjs`) and `idChecks`, the blueprint ids
+  (`evaluation/checks/analyzers/<id>.ts`) and `idChecks`, the blueprint ids
   its answer may cite. The judge workspace's validator reads them from the
   entry; without any, only the shape is checked.
 

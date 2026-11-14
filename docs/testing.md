@@ -4,24 +4,23 @@
 
 - **API/shared unit**: `tests/api/unit`, Vitest, no server. Contracts, schemas,
   the command grammar, prompts and parsing, AI-provider helpers, generation and
-  evaluation, image helpers, the local adapter, the mock provider. `npm run test:unit`.
+  evaluation, image helpers, the local adapter. `npm run test:unit`.
 - **Web unit**: `web/src/lib/domain`, `web/src/lib/api`, Vitest. Retry
   classification, store behaviour, transcript transforms. `npm -w web run test:unit`.
 - **Integration**: `tests/api/integration`, Vitest on the built server with the
   mock provider. Endpoints, profile gating, session ownership, schema, content
-  loading, AI profile and provider selection. `npm run test:integration`.
+  loading, AI provider selection. `npm run test:integration`.
 - **API E2E**: `tests/api/e2e`, same runner. Multi-endpoint journeys; session
   start, resume and endgame. `npm run test:e2e`.
 - **Golden transcripts**: what the player reads across a whole game (below).
-- **Browser E2E**: `web/e2e`, Playwright on `vite dev`. Route protection, the
-  profile picker, command entry, loading states, retries, session list, speaker
-  colours, images. `npm -w web run test:e2e`.
+- **Browser E2E**: `web/e2e`, Playwright on `vite dev`. Route protection, command
+  entry, loading states, retries, images. `npm -w web run test:e2e`.
 
 Every suite is self-contained: it starts what it needs in a temporary config
 root, deletes it afterwards, and never touches your play database. Shared
 helpers live in `tests/testkit`; integration and E2E use the `blueprints/`
-fixtures. A change crossing boundaries updates every affected suite. Prefer integration tests for backend behaviour; Playwright is for
-browser journeys.
+fixtures. A change crossing boundaries updates every affected suite. Prefer
+integration tests for backend behaviour.
 
 ## The gate
 
@@ -33,8 +32,7 @@ once both unit suites finish. Phase 2 runs only if phase 1 passed, one step at a
 time: integration, API E2E, browser E2E.
 
 **Every step runs in every environment.** The gate needs nothing beyond this
-repo. No suite may be reported skipped, and one that cannot start is a bug to
-fix.
+repo. No suite may be reported skipped; one that cannot start is a bug.
 
 Integration and API E2E run against the production build (`node build/index.js`),
 so a bundling failure shows. The build gets the run's config root and fails
@@ -76,9 +74,8 @@ shrink: a new offender or a stale entry fails. After a fix, run
 
 ## Running
 
-Integration, API E2E and browser E2E share the worktree's port, so run one at a
-time per checkout. Each worktree has its own port
-([`docs/local-infrastructure.md`](local-infrastructure.md)).
+Integration, API E2E and browser E2E share the worktree's port: run one at a
+time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 - **Playwright.** Once per machine, and after any `@playwright/test` bump, run
   `npx playwright install chromium`. Otherwise browser tests fail with
@@ -87,14 +84,14 @@ time per checkout. Each worktree has its own port
   `npm run test:integration:live:free|paid`, `test:e2e:live:free|paid`,
   `test:blueprint:live:free|paid`, and `AI_LIVE=1 npm -w web run test:e2e --
   web/e2e/live-ai.spec.ts`. They need `AI_LIVE=1`, a `.env.ai.free.local` or
-  `.env.ai.paid.local`, and tolerance of retriable `503`s. See
+  `.env.ai.paid.local`, and tolerate retriable `503`s. See
   [`docs/ai-configuration.md`](ai-configuration.md).
 
 ## Reading results
 
-Each `npm test` writes `test-results/<timestamp>/` (the last five are kept): a
+Each `npm test` writes `test-results/<timestamp>/` (last five kept): a
 log per step, `summary.log` and `coverage.log`. The `Total` line in
-`summary.log` is the verdict; coverage never changes the exit code.
+`summary.log` is the verdict.
 For a failure, also read the server's stdout, `readStoredSession()` and
 `readStoredEvents()` (`tests/api/integration/helpers.ts`), and Playwright's report.
 
@@ -102,17 +99,19 @@ For a failure, also read the server's stdout, `readStoredSession()` and
 
 `coverage-floors.json` holds the floors, as percentages of the unit totals:
 engine and shared 80% lines and 80% branches; web TypeScript without `.svelte`
-80% lines and 75% branches. The `coverage-floors` step fails, naming the project
-and measure, when one falls short or reads `not measured`. Anyone may raise a
-floor. Lowering one, or excluding code, is the operator's decision: if
-behaviour-proving tests cannot reach a floor, ask.
+80% lines and 75% branches; evaluation (`evaluation/**/*.ts`, counted apart from
+engine and shared) 90% and 80%, above its 80% and 75% minimum. Every `./dev eval` command's main path runs in the gate on
+stub bindings (`play` in integration), never a model. The `coverage-floors`
+step fails, naming the project and measure, when one falls short or reads
+`not measured`. Anyone may raise a floor. Lowering one, or excluding code, is
+the operator's decision: if behaviour-proving tests cannot reach a floor, ask.
 
 Measured globs are the `coverage.include` arrays in `vitest.config.ts` and
 `web/vite.config.ts`; a new source directory is invisible until added.
 `summary.log` lists files at or below `LOW_FILE_THRESHOLD`
 (`scripts/lib/coverage-report.mjs`) by uncovered statements. Only unit suites
 feed the numbers: E2E drives an uninstrumented server, so endpoints and
-components read 0%. Act on a listed file only when its boundary is unit.
+components read 0%; act on a listed file only when its boundary is unit.
 
 ## Evaluation snapshots
 
@@ -130,8 +129,7 @@ read the diff; for judge content, that is the operator's call.
 what the player would see (lines, speakers, page breaks, mode, turns left) with
 `tests/api/e2e/golden/transcripts/`. They cover every command and refusal, the
 budget running out, and a won and a lost accusation. Only
-`tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A resumed
-game is not compared. The mock quotes the start of the narrator prompt, so
+`tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A resumed game is not compared. The mock quotes the start of the narrator prompt, so
 editing it changes every transcript. Re-record with `npm run
 test:golden:record`; review the diff.
 
@@ -173,5 +171,4 @@ test:golden:record`; review the diff.
 `.github/workflows/ci.yml` runs the gate on pushes to `main` and on pull requests,
 and uploads `test-results/` and, on failure, Playwright's report. A
 documentation-only change runs `check:curated-docs`, `check:doc-refs` and
-`check:word-budgets`; the code suites are optional locally. Check commands by
-hand and against the owning doc.
+`check:word-budgets`; the code suites are optional locally. Check commands by hand and against the owning doc.

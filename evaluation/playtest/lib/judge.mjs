@@ -214,7 +214,8 @@ export async function gradeGame({ repoRoot, gameDir, targetAge, judgeTraceArgs =
   fs.copyFileSync(resultPath, path.join(gameDir, "result.json"));
   const result = JSON.parse(fs.readFileSync(resultPath, "utf8"));
 
-  const { narrations: _narrations, ...readabilitySummary } = readability;
+  const readabilitySummary = { ...readability };
+  delete readabilitySummary.narrations;
   return {
     ...summarizeResult(result),
     judge_cost_usd: judgeCost(path.join(path.dirname(resultPath), "logs")),

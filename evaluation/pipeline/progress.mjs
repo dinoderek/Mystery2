@@ -146,7 +146,7 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
   };
 
   const sweep = () => {
-    let names = [];
+    let names;
     try {
       names = fs.readdirSync(dir);
     } catch {

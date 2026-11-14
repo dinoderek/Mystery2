@@ -9,7 +9,17 @@
   "engine-imports-engine-and-shared: packages/game-engine/src/ai-settings-env.ts -> scripts/local-config.mjs",
   "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> lib/database-target.mjs",
   "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> scripts/local-config.mjs",
+  "model-subprocess-only-in-evaluation-core: evaluation/generator-harness/scripts/check-curated-docs.mjs -> child_process",
+  "model-subprocess-only-in-evaluation-core: evaluation/judge-harness/scripts/validate-judge-output.mjs -> child_process",
+  "model-subprocess-only-in-evaluation-core: evaluation/pipeline/cli-runner.mjs -> child_process",
+  "model-subprocess-only-in-evaluation-core: evaluation/playtest/lib/investigator.mjs -> packages/game-engine/src/ai-provider-claude-cli.ts",
+  "model-subprocess-only-in-evaluation-core: evaluation/playtest/lib/judge.mjs -> child_process",
   "no-cycles: packages/game-engine/src/ai-call-log.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-call-log.ts)",
   "no-cycles: packages/game-engine/src/ai-provider-claude-cli.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-provider-claude-cli.ts)",
-  "no-cycles: packages/game-engine/src/context.ts -> packages/game-engine/src/narration.ts (via packages/game-engine/src/narration.ts > packages/game-engine/src/context.ts)"
+  "no-cycles: packages/game-engine/src/context.ts -> packages/game-engine/src/narration.ts (via packages/game-engine/src/narration.ts > packages/game-engine/src/context.ts)",
+  "play-database-path-only-in-trace-extractor: evaluation/playtest/run.mjs -> lib/database-target.mjs",
+  "play-database-path-only-in-trace-extractor: evaluation/runtime/lib/auth.mjs -> packages/game-engine/src/paths.ts",
+  "play-database-path-only-in-trace-extractor: evaluation/runtime/lib/seed-session.mjs -> packages/game-engine/src/paths.ts",
+  "sqlite-driver-only-in-db-client: evaluation/playtest/lib/report.mjs -> node_modules/better-sqlite3/lib/index.js",
+  "sqlite-driver-only-in-db-client: evaluation/playtest/run.mjs -> node_modules/better-sqlite3/lib/index.js"
 ]

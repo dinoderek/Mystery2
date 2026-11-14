@@ -20,7 +20,7 @@
 Every suite is self-contained: it starts what it needs in a temporary config
 root, deletes it afterwards, and never touches your play database. Shared
 helpers live in `tests/testkit`; integration and E2E use the `blueprints/`
-fixtures. A change that crosses boundaries updates every affected suite. Prefer integration tests for backend behaviour; Playwright is for
+fixtures. A change crossing boundaries updates every affected suite. Prefer integration tests for backend behaviour; Playwright is for
 browser journeys.
 
 ## The gate
@@ -47,11 +47,13 @@ by name, on any test file no step collects, counting untracked files git does
 not ignore. It runs even when named alone (`./dev test gate-coverage`). Keep the
 `e2e-browser` root in step with `testDir` in `web/playwright.config.ts`.
 
-**Quality and layer rules.** `quality` holds each function in engine, shared and
-web TypeScript (not tests or `.svelte`) to cognitive complexity 25, 200 lines,
-nesting 4 and 5 parameters. `imports` enforces `scripts/lib/import-rules.mjs`.
+**Quality and layer rules.** `lint`, `quality` and `imports` also cover
+`evaluation/`, `scripts/` and `lib/`. `quality` holds each function (not tests or
+`.svelte`) to cognitive complexity 25, 200 lines, nesting 4 and 5 parameters.
+`imports` enforces `scripts/lib/import-rules.mjs`, including what `evaluation/`
+may import and who may start a model subprocess or resolve the play database.
 Offenders sit in `quality-baseline.json` and `imports-baseline.json`, which only
-shrink: a new offender fails, and so does a stale entry. After a fix, run
+shrink: a new offender or a stale entry fails. After a fix, run
 `npm run check:quality -- --prune` or `npm run check:imports -- --prune`.
 
 **Doc checks**, all failing the gate:
@@ -130,7 +132,7 @@ what the player would see (lines, speakers, page breaks, mode, turns left) with
 budget running out, and a won and a lost accusation. Only
 `tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A resumed
 game is not compared. The mock quotes the start of the narrator prompt, so
-editing it changes every transcript. Re-record on purpose with `npm run
+editing it changes every transcript. Re-record with `npm run
 test:golden:record`; review the diff.
 
 ## Writing tests
@@ -138,7 +140,7 @@ test:golden:record`; review the diff.
 - **Isolation.** Each API run gets a temporary database. Each test creates its
   own profile with `setupApiTestAuth(tag)` and scopes assertions to its own
   identifiers, with no unscoped global counts. Anything that opens a database gets an explicit path,
-  never `resolveDatabasePath()`, which points at the database you play on.
+  never `resolveDatabasePath()`, which names your play database.
 - **Fixtures.** Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
   Factories parse at creation: pass only the overrides that differ. A new
@@ -158,9 +160,9 @@ test:golden:record`; review the diff.
 - **No real model.** Integration and E2E never call one. The server runs the mock
   provider, so assert persisted side effects.
 - **Mock by absence.** Mock is chosen when the config root has no `.env.ai.*` and
-  the settings row is empty. A test that switches the row to live, over the API, does so for
-  every test sharing the server, and their calls reach the real API. So no suite
-  sharing a server with game-playing tests may switch to live; assert that in the unit suites (`ai-settings-store.test.ts`,
+  the settings row is empty. A test that switches the row to live over the API does so for
+  every test sharing the server, so no suite sharing a server with game-playing
+  tests may; assert that in the unit suites (`ai-settings-store.test.ts`,
   `local-engine-ai-profile.test.ts`). Suites that change the row
   (`tests/api/integration/ai-settings.test.ts`, `web/e2e/ai-settings.spec.ts`)
   reset it around each test and leave it on mock. The runners also
@@ -169,7 +171,7 @@ test:golden:record`; review the diff.
 ## CI and documentation-only changes
 
 `.github/workflows/ci.yml` runs the gate on pushes to `main` and on pull requests,
-and uploads `test-results/` (and Playwright's report on failure). A
+and uploads `test-results/` and, on failure, Playwright's report. A
 documentation-only change runs `check:curated-docs`, `check:doc-refs` and
 `check:word-budgets`; the code suites are optional locally. Check commands by
-hand, and check consistency with the owning doc.
+hand and against the owning doc.

@@ -24,7 +24,7 @@ async function callEndpoint(apiUrl, endpoint, method, body, headers) {
     body: JSON.stringify(body),
   });
   const text = await res.text();
-  let data = null;
+  let data;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {

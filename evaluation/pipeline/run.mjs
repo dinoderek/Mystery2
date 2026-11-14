@@ -254,6 +254,7 @@ async function runPipeline({
       } catch (err) {
         throw new Error(
           `Could not load CLI config at ${configPath}. Copy evaluation/config/cli.example.json to cli.json and customize, or pass --blueprint to skip generation. (${err.message})`,
+          { cause: err },
         );
       }
     });
@@ -308,6 +309,7 @@ async function runPipeline({
               } catch (err) {
                 throw new Error(
                   `Generated blueprint is not valid JSON (${err.message}). First 200 chars: ${extracted.slice(0, 200)}`,
+                  { cause: err },
                 );
               }
               const check = BlueprintV2Schema.safeParse(parsed);

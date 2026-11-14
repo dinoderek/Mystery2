@@ -76,7 +76,7 @@ function portraitBackgroundHint(blueprint) {
   return `Portrait background: ${custom || PORTRAIT_BACKGROUND_DEFAULT}`;
 }
 
-function targetBlock(blueprint, target, _options = {}) {
+function targetBlock(blueprint, target) {
   if (target.targetType === "blueprint") {
     const coverImage = blueprint.cover_image;
     if (coverImage?.description) {
@@ -232,7 +232,7 @@ export function buildImagePrompt(blueprint, target, options = {}) {
   const aspectRatio = options.aspectRatio ?? DEFAULT_IMAGE_ASPECT_RATIO;
   return [
     styleBlock(blueprint),
-    targetBlock(blueprint, target, options),
+    targetBlock(blueprint, target),
     legend,
     guardrailBlock(),
     outputBlock(aspectRatio),

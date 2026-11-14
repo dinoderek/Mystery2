@@ -66,7 +66,7 @@ export function buildJudgeUserMessage(judgeId, interaction, blueprint) {
   // through the harness's own action map. If an action has no local mapping (or
   // its resolver needs a field this capture lacks), fall back to the action
   // type: a slightly coarser label is better than failing the judge.
-  let roleName = actionType;
+  let roleName;
   try {
     roleName =
       resolveRoleName(

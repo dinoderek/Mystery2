@@ -1,4 +1,48 @@
 {
+  "evaluation/checks/mechanical.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/generator-harness/scripts/check-curated-docs.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/judge-harness/scripts/validate-judge-output.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/pipeline/run.mjs": {
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/playtest/lib/play.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/playtest/run.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "evaluation/trace/lib/mechanical.mjs": {
+    "max-depth": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "packages/game-engine/src/ai-provider.ts": {
     "max-lines-per-function": {
       "count": 1
@@ -21,6 +65,24 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 1
+    }
+  },
+  "scripts/check-doc-refs.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "scripts/generate-blueprint-images.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "scripts/generate-blueprint.mjs": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 3
     }
   }
 }

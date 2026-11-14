@@ -29,7 +29,9 @@ export function readFloors(repoRoot) {
   try {
     floors = JSON.parse(fs.readFileSync(file, "utf-8"));
   } catch (err) {
-    throw new Error(`cannot read ${FLOOR_FILE}: ${err.message ?? err}`);
+    throw new Error(`cannot read ${FLOOR_FILE}: ${err.message ?? err}`, {
+      cause: err,
+    });
   }
   for (const project of COVERAGE_PROJECTS) {
     for (const measure of MEASURES) {

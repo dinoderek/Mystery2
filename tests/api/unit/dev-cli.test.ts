@@ -147,6 +147,13 @@ describe("./dev eval", () => {
     expect(err.join("\n")).toContain('Unknown eval command "frobnicate"');
   });
 
+  it("loads only Node builtins and scripts/lib at the top, so ./dev runs before dependencies are installed", () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, "scripts", "dev-cli.mjs"), "utf8");
+    const imports = [...source.matchAll(/^import\s[^;]*?from\s+"([^"]+)"/gms)].map((match) => match[1]);
+    expect(imports.length).toBeGreaterThan(0);
+    for (const specifier of imports) expect(specifier).toMatch(/^(node:|\.\/lib\/)/);
+  });
+
   it("runs from the executable, loading the evaluation code under Node's own type stripping", () => {
     const listed = spawnSync(path.join(REPO_ROOT, "dev"), ["eval"], { encoding: "utf8" });
     expect(listed.status).toBe(0);

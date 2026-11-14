@@ -21,10 +21,6 @@ const POLL_MS = 700;
 
 export type Write = (line: string) => void;
 
-const stdoutWrite: Write = (line) => {
-  process.stdout.write(`${line}\n`);
-};
-
 export function tickInterval(env: NodeJS.ProcessEnv = process.env): number {
   const fromEnv = Number(env.EVAL_HEARTBEAT_MS);
   return fromEnv > 0 ? fromEnv : DEFAULT_TICK_MS;
@@ -190,7 +186,8 @@ export interface DigestOptions {
   tag?: string;
   quiet?: boolean;
   intervalMs?: number;
-  write?: Write;
+  /** Where lines go: a command passes its context's `out`, so a test captures them. */
+  write: Write;
 }
 
 interface Track {
@@ -212,7 +209,7 @@ function flushLines(lines: string[], cap: number, indent: string, write: Write):
 export function startDigest(
   label: string,
   steps: readonly string[],
-  { logDir, tag = "[eval]", quiet = false, intervalMs = tickInterval(), write = stdoutWrite }: DigestOptions,
+  { logDir, tag = "[eval]", quiet = false, intervalMs = tickInterval(), write }: DigestOptions,
 ): { markDone(step: string): void; stop(): void } {
   if (quiet) return { markDone() {}, stop() {} };
   const startedAt = performance.now();

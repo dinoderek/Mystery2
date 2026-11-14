@@ -149,12 +149,41 @@ describe("collectCoverage", () => {
   it("reports every project even when none of them ran", () => {
     const projects = collectCoverage({ repoRoot, results: [] });
 
-    expect(projects).toHaveLength(2);
-    expect(projects.map((p: Project) => p.label)).toEqual(["api", "web"]);
+    expect(projects).toHaveLength(3);
+    expect(projects.map((p: Project) => p.label)).toEqual([
+      "api",
+      "web",
+      "evaluation",
+    ]);
     for (const project of projects) {
       expect(project.status).toBe("unmeasured");
       expect(project.reason).toContain("did not run");
     }
+  });
+
+  it("splits one unit report between engine code and evaluation code", () => {
+    // Both come from the one `unit-api` run: each project counts only the files
+    // under its own roots, and its totals are summed from them.
+    writeReport("coverage/api", {
+      "packages/game-engine/src/a.ts": { total: 100, covered: 90 },
+      "packages/shared/src/b.ts": { total: 100, covered: 70 },
+      "evaluation/core/c.ts": { total: 50, covered: 10 },
+      "evaluation-extras/d.ts": { total: 1000, covered: 0 },
+    });
+
+    const [api, , evaluation] = collectCoverage({ repoRoot, results: PASSED });
+
+    expect(api.total.lines).toMatchObject({ total: 200, covered: 160 });
+    expect(api.files.map((f: LowFile) => f.file)).toEqual([
+      "packages/shared/src/b.ts",
+      "packages/game-engine/src/a.ts",
+    ]);
+    expect(evaluation.status).toBe("ok");
+    expect(evaluation.total.lines).toMatchObject({ total: 50, covered: 10 });
+    expect(evaluation.total.lines.pct).toBeCloseTo(20);
+    expect(evaluation.files.map((f: LowFile) => f.file)).toEqual([
+      "evaluation/core/c.ts",
+    ]);
   });
 
   it("says so when a passing step wrote no report", () => {

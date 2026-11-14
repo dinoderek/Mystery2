@@ -84,6 +84,26 @@ describe("./dev eval", () => {
     expect(listed).toHaveLength(8);
   });
 
+  it("has a test that runs each command's main path on stub bindings", () => {
+    // The gate runs every command without a model call. A new command is a new
+    // row here, naming the test that runs it and what that test starts it with.
+    const runBy: Record<string, [file: string, startedWith: string]> = {
+      generate: ["tests/api/unit/eval-generate-command.test.ts", '["generate", ...argv]'],
+      "judge blueprint": ["tests/api/unit/eval-blueprint-command.test.ts", '["judge", "blueprint"'],
+      validate: ["tests/api/unit/eval-blueprint-command.test.ts", '["validate"'],
+      "judge game": ["tests/api/unit/trace-judge-game.test.ts", '["judge", "game"'],
+      "judge turn": ["tests/api/unit/runtime-judge-turn.test.ts", '["judge", "turn"'],
+      cases: ["tests/api/unit/no-turn-readers.test.ts", "casesCommand.run("],
+      play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
+      report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
+    };
+
+    expect(Object.keys(runBy).sort()).toEqual(COMMANDS.map((command) => command.name).sort());
+    for (const [name, [file, startedWith]] of Object.entries(runBy)) {
+      expect(fs.readFileSync(path.join(ROOT, file), "utf8"), name).toContain(startedWith);
+    }
+  });
+
   it("prints that list for --help and exits 0", async () => {
     const out: string[] = [];
     const code = await runEval(["--help"], { root: ROOT, out: (text) => out.push(text), err: () => {}, env: {} }, COMMANDS);

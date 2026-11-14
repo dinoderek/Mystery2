@@ -1,4 +1,5 @@
 {
   "api": { "lines": 80, "branches": 80 },
-  "web": { "lines": 80, "branches": 75 }
+  "web": { "lines": 80, "branches": 75 },
+  "evaluation": { "lines": 90, "branches": 80 }
 }

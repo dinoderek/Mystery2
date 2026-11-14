@@ -31,6 +31,7 @@ type Result = {
 const FLOORS = {
   api: { lines: 80, branches: 80 },
   web: { lines: 80, branches: 75 },
+  evaluation: { lines: 80, branches: 75 },
 };
 
 function summary(lines: Counts, branches: Counts) {
@@ -40,6 +41,7 @@ function summary(lines: Counts, branches: Counts) {
 const AT_FLOOR = {
   api: summary({ covered: 80, total: 100 }, { covered: 80, total: 100 }),
   web: summary({ covered: 80, total: 100 }, { covered: 75, total: 100 }),
+  evaluation: summary({ covered: 80, total: 100 }, { covered: 75, total: 100 }),
 };
 
 function evaluate(summaries: Record<string, unknown>): Result[] {
@@ -50,7 +52,7 @@ describe("evaluateFloors", () => {
   it("passes a project exactly at its floors", () => {
     const results = evaluate(AT_FLOOR);
 
-    expect(results.map((r) => r.status)).toEqual(["ok", "ok", "ok", "ok"]);
+    expect(results.map((r) => r.status)).toEqual(Array(6).fill("ok"));
     expect(describeFailures(results)).toBeNull();
   });
 
@@ -162,17 +164,82 @@ describe("the floor file and the gate", () => {
     );
   }
 
+  /**
+   * The one report the `unit-api` step writes: engine and shared files, and
+   * evaluation files, each file carrying the counts its project is held to.
+   */
+  function writeUnitApiReport(
+    api: { lines: Counts; branches: Counts },
+    evaluation: { lines: Counts; branches: Counts } | null,
+  ) {
+    const entry = (counts: { lines: Counts; branches: Counts }) => ({
+      ...counts,
+      statements: counts.lines,
+      functions: counts.lines,
+    });
+    const files: Record<string, unknown> = {
+      [path.join(repoRoot, "packages/game-engine/src/a.ts")]: entry(api),
+    };
+    if (evaluation) {
+      files[path.join(repoRoot, "evaluation/core/b.ts")] = entry(evaluation);
+    }
+    writeReport("coverage/api", {
+      total: summary({ covered: 0, total: 1 }, { covered: 0, total: 1 }).total,
+      ...files,
+    });
+  }
+
+  const AT = AT_FLOOR.evaluation.total;
+
   it("reads the floors and the unit reports from disk", () => {
     writeFloors(FLOORS);
-    writeReport("coverage/api", AT_FLOOR.api);
+    writeUnitApiReport(AT_FLOOR.api.total, AT);
     writeReport("web/coverage", AT_FLOOR.web);
 
     expect(describeFailures(checkFloors(repoRoot))).toBeNull();
   });
 
+  it("holds evaluation code to its own floor, whatever engine code reaches", () => {
+    writeFloors(FLOORS);
+    writeUnitApiReport(AT_FLOOR.api.total, {
+      lines: { covered: 79, total: 100 },
+      branches: { covered: 74, total: 100 },
+    });
+    writeReport("web/coverage", AT_FLOOR.web);
+
+    const failures = describeFailures(checkFloors(repoRoot));
+    expect(failures).toContain("evaluation lines: 79.00% is below the 80% floor");
+    expect(failures).toContain("evaluation branches: 74.00% is below the 75% floor");
+    expect(failures).not.toContain("api");
+    expect(failures).not.toContain("web");
+  });
+
+  it("does not let evaluation code lift engine code over its floor, or drag it under", () => {
+    writeFloors(FLOORS);
+    writeUnitApiReport(
+      { lines: { covered: 79, total: 100 }, branches: { covered: 80, total: 100 } },
+      { lines: { covered: 10_000, total: 10_000 }, branches: { covered: 10_000, total: 10_000 } },
+    );
+    writeReport("web/coverage", AT_FLOOR.web);
+
+    const failures = describeFailures(checkFloors(repoRoot));
+    expect(failures).toBe("api lines: 79.00% is below the 80% floor");
+  });
+
+  it("reads evaluation as not measured when the report holds no evaluation file", () => {
+    writeFloors(FLOORS);
+    writeUnitApiReport(AT_FLOOR.api.total, null);
+    writeReport("web/coverage", AT_FLOOR.web);
+
+    const failures = describeFailures(checkFloors(repoRoot));
+    expect(failures).toContain("evaluation lines: not measured");
+    expect(failures).toContain("evaluation branches: not measured");
+    expect(failures).not.toContain("api");
+  });
+
   it("reads a report that was never written as not measured", () => {
     writeFloors(FLOORS);
-    writeReport("coverage/api", AT_FLOOR.api);
+    writeUnitApiReport(AT_FLOOR.api.total, AT);
 
     expect(describeFailures(checkFloors(repoRoot))).toContain(
       "web lines: not measured",
@@ -181,7 +248,7 @@ describe("the floor file and the gate", () => {
 
   it("reads an unparseable report as not measured", () => {
     writeFloors(FLOORS);
-    writeReport("coverage/api", AT_FLOOR.api);
+    writeUnitApiReport(AT_FLOOR.api.total, AT);
     fs.mkdirSync(path.join(repoRoot, "web/coverage"), { recursive: true });
     fs.writeFileSync(
       path.join(repoRoot, "web/coverage/coverage-summary.json"),
@@ -207,6 +274,9 @@ describe("the floor file and the gate", () => {
 
     writeFloors({ ...FLOORS, web: { lines: 180, branches: 75 } });
     expect(() => readFloors(repoRoot)).toThrow("web.lines");
+
+    writeFloors({ api: FLOORS.api, web: FLOORS.web });
+    expect(() => readFloors(repoRoot)).toThrow("evaluation.lines");
   });
 
   it("is a phase-1 step that waits for both unit suites", () => {

@@ -18,13 +18,17 @@ import path from "node:path";
  * it. A project is only reported when its step actually passed: a failed suite
  * leaves partial data that reads as a coverage regression when it is nothing
  * of the sort.
+ *
+ * Engine and shared code and evaluation code come from one unit run and one
+ * report, so a project with `roots` counts only the files under them, and its
+ * totals are summed from those files rather than taken from the report's.
  */
 export const COVERAGE_PROJECTS = [
   {
     label: "api",
     step: "unit-api",
     dir: "coverage/api",
-    scope: "packages/game-engine/src, packages/shared/src",
+    roots: ["packages/game-engine/src", "packages/shared/src"],
   },
   {
     label: "web",
@@ -32,7 +36,45 @@ export const COVERAGE_PROJECTS = [
     dir: "web/coverage",
     scope: "web/src/lib",
   },
-];
+  {
+    label: "evaluation",
+    step: "unit-api",
+    dir: "coverage/api",
+    roots: ["evaluation"],
+  },
+].map((project) => ({
+  ...project,
+  scope: project.scope ?? project.roots.join(", "),
+}));
+
+const METRICS = ["lines", "statements", "functions", "branches"];
+
+function pctOf(covered, total) {
+  return total === 0 ? 100 : (covered / total) * 100;
+}
+
+/** The report's files under `roots`, with the totals summed from them. */
+function scopeToRoots(summary, repoRoot, roots) {
+  const kept = {};
+  const total = Object.fromEntries(
+    METRICS.map((metric) => [metric, { total: 0, covered: 0, skipped: 0 }]),
+  );
+  for (const [file, metrics] of Object.entries(summary)) {
+    if (file === "total") continue;
+    const relative = path.relative(repoRoot, file).split(path.sep).join("/");
+    if (!roots.some((root) => relative === root || relative.startsWith(`${root}/`))) continue;
+    kept[file] = metrics;
+    for (const metric of METRICS) {
+      for (const field of ["total", "covered", "skipped"]) {
+        total[metric][field] += metrics[metric]?.[field] ?? 0;
+      }
+    }
+  }
+  for (const metric of METRICS) {
+    total[metric].pct = pctOf(total[metric].covered, total[metric].total);
+  }
+  return { total, ...kept };
+}
 
 /** A file at or below this statement percentage gets named in the summary. */
 export const LOW_FILE_THRESHOLD = 60;
@@ -56,11 +98,14 @@ export function clearCoverageReports(repoRoot) {
 export function readSummary(repoRoot, project) {
   const file = path.join(repoRoot, project.dir, "coverage-summary.json");
   if (!fs.existsSync(file)) return null;
+  let summary;
   try {
-    return JSON.parse(fs.readFileSync(file, "utf-8"));
+    summary = JSON.parse(fs.readFileSync(file, "utf-8"));
   } catch {
     return null;
   }
+  if (!project.roots || !summary?.total) return summary;
+  return scopeToRoots(summary, repoRoot, project.roots);
 }
 
 function pct(metric) {

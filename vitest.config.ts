@@ -14,6 +14,7 @@ export default defineConfig({
       include: [
         "packages/game-engine/src/**/*.ts",
         "packages/shared/src/**/*.ts",
+        "evaluation/**/*.ts",
       ],
       exclude: ["**/*.test.ts", "**/node_modules/**", "**/*.d.ts"],
     },

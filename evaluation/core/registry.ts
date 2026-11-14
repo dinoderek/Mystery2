@@ -43,8 +43,8 @@ export type IdSetName =
  *   `covers` requires every member of the set to appear, `optional` lets an
  *   absent or empty value pass, `skipIfEmpty` drops the rule when the set is.
  * - `equals`: the value at `at` is the blueprint's target age.
- * - `field_of`: each item at `at` names a record by `id`, and its `field`
- *   equals that record's.
+ * - `field_of`: each item at `at` names a blueprint character by `id`, and
+ *   its `field` equals that character's.
  * - `nonempty_when`: an item at `at` whose `when.field` is `when.equals` has
  *   a non-empty `field`.
  */
@@ -60,7 +60,7 @@ export type IdCheck =
       skipIfEmpty?: boolean;
     }
   | { kind: "equals"; at: string; to: "target_age" }
-  | { kind: "field_of"; at: string; id: string; field: string; lookup: "character_first_name" }
+  | { kind: "field_of"; at: string; id: string; field: string }
   | {
       kind: "nonempty_when";
       at: string;
@@ -290,7 +290,6 @@ export const REGISTRY: readonly RegistryEntry[] = [
         at: "characters[]",
         id: "character_id",
         field: "first_name",
-        lookup: "character_first_name",
       },
       {
         kind: "ref",

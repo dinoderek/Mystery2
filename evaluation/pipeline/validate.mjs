@@ -2,10 +2,9 @@
 //
 // Exposes the same Zod schemas the pipeline already imports so that an agent
 // (or any caller) can validate a candidate JSON file against them before
-// submission. The judge harness's validator
-// (evaluation/judge-harness/scripts/validate-judge-output.mjs) delegates its
-// shape check here, so an in-workspace judge agent self-validates its
-// candidate verdict against the dimension schema before declaring done.
+// submission. (The judge workspace's validator,
+// evaluation/judge-harness/scripts/validate-judge-output.mjs, checks the shape
+// and the cited ids itself through evaluation/core/judge-output.ts.)
 //
 // Usage:
 //   node evaluation/pipeline/validate.mjs <schema> <candidate.json>
@@ -62,7 +61,7 @@ async function main() {
     // Dimension ids use underscores everywhere except their schema filenames,
     // which use kebab-case to match the .md files next to them. Resolved
     // generically from the files on disk — a new dimension's schema is picked
-    // up with no edit here (matching loadDimensionDefinition in load.mjs).
+    // up with no edit here.
     const fileSlug = schemaName.replaceAll("_", "-");
     const schemaPath = path.join(dimensionsDir, `${fileSlug}.schema.ts`);
     try {

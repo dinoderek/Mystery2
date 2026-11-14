@@ -20,7 +20,7 @@ How they connect:
   runs and models — by fixing the prior state and history. It collects
   narration from the real endpoint or by replaying the real prompt through a
   local CLI, and grades it with `flesch` (Flesch–Kincaid for the target age),
-  `age_appropriate_turn`, and the `gm_*` judges.
+  `age_appropriate`, and the `gm_*` judges.
 - **The `gm_*` judges** (`gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`,
   `gm_spoiler`) belong to neither: they live in `evaluation/judges/` and are
   written against a subject projection. Trace judges every turn of a session;

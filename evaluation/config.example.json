@@ -1,0 +1,103 @@
+{
+  "_comment": "Model bindings for ./dev eval. Copy to evaluation/config.json (gitignored) to change one; --config <file> replaces both. Each binding starts cmd (repo-relative when it holds a /, else found on PATH) with args, where {{system_prompt_file}} and {{user_message_file}} become the paths of the prompt files. The wrapper gets model as EVAL_MODEL. extract_path is the dotted path to the answer in the JSON the wrapper prints, or null when stdout is the answer. retries is how many more attempts follow a failed first one. The fields are documented in evaluation/core/config.ts.",
+
+  "generator-agent": {
+    "description": "A Claude agent in a generator workspace writes a Blueprint V2 from a brief.",
+    "cmd": "evaluation/config/wrappers/claude-generate.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "opus",
+    "timeout_ms": 1800000,
+    "retries": 1
+  },
+
+  "generator-api": {
+    "description": "One OpenRouter call writes a Blueprint V2 from a brief. Set model to an OpenRouter model id; the key is read from OPENROUTER_API_KEY, else .env.local in the config root.",
+    "cmd": "evaluation/config/wrappers/openrouter-generate.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": null,
+    "timeout_ms": 600000,
+    "retries": 1
+  },
+
+  "blueprint-judge": {
+    "description": "A Claude agent in a judge workspace judges one blueprint dimension.",
+    "cmd": "evaluation/config/wrappers/claude-judge.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "opus",
+    "timeout_ms": 1800000,
+    "retries": 1
+  },
+
+  "game-judge": {
+    "description": "One Claude call judges a played game against one gm_* judge.",
+    "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "opus",
+    "timeout_ms": 1800000,
+    "retries": 1
+  },
+
+  "turn-judge": {
+    "description": "One Claude call judges one replayed turn.",
+    "cmd": "evaluation/runtime/config/wrappers/claude-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "sonnet",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "investigator": {
+    "description": "One Claude call chooses the self-play investigator's next typed line; the caller reads structured_output from the Claude CLI's JSON envelope.",
+    "cmd": "evaluation/playtest/wrappers/claude-investigator.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": null,
+    "model": "sonnet",
+    "timeout_ms": 120000,
+    "retries": 2
+  },
+
+  "narrator-claude": {
+    "description": "One Claude call narrates a replayed turn from the real narrator prompt.",
+    "cmd": "evaluation/runtime/config/wrappers/claude-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "sonnet",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "narrator-openai": {
+    "description": "One OpenAI call narrates a replayed turn. Needs the openai CLI on PATH and OPENAI_API_KEY.",
+    "cmd": "evaluation/runtime/config/wrappers/openai-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": null,
+    "model": "gpt-4o-mini",
+    "timeout_ms": 120000,
+    "retries": 1
+  },
+
+  "narrator-stub": {
+    "description": "No model: a fixed, content-free narration, for offline runs.",
+    "cmd": "evaluation/runtime/config/wrappers/stub-runtime.sh",
+    "args": ["{{user_message_file}}"],
+    "extract_path": null,
+    "model": null,
+    "timeout_ms": 30000,
+    "retries": 0
+  },
+
+  "judge-stub": {
+    "description": "No model: a fixed passing verdict for any judge, for offline runs.",
+    "cmd": "evaluation/runtime/config/wrappers/stub-judge.sh",
+    "args": ["{{user_message_file}}"],
+    "extract_path": null,
+    "model": null,
+    "timeout_ms": 30000,
+    "retries": 0
+  }
+}

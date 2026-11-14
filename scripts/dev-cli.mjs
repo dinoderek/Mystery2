@@ -4,8 +4,12 @@
  * calls `main`.
  *
  * `run` and `test` build a command for the game starter (`scripts/dev.mjs`) and
- * the gate runner (`scripts/run-test-gate.mjs`) and hand over to it; this file
- * implements neither.
+ * the gate runner (`scripts/run-test-gate.mjs`) and hand over to it; `eval`
+ * calls the evaluation dispatcher in-process. This file implements none of them.
+ *
+ * Only Node builtins and `scripts/lib` load at the top: `./dev doctor` must run
+ * on a fresh clone with no dependencies installed, so the evaluation code (which
+ * needs them) loads only for `eval`.
  */
 
 import { spawnSync } from "node:child_process";
@@ -24,6 +28,7 @@ export const USAGE = `Usage: ./dev <verb> [args]
   run [free|paid|claude] [--db <name>]
                                    start the game (what \`npm run dev\` does)
   test [step ...]                  run the gate (what \`npm test\` does), or only the named steps
+  eval [command] [args]            run an evaluation command; with none, list them
   worktree create <branch>         add a worktree beside the clone, with dependencies installed
   worktree release <branch>        remove that worktree and its development database
 `;
@@ -51,11 +56,14 @@ function execute({ command, args, cwd }) {
  * Runs one `./dev` invocation and returns its exit status.
  *
  * @param {string[]} argv arguments after `./dev`
- * @param {{ root: string, out?: (text: string) => void, err?: (text: string) => void, execute?: (command: Command) => number }} context
+ * @param {{ root: string, out?: (text: string) => void, err?: (text: string) => void, execute?: (command: Command) => number, evalCommands?: readonly object[] }} context
  *   `root` is the checkout `dev` lives in
  * @returns {Promise<number>}
  */
-export async function main(argv, { root, out = console.log, err = console.error, execute: exec = execute }) {
+export async function main(
+  argv,
+  { root, out = console.log, err = console.error, execute: exec = execute, evalCommands },
+) {
   const [verb, ...rest] = argv;
 
   try {
@@ -69,6 +77,11 @@ export async function main(argv, { root, out = console.log, err = console.error,
         return exec(buildRunCommand(root, rest));
       case "test":
         return exec(buildTestCommand(root, rest));
+      case "eval": {
+        const { runEval } = await import("../evaluation/core/dispatch.ts");
+        const commands = evalCommands ?? (await import("../evaluation/commands.ts")).COMMANDS;
+        return await runEval(rest, { root, out, err, env: process.env }, commands);
+      }
       case "worktree": {
         const [action, branch, ...extra] = rest;
         if ((action === "create" || action === "release") && branch && extra.length === 0) {

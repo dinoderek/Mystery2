@@ -42,11 +42,14 @@ const BUILT_IN = new Set(["mock", "default"]);
  * @throws AIConfigError naming the AI that is missing from `ai.json` or has no key
  */
 export function pickAIs({ repoRoot, env, names }) {
+  // Nothing is read when no entry is wanted: a run that names only built-ins
+  // does not depend on, or open, the config root's files.
+  const wanted = [...new Set(names)].filter((name) => !BUILT_IN.has(name));
+  if (wanted.length === 0) return { ais: {} };
   // The run override is a server's business, not the harness's.
   const { file, config, sources } = loadAIConfig({ repoRoot, env: { ...env, [RUN_OVERRIDE_ENV]: "" } });
   const ais = {};
-  for (const name of new Set(names)) {
-    if (BUILT_IN.has(name)) continue;
+  for (const name of wanted) {
     if (!Object.hasOwn(config.ais, name)) {
       throw new AIConfigError(
         `AI "${name}" is not in ${file}. Name one of: ${availableAINames(config).join(", ")}.`,

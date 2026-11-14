@@ -63,6 +63,15 @@ describe("pickAIs", () => {
     expect(pickAIs({ repoRoot: root, env: env(), names: ["mock", "default"] })).toEqual({ ais: {} });
   });
 
+  it("reads nothing from the config root when only mock or default is named", () => {
+    writeFile("ai.json", "{ not json");
+    writeFile(".env.local", "OPENROUTER_API_KEY=sk-base\n");
+    expect(pickAIs({ repoRoot: root, env: env(), names: ["mock", "default"] })).toEqual({ ais: {} });
+    expect(pickAIs({ repoRoot: root, env: env(), names: [] })).toEqual({ ais: {} });
+    expect(seedAIs({ repoRoot: root, env: env(), names: ["mock"] })).toBeUndefined();
+    expect(() => pickAIs({ repoRoot: root, env: env(), names: ["free"] })).toThrow(/not valid JSON/);
+  });
+
   it("names an AI the file does not have, and the file it looked in", () => {
     writeAIs(FILE);
     const ask = () => pickAIs({ repoRoot: root, env: env(), names: ["luna"] });

@@ -41,43 +41,26 @@ made on the page reaches a session in play. `default` is the first that applies:
 
 - A name that is not `mock`, `default` or in the file returns `null`, which
   `game-start` answers with `400 Invalid ai_profile`.
-- An `openrouter` AI with no key anywhere throws when it is resolved, naming
-  it, and surfaces as a 500; a run override naming a missing or broken AI stops
-  the server from starting. Neither falls back to mock.
+- An AI that cannot narrate is an error naming it, never mock: an `openrouter`
+  AI with no key anywhere, or a stored choice no longer in the file.
+  `game-start` and a turn answer `500` with that message and write nothing; a
+  run override naming one stops the server from starting.
 - Keys are read on the server and never reach the browser. The settings
-  endpoints return a key's last four characters and nothing else.
+  endpoints carry none.
 
 ## The settings page
 
 `/settings` is reachable from the profile picker **before a profile exists**: a
-machine whose AI is misconfigured is exactly the one a player cannot get past
-the picker on.
+machine whose chosen AI is missing or broken is exactly the one a player cannot
+get past the picker on.
 
-- **Mock or real AI.** Real AI is refused until a key and a model are both
-  selected, so a stored `openrouter` choice is always one the runtime can call.
-- **Labelled keys and models**, each a label → value pair that can be added,
-  replaced or deleted.
-- Rows have a `source`. `env` rows come from files, are re-read on every start,
-  show `[ENV]`, and refuse edits and deletes — an edit the next restart would
-  silently undo is worse than none. `user` rows were typed on the page. A `user`
-  row wins over an `env` row with the same label.
-- A selection is stored as a label and may dangle: if a reseed removes it,
-  narration falls back to mock and the page names the missing label. The
-  comment above the AI tables in `packages/game-engine/src/db/schema.ts` says
-  why the tables key on labels.
-
-### Seeding from files
-
-On every start, all `env` rows are deleted and re-inserted, not upserted, so a
-label removed from a file disappears instead of lingering as a dead choice.
-
-| File | Becomes |
-|---|---|
-| `.env.local` `OPENROUTER_API_KEY` | key `default` |
-| `.env.ai.free.local`, `.env.ai.paid.local` | key and model `free`, `paid` |
-| `.env.ai.local` `OPENROUTER_KEY_<LABEL>`, `AI_MODEL_<LABEL>` | key or model `<label>`, lowercased |
-
-Later rows win.
+- It lists mock and each AI in `ai.json` with its backend and model, marks the
+  choice (mock while nothing is chosen), and stores one name in `app_settings`.
+- An AI without its key is listed with the reason and cannot be chosen. A choice
+  can still break when the file changes; the page and the picker then name it.
+- The picker names the narrator before a game starts.
+- It adds, edits and deletes nothing. `packages/game-engine/src/ai-choice.ts`
+  answers `/api/ai-settings`.
 
 ## The claude CLI provider
 
@@ -85,8 +68,7 @@ A `claude-cli` AI narrates through the local `claude` command and its own login,
 for machines that reach Anthropic but not OpenRouter — a cloud container, say.
 
 - `./dev run --ai <name>` refuses to start a `claude-cli` AI without the
-  executable. A run override or a request naming it selects one; the settings
-  page cannot.
+  executable. The settings page lists one without running it.
 - Each call is one `claude --print` subprocess with the same messages the
   OpenRouter provider sends, its output constrained by `--json-schema` from the
   role's contract. Flags keep Claude Code's own system prompt, tools, MCP
@@ -114,7 +96,7 @@ the repo root; the mock suites clear the variable.
 ## Operator tools
 
 Blueprint and image generation read keys from the shell and the config root's
-env files, never from the settings tables; blueprint models come from
+env files; blueprint models come from
 `evaluation/config.json` or `--model`. Their flags, defaults and precedence are
 in their own help:
 
@@ -129,7 +111,7 @@ worked examples are in `QUICKSTART.md`.
 ## Tests
 
 Every suite runs mock by absence: its server gets a config root with no
-`ai.json`, no run override and an empty settings row. The settings row belongs to the
+`ai.json`, no run override and nothing chosen. The choice belongs to the
 installation, not a profile, so a suite sharing a server with game-playing tests
 must never switch it to live. `docs/testing.md` has the rule and the backstop.
 
@@ -141,5 +123,5 @@ missing, or an `openrouter` AI with no key, fails before the server starts. A
 live run calls nothing unless given a name, and reads no `.env.ai.*` or
 `AI_MODEL`. A trace takes its model from the game's events and resolves nothing.
 
-Changing profile resolution, the settings store or a provider changes the mock
+Changing profile resolution, the stored choice or a provider changes the mock
 and its tests in the same change (`docs/ai-runtime.md`, "The mock provider").

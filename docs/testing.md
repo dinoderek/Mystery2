@@ -158,10 +158,11 @@ test:golden:record`; review the diff.
     answers `404`.
 - **No real model.** Integration and E2E never call one. The server runs the mock
   provider, so assert persisted side effects.
-- **Mock by absence.** Mock is chosen when the config root has no `ai.json`,
-  the runners clear `AI_PROFILE`, and the settings row is empty. A suite sharing
-  a server with game-playing tests must not switch the row to live, which
-  switches it for all of them; the unit suites assert that. The runners also point `OPENROUTER_URL` at
+- **Mock by absence.** Mock narrates when the config root has no `ai.json`,
+  the runners clear `AI_PROFILE`, and nothing is chosen. A live choice switches
+  every test sharing the server, so make one only in the unit suites or on a
+  server of the test's own (`tests/testkit/src/own-server.ts`); suites that
+  choose reset to mock around each test. The runners also point `OPENROUTER_URL` at
   a closed port and `CLAUDE_CLI_PATH` at a missing file.
 
 ## CI and documentation-only changes

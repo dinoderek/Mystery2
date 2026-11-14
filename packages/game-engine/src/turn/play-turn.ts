@@ -13,6 +13,7 @@
 
 import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
+import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
 import { HELP_NOTE, interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
 import type { EngineAIProfile, EngineContext, GameSessionRow } from "../context.ts";
@@ -104,7 +105,14 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
 }
 
 async function loadProvider(ctx: EngineContext, session: GameSessionRow, options: TurnOptions): Promise<AIProvider> {
-  const profile = await ctx.aiProfiles.getById(session.ai_profile_id);
+  let profile: EngineAIProfile | null;
+  try {
+    profile = await ctx.aiProfiles.getById(session.ai_profile_id);
+  } catch (error) {
+    // The AI the game resolves to is missing or broken. Nothing narrates in its place.
+    if (error instanceof AIConfigError) throw new RequestRejectedError(500, error.message, "ai_unavailable");
+    throw error;
+  }
   if (!profile) throw new RequestRejectedError(500, "AI profile not found", "ai_profile_missing");
   return (options.createProvider ?? defaultProvider)(profile);
 }

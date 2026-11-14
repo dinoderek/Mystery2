@@ -20,10 +20,10 @@ if (suite !== "integration" && suite !== "e2e") {
  * A mock-mode suite must not be able to reach OpenRouter.
  *
  * Mock is chosen by absence — a temporary config root with no `ai.json` in it,
- * and no run override — which is a property of the *configuration*, and configuration is now
- * something a test can change: the settings row is per-installation, so a test
- * that switches the server to live narration switches it for every other test
- * sharing that server. When that happened, the calls went to the real
+ * and no run override — which is a property of the *configuration*, and configuration is
+ * something a test can change: the stored AI choice is per-installation, so a
+ * test that chooses a live AI chooses it for every other test sharing that
+ * server. When that happened, the calls went to the real
  * openrouter.ai with a throwaway key, and the suite failed a third of a second
  * later with a 401 nobody could see the cause of. On a slower network they hung
  * instead, and the CI job was killed at its fifteen-minute cap.
@@ -31,7 +31,7 @@ if (suite !== "integration" && suite !== "e2e") {
  * Pointing the base URL at a closed port turns that from a timeout into an
  * immediate connection error: the suite still fails, but it fails locally, in
  * milliseconds, and without spending anyone's credits. It is a backstop, not
- * the rule — the rule is that no shared-server suite switches the mode at all,
+ * the rule — the rule is that no shared-server suite chooses a live AI at all,
  * and `tests/api/integration/ai-settings.test.ts` says why.
  *
  * Live-AI runs use `run-live-ai.mjs`, which passes its own env and is not

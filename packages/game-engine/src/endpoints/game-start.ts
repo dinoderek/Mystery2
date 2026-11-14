@@ -12,6 +12,7 @@ import {
   notFound,
   RetriableAIError,
 } from "../errors.ts";
+import { AIConfigError } from "../ai-config.ts";
 import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
@@ -51,7 +52,16 @@ async function resolveProfile(
   requested: string | undefined,
   logger: LogWriter,
 ): Promise<ProfileResult> {
-  const profile = await ctx.aiProfiles.getById(requested ?? DEFAULT_AI_PROFILE_ID);
+  const name = requested ?? DEFAULT_AI_PROFILE_ID;
+  let profile: EngineAIProfile | null;
+  try {
+    profile = await ctx.aiProfiles.getById(name);
+  } catch (error) {
+    // The AI it names is missing or broken. Nothing narrates in its place.
+    if (!(error instanceof AIConfigError)) throw error;
+    logger.logError("request.error", { reason: "ai_unavailable", ai_profile: name, error: error.message });
+    return { response: internalError(error.message) };
+  }
   if (profile) return { profile };
 
   if (requested) {

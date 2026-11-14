@@ -75,17 +75,24 @@ describe("local database client", () => {
   it("creates the schema in a directory that does not exist yet", () => {
     expect(fs.existsSync(databasePath())).toBe(true);
     expect(
-      db.prepare("select name from sqlite_master where type = 'table'").all(),
-    ).toEqual(
-      expect.arrayContaining([
-        { name: "players" },
-        { name: "game_sessions" },
-        { name: "game_events" },
-        { name: "ai_keys" },
-        { name: "ai_models" },
-        { name: "app_settings" },
-      ]),
-    );
+      db.prepare("select name from sqlite_master where type = 'table' order by name").all(),
+    ).toEqual([
+      { name: "app_settings" },
+      { name: "game_events" },
+      { name: "game_sessions" },
+      { name: "players" },
+    ]);
+  });
+
+  it("creates a fresh database at version 3, holding the AI choice as one value", () => {
+    expect(SCHEMA_VERSION).toBe(3);
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 3 });
+    expect(
+      db.prepare("pragma table_info(app_settings)").all().map((column) => column.name),
+    ).toEqual(["id", "ai_name"]);
+    // One row at most.
+    db.prepare("insert into app_settings (id, ai_name) values (1, 'mock')").run();
+    expect(() => db.prepare("insert into app_settings (id, ai_name) values (2, 'mock')").run()).toThrow();
   });
 
   it("stamps the schema version so a reopen is a no-op", () => {
@@ -178,9 +185,10 @@ function describeShape(db: Db): string {
   return parts.join("\n");
 }
 
-// A database at schema version 1, built the way one that shipped was: the
-// three play tables, and nothing else.
-const SCHEMA_V1_SQL = `
+// A database at schema version 2, built the way one that shipped was: the
+// three play tables, and the labelled keys and models with the settings row
+// that selected among them.
+const SCHEMA_V2_SQL = `
 create table players (
     id          text primary key,
     name        text not null unique,
@@ -223,6 +231,30 @@ create table game_events (
 
 create unique index game_events_session_sequence_idx
     on game_events(session_id, sequence);
+
+create table ai_keys (
+    label       text primary key,
+    api_key     text not null,
+    source      text not null check (source in ('env', 'user')),
+    created_at  text not null,
+    updated_at  text not null
+);
+
+create table ai_models (
+    label       text primary key,
+    model_id    text not null,
+    source      text not null check (source in ('env', 'user')),
+    created_at  text not null,
+    updated_at  text not null
+);
+
+create table app_settings (
+    id              text primary key check (id = 'singleton'),
+    ai_mode         text not null default 'mock' check (ai_mode in ('mock', 'openrouter')),
+    ai_key_label    text,
+    ai_model_label  text,
+    updated_at      text not null
+);
 `;
 
 // The real upgrade, run end to end against a database that already has data in
@@ -230,14 +262,15 @@ create unique index game_events_session_sequence_idx
 // it is the only thing that can catch `schema.ts` and `MIGRATIONS` drifting
 // apart — every other suite builds from scratch and takes the version-0 branch,
 // so a migration that does not match the schema would never be executed.
-describe("migrating a database that already exists", () => {
+describe("migrating a version 2 database", () => {
   let upgradedPath: string;
+  let sessionId: string;
 
-  beforeEach(() => {
-    upgradedPath = path.join(tempDir, "v1", "game.db");
+  beforeEach(async () => {
+    upgradedPath = path.join(tempDir, "v2", "game.db");
 
     // Built through `openDatabase` so the file gets the same pragmas a real one
-    // has, then emptied and rewritten to look like version 1. The tables are
+    // has, then emptied and rewritten to look like version 2. The tables are
     // dropped by enumeration rather than by name so this keeps working as the
     // current schema grows.
     const seeded = openDatabase({ path: upgradedPath });
@@ -252,36 +285,63 @@ describe("migrating a database that already exists", () => {
       seeded.exec(`drop table "${String(table.name)}"`);
     }
     seeded.exec("pragma foreign_keys = on");
-    seeded.exec(SCHEMA_V1_SQL);
-    seeded.exec("pragma user_version = 1");
-    createPlayerStore(seeded).create("Ada");
+    seeded.exec(SCHEMA_V2_SQL);
+    seeded.exec("pragma user_version = 2");
+
+    const player = createPlayerStore(seeded).create("Ada");
+    sessionId = await createSessionStore(seeded, player.id).create(newSession(player.id));
+    await createEventStore(seeded, player.id).insert(newEvent(sessionId, 1));
+    const now = new Date().toISOString();
+    seeded
+      .prepare("insert into ai_keys (label, api_key, source, created_at, updated_at) values ('work', 'sk-old', 'user', ?, ?)")
+      .run(now, now);
+    seeded
+      .prepare("insert into ai_models (label, model_id, source, created_at, updated_at) values ('work', 'v/m', 'user', ?, ?)")
+      .run(now, now);
+    seeded
+      .prepare(
+        "insert into app_settings (id, ai_mode, ai_key_label, ai_model_label, updated_at) " +
+          "values ('singleton', 'openrouter', 'work', 'work', ?)",
+      )
+      .run(now);
     seeded.close();
   });
 
-  it("brings a version 1 database to the current version", () => {
+  it("steps it to version 3", () => {
     const upgraded = openDatabase({ path: upgradedPath });
 
-    expect(upgraded.prepare("pragma user_version").get()).toEqual({
-      user_version: SCHEMA_VERSION,
-    });
+    expect(upgraded.prepare("pragma user_version").get()).toEqual({ user_version: 3 });
 
     upgraded.close();
   });
 
-  it("leaves an upgraded database in the same shape as a fresh one", () => {
+  it("leaves it in the same shape as a fresh one, the old AI tables gone", () => {
     const upgraded = openDatabase({ path: upgradedPath });
 
     expect(describeShape(upgraded)).toBe(describeShape(db));
+    expect(describeShape(upgraded)).not.toMatch(/ai_keys|ai_models|ai_mode/);
 
     upgraded.close();
   });
 
-  it("keeps the data that was already there", () => {
+  it("keeps its players, sessions and events, and carries no choice over", async () => {
     const upgraded = openDatabase({ path: upgradedPath });
 
-    expect(createPlayerStore(upgraded).list().map((player) => player.name)).toEqual(["Ada"]);
+    const players = createPlayerStore(upgraded).list();
+    expect(players.map((player) => player.name)).toEqual(["Ada"]);
+    expect((await createSessionStore(upgraded, players[0].id).getById(sessionId))?.blueprint_id).toBe("blueprint-1");
+    expect((await createEventStore(upgraded, players[0].id).listBySession(sessionId)).map((event) => event.sequence)).toEqual([1]);
+    expect(upgraded.prepare("select count(*) as n from app_settings").get()).toEqual({ n: 0 });
 
     upgraded.close();
+  });
+
+  it("refuses a version 1 database, which has no step", () => {
+    const old = openDatabase({ path: path.join(tempDir, "v1", "game.db") });
+    old.exec("pragma user_version = 1");
+    old.close();
+
+    expect(() => openDatabase({ path: path.join(tempDir, "v1", "game.db") })).toThrow(/No migration to schema version 2/);
   });
 });
 

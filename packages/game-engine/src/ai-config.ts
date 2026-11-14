@@ -273,10 +273,26 @@ export function loadAIConfig(options: LoadAIConfigOptions = {}): LoadedAIConfig 
 }
 
 /**
+ * Resolves the AI chosen on the settings page.
+ *
+ * @throws AIConfigError when the name is no longer in `ai.json`, or names an
+ * AI that cannot work: a chosen AI that has gone is an error, never mock
+ */
+export function resolveChosenAI(name: string, loaded: LoadedAIConfig): EngineAIProfile {
+  const profile = resolveNamedAI(name, loaded.config, loaded.sources);
+  if (profile) return profile;
+  throw new AIConfigError(
+    `The AI chosen on the settings page, "${name}", is not in ai.json. ` +
+      "Choose another there, or add it back to ai.json and restart.",
+  );
+}
+
+/**
  * Resolves the profile a request or a stored game names. Returns null for a
  * name that is not configured here.
  *
- * @throws AIConfigError for a named OpenRouter AI with no key
+ * @throws AIConfigError for a named OpenRouter AI with no key, and for a
+ * `default` whose stored choice is missing or broken
  */
 export function resolveAIProfile(
   profileId: string,
@@ -289,19 +305,9 @@ export function resolveAIProfile(
 
   if (loaded.runOverride) return { ...loaded.runOverride.profile, id: DEFAULT_AI_PROFILE_ID };
 
-  // A dangling stored selection has already been resolved to mock by
-  // `resolve()`, so there is nothing unusable to guard against.
-  const stored = settings?.resolve();
-  if (stored?.mode === "openrouter" && stored.key && stored.model) {
-    return {
-      id: DEFAULT_AI_PROFILE_ID,
-      provider: "openrouter",
-      model: stored.model.model_id,
-      openrouter_api_key: stored.key.api_key,
-    };
-  }
-
-  return mockProfile(DEFAULT_AI_PROFILE_ID);
+  const chosen = settings?.getChoice() ?? null;
+  if (chosen === null) return mockProfile(DEFAULT_AI_PROFILE_ID);
+  return { ...resolveChosenAI(chosen, loaded), id: DEFAULT_AI_PROFILE_ID };
 }
 
 export function createLocalAIProfileStore(

@@ -82,12 +82,14 @@ describe("extraction from a database the test made", () => {
   it("does not migrate a database from an older schema", async () => {
     const game = createGameDatabase(makeScratch());
     const db = openDatabase({ path: game.databasePath });
-    // What a version-1 database held: no AI configuration tables yet.
-    db.exec("drop table app_settings; drop table ai_models; drop table ai_keys; pragma user_version = 1;");
+    // What a version-2 database held: the labelled key and model tables.
+    db.exec(
+      "create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;",
+    );
     db.close();
     const before = { bytes: sha256(game.databasePath), ...inspect(game.databasePath) };
-    expect(before.version).toBe(1);
-    expect(before.tables).not.toContain("ai_keys");
+    expect(before.version).toBe(2);
+    expect(before.tables).toContain("ai_keys");
 
     // The control: opening it the way the game does would bring it forward.
     const copy = path.join(scratch, "copy.db");

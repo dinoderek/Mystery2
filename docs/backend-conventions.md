@@ -94,8 +94,8 @@ HTTP. A new endpoint fails both until it is listed.
 
 ## 3. The Database
 
-Six tables, defined once in `packages/game-engine/src/db/schema.ts`: three for
-play, three for AI configuration.
+Four tables at schema version 3, defined once in
+`packages/game-engine/src/db/schema.ts`: three for play, and `app_settings`.
 
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
   and `db/events.ts` is scoped to one player, with nothing underneath to catch a
@@ -137,7 +137,6 @@ the browser ever plays as — is chosen on the settings page and stored in
 `app_settings`, though a run started with `--ai` still outranks it. See
 `packages/game-engine/src/ai-config.ts` and `docs/ai-configuration.md`.
 
-A misconfigured profile throws; an unconfigured one returns `null`, which
-handlers turn into `400 Invalid ai_profile`. A *stored* choice cannot be
-misconfigured: `updateSettings` refuses live narration without a key and a model,
-so the invariant is kept at the write.
+A misconfigured profile, or a stored choice that has gone from the file, throws
+`AIConfigError`, which handlers answer with its message; an unconfigured one
+returns `null`, which handlers turn into `400 Invalid ai_profile`.

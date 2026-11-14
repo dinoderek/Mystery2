@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { blueprintImageUrl, callApi, callApiDelete, callApiGet } from './client';
+import { blueprintImageUrl, callApi, callApiGet } from './client';
 
 /** What the browser sends and reads: these tests stub `fetch`, nothing else. */
 const fetchMock = vi.fn();
@@ -90,46 +90,32 @@ describe('callApi', () => {
   });
 });
 
-describe('callApiGet and callApiDelete', () => {
-  it('put the query on the URL and use their own method', async () => {
+describe('callApiGet', () => {
+  it('puts the query on the URL and uses GET', async () => {
     stubFetch();
     fetchMock.mockResolvedValue(reply({ ok: 1 }));
 
     await callApiGet('game-get', { game_id: 'a b' });
-    await callApiDelete('ai-settings/keys', { label: 'main' });
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/game-get?game_id=a+b', {
-      method: 'GET',
-    });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/ai-settings/keys?label=main', {
-      method: 'DELETE',
-    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/game-get?game_id=a+b', { method: 'GET' });
   });
 
-  it('leave the URL bare without a query', async () => {
+  it('leaves the URL bare without a query', async () => {
     stubFetch();
     fetchMock.mockResolvedValue(reply({ ok: 1 }));
 
     await callApiGet('sessions-list');
-    await callApiDelete('player');
 
-    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
-      '/api/sessions-list',
-      '/api/player',
-    ]);
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual(['/api/sessions-list']);
   });
 
-  it('return errors and network failures the way callApi does', async () => {
+  it('returns errors and network failures the way callApi does', async () => {
     stubFetch();
     fetchMock.mockResolvedValueOnce(reply({ error: 'locked' }, 409));
     fetchMock.mockRejectedValueOnce(new Error('down'));
-    fetchMock.mockResolvedValueOnce(reply({ error: 'gone' }, 410));
-    fetchMock.mockRejectedValueOnce(new Error('down too'));
 
     expect((await callApiGet('a')).error).toEqual({ message: 'locked', status: 409 });
     expect((await callApiGet('a')).error).toEqual({ message: 'down' });
-    expect((await callApiDelete('a')).error).toEqual({ message: 'gone', status: 410 });
-    expect((await callApiDelete('a')).error).toEqual({ message: 'down too' });
   });
 });
 

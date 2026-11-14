@@ -4,7 +4,7 @@
 // compares it to the reading grade implied by the blueprint's target_age. No
 // model, no dependencies — fully reproducible from a stored turn.
 //
-// The metric functions live in evaluation/lib/readability.mjs (shared with the
+// The metric functions live in evaluation/lib/readability.ts (shared with the
 // blueprint pipeline's age_appropriate analyzer) and are re-exported here so
 // this module remains the check's entry point.
 
@@ -13,7 +13,7 @@ import {
   expectedGradeForAge,
   fleschKincaidGrade,
   splitWords,
-} from "../../lib/readability.mjs";
+} from "../../lib/readability.ts";
 
 import type { JudgeOptions } from "./case.ts";
 import type { Verdict } from "../../core/result.ts";

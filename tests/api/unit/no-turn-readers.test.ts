@@ -10,7 +10,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { NO_TURN_EVENT_TYPE } from "@my2/shared";
-import { playedEvents } from "../../../evaluation/lib/game-events.mjs";
+import { playedEvents } from "../../../evaluation/lib/game-events.ts";
 import { casesCommand } from "../../../evaluation/runtime/cases.ts";
 import { scoreReadability } from "../../../evaluation/playtest/lib/judge.ts";
 import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.ts";

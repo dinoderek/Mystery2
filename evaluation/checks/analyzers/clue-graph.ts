@@ -5,12 +5,12 @@
 // locked behind unreachable clues. The subjective "is the gating fun and fair?"
 // call is left to the judge half of the dimension.
 
-import { analyzeClueGraph } from "../lib/clue-graph.mjs";
+import { analyzeClueGraph, type ClueGraphBlueprint } from "../lib/clue-graph.ts";
 
-export function analyze({ blueprint }) {
+export function analyze({ blueprint }: { blueprint: ClueGraphBlueprint }) {
   const result = analyzeClueGraph(blueprint);
 
-  const problems = [];
+  const problems: string[] = [];
   if (result.unknown_requires.length > 0) {
     problems.push(`${result.unknown_requires.length} requires reference unknown clues`);
   }

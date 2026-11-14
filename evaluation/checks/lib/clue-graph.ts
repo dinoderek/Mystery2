@@ -8,13 +8,47 @@
 // unknown / self references, cycles, reachability from ungated roots, and whether
 // the solution stays discoverable.
 //
-// Shared by evaluation/checks/mechanical.mjs and
-// evaluation/checks/analyzers/clue-graph.mjs so both agree on graph semantics.
+// Shared by evaluation/checks/mechanical.ts and
+// evaluation/checks/analyzers/clue-graph.ts so both agree on graph semantics.
+
+interface GraphClue {
+  id: string;
+  requires?: { clue_ids?: string[] } | null;
+}
+
+interface GraphPath {
+  id: string;
+  location_clue_ids?: string[];
+  character_clue_ids?: string[];
+}
+
+/** The fields read below, all optional: a candidate blueprint need not be well formed. */
+export interface ClueGraphBlueprint {
+  world?: {
+    locations?: Array<{
+      id: string;
+      name: string;
+      clues?: GraphClue[];
+      sub_locations?: Array<{ clues?: GraphClue[] }>;
+    }>;
+    characters?: Array<{ id: string; first_name: string; last_name: string; clues?: GraphClue[] }>;
+  };
+  solution_paths?: GraphPath[];
+  red_herrings?: GraphPath[];
+  suspect_elimination_paths?: GraphPath[];
+}
+
+export interface ClueRecord {
+  id: string;
+  owner: { kind: "location" | "character"; id: string; name: string };
+  requires: string[];
+}
+
+export type PathGroup = "solution" | "red_herring" | "suspect_elimination";
 
 // Collect every clue in the blueprint with its owner and prerequisite ids.
-// Returns Map<clueId, { id, owner: { kind, id, name }, requires: string[] }>.
-export function collectClues(blueprint) {
-  const clues = new Map();
+export function collectClues(blueprint: ClueGraphBlueprint | null | undefined): Map<string, ClueRecord> {
+  const clues = new Map<string, ClueRecord>();
   for (const location of blueprint?.world?.locations ?? []) {
     for (const clue of location.clues ?? []) {
       clues.set(clue.id, {
@@ -49,8 +83,8 @@ export function collectClues(blueprint) {
   return clues;
 }
 
-function solutionClueIds(blueprint) {
-  const ids = new Set();
+function solutionClueIds(blueprint: ClueGraphBlueprint | null | undefined): Set<string> {
+  const ids = new Set<string>();
   for (const path of blueprint?.solution_paths ?? []) {
     for (const id of path.location_clue_ids ?? []) ids.add(id);
     for (const id of path.character_clue_ids ?? []) ids.add(id);
@@ -58,18 +92,44 @@ function solutionClueIds(blueprint) {
   return ids;
 }
 
-function pathClueIds(path) {
+function pathClueIds(path: GraphPath): string[] {
   return [...(path.location_clue_ids ?? []), ...(path.character_clue_ids ?? [])];
 }
 
+export interface PathShape {
+  id: string;
+  group: PathGroup;
+  clue_count: number;
+  root_count: number;
+  gated_count: number;
+  max_depth: number | null;
+  is_single_chain: boolean;
+  has_ungated_entry: boolean;
+}
+
+export interface ClueGraphAnalysis {
+  total_clues: number;
+  gated_clue_count: number;
+  unknown_requires: Array<{ clue_id: string; missing: string }>;
+  self_references: string[];
+  acyclic: boolean;
+  cycles: string[][];
+  discoverable: string[];
+  undiscoverable: string[];
+  locked_solution_clues: string[];
+  solution_locked: boolean;
+  paths: PathShape[];
+  ok: boolean;
+}
+
 // Compute the full structural analysis of the discovery graph.
-export function analyzeClueGraph(blueprint) {
+export function analyzeClueGraph(blueprint: ClueGraphBlueprint | null | undefined): ClueGraphAnalysis {
   const clues = collectClues(blueprint);
   const allClueIds = new Set(clues.keys());
 
   // Reference integrity: unknown prerequisite ids and self-references.
-  const unknownRequires = [];
-  const selfReferences = [];
+  const unknownRequires: Array<{ clue_id: string; missing: string }> = [];
+  const selfReferences: string[] = [];
   for (const [clueId, { requires }] of clues) {
     for (const dep of requires) {
       if (dep === clueId) selfReferences.push(clueId);
@@ -80,17 +140,17 @@ export function analyzeClueGraph(blueprint) {
   }
 
   // Adjacency over known, non-self edges only.
-  const requiresOf = (id) =>
+  const requiresOf = (id: string): string[] =>
     (clues.get(id)?.requires ?? []).filter(
       (dep) => dep !== id && allClueIds.has(dep),
     );
 
   // Cycle detection via DFS coloring (0=unvisited, 1=in-stack, 2=done).
-  const color = new Map();
-  const cycles = [];
-  const stack = [];
-  const seenCycleNodes = new Set();
-  const visit = (id) => {
+  const color = new Map<string, number>();
+  const cycles: string[][] = [];
+  const stack: string[] = [];
+  const seenCycleNodes = new Set<string>();
+  const visit = (id: string): void => {
     color.set(id, 1);
     stack.push(id);
     for (const dep of requiresOf(id)) {
@@ -116,7 +176,7 @@ export function analyzeClueGraph(blueprint) {
 
   // Reachability: a clue is discoverable when all its prerequisites are
   // discoverable (fixpoint from ungated roots).
-  const discoverable = new Set();
+  const discoverable = new Set<string>();
   for (const id of allClueIds) {
     if (requiresOf(id).length === 0) discoverable.add(id);
   }
@@ -140,9 +200,10 @@ export function analyzeClueGraph(blueprint) {
   );
 
   // Longest prerequisite chain depth per clue (only meaningful when acyclic).
-  const depthMemo = new Map();
-  const depthOf = (id) => {
-    if (depthMemo.has(id)) return depthMemo.get(id);
+  const depthMemo = new Map<string, number>();
+  const depthOf = (id: string): number => {
+    const known = depthMemo.get(id);
+    if (known !== undefined) return known;
     depthMemo.set(id, 0); // guard against cycles
     const deps = requiresOf(id);
     const d = deps.length === 0 ? 0 : 1 + Math.max(...deps.map(depthOf));
@@ -151,7 +212,7 @@ export function analyzeClueGraph(blueprint) {
   };
 
   // Per-reasoning-path shape, for the judge's fun/fairness call.
-  const describePath = (path, group) => {
+  const describePath = (path: GraphPath, group: PathGroup): PathShape => {
     const ids = pathClueIds(path).filter((id) => allClueIds.has(id));
     const idSet = new Set(ids);
     const rootCount = ids.filter((id) => requiresOf(id).length === 0).length;

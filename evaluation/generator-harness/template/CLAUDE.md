@@ -20,8 +20,8 @@ outside this workspace.
   clues — these have real consumers).
 - `./docs/briefs.md` — what each `story_brief` field means and how to interpret
   it.
-- `./scripts/validate-blueprint.mjs` — the validator. Usage:
-  `node scripts/validate-blueprint.mjs ./blueprint.json`. Exits 0 on pass,
+- `./scripts/validate-blueprint.ts` — the validator. Usage:
+  `node scripts/validate-blueprint.ts ./blueprint.json`. Exits 0 on pass,
   non-zero on fail. Prints all schema issues.
 
 ## Mandatory iteration protocol
@@ -31,7 +31,7 @@ outside this workspace.
 2. **Draft the blueprint.** Write it to `./blueprint.json` as a single JSON
    object. No markdown fences, no explanation, no commentary anywhere in the
    file.
-3. **Validate.** Run `node scripts/validate-blueprint.mjs ./blueprint.json`.
+3. **Validate.** Run `node scripts/validate-blueprint.ts ./blueprint.json`.
 4. **If validation fails:** read every reported issue, edit `./blueprint.json`
    in place, re-run the validator. Repeat until it passes.
 5. **Consistency review.** Once the validator passes, review the blueprint
@@ -95,7 +95,7 @@ because the validator passed.
 
 - `Read` — for the brief, prompt, schema, and docs.
 - `Write` / `Edit` — for drafting and revising `./blueprint.json`.
-- `Bash` — only for running the validator (`node scripts/validate-blueprint.mjs
+- `Bash` — only for running the validator (`node scripts/validate-blueprint.ts
   ./blueprint.json`). Do not run other commands.
 
 ## Out of scope

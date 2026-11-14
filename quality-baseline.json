@@ -1,14 +1,4 @@
 {
-  "evaluation/checks/mechanical.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "evaluation/generator-harness/scripts/check-curated-docs.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "packages/game-engine/src/ai-provider.ts": {
     "max-lines-per-function": {
       "count": 1

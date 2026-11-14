@@ -9,8 +9,6 @@
   "engine-imports-engine-and-shared: packages/game-engine/src/ai-settings-env.ts -> scripts/local-config.mjs",
   "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> lib/database-target.mjs",
   "engine-imports-engine-and-shared: packages/game-engine/src/paths.ts -> scripts/local-config.mjs",
-  "model-subprocess-only-in-evaluation-core: evaluation/generator-harness/scripts/check-curated-docs.mjs -> child_process",
-  "model-subprocess-only-in-evaluation-core: evaluation/pipeline/cli-runner.mjs -> child_process",
   "no-cycles: packages/game-engine/src/ai-call-log.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-call-log.ts)",
   "no-cycles: packages/game-engine/src/ai-provider-claude-cli.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-provider-claude-cli.ts)",
   "no-cycles: packages/game-engine/src/context.ts -> packages/game-engine/src/narration.ts (via packages/game-engine/src/narration.ts > packages/game-engine/src/context.ts)"

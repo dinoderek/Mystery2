@@ -7,7 +7,7 @@
 // produced it and (b) the clue ids it revealed therefore has to be identical on
 // both sides, so it lives here rather than in either harness.
 //
-// Sibling of evaluation/lib/readability.mjs — the other module shared across
+// Sibling of evaluation/lib/readability.ts — the other module shared across
 // harnesses.
 
 import { NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contracts.ts";
@@ -16,7 +16,15 @@ import { NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contra
 // shows them. They are not something the game master did: every reader that
 // follows the game master's play takes its events through this, so its output is
 // the same with or without them.
-export function playedEvents(events) {
+/** A game event as the trace stores it and a case writes it: the fields the readers below use. */
+export interface GameEventLike {
+  event_type: string;
+  payload?: Record<string, unknown> | null;
+  narration?: string;
+  clues_revealed?: string[];
+}
+
+export function playedEvents<T extends GameEventLike>(events: readonly T[]): T[] {
   return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE);
 }
 
@@ -28,7 +36,7 @@ export function playedEvents(events) {
 // its context with role_name "ambience" (the arrival narration role); "move"
 // reads more clearly in turn records and judge projections, and never reaches a
 // builder as a role string.
-export const EVENT_ROLE = {
+export const EVENT_ROLE: Readonly<Record<string, string>> = {
   move: "move",
   search: "search",
   talk: "talk_start",
@@ -49,17 +57,17 @@ export const ACCUSATION_EVENT_TYPES = new Set([
   "forced_endgame",
 ]);
 
-export function readField(payload, key) {
+export function readField(payload: Record<string, unknown> | null | undefined, key: string): string | null {
   if (!payload || typeof payload !== "object") return null;
   const value = payload[key];
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function readStringArray(payload, key) {
+export function readStringArray(payload: Record<string, unknown> | null | undefined, key: string): string[] {
   if (!payload || typeof payload !== "object") return [];
   const value = payload[key];
   if (!Array.isArray(value)) return [];
-  return value.filter((v) => typeof v === "string" && v.trim().length > 0);
+  return value.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
 }
 
 // The clue ids revealed by a single event THIS TURN. The runtime persists
@@ -72,7 +80,7 @@ export function readStringArray(payload, key) {
 //     (`turn/resolve-talk.ts` in the engine).
 // The clues_revealed column is never written by the runtime; we honor it only
 // as a fallback for legacy/seeded rows on non-search/ask events.
-export function revealedClueIdsForEvent(event) {
+export function revealedClueIdsForEvent(event: GameEventLike): string[] {
   const payload = event.payload ?? null;
   if (event.event_type === "search") {
     const single = readField(payload, "revealed_clue_id");
@@ -88,6 +96,6 @@ export function revealedClueIdsForEvent(event) {
 
 // Clue ids the narrator granted outside the discovery graph (a brilliance
 // bypass), which the runtime records alongside the reveal itself.
-export function offScriptClueIdsForEvent(event) {
+export function offScriptClueIdsForEvent(event: GameEventLike): string[] {
   return readStringArray(event.payload ?? null, "revealed_off_script");
 }

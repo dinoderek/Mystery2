@@ -26,7 +26,7 @@
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",
-        "check:curated-docs": "node evaluation/generator-harness/scripts/check-curated-docs.mjs",
+        "check:curated-docs": "node scripts/check-curated-docs.mjs",
         "check:doc-refs": "node scripts/check-doc-refs.mjs",
         "check:word-budgets": "node scripts/check-word-budgets.mjs",
         "check:gate-coverage": "node scripts/check-gate-coverage.mjs",

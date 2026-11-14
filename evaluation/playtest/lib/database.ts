@@ -3,7 +3,7 @@
 // SQLite's backup, which is safe while the server is still writing.
 
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
-import { playedEvents } from "../../lib/game-events.mjs";
+import { playedEvents } from "../../lib/game-events.ts";
 
 /** One saved event of a game, as the report lays it out. */
 export interface PlayedEvent {
@@ -41,7 +41,7 @@ export function readPlayedEvents(databaseFile: string, gameId: string): PlayedEv
       )
       .all(gameId);
     return rows
-      .filter((row) => playedEvents([row]).length > 0)
+      .filter((row) => playedEvents([{ event_type: row.event_type as string }]).length > 0)
       .map((row) => ({
         sequence: row.sequence as number,
         type: row.event_type as string,

@@ -75,9 +75,9 @@ cd "$WORKSPACE"
 STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"
 # The model is EVAL_MODEL, which the evaluation core sets from the binding;
-# opus when it is unset.
+# the wrapper stops when it is unset.
 claude --print --output-format stream-json --verbose \
-       --model "${EVAL_MODEL:-opus}" \
+       --model "${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}" \
        --effort xhigh \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./verdict.json that passes the validator." \

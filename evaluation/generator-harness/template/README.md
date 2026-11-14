@@ -23,7 +23,7 @@ overwritten or deleted.
 │   ├── runtime-consumption.md      Curated extract: how the runtime AI uses your blueprint
 │   └── briefs.md                   Curated extract: story_brief field reference
 └── scripts/
-    └── validate-blueprint.mjs      Symlink to repo: schema validator
+    └── validate-blueprint.ts      Symlink to repo: schema validator
 ```
 
 ## What lives here vs in the repo

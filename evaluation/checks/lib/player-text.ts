@@ -14,14 +14,47 @@
 // the player"), character backgrounds/personalities/alibis, tells,
 // flavor_knowledge, actual_actions, image descriptions, and ground truth.
 
+interface TextClue {
+  id?: string;
+  text?: string;
+}
+
+/** The fields read below, all optional: a candidate blueprint need not be well formed. */
+export interface PlayerTextBlueprint {
+  metadata?: { title?: string; one_liner?: string; target_age?: unknown };
+  narrative?: {
+    premise?: string;
+    starting_knowledge?: {
+      mystery_summary?: string;
+      locations?: Array<{ summary?: string } | null | undefined>;
+      characters?: Array<{ summary?: string } | null | undefined>;
+    };
+  };
+  world?: {
+    locations?: Array<{
+      name?: string;
+      description?: string;
+      clues?: Array<TextClue | null | undefined>;
+      sub_locations?: Array<{ name?: string; clues?: Array<TextClue | null | undefined> } | null | undefined>;
+    } | null | undefined>;
+    characters?: Array<{ clues?: Array<TextClue | null | undefined> } | null | undefined>;
+  };
+}
+
+export interface PlayerText {
+  path: string;
+  kind: string;
+  text: string;
+}
+
 /**
  * Extract every player-facing string from a blueprint.
  * Returns [{ path, kind, text }] where `path` is a dotted JSON path into the
  * blueprint and `kind` groups strings for reporting.
  */
-export function extractPlayerFacingText(blueprint) {
-  const out = [];
-  const push = (path, kind, text) => {
+export function extractPlayerFacingText(blueprint: PlayerTextBlueprint): PlayerText[] {
+  const out: PlayerText[] = [];
+  const push = (path: string, kind: string, text: unknown) => {
     if (typeof text === "string" && text.trim().length > 0) {
       out.push({ path, kind, text: text.trim() });
     }

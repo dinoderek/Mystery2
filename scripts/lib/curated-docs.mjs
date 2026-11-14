@@ -1,4 +1,4 @@
-// The logic behind `check-curated-docs.mjs`, kept free of I/O so it can be
+// The logic behind `scripts/check-curated-docs.mjs`, kept free of I/O so it can be
 // unit-tested.
 //
 // A curated extract pins each source it was derived from:

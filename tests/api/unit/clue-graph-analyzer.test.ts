@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { analyzeClueGraph } from "../../../evaluation/checks/lib/clue-graph.mjs";
-import { analyze } from "../../../evaluation/checks/analyzers/clue-graph.mjs";
+import { analyzeClueGraph } from "../../../evaluation/checks/lib/clue-graph.ts";
+import { analyze } from "../../../evaluation/checks/analyzers/clue-graph.ts";
 import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 

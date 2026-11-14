@@ -27,14 +27,67 @@
 import {
   ACCUSATION_EVENT_TYPES,
   EVENT_ROLE,
+  type GameEventLike,
   offScriptClueIdsForEvent,
   readField,
   revealedClueIdsForEvent,
-} from "../lib/game-events.mjs";
+} from "../lib/game-events.ts";
+
+/** One turn of a judge subject, in the shape the judge briefs are written against. */
+export interface JudgeTurn {
+  sequence: number;
+  judged: boolean;
+  role_name: string | null;
+  location_id: string | null;
+  character_id: string | null;
+  player_input: string | null;
+  search_query: string | null;
+  revealed_clue_ids: string[];
+  revealed_off_script: string[];
+  narration: string;
+  is_accusation_phase: boolean;
+  /** Clue ids established by every turn before this one, in reveal order. */
+  prior_revealed_clue_ids: string[];
+}
+
+type TurnBeforePriors = Omit<JudgeTurn, "prior_revealed_clue_ids">;
+
+export interface JudgeSubject {
+  subject_kind: "trace" | "interaction";
+  turns: JudgeTurn[];
+  judged_sequences: number[];
+}
+
+/** A reconstructed game turn, as far as the projection reads it. */
+export interface TraceTurnLike {
+  sequence: number;
+  event_type: string;
+  role_name: string | null;
+  location_id?: string | null;
+  character_id?: string | null;
+  player_input?: string | null;
+  search_query?: string | null;
+  revealed_clue_ids?: string[];
+  revealed_off_script?: string[];
+  narration: string;
+}
+
+/** One replayed interaction, as far as the projection reads it. */
+export interface InteractionLike {
+  given?: { location_id?: string; talk_character_id?: string; history?: GameEventLike[] };
+  action?: {
+    location_id?: string;
+    character_id?: string;
+    player_input?: string;
+    player_reasoning?: string;
+    search_query?: string;
+  };
+  response?: { raw?: unknown; narration_text?: string };
+}
 
 /** Clue ids established by every turn before `index`, in reveal order. */
-function priorRevealedClueIds(turns, index) {
-  const seen = [];
+function priorRevealedClueIds(turns: readonly TurnBeforePriors[], index: number): string[] {
+  const seen: string[] = [];
   for (let i = 0; i < index; i += 1) {
     for (const id of turns[i].revealed_clue_ids ?? []) {
       if (!seen.includes(id)) seen.push(id);
@@ -43,7 +96,7 @@ function priorRevealedClueIds(turns, index) {
   return seen;
 }
 
-function finalizeSubject(subjectKind, turns) {
+function finalizeSubject(subjectKind: JudgeSubject["subject_kind"], turns: TurnBeforePriors[]): JudgeSubject {
   const withPriors = turns.map((turn, index) => ({
     ...turn,
     prior_revealed_clue_ids: priorRevealedClueIds(turns, index),
@@ -60,8 +113,8 @@ function finalizeSubject(subjectKind, turns) {
  * no AI role (the opening "start" block) carry no narration the game master
  * wrote, so they are dropped exactly as the trace pipeline always dropped them.
  */
-export function projectTraceSubject(reconstructedTurns) {
-  const turns = reconstructedTurns
+export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]): JudgeSubject {
+  const turns: TurnBeforePriors[] = reconstructedTurns
     .filter((t) => t.role_name !== null)
     .map((t) => ({
       sequence: t.sequence,
@@ -89,32 +142,32 @@ export function projectTraceSubject(reconstructedTurns) {
 // handler drops ids the model was not entitled to), the CLI list is the model's
 // raw claim. A clue-discipline finding therefore reads as "what the model asked
 // for" on cli and "what the server let through" on endpoint.
-export function revealedClueIdsFromResponse(response) {
-  const raw = response?.raw ?? null;
+export function revealedClueIdsFromResponse(response: InteractionLike["response"]): string[] {
+  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
   if (!raw || typeof raw !== "object") return [];
   if (Array.isArray(raw.revealed_clues)) {
     return raw.revealed_clues
-      .map((clue) => (typeof clue?.id === "string" ? clue.id : null))
-      .filter(Boolean);
+      .map((clue: { id?: unknown } | null) => (typeof clue?.id === "string" ? clue.id : null))
+      .filter((id): id is string => Boolean(id));
   }
   if (Array.isArray(raw.revealed_clue_ids)) {
-    return raw.revealed_clue_ids.filter((id) => typeof id === "string");
+    return raw.revealed_clue_ids.filter((id): id is string => typeof id === "string");
   }
   if (typeof raw.revealed_clue_id === "string") return [raw.revealed_clue_id];
   return [];
 }
 
-function offScriptClueIdsFromResponse(response) {
-  const raw = response?.raw ?? null;
+function offScriptClueIdsFromResponse(response: InteractionLike["response"]): string[] {
+  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
   if (!raw || typeof raw !== "object") return [];
   return Array.isArray(raw.revealed_off_script)
-    ? raw.revealed_off_script.filter((id) => typeof id === "string")
+    ? raw.revealed_off_script.filter((id): id is string => typeof id === "string")
     : [];
 }
 
 // The case's `given.history` rows use the persisted game_events shape, so the
 // same readers that parse a real trace parse them here.
-function historyTurns(history) {
+function historyTurns(history: readonly GameEventLike[] | undefined): TurnBeforePriors[] {
   return (history ?? []).map((event, index) => ({
     sequence: index + 1,
     judged: false,
@@ -137,16 +190,19 @@ function historyTurns(history) {
  * ONE action under test as the single judged turn.
  *
  * `roleName`/`isAccusationPhase` describe the judged turn; the caller resolves
- * them from the action map (lib/roles.mjs) so this module stays independent of
+ * them from the action map (runtime/lib/roles.ts) so this module stays independent of
  * the runtime harness's action registry.
  */
-export function projectInteractionSubject(interaction, { roleName = null, isAccusationPhase = false } = {}) {
+export function projectInteractionSubject(
+  interaction: InteractionLike,
+  { roleName = null, isAccusationPhase = false }: { roleName?: string | null; isAccusationPhase?: boolean } = {},
+): JudgeSubject {
   const given = interaction.given ?? {};
   const context = historyTurns(given.history);
   const action = interaction.action ?? {};
   const response = interaction.response ?? {};
 
-  const judgedTurn = {
+  const judgedTurn: TurnBeforePriors = {
     sequence: context.length + 1,
     judged: true,
     role_name: roleName,

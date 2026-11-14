@@ -10,17 +10,17 @@
 // A US grade level maps to age roughly as `grade = age - 5` (grade 5 ≈ age 10).
 
 /** Expected reading grade for a target age (kindergarten = age 5 = grade 0). */
-export function expectedGradeForAge(age) {
+export function expectedGradeForAge(age: number): number {
   return Math.max(0, age - 5);
 }
 
-export function countSentences(text) {
+export function countSentences(text: string): number {
   const matches = text.match(/[.!?]+(?:\s|$)/g);
   // Always at least one "sentence" so we never divide by zero on a fragment.
   return Math.max(1, matches ? matches.length : 1);
 }
 
-export function splitWords(text) {
+export function splitWords(text: string): string[] {
   return text.match(/[A-Za-z0-9']+/g) ?? [];
 }
 
@@ -30,7 +30,7 @@ export function splitWords(text) {
  * silent-e regex deliberately keeps consonant+"le" endings ("candle", "apple")
  * so their final vowel group is still counted, which is the correct syllable.
  */
-export function countSyllables(word) {
+export function countSyllables(word: string): number {
   const w = word.toLowerCase().replace(/[^a-z]/g, "");
   if (w.length === 0) return 0;
   if (w.length <= 3) return 1;
@@ -42,7 +42,7 @@ export function countSyllables(word) {
 }
 
 /** Compute the Flesch–Kincaid grade level for a block of text. */
-export function fleschKincaidGrade(text) {
+export function fleschKincaidGrade(text: string): number | null {
   const words = splitWords(text);
   const wordCount = words.length;
   if (wordCount === 0) return null;

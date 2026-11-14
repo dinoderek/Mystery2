@@ -9,7 +9,7 @@
 #     dimension.md                       (symlink -> repo)
 #     prompts/judge-system.md            (symlink -> repo)
 #     schema/output-schema.ts            (symlink -> repo)
-#     scripts/validate-judge-output.mjs  (symlink -> repo)
+#     scripts/validate-judge-output.ts  (symlink -> repo)
 #     docs/                              (only for dims that need it)
 #       runtime-consumption.md           (symlink -> generator-harness curated)
 #
@@ -59,8 +59,8 @@ ln -s "$REPO_ROOT/evaluation/prompts/judge-system.md" \
       "$TARGET/prompts/judge-system.md"
 ln -s "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.schema.ts" \
       "$TARGET/schema/output-schema.ts"
-ln -s "$REPO_ROOT/evaluation/judge-harness/scripts/validate-judge-output.mjs" \
-      "$TARGET/scripts/validate-judge-output.mjs"
+ln -s "$REPO_ROOT/evaluation/judge-harness/scripts/validate-judge-output.ts" \
+      "$TARGET/scripts/validate-judge-output.ts"
 
 # Per-dimension docs (only character_grounding needs extra context today)
 if [[ "$DIM_ID" == "character_grounding" ]]; then

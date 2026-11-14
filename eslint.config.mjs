@@ -6,8 +6,8 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    // The Node scripts and evaluation harnesses are plain ES modules.
-    files: ["evaluation/**/*.mjs", "scripts/**/*.mjs", "lib/**/*.mjs"],
+    // The Node scripts are plain ES modules.
+    files: ["scripts/**/*.mjs", "lib/**/*.mjs"],
     languageOptions: { globals: globals.node },
   },
   {

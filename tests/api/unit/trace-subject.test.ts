@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { projectTraceSubject } from "../../../evaluation/judges/subject.mjs";
+import { projectTraceSubject } from "../../../evaluation/judges/subject.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { makeRawTrace } from "./trace-fixtures";
 

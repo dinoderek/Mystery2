@@ -26,14 +26,14 @@ gets its own `<run-stamp>` subtree, so prior runs are never overwritten.
 │   └── runtime-consumption.md         Symlink: curated runtime narrator doc
 │                                                (character_grounding only)
 └── scripts/
-    └── validate-judge-output.mjs      Symlink: schema + reference validator
+    └── validate-judge-output.ts      Symlink: schema + reference validator
 ```
 
 ## Symlinks vs copies
 
 - **Symlinks** to authoritative repo artifacts:
   `prompts/judge-system.md`, `schema/output-schema.ts`, `dimension.md`,
-  `scripts/validate-judge-output.mjs`, any per-dim docs. Edits to these
+  `scripts/validate-judge-output.ts`, any per-dim docs. Edits to these
   flow into the next eval run.
 - **Copies** of per-run inputs: `brief.json`, `blueprint.json`,
   `context.json`. Each run gets its own snapshot.

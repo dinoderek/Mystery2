@@ -21,7 +21,7 @@ import {
   playedEvents,
   readField,
   revealedClueIdsForEvent,
-} from "../../lib/game-events.mjs";
+} from "../../lib/game-events.ts";
 import type {
   AIContext,
   BlueprintContext,

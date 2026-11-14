@@ -134,7 +134,7 @@ describe("loader", () => {
       loadJudge({ ...base, prompt: { ...base.prompt, brief: "evaluation/dimensions/no-such-brief.md" } }),
     ).rejects.toThrow(/ENOENT/);
     await expect(
-      loadJudge({ ...base, prompt: { ...base.prompt, schema: "evaluation/judges/index.mjs" } }),
+      loadJudge({ ...base, prompt: { ...base.prompt, schema: "evaluation/judges/index.ts" } }),
     ).rejects.toThrow(/must export a named 'schema'/);
   });
 

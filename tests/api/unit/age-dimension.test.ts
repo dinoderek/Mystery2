@@ -4,8 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { judgesFor } from "../../../evaluation/core/registry.ts";
-import { analyze } from "../../../evaluation/checks/analyzers/age-appropriate.mjs";
-import { extractPlayerFacingText } from "../../../evaluation/checks/lib/player-text.mjs";
+import { analyze } from "../../../evaluation/checks/analyzers/age-appropriate.ts";
+import { extractPlayerFacingText } from "../../../evaluation/checks/lib/player-text.ts";
 import { schema } from "../../../evaluation/dimensions/age-appropriate.schema.ts";
 import { allAgeProfiles } from "../../../packages/shared/src/age-profile.ts";
 
@@ -108,7 +108,7 @@ describe("age_appropriate analyzer", () => {
     const result = analyze({ blueprint, context: {} });
     expect(result.status).toBe("fail");
     expect(
-      result.details.violations.map((v: { path: string }) => v.path),
+      result.details.violations?.map((v: { path: string }) => v.path),
     ).toContain("narrative.premise");
   });
 

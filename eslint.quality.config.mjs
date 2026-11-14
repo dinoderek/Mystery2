@@ -9,7 +9,7 @@ export default tseslint.config({
     "packages/game-engine/**/*.ts",
     "packages/shared/**/*.ts",
     "web/src/**/*.ts",
-    "evaluation/**/*.{ts,mjs}",
+    "evaluation/**/*.ts",
     "scripts/**/*.mjs",
     "lib/**/*.mjs",
   ],

@@ -24,8 +24,8 @@ passes.
   match.
 - `./docs/` — per-dimension curated context (only present for dimensions
   that need it; e.g. `runtime-consumption.md` for `character_grounding`).
-- `./scripts/validate-judge-output.mjs` — the validator. Usage:
-  `node scripts/validate-judge-output.mjs ./verdict.json`. Exits 0 on pass,
+- `./scripts/validate-judge-output.ts` — the validator. Usage:
+  `node scripts/validate-judge-output.ts ./verdict.json`. Exits 0 on pass,
   non-zero on fail. Runs a **shape check** (Zod against the dimension's
   output schema) followed by **semantic reference / coverage checks** (every
   id you cite exists in `blueprint.json`; topics come from `probe_topics`;
@@ -41,7 +41,7 @@ passes.
 3. **Write the verdict.** Save to `./verdict.json` as a single JSON object
    matching `schema/output-schema.ts`. No markdown fences, no prose before
    or after the JSON.
-4. **Validate.** Run `node scripts/validate-judge-output.mjs ./verdict.json`.
+4. **Validate.** Run `node scripts/validate-judge-output.ts ./verdict.json`.
 5. **If validation fails:** read every reported issue (schema and/or
    reference), edit `./verdict.json` in place, re-run the validator. Repeat
    until it passes.
@@ -86,7 +86,7 @@ Validator exit code 0. Nothing else counts.
 
 - `Read` — for inputs (dimension.md, brief, blueprint, schema, docs).
 - `Write` / `Edit` — for drafting and revising `./verdict.json`.
-- `Bash` — only for running `node scripts/validate-judge-output.mjs
+- `Bash` — only for running `node scripts/validate-judge-output.ts
   ./verdict.json`. Do not run other commands.
 
 ## Out of scope

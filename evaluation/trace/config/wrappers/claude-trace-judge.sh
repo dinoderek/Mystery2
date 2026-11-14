@@ -39,10 +39,10 @@ STREAM_FILE="${EVAL_STREAM_FILE:-${TMPDIR:-/tmp}/claude-trace-judge.$$.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"
 
 # The model is EVAL_MODEL, which the evaluation core sets from the binding;
-# opus when it is unset.
+# the wrapper stops when it is unset.
 claude --print \
        --output-format stream-json --verbose \
-       --model "${EVAL_MODEL:-opus}" \
+       --model "${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}" \
        --system-prompt "$(cat "$SYSTEM_PROMPT_FILE")" \
        --tools "" \
        --strict-mcp-config \

@@ -5,7 +5,7 @@ import {
   parseSections,
   sectionHash,
   splitPin,
-} from "../../../evaluation/generator-harness/scripts/curated-docs.mjs";
+} from "../../../scripts/lib/curated-docs.mjs";
 
 /**
  * A curated extract is only as honest as its pins. The properties worth holding

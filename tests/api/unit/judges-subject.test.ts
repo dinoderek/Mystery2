@@ -4,7 +4,7 @@ import {
   projectInteractionSubject,
   projectTraceSubject,
   revealedClueIdsFromResponse,
-} from "../../../evaluation/judges/subject.mjs";
+} from "../../../evaluation/judges/subject.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { makeRawTrace } from "./trace-fixtures";
 

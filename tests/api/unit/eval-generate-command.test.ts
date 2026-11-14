@@ -312,6 +312,19 @@ describe("generate, before it starts", () => {
     expect(await refused(["--backend", "api"], { OPENROUTER_API_KEY: KEY }, config)).toContain('binding "generator-api" has no model');
   });
 
+  it("ignores an exported AI_MODEL and AI_PROVIDER when the api backend has no model", async () => {
+    const config = stubConfig({ answers: {}, apiModel: null });
+    const env = { OPENROUTER_API_KEY: KEY, AI_MODEL: "vendor/exported", AI_PROVIDER: "openrouter" };
+    expect(await refused(["--backend", "api"], env, config)).toContain('binding "generator-api" has no model');
+  });
+
+  it("uses --model, not an exported AI_MODEL", async () => {
+    const config = stubConfig({ answers: { "generator-api": validBlueprintV2 }, apiModel: null });
+    expect(await generate(argv(["--config", config, "--backend", "api", "--model", "flag/model"]), { OPENROUTER_API_KEY: KEY, AI_MODEL: "vendor/exported" })).toBe(0);
+    const [result] = await results();
+    expect(result.production?.calls[0].model).toBe("flag/model");
+  });
+
   it("takes the api model from --model-override", async () => {
     const config = stubConfig({ answers: { "generator-api": validBlueprintV2 }, apiModel: null });
     expect(await generate(argv(["--config", config, "--backend", "api", "--model-override", "generator-api=via/override"]), { OPENROUTER_API_KEY: KEY })).toBe(0);

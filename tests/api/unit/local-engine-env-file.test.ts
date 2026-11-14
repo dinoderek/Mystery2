@@ -21,8 +21,8 @@ describe("parseEnvFile", () => {
         [
           "# a comment",
           "",
-          "AI_PROVIDER=openrouter",
-          "  AI_MODEL = some/model  ",
+          "FIRST=one",
+          "  SECOND = some/value  ",
           "QUOTED=\"sk-with spaces\"",
           "SINGLE='sk-single'",
           "EMPTY=",
@@ -31,8 +31,8 @@ describe("parseEnvFile", () => {
         ].join("\n"),
       ),
     ).toEqual({
-      AI_PROVIDER: "openrouter",
-      AI_MODEL: "some/model",
+      FIRST: "one",
+      SECOND: "some/value",
       QUOTED: "sk-with spaces",
       SINGLE: "sk-single",
       EMPTY: "",

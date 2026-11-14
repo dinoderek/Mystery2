@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   MYSTERY_CONFIG_ROOT_ENV,
-  getAIEnvPath,
+  getAIConfigPath,
   getBaseEnvPath,
   getBlueprintImagesDir,
   getBlueprintsDir,
@@ -30,9 +30,7 @@ describe("local config resolver", () => {
     expect(resolveLocalConfigRoot(repoRoot, env)).toBe(externalRoot);
     expect(isUsingExternalLocalConfigRoot(repoRoot, env)).toBe(true);
     expect(getBaseEnvPath(repoRoot, env)).toBe(path.join(externalRoot, ".env.local"));
-    expect(getAIEnvPath(repoRoot, "free", env)).toBe(
-      path.join(externalRoot, ".env.ai.free.local"),
-    );
+    expect(getAIConfigPath(repoRoot, env)).toBe(path.join(externalRoot, "ai.json"));
     expect(getImagesEnvPath(repoRoot, env)).toBe(
       path.join(externalRoot, ".env.images.local"),
     );

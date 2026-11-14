@@ -14,7 +14,7 @@ summaries.
 - Engine, API contracts, database. `docs/backend-conventions.md`
 - Running the game, worktrees, databases, ports. `docs/local-infrastructure.md`
 - Narrator prompts, AI contracts, runtime context. `docs/ai-runtime.md`
-- AI profiles, providers, settings, mock vs live. `docs/ai-configuration.md`
+- AIs (`ai.json`), backends, settings, mock vs live. `docs/ai-configuration.md`
 - Blueprint fields and generation. `docs/blueprint-generation-flows.md`,
   `packages/shared/src/blueprint-schema-v2.ts`
 - `evaluation/`: `docs/evaluation-pipeline.md`, then the README beside the code.

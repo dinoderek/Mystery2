@@ -77,10 +77,11 @@ your AIs by name:
     "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 ```
 
-Leave out `"key"` to use `OPENROUTER_API_KEY` from the environment or `.env.local`. `./dev doctor`
-checks the file. Restart, then choose one on the settings page: `[ AI SETTINGS ]`
-on the profile picker, reachable before you have picked a profile. The choice is
-stored in this database and survives a restart; the picker names the narrator.
+Add a `"key"`, or leave it out and put `OPENROUTER_API_KEY` in `.env.local`.
+`./dev doctor` checks the file. Start, then choose one on `/settings`
+(`[ AI SETTINGS ]` on the profile picker, reachable before you have picked a
+profile). The choice is stored per database and survives a restart; a fresh
+database is mock, and the picker names the narrator.
 
 ### Naming an AI for a run
 
@@ -94,12 +95,12 @@ process, and the page shows a banner saying so.
 
 ### Switching model
 
-Change it on the settings page; no restart. Because a session's profile is
-resolved on every request, the switch takes effect on the next turn of a session
-already in progress.
+Change it on the settings page; no restart. A session resolves its AI on every
+request, so the switch takes effect on the next turn of a game in progress. A
+new or edited `ai.json` entry needs a restart.
 
-Existing sessions keep the profile *label* they were started with, which is
-what the evaluation pipeline reads.
+Existing sessions keep the AI name they were started with, which is what the
+evaluation pipeline reads.
 See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 
 ## Profiles

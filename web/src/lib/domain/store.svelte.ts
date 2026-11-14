@@ -388,6 +388,7 @@ export class GameSessionStore {
       // Not offered for a retry: the turn may well have been saved, and a
       // second send would play it twice.
       this.error = answer.message;
+      this.lastFailedInput = null;
       this.appendError(`${answer.message} ${UNREADABLE_NOTE}`);
       return null;
     }

@@ -2,7 +2,7 @@
 // a schema from `packages/shared`, so a shape the browser does not understand
 // stops here, named and logged, instead of half-updating the screen.
 
-/** The part of a Zod schema this needs, so the browser takes no dependency on Zod itself. */
+/** The part of a Zod schema this needs, so this module does not import Zod. */
 export interface ContractSchema<T> {
   safeParse(
     data: unknown,

@@ -339,6 +339,18 @@ describe('a turn that fails', () => {
     expect(store.status).toBe('active');
   });
 
+  it('does not leave an earlier failed line to be retried after an unreadable answer', async () => {
+    const store = createStore();
+    invokeMock.mockResolvedValueOnce({ data: null, error: { message: 'Bad request', status: 400 } });
+    await store.submitInput('search');
+    expect(store.lastFailedInput).toBe('search');
+
+    answer({ kind: 'dance' });
+    await store.submitInput('talk to Rosie');
+
+    expect(store.lastFailedInput).toBeNull();
+  });
+
   it('rejects an answer of an unknown kind', async () => {
     const store = createStore();
     answer({ kind: 'dance' });

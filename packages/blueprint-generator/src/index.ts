@@ -473,6 +473,7 @@ export async function generateBlueprint(
       {
         issues: blueprint.error.format(),
         responseText,
+        checkedJson: parsedJson,
         model,
         requestBody,
       },

@@ -94,6 +94,15 @@ describe("the api wrapper's request", () => {
     expect(JSON.parse(JSON.parse(stdout).result)).toEqual({ title: "x" });
   });
 
+  it("prints a failing blueprint as it was checked, without the nulls strict mode forced", async () => {
+    const answer = { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, art_style: null, title: "" } };
+    const stdout = await generateViaOpenRouter({ userMessageFile: userMessage(), env: { EVAL_MODEL: MODEL, OPENROUTER_API_KEY: KEY }, fetchImpl: fakeFetch(answer).impl });
+    const printed = JSON.parse(JSON.parse(stdout).result);
+    expect(printed.metadata).not.toHaveProperty("art_style");
+    const issues = BlueprintV2Schema.safeParse(printed).error?.issues.map((issue) => issue.path.join("."));
+    expect(issues).toEqual(["metadata.title"]);
+  });
+
   it("sends to OPENROUTER_URL when it is set, with the timeout from AI_OPENROUTER_TIMEOUT_MS", async () => {
     const wrapped = fakeFetch(validBlueprintV2);
     const env = { EVAL_MODEL: MODEL, OPENROUTER_API_KEY: KEY, OPENROUTER_URL: "http://127.0.0.1:9/chat", AI_OPENROUTER_TIMEOUT_MS: "5000" };

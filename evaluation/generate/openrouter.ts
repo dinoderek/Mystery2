@@ -85,9 +85,13 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
     });
     text = JSON.stringify(blueprint, null, 2);
   } catch (error) {
-    const kept = error instanceof BlueprintGenerationError && error.code === "SCHEMA_VALIDATION_FAILED" ? error.details.responseText : undefined;
-    if (typeof kept !== "string") throw error;
-    text = kept;
+    if (!(error instanceof BlueprintGenerationError) || error.code !== "SCHEMA_VALIDATION_FAILED") throw error;
+    // The answer as the generator checked it, so the command's own check
+    // reports what is really wrong rather than the nulls strict mode forced.
+    const { checkedJson, responseText } = error.details;
+    if (checkedJson !== undefined) text = JSON.stringify(checkedJson, null, 2);
+    else if (typeof responseText === "string") text = responseText;
+    else throw error;
   }
   return JSON.stringify({ result: text });
 }

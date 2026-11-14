@@ -45,6 +45,7 @@
         "test:unit": "vitest run tests/api/unit",
         "test:integration": "node scripts/run-mock-tests.mjs integration",
         "test:e2e": "node scripts/run-mock-tests.mjs e2e",
+        "test:golden:record": "GOLDEN_RECORD=1 node scripts/run-mock-tests.mjs e2e",
         "test:integration:live:free": "node scripts/run-live-ai.mjs integration free",
         "test:integration:live:paid": "node scripts/run-live-ai.mjs integration paid",
         "test:e2e:live:free": "node scripts/run-live-ai.mjs e2e free",

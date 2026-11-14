@@ -1,0 +1,116 @@
+game: mock-investigation-won
+blueprint: mock-blueprint
+
+steps
+  0  (start)  mode=explore turns=10
+  1  (enter)  mode=explore turns=10
+  2  "help"  mode=explore turns=10 opens=help
+  3  "notebook"  mode=explore turns=10 opens=notebook
+  4  "n"  mode=explore turns=10 opens=notebook
+  5  "locations"  mode=explore turns=10 opens=notebook/places
+  6  "characters"  mode=explore turns=10 opens=notebook/people
+  7  "dance"  mode=explore turns=10
+  8  "go"  mode=explore turns=10
+  9  "move to the moon"  mode=explore turns=10
+  10  "talk to"  mode=explore turns=10
+  11  "talk to Bob"  mode=explore turns=10
+  12  "search xzqv"  mode=explore turns=10
+  13  "search"  mode=explore turns=9 clues=clue-crumb
+  14  "inspect the pantry shelf"  mode=explore turns=8 clues=clue-jar
+  15  "look around"  mode=explore turns=7
+  16  "go to the Living Room"  mode=explore turns=6
+  17  "search"  mode=explore turns=5 clues=clue-wrapper
+  18  "look"  mode=explore turns=4 clues=clue-half-eaten
+  19  "talk to bob"  mode=talk turns=3
+  20  "What did you see?!"  mode=talk turns=3 clues=clue-bob-alice-loves-cookies
+  21  "aha, I bet it was the cookies"  mode=talk turns=3
+  22  "tell me more"  mode=talk turns=3
+  23  "xzqv"  mode=talk turns=3
+  24  "help"  mode=talk turns=3 opens=help
+  25  "notebook"  mode=talk turns=3 opens=notebook
+  26  "who is here?"  mode=talk turns=3
+  27  "bye"  mode=explore turns=3
+  28  "move to kitchen"  mode=explore turns=2
+  29  "speak to Alice Smith"  mode=talk turns=1
+  30  "Where were you at noon?"  mode=talk turns=1 clues=clue-alice-saw-bob
+  31  "accuse Bob"  mode=talk turns=1
+  32  "goodbye"  mode=explore turns=1
+  33  "accuse"  mode=accuse turns=1
+  34  "help"  mode=accuse turns=1 opens=help
+  35  "notebook"  mode=accuse turns=1 opens=notebook
+  36  "Maybe it was Bob?"  mode=accuse turns=1
+  37  "I think it was Alice, because of the empty cookie jar."  mode=ended turns=1 result=win
+
+pages
+  page 0 opening "Mock Blueprint"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "Kitchen"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 2 | You (investigator): "help"
+    step 2 | System (system): "Help menu opened."
+    step 7 | You (investigator): "dance"
+    step 7 | System (system): "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details."
+    step 8 | You (investigator): "go"
+    step 8 | System (system): "Where to? Try: Kitchen, Living Room, Alice Smith."
+    step 9 | You (investigator): "move to the moon"
+    step 9 | System (system): "\"the moon\" is not a valid destination. Try: Kitchen, Living Room, Alice Smith."
+    step 10 | You (investigator): "talk to"
+    step 10 | System (system): "Who do you want to talk to? Try: Alice Smith."
+    step 11 | You (investigator): "talk to Bob"
+    step 11 | System (system): "\"bob\" is not a valid character. Try: Alice Smith."
+    step 12 | You (investigator): "search xzqv"
+    step 12 | Narrator (narrator): "[Mock] You poke around Kitchen, but you're not sure what you're even looking for."
+    step 13 | You (investigator): "search"
+    step 13 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A crumb on the floor."
+    step 14 | You (investigator): "inspect the pantry shelf"
+    step 14 | Narrator (narrator): "[Mock] You search the pantry shelf in Kitchen and uncover a clue: An empty cookie jar hidden behind cereal boxes."
+    step 15 | You (investigator): "look around"
+    step 15 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+  page 2 location "Living Room"
+    step 16 | You (investigator): "go to the Living Room"
+    step 16 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 17 | You (investigator): "search"
+    step 17 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A wrapper on the sofa."
+    step 18 | You (investigator): "look"
+    step 18 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A half-eaten cookie."
+  page 3 conversation "Bob"
+    step 19 | You (investigator): "talk to bob"
+    step 19 | Narrator (narrator): "[Mock] You walk up to Bob in Living Room. he looks Short with glasses.."
+    step 20 | You (investigator): "What did you see?!"
+    step 20 | Bob (character): "[Mock] Bob thinks, then says: Alice loves cookies."
+    step 21 | You (investigator): "aha, I bet it was the cookies"
+    step 21 | Bob (character): "[Mock] Bob thinks about your question: \"aha, I bet it was the cookies\"."
+    step 22 | You (investigator): "tell me more"
+    step 22 | Bob (character): "[Mock] Bob thinks about your question: \"tell me more\"."
+    step 23 | You (investigator): "xzqv"
+    step 23 | Bob (character): "[Mock] Bob blinked. \"Sorry — what?\""
+    step 24 | You (investigator): "help"
+    step 24 | System (system): "Help menu opened."
+    step 26 | You (investigator): "who is here?"
+    step 26 | Bob (character): "[Mock] Bob thinks about your question: \"who is here?\"."
+  page 4 location "Living Room"
+    step 27 | You (investigator): "bye"
+    step 27 | Narrator (narrator): "[Mock] You say goodbye to Bob and look around again."
+  page 5 location "Kitchen"
+    step 28 | You (investigator): "move to kitchen"
+    step 28 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+  page 6 conversation "Alice"
+    step 29 | You (investigator): "speak to Alice Smith"
+    step 29 | Narrator (narrator): "[Mock] You walk up to Alice in Kitchen. she looks Tall with red hair.."
+    step 30 | You (investigator): "Where were you at noon?"
+    step 30 | Alice (character): "[Mock] Alice thinks, then says: Bob was in the living room."
+    step 31 | You (investigator): "accuse Bob"
+    step 31 | Alice (character): "[Mock] Alice thinks about your question: \"accuse Bob\"."
+  page 7 location "Kitchen"
+    step 32 | You (investigator): "goodbye"
+    step 32 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
+  page 8 accusation "The accusation"
+    step 33 | You (investigator): "accuse"
+    step 33 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 34 | You (investigator): "help"
+    step 34 | System (system): "Help menu opened."
+    step 36 | You (investigator): "Maybe it was Bob?"
+    step 36 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
+    step 37 | You (investigator): "I think it was Alice, because of the empty cookie jar."
+    step 37 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"

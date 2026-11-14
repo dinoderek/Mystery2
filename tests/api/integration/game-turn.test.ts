@@ -277,12 +277,19 @@ describe("game-turn endpoint", () => {
       );
     }
 
-    const res = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
-    const read = SessionTranscriptResponseSchema.parse(await res.json());
+    const readBack = async () => {
+      const res = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
+      expect(res.status).toBe(200);
+      const read = SessionTranscriptResponseSchema.parse(await res.json());
+      return read.narration_events.slice(1).map((event) => event.narration_parts[0].text);
+    };
 
-    expect(read.narration_events.slice(1).map((event) => event.narration_parts[0].text)).toEqual([
-      "move to Living Room",
-      "search behind the bookshelf",
-    ]);
+    expect(await readBack()).toEqual(["move to Living Room", "search behind the bookshelf"]);
+
+    // Resuming such a game plays on from where it stood.
+    const turnsBefore = Number(readStoredSession(gameId)?.time_remaining);
+    const next = await played(gameId, "go to the kitchen");
+    expect(next.state).toMatchObject({ location: "loc-kitchen", time_remaining: turnsBefore - 1 });
+    expect(await readBack()).toEqual(["move to Living Room", "search behind the bookshelf", "go to the kitchen"]);
   });
 });

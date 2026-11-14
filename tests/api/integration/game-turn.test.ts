@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { GameTurnResponseSchema, SessionTranscriptResponseSchema, type GameTurnResponse } from "@my2/shared";
+import { GameTurnResponseSchema, NO_TURN_EVENT_TYPE, SessionTranscriptResponseSchema, type GameTurnResponse } from "@my2/shared";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
@@ -114,7 +114,13 @@ describe("game-turn endpoint", () => {
     expect(readStoredSession(gameId)).toMatchObject({ mode: "accuse", time_remaining: 0 });
   });
 
-  it("answers each refusal and view without saving or spending anything", async () => {
+  async function getGame(gameId: string) {
+    const res = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
+    expect(res.status).toBe(200);
+    return SessionTranscriptResponseSchema.parse(await res.json());
+  }
+
+  it("saves a refused line and help as lines that cost no turn", async () => {
     const gameId = await startGame();
     const before = readStoredSession(gameId);
 
@@ -123,14 +129,76 @@ describe("game-turn endpoint", () => {
     expect(await turn(gameId, "move to the moon")).toMatchObject({ kind: "refused", reason: "invalid-target" });
     expect(await turn(gameId, "talk to")).toMatchObject({ kind: "refused", reason: "missing-target" });
     expect(await turn(gameId, "talk to Bob")).toMatchObject({ kind: "refused", reason: "invalid-target" });
-    expect(await turn(gameId, "help")).toEqual({ kind: "view", view: "help", section: null });
-    expect(await turn(gameId, "notebook")).toEqual({ kind: "view", view: "notebook", section: null });
-    expect(await turn(gameId, "locations")).toEqual({ kind: "view", view: "locations", section: "places" });
-    expect(await turn(gameId, "characters")).toEqual({ kind: "view", view: "characters", section: "people" });
+    expect(await turn(gameId, "help")).toEqual({ kind: "view", view: "help", section: null, note: "Help menu opened." });
+
+    const stored = readStoredEvents(gameId);
+    expect(stored.map((event) => event.event_type)).toEqual(["start", ...Array(6).fill(NO_TURN_EVENT_TYPE)]);
+    expect(stored.slice(1).map((event) => event.payload)).toEqual([
+      { input: "dance", answered: "refused", reason: "unrecognized" },
+      { input: "go", answered: "refused", reason: "missing-target" },
+      { input: "move to the moon", answered: "refused", reason: "invalid-target" },
+      { input: "talk to", answered: "refused", reason: "missing-target" },
+      { input: "talk to Bob", answered: "refused", reason: "invalid-target" },
+      { input: "help", answered: "help" },
+    ]);
+    expect(stored[6].narration_parts.map((part) => String(part.text))).toEqual(["Help menu opened."]);
+    expect(readStoredSession(gameId)).toEqual(before);
+  });
+
+  it("saves nothing for the notebook, the lists and quit", async () => {
+    const gameId = await startGame();
+    const before = readStoredSession(gameId);
+
+    expect(await turn(gameId, "notebook")).toEqual({ kind: "view", view: "notebook", section: null, note: null });
+    expect(await turn(gameId, "locations")).toEqual({ kind: "view", view: "locations", section: "places", note: null });
+    expect(await turn(gameId, "characters")).toEqual({ kind: "view", view: "characters", section: "people", note: null });
     expect(await turn(gameId, "quit")).toEqual({ kind: "quit" });
 
     expect(readStoredSession(gameId)).toEqual(before);
     expect(readStoredEvents(gameId)).toHaveLength(1);
+  });
+
+  it("returns those lines from game-get in order, among the turns", async () => {
+    const gameId = await startGame();
+
+    await turn(gameId, "dance");
+    await played(gameId, "go to the Living Room");
+    await turn(gameId, "help");
+    await played(gameId, "search");
+
+    const game = await getGame(gameId);
+    expect(game.narration_events.map((event) => [event.sequence, event.event_type])).toEqual([
+      [1, "start"],
+      [2, NO_TURN_EVENT_TYPE],
+      [3, "move"],
+      [4, NO_TURN_EVENT_TYPE],
+      [5, "search"],
+    ]);
+    expect(game.narration_events[1].narration_parts.map((part) => [part.speaker.kind, part.text.startsWith("Commands:")])).toEqual([
+      ["investigator", false],
+      ["system", true],
+    ]);
+    expect(game.narration_events[1].narration_parts[0].text).toBe("dance");
+    expect(game.narration_events[3].narration_parts.map((part) => part.text)).toEqual(["help", "Help menu opened."]);
+    expect(game.state).toMatchObject({ mode: "explore", time_remaining: 8, location: "loc-living-room" });
+  });
+
+  it("lets the player step into the case after a line that costs no turn", async () => {
+    const gameId = await startGame();
+    await turn(gameId, "help");
+
+    const res = await fetch(`${API_URL}/game-enter`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id: gameId }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(readStoredEvents(gameId).map((event) => [event.sequence, event.event_type])).toEqual([
+      [1, "start"],
+      [2, NO_TURN_EVENT_TYPE],
+      [3, "move"],
+    ]);
   });
 
   it("names the missing or wrong field in a 400", async () => {

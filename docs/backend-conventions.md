@@ -24,14 +24,13 @@ All game logic runs in the engine, imported by the SvelteKit server.
   `packages/game-engine/src/endpoints/index.ts`; an unlisted name is a 404. The
   six are `game-start`, `game-enter`, `game-turn`, `game-get`,
   `game-sessions-list` and `blueprints-list`.
-- The engine calls the AI provider with a server-side key; the UI never does.
 - The engine imports `packages/shared` directly, with no build step between.
 
 ### The `EngineContext` seam
 
 Handlers do **not** touch a database, a file path, or an HTTP detail. Each
-exports `handle(req, ctx)`, and `web/src/routes/api/[endpoint]/+server.ts` does
-the rest once for all of them: check the method, build the context, delegate.
+exports `handle(req, ctx)`; `web/src/routes/api/[endpoint]/+server.ts` checks the
+method, builds the context and delegates, once for all of them.
 
 `EngineContext` (`packages/game-engine/src/context.ts`) is the engine's whole boundary against its
 host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
@@ -50,11 +49,11 @@ Rules:
   and every event in one `Db.transaction`, sequences assigned inside it, after
   the model has answered. A stale expected sequence writes nothing and throws
   `SaveConflictError` (`409`). Never write a session and its events separately.
-- Register the endpoint's allowed methods in `packages/game-engine/src/endpoints/index.ts`. The
-  route returns `405` from that list; handlers do not re-check.
+- The registry also lists each endpoint's allowed methods. The route returns
+  `405` from that list; handlers do not re-check.
 
 A direct file or driver reference in a handler is a bug: a second adapter must
-be able to sit beside the first.
+fit beside the first.
 
 ### The turn function
 
@@ -62,10 +61,15 @@ be able to sit beside the first.
 place a turn's rules live. It parses the line with `command-grammar.ts` and
 answers a refusal, a view or quit without loading the narrator. An action is
 checked against the mode, resolved by its own resolver (the narrator call), and
-costed by `effect.ts`, pure data in and out: the turn spent, the accusation the
-last one forces, the patch and the events. It is saved once and answered from
+costed by `effect.ts`, pure data in and out: turn spent, forced accusation,
+patch, events. It is saved once and answered from
 the save. The action's event stores the line under `input`; transcripts fall
 back to a rebuilt line for events without one.
+
+A refusal and `help` are saved as one `no_turn_line` event (line, answer), so
+resume matches the live game. It spends no turn and changes no session field;
+the narrator's history and evaluation readers skip it. `notebook`, the lists and
+`quit` save nothing.
 
 ### Access
 
@@ -95,15 +99,14 @@ play, three for AI configuration.
 
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
   and `db/events.ts` is scoped to one player, with nothing underneath to catch a
-  query that forgets: a method without a `player_id` filter crosses profiles.
-  That is why the two contexts are separate types: a handler without a profile
+  query that forgets. That is why the two contexts are separate types: a handler without a profile
   has no session store to get wrong.
 - **One driver import.** Only `db/client.ts` imports `better-sqlite3` (via
   `createRequire`, so no bundler can inline a native addon), and only
   `context-local.ts` and `db/` import `db/`; the `imports` gate step checks
   both. Repositories receive a `Db` interface.
-- **`schema.ts`, not `schema.sql`.** Only a module loads identically under
-  Vite's SSR bundle, vitest and plain `node`.
+- **`schema.ts`, not `schema.sql`.** Only a module loads the same under Vite's
+  SSR bundle, vitest and plain `node`.
 - **Three pragmas are load-bearing:** `journal_mode = WAL` (a reader does not
   block the running game), `foreign_keys = ON` (off by default in SQLite; the
   `game_events` cascade depends on it), and `busy_timeout = 5000`.
@@ -125,8 +128,7 @@ play, three for AI configuration.
 ## 4. Content
 
 Blueprints and images are files. `packages/game-engine/src/content.ts` reads them, caches on mtime
-and size, and skips-and-logs anything unparseable rather than failing the
-catalog. `packages/game-engine/src/paths.ts` is the only place that decides where they are.
+and size, and logs and skips anything unparseable rather than failing the catalog. `packages/game-engine/src/paths.ts` is the only place that decides where they are.
 
 ## 5. AI Profiles
 
@@ -137,5 +139,5 @@ outranks it. See `packages/game-engine/src/ai-profile.ts` and `docs/ai-configura
 
 A misconfigured profile throws; an unconfigured one returns `null`, which
 handlers turn into `400 Invalid ai_profile`. A *stored* choice cannot be
-misconfigured: `updateSettings` refuses live narration without both a key and a
-model, so the invariant is kept at the write rather than repaired at the read.
+misconfigured: `updateSettings` refuses live narration without a key and a model,
+so the invariant is kept at the write.

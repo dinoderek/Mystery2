@@ -18,6 +18,7 @@
 import {
   EVENT_ROLE,
   offScriptClueIdsForEvent,
+  playedEvents,
   readField,
   revealedClueIdsForEvent,
 } from "../../lib/game-events.mjs";
@@ -167,7 +168,7 @@ function reconstructContext(roleName, ctx) {
 // was BEFORE the action resolved — i.e. what the builder would have seen.
 export function reconstructTrace(rawTrace) {
   const blueprint = rawTrace.blueprint;
-  const events = [...rawTrace.events].sort((a, b) => a.sequence - b.sequence);
+  const events = playedEvents(rawTrace.events).sort((a, b) => a.sequence - b.sequence);
 
   const state = {
     mode: "explore",

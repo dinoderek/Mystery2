@@ -17,6 +17,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { playedEvents } from "../../lib/game-events.mjs";
 import { judge as fleschJudge } from "../../runtime/lib/judges/flesch.mjs";
 import { partsToText } from "../../runtime/lib/transcript.mjs";
 
@@ -101,7 +102,7 @@ export function judgeCost(logDir) {
 
 /** Every narration in a raw trace, scored for reading level against `targetAge`. */
 export function scoreReadability(trace, targetAge) {
-  const narrations = trace.events
+  const narrations = playedEvents(trace.events)
     .map((event) => ({ event, text: partsToText(event.narration_parts) || event.narration.trim() }))
     .filter(({ text }) => text.length > 0)
     .map(({ event, text }) => {

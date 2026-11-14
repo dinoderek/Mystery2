@@ -31,6 +31,10 @@ How they connect:
   through the real server, sending each typed line to `game-turn`, and each game
   leaves a transcript and a replayable script. `--judge` hands the games to trace.
 
+Every reader of a played game's events (trace, runtime cases, playtest) skips
+`no_turn_line`, the event a refused line or `help` is saved as; the shared
+filter is `playedEvents` in `evaluation/lib/game-events.mjs`.
+
 The rest of this doc is the blueprint pipeline's design, which the others
 inherit.
 

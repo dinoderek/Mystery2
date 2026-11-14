@@ -3,6 +3,7 @@
 // 1. Load the history, the session (scoped to the profile) and the blueprint.
 // 2. Parse the line against the session's mode, place and the people present.
 // 3. Answer a line that is not an action at once: a refusal, a view, or quit.
+//    A refusal and `help` are saved, as lines that cost no turn.
 // 4. Check the action is allowed in this mode.
 // 5. Resolve it: load the narrator and call the model.
 // 6. Work out the effect: the session change, the events, the turn spent and
@@ -13,7 +14,7 @@
 import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
-import { interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
+import { HELP_NOTE, interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
 import type { EngineAIProfile, EngineContext, GameSessionRow } from "../context.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { logTimeoutTransition } from "../forced-endgame.ts";
@@ -21,6 +22,7 @@ import type { LogWriter } from "../logging.ts";
 import { logNarrationEventSaved } from "../narration.ts";
 import { spendTurn, turnEffect, type TurnEffect } from "./effect.ts";
 import { narrateForcedEndgame } from "./narrator.ts";
+import { nextSequenceAfter, noTurnEvent, playedEvents } from "./no-turn.ts";
 import { planAction } from "./plan.ts";
 import { resolveAccuseRound, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
@@ -66,7 +68,12 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
     case "refused":
       return { kind: "refused", reason: meaning.reason, hint: meaning.hint };
     case "view":
-      return { kind: "view", view: meaning.view, section: meaning.section };
+      return {
+        kind: "view",
+        view: meaning.view,
+        section: meaning.section,
+        note: meaning.view === "help" ? HELP_NOTE : null,
+      };
     case "quit":
       return { kind: "quit" };
     case "action":
@@ -78,7 +85,8 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
  * The history is read before the session. The save expects the sequence after
  * the last event read here, so a turn saved after that read, before or after
  * the session is read, makes this one's save conflict rather than land on a
- * stale session.
+ * stale session. The narrator is shown the events the game master took part
+ * in; the sequence counts every saved one.
  */
 async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): Promise<TurnGame> {
   const history = await ctx.events.listBySession(gameId);
@@ -86,7 +94,13 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
   const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
-  return { game_id: gameId, session, blueprint, history };
+  return {
+    game_id: gameId,
+    session,
+    blueprint,
+    history: playedEvents(history),
+    next_sequence: nextSequenceAfter(history),
+  };
 }
 
 async function loadProvider(ctx: EngineContext, session: GameSessionRow, options: TurnOptions): Promise<AIProvider> {
@@ -132,6 +146,38 @@ function logSaved(runtime: TurnRuntime, game: TurnGame, outcome: ActionOutcome, 
   }
 }
 
+/**
+ * Answers a line that plays nothing. A refusal and `help` are saved first, with
+ * the session left as it was, so a game opened later shows them.
+ */
+async function answerAndKeep(
+  ctx: EngineContext,
+  game: TurnGame,
+  input: string,
+  answer: GameTurnResponse,
+  options: TurnOptions,
+): Promise<GameTurnResponse> {
+  const event = noTurnEvent(input, answer);
+  if (!event) return answer;
+
+  await ctx.sessions.saveTurn({
+    game_id: game.game_id,
+    expected_sequence: game.next_sequence,
+    events: [event],
+  });
+  logNarrationEventSaved(
+    {
+      session_id: game.game_id,
+      event_type: event.event_type,
+      actor: event.actor,
+      narration_parts: event.narration_parts,
+      logger: options.logger,
+    },
+    game.next_sequence,
+  );
+  return answer;
+}
+
 function answerFromSave(outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
   return {
     kind: "turn",
@@ -152,7 +198,8 @@ function answerFromSave(outcome: ActionOutcome, effect: TurnEffect): TurnPlayedR
  * play, `BadRequestError` for an action the mode does not allow,
  * `RetriableAIError` when the narrator fails, and `SaveConflictError` when
  * another turn for the game was saved first. Nothing is written unless it
- * returns a `turn`.
+ * returns a `turn`, a `refused` or a `view` of `help`; the last two leave the
+ * session as it was.
  */
 export async function playTurn(
   ctx: EngineContext,
@@ -164,7 +211,7 @@ export async function playTurn(
 
   const input = request.input.trim();
   const meaning = interpretLine(input, grammarStateOf(session, game.blueprint));
-  if (meaning.kind !== "action") return answerWithoutPlaying(meaning)!;
+  if (meaning.kind !== "action") return answerAndKeep(ctx, game, input, answerWithoutPlaying(meaning)!, options);
 
   const action = planAction(meaning.action, session);
   const runtime: TurnRuntime = {
@@ -182,7 +229,7 @@ export async function playTurn(
       ? await narrateForcedEndgame(runtime, game, outcome.endgame, cost.time_after)
       : null;
 
-  const expectedSequence = (game.history.at(-1)?.sequence ?? 0) + 1;
+  const expectedSequence = game.next_sequence;
   const effect = turnEffect({
     game_id: request.game_id,
     session,

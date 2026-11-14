@@ -10,6 +10,16 @@
 // Sibling of evaluation/lib/readability.mjs — the other module shared across
 // harnesses.
 
+import { NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contracts.ts";
+
+// A refused line and `help` are saved as events of their own, so a resumed game
+// shows them. They are not something the game master did: every reader that
+// follows the game master's play takes its events through this, so its output is
+// the same with or without them.
+export function playedEvents(events) {
+  return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE);
+}
+
 // Maps a persisted event_type to the AI role whose context builder applies.
 // Event types with no game-master AI role (e.g. the opening "start" block) map
 // to null and get a turn record without a reconstructed context.

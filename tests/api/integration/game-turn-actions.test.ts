@@ -304,7 +304,7 @@ describe("game-turn actions", () => {
       expect(readStoredSession(gameId)).toMatchObject({ mode: "ended", outcome: "win" });
     });
 
-    it("plays nothing once the case has ended", async () => {
+    it("plays nothing once the case has ended, and only keeps the line", async () => {
       const gameId = await startMockGame(auth);
       await play(gameId, "accuse Alice because she had crumbs and no alibi.");
       await play(gameId, "Alice had motive and access, and the clues match her timeline.");
@@ -314,7 +314,9 @@ describe("game-turn actions", () => {
 
       expect(res.status).toBe(200);
       expect(GameTurnResponseSchema.parse(await res.json()).kind).toBe("refused");
-      expect(readStoredEvents(gameId)).toHaveLength(events);
+      const stored = readStoredEvents(gameId);
+      expect(stored).toHaveLength(events + 1);
+      expect(stored.at(-1)).toMatchObject({ event_type: "no_turn_line", payload: { answered: "refused" } });
       expect(readStoredSession(gameId)).toMatchObject({ mode: "ended", outcome: "win" });
     });
 

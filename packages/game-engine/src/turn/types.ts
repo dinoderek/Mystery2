@@ -13,8 +13,10 @@ export interface TurnGame {
   game_id: string;
   session: GameSessionRow;
   blueprint: BlueprintV2;
-  /** Every event so far, in sequence order. */
+  /** The events the game master took part in so far, in sequence order. */
   history: GameEventRow[];
+  /** The sequence the next saved event takes, counting every event saved. */
+  next_sequence: number;
 }
 
 /** What a turn needs to call the narrator and log. */

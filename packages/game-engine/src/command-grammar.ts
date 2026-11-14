@@ -59,6 +59,9 @@ const MODE_HINTS: Record<GameMode, string> = {
   ended: "Commands: notebook, help, quit. Type 'help' for details.",
 };
 
+/** What the transcript says when help opens. */
+export const HELP_NOTE = "Help menu opened.";
+
 const TRAILING_PUNCTUATION = /[!?.,]+$/g;
 const WHITESPACE = /\s+/g;
 

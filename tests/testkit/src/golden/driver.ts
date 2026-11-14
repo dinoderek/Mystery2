@@ -82,9 +82,6 @@ function readParts(payload: Record<string, unknown>): NarrationPart[] {
   return parts;
 }
 
-/** The transcript line the browser adds when help opens. */
-const HELP_NOTE = "Help menu opened.";
-
 /**
  * An accusation made with its reasoning in one line is saved as its first
  * round, which on its own would continue the page already open. On screen it
@@ -97,7 +94,7 @@ function presentedType(eventType: string, playedIn: GameMode): string {
 
 function viewOutcome(answer: Extract<GameTurnResponse, { kind: "view" }>): LineOutcome {
   return answer.view === "help"
-    ? { kind: "view", overlay: "help", section: null, echo: true, note: HELP_NOTE }
+    ? { kind: "view", overlay: "help", section: null, echo: true, note: answer.note }
     : { kind: "view", overlay: "notebook", section: answer.section, echo: false, note: null };
 }
 

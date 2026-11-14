@@ -347,6 +347,7 @@ export function createTurnViewResponse(
     kind: "view" as const,
     view: "notebook" as const,
     section: null,
+    note: null,
     ...overrides,
   });
 }

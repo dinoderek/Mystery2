@@ -7,7 +7,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GameTurnResponseSchema, type TurnPlayedResponse } from "@my2/shared";
+import { GameTurnResponseSchema, NO_TURN_EVENT_TYPE, NoTurnLinePayloadSchema, type TurnPlayedResponse } from "@my2/shared";
 import { createAIProviderFromProfile, type AIProvider } from "../../../packages/game-engine/src/ai-provider.ts";
 import type { EngineAIProfile, EngineContext } from "../../../packages/game-engine/src/context.ts";
 import { createLocalEngine, type LocalEngine } from "../../../packages/game-engine/src/context-local.ts";
@@ -85,7 +85,7 @@ afterEach(() => {
 });
 
 describe("playTurn, for a line that plays nothing", () => {
-  it("answers without loading the narrator or writing anything", async () => {
+  it("answers without loading the narrator, and saves only a refusal and help", async () => {
     const createProvider = vi.fn();
     const profiles = vi.spyOn(ctx.aiProfiles, "getById");
 
@@ -95,12 +95,84 @@ describe("playTurn, for a line that plays nothing", () => {
       reason: "invalid-target",
       hint: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice Smith.',
     });
-    expect(await play("help", { createProvider })).toEqual({ kind: "view", view: "help", section: null });
-    expect(await play("characters", { createProvider })).toEqual({ kind: "view", view: "characters", section: "people" });
+    expect(await play("help", { createProvider })).toEqual({ kind: "view", view: "help", section: null, note: "Help menu opened." });
+    expect(await play("characters", { createProvider })).toEqual({ kind: "view", view: "characters", section: "people", note: null });
+    expect(await play("notebook", { createProvider })).toEqual({ kind: "view", view: "notebook", section: null, note: null });
     expect(await play("quit", { createProvider })).toEqual({ kind: "quit" });
+    expect(await play("   ", { createProvider })).toMatchObject({ kind: "refused" });
 
     expect(createProvider).not.toHaveBeenCalled();
     expect(profiles).not.toHaveBeenCalled();
+    expect(storedEvents().map(({ sequence, event_type }) => [sequence, event_type])).toEqual([
+      [1, "start"],
+      [2, NO_TURN_EVENT_TYPE],
+      [3, NO_TURN_EVENT_TYPE],
+      [4, NO_TURN_EVENT_TYPE],
+    ]);
+  });
+
+  it("saves the line as typed and the answer read, and changes nothing in the session", async () => {
+    const before = await ctx.sessions.getById(gameId);
+
+    await play("  go to the moon  ");
+    await play("Help");
+
+    expect(await ctx.sessions.getById(gameId)).toEqual(before);
+    const [refused, help] = local.db
+      .prepare("select event_type, actor, narration, narration_parts, payload from game_events where session_id = ? order by sequence")
+      .all(gameId)
+      .slice(1)
+      .map((row) => ({
+        ...row,
+        payload: NoTurnLinePayloadSchema.parse(JSON.parse(String(row.payload))),
+        narration_parts: JSON.parse(String(row.narration_parts)),
+      }));
+    expect(refused).toMatchObject({
+      actor: "system",
+      payload: { input: "go to the moon", answered: "refused", reason: "invalid-target" },
+      narration: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice Smith.',
+      narration_parts: [{ speaker: { kind: "system" } }],
+    });
+    expect(help).toMatchObject({ payload: { input: "Help", answered: "help" }, narration: "Help menu opened." });
+    expect(help.payload.reason).toBeUndefined();
+  });
+
+  it("is not in the narrator's history, and does not shift what a turn is saved after", async () => {
+    await play("dance");
+    await play("help");
+    const seen: string[] = [];
+    const watching = (profile: EngineAIProfile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+      return {
+        profile: inner.profile,
+        get resolvedModel() {
+          return inner.resolvedModel;
+        },
+        generateNarration: (prompt, metadata) => {
+          seen.push(prompt);
+          return inner.generateNarration(prompt, metadata);
+        },
+        generateRoleOutput: (request) => {
+          seen.push(request.prompt, JSON.stringify(request.context));
+          return inner.generateRoleOutput(request);
+        },
+      };
+    };
+
+    const answer = await playAction("go to the Living Room", { createProvider: watching });
+
+    expect(answer.events[0].sequence).toBe(4);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.join("\n")).not.toContain("Help menu opened.");
+    expect(seen.join("\n")).not.toContain(NO_TURN_EVENT_TYPE);
+    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", NO_TURN_EVENT_TYPE, NO_TURN_EVENT_TYPE, "move"]);
+  });
+
+  it("refuses to save a line that lost a race with another turn", async () => {
+    const save = vi.spyOn(ctx.sessions, "saveTurn").mockRejectedValueOnce(new SaveConflictError(gameId, 2));
+
+    await expect(play("dance")).rejects.toBeInstanceOf(SaveConflictError);
+    save.mockRestore();
     expect(storedEvents()).toHaveLength(1);
   });
 });

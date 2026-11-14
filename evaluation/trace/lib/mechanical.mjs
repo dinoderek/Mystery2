@@ -19,6 +19,7 @@
 import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
 import { collectClues } from "../../checks/lib/clue-graph.mjs";
 import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
+import { playedEvents } from "../../lib/game-events.mjs";
 import { revealedClueIdsForEvent } from "./reconstruct.mjs";
 
 const DEFAULT_SPOILER_MIN_RUN = 12;
@@ -46,7 +47,7 @@ function locationClueIds(location) {
 // the action, a repeat, or a bare-search reveal that breaks the ordered prefix).
 function checkClueAccounting(rawTrace) {
   const blueprint = rawTrace.blueprint;
-  const events = [...rawTrace.events].sort((a, b) => a.sequence - b.sequence);
+  const events = playedEvents(rawTrace.events).sort((a, b) => a.sequence - b.sequence);
   const violations = [];
 
   // Running location-level reveal counts, to validate bare-search ordering.
@@ -213,7 +214,7 @@ function longestCommonRun(a, b) {
 // ground-truth words copied into a pre-accusation narration.
 function checkSpoilerLeak(rawTrace, minRun = DEFAULT_SPOILER_MIN_RUN) {
   const blueprint = rawTrace.blueprint;
-  const events = [...rawTrace.events].sort((a, b) => a.sequence - b.sequence);
+  const events = playedEvents(rawTrace.events).sort((a, b) => a.sequence - b.sequence);
 
   const secrets = [];
   const gt = blueprint?.ground_truth ?? {};
@@ -280,7 +281,7 @@ function checkSpoilerLeak(rawTrace, minRun = DEFAULT_SPOILER_MIN_RUN) {
 function checkClueRequiresViolation(rawTrace) {
   const blueprint = rawTrace.blueprint;
   const clues = collectClues(blueprint);
-  const events = [...rawTrace.events].sort((a, b) => a.sequence - b.sequence);
+  const events = playedEvents(rawTrace.events).sort((a, b) => a.sequence - b.sequence);
   const everRevealed = new Set();
   const violations = [];
 

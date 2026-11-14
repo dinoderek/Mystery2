@@ -29,6 +29,9 @@ extract.mjs        run.mjs
    (`packages/game-engine/src/ai-context.ts`), then runs the mechanical checks
    and the judges.
 
+The log also holds `no_turn_line` events (a refused line, `help`); extraction
+and every reader skip them.
+
 Reconstruction happens at run time, not in the stored artifact, so it stays
 versioned with the code instead of frozen into old data. Traces carry no
 context version: the builders are not versioned, and a stamp could not
@@ -70,9 +73,9 @@ short environment note. Two consequences:
 - **Settings-only logins fail.** Skipping settings also skips a login set only
   in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env), so the wrapper
   cannot authenticate.
-- **Fenced verdicts are unwrapped.** Judges sometimes wrap the verdict in a
-  `json` code fence, which the pipeline would reject as "not a JSON object";
-  the wrapper strips it.
+- **Fenced verdicts are unwrapped.** Judges sometimes fence the verdict in
+  `json`, which the pipeline would reject as "not a JSON object"; the wrapper
+  strips it.
 
 ## Checks and dimensions
 

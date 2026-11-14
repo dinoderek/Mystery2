@@ -115,7 +115,8 @@ const FETCH_ATTEMPTS = 3;
 const FETCH_RETRY_MS = { min: 500, max: 1500 };
 
 /** What git says when another process holds a ref's lock file. */
-const REF_LOCK_FAILURE = /cannot lock ref|unable to create '[^']+\.lock'/i;
+export const REF_LOCK_FAILURE =
+  /cannot lock ref|unable to create '[^']+\.lock'|fetching ref [^\n]* failed: reference already exists/i;
 
 /** Blocks for a random time between the two waits; worktree creation is synchronous throughout. */
 function jitteredSleep() {

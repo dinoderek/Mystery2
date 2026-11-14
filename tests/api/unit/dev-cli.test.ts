@@ -21,6 +21,7 @@ import {
   DevError,
   createWorktree,
   fetchOrigin,
+  REF_LOCK_FAILURE,
   releaseWorktree,
   worktreePathFor,
 } from "../../../scripts/lib/dev-worktree.mjs";
@@ -241,9 +242,22 @@ describe("./dev worktree create's fetch", () => {
     const waits: number[] = [];
 
     expect(() => fetchOrigin(clone, { wait: (attempt: number) => waits.push(attempt) })).toThrow(
-      /git fetch origin failed \(after 3 tries\): .*cannot lock ref/s,
+      /git fetch origin failed \(after 3 tries\): .*(cannot lock ref|reference already exists)/s,
     );
     expect(waits).toEqual([1, 2]);
+  });
+
+  it.each([
+    ["older git", "error: cannot lock ref 'refs/remotes/origin/main': is at abc but expected def"],
+    ["older git, lock file", "fatal: Unable to create '/r/.git/refs/remotes/origin/main.lock': File exists."],
+    ["newer git (2.53)", "error: fetching ref refs/remotes/origin/main failed: reference already exists"],
+  ])("recognises a lost ref race as git words it: %s", (_git, message) => {
+    expect(REF_LOCK_FAILURE.test(message)).toBe(true);
+  });
+
+  it("does not take other fetch failures for a ref lock", () => {
+    expect(REF_LOCK_FAILURE.test("fatal: '/x/missing.git' does not appear to be a git repository")).toBe(false);
+    expect(REF_LOCK_FAILURE.test("error: fetching ref refs/heads/x failed: some other reason")).toBe(false);
   });
 
   it("does not retry a failure that is not a ref lock", () => {

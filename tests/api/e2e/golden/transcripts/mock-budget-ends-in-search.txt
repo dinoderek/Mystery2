@@ -1,0 +1,50 @@
+game: mock-budget-ends-in-search
+blueprint: mock-blueprint
+
+steps
+  0  (start)  mode=explore turns=10
+  1  (enter)  mode=explore turns=10
+  2  "search"  mode=explore turns=9 clues=clue-crumb
+  3  "search"  mode=explore turns=8
+  4  "search"  mode=explore turns=7
+  5  "search"  mode=explore turns=6
+  6  "search"  mode=explore turns=5
+  7  "search"  mode=explore turns=4
+  8  "search"  mode=explore turns=3
+  9  "search"  mode=explore turns=2
+  10  "search the pantry"  mode=explore turns=1 clues=clue-jar
+  11  "search"  mode=accuse turns=0
+  12  "accuse"  mode=accuse turns=0
+  13  "quit"  mode=ended turns=0
+
+pages
+  page 0 opening "Mock Blueprint"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "Kitchen"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 2 | You (investigator): "search"
+    step 2 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A crumb on the floor."
+    step 3 | You (investigator): "search"
+    step 3 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 4 | You (investigator): "search"
+    step 4 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 5 | You (investigator): "search"
+    step 5 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 6 | You (investigator): "search"
+    step 6 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 7 | You (investigator): "search"
+    step 7 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 8 | You (investigator): "search"
+    step 8 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 9 | You (investigator): "search"
+    step 9 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 10 | You (investigator): "search the pantry"
+    step 10 | Narrator (narrator): "[Mock] You search the pantry shelf in Kitchen and uncover a clue: An empty cookie jar hidden behind cereal boxes."
+    step 11 | You (investigator): "search"
+    step 11 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 11 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 12 | You (investigator): "accuse"
+    step 12 | Narrator (narrator): "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?"
+    step 13 | You (investigator): "quit"
+    step 13 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."

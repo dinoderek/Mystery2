@@ -1,0 +1,92 @@
+game: heartwood-aliases
+blueprint: the-missing-heartwood
+
+steps
+  0  (start)  mode=explore turns=14
+  1  (enter)  mode=explore turns=14
+  2  "where can i go"  mode=explore turns=14 opens=notebook/places
+  3  "who is here"  mode=explore turns=14 opens=notebook/people
+  4  "look"  mode=explore turns=13
+  5  "search the banner wall"  mode=explore turns=12 clues=clue_wet_bear_prints
+  6  "speak to Sophie"  mode=talk turns=11
+  7  "Where were you?"  mode=talk turns=11 clues=clue_sophie_splinter
+  8  "see you"  mode=explore turns=11
+  9  "speak with Sam"  mode=talk turns=10
+  10  "leave"  mode=explore turns=10
+  11  "talk to Sam Bramble"  mode=talk turns=9
+  12  "end"  mode=explore turns=9
+  13  "travel to heartwood hollow"  mode=explore turns=8
+  14  "inspect"  mode=explore turns=7 clues=clue_footprint_trail
+  15  "head towards Eva's Leaf-Lab"  mode=explore turns=6
+  16  "talk to eva"  mode=talk turns=5
+  17  "What are the gloves for?"  mode=talk turns=5
+  18  "bye"  mode=explore turns=5
+  19  "go home"  mode=explore turns=5
+  20  "move to the cheer stage grove"  mode=explore turns=4
+  21  "talk to Toby Flit"  mode=talk turns=3
+  22  "goodbye"  mode=explore turns=3
+  23  "talk to alexandra"  mode=talk turns=2
+  24  "exit"  mode=ended turns=2
+
+pages
+  page 0 opening "The Missing Heartwood"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 7 ye..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "Glimmerbank Landing"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Glimmerbank Landing. Sophie is here. Sam is here."
+    step 4 | You (investigator): "look"
+    step 4 | Narrator (narrator): "[Mock] You search Glimmerbank Landing again, but discover no new clue."
+    step 5 | You (investigator): "search the banner wall"
+    step 5 | Narrator (narrator): "[Mock] You search The Diving Dock in Glimmerbank Landing and uncover a clue: Big, heavy bear paw prints cross the diving dock. They are wet with river water, and they do not glow. Whoever made them was in the water, not digging up plants."
+  page 2 conversation "Sophie"
+    step 6 | You (investigator): "speak to Sophie"
+    step 6 | Narrator (narrator): "[Mock] You walk up to Sophie in Glimmerbank Landing. she looks A small, sleek river otter with soft brown fur, big shy eyes, and paws that glow very faintly.. (she shyly tucks her faintly glowing paws under her tail)"
+    step 7 | You (investigator): "Where were you?"
+    step 7 | Sophie (character): "[Mock] Sophie thinks, then says: I couldn't sleep, so I was playing in the reeds. I found a pretty golden piece floating in the water. I held it, then let it float away. That is why my paws glow! Sam was diving right there the whole time. He saw me."
+  page 3 location "Glimmerbank Landing"
+    step 8 | You (investigator): "see you"
+    step 8 | Narrator (narrator): "[Mock] You say goodbye to Sophie and look around again."
+  page 4 conversation "Sam"
+    step 9 | You (investigator): "speak with Sam"
+    step 9 | Narrator (narrator): "[Mock] You walk up to Sam in Glimmerbank Landing. he looks A huge brown bear with broad shoulders, a permanent frown, and a bright red lifeguard whistle around his neck.."
+  page 5 location "Glimmerbank Landing"
+    step 10 | You (investigator): "leave"
+    step 10 | Narrator (narrator): "[Mock] You say goodbye to Sam and look around again."
+  page 6 conversation "Sam"
+    step 11 | You (investigator): "talk to Sam Bramble"
+    step 11 | Narrator (narrator): "[Mock] You walk up to Sam in Glimmerbank Landing. he looks A huge brown bear with broad shoulders, a permanent frown, and a bright red lifeguard whistle around his neck.."
+  page 7 location "Glimmerbank Landing"
+    step 12 | You (investigator): "end"
+    step 12 | Narrator (narrator): "[Mock] You say goodbye to Sam and look around again."
+  page 8 location "Heartwood Hollow"
+    step 13 | You (investigator): "travel to heartwood hollow"
+    step 13 | Narrator (narrator): "[Mock] You arrive at Heartwood Hollow."
+    step 14 | You (investigator): "inspect"
+    step 14 | Narrator (narrator): "[Mock] You search Heartwood Hollow and uncover a clue: Glowing footprints lead out of the empty pit. They go off through the ferns. Whoever took the trunk carried it away on foot."
+  page 9 location "Eva's Leaf-Lab"
+    step 15 | You (investigator): "head towards Eva's Leaf-Lab"
+    step 15 | Narrator (narrator): "[Mock] You arrive at Eva's Leaf-Lab. Eva is here."
+  page 10 conversation "Eva"
+    step 16 | You (investigator): "talk to eva"
+    step 16 | Narrator (narrator): "[Mock] You walk up to Eva in Eva's Leaf-Lab. she looks A sleek silver-grey squirrel with a big bushy tail, bright curious eyes, and a pencil tucked behind one ear.."
+    step 17 | You (investigator): "What are the gloves for?"
+    step 17 | Eva (character): "[Mock] Eva thinks about your question: \"What are the gloves for?\"."
+  page 11 location "Eva's Leaf-Lab"
+    step 18 | You (investigator): "bye"
+    step 18 | Narrator (narrator): "[Mock] You say goodbye to Eva and look around again."
+    step 19 | You (investigator): "go home"
+    step 19 | System (system): "\"home\" is not a valid destination. Try: Glimmerbank Landing, Heartwood Hollow, Eva's Leaf-Lab, Cheer Stage Grove, Eva Nutwood."
+  page 12 location "Cheer Stage Grove"
+    step 20 | You (investigator): "move to the cheer stage grove"
+    step 20 | Narrator (narrator): "[Mock] You arrive at Cheer Stage Grove. Toby is here. Alexandra is here."
+  page 13 conversation "Toby"
+    step 21 | You (investigator): "talk to Toby Flit"
+    step 21 | Narrator (narrator): "[Mock] You walk up to Toby in Cheer Stage Grove. he looks A plump enchanted pigeon with shimmering rainbow-tinged feathers and tiny pom-poms tied to his wingtips.."
+  page 14 location "Cheer Stage Grove"
+    step 22 | You (investigator): "goodbye"
+    step 22 | Narrator (narrator): "[Mock] You say goodbye to Toby and look around again."
+  page 15 conversation "Alexandra"
+    step 23 | You (investigator): "talk to alexandra"
+    step 23 | Narrator (narrator): "[Mock] You walk up to Alexandra in Cheer Stage Grove. she looks A quick, slender meerkat with a glossy coat, bright darting eyes, and dirt-crusted little paws she keeps trying to hide.. (she quickly hides her dirt-crusted paws behind her back)"
+    step 24 | You (investigator): "exit"
+    step 24 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."

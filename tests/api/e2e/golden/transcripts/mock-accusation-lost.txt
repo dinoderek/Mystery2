@@ -1,0 +1,26 @@
+game: mock-accusation-lost
+blueprint: mock-blueprint
+
+steps
+  0  (start)  mode=explore turns=10
+  1  (enter)  mode=explore turns=10
+  2  "accuse Bob took the cookies"  mode=accuse turns=10
+  3  "It was Bob"  mode=accuse turns=10
+  4  "It was definitely Bob"  mode=accuse turns=10
+  5  "Bob, I am sure"  mode=ended turns=10 result=lose
+
+pages
+  page 0 opening "Mock Blueprint"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "Kitchen"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+  page 2 accusation "The accusation"
+    step 2 | You (investigator): "accuse Bob took the cookies"
+    step 2 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
+    step 3 | You (investigator): "It was Bob"
+    step 3 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
+    step 4 | You (investigator): "It was definitely Bob"
+    step 4 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
+    step 5 | You (investigator): "Bob, I am sure"
+    step 5 | Narrator (narrator): "[Mock] The case ends here. This time the answer got away."

@@ -11,17 +11,16 @@
 | Browser E2E     | `web/e2e`               | Playwright                              | `vite dev` via `webServer` | Mock provider              | `npm -w web run test:e2e`  |
 
 Every suite is self-contained: it builds or starts what it needs against a
-temporary config root and deletes it afterwards. Nothing has to be running
-first, and no suite can touch the database you play on.
+temporary config root and deletes it afterwards, so nothing has to be running
+first and no suite can touch the database you play on.
 
 Shared helpers live in `tests/testkit`; the integration suite adds
 `tests/api/integration/helpers.ts`. Integration and API E2E depend on the
-blueprints committed in `blueprints/`, which are deterministic fixtures.
+deterministic fixtures committed in `blueprints/`.
 
 ## Which Suite To Update
 
-- shared contracts and schema validation; the command grammar (parser and
-  command normalization); prompt construction, parsing, and
+- shared contracts and schema validation; the command grammar; prompt construction, parsing, and
   AI-provider helpers; blueprint generation, evaluation, and image helpers; the
   local adapter (repositories, content loading, profile resolution, schema);
   mock provider behavior → **API/shared unit**
@@ -31,18 +30,16 @@ blueprints committed in `blueprints/`, which are deterministic fixtures.
   contracts, AI profile resolution and provider selection → **integration**
 - multi-endpoint player journeys; session start/resume/endgame lifecycle →
   **API E2E**
+- what the player reads across a whole game → **golden transcripts** (below)
 - route protection and the profile picker; terminal rendering, command entry,
   loading states, retries; session list navigation; speaker colours; image
   rendering and its failure UX → **browser E2E**
 
 A change that crosses boundaries updates every affected suite. An AI output
-contract change, for example, touches unit
-(`packages/game-engine/src/ai-provider.ts`), integration (endpoint payloads,
-profile resolution), API E2E (mock narration, session flow), and browser E2E
-only if the rendered UX or retry behavior changes.
+contract change, for example, touches unit, integration, API E2E, and browser
+E2E only if the rendered UX or retry behavior changes.
 
-Prefer integration tests for backend behavior; reserve Playwright for
-browser-specific journeys.
+Prefer integration tests for backend behavior; Playwright is for browser journeys.
 
 ## Running
 
@@ -56,19 +53,15 @@ phase 1 passed, one step at a time because each starts a server on the
 worktree's port: integration, API E2E, browser E2E.
 
 **Every step runs in every environment.** The gate needs nothing beyond this
-repo — no Docker, no CLI, no seeding — so there is no waiver and no condition
-under which a suite may be reported as skipped. A suite that cannot start is a
-bug to fix, not a partial run to report. Focused scripts are for iteration;
-re-run the gate if you edit after it passes.
+repo — no Docker, no CLI, no seeding — so no suite may be reported as skipped. A suite that cannot start is a
+bug to fix, not a partial run to report. Focused scripts are for iteration; re-run the gate after any later edit.
 
 Integration and API E2E run against the production build (`node build/index.js`),
 not the dev server, so a bundling failure is caught. The build gets the run's
-config root too, and fails the step if it opens a database. Before starting it, the
-runner fails if anything already holds the port: otherwise that process would
-answer the readiness poll and the suite would test the wrong server. The
-browser suite starts `vite dev` through Playwright's `webServer`. Each gets a
-config root of its own, deleted afterwards, so nothing needs restarting after
-an engine edit.
+config root too, and fails the step if it opens a database. The runner fails if
+anything already holds the port, which would otherwise answer the readiness
+poll and be tested instead. The browser suite starts `vite dev` through
+Playwright's `webServer`. Each gets a config root of its own, deleted afterwards.
 
 **Every test file runs in the gate.** `scripts/lib/gate-steps.mjs` is the one
 list of where tests live: each step that runs tests names its `roots` and the
@@ -96,8 +89,8 @@ The three doc checks:
 - `check:curated-docs` holds the curated extracts in
   `evaluation/generator-harness/template/docs/` to the doc sections they
   summarise. On drift it names the commit to diff against; fix the extract if
-  it no longer holds, then record the new hash — a refreshed hash over stale
-  prose silences the check without fixing anything. Details:
+  it no longer holds, then record the new hash: a refreshed hash over stale
+  prose fixes nothing. Details:
   `evaluation/generator-harness/template/README.md`.
 - `check:doc-refs` fails when `AGENTS.md`, `QUICKSTART.md`, `docs/` or a README
   names a path, an `npm run` script or a relative link that does not exist. A
@@ -106,20 +99,19 @@ The three doc checks:
 - `check:word-budgets` fails when a Markdown file is over its word budget, has
   no row in `docs/word-budgets.tsv`, or a row names a file that does not exist.
   It lists files as `gate-coverage` does, so a doc not yet added counts. Every
-  `.md` counts, including the harness templates, judges, personas and prompts,
-  because each run reads them. Words are counted as `wc -w` counts them;
-  symlinks such as `CLAUDE.md` are skipped and answer to their target's row.
+  `.md` counts, including harness templates, judges, personas and prompts.
+  Words are counted as `wc -w` counts them; symlinks such as `CLAUDE.md` are
+  skipped and answer to their target's row.
   Budgets sit at each file's count when set, rounded up to the next 50. Raising
-  a budget is the operator's decision, not an executor's: trim the doc, or ask
+  one is the operator's decision: trim the doc, or ask
   the operator to raise its row.
 
 ### Concurrency
 
 Integration, API E2E, and browser E2E share the worktree's port, so run only
-one at a time within a checkout; a second fails fast. Across worktrees they can run concurrently;
-each worktree gets its own port. See
-[`docs/local-infrastructure.md`](local-infrastructure.md). Unit suites
-parallelize safely.
+one at a time within a checkout; a second fails fast. Worktrees each get their
+own port and can run concurrently
+([`docs/local-infrastructure.md`](local-infrastructure.md)). Unit suites parallelize.
 
 ### Playwright browsers
 
@@ -135,7 +127,7 @@ itself (its cache key hashes `package-lock.json` and `web/package.json`).
 
 ### Live-AI suites (opt-in)
 
-Excluded from `npm test`, and never a substitute for it:
+Excluded from `npm test`, never a substitute for it:
 
 - `npm run test:integration:live:free` / `:paid`
 - `npm run test:e2e:live:free` / `:paid`
@@ -143,49 +135,61 @@ Excluded from `npm test`, and never a substitute for it:
 - `AI_LIVE=1 npm -w web run test:e2e -- web/e2e/live-ai.spec.ts`
 
 They require `AI_LIVE=1`, a `.env.ai.free.local` or `.env.ai.paid.local`, and
-tolerance of retriable `503`s. There is no profile to seed —
-`scripts/run-live-ai.mjs` starts the server with the mode's AI env. See
+tolerance of retriable `503`s. `scripts/run-live-ai.mjs` starts the server with
+the mode's AI env; there is no profile to seed. See
 [`docs/ai-configuration.md`](ai-configuration.md).
 
 ## Reading The Results
 
 Each `npm test` run writes `test-results/<timestamp>/` (the last five are
-kept): one log per step, `summary.log`, and `coverage.log`. In `summary.log`,
-the `Total` line is the verdict; the coverage section after it is information
-and never changes the exit code. Read the file, not console scrollback.
+kept): a log per step, `summary.log` and `coverage.log`. In `summary.log`,
+the `Total` line is the verdict; the coverage section after it never changes
+the exit code. Read the file, not scrollback.
 
 For a failure, also look at the server's stdout (structured JSON per request),
 `readStoredSession()` and `readStoredEvents()` in
-`tests/api/integration/helpers.ts` for what was actually persisted, and for
-Playwright `web/playwright-report/` and `web/test-results/` (screenshots and
-traces are kept on failure).
+`tests/api/integration/helpers.ts` for what was persisted, and for Playwright
+`web/playwright-report/` and `web/test-results/`.
 
 ## Coverage
 
-Measured on every gate run, never enforced. The measured globs are the
+Measured every gate run, never enforced. The measured globs are the
 `coverage.include` arrays in `vitest.config.ts` and `web/vite.config.ts`; a new
 source directory outside them is invisible until added. `summary.log` lists
-files at or below `LOW_FILE_THRESHOLD` (`scripts/lib/coverage-report.mjs`),
-ranked by uncovered statements, not percentage. A project whose unit step
-failed reads `not measured`, never partial numbers.
+files at or below `LOW_FILE_THRESHOLD` (`scripts/lib/coverage-report.mjs`) by
+uncovered statements, not percentage. A project whose unit step
+failed reads `not measured`.
 
 **The numbers come from the unit suites alone.** Integration and E2E drive a
-separate server process, which this instrumentation does not see, so every file
-under `packages/game-engine/src/endpoints/` reads 0% while API E2E exercises all
-of them — as browser E2E does for `web/src/lib/components/`. A listed file is a
+separate server process this instrumentation does not see, so every file under
+`packages/game-engine/src/endpoints/` reads 0% while API E2E exercises it, as
+browser E2E does for `web/src/lib/components/`. A listed file is a
 reason to act only when its boundary is unit ([Which Suite To
 Update](#which-suite-to-update)).
 
 `npm run test:unit:coverage` and `npm -w web run test:unit:coverage` write the
-same reports (`coverage/api/`, `web/coverage/`) for iteration.
+same reports.
+
+## Golden transcripts
+
+`tests/api/e2e/golden-transcripts.test.ts` plays the games in
+`tests/api/e2e/golden/games.ts` over HTTP under the mock narrator and compares
+what the player would see (lines, speakers, page breaks, mode, turns left) with
+`tests/api/e2e/golden/transcripts/`. They cover every command and refusal, the
+budget running out, and a won and a lost accusation,
+so they prove the game reads the same however a line reaches it. Only
+`tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A
+resumed game is not compared. The mock
+quotes the start of the narrator prompt, so editing it changes every
+transcript. The gate only compares; change a transcript on purpose with
+`npm run test:golden:record` and review the diff.
 
 ## Writing Tests
 
 ### Isolation
 
-Each API suite run gets its own database in a temporary config root, deleted
-afterwards. Within a run tests share it, so each must create its own profile
-via `setupApiTestAuth(tag)`, scope assertions to its own identifiers, and avoid
+Each API suite run gets its own database in a temporary config root. Within a
+run tests share it, so each must create its own profile via `setupApiTestAuth(tag)`, scope assertions to its own identifiers, and avoid
 unscoped global count assertions.
 
 Anything that opens a database directly must be given an explicit path — never
@@ -193,16 +197,15 @@ Anything that opens a database directly must be given an explicit path — never
 
 ### Mock data
 
-Fixtures are typed against the Zod schemas in
-`packages/shared/src/mystery-api-contracts.ts` and
-`packages/shared/src/blueprint-schema-v2.ts`.
+Fixtures are typed against the Zod schemas in `packages/shared/src/`
+(`mystery-api-contracts.ts`, `blueprint-schema-v2.ts`).
 
 - Use the factories and constants in `tests/testkit/src/fixtures.ts`; never
   hand-write inline objects for shapes that have a Zod schema.
 - Factories call `Schema.parse()` at creation, so a renamed or newly required
-  field fails immediately instead of passing against a stale shape.
+  field fails at once.
 - Pass only the overrides that differ from the defaults.
-- Adding a response type to the shared schemas means adding its factory.
+- A new response type in the shared schemas needs its factory.
 - For shapes with a TypeScript type but no Zod schema, annotate the mock
   explicitly so `npm run typecheck` catches drift.
 
@@ -228,11 +231,10 @@ That bar lives in `tests/api/integration/session-ownership.test.ts` and
 Integration and E2E never call a real model. The server runs the mock provider;
 assert persisted side effects instead.
 
-Mock is chosen by absence — the server's config root has no `.env.ai.*` and
-its settings row is empty — but the settings row can be changed over the API,
-and it belongs to the installation, not a profile. **A test that switches the
-server to live switches it for every test sharing that server**, and their
-calls go to the real API with whatever throwaway key was stored.
+Mock is chosen by absence: the config root has no `.env.ai.*` and the settings
+row is empty. That row can be changed over the API and belongs to the
+installation, not a profile. **A test that switches the server to live switches
+it for every test sharing that server**, and their calls reach the real API.
 
 So no suite that shares a server with game-playing tests may switch the mode to
 live; assert that in the unit suites (`ai-settings-store.test.ts`,
@@ -241,11 +243,11 @@ live; assert that in the unit suites (`ai-settings-store.test.ts`,
 reset it around each test and leave it on mock. As a backstop,
 `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` point
 `OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a file that does not
-exist, so a slip fails in milliseconds instead of hanging or spending credits.
+exist, so a slip fails fast instead of hanging or spending credits.
 
 `tests/api/integration/ai-profile-runtime.test.ts` proves profiles are resolved
-per request: it writes a `free` profile, plays a turn, breaks the file, and
-asserts the next turn fails.
+per request: it plays a turn on a `free` profile, breaks the file, and asserts
+the next turn fails.
 
 Changing an AI contract, prompt, context or provider selection updates the mock
 provider and its tests in the same change ("The mock provider" in
@@ -254,13 +256,12 @@ provider and its tests in the same change ("The mock provider" in
 ## CI
 
 `.github/workflows/ci.yml` runs the gate on pushes to `main` and on pull
-requests, and uploads `test-results/` (with the coverage summary) on every run
+requests, and uploads `test-results/` on every run
 and Playwright's report on failure.
 
 ## Documentation-Only Changes
 
-If a change touches only documentation, the code suites are optional locally,
-but run `npm run check:curated-docs`, `npm run check:doc-refs` and `npm run
+For a change to documentation only, the code suites are optional locally; run
+`npm run check:curated-docs`, `npm run check:doc-refs` and `npm run
 check:word-budgets`: CI runs the whole gate, and all three fail it. Check the
-rest by hand — command accuracy, and consistency with the doc that owns each
-topic.
+rest by hand: command accuracy, and consistency with the owning doc.

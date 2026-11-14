@@ -1,0 +1,66 @@
+game: mock-budget-ends-in-talk
+blueprint: mock-blueprint
+
+steps
+  0  (start)  mode=explore turns=10
+  1  (enter)  mode=explore turns=10
+  2  "go to living room"  mode=explore turns=9
+  3  "go to kitchen"  mode=explore turns=8
+  4  "search"  mode=explore turns=7 clues=clue-crumb
+  5  "search"  mode=explore turns=6
+  6  "talk to alice"  mode=talk turns=5
+  7  "Where were you?"  mode=talk turns=5 clues=clue-alice-saw-bob
+  8  "see you"  mode=explore turns=5
+  9  "move to living room"  mode=explore turns=4
+  10  "search"  mode=explore turns=3 clues=clue-wrapper
+  11  "look"  mode=explore turns=2 clues=clue-half-eaten
+  12  "go to the kitchen"  mode=explore turns=1
+  13  "talk to Alice"  mode=accuse turns=0
+  14  "help"  mode=accuse turns=0 opens=help
+  15  "Alice did it"  mode=accuse turns=0
+  16  "Alice, because of the clues I found"  mode=ended turns=0 result=win
+
+pages
+  page 0 opening "Mock Blueprint"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "Kitchen"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+  page 2 location "Living Room"
+    step 2 | You (investigator): "go to living room"
+    step 2 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+  page 3 location "Kitchen"
+    step 3 | You (investigator): "go to kitchen"
+    step 3 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 4 | You (investigator): "search"
+    step 4 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A crumb on the floor."
+    step 5 | You (investigator): "search"
+    step 5 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+  page 4 conversation "Alice"
+    step 6 | You (investigator): "talk to alice"
+    step 6 | Narrator (narrator): "[Mock] You walk up to Alice in Kitchen. she looks Tall with red hair.."
+    step 7 | You (investigator): "Where were you?"
+    step 7 | Alice (character): "[Mock] Alice thinks, then says: Bob was in the living room."
+  page 5 location "Kitchen"
+    step 8 | You (investigator): "see you"
+    step 8 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
+  page 6 location "Living Room"
+    step 9 | You (investigator): "move to living room"
+    step 9 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 10 | You (investigator): "search"
+    step 10 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A wrapper on the sofa."
+    step 11 | You (investigator): "look"
+    step 11 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A half-eaten cookie."
+  page 7 location "Kitchen"
+    step 12 | You (investigator): "go to the kitchen"
+    step 12 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+  page 8 conversation "Conversation"
+    step 13 | You (investigator): "talk to Alice"
+    step 13 | Narrator (narrator): "[Mock] You walk up to Alice in Kitchen. she looks Tall with red hair.."
+    step 13 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 14 | You (investigator): "help"
+    step 14 | System (system): "Help menu opened."
+    step 15 | You (investigator): "Alice did it"
+    step 15 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
+    step 16 | You (investigator): "Alice, because of the clues I found"
+    step 16 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"

@@ -81,7 +81,7 @@ create table game_events (
 );
 
 -- Dropped on the way over: \`game_events.clues_revealed\`. The runtime has never
--- written it (see evaluation/lib/game-events.mjs) — reveals live in \`payload\`.
+-- written it (see evaluation/lib/game-events.ts) — reveals live in \`payload\`.
 
 create unique index game_events_session_sequence_idx
     on game_events(session_id, sequence);

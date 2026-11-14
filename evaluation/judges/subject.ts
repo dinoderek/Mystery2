@@ -148,7 +148,7 @@ export function revealedClueIdsFromResponse(response: InteractionLike["response"
   if (Array.isArray(raw.revealed_clues)) {
     return raw.revealed_clues
       .map((clue: { id?: unknown } | null) => (typeof clue?.id === "string" ? clue.id : null))
-      .filter((id): id is string => id !== null);
+      .filter((id): id is string => Boolean(id));
   }
   if (Array.isArray(raw.revealed_clue_ids)) {
     return raw.revealed_clue_ids.filter((id): id is string => typeof id === "string");

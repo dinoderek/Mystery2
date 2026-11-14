@@ -2,7 +2,7 @@
 // wrapper: ignores the prompt files and prints a canned envelope whose
 // ".result" is a verdict JSON string, matching extract_path "result".
 //
-// Usage (via the pipeline's cli-runner): node trace-mock-judge.mjs <sys> <user>
+// Usage (as an evaluation binding's cmd): node trace-mock-judge.mjs <sys> <user>
 // Env MOCK_JUDGE_MODE controls the canned output:
 //   pass (default) — a valid passing verdict
 //   fail           — a valid failing verdict with one finding

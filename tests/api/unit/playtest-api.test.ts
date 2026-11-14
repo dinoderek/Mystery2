@@ -120,7 +120,7 @@ describe('calling the game', () => {
 		expect(await api.get('game-get')).toEqual({ ok: false, status: 404, body: { error: 'not here' } });
 	});
 
-	it('retries a server error after the web store backoff (300 ms, then 600) and returns the answer that follows', async () => {
+	it('retries a server error and returns the answer that follows', async () => {
 		let failures = 2;
 		respond = (request, response) => {
 			if (signInResponse(request, response)) return;

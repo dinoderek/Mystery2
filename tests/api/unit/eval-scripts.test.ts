@@ -30,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
+	vi.unstubAllGlobals();
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -101,7 +102,7 @@ describe('validate-blueprint', () => {
 	});
 
 	it('exits 2 for a file that is missing or not JSON, 3 with no argument', async () => {
-		expect(await runScript(VALIDATE_BLUEPRINT, [path.join(dir, 'missing.json')])).toMatchObject({ code: 2 });
+		expect(await runScript(VALIDATE_BLUEPRINT, [path.join(dir, 'missing.json')])).toMatchObject({ code: 2, stderr: expect.stringContaining('read error') });
 		const notJson = await runScript(VALIDATE_BLUEPRINT, [write('bad.json', '{ nope')]);
 		expect(notJson).toMatchObject({ code: 2 });
 		expect(notJson.stderr).toContain('invalid JSON');
@@ -196,7 +197,6 @@ describe('the api generation wrapper', () => {
 		expect(ran.code).toBeUndefined();
 		expect(requests).toHaveLength(1);
 		expect(ran.stdout).toContain(validBlueprintV2.id);
-		vi.unstubAllGlobals();
 	});
 
 	it('exits 2 with no user message file', async () => {
@@ -208,7 +208,6 @@ describe('the api generation wrapper', () => {
 		vi.stubEnv('OPENROUTER_API_KEY', 'sk-or-secret-value-9876');
 		vi.stubGlobal('fetch', async () => new Response('{"error":{"message":"rate limited"}}', { status: 429 }));
 		const ran = await runScript(OPENROUTER_WRAPPER, [write('system.txt', ''), write('user.json', { story_brief: generatorBrief })]);
-		vi.unstubAllGlobals();
 		expect(ran.code).toBe(1);
 		expect(ran.stderr).toContain('openrouter-generate:');
 		expect(ran.stderr).not.toContain('sk-or-secret-value-9876');

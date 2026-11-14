@@ -8,7 +8,7 @@
 #          so the model's reply (which must be the role JSON) is read from there.
 #
 # Model is taken from EVAL_MODEL (set by the evaluation core's model runner from
-# the binding), else sonnet.
+# the binding); the wrapper stops when it is unset.
 #
 # `--system-prompt` replaces Claude Code's own system prompt instead of appending
 # to it, and the remaining flags keep out its tools, MCP servers and settings,
@@ -21,7 +21,7 @@ set -euo pipefail
 
 SYS_FILE="${1:?missing system prompt file}"
 USER_FILE="${2:?missing user message file}"
-MODEL="${EVAL_MODEL:-sonnet}"
+MODEL="${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}"
 
 claude --print \
   --output-format json \

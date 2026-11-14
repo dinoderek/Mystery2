@@ -131,7 +131,7 @@ export function snapshotFromGiven(given: Given) {
 // and hands over the same fields the handler would, and
 // packages/game-engine/src/role-request.ts does the assembly for both. The
 // per-action `cli` blocks that used to live here duplicated that assembly and
-// drifted out of sync with the handlers (see prompt-build.mjs).
+// drifted out of sync with the handlers (see prompt-build.ts).
 export const ACTIONS: Record<string, ActionSpec> = {
   // The opening narration. Unlike every other action there is no prior state to
   // seed: game-start creates the session, so `given` is empty and the endpoint

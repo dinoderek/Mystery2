@@ -105,8 +105,8 @@ iterates until its output validates.
 
 | Harness | Template | Output | Validator |
 |---|---|---|---|
-| Generator | `evaluation/generator-harness/template/` | `blueprint.json` | `evaluation/generator-harness/scripts/validate-blueprint.mjs` |
-| Judge | `evaluation/judge-harness/template/` | `verdict.json` | `evaluation/judge-harness/scripts/validate-judge-output.mjs` |
+| Generator | `evaluation/generator-harness/template/` | `blueprint.json` | `evaluation/generator-harness/scripts/validate-blueprint.ts` |
+| Judge | `evaluation/judge-harness/template/` | `verdict.json` | `evaluation/judge-harness/scripts/validate-judge-output.ts` |
 
 - **Self-correction.** An agent that runs its own validator fixes schema
   mistakes before the pipeline sees them, so a retry exercises a real failure.

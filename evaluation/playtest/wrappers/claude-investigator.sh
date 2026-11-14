@@ -9,7 +9,7 @@
 #          binding's extract_path is null.
 #
 # The model is EVAL_MODEL, which the evaluation core sets from the binding;
-# sonnet when it is unset. CLAUDE_CLI_PATH names the `claude` executable, as it
+# the wrapper stops when it is unset. CLAUDE_CLI_PATH names the `claude` executable, as it
 # does for the game server's own claude-cli narrator.
 #
 # The flags are the ones the game server's claude-cli provider passes
@@ -26,7 +26,7 @@ set -euo pipefail
 
 SYS_FILE="${1:?missing system prompt file}"
 USER_FILE="${2:?missing user message file}"
-MODEL="${EVAL_MODEL:-sonnet}"
+MODEL="${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}"
 CLAUDE="${CLAUDE_CLI_PATH:-claude}"
 
 SCHEMA='{"type":"object","properties":{"plan":{"type":"string"},"input":{"type":"string","minLength":1}},"required":["plan","input"],"additionalProperties":false}'

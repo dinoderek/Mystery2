@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   findOrphanClues,
   runMechanicalChecks,
-} from "../../../evaluation/checks/mechanical.mjs";
+} from "../../../evaluation/checks/mechanical.ts";
 import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 

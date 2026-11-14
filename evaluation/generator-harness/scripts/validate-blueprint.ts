@@ -2,7 +2,7 @@
 // Blueprint V2 validator. Standalone — invoked by the generator agent (and by
 // the harness as a sanity check after the agent exits).
 //
-// Usage: node validate-blueprint.mjs <path-to-blueprint.json>
+// Usage: node validate-blueprint.ts <path-to-blueprint.json>
 //
 // Exit codes:
 //   0 — blueprint parsed and passed BlueprintV2Schema
@@ -22,10 +22,14 @@ import process from "node:process";
 // Real path of this script -> ../../../packages/shared/src/blueprint-schema-v2.ts
 import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 
+function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 async function main() {
   const blueprintPath = process.argv[2];
   if (!blueprintPath) {
-    process.stderr.write("usage: validate-blueprint.mjs <blueprint.json>\n");
+    process.stderr.write("usage: validate-blueprint.ts <blueprint.json>\n");
     process.exit(3);
   }
 
@@ -33,7 +37,7 @@ async function main() {
   try {
     raw = await fs.readFile(path.resolve(blueprintPath), "utf8");
   } catch (err) {
-    process.stderr.write(`read error: ${err.message}\n`);
+    process.stderr.write(`read error: ${messageOf(err)}\n`);
     process.exit(2);
   }
 
@@ -41,7 +45,7 @@ async function main() {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    process.stderr.write(`invalid JSON: ${err.message}\n`);
+    process.stderr.write(`invalid JSON: ${messageOf(err)}\n`);
     process.exit(2);
   }
 
@@ -56,13 +60,13 @@ async function main() {
   );
   for (const issue of result.error.issues) {
     const where = issue.path.length ? issue.path.join(".") : "(root)";
-    const got = "received" in issue ? ` (got: ${JSON.stringify(issue.received).slice(0, 80)})` : "";
+    const got = "received" in issue ? ` (got: ${(JSON.stringify(issue.received) ?? "undefined").slice(0, 80)})` : "";
     process.stderr.write(`  - ${where}: ${issue.message}${got}\n`);
   }
   process.exit(1);
 }
 
 main().catch((err) => {
-  process.stderr.write(`fatal: ${err.message ?? err}\n`);
+  process.stderr.write(`fatal: ${messageOf(err)}\n`);
   process.exit(2);
 });

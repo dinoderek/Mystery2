@@ -14,7 +14,7 @@
 // normalization unit-testable without a database.
 
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
-import { playedEvents } from "../../lib/game-events.mjs";
+import { playedEvents } from "../../lib/game-events.ts";
 
 export const TRACE_SCHEMA_VERSION = "trace/0.1";
 

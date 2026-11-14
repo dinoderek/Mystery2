@@ -9,7 +9,7 @@
 //      covers what the entry says it must, and it repeats nothing it must not.
 //      The registry entry declares these checks per dimension.
 //
-// Usage: node validate-judge-output.mjs <path-to-verdict.json>
+// Usage: node validate-judge-output.ts <path-to-verdict.json>
 //
 // Reads ./dimension-id, ./blueprint.json and (optionally) ./context.json from
 // the working directory, which is the judge workspace.
@@ -27,16 +27,20 @@ import process from "node:process";
 import { loadJudge } from "../../core/judge-loader.ts";
 import { validateJudgeAnswer } from "../../core/judge-output.ts";
 
-async function readJson(file) {
+function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+async function readJson(file: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
 /** Read a workspace file as JSON, or exit 2 saying which one and why. */
-async function readOrExit(file, what) {
+async function readOrExit(file: string, what: string): Promise<unknown> {
   try {
     return await readJson(path.resolve(file));
   } catch (err) {
-    process.stderr.write(`could not read ${what} (${err.message}).\n`);
+    process.stderr.write(`could not read ${what} (${messageOf(err)}).\n`);
     process.exit(2);
   }
 }
@@ -44,7 +48,7 @@ async function readOrExit(file, what) {
 async function main() {
   const verdictPath = process.argv[2];
   if (!verdictPath) {
-    process.stderr.write("usage: validate-judge-output.mjs <verdict.json>\n");
+    process.stderr.write("usage: validate-judge-output.ts <verdict.json>\n");
     process.exit(3);
   }
   let dimId;
@@ -52,7 +56,7 @@ async function main() {
     dimId = (await fs.readFile(path.resolve("dimension-id"), "utf8")).trim();
   } catch (err) {
     process.stderr.write(
-      `could not read ./dimension-id from cwd (${err.message}). Run me from the workspace root.\n`,
+      `could not read ./dimension-id from cwd (${messageOf(err)}). Run me from the workspace root.\n`,
     );
     process.exit(2);
   }
@@ -61,13 +65,13 @@ async function main() {
   try {
     definition = await loadJudge(dimId);
   } catch (err) {
-    process.stderr.write(`${err.message}\n`);
+    process.stderr.write(`${messageOf(err)}\n`);
     process.exit(2);
   }
 
   const verdict = await readOrExit(verdictPath, verdictPath);
   const blueprint = await readOrExit("blueprint.json", "./blueprint.json");
-  const context = await readJson(path.resolve("context.json")).catch(() => ({}));
+  const context = (await readJson(path.resolve("context.json")).catch(() => ({}))) as Record<string, unknown>;
 
   const result = validateJudgeAnswer(definition, verdict, blueprint, context);
   if (!result.ok) {
@@ -82,6 +86,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  process.stderr.write(`fatal: ${err.message ?? err}\n`);
+  process.stderr.write(`fatal: ${messageOf(err)}\n`);
   process.exit(2);
 });

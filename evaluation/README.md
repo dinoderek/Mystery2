@@ -164,6 +164,6 @@ keep generation cost out of the loop, then edit:
 - `evaluation/dimensions/<id>.schema.ts` — its output schema, appended to the
   prompt and used to validate the answer. Where brief and schema disagree, the
   schema wins.
-- `evaluation/checks/analyzers/<id>.mjs` — a deterministic pre-check.
+- `evaluation/checks/analyzers/<id>.ts` — a deterministic pre-check.
 - `evaluation/prompts/judge-system.md` — the system prefix shared by every
   judge.

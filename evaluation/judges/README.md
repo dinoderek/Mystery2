@@ -31,7 +31,7 @@ four times.
 ## The subject
 
 Each judge is a brief and a Zod schema in this directory, behind a shared
-evaluator preamble (`prompts/judge-system.md`). `subject.mjs` projects each
+evaluator preamble (`prompts/judge-system.md`). `subject.ts` projects each
 harness's data into the subject: a list of turns, each with its input,
 narration and revealed clues. Two fields carry the design.
 

@@ -9,7 +9,7 @@
 #     prompts/generator-prompt.md     (symlink -> repo; the wrapper replaces it
 #                                      with the pipeline's rendered prompt)
 #     schema/blueprint-schema-v2.ts   (symlink -> repo)
-#     scripts/validate-blueprint.mjs  (symlink -> repo)
+#     scripts/validate-blueprint.ts  (symlink -> repo)
 #
 # The wrapper then writes <target-dir>/brief.json before invoking claude.
 #
@@ -47,7 +47,7 @@ ln -s "$REPO_ROOT/packages/blueprint-generator/src/generator-prompt.md" \
       "$TARGET/prompts/generator-prompt.md"
 ln -s "$REPO_ROOT/packages/shared/src/blueprint-schema-v2.ts" \
       "$TARGET/schema/blueprint-schema-v2.ts"
-ln -s "$REPO_ROOT/evaluation/generator-harness/scripts/validate-blueprint.mjs" \
-      "$TARGET/scripts/validate-blueprint.mjs"
+ln -s "$REPO_ROOT/evaluation/generator-harness/scripts/validate-blueprint.ts" \
+      "$TARGET/scripts/validate-blueprint.ts"
 
 echo "workspace ready: $TARGET"

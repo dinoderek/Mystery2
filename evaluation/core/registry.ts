@@ -19,7 +19,7 @@ export type SubjectKind = (typeof SUBJECT_KINDS)[number];
 /**
  * How a judge's verdict is reached. `stated`: the model's own `verdict` is
  * taken. `major_findings`: the verdict fails on any `major` finding, whatever
- * the model says (`resolveVerdict` in `evaluation/judges/index.mjs`).
+ * the model says (`resolveVerdict` in `evaluation/judges/index.ts`).
  */
 export const VERDICT_RULES = ["stated", "major_findings"] as const;
 export type VerdictRule = (typeof VERDICT_RULES)[number];
@@ -162,7 +162,7 @@ function blueprintCheck(id: string): CheckEntry {
     type: "check",
     id,
     subjects: ["blueprint"],
-    run: { module: "evaluation/checks/mechanical.mjs", export: "runMechanicalChecks" },
+    run: { module: "evaluation/checks/mechanical.ts", export: "runMechanicalChecks" },
   };
 }
 
@@ -302,11 +302,11 @@ export const REGISTRY: readonly RegistryEntry[] = [
   }),
   blueprintJudge("path_payoff"),
   blueprintJudge("clue_graph", {
-    analyzer: { module: "evaluation/checks/analyzers/clue-graph.mjs", export: "analyze" },
+    analyzer: { module: "evaluation/checks/analyzers/clue-graph.ts", export: "analyze" },
   }),
   blueprintJudge("age_appropriate", {
     context: { tolerance: 2, min_words: 8 },
-    analyzer: { module: "evaluation/checks/analyzers/age-appropriate.mjs", export: "analyze" },
+    analyzer: { module: "evaluation/checks/analyzers/age-appropriate.ts", export: "analyze" },
     idChecks: [
       { kind: "equals", at: "target_age", to: "target_age" },
       {

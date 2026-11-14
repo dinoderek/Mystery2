@@ -16,15 +16,52 @@ import {
   expectedGradeForAge,
   fleschKincaidGrade,
   splitWords,
-} from "../../lib/readability.mjs";
-import { extractPlayerFacingText } from "../lib/player-text.mjs";
+} from "../../lib/readability.ts";
+import { extractPlayerFacingText, type PlayerTextBlueprint } from "../lib/player-text.ts";
 
 const DEFAULT_TOLERANCE = 2;
 const DEFAULT_MIN_WORDS = 8;
 
-export function analyze({ blueprint, context }) {
+interface MeasuredString {
+  path: string;
+  kind: string;
+  words: number;
+  grade: number | null;
+  over_threshold: boolean;
+  scored: boolean;
+  preview: string;
+}
+
+/** What the analyzer reports; a blueprint with nothing to measure reports only the fields it has. */
+export interface AgeAppropriateDetails {
+  summary: string;
+  target_age?: number;
+  expected_grade?: number;
+  tolerance?: number;
+  threshold?: number;
+  min_words?: number;
+  strings_total?: number;
+  strings_scored?: number;
+  violations?: MeasuredString[];
+  worst_grade?: number | null;
+  worst_path?: string | null;
+}
+
+export interface AgeAppropriateInput {
+  blueprint: PlayerTextBlueprint;
+  context?: { tolerance?: number; min_words?: number } | null;
+}
+
+function finiteOr(value: number | undefined, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+export function analyze({ blueprint, context }: AgeAppropriateInput): {
+  status: "pass" | "fail";
+  details: AgeAppropriateDetails;
+} {
   const targetAge = blueprint?.metadata?.target_age;
-  if (!Number.isFinite(targetAge)) {
+  if (typeof targetAge !== "number" || !Number.isFinite(targetAge)) {
     return {
       status: "fail",
       details: {
@@ -33,12 +70,8 @@ export function analyze({ blueprint, context }) {
     };
   }
 
-  const tolerance = Number.isFinite(context?.tolerance)
-    ? context.tolerance
-    : DEFAULT_TOLERANCE;
-  const minWords = Number.isFinite(context?.min_words)
-    ? context.min_words
-    : DEFAULT_MIN_WORDS;
+  const tolerance = finiteOr(context?.tolerance, DEFAULT_TOLERANCE);
+  const minWords = finiteOr(context?.min_words, DEFAULT_MIN_WORDS);
   const expectedGrade = expectedGradeForAge(targetAge);
   const threshold = expectedGrade + tolerance;
 
@@ -55,7 +88,7 @@ export function analyze({ blueprint, context }) {
       },
     };
   }
-  const measured = strings.map((s) => {
+  const measured: MeasuredString[] = strings.map((s) => {
     const words = splitWords(s.text).length;
     const grade = fleschKincaidGrade(s.text);
     return {
@@ -70,9 +103,10 @@ export function analyze({ blueprint, context }) {
   });
 
   const violations = measured.filter((m) => m.scored && m.over_threshold);
-  const worst = measured
-    .filter((m) => m.grade !== null)
-    .reduce((max, m) => (max === null || m.grade > max.grade ? m : max), null);
+  let worst: MeasuredString | null = null;
+  for (const m of measured) {
+    if (m.grade !== null && (worst === null || m.grade > (worst.grade ?? -Infinity))) worst = m;
+  }
 
   return {
     status: violations.length === 0 ? "pass" : "fail",

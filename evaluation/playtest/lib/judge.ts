@@ -21,7 +21,7 @@ import { runEval } from "../../core/dispatch.ts";
 import type { EvalContext } from "../../core/dispatch.ts";
 import { readResult } from "../../core/result.ts";
 import type { Result, RunError } from "../../core/result.ts";
-import { playedEvents } from "../../lib/game-events.mjs";
+import { playedEvents } from "../../lib/game-events.ts";
 import { judge as fleschJudge } from "../../runtime/lib/flesch.ts";
 import { partsToText } from "../../runtime/lib/transcript.ts";
 import { judgeGame } from "../../trace/judge-game.ts";

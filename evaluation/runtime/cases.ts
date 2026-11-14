@@ -23,7 +23,7 @@ import type { OptionValue } from "../core/args.ts";
 import type { EvalCommand } from "../core/dispatch.ts";
 import { UsageError } from "../core/errors.ts";
 import { resolveOutputRoot } from "../core/run-folder.ts";
-import { playedEvents } from "../lib/game-events.mjs";
+import { playedEvents } from "../lib/game-events.ts";
 import type { TurnAction, TurnCase } from "./lib/case.ts";
 
 /** A persisted event, as a trace holds it. */

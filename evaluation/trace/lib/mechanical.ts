@@ -17,9 +17,9 @@
 //                     leakage is a judge's job.
 
 import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
-import { collectClues } from "../../checks/lib/clue-graph.mjs";
+import { collectClues } from "../../checks/lib/clue-graph.ts";
 import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
-import { playedEvents } from "../../lib/game-events.mjs";
+import { playedEvents } from "../../lib/game-events.ts";
 import type { RawEvent, RawTrace } from "./normalize.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.ts";
 

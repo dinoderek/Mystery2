@@ -2,7 +2,7 @@
 // Drift checker for the curated extracts in
 // evaluation/generator-harness/template/docs/.
 //
-// Each extract pins the sources it was derived from (see curated-docs.mjs for
+// Each extract pins the sources it was derived from (see lib/curated-docs.mjs for
 // the header format). This recomputes every pin and reports:
 //
 //   DRIFT    a pinned source or section changed since the extract was reviewed
@@ -15,7 +15,7 @@
 //
 // Exit codes: 0 clean, 1 problems found, 2 internal error.
 //
-// Run from anywhere: node evaluation/generator-harness/scripts/check-curated-docs.mjs
+// Run from anywhere: node scripts/check-curated-docs.mjs
 
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -23,10 +23,10 @@ import path from "node:path";
 import process from "node:process";
 import url from "node:url";
 
-import { parsePins, parseSections, sectionHash } from "./curated-docs.mjs";
+import { parsePins, parseSections, sectionHash } from "./lib/curated-docs.mjs";
 
 const SCRIPT_PATH = url.fileURLToPath(import.meta.url);
-const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..", "..", "..");
+const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..");
 const DOCS_DIR = path.join(REPO_ROOT, "evaluation", "generator-harness", "template", "docs");
 const HISTORY_DEPTH = 200;
 
@@ -72,53 +72,40 @@ function markdownUnder(dir) {
     .map((entry) => path.join(entry.parentPath, entry.name));
 }
 
-function main() {
-  const docs = fs.readdirSync(DOCS_DIR).filter((f) => f.endsWith(".md"));
-  const problems = [];
-  const pinnedSections = new Map(); // source path → Set of pinned ids
-  let checked = 0;
-
-  for (const doc of docs) {
-    const pins = parsePins(fs.readFileSync(path.join(DOCS_DIR, doc), "utf8"));
-    if (pins.length === 0) {
-      problems.push(`MISSING ${doc}: no pinned sources in its header`);
-      continue;
-    }
-
-    for (const pin of pins) {
-      checked += 1;
-      const abs = path.join(REPO_ROOT, pin.path);
-      if (!fs.existsSync(abs)) {
-        problems.push(`MISSING ${doc} -> ${pin.pin}: no such file`);
-        continue;
-      }
-      if (pin.section) {
-        if (!pinnedSections.has(pin.path)) pinnedSections.set(pin.path, new Set());
-        pinnedSections.get(pin.path).add(pin.section);
-      }
-
-      const actual = hashOf(pin, fs.readFileSync(abs, "utf8"));
-      if (actual === null) {
-        problems.push(
-          `MISSING ${doc} -> ${pin.pin}: no <!-- extract:${pin.section} --> section in ${pin.path}`,
-        );
-        continue;
-      }
-      if (actual !== pin.expected) {
-        const since = lastMatchingCommit(pin);
-        problems.push(
-          `DRIFT ${doc} -> ${pin.pin}\n` +
-            `  pinned:  ${pin.expected}\n` +
-            `  current: ${actual}\n` +
-            (since
-              ? `  review:  git diff ${since} -- ${pin.path}`
-              : `  review:  no matching commit in the last ${HISTORY_DEPTH} (shallow clone?)`),
-        );
-      }
-    }
+/** Checks one pin of `doc`, adding what is wrong with it to `problems`. */
+function checkPin(doc, pin, problems, pinnedSections) {
+  const abs = path.join(REPO_ROOT, pin.path);
+  if (!fs.existsSync(abs)) {
+    problems.push(`MISSING ${doc} -> ${pin.pin}: no such file`);
+    return;
+  }
+  if (pin.section) {
+    if (!pinnedSections.has(pin.path)) pinnedSections.set(pin.path, new Set());
+    pinnedSections.get(pin.path).add(pin.section);
   }
 
-  // Markers are only worth their noise while an extract depends on them.
+  const actual = hashOf(pin, fs.readFileSync(abs, "utf8"));
+  if (actual === null) {
+    problems.push(
+      `MISSING ${doc} -> ${pin.pin}: no <!-- extract:${pin.section} --> section in ${pin.path}`,
+    );
+    return;
+  }
+  if (actual !== pin.expected) {
+    const since = lastMatchingCommit(pin);
+    problems.push(
+      `DRIFT ${doc} -> ${pin.pin}\n` +
+        `  pinned:  ${pin.expected}\n` +
+        `  current: ${actual}\n` +
+        (since
+          ? `  review:  git diff ${since} -- ${pin.path}`
+          : `  review:  no matching commit in the last ${HISTORY_DEPTH} (shallow clone?)`),
+    );
+  }
+}
+
+/** Markers are only worth their noise while an extract depends on them. */
+function checkMarkers(problems, pinnedSections) {
   for (const doc of markdownUnder(path.join(REPO_ROOT, "docs"))) {
     const source = path.relative(REPO_ROOT, doc).split(path.sep).join("/");
     if (!pinnedSections.has(source)) pinnedSections.set(source, new Set());
@@ -134,6 +121,26 @@ function main() {
       }
     }
   }
+}
+
+function main() {
+  const docs = fs.readdirSync(DOCS_DIR).filter((f) => f.endsWith(".md"));
+  const problems = [];
+  const pinnedSections = new Map(); // source path → Set of pinned ids
+  let checked = 0;
+
+  for (const doc of docs) {
+    const pins = parsePins(fs.readFileSync(path.join(DOCS_DIR, doc), "utf8"));
+    if (pins.length === 0) {
+      problems.push(`MISSING ${doc}: no pinned sources in its header`);
+      continue;
+    }
+    for (const pin of pins) {
+      checked += 1;
+      checkPin(doc, pin, problems, pinnedSections);
+    }
+  }
+  checkMarkers(problems, pinnedSections);
 
   if (problems.length === 0) {
     process.stdout.write(`OK: ${docs.length} curated doc(s), ${checked} pin(s) verified\n`);

@@ -5,7 +5,7 @@
  * cannot say these things, because they depend on the blueprint.
  */
 
-import { extractPlayerFacingText } from "../checks/lib/player-text.mjs";
+import { extractPlayerFacingText } from "../checks/lib/player-text.ts";
 import type { IdCheck, IdSetName } from "./registry.ts";
 
 interface Blueprint {

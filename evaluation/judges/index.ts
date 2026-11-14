@@ -2,7 +2,7 @@
 //
 // The game-master judges (briefs and schemas in this directory, listed in
 // evaluation/core/registry.ts) are subject-agnostic: they are written against
-// the projection in subject.mjs, so the SAME brief and the SAME output schema
+// the projection in subject.ts, so the SAME brief and the SAME output schema
 // grade a whole played game (evaluation/trace) and a single replayed turn
 // (evaluation/runtime). Their registry entries declare the `major_findings`
 // verdict rule that resolveVerdict applies.
@@ -14,9 +14,15 @@
  * that lists a major defect and then says "pass" is contradicting its own
  * evidence. Disagreements are surfaced, not silently resolved.
  */
-export function resolveVerdict(data) {
+export function resolveVerdict(data: { findings?: unknown; verdict?: string | null }): {
+  status: "pass" | "fail";
+  major_count: number;
+  minor_count: number;
+  model_verdict: string | null;
+  verdict_disagreement: boolean;
+} {
   const findings = Array.isArray(data.findings) ? data.findings : [];
-  const majors = findings.filter((f) => f?.severity === "major");
+  const majors = findings.filter((f: { severity?: string } | null) => f?.severity === "major");
   const status = majors.length > 0 ? "fail" : "pass";
   return {
     status,

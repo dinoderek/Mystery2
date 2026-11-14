@@ -1,14 +1,27 @@
-import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
-import { StoryBriefSchema } from "../../packages/blueprint-generator/src/story-brief.ts";
-import { analyzeClueGraph } from "./lib/clue-graph.mjs";
+import { BlueprintV2Schema, type BlueprintV2 } from "../../packages/shared/src/blueprint-schema-v2.ts";
+import { StoryBriefSchema, type StoryBrief } from "../../packages/blueprint-generator/src/story-brief.ts";
+import { analyzeClueGraph } from "./lib/clue-graph.ts";
+
+export interface MechanicalCheck {
+  id: string;
+  kind: "mechanical";
+  status: "pass" | "fail";
+  details: Record<string, unknown> | null;
+}
 
 // Runs the checks on a candidate blueprint. With a brief, it is checked first
 // and the blueprint is compared with it; without one (a blueprint validated on
 // its own) only the checks that need no brief run.
-export function runMechanicalChecks({ brief, blueprintCandidate }) {
-  const checks = [];
+export function runMechanicalChecks({
+  brief,
+  blueprintCandidate,
+}: {
+  brief?: unknown;
+  blueprintCandidate: unknown;
+}): MechanicalCheck[] {
+  const checks: MechanicalCheck[] = [];
 
-  let validBrief = null;
+  let validBrief: StoryBrief | null = null;
   if (brief !== undefined && brief !== null) {
     const briefParse = StoryBriefSchema.safeParse(brief);
     checks.push(
@@ -39,8 +52,8 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
 }
 
 // The checks that compare the blueprint with the counts its brief asks for.
-function briefChecks(validBrief, blueprint) {
-  const checks = [];
+function briefChecks(validBrief: StoryBrief, blueprint: BlueprintV2): MechanicalCheck[] {
+  const checks: MechanicalCheck[] = [];
   const expectedCulprits = validBrief.culprits ?? 1;
   const actualCulprits = blueprint.world.characters.filter((c) => c.is_culprit).length;
   checks.push(
@@ -75,7 +88,7 @@ function briefChecks(validBrief, blueprint) {
 }
 
 // The character count the brief's culprits, suspects and witnesses add up to.
-function characterCountChecks(validBrief, blueprint) {
+function characterCountChecks(validBrief: StoryBrief, blueprint: BlueprintV2): MechanicalCheck[] {
   if (validBrief.suspects === undefined && validBrief.witnesses === undefined) return [];
   const culprits = validBrief.culprits ?? 1;
   const suspects = validBrief.suspects ?? 0;
@@ -92,8 +105,8 @@ function characterCountChecks(validBrief, blueprint) {
 }
 
 // The checks that need only the blueprint.
-function structureChecks(blueprint) {
-  const checks = [];
+function structureChecks(blueprint: BlueprintV2): MechanicalCheck[] {
+  const checks: MechanicalCheck[] = [];
   const orphans = findOrphanClues(blueprint);
   const orphanCount = orphans.location.length + orphans.character.length;
   checks.push(
@@ -116,7 +129,7 @@ function structureChecks(blueprint) {
   return checks;
 }
 
-function mkCheck(id, passed, details) {
+function mkCheck(id: string, passed: boolean, details?: Record<string, unknown> | null): MechanicalCheck {
   return {
     id,
     kind: "mechanical",
@@ -125,29 +138,26 @@ function mkCheck(id, passed, details) {
   };
 }
 
-export function findOrphanClues(bp) {
-  const referenced = new Set();
+function referencedClueIds(bp: BlueprintV2): Set<string> {
+  const referenced = new Set<string>();
   const allPaths = [...bp.solution_paths, ...bp.red_herrings, ...bp.suspect_elimination_paths];
   for (const p of allPaths) {
     for (const id of p.location_clue_ids) referenced.add(id);
     for (const id of p.character_clue_ids) referenced.add(id);
   }
+  return referenced;
+}
 
-  const orphans = { location: [], character: [] };
-  for (const loc of bp.world.locations) {
-    for (const clue of loc.clues) {
-      if (!referenced.has(clue.id)) orphans.location.push(clue.id);
-    }
-    for (const sub of loc.sub_locations ?? []) {
-      for (const clue of sub.clues) {
-        if (!referenced.has(clue.id)) orphans.location.push(clue.id);
-      }
-    }
-  }
-  for (const ch of bp.world.characters) {
-    for (const clue of ch.clues) {
-      if (!referenced.has(clue.id)) orphans.character.push(clue.id);
-    }
-  }
-  return orphans;
+export function findOrphanClues(bp: BlueprintV2): { location: string[]; character: string[] } {
+  const referenced = referencedClueIds(bp);
+  const unreferenced = (clues: ReadonlyArray<{ id: string }>) =>
+    clues.filter((clue) => !referenced.has(clue.id)).map((clue) => clue.id);
+
+  return {
+    location: bp.world.locations.flatMap((loc) => [
+      ...unreferenced(loc.clues),
+      ...(loc.sub_locations ?? []).flatMap((sub) => unreferenced(sub.clues)),
+    ]),
+    character: bp.world.characters.flatMap((ch) => unreferenced(ch.clues)),
+  };
 }

@@ -16,12 +16,6 @@
   "include": [
     "packages/**/*",
     "tests/**/*",
-    "evaluation/core/**/*",
-    "evaluation/blueprint/**/*",
-    "evaluation/generate/**/*",
-    "evaluation/playtest/**/*",
-    "evaluation/runtime/**/*",
-    "evaluation/trace/**/*",
-    "evaluation/commands.ts"
+    "evaluation/**/*"
   ]
 }

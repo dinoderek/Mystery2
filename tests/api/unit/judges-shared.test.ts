@@ -4,7 +4,7 @@ import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
 import { validateJudgeOutput } from "../../../evaluation/core/judge-output.ts";
 import { composeJudgeSystemPrompt } from "../../../evaluation/core/judge-prompt.ts";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
-import { resolveVerdict } from "../../../evaluation/judges/index.mjs";
+import { resolveVerdict } from "../../../evaluation/judges/index.ts";
 
 // The game-master adherence battery is shared: the trace pipeline runs these as
 // registry dimensions over a played session, the runtime harness runs them as

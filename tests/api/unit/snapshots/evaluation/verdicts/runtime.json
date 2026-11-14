@@ -1,0 +1,139 @@
+{
+  "case_id": "ask-alice",
+  "backend": "cli:stub",
+  "model": "stub",
+  "narration": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\"",
+  "judges": [
+    {
+      "id": "flesch",
+      "status": "pass",
+      "score": 4.79,
+      "details": {
+        "target_age": 8,
+        "expected_grade": 3,
+        "tolerance": 2,
+        "threshold": 5,
+        "action": "ask",
+        "words": 11,
+        "preview": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\""
+      },
+      "parts": [
+        {
+          "grade": 4.79,
+          "pass": true,
+          "words": 11,
+          "speaker": "character",
+          "preview": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\""
+        }
+      ]
+    },
+    {
+      "id": "age_appropriate",
+      "status": "pass",
+      "score": 9,
+      "details": {
+        "target_age": 8,
+        "estimated_reading_age": 9,
+        "findings": [
+          {
+            "quote": "folding her arms",
+            "kind": "figurative_language",
+            "why": "A child may not read this as defensive.",
+            "suggestion": "crossing her arms"
+          }
+        ],
+        "reasoning": "Close to the target age.",
+        "judge_model": "inline",
+        "attempts": [
+          "ok"
+        ]
+      },
+      "parts": []
+    },
+    {
+      "id": "gm_roleplay",
+      "status": "fail",
+      "score": 1,
+      "details": {
+        "judge_model": "judge",
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": true,
+        "reasoning": "Mostly in voice.",
+        "findings": [
+          {
+            "sequence": 3,
+            "severity": "major",
+            "kind": "voice",
+            "quote": "The narrator says it was Alice.",
+            "why": "A character should speak for themselves.",
+            "refers_to": "alice"
+          }
+        ]
+      },
+      "parts": []
+    },
+    {
+      "id": "gm_clue_discipline",
+      "status": "fail",
+      "score": 1,
+      "details": {
+        "judge_model": "judge",
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "fail",
+        "verdict_disagreement": false,
+        "reasoning": "A clue came too early.",
+        "findings": [
+          {
+            "sequence": 3,
+            "severity": "major",
+            "kind": "premature",
+            "quote": "the lunch bag",
+            "why": "The bag is gated behind the hallway clue.",
+            "refers_to": "loc-bag"
+          }
+        ]
+      },
+      "parts": []
+    },
+    {
+      "id": "gm_fabrication",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "judge_model": "judge",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "Nothing invented.",
+        "findings": []
+      },
+      "parts": []
+    },
+    {
+      "id": "gm_spoiler",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "judge_model": "judge",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "No spoilers.",
+        "findings": []
+      },
+      "parts": []
+    }
+  ],
+  "summary": {
+    "judges": {
+      "pass": 4,
+      "fail": 2,
+      "error": 0
+    }
+  }
+}

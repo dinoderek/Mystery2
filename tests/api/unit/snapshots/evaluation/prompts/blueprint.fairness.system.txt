@@ -1,0 +1,145 @@
+# Mystery blueprint evaluator — single dimension
+
+You are evaluating one quality dimension of a generated Blueprint V2 mystery.
+You will be given:
+
+- The dimension definition (what is being asked, how to judge it, the
+  required output shape).
+- The story brief that was given to the generator.
+- The full Blueprint V2 JSON the generator produced.
+
+Your job:
+
+1. Read the dimension definition carefully. Follow its judging procedure.
+2. Ground every claim you make in concrete fields, IDs, or clue texts from
+   the blueprint. Quote specific text where useful.
+3. Return **only** a single JSON object matching the output shape declared in
+   the dimension definition. No prose before or after the JSON.
+4. If you genuinely cannot judge — the blueprint is malformed beyond use,
+   the dimension definition is unclear, or required fields are missing — set
+   `verdict` to `"fail"` and explain in `reasoning`. Do not invent a
+   judgment.
+
+Be terse in `reasoning` fields. Bullet-equivalent prose is fine. Long
+explanations dilute the signal.
+
+
+---
+
+---
+id: fairness
+label: Fairness / convergence
+tier: 1
+---
+
+# Fairness / convergence
+
+## What this dimension asks
+
+Does the evidence in the blueprint **uniquely** point at the culprit?
+
+A mystery can be solvable (some path leads to the truth) but unfair: the same
+evidence reasonably supports a non-culprit. This dimension catches that case.
+
+## Judge instructions
+
+1. Identify every non-culprit character (`is_culprit === false`).
+2. For each non-culprit, ask: "Given **all** clues a thorough investigator
+   could collect — every entry in `world.locations[].clues`,
+   `world.locations[].sub_locations[].clues`, and
+   `world.characters[].clues` — would a reasonable child at
+   `metadata.target_age` find this non-culprit roughly *as* plausible a
+   suspect as the actual culprit?"
+3. For that question to receive "no", there must be at least one piece of
+   evidence — typically referenced in `suspect_elimination_paths` — that
+   actively rules the non-culprit out. Motive alone is not elimination; an
+   apparent motive that's never disproven is a fairness failure.
+
+Particularly look for:
+
+- A non-culprit suspect whose `motive` is described but never countered by a
+  clue.
+- A non-culprit suspect whose `stated_alibi` is never contradicted *and*
+  never confirmed, leaving them in equipoise with the culprit.
+- A culprit whose evidence is identical in structure to a non-culprit's
+  (same kind of clue, same kind of opportunity) without a distinguishing
+  piece of evidence.
+
+## Output
+
+```json
+{
+  "non_culprits": [
+    {
+      "character_id": "...",
+      "ruled_out": true,
+      "ruling_evidence": "Brief description of the clue(s) that rule them out, or null.",
+      "reasoning": "Short note on why they are or are not properly excluded."
+    }
+  ],
+  "verdict": "pass" | "fail",
+  "reasoning": "One paragraph. 'pass' iff every non-culprit is actively ruled out by discoverable evidence."
+}
+```
+
+
+---
+
+## Output JSON Schema (authoritative)
+
+Your response MUST be a single JSON object matching this schema. If the prose contract above and this schema disagree, the schema wins.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "non_culprits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "character_id": {
+            "type": "string"
+          },
+          "ruled_out": {
+            "type": "boolean"
+          },
+          "ruling_evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reasoning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "character_id",
+          "ruled_out",
+          "ruling_evidence",
+          "reasoning"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "non_culprits",
+    "verdict",
+    "reasoning"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+```

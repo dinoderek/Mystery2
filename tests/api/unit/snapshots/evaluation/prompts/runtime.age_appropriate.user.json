@@ -1,0 +1,14 @@
+{
+  "target_age": 8,
+  "action": {
+    "type": "ask",
+    "player_input": "Where did the cookies go?"
+  },
+  "narration": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\"",
+  "narration_parts": [
+    {
+      "speaker": "character",
+      "text": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\""
+    }
+  ]
+}

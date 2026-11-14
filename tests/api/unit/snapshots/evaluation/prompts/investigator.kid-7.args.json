@@ -1,0 +1,17 @@
+[
+  "--print",
+  "--model",
+  "sonnet",
+  "--output-format",
+  "json",
+  "--system-prompt",
+  "<system prompt>",
+  "--tools",
+  "",
+  "--strict-mcp-config",
+  "--setting-sources",
+  "",
+  "--no-session-persistence",
+  "--json-schema",
+  "{\"type\":\"object\",\"properties\":{\"plan\":{\"type\":\"string\"},\"input\":{\"type\":\"string\",\"minLength\":1}},\"required\":[\"plan\",\"input\"],\"additionalProperties\":false}"
+]

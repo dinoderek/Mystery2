@@ -1,0 +1,118 @@
+{
+  "reconstruction": {
+    "turns": 9,
+    "context_errors": 0,
+    "issues": []
+  },
+  "mechanical": [
+    {
+      "id": "clue_accounting",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "spoiler_leak",
+      "status": "pass",
+      "details": {
+        "min_run": 12
+      }
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "gm_roleplay",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "Every character stayed in voice.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "answer": {
+          "findings": [],
+          "verdict": "pass",
+          "reasoning": "Every character stayed in voice."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "gm_clue_discipline",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "Clues were given as recorded.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "answer": {
+          "findings": [],
+          "verdict": "pass",
+          "reasoning": "Clues were given as recorded."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "gm_fabrication",
+      "overall": "fail",
+      "analyzer": null,
+      "judge": {
+        "status": "fail",
+        "reasoning": "One invented place.",
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "fail",
+        "verdict_disagreement": false,
+        "answer": {
+          "findings": [
+            {
+              "sequence": 6,
+              "severity": "major",
+              "kind": "place",
+              "quote": "the locked gate",
+              "why": "No such gate in the blueprint.",
+              "refers_to": "loc_garden"
+            }
+          ],
+          "verdict": "fail",
+          "reasoning": "One invented place."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "gm_spoiler",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "One hint, nothing given away.",
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "answer": {
+          "findings": [
+            {
+              "sequence": 4,
+              "severity": "minor",
+              "kind": "hidden_action",
+              "quote": "he seemed to know the garden well",
+              "why": "Hints at where Dorn was.",
+              "refers_to": null
+            }
+          ],
+          "verdict": "pass",
+          "reasoning": "One hint, nothing given away."
+        }
+      },
+      "error": null
+    }
+  ],
+  "run_error": null
+}

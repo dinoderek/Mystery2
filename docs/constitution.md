@@ -9,8 +9,8 @@ agents work; it may not weaken anything here.
 
 ## I. Documentation ships with the change
 
-Read the core docs `AGENTS.md` lists, and the area docs it names for what you
-touch. A change to behaviour, workflow, commands or setup updates the owning doc
+Before significant work, read the core docs `AGENTS.md` lists, and the area
+docs it names for what you touch. A change to behaviour, workflow, commands or setup updates the owning doc
 in the same change. Each topic has one owner; others link to it.
 
 ## II. Test what you build (non-negotiable)
@@ -18,7 +18,7 @@ in the same change. Each topic has one owner; others link to it.
 Every change carries tests at the boundary it affects, per `docs/testing.md`:
 unit for logic, integration against a running server for endpoints, ownership,
 profiles and content, E2E for journeys. The game is one process over a real
-database and real files; regressions at those boundaries show only when each is
+database and files; regressions there show only when each boundary is
 exercised.
 
 ## III. Run the gate
@@ -46,15 +46,15 @@ running game is a deviation, and is agreed before work starts.
 
 ## V. Follow the existing conventions
 
-Follow the conventions of the area you edit, and justify any departure in the
-change.
+Follow the conventions of the area you edit instead of inventing parallel ones,
+and justify any departure in the change.
 
 ## VI. Failures are visible
 
 A changed feature logs its failures once, with enough context — request,
 session, blueprint — to diagnose them, and no user-facing flow swallows an
-error silently. AI turns are non-deterministic; what was logged at the time is
-the only way to explain a bad one.
+error silently. AI turns are non-deterministic; only what was logged explains a bad
+one.
 
 ---
 

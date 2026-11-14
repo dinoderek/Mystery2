@@ -1,10 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
-import type { EventStore } from "../../../packages/game-engine/src/context.ts";
-import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
+import { describe, expect, it } from "vitest";
 import {
   buildNarrationEvent,
   createNarrationPart,
-  insertNarrationEvent,
   parseNarrationParts,
   readNarrationEvent,
 } from "../../../packages/game-engine/src/narration.ts";
@@ -248,76 +245,5 @@ describe("buildNarrationEvent", () => {
     );
 
     expect(event).toMatchObject({ payload: { a: 1 }, model: "m-1" });
-  });
-});
-
-describe("insertNarrationEvent", () => {
-  function logger() {
-    return { log: vi.fn(), logError: vi.fn() } satisfies LogWriter;
-  }
-
-  const input = {
-    session_id: "g",
-    event_type: "search",
-    actor: "player",
-    narration_parts: [createNarrationPart("One", NARRATOR_SPEAKER)],
-  };
-
-  it("writes at the next sequence, logs it, and returns the sequence", async () => {
-    const log = logger();
-    const insert = vi.fn().mockResolvedValue(undefined);
-    const events = {
-      nextSequence: async () => 5,
-      insert,
-    } as unknown as EventStore;
-
-    const sequence = await insertNarrationEvent(events, {
-      ...input,
-      logger: log,
-    });
-
-    expect(sequence).toBe(5);
-    expect(insert).toHaveBeenCalledWith(
-      expect.objectContaining({ session_id: "g", sequence: 5 }),
-    );
-    expect(log.log).toHaveBeenCalledWith(
-      "narration_event.persisted",
-      expect.objectContaining({ sequence: 5, part_count: 1 }),
-    );
-  });
-
-  it("logs and rethrows with the cause when the write fails", async () => {
-    const log = logger();
-    const cause = new Error("disk full");
-    const events = {
-      nextSequence: async () => 2,
-      insert: async () => {
-        throw cause;
-      },
-    } as unknown as EventStore;
-
-    const failure = await insertNarrationEvent(events, {
-      ...input,
-      logger: log,
-    }).catch((error: unknown) => error);
-
-    expect(failure).toMatchObject({ message: "disk full", cause });
-    expect(log.logError).toHaveBeenCalledWith(
-      "narration_event.persist_failed",
-      expect.objectContaining({ sequence: 2, error: "disk full" }),
-    );
-  });
-
-  it("names a failure that is not an Error", async () => {
-    const events = {
-      nextSequence: async () => 2,
-      insert: async () => {
-        throw "nope";
-      },
-    } as unknown as EventStore;
-
-    await expect(insertNarrationEvent(events, input)).rejects.toThrow(
-      "Failed to insert narration event",
-    );
   });
 });

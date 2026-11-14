@@ -31,8 +31,9 @@ summaries.
 ## The gate
 
 Any non-documentation change finishes with `npm test`. Focused scripts are for
-iteration. The gate takes about 20 seconds; run it in the background into a file
-named after the worktree, and read that file on the completion notification:
+iteration; rerun the gate after any later edit. The gate takes about 20 seconds;
+run it in the background into a file named after the worktree, and read it when
+it completes:
 
 ```bash
 ( npm test; echo "GATE_EXIT=$?" ) > "/tmp/gate-$(basename "$PWD").log" 2>&1
@@ -44,12 +45,12 @@ A shared log name gets overwritten by other worktrees' runs. Never block on
 Two traps:
 
 - **Check `GATE_EXIT`**, not the task's exit code, which is the final `echo`'s.
+  Piping `npm test` into `tail` masks it too.
 - **Check the `Total` line**, not the last line: a failing step can print a
   passing test name under it. `Total ... FAIL` is the verdict.
 
-Every step runs in every environment, and the gate needs nothing beyond this
-repo; a suite that will not start is a bug to fix, not a partial run to report. Coverage floors are enforced
-(`docs/testing.md`). Final summaries state which gates ran, and why anything
+Every step runs in every environment, no suite may be reported skipped, and
+coverage floors are enforced (`docs/testing.md`). Final summaries state which gates ran, and why anything
 was skipped.
 
 ## Things that bite

@@ -14,9 +14,10 @@ cloud backend, container or separate API service.
 - **Model provider**: OpenRouter, or the local `claude` CLI, called from the
   server. A key never reaches the browser.
 
-Goals: **one command** (`npm run dev` starts everything); **testability** (the
-full gate runs against a real server and database, with no external dependencies); **a queryable history** (every
-session is a row you can export).
+Goals: **one command** (`npm run dev` starts everything; nothing else is
+installed, started, seeded or restarted); **testability** (the full gate runs
+against a real server and database, with no external dependencies); **a
+queryable history** (every session is an exportable row).
 
 Non-goals: hosting, offline play, and multi-user access control. Profiles keep
 one person's cases apart from another's on a shared machine. They are not a
@@ -42,31 +43,30 @@ security boundary.
 engine's endpoint registry: it checks the method, builds the context the endpoint
 needs, and delegates. `src/hooks.server.ts` resolves the profile cookie into
 `locals.player`. The browser reaches all of it through `src/lib/api/client.ts`,
-on the same origin, so there is no CORS, no bearer token and no base URL.
+on the same origin, with no base URL.
 
 A few routes sit outside the registry: `player` and `players` (how you get a
 profile) and `ai-settings` (installation configuration). They reach the engine
-through `getEngine()`. Keep that list short. A route belongs here only when the
+through `getEngine()`. Keep it short: a route belongs here only when the
 registry cannot express it.
 
 **The engine (`packages/game-engine/`).** Handlers take an `EngineContext` and
-reach the outside world only through it. That boundary keeps storage
-substitutable. How to work inside it is `docs/backend-conventions.md`.
+reach the outside world only through it, which keeps storage substitutable
+(`docs/backend-conventions.md`).
 
 **Data.** `packages/game-engine/src/db/schema.ts` is the whole schema, always the
 current end state. Existing databases move forward through numbered steps keyed
 on `PRAGMA user_version`. Play uses `players`, `game_sessions` (one per case,
 owned by a player) and `game_events` (the append-only transcript, unique on `(session_id, sequence)`). AI
 configuration is per installation: `ai_keys`, `ai_models` and `app_settings`
-(see `docs/ai-configuration.md`).
+(`docs/ai-configuration.md`).
 
 The database is `<config root>/database/<name>/game.db`, one per worktree plus
 `prod` (`docs/local-infrastructure.md`). Tests never touch any of them.
 
 **Content.** Blueprints are JSON, searched in the config root's `blueprints/`
 and then the committed ones. A malformed blueprint is skipped and logged, never
-allowed to fail the whole catalog. Both blueprints and images are cached on mtime
-and size, so edits take effect without a restart.
+failing the whole catalog. Blueprints and images are cached on mtime and size, so edits take effect without a restart.
 
 **AI.** Four profiles: `mock` (built in), `free` and `paid` (`.env.ai.<mode>.local`
 files), and `default`, the only one the browser plays as. `default` resolves per
@@ -108,5 +108,7 @@ Every step is in-process except the model call.
 
 ## What this architecture does not have
 
-No CORS, tokens, object storage, containers or deploy pipeline. A single-player
-game on one machine needs none of them.
+No CORS, tokens, expiring image links, privileged database client, object
+storage, migration chain, mirrored modules, containers, port allocator beyond
+one port per worktree, or deploy pipeline. A single-player game on one machine
+needs none of them.

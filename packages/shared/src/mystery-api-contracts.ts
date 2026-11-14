@@ -58,8 +58,8 @@ export const TurnResponseBaseSchema = z.object({
   mode: ModeSchema,
   current_talk_character: z.string().nullable().optional(),
   result: OutcomeSchema.nullable().optional(),
-  // Clue(s) revealed by this action, for the in-game notebook to merge. Only
-  // search/ask actions populate this; other turns omit it.
+  // Clues for the in-game notebook to merge. Stepping into the starting
+  // location reveals none, so game-enter omits it.
   revealed_clues: z.array(DiscoveredClueSchema).optional(),
 });
 

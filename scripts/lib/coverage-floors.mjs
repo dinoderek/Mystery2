@@ -46,12 +46,13 @@ export function readFloors(repoRoot) {
 
 /**
  * Percentage from the counts, not from the report's `pct`, which is rounded to
- * two places and would let 79.996% read as 80. Null when the counts are absent.
+ * two places and would let 79.996% read as 80. Null when the counts are absent
+ * or nothing was counted: a suite that measured nothing has not met a floor.
  */
 function percent(metric) {
   const { covered, total } = metric ?? {};
-  if (!Number.isFinite(covered) || !Number.isFinite(total)) return null;
-  return total === 0 ? 100 : (covered / total) * 100;
+  if (!Number.isFinite(covered) || !Number.isFinite(total) || total === 0) return null;
+  return (covered / total) * 100;
 }
 
 /**

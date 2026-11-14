@@ -123,13 +123,16 @@ describe("evaluateFloors", () => {
     expect(failures).not.toContain("api branches");
   });
 
-  it("treats a measure with nothing to cover as met", () => {
-    const results = evaluate({
-      ...AT_FLOOR,
-      api: summary({ covered: 80, total: 100 }, { covered: 0, total: 0 }),
-    });
+  it("reads a measure that counted nothing as not measured", () => {
+    const failures = describeFailures(
+      evaluate({
+        ...AT_FLOOR,
+        api: summary({ covered: 80, total: 100 }, { covered: 0, total: 0 }),
+      }),
+    );
 
-    expect(describeFailures(results)).toBeNull();
+    expect(failures).toContain("api branches: not measured");
+    expect(failures).not.toContain("api lines");
   });
 });
 

@@ -78,6 +78,10 @@ describe("import-layer rules", () => {
       'import "$lib/server/s";\nimport "../../../../packages/game-engine/src/index.ts";\n',
     );
     write("web/src/hooks.server.ts", 'import "$lib/server/s";\n');
+    write(
+      "web/src/lib/server/reaches-db.ts",
+      'import "../../../../packages/game-engine/src/db/other.ts";\n',
+    );
 
     write("packages/game-engine/src/command-grammar.ts");
     write(
@@ -142,6 +146,9 @@ describe("import-layer rules", () => {
     expect(
       rulesBrokenBy(violations, "packages/game-engine/src/db/other.ts"),
     ).toEqual([]);
+    expect(
+      rulesBrokenBy(violations, "web/src/lib/server/reaches-db.ts"),
+    ).toEqual(["db-only-from-context-local"]);
   });
 
   it("flags browser code that imports the engine or $lib/server, and allows the server side", () => {

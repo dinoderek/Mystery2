@@ -2,17 +2,18 @@
 //
 // It opens as the browser does: game-start narrates the premise, then
 // game-enter (the player's "press any key") narrates the arrival. Each step
-// after that: show the investigator the player's view, take the line it types,
-// run it through the UI's parser, and either call the matching endpoint or
-// show the parser's hint (no turn spent), as the web store does. The game's
-// state is re-read after every call, so the next view is what the server says,
+// after that: show the investigator the player's view, take the line it types
+// and post it, as typed, to game-turn. The engine decides what the line means
+// and answers with one of four kinds: a played turn, a refusal with its hint, a
+// view to open, or quit. Only a played turn spends one. The game's state is
+// re-read after every played turn, so the next view is what the server says,
 // not what the runner assumes.
 //
 // Each input is kept with a checkpoint of the game just before it, and the
 // game's end with one more, so a replay of the script can tell when the game
 // has diverged (./replay.mjs).
 
-import { resolveInput } from "./commands.mjs";
+import { commandHint } from "../../../packages/game-engine/src/command-grammar.ts";
 import { checkpointOf } from "./replay.mjs";
 import { buildView } from "./view.mjs";
 
@@ -32,10 +33,50 @@ function errorText(response) {
   return response.body?.error ?? `status ${response.status}`;
 }
 
-/** What the store adds to the transcript for a successful response. */
+/** What the store adds to the transcript for a successful game-enter response. */
 function responseEntries(body) {
   const parts = narrationEntries(body.narration_parts);
   return parts.length > 0 ? parts : [{ kind: "narration", speaker: "Narrator", text: "Action completed." }];
+}
+
+/** The narration of a played turn: every saved event, in order. */
+function turnEntries(body) {
+  const entries = (body.events ?? []).flatMap((event) => narrationEntries(event.narration_parts));
+  return entries.length > 0 ? entries : [{ kind: "narration", speaker: "Narrator", text: "Action completed." }];
+}
+
+/**
+ * What the investigator is told for a line that played nothing, in the words
+ * the browser would answer it with, or a screen it opens: the investigator's
+ * view already carries the notebook, so a view is said in a line.
+ * `echo` is true only for `help`: the browser opens the notebook for `notebook`
+ * and the list commands before it echoes anything into the transcript.
+ */
+function feedbackFor(body, mode) {
+  if (body.kind === "refused") return { echo: true, text: body.hint };
+  if (body.view === "help") return { echo: true, text: `Help menu opened. ${commandHint(mode)}` };
+  return {
+    echo: false,
+    text: body.section
+      ? `(The notebook opens at ${body.section}: it is the NOTEBOOK sections of your view.)`
+      : "(The notebook opens: it is the NOTEBOOK sections of your view.)",
+  };
+}
+
+/** The step's record of how the engine answered the line. */
+function actionOf(response) {
+  if (!response.ok) return { kind: "failed", status: response.status };
+  const body = response.body;
+  switch (body.kind) {
+    case "turn":
+      return { kind: "turn", event_type: body.events[0]?.event_type ?? null };
+    case "refused":
+      return { kind: "refused", reason: body.reason, text: body.hint };
+    case "view":
+      return { kind: "view", view: body.view, section: body.section };
+    default:
+      return { kind: "quit" };
+  }
 }
 
 /**
@@ -117,12 +158,6 @@ export async function playGame({
 
     script.push(decision.input);
     checkpoints.push(checkpoint);
-    const action = resolveInput(decision.input, state, gameId);
-    // The store echoes what was typed, except the line that only opens a
-    // screen (notebook).
-    if (action.kind !== "feedback" || action.echo) {
-      transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
-    }
     const step = {
       step: number,
       mode_before: state.mode,
@@ -135,38 +170,47 @@ export async function playGame({
         cost_usd: decision.cost_usd,
         attempts: decision.attempts,
       },
-      action: action.kind === "call"
-        ? { kind: "call", endpoint: action.endpoint, body: action.body }
-        : action.kind === "feedback"
-        ? { kind: "feedback", text: action.text, parse: action.parsed.type }
-        : { kind: "quit" },
+      action: null,
       response: null,
       view,
     };
 
-    if (action.kind === "quit") {
+    const response = await api.post("game-turn", { game_id: gameId, input: decision.input });
+    step.response = { ok: response.ok, status: response.status, body: response.body };
+    step.action = actionOf(response);
+    const played = response.ok && response.body.kind === "turn";
+    const feedback = response.ok && (response.body.kind === "refused" || response.body.kind === "view")
+      ? feedbackFor(response.body, state.mode)
+      : null;
+
+    // The store echoes what was typed, except the lines that open the notebook.
+    if (feedback?.echo ?? true) {
+      transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
+    }
+
+    if (feedback) {
+      step.action.text = feedback.text;
+      transcript.push({ kind: "feedback", text: feedback.text });
+    } else if (step.action.kind === "quit") {
       stopReason = "quit";
+    } else if (played) {
+      consecutiveErrors = 0;
+      transcript.push(...turnEntries(response.body));
+      if (response.body.result) result = response.body.result;
+    } else {
+      consecutiveErrors += 1;
+      transcript.push({ kind: "error", text: `Request failed: ${errorText(response)}` });
+    }
+
+    // Only a played turn, or a failed call that may have saved, changes the game.
+    if (played || !response.ok) {
+      if (!(await refreshState())) stopReason = "errors";
+    }
+
+    if (stopReason === "quit") {
       steps.push(step);
       onStep(step);
       break;
-    }
-
-    if (action.kind === "feedback") {
-      transcript.push({ kind: "feedback", text: action.text });
-    } else {
-      const response = await api.post(action.endpoint, action.body);
-      step.response = { ok: response.ok, status: response.status, body: response.body };
-
-      if (response.ok) {
-        consecutiveErrors = 0;
-        transcript.push(...responseEntries(response.body));
-        if (response.body.result) result = response.body.result;
-      } else {
-        consecutiveErrors += 1;
-        transcript.push({ kind: "error", text: `Request failed: ${errorText(response)}` });
-      }
-
-      if (!(await refreshState())) stopReason = "errors";
     }
 
     step.mode_after = state.mode;

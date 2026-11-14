@@ -2,10 +2,10 @@
 //
 // A scripted investigator stands in for the model one, so this runs offline
 // and deterministically. It proves the pieces a real playtest relies on: the
-// UI's parser decides what each line does, rejected lines cost no turn, free
-// text in accuse mode becomes reasoning, the loop stops when the case ends,
-// the run folder records it all, and a recorded game replays until the game
-// no longer matches the recording.
+// engine decides what each line does and answers with one of four kinds,
+// refused lines and views cost no turn, free text in accuse mode becomes
+// reasoning, the loop stops when the case ends, the run folder records it all,
+// and a recorded game replays until the game no longer matches the recording.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -26,6 +26,7 @@ const MOCK_BLUEPRINT = JSON.parse(
 const INPUTS = [
 	'search',
 	'notebook',
+	'help',
 	'serch the pantry',
 	'search the pantry shelf',
 	'talk to Zed',
@@ -39,6 +40,8 @@ const INPUTS = [
 	'Alice took the cookies: the crumbs and the empty jar both point to her.',
 	'this line is never reached'
 ];
+// The game ends on the line before the last, which is never sent.
+const PLAYED = INPUTS.slice(0, -1);
 
 // The step records `playGame` returns (evaluation/playtest/lib/play.mjs).
 interface PlayedStep {
@@ -58,7 +61,21 @@ afterEach(() => {
 });
 
 describe('playtest loop', () => {
-	it('plays a scripted game to the end through the UI parser', async () => {
+	it('stops when the investigator quits, and the game is left as it was', async () => {
+		const game = await playGame({
+			api: await signIn(BASE_URL, 'playtest-quit'),
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			investigator: scriptedInvestigator(['quit', 'search'])
+		});
+		expect(game.stopReason).toBe('quit');
+		expect(game.steps).toHaveLength(1);
+		expect(game.steps[0].action).toEqual({ kind: 'quit' });
+		expect(game.finalState.mode).toBe('explore');
+		// The browser echoes `quit` like any other line.
+		expect(game.transcript.at(-1)).toMatchObject({ kind: 'input', text: 'quit' });
+	});
+
+	it('plays a scripted game to the end through game-turn', async () => {
 		const api = await signIn(BASE_URL, 'playtest-smoke');
 
 		const game = await playGame({
@@ -69,43 +86,53 @@ describe('playtest loop', () => {
 
 		expect(game.stopReason).toBe('ended');
 		expect(game.result).toBe('win');
-		expect(game.script).toEqual(INPUTS.slice(0, 12));
+		expect(game.script).toEqual(PLAYED);
 
 		const steps: PlayedStep[] = game.steps;
 		const byInput = Object.fromEntries(steps.map((step) => [step.input, step]));
 
-		// Lines the parser rejects print its hint and cost no turn.
-		expect(byInput['serch the pantry'].action).toMatchObject({ kind: 'feedback', parse: 'unrecognized' });
+		// A refused line prints the engine's hint and costs no turn.
+		expect(byInput['serch the pantry'].action).toMatchObject({ kind: 'refused', reason: 'unrecognized' });
 		expect(byInput['serch the pantry'].time_before).toBe(byInput['serch the pantry'].time_after);
 		expect(byInput['talk to Zed'].action).toEqual({
-			kind: 'feedback',
-			parse: 'invalid-target',
+			kind: 'refused',
+			reason: 'invalid-target',
 			text: expect.stringContaining('"zed" is not a valid character. Try: Alice Smith'),
 		});
 
-		// Routing mirrors the web store.
-		expect(byInput['search the pantry shelf'].action).toMatchObject({
-			endpoint: 'game-search',
-			body: { search_query: 'the pantry shelf' }
+		// `help` is a view: the investigator is told the mode's commands.
+		expect(byInput['help'].action).toMatchObject({
+			kind: 'view',
+			view: 'help',
+			text: expect.stringMatching(/^Help menu opened\. Commands: move to\/go to <location>/)
 		});
-		expect(byInput['talk to alice'].action).toMatchObject({
-			endpoint: 'game-talk',
-			body: { character_id: 'char-alice' }
+		expect(byInput['help'].time_before).toBe(byInput['help'].time_after);
+
+		// Each played line is one turn, whatever the engine took it to mean.
+		const played = (input: string) => byInput[input].action;
+		expect(played('search the pantry shelf')).toEqual({ kind: 'turn', event_type: 'search' });
+		expect(played('talk to alice')).toEqual({ kind: 'turn', event_type: 'talk' });
+		expect(played('Where were you last night?')).toEqual({ kind: 'turn', event_type: 'ask' });
+		expect(played('bye')).toEqual({ kind: 'turn', event_type: 'end_talk' });
+		expect(played('go to living room')).toEqual({ kind: 'turn', event_type: 'move' });
+		expect(played('accuse')).toEqual({ kind: 'turn', event_type: 'accuse_start' });
+		// Free text in accuse mode is reasoning.
+		expect(played('Alice did it, the crumbs lead to her.')).toEqual({
+			kind: 'turn',
+			event_type: 'accuse_round'
 		});
-		expect(byInput['Where were you last night?'].action).toMatchObject({ endpoint: 'game-ask' });
-		expect(byInput['go to living room'].action).toMatchObject({
-			endpoint: 'game-move',
-			body: { destination: 'loc-living-room' }
+		expect(played('Alice took the cookies: the crumbs and the empty jar both point to her.')).toEqual({
+			kind: 'turn',
+			event_type: 'accuse_resolved'
 		});
-		expect(byInput['Alice did it, the crumbs lead to her.'].action).toMatchObject({
-			endpoint: 'game-accuse',
-			body: { player_reasoning: 'Alice did it, the crumbs lead to her.' }
-		});
+		// Every line was posted as typed.
+		expect(steps.map((step) => step.input)).toEqual(PLAYED);
 
 		// It opened as the browser does: the premise, then the arrival.
 		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] Narration for:/);
-		// `notebook` opens a screen in the browser: no echo, no turn.
-		expect(byInput['notebook'].action).toMatchObject({ kind: 'feedback', parse: 'notebook' });
+		// `notebook` opens a screen in the browser: no echo, no turn. `help` is echoed.
+		expect(game.transcript.some((entry: { text: string }) => entry.text === 'help')).toBe(true);
+		expect(byInput['notebook'].action).toMatchObject({ kind: 'view', view: 'notebook' });
 		expect(game.transcript.some((entry: { text: string }) => entry.text === 'notebook')).toBe(false);
 
 		// Every call succeeded, and the investigator saw the mock narration.
@@ -138,8 +165,8 @@ describe('playtest loop', () => {
 		expect(summary).toMatchObject({
 			outcome: 'win',
 			stop_reason: 'ended',
-			steps: 12,
-			parser_rejections: 3,
+			steps: PLAYED.length,
+			parser_rejections: 4,
 			failed_calls: 0,
 			time_budget: MOCK_BLUEPRINT.metadata.time_budget,
 			narrator_cost_usd: null,
@@ -149,10 +176,10 @@ describe('playtest loop', () => {
 		expect(summary.clues_total).toBeGreaterThanOrEqual(summary.clues_found);
 
 		const script = JSON.parse(fs.readFileSync(path.join(dir, 'script.json'), 'utf8'));
-		expect(script.inputs).toEqual(INPUTS.slice(0, 12));
-		expect(script.checkpoints).toHaveLength(12);
+		expect(script.inputs).toEqual(PLAYED);
+		expect(script.checkpoints).toHaveLength(PLAYED.length);
 		expect(script.checkpoints[0]).toMatchObject({ mode: 'explore', talk_character: null });
-		expect(fs.readFileSync(path.join(dir, 'steps.jsonl'), 'utf8').trim().split('\n')).toHaveLength(12);
+		expect(fs.readFileSync(path.join(dir, 'steps.jsonl'), 'utf8').trim().split('\n')).toHaveLength(PLAYED.length);
 		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
 		expect(transcript).toContain('**> talk to alice**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');

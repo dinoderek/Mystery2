@@ -7,6 +7,7 @@ import {
   LiveAIRetriableExhaustedError,
   resolveLiveAILabel,
 } from "../../../testkit/src/live-ai.ts";
+import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   API_URL,
   setupApiTestAuth,
@@ -43,33 +44,29 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
       const { game_id } = startData;
       expect(typeof game_id).toBe("string");
 
-      const searchData = await callLiveEndpointWithRetry<{
-        narration_parts: Array<{ text: string }>;
-        mode: string;
-      }>({
+      const searchData = await callLiveEndpointWithRetry<GameTurnResponse>({
         apiUrl: API_URL,
-        endpoint: "game-search",
+        endpoint: "game-turn",
         headers,
-        stepLabel: "game-search",
-        body: { game_id },
+        stepLabel: "game-turn (search)",
+        body: { game_id, input: "search" },
       });
-      expect(Array.isArray(searchData.narration_parts)).toBe(true);
-      expect(searchData.narration_parts.length).toBeGreaterThan(0);
-      expect(typeof searchData.narration_parts[0].text).toBe("string");
+      expect(searchData.kind).toBe("turn");
+      if (searchData.kind !== "turn") return;
+      expect(searchData.events[0].narration_parts.length).toBeGreaterThan(0);
+      expect(typeof searchData.events[0].narration_parts[0].text).toBe("string");
 
-      const talkData = await callLiveEndpointWithRetry<{
-        narration_parts: Array<{ text: string }>;
-        mode: string;
-      }>({
+      const talkData = await callLiveEndpointWithRetry<GameTurnResponse>({
         apiUrl: API_URL,
-        endpoint: "game-talk",
+        endpoint: "game-turn",
         headers,
-        stepLabel: "game-talk",
-        body: { game_id, character_id: "char-alice" },
+        stepLabel: "game-turn (talk)",
+        body: { game_id, input: "talk to alice" },
       });
-      expect(Array.isArray(talkData.narration_parts)).toBe(true);
-      expect(talkData.narration_parts.length).toBeGreaterThan(0);
-      expect(talkData.mode === "talk" || talkData.mode === "accuse").toBe(true);
+      expect(talkData.kind).toBe("turn");
+      if (talkData.kind !== "turn") return;
+      expect(talkData.events[0].narration_parts.length).toBeGreaterThan(0);
+      expect(talkData.state.mode === "talk" || talkData.state.mode === "accuse").toBe(true);
 
       // Ensure live AI labeling is wired for test run visibility.
       expect(label.length).toBeGreaterThan(0);

@@ -21,6 +21,41 @@ export function locationName(blueprint, locationId) {
   return blueprint.world.locations.find((l) => l.id === locationId)?.name ?? locationId;
 }
 
+function characterFullName(blueprint, characterId) {
+  const character = blueprint.world.characters.find((c) => c.id === characterId);
+  if (!character) throw new Error(`Character "${characterId}" is not in the blueprint`);
+  return `${character.first_name} ${character.last_name}`.trim();
+}
+
+// A structured action as the line a player would type for it. The engine's
+// grammar reads the line back, so each builder names its target the way that
+// grammar accepts: places by id, characters by their name in the blueprint.
+// A line the grammar reads as another action (a question of "bye" ends the
+// conversation) is caught by the endpoint backend, which checks the event the
+// turn saved against the action's `events`.
+function accusationLine(given, action) {
+  const reasoning = action.player_reasoning?.trim();
+  if (given.mode === "accuse") {
+    // Every line typed during the accusation is reasoning; none reopens it.
+    if (!reasoning) throw new Error("An accusation already open needs player_reasoning to continue");
+    return reasoning;
+  }
+  return reasoning ? `accuse ${reasoning}` : "accuse";
+}
+
+const talkLine = (g, a, bp) => `talk to ${characterFullName(bp, a.character_id)}`;
+const askLine = (g, a) => a.player_input;
+const endTalkLine = () => "bye";
+const moveLine = (g, a) => `move to ${a.destination}`;
+const searchLine = (g, a) => (a.search_query ? `search ${a.search_query}` : "search");
+
+/** The POST /api/game-turn call for a line, in the endpoint backend's shape. */
+const turnEndpoint = (line) => ({
+  name: "game-turn",
+  method: "POST",
+  body: (g, a, gid, extra) => ({ game_id: gid, input: line(g, a, extra?.blueprint) }),
+});
+
 export function narratorSpeaker() {
   return { kind: "narrator", key: "narrator", label: "Narrator" };
 }
@@ -45,8 +80,12 @@ export function snapshotFromGiven(given) {
 //                   acting on a seeded one (`start` only). The endpoint backend
 //                   skips seeding and the body identifies the blueprint instead
 //                   of a game id.
+//   line          — the typed line that plays the action (every action but
+//                   `start`), line(given, action, blueprint)
+//   events        — the event types a played turn of this action saves first
 //   endpoint      — how to call the live function (name, method, body builder).
-//                   body(given, action, gameId, { blueprint, aiProfile })
+//                   body(given, action, gameId, { blueprint, aiProfile }); the
+//                   turn actions all post their line to game-turn
 //   roleInput     — the RoleRequestInput for the local (CLI) replay of the same
 //                   turn, built from the case's fixed `given` + `action`
 //   speaker       — who the resulting narration is attributed to
@@ -82,7 +121,9 @@ export const ACTIONS = {
 
   talk: {
     requiredMode: "explore",
-    endpoint: { name: "game-talk", method: "POST", body: (g, a, gid) => ({ game_id: gid, character_id: a.character_id }) },
+    line: talkLine,
+    endpoint: turnEndpoint(talkLine),
+    events: ["talk"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_start",
       game_id: "case",
@@ -97,7 +138,9 @@ export const ACTIONS = {
 
   ask: {
     requiredMode: "talk",
-    endpoint: { name: "game-ask", method: "POST", body: (g, a, gid) => ({ game_id: gid, player_input: a.player_input }) },
+    line: askLine,
+    endpoint: turnEndpoint(askLine),
+    events: ["ask"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_conversation",
       game_id: "case",
@@ -113,7 +156,9 @@ export const ACTIONS = {
 
   end_talk: {
     requiredMode: "talk",
-    endpoint: { name: "game-end-talk", method: "POST", body: (g, a, gid) => ({ game_id: gid }) },
+    line: endTalkLine,
+    endpoint: turnEndpoint(endTalkLine),
+    events: ["end_talk"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_end",
       game_id: "case",
@@ -128,7 +173,9 @@ export const ACTIONS = {
 
   move: {
     requiredMode: "explore",
-    endpoint: { name: "game-move", method: "POST", body: (g, a, gid) => ({ game_id: gid, destination: a.destination }) },
+    line: moveLine,
+    endpoint: turnEndpoint(moveLine),
+    events: ["move"],
     roleInput: (g, a, bp, history) => ({
       role: "ambience",
       game_id: "case",
@@ -141,14 +188,9 @@ export const ACTIONS = {
 
   search: {
     requiredMode: "explore",
-    endpoint: {
-      name: "game-search",
-      method: "POST",
-      body: (g, a, gid) => ({
-        game_id: gid,
-        ...(a.search_query ? { search_query: a.search_query } : {}),
-      }),
-    },
+    line: searchLine,
+    endpoint: turnEndpoint(searchLine),
+    events: ["search"],
     roleInput: (g, a, bp, history) => ({
       role: resolveSearchRole(a.search_query),
       game_id: "case",
@@ -166,15 +208,9 @@ export const ACTIONS = {
 
   accuse: {
     requiredMode: "accuse",
-    endpoint: {
-      name: "game-accuse",
-      method: "POST",
-      body: (g, a, gid) => ({
-        game_id: gid,
-        ...(a.player_reasoning ? { player_reasoning: a.player_reasoning } : {}),
-        ...(a.accusation_history_mode ? { accusation_history_mode: a.accusation_history_mode } : {}),
-      }),
-    },
+    line: accusationLine,
+    endpoint: turnEndpoint(accusationLine),
+    events: ["accuse_start", "accuse_round", "accuse_resolved"],
     roleInput: (g, a, bp, history) => {
       const role = resolveAccusationRole(a.player_reasoning);
       const base = {

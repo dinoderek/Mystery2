@@ -7,6 +7,7 @@ import {
   LiveAIRetriableExhaustedError,
   resolveLiveAILabel,
 } from "../../../testkit/src/live-ai.ts";
+import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   API_URL,
   setupApiTestAuth,
@@ -43,42 +44,41 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
       const { game_id } = startData;
       expect(typeof game_id).toBe("string");
 
-      const accuseStartData = await callLiveEndpointWithRetry<{ mode: string }>({
+      const accuseStartData = await callLiveEndpointWithRetry<GameTurnResponse>({
         apiUrl: API_URL,
-        endpoint: "game-accuse",
+        endpoint: "game-turn",
         headers,
-        stepLabel: "game-accuse (start)",
+        stepLabel: "game-turn (accuse)",
         body: {
           game_id,
-          player_reasoning:
-            "I accuse Alice because the clues point to her timeline.",
+          input: "accuse Alice, because the clues point to her timeline.",
         },
       });
-      expect(accuseStartData.mode === "accuse" || accuseStartData.mode === "ended").toBe(true);
+      expect(accuseStartData.kind).toBe("turn");
+      if (accuseStartData.kind !== "turn") return;
+      expect(accuseStartData.state.mode === "accuse" || accuseStartData.state.mode === "ended").toBe(true);
 
-      if (accuseStartData.mode === "ended") {
+      if (accuseStartData.state.mode === "ended") {
         return;
       }
 
       let responseMode: string | null = null;
       let finalResult: string | null = null;
       for (let round = 0; round < 4; round += 1) {
-        const roundData = await callLiveEndpointWithRetry<{
-          mode?: string;
-          result?: string;
-        }>({
+        const roundData = await callLiveEndpointWithRetry<GameTurnResponse>({
           apiUrl: API_URL,
-          endpoint: "game-accuse",
+          endpoint: "game-turn",
           headers,
-          stepLabel: `game-accuse (reasoning round ${round + 1})`,
+          stepLabel: `game-turn (reasoning round ${round + 1})`,
           body: {
             game_id,
-            player_reasoning:
-              `Round ${round + 1} reasoning: clues and timeline point to Alice.`,
+            input: `Round ${round + 1} reasoning: clues and timeline point to Alice.`,
           },
         });
-        responseMode = roundData.mode ?? null;
-        finalResult = roundData.result ?? null;
+        expect(roundData.kind).toBe("turn");
+        if (roundData.kind !== "turn") return;
+        responseMode = roundData.state.mode;
+        finalResult = roundData.result;
 
         if (responseMode === "ended") {
           break;

@@ -73,7 +73,6 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
   if (!openRouterApiKey) throw new Error(`${OPENROUTER_KEY_VAR} is not set`);
   const storyBrief = await readStoryBrief(userMessageFile);
 
-  let text: string;
   try {
     const blueprint = await generateBlueprint({
       storyBrief,
@@ -83,17 +82,16 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
       baseUrl: env.OPENROUTER_URL?.trim() || undefined,
       fetchImpl,
     });
-    text = JSON.stringify(blueprint, null, 2);
+    return JSON.stringify({ result: JSON.stringify(blueprint, null, 2) });
   } catch (error) {
     if (!(error instanceof BlueprintGenerationError) || error.code !== "SCHEMA_VALIDATION_FAILED") throw error;
-    // The answer as the generator checked it, so the command's own check
-    // reports what is really wrong rather than the nulls strict mode forced.
+    // The result is the answer as the generator checked it, so the command's
+    // own check reports what is really wrong rather than the nulls strict mode
+    // forced; `raw` keeps what the model sent in the attempt's stdout log.
     const { checkedJson, responseText } = error.details;
-    if (checkedJson !== undefined) text = JSON.stringify(checkedJson, null, 2);
-    else if (typeof responseText === "string") text = responseText;
-    else throw error;
+    if (checkedJson === undefined) throw error;
+    return JSON.stringify({ result: JSON.stringify(checkedJson, null, 2), raw: responseText });
   }
-  return JSON.stringify({ result: text });
 }
 
 /** What a failed call says on stderr: the error's code and message, never its request. */

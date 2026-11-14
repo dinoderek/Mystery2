@@ -97,8 +97,10 @@ describe("the api wrapper's request", () => {
   it("prints a failing blueprint as it was checked, without the nulls strict mode forced", async () => {
     const answer = { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, art_style: null, title: "" } };
     const stdout = await generateViaOpenRouter({ userMessageFile: userMessage(), env: { EVAL_MODEL: MODEL, OPENROUTER_API_KEY: KEY }, fetchImpl: fakeFetch(answer).impl });
-    const printed = JSON.parse(JSON.parse(stdout).result);
+    const envelope = JSON.parse(stdout);
+    const printed = JSON.parse(envelope.result);
     expect(printed.metadata).not.toHaveProperty("art_style");
+    expect(JSON.parse(envelope.raw).metadata.art_style).toBeNull();
     const issues = BlueprintV2Schema.safeParse(printed).error?.issues.map((issue) => issue.path.join("."));
     expect(issues).toEqual(["metadata.title"]);
   });

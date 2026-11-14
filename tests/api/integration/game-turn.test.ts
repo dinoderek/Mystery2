@@ -260,7 +260,7 @@ describe("game-turn endpoint", () => {
     ]);
   });
 
-  it("reads a transcript of events saved without the typed line as it always has", async () => {
+  it("reads and plays on a game whose events carry no typed line", async () => {
     const gameId = await startGame();
     await played(gameId, "move to living room");
     await played(gameId, "search behind the bookshelf");
@@ -277,12 +277,14 @@ describe("game-turn endpoint", () => {
       );
     }
 
-    const res = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
-    const read = SessionTranscriptResponseSchema.parse(await res.json());
+    const readBack = async () =>
+      (await getGame(gameId)).narration_events.slice(1).map((event) => event.narration_parts[0].text);
 
-    expect(read.narration_events.slice(1).map((event) => event.narration_parts[0].text)).toEqual([
-      "move to Living Room",
-      "search behind the bookshelf",
-    ]);
+    expect(await readBack()).toEqual(["move to Living Room", "search behind the bookshelf"]);
+
+    const turnsBefore = Number(readStoredSession(gameId)?.time_remaining);
+    const next = await played(gameId, "go to the kitchen");
+    expect(next.state).toMatchObject({ location: "loc-kitchen", time_remaining: turnsBefore - 1 });
+    expect(await readBack()).toEqual(["move to Living Room", "search behind the bookshelf", "go to the kitchen"]);
   });
 });

@@ -7,14 +7,21 @@
 // comes back as { ok: false } rather than throwing, so a failed turn is
 // recorded instead of losing the game.
 
-import {
-  getBackoffDelayMs,
-  isTransientFailure,
-} from "../../../web/src/lib/domain/store.retry.ts";
+import { getBackoffDelayMs, isTransientFailure } from "../../../web/src/lib/domain/store.retry.ts";
 
 const MAX_ATTEMPTS = 3;
 
-export async function signIn(baseUrl, name) {
+/** One answer from the API: the parsed body of a success, or what a failure said. */
+export type ApiResponse<T> =
+  | { ok: true; status: number; body: T }
+  | { ok: false; status: number; body: { error?: string } };
+
+export interface GameApi {
+  get<T>(endpoint: string, query?: Record<string, string>): Promise<ApiResponse<T>>;
+  post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>>;
+}
+
+export async function signIn(baseUrl: string, name: string): Promise<GameApi> {
   const response = await fetch(`${baseUrl}/api/player`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -23,21 +30,37 @@ export async function signIn(baseUrl, name) {
   if (!response.ok) {
     throw new Error(`Sign-in as "${name}" failed: ${response.status} ${await response.text()}`);
   }
-  const cookie = response.headers.getSetCookie().map((line) => line.split(";")[0]).join("; ");
+  const cookie = response.headers
+    .getSetCookie()
+    .map((line) => line.split(";")[0])
+    .join("; ");
   return createApi(baseUrl, cookie);
 }
 
-function wait(ms) {
+function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createApi(baseUrl, cookie) {
-  async function call(method, endpoint, { body, query } = {}) {
+function parseBody(text: string): { error?: string } {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+interface CallOptions {
+  body?: unknown;
+  query?: Record<string, string>;
+}
+
+function createApi(baseUrl: string, cookie: string): GameApi {
+  async function call<T>(method: string, endpoint: string, { body, query }: CallOptions = {}): Promise<ApiResponse<T>> {
     const url = new URL(`${baseUrl}/api/${endpoint}`);
     for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, value);
 
     for (let attempt = 1; ; attempt += 1) {
-      let response;
+      let response: Response;
       try {
         response = await fetch(url, {
           method,
@@ -49,17 +72,11 @@ function createApi(baseUrl, cookie) {
           await wait(getBackoffDelayMs(attempt));
           continue;
         }
-        return { ok: false, status: 0, body: { error: `request failed: ${error.message}` } };
+        return { ok: false, status: 0, body: { error: `request failed: ${(error as Error).message}` } };
       }
 
-      const text = await response.text();
-      let payload;
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = { error: text };
-      }
-      if (response.ok) return { ok: true, status: response.status, body: payload };
+      const payload = parseBody(await response.text());
+      if (response.ok) return { ok: true, status: response.status, body: payload as T };
 
       const failure = { status: response.status, message: payload?.error ?? null };
       if (attempt < MAX_ATTEMPTS && isTransientFailure(failure)) {

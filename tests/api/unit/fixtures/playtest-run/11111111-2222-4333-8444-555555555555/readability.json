@@ -1,0 +1,30 @@
+{
+  "target_age": 7,
+  "threshold": 4,
+  "pass": 1,
+  "total": 2,
+  "mean_grade": 5,
+  "max_grade": 8,
+  "narrations": [
+    {
+      "sequence": 1,
+      "event_type": "start",
+      "status": "pass",
+      "grade": 2,
+      "words": 4,
+      "preview": "The cookies are gone.",
+      "threshold": 4,
+      "parts": []
+    },
+    {
+      "sequence": 3,
+      "event_type": "search",
+      "status": "fail",
+      "grade": 8,
+      "words": 4,
+      "preview": "You find a crumb.",
+      "threshold": 4,
+      "parts": []
+    }
+  ]
+}

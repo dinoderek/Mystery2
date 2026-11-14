@@ -20,7 +20,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
-import { signIn } from "../../playtest/lib/api.mjs";
+import { signIn } from "../../playtest/lib/api.ts";
 import { startTestServer } from "../../../scripts/lib/test-server.mjs";
 import { getAIEnvPath, getBaseEnvPath } from "../../../scripts/local-config.mjs";
 import type { BlueprintLike, TurnCase } from "./case.ts";
@@ -138,7 +138,7 @@ export class ServerNarrator {
       : seedSessionWithHistory({ databaseFile: server.databaseFile, blueprint, given: testCase.given, aiProfile, playerName });
 
     const body = action.endpoint.body(testCase.given, testCase.action, gameId, { blueprint, aiProfile });
-    const answer = await api.post(action.endpoint.name, body);
+    const answer = await api.post<Record<string, unknown>>(action.endpoint.name, body);
     if (!answer.ok) {
       throw new Error(`${action.endpoint.name} failed: HTTP ${answer.status} ${JSON.stringify(answer.body).slice(0, 500)}`);
     }

@@ -1,0 +1,58 @@
+[
+  {
+    "sequence": 1,
+    "type": "start",
+    "payload": {},
+    "parts": [
+      {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "text": "The cookies are gone."
+      }
+    ]
+  },
+  {
+    "sequence": 3,
+    "type": "search",
+    "payload": {
+      "revealed_clue_id": "clue-crumb",
+      "revealed_clue_text": "A crumb on the floor.",
+      "diagnostics": {
+        "time_after": 5
+      }
+    },
+    "parts": [
+      {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "text": "You find a crumb."
+      }
+    ]
+  },
+  {
+    "sequence": 5,
+    "type": "ask",
+    "payload": {
+      "revealed_clue_ids": [],
+      "diagnostics": {
+        "time_after": 4
+      }
+    },
+    "parts": [
+      {
+        "speaker": {
+          "kind": "character",
+          "key": "char-alice",
+          "label": "Alice Smith"
+        },
+        "text": "I was baking all morning."
+      }
+    ]
+  }
+]

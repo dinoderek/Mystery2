@@ -1,0 +1,53 @@
+{
+  "schema_version": "mystery-eval-result/1",
+  "run": {
+    "id": "2026-01-02/03-04-05-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "mock-blueprint",
+      "--judge"
+    ],
+    "started_at": "2026-01-02T03:04:05.000Z",
+    "ended_at": "2026-01-02T03:04:05.000Z",
+    "commit": "0000000000000000000000000000000000000000",
+    "tree_clean": true,
+    "bindings": {}
+  },
+  "subjects": [
+    {
+      "kind": "game",
+      "id": "11111111-2222-4333-8444-555555555555",
+      "dir": "11111111-2222-4333-8444-555555555555",
+      "summary": {
+        "counts": {
+          "pass": 0,
+          "fail": 2,
+          "error": 0,
+          "skipped": 0
+        },
+        "passed": false
+      },
+      "run_error": null
+    },
+    {
+      "kind": "game",
+      "id": "game-2",
+      "dir": "game-2",
+      "summary": {
+        "counts": {
+          "pass": 0,
+          "fail": 0,
+          "error": 0,
+          "skipped": 0
+        },
+        "passed": false
+      },
+      "run_error": {
+        "stage": "play",
+        "message": "game-start failed: signed out"
+      }
+    }
+  ],
+  "exit_code": 1
+}

@@ -9,8 +9,9 @@
 // The flags keep Claude Code's own system prompt, tools, MCP servers and
 // settings (which include this repo's CLAUDE.md) out of the model's context,
 // and the process runs outside the repo. The evaluation wrappers
-// (evaluation/runtime/config/wrappers/claude-runtime.sh and
-// evaluation/trace/config/wrappers/claude-trace-judge.sh) use the same flags.
+// (evaluation/runtime/config/wrappers/claude-runtime.sh,
+// evaluation/trace/config/wrappers/claude-trace-judge.sh and
+// evaluation/playtest/wrappers/claude-investigator.sh) use the same flags.
 
 import { spawn } from "node:child_process";
 import os from "node:os";
@@ -212,7 +213,7 @@ export class ClaudeCliProvider implements AIProvider {
   }
 }
 
-export interface ClaudeCliRun {
+interface ClaudeCliRun {
   binary: string;
   model: string;
   system: string;
@@ -227,11 +228,8 @@ export interface ClaudeCliRun {
  * in a process group of its own. A timeout, failed run, `is_error` reply or
  * output that is not JSON rejects with a RetriableAIError; a CLI that cannot be
  * started at all rejects with a plain Error. Retrying is the caller's call.
- *
- * Exported for the playtest harness's investigator, which needs the same
- * isolation for a different prompt.
  */
-export function runClaudeCli(run: ClaudeCliRun): Promise<ClaudeCliReply> {
+function runClaudeCli(run: ClaudeCliRun): Promise<ClaudeCliReply> {
   const args = [
     "--print",
     "--model",
@@ -340,7 +338,7 @@ export function runClaudeCli(run: ClaudeCliRun): Promise<ClaudeCliReply> {
  * is the full name behind an alias such as "sonnet". Tokens are summed over
  * every model, as the cost is.
  */
-export function summarizeClaudeCliUsage(reply: ClaudeCliReply): {
+function summarizeClaudeCliUsage(reply: ClaudeCliReply): {
   model: string | null;
   input_tokens: number;
   output_tokens: number;

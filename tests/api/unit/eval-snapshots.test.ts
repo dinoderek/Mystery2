@@ -23,11 +23,13 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
+import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { resolveBinding } from "../../../evaluation/core/config.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
-import { gradeGame } from "../../../evaluation/playtest/lib/judge.mjs";
-import { listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.mjs";
-import { buildView } from "../../../evaluation/playtest/lib/view.mjs";
+import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
+import { INVESTIGATOR_BINDING, listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.ts";
+import { buildView } from "../../../evaluation/playtest/lib/view.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 import {
   clearForRecording,
@@ -357,17 +359,19 @@ async function runPlaytestJudging(answersFile: string) {
   // The same trace the trace harness judges, so its prompts are not kept twice.
   fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", "-") }));
 
-  const grades = await gradeGame({
-    repoRoot: REPO_ROOT,
+  const { grades } = await gradeGame({
+    root: REPO_ROOT,
     gameDir,
     targetAge: 9,
-    judgeTraceArgs: ["--config", config],
+    judgeArgs: ["--config", config],
   });
   verdicts.set("playtest-judging", grades);
 }
 
 async function composeInvestigatorPrompts() {
   const record = path.join(scratch, "investigator-calls.jsonl");
+  // The investigator's wrapper starts whatever CLAUDE_CLI_PATH names, as it does for the server's narrator.
+  vi.stubEnv("CLAUDE_CLI_PATH", FAKE_CLAUDE);
   vi.stubEnv("FAKE_CLAUDE_RECORD", record);
   vi.stubEnv("FAKE_CLAUDE_BEHAVIOUR", "ok");
   vi.stubEnv("FAKE_CLAUDE_OUTPUT", JSON.stringify({ plan: "look around", input: "search" }));
@@ -397,7 +401,7 @@ async function composeInvestigatorPrompts() {
         location: "kitchen",
         mode: "explore",
         current_talk_character: null,
-      },
+      } as unknown as GameState,
       transcript: [
         { kind: "narration", speaker: "Narrator", text: "You arrive in the kitchen." },
         { kind: "input", text: "search", plan: "look around" },
@@ -405,8 +409,12 @@ async function composeInvestigatorPrompts() {
       ],
     });
 
+    // The investigator's binding as the example config names it, so the call
+    // goes through the same wrapper and runner as a real run.
+    const example = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "evaluation", "config.example.json"), "utf8"));
+    const binding = resolveBinding({ file: "config.example.json", bindings: { [INVESTIGATOR_BINDING]: example[INVESTIGATOR_BINDING] } }, INVESTIGATOR_BINDING, { root: REPO_ROOT });
     for (const persona of PERSONAS) {
-      const investigator = modelInvestigator({ persona, model: "sonnet", binary: FAKE_CLAUDE });
+      const investigator = modelInvestigator({ persona, binding, logDir: path.join(scratch, "investigator-logs", persona) });
       await investigator.next(view);
     }
     const calls = fs

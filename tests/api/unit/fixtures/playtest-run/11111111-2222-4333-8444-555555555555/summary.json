@@ -1,0 +1,54 @@
+{
+  "game_number": 1,
+  "game_id": "11111111-2222-4333-8444-555555555555",
+  "blueprint": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "title": "The Missing Cookies"
+  },
+  "persona": "detective",
+  "narrator_model": "mock",
+  "investigator_model": "stub-model",
+  "outcome": "win",
+  "stop_reason": "ended",
+  "error": null,
+  "replay_of": null,
+  "divergence": null,
+  "clue_drift": null,
+  "final_mode": "ended",
+  "steps": 3,
+  "turns_used": 3,
+  "time_budget": 7,
+  "parser_rejections": 1,
+  "failed_calls": 0,
+  "clues_found": 1,
+  "clues_total": 2,
+  "clue_ids_found": [
+    "clue-crumb"
+  ],
+  "narrator_calls": 0,
+  "narrator_cost_usd": null,
+  "investigator_cost_usd": 0.03,
+  "wall_seconds": 12,
+  "grades": {
+    "mechanical": {
+      "clue_accounting": "fail"
+    },
+    "judges": {
+      "gm_spoiler": {
+        "status": "fail",
+        "major": 1,
+        "minor": 0
+      }
+    },
+    "run_error": null,
+    "judge_cost_usd": 0.5,
+    "readability": {
+      "target_age": 7,
+      "threshold": 4,
+      "pass": 1,
+      "total": 2,
+      "mean_grade": 5,
+      "max_grade": 8
+    }
+  }
+}

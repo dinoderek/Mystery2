@@ -9,16 +9,6 @@
       "count": 1
     }
   },
-  "evaluation/playtest/lib/play.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "evaluation/playtest/run.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "packages/game-engine/src/ai-provider.ts": {
     "max-lines-per-function": {
       "count": 1

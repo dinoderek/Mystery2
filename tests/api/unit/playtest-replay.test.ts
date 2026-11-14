@@ -9,15 +9,16 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.mjs';
+import type { GameState } from '../../../packages/shared/src/mystery-api-contracts.ts';
+import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
 import {
 	checkpointOf,
 	compareCheckpoints,
 	loadScript
-} from '../../../evaluation/playtest/lib/replay.mjs';
+} from '../../../evaluation/playtest/lib/replay.ts';
 
 // The shape `game-get` returns (see packages/game-engine/src/endpoints/game-get.ts).
-function state(overrides: Record<string, unknown> = {}) {
+function state(overrides: Record<string, unknown> = {}): GameState {
 	return {
 		premise: 'The cookies are gone.',
 		locations: [
@@ -34,7 +35,7 @@ function state(overrides: Record<string, unknown> = {}) {
 		mode: 'explore',
 		current_talk_character: null,
 		...overrides
-	};
+	} as unknown as GameState;
 }
 
 let scratch: string | null = null;

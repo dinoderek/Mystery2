@@ -1,21 +1,24 @@
 // The playtest report (report.html), built from a run folder made the way
-// eval:playtest makes one: a scripted game against the suite's mock server,
-// its folder, and a copy of the database. Grades are written by hand, so no
-// judge runs.
+// `play` makes one: a scripted game against the suite's mock server, its
+// subject folder with the events the game saved, and the run's index. Grades are
+// written by hand, so no judge runs.
 
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { TEST_DATABASE, resolveDatabaseFile } from '../../../lib/database-target.mjs';
-import { signIn } from '../../../evaluation/playtest/lib/api.mjs';
-import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.mjs';
-import { writeGameFolder } from '../../../evaluation/playtest/lib/output.mjs';
-import { playGame } from '../../../evaluation/playtest/lib/play.mjs';
-import { buildReportData, renderReport } from '../../../evaluation/playtest/lib/report.mjs';
+import { signIn } from '../../../evaluation/playtest/lib/api.ts';
+import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
+import { readPlayedEvents } from '../../../evaluation/playtest/lib/database.ts';
+import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
+import { playGame } from '../../../evaluation/playtest/lib/game.ts';
+import { buildReportData, renderReport } from '../../../evaluation/playtest/lib/report-page.ts';
+import type { Verdict } from '../../../evaluation/core/result.ts';
+import { createRunFolder } from '../../../evaluation/core/run-folder.ts';
+import { RESULT_SCHEMA_VERSION, summarize, writeResult } from '../../../evaluation/core/result.ts';
 import { BASE_URL, MOCK_BLUEPRINT_ID, TEST_CONFIG_ROOT } from './helpers';
 
 const MOCK_BLUEPRINT = JSON.parse(
@@ -63,7 +66,10 @@ describe('playtest report', () => {
 		});
 		expect(game.result).toBe('win');
 
-		const gameDir = path.join(scratch, 'game-1');
+		// The run as `play` leaves it: an index, and a subject folder for each game.
+		const run = createRunFolder({ outputRoot: scratch, command: 'play', argv: [], root: process.cwd(), bindings: [] });
+		const folder = run.subject({ kind: 'game', id: game.gameId });
+		const gameDir = folder.dir;
 		const summary = writeGameFolder({
 			dir: gameDir,
 			game,
@@ -72,20 +78,32 @@ describe('playtest report', () => {
 			narratorModel: 'mock',
 			investigatorModel: 'script',
 			callLogFile: null,
-			wallMs: 1000
+			wallMs: 1000,
+			events: readPlayedEvents(resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {}), game.gameId)
 		});
-		const live = new Database(resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {}), { readonly: true });
-		try {
-			await live.backup(path.join(scratch, 'game.db'));
-		} finally {
-			live.close();
-		}
-		fs.writeFileSync(
-			path.join(scratch, 'summary.json'),
-			JSON.stringify([summary, { game: 2, error: 'game-start failed: signed out' }])
-		);
+		const failedFolder = run.subject({ kind: 'game', id: 'game-2' });
+		const writeVerdicts = async (verdicts: Verdict[]) => {
+			const base = { schema_version: RESULT_SCHEMA_VERSION, run: run.info(), production: null, timing: null } as const;
+			await writeResult(folder.resultFile, {
+				...base,
+				subject: { kind: 'game', id: game.gameId, path: null },
+				verdicts,
+				summary: summarize(verdicts),
+				run_error: null
+			});
+			const runError = { stage: 'play', message: 'game-start failed: signed out' };
+			await writeResult(failedFolder.resultFile, {
+				...base,
+				subject: { kind: 'game', id: 'game-2', path: null },
+				verdicts: [],
+				summary: summarize([], runError),
+				run_error: runError
+			});
+			await run.finish();
+		};
+		await writeVerdicts([]);
 
-		const ungraded = buildReportData(scratch);
+		const ungraded = await buildReportData(run.dir);
 		const turns: Turn[] = ungraded.games[0].turns;
 
 		// Every event once, in order; a line that played nothing (refused, or the
@@ -137,32 +155,24 @@ describe('playtest report', () => {
 				}
 			})
 		);
-		fs.writeFileSync(
-			path.join(gameDir, 'result.json'),
-			JSON.stringify({
-				mechanical: [
-					{
-						id: 'clue_accounting',
-						status: 'fail',
-						details: { violations: [{ sequence: asked.seq, reason: 'clue_revealed_again', clue_id: 'clue-x' }] }
-					}
-				],
-				dimensions: [
-					{
-						id: 'gm_spoiler',
-						judge: {
-							raw: {
-								findings: [
-									{ sequence: asked.seq, severity: 'major', kind: 'confirmation', quote: '</script><b>', why: 'Named the culprit.' }
-								]
-							}
-						}
-					}
+		await writeVerdicts([
+			{
+				id: 'clue_accounting',
+				tier: 'mechanical',
+				status: 'fail',
+				details: { violations: [{ sequence: asked.seq, reason: 'clue_revealed_again', clue_id: 'clue-x' }] }
+			},
+			{
+				id: 'gm_spoiler',
+				tier: 'judge',
+				status: 'fail',
+				findings: [
+					{ sequence: asked.seq, severity: 'major', kind: 'confirmation', quote: '</script><b>', why: 'Named the culprit.' }
 				]
-			})
-		);
+			}
+		]);
 
-		const graded = buildReportData(scratch);
+		const graded = await buildReportData(run.dir);
 		expect(graded.games[0].judges).toEqual({ gm_spoiler: { status: 'fail', major: 1, minor: 0 } });
 		expect(graded.games[0].findings).toEqual([
 			{

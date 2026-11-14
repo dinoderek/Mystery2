@@ -13,10 +13,10 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { signIn } from '../../../evaluation/playtest/lib/api.mjs';
-import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.mjs';
-import { writeGameFolder } from '../../../evaluation/playtest/lib/output.mjs';
-import { playGame } from '../../../evaluation/playtest/lib/play.mjs';
+import { signIn } from '../../../evaluation/playtest/lib/api.ts';
+import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
+import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
+import { playGame } from '../../../evaluation/playtest/lib/game.ts';
 import { BASE_URL, MOCK_BLUEPRINT_ID } from './helpers';
 
 const MOCK_BLUEPRINT = JSON.parse(
@@ -42,16 +42,6 @@ const INPUTS = [
 ];
 // The game ends on the line before the last, which is never sent.
 const PLAYED = INPUTS.slice(0, -1);
-
-// The step records `playGame` returns (evaluation/playtest/lib/play.mjs).
-interface PlayedStep {
-	input: string;
-	action: Record<string, unknown>;
-	response: { ok: boolean } | null;
-	view: string;
-	time_before: number;
-	time_after: number;
-}
 
 let scratch: string | null = null;
 
@@ -88,7 +78,7 @@ describe('playtest loop', () => {
 		expect(game.result).toBe('win');
 		expect(game.script).toEqual(PLAYED);
 
-		const steps: PlayedStep[] = game.steps;
+		const steps = game.steps;
 		const byInput = Object.fromEntries(steps.map((step) => [step.input, step]));
 
 		// A refused line prints the engine's hint and costs no turn.
@@ -209,7 +199,7 @@ describe('playtest loop', () => {
 
 		// As if the recorded game had been talking to Bob, not Alice, before `bye`.
 		const byeIndex = original.script.indexOf('bye');
-		const tampered = original.checkpoints.map((checkpoint: Record<string, unknown>, index: number) =>
+		const tampered = original.checkpoints.map((checkpoint, index) =>
 			index === byeIndex ? { ...checkpoint, talk_character: 'char-bob' } : checkpoint
 		);
 		const diverged = await playGame({

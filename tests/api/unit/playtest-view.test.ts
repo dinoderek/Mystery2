@@ -4,10 +4,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { buildView } from '../../../evaluation/playtest/lib/view.mjs';
+import type { GameState } from '../../../packages/shared/src/mystery-api-contracts.ts';
+import { buildView } from '../../../evaluation/playtest/lib/view.ts';
 
 // The shape `game-get` returns (see packages/game-engine/src/endpoints/game-get.ts).
-function state(overrides: Record<string, unknown> = {}) {
+function state(overrides: Record<string, unknown> = {}): GameState {
 	return {
 		premise: 'The cookies are gone.',
 		mystery_summary: 'Someone took the cookies this morning.',
@@ -32,7 +33,7 @@ function state(overrides: Record<string, unknown> = {}) {
 		mode: 'explore',
 		current_talk_character: null,
 		...overrides
-	};
+	} as unknown as GameState;
 }
 
 describe('playtest player view', () => {

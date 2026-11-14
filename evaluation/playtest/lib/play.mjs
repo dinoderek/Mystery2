@@ -13,7 +13,6 @@
 // game's end with one more, so a replay of the script can tell when the game
 // has diverged (./replay.mjs).
 
-import { commandHint } from "../../../packages/game-engine/src/command-grammar.ts";
 import { checkpointOf } from "./replay.mjs";
 import { buildView } from "./view.mjs";
 
@@ -52,9 +51,9 @@ function turnEntries(body) {
  * `echo` is true only for `help`: the browser opens the notebook for `notebook`
  * and the list commands before it echoes anything into the transcript.
  */
-function feedbackFor(body, mode) {
+function feedbackFor(body) {
   if (body.kind === "refused") return { echo: true, text: body.hint };
-  if (body.view === "help") return { echo: true, text: `Help menu opened. ${commandHint(mode)}` };
+  if (body.view === "help") return { echo: true, text: "Help menu opened." };
   return {
     echo: false,
     text: body.section
@@ -180,7 +179,7 @@ export async function playGame({
     step.action = actionOf(response);
     const played = response.ok && response.body.kind === "turn";
     const feedback = response.ok && (response.body.kind === "refused" || response.body.kind === "view")
-      ? feedbackFor(response.body, state.mode)
+      ? feedbackFor(response.body)
       : null;
 
     // The store echoes what was typed, except the lines that open the notebook.

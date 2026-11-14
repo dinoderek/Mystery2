@@ -36,6 +36,27 @@ describe("Full E2E API Investigation Flow", () => {
     return startData.game_id as string;
   }
 
+  /** Sends one typed line to `game-turn` and returns the answer. */
+  async function line(headers: HeadersInit, gameId: string, input: string) {
+    const res = await fetch(`${API_URL}/game-turn`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ game_id: gameId, input }),
+    });
+    expect(res.status, `"${input}" answered ${res.status}`).toBe(200);
+    return (await res.json()) as {
+      kind: string;
+      events: Array<{ event_type: string; narration_parts: Array<{ text: string; speaker: { kind: string } }> }>;
+      state: { mode: string; time_remaining: number };
+      result: string | null;
+    };
+  }
+
+  /** The speakers of the first part of the events a turn saved. */
+  function speakers(answer: Awaited<ReturnType<typeof line>>) {
+    return answer.events.map((event) => event.narration_parts[0].speaker.kind);
+  }
+
   async function loadNarrationEvents(gameId: string, headers: HeadersInit) {
     const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
       headers,
@@ -72,57 +93,18 @@ describe("Full E2E API Investigation Flow", () => {
     expect(state.mode).toBe("explore");
     expect(narration_events[0].narration_parts[0].speaker.kind).toBe("narrator");
 
-    const moveRes = await fetch(`${API_URL}/game-move`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id, destination: "loc-kitchen" }),
-    });
-    expect(moveRes.status).toBe(200);
-    const moveData = await moveRes.json();
-    expect(moveData.narration_parts[0].speaker.kind).toBe("narrator");
+    expect(speakers(await line(headers, game_id, "go to the Kitchen"))).toEqual(["narrator"]);
+    expect(speakers(await line(headers, game_id, "search"))).toEqual(["narrator"]);
+    expect(speakers(await line(headers, game_id, "talk to Alice"))).toEqual(["narrator"]);
 
-    const searchRes = await fetch(`${API_URL}/game-search`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id }),
-    });
-    expect(searchRes.status).toBe(200);
-    const searchData = await searchRes.json();
-    expect(searchData.narration_parts[0].speaker.kind).toBe("narrator");
-
-    const talkRes = await fetch(`${API_URL}/game-talk`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id, character_id: "char-alice" }),
-    });
-    expect(talkRes.status).toBe(200);
-    const talkData = await talkRes.json();
-    expect(talkData.narration_parts[0].speaker.kind).toBe("narrator");
-
-    const askRes = await fetch(`${API_URL}/game-ask`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        game_id,
-        player_input: "Where were you when this happened?",
-      }),
-    });
-    expect(askRes.status).toBe(200);
-    const askData = await askRes.json();
-    expect(askData.narration_parts[0].speaker).toMatchObject({
+    const ask = await line(headers, game_id, "Where were you when this happened?");
+    expect(ask.events[0].narration_parts[0].speaker).toMatchObject({
       kind: "character",
       key: "character:alice",
       label: "Alice",
     });
 
-    const endRes = await fetch(`${API_URL}/game-end-talk`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id }),
-    });
-    expect(endRes.status).toBe(200);
-    const endData = await endRes.json();
-    expect(endData.narration_parts[0].speaker.kind).toBe("narrator");
+    expect(speakers(await line(headers, game_id, "goodbye"))).toEqual(["narrator"]);
 
     const getRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
@@ -137,33 +119,14 @@ describe("Full E2E API Investigation Flow", () => {
       ),
     ).toBe(true);
 
-    const accuseStartRes = await fetch(`${API_URL}/game-accuse`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        game_id,
-        player_reasoning:
-          "I accuse Alice because she was nearby and acted nervous.",
-      }),
-    });
-    expect(accuseStartRes.status).toBe(200);
-    const accuseStartData = await accuseStartRes.json();
-    expect(accuseStartData.mode).toBe("accuse");
-    expect(accuseStartData.narration_parts[0].speaker.kind).toBe("narrator");
+    const accuseStart = await line(headers, game_id, "accuse Alice because she was nearby and acted nervous.");
+    expect(accuseStart.state.mode).toBe("accuse");
+    expect(speakers(accuseStart)).toEqual(["narrator"]);
 
-    const accuseRoundOneRes = await fetch(`${API_URL}/game-accuse`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        game_id,
-        player_reasoning: "Alice was nearby and behaved nervously.",
-      }),
-    });
-    expect(accuseRoundOneRes.status).toBe(200);
-    const accuseRoundOneData = await accuseRoundOneRes.json();
-    expect(accuseRoundOneData.mode).toBe("ended");
-    expect(accuseRoundOneData.result).toBe("win");
-    expect(accuseRoundOneData.narration_parts[0].speaker.kind).toBe("narrator");
+    const accuseRoundOne = await line(headers, game_id, "Alice was nearby and behaved nervously.");
+    expect(accuseRoundOne.state.mode).toBe("ended");
+    expect(accuseRoundOne.result).toBe("win");
+    expect(speakers(accuseRoundOne)).toEqual(["narrator"]);
 
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,
@@ -174,91 +137,33 @@ describe("Full E2E API Investigation Flow", () => {
     expect(lastParts.some((p: { speaker: { kind: string } }) => p.speaker.kind === "narrator")).toBe(true);
   });
 
-  it("forces endgame when the final move consumes the last turn", async () => {
-    const headers = auth.headers;
-    const gameId = await startGameSession(headers);
-    setStoredTimeRemaining(gameId, 1);
+  const lastTurnCases = [
+    { action: "move", input: "go to the Kitchen", events: ["move", "forced_endgame"] },
+    { action: "search", input: "search", events: ["search", "forced_endgame"] },
+    { action: "conversation start", input: "talk to Alice", events: ["talk", "forced_endgame"] },
+  ];
 
-    const moveRes = await fetch(`${API_URL}/game-move`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id: gameId, destination: "loc-kitchen" }),
+  for (const { action, input, events } of lastTurnCases) {
+    it(`forces endgame when the final ${action} consumes the last turn`, async () => {
+      const headers = auth.headers;
+      const gameId = await startGameSession(headers);
+      setStoredTimeRemaining(gameId, 1);
+
+      const answer = await line(headers, gameId, input);
+
+      expect(answer.state.mode).toBe("accuse");
+      expect(answer.state.time_remaining).toBe(0);
+      expect(answer.events.map((event) => event.event_type)).toEqual(events);
+      expect(speakers(answer)).toEqual(["narrator", "narrator"]);
+
+      const narrationEvents = await loadNarrationEvents(gameId, headers);
+      const tail = narrationEvents.slice(-2);
+      expect(tail.map((event) => event.event_type)).toEqual(events);
+
+      // The turn's event reads back with the player's own line before the narration.
+      expect(tail[0].narration_parts[0].speaker.kind).toBe("investigator");
+      expect(tail[0].narration_parts[0].text).toBe(input);
+      expect(tail[0].narration_parts[1].text).toBe(answer.events[0].narration_parts[0].text);
     });
-    expect(moveRes.status).toBe(200);
-    const moveData = await moveRes.json();
-
-    expect(moveData.mode).toBe("accuse");
-    expect(moveData.time_remaining).toBe(0);
-    expect(moveData).not.toHaveProperty("follow_up_prompt");
-    expect(moveData.narration_parts).toHaveLength(2);
-    expect(
-      moveData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
-    ).toEqual(["narrator", "narrator"]);
-
-    const narrationEvents = await loadNarrationEvents(gameId, headers);
-    const tail = narrationEvents.slice(-2);
-    expect(tail.map((event) => event.event_type)).toEqual(["move", "forced_endgame"]);
-
-    // The move event now has a synthesized investigator command prepended
-    const moveEvent = tail[0];
-    expect(moveEvent.narration_parts[0].speaker.kind).toBe("investigator");
-    expect(moveEvent.narration_parts[1].text).toBe(moveData.narration_parts[0].text);
-  });
-
-  it("forces endgame when the final search consumes the last turn", async () => {
-    const headers = auth.headers;
-    const gameId = await startGameSession(headers);
-    setStoredTimeRemaining(gameId, 1);
-
-    const searchRes = await fetch(`${API_URL}/game-search`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id: gameId }),
-    });
-    expect(searchRes.status).toBe(200);
-    const searchData = await searchRes.json();
-
-    expect(searchData.mode).toBe("accuse");
-    expect(searchData.time_remaining).toBe(0);
-    expect(searchData).not.toHaveProperty("follow_up_prompt");
-    expect(searchData.narration_parts).toHaveLength(2);
-    expect(
-      searchData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
-    ).toEqual(["narrator", "narrator"]);
-
-    const narrationEvents = await loadNarrationEvents(gameId, headers);
-    const tail = narrationEvents.slice(-2);
-    expect(tail.map((event) => event.event_type)).toEqual(["search", "forced_endgame"]);
-
-    // The search event now has a synthesized investigator command prepended
-    const searchEvent = tail[0];
-    expect(searchEvent.narration_parts[0].speaker.kind).toBe("investigator");
-    expect(searchEvent.narration_parts[1].text).toBe(searchData.narration_parts[0].text);
-  });
-
-  it("forces endgame when starting a conversation consumes the last turn", async () => {
-    const headers = auth.headers;
-    const gameId = await startGameSession(headers);
-    setStoredTimeRemaining(gameId, 1);
-
-    const talkRes = await fetch(`${API_URL}/game-talk`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ game_id: gameId, character_id: "char-alice" }),
-    });
-    expect(talkRes.status).toBe(200);
-    const talkData = await talkRes.json();
-
-    expect(talkData.mode).toBe("accuse");
-    expect(talkData.time_remaining).toBe(0);
-    expect(talkData).not.toHaveProperty("follow_up_prompt");
-    expect(talkData.narration_parts).toHaveLength(2);
-    expect(
-      talkData.narration_parts.map((part: { speaker: { kind: string } }) => part.speaker.kind),
-    ).toEqual(["narrator", "narrator"]);
-
-    const narrationEvents = await loadNarrationEvents(gameId, headers);
-    const tail = narrationEvents.slice(-2);
-    expect(tail.map((event) => event.event_type)).toEqual(["talk", "forced_endgame"]);
-  });
+  }
 });

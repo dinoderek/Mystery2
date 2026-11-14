@@ -85,7 +85,7 @@ function reconstructContext(roleName, ctx) {
     ctx;
   const common = { game_id: ctx.gameId, session, blueprint, conversation_history: history };
   // The runtime always builds accusation contexts with the session forced into
-  // "accuse" mode (forced-endgame.ts, and game-accuse's immediate-judge-on-entry
+  // "accuse" mode (forced-endgame.ts, and the accuse action's immediate-judge-on-entry
   // path where the prior mode is still "explore"). Mirror that so context.mode
   // matches what the builder saw, regardless of the folded pre-state.
   const accuseCommon = { ...common, session: { ...session, mode: "accuse" } };
@@ -136,7 +136,7 @@ function reconstructContext(roleName, ctx) {
         ...common,
         destination_id: locationId,
         // Match the runtime: "visited before" iff there is prior location
-        // history for the destination (game-move uses
+        // history for the destination (the move action uses
         // selectLocationConversationHistory(...).length > 0), not merely
         // whether we ever stood there.
         has_visited_before:
@@ -196,7 +196,7 @@ export function reconstructTrace(rawTrace) {
     const forcedByTimeout = event.event_type === "forced_endgame";
     // Match the runtime: the judge round is the number of accuse_round events
     // that already happened (0 on the first round); the resolving event is not
-    // counted (game-accuse/index.ts).
+    // counted (`turn/resolve-accuse.ts` in the engine).
     const accusationRound = priorEvents.filter(
       (e) => e.event_type === "accuse_round",
     ).length;

@@ -8,3 +8,10 @@ export const SOURCE_ROOTS = [
   "packages/shared/src",
   "web/src",
 ];
+
+/**
+ * Where the grammar rule looks for an importer: the browser and the evaluation
+ * harnesses. `evaluation/` is outside the layer rules and the quality limits;
+ * only this one rule reaches it.
+ */
+export const GRAMMAR_ROOTS = ["web/src", "evaluation"];

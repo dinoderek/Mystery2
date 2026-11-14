@@ -4,10 +4,10 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#roles` — `40866e8705d609293acf2c706f6b6f23b000d540`
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `37fc9b7a3a0bf8b035437ce94886c9e05a86476f`
-> - `docs/ai-runtime.md#clue-gating` — `74c7f26858a60fde72a3f2751dfcc66019916273`
-> - `docs/ai-runtime.md#game-enter` — `ed918f6bb6b0936a009c84020f0dcceb305a272b`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `73dd510a6fc320cd3af078a6a17e71d781122852`
+> - `docs/ai-runtime.md#context-boundaries` — `3e9463c0b609a0d0f48cd3d8761cbd95684d3b40`
+> - `docs/ai-runtime.md#clue-gating` — `00d0d82983f875c6fa64e6d4af2dd505aae8d4f1`
+> - `docs/ai-runtime.md#game-enter` — `180e7c74719a4df2082d45f9801db13348c12a7f`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `cc468b3c0f0390c26946e3e943eadd16a711b546`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `5361c3c95c349855e79f49db05adce1317ce671c`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -22,10 +22,10 @@ except the accusation judge.
 | Role | What it does | Blueprint slice it receives |
 |---|---|---|
 | `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is not used for narration — it is surfaced verbatim (not generated) as the player's in-game notebook (case facts, people, places). |
-| `game-enter` | arrival at the **starting** location, once, after the player confirms the opening | same slice as `game-move` for `world.starting_location_id`, with no prior history. Your starting location's `description`, sub-locations, and characters are therefore read out at the very start of play, not first seen on a return visit. |
-| `game-move` | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
-| `game-search` (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
-| `game-search` (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |
+| `game-enter` | arrival at the **starting** location, once, after the player confirms the opening | same slice as a move for `world.starting_location_id`, with no prior history. Your starting location's `description`, sub-locations, and characters are therefore read out at the very start of play, not first seen on a return visit. |
+| move action | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
+| search action (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
+| search action (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |
 | `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `clues` (each with `requires_rationale`, `prereqs_met` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
 | `accusation_start` | scene-setting for accusation | spoiler-safe context only (no ground truth, no solution paths), plus the public character roster (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`) so suspects can be named with grounded pronouns. |
 | `accusation_judge` | adjudicates player reasoning | **the full blueprint**, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` — plus `player_known_clues` (what the investigator actually discovered) and `path_coverage` (per path: `found_clue_ids` / `missing_clue_ids`), so it credits an evidence chain only from clues the player really holds. |

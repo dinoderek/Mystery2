@@ -70,22 +70,9 @@ describe("session ownership", () => {
     const gameId = await startSessionFor(playerA);
     const before = readStoredSession(gameId);
 
-    const move = await fetch(`${API_URL}/game-move`, {
-      method: "POST",
-      headers: playerB.headers,
-      body: JSON.stringify({ game_id: gameId, destination: "loc-living-room" }),
-    });
-    expect(move.status).toBe(400);
-
-    const accuse = await fetch(`${API_URL}/game-accuse`, {
-      method: "POST",
-      headers: playerB.headers,
-      body: JSON.stringify({ game_id: gameId }),
-    });
-    expect(accuse.status).toBe(400);
-
-    // A line that plays nothing is refused too: the game is not B's to read.
-    for (const input of ["search", "help"]) {
+    // Every kind of line is refused, including the ones that play nothing: the
+    // game is not B's to read.
+    for (const input of ["go to the Living Room", "accuse", "search", "help"]) {
       const turn = await fetch(`${API_URL}/game-turn`, {
         method: "POST",
         headers: playerB.headers,

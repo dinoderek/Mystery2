@@ -1,8 +1,11 @@
+import { GameGetRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
 import type { EngineContext } from "../context.ts";
-import { badRequest, notFound, internalError } from "../errors.ts";
+import { notFound, internalError } from "../errors.ts";
 import { createRequestLogger } from "../logging.ts";
+import { readQueryRequest } from "../request.ts";
 import { readNarrationEvent } from "../narration.ts";
 import { buildDiscoveryRecords } from "../clue-discovery.ts";
+import { buildGameState } from "../game-state-view.ts";
 
 export async function handle(
   req: Request,
@@ -12,13 +15,9 @@ export async function handle(
   const { log, logError } = logger;
 
   try {
-    const url = new URL(req.url);
-    const gameId = url.searchParams.get("game_id");
-
-    if (!gameId) {
-      log("request.invalid", { reason: "missing_game_id" });
-      return badRequest("Missing game_id parameter");
-    }
+    const read = readQueryRequest(req, GameGetRequestSchema, logger);
+    if (!read.ok) return read.response;
+    const gameId = read.data.game_id;
 
     // Fetch session
     let session;
@@ -73,39 +72,15 @@ export async function handle(
       });
     }
 
-    const startingKnowledge = blueprint.narrative.starting_knowledge;
-    const locationSummaries = new Map(
-      (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
-    );
-    const characterSummaries = new Map(
-      (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
-    );
     // The notebook: discovered clues grouped by mini-mystery thread. Built from
     // event history (the source of truth) and joined against the blueprint.
-    const discoveredClues = buildDiscoveryRecords(blueprint, events ?? []);
-
-    const gameState = {
-      mystery_summary: startingKnowledge?.mystery_summary ?? null,
-      premise: blueprint.narrative.premise,
-      locations: blueprint.world.locations.map((l) => ({
-        id: l.id,
-        name: l.name,
-        summary: locationSummaries.get(l.id) ?? null,
-      })),
-      characters: blueprint.world.characters.map((c) => ({
-        id: c.id,
-        first_name: c.first_name,
-        last_name: c.last_name,
-        location_id: c.location_id,
-        sex: c.sex,
-        summary: characterSummaries.get(c.id) ?? null,
-      })),
-      discovered_clues: discoveredClues,
+    const gameState = buildGameState(blueprint, {
+      discovered_clues: buildDiscoveryRecords(blueprint, events ?? []),
       time_remaining: session.time_remaining,
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,
-    };
+    });
 
     return new Response(JSON.stringify({
       blueprint_id: session.blueprint_id,

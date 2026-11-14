@@ -11,16 +11,19 @@ sanitized views of it.
 - All shapes at that boundary MUST be Zod schemas.
 - The single source of truth is `packages/shared/src/mystery-api-contracts.ts`.
 - Update those schemas **first** whenever the API boundary changes.
-- An endpoint parses its request with its schema and answers `400` naming the
-  bad field (`game-turn` does). The server does not check its responses; the browser parses
-  every answer it reads, and the integration suite parses the real ones.
+- Every endpoint that takes fields parses its request with its schema
+  (`packages/game-engine/src/request.ts`) and answers `400` naming the bad
+  field. The server does not check its responses; the browser parses every
+  answer it reads, and the integration suite parses the real ones.
 
 ## 2. The Engine (`packages/game-engine/`)
 
 All game logic runs in the engine, imported by the SvelteKit server.
 
 - Endpoint handlers live in `packages/game-engine/src/endpoints/<name>.ts` and are listed in
-  `packages/game-engine/src/endpoints/index.ts`. An unlisted name is a 404.
+  `packages/game-engine/src/endpoints/index.ts`; an unlisted name is a 404. The
+  six are `game-start`, `game-enter`, `game-turn`, `game-get`,
+  `game-sessions-list` and `blueprints-list`.
 - The engine calls the AI provider with a server-side key; the UI never does.
 - The engine imports `packages/shared` directly, with no build step between.
 
@@ -50,9 +53,8 @@ Rules:
 - Register the endpoint's allowed methods in `packages/game-engine/src/endpoints/index.ts`. The
   route returns `405` from that list; handlers do not re-check.
 
-This lets the engine be re-hosted without touching game logic: a second adapter
-can sit beside the first, and handlers cannot tell which they have. A direct
-file or driver reference in a handler is a bug.
+A direct file or driver reference in a handler is a bug: a second adapter must
+be able to sit beside the first.
 
 ### The turn function
 

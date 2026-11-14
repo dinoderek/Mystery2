@@ -3,8 +3,7 @@
 // Each endpoint is a `handle(req, ctx) => Response`, a list of methods it
 // answers, and the access it runs under. One SvelteKit route
 // (`web/src/routes/api/[endpoint]/+server.ts`) reads this table to check the
-// method, build the right context and delegate — once, for all of them, in
-// place of the twelve identical bootstraps this replaced.
+// method, build the right context and delegate — once, for all of them.
 //
 // Adding an endpoint means adding it here: an unlisted name is a 404.
 //
@@ -28,16 +27,10 @@
 import type { CatalogContext, EngineContext } from "../context.ts";
 
 import * as blueprintsList from "./blueprints-list.ts";
-import * as gameAccuse from "./game-accuse.ts";
-import * as gameAsk from "./game-ask.ts";
-import * as gameEndTalk from "./game-end-talk.ts";
 import * as gameEnter from "./game-enter.ts";
 import * as gameGet from "./game-get.ts";
-import * as gameMove from "./game-move.ts";
-import * as gameSearch from "./game-search.ts";
 import * as gameSessionsList from "./game-sessions-list.ts";
 import * as gameStart from "./game-start.ts";
-import * as gameTalk from "./game-talk.ts";
 import * as gameTurn from "./game-turn.ts";
 
 export type EndpointMethod = "GET" | "POST";
@@ -71,16 +64,10 @@ const GET_OR_POST: readonly EndpointMethod[] = ["GET", "POST"];
 
 export const ENDPOINTS: readonly EndpointDefinition[] = [
   { name: "blueprints-list", access: "catalog", methods: GET_OR_POST, handle: blueprintsList.handle },
-  { name: "game-accuse", access: "profile", methods: POST_ONLY, handle: gameAccuse.handle },
-  { name: "game-ask", access: "profile", methods: POST_ONLY, handle: gameAsk.handle },
-  { name: "game-end-talk", access: "profile", methods: POST_ONLY, handle: gameEndTalk.handle },
   { name: "game-enter", access: "profile", methods: POST_ONLY, handle: gameEnter.handle },
   { name: "game-get", access: "profile", methods: GET_ONLY, handle: gameGet.handle },
-  { name: "game-move", access: "profile", methods: POST_ONLY, handle: gameMove.handle },
-  { name: "game-search", access: "profile", methods: POST_ONLY, handle: gameSearch.handle },
   { name: "game-sessions-list", access: "profile", methods: GET_OR_POST, handle: gameSessionsList.handle },
   { name: "game-start", access: "profile", methods: POST_ONLY, handle: gameStart.handle },
-  { name: "game-talk", access: "profile", methods: POST_ONLY, handle: gameTalk.handle },
   { name: "game-turn", access: "profile", methods: POST_ONLY, handle: gameTurn.handle },
 ];
 

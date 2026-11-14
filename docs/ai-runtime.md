@@ -98,7 +98,7 @@ other role.
     A `talk_start` greeting comes before the player says anything, so a `clue`
     tell never fires there, and a `condition` tell fires only if an earlier
     visit already met it.
-- **Arrival** (`ambience`, from `game-move` and `game-enter`) gets the
+- **Arrival** (`ambience`, from the move action and `game-enter`) gets the
   destination's name, description and sub-location names, its history, and,
   for each character present, the same private pack a talk turn gives its
   active character (`buildPresentCharacterContexts`). Absent characters are not
@@ -167,7 +167,7 @@ from history.
 A clue is discovered once. A narrator's reveal list names only clues the turn
 reveals for the first time: a character may restate or elaborate on a clue the
 player already holds (the talk context marks it `known_to_player`), but does
-not list it again. `game-ask` and `game-search` both drop an id the session has
+not list it again. The ask and search actions both drop an id the session has
 already discovered before recording the event or answering, and log it
 (`ask.clue_already_discovered`, `search.clue_validation_failed`).
 
@@ -181,7 +181,7 @@ Gates use each clue's optional `requires` (`{ clue_ids, rationale }`):
   for a clever question or a convincing bluff when the rationale implies a
   social or knowledge gate. Such reveals are listed in `revealed_off_script`
   and recorded as real discoveries.
-- **Accusation — judged, not mechanical.** Nothing in `game-accuse` rejects an
+- **Accusation — judged, not mechanical.** Nothing in the accuse action rejects an
   accusation on coverage. The judge prompt applies three scoping rules:
   - The discovered set limits the **evidence-chain** route only. The true-
     account route and an earned confession need no discovered clues, so a child
@@ -230,7 +230,7 @@ the same definition of earned.
 
 `game-start` and `game-get` return the notebook's case facts as structured
 `state` (`mystery_summary`, `premise`, a `summary` per location and character);
-`game-search` and `game-ask` return the turn's `revealed_clues` so the notebook
+`game-turn` returns the turn's `revealed_clues` for a search or an ask so the notebook
 updates live. Nothing is parsed out of narration.
 
 ## Entering the first location
@@ -242,7 +242,7 @@ confirms the opening:
 1. It is refused unless the session's only event is `start`, which is what
    stops a double confirmation narrating the arrival twice.
 2. It generates `ambience` narration for the starting location with an empty
-   history — a first visit, with no clues held — the same call `game-move`
+   history — a first visit, with no clues held — the same call a move
    makes.
 3. It persists a `move` event with `role: "enter"` and the location image, but
    changes no session state: entering costs no turn and moves no one.
@@ -253,8 +253,8 @@ the player never typed.
 
 ## The accusation lifecycle
 
-`game-accuse` takes `game_id` and `player_reasoning`, which is optional only
-when entering accuse mode.
+The accuse action takes the line `accuse`, with reasoning only when it enters
+accuse mode, and then each line typed in `accuse` mode.
 
 1. From `explore` without reasoning: `accusation_start` narration; the mode
    becomes `accuse` (event `accuse_start`).

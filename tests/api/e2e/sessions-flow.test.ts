@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
+  playLine,
   setupApiTestAuth,
   type ApiAuthContext,
 } from '../integration/helpers';
@@ -37,22 +38,8 @@ describe('session list resume/view API flows', () => {
   it('replays an in-progress session without changing the persisted transcript', async () => {
     const gameId = await startSession(auth);
 
-    const talkRes = await fetch(`${API_URL}/game-talk`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId, character_id: 'char-alice' }),
-    });
-    expect(talkRes.status).toBe(200);
-
-    const askRes = await fetch(`${API_URL}/game-ask`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_input: 'Where were you when the cookies disappeared?',
-      }),
-    });
-    expect(askRes.status).toBe(200);
+    await playLine(auth, gameId, 'talk to Alice');
+    await playLine(auth, gameId, 'Where were you when the cookies disappeared?');
 
     const preResumeData = await loadSessionTranscript(auth, gameId);
     expect(
@@ -81,23 +68,9 @@ describe('session list resume/view API flows', () => {
   it('preserves player inputs in the transcript on resume', async () => {
     const gameId = await startSession(auth);
 
-    const talkRes = await fetch(`${API_URL}/game-talk`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId, character_id: 'char-alice' }),
-    });
-    expect(talkRes.status).toBe(200);
-
+    await playLine(auth, gameId, 'talk to Alice');
     const playerQuestion = 'Where were you when the cookies disappeared?';
-    const askRes = await fetch(`${API_URL}/game-ask`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_input: playerQuestion,
-      }),
-    });
-    expect(askRes.status).toBe(200);
+    await playLine(auth, gameId, playerQuestion);
 
     const resumed = await loadSessionTranscript(auth, gameId);
     const askEvent = resumed.narration_events.find(
@@ -117,16 +90,8 @@ describe('session list resume/view API flows', () => {
   it('preserves player reasoning in the transcript on resume (accuse)', async () => {
     const gameId = await startSession(auth);
 
-    const playerReasoning = 'I accuse Alice based on motive and opportunity.';
-    const accuseRes = await fetch(`${API_URL}/game-accuse`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_reasoning: playerReasoning,
-      }),
-    });
-    expect(accuseRes.status).toBe(200);
+    const playerReasoning = 'accuse Alice based on motive and opportunity.';
+    await playLine(auth, gameId, playerReasoning);
 
     const resumed = await loadSessionTranscript(auth, gameId);
     // Find the accuse event that carries player reasoning (accuse_round or accuse_resolved)
@@ -146,15 +111,7 @@ describe('session list resume/view API flows', () => {
   it('preserves targeted search query in the transcript on resume', async () => {
     const gameId = await startSession(auth);
 
-    const searchRes = await fetch(`${API_URL}/game-search`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        search_query: 'check under the sink',
-      }),
-    });
-    expect(searchRes.status).toBe(200);
+    await playLine(auth, gameId, 'search check under the sink');
 
     const resumed = await loadSessionTranscript(auth, gameId);
     const searchEvent = resumed.narration_events.find(
@@ -172,12 +129,7 @@ describe('session list resume/view API flows', () => {
   it('preserves bare search as "search" in the transcript on resume', async () => {
     const gameId = await startSession(auth);
 
-    const searchRes = await fetch(`${API_URL}/game-search`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId }),
-    });
-    expect(searchRes.status).toBe(200);
+    await playLine(auth, gameId, 'search');
 
     const resumed = await loadSessionTranscript(auth, gameId);
     const searchEvent = resumed.narration_events.find(
@@ -195,27 +147,9 @@ describe('session list resume/view API flows', () => {
   it('opens a completed session in ended mode with persisted history', async () => {
     const gameId = await startSession(auth);
 
-    const accuseStartRes = await fetch(`${API_URL}/game-accuse`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_reasoning: 'I accuse Alice based on motive and opportunity.',
-      }),
-    });
-    expect(accuseStartRes.status).toBe(200);
-
-    const accuseJudgeRes = await fetch(`${API_URL}/game-accuse`, {
-      method: 'POST',
-      headers: auth.headers,
-      body: JSON.stringify({
-        game_id: gameId,
-        player_reasoning: 'Alice lied about where she was and had crumbs on her coat.',
-      }),
-    });
-    expect(accuseJudgeRes.status).toBe(200);
-    const accuseJudgeData = await accuseJudgeRes.json();
-    expect(accuseJudgeData.mode).toBe('ended');
+    await playLine(auth, gameId, 'accuse Alice based on motive and opportunity.');
+    const verdict = await playLine(auth, gameId, 'Alice lied about where she was and had crumbs on her coat.');
+    expect(verdict.state.mode).toBe('ended');
 
     const preResumeData = await loadSessionTranscript(auth, gameId);
     expect(preResumeData.state.mode).toBe('ended');

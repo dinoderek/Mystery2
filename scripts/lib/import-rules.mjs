@@ -74,3 +74,16 @@ export const FORBIDDEN = [
     to: { path: ["^web/src/lib/components/", "^web/src/routes/"] },
   },
 ];
+
+/**
+ * The command grammar decides what a typed line means, and only the engine
+ * asks. The roots it covers are the browser and the evaluation harnesses, which
+ * the layer rules above do not reach (`GRAMMAR_ROOTS`).
+ */
+export const GRAMMAR_RULE = {
+  name: "grammar-only-in-engine",
+  comment: "Only packages/game-engine imports the command grammar.",
+  severity: "error",
+  from: { path: "^(web|evaluation)/" },
+  to: { path: "^packages/game-engine/src/command-grammar\\.ts$" },
+};

@@ -8,9 +8,10 @@
  *
  * It emits a regular `move` event, so everything downstream — the client's page
  * model, `selectLocationConversationHistory`'s "have I been here before" check,
- * the trace tooling — treats it as the arrival it is. Unlike `game-move` it
+ * the trace tooling — treats it as the arrival it is. Unlike a move it
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
+import { GameEnterRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
 import type { EngineContext } from "../context.ts";
 import {
   asConflictResponse,
@@ -25,6 +26,7 @@ import {
 } from "../ai-provider.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, withLogContext } from "../logging.ts";
+import { readJsonRequest } from "../request.ts";
 import {
   createNarrationDiagnostics,
   buildNarrationEvent,
@@ -41,13 +43,10 @@ export async function handle(
   const { requestId, log, logError } = logger;
 
   try {
-    const body = await req.json();
-    if (!body || !body.game_id) {
-      log("request.invalid", { reason: "missing_game_id" });
-      return badRequest("Missing game_id");
-    }
+    const read = await readJsonRequest(req, GameEnterRequestSchema, logger);
+    if (!read.ok) return read.response;
 
-    const gameId = String(body.game_id);
+    const gameId = read.data.game_id;
     const narrationLogger = withLogContext(logger, { game_id: gameId });
 
     const session = await ctx.sessions.getById(gameId);

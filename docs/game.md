@@ -1,21 +1,16 @@
 # The game
 
-A text mystery for children that makes reading and writing feel like a
-challenge worth taking: explore, ask questions, find clues, and accuse someone
-before time runs out.
-
-This doc is the player-facing contract. How the narrator is prompted is
-`docs/ai-runtime.md`; what the screens look like is `docs/ui.md`.
+A text mystery for children that makes reading and writing feel like a challenge
+worth taking: explore, ask questions, find clues, and accuse someone before time runs out. This is the player-facing contract. The narrator's
+prompts are in `docs/ai-runtime.md`; the screens are in `docs/ui.md`.
 
 ## Who is who
 
-- **The investigator** is the child. They type commands and build a theory.
+- **The investigator** is the child, typing commands and building a theory.
 - **The narrator** is the AI. It describes places, speaks as each character,
-  and judges searches and the accusation. It must never contradict the
-  blueprint.
+  judges searches and the accusation, and never contradicts the blueprint.
 - **The blueprint** is the case: what happened, who did what and why, and
-  where the clues are. Its schema, and the intent behind each field, is
-  `packages/shared/src/blueprint-schema-v2.ts`.
+  where the clues are. Schema and intent: `packages/shared/src/blueprint-schema-v2.ts`.
 - **The turn budget** (`metadata.time_budget`) keeps the investigation finite.
 
 ## Starting a case

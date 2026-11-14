@@ -4,23 +4,22 @@ A text-based, AI-narrated mystery game for young children. Every change keeps
 the player promise in `docs/game.md`: typed investigation, coherent narration,
 fidelity to the blueprint, and a child-friendly experience.
 
-This document wins over any other guidance in the repo. `AGENTS.md` adds how
+This document wins over any other guidance. `AGENTS.md` adds how
 agents work; it may not weaken anything here.
 
 ## I. Documentation ships with the change
 
-Read the core docs listed in `AGENTS.md` before significant work, and the
-area docs it names for the surface you touch. A change to behaviour, workflow,
-commands or setup updates the doc that owns that topic in the same change. Each
-topic has one owning doc; others link to it rather than restate it.
+Read the core docs `AGENTS.md` lists, and the area docs it names for what you
+touch. A change to behaviour, workflow, commands or setup updates the owning doc
+in the same change. Each topic has one owner; others link to it.
 
 ## II. Test what you build (non-negotiable)
 
 Every change carries tests at the boundary it affects, per `docs/testing.md`:
 unit for logic, integration against a running server for endpoints, ownership,
-profiles and content loading, E2E for journeys. The game is one process over a
-real database and real files; regressions at those boundaries show only when
-each is exercised.
+profiles and content, E2E for journeys. The game is one process over a real
+database and real files; regressions at those boundaries show only when each is
+exercised.
 
 ## III. Run the gate
 
@@ -47,8 +46,8 @@ running game is a deviation, and is agreed before work starts.
 
 ## V. Follow the existing conventions
 
-Use the conventions of the area you are editing instead of inventing parallel
-ones. Complexity that departs from them is justified in the change.
+Follow the conventions of the area you edit, and justify any departure in the
+change.
 
 ## VI. Failures are visible
 

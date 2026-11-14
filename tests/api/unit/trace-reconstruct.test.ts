@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.mjs";
-import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
+import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.ts";
+import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { makeEvents, makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
 
 function moveEvent(seq: number, locationId: string): TraceEventRow {

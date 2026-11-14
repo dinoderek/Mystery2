@@ -171,7 +171,7 @@ function gameCheck(id: string, context?: Readonly<Record<string, unknown>>): Che
     type: "check",
     id,
     subjects: ["game"],
-    run: { module: "evaluation/trace/lib/mechanical.mjs", export: "runTraceMechanicalChecks" },
+    run: { module: "evaluation/trace/lib/mechanical.ts", export: "runTraceMechanicalChecks" },
     ...(context ? { context } : {}),
   };
 }

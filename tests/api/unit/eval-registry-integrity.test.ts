@@ -3,11 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { loadAnalyzer, loadJudge, repoRoot } from "../../../evaluation/core/judge-loader.ts";
-import { judgesFor, REGISTRY } from "../../../evaluation/core/registry.ts";
-import {
-  loadTraceDimensions,
-  loadTraceDimensionDefinition,
-} from "../../../evaluation/trace/lib/load.mjs";
+import { checksFor, judgesFor, REGISTRY } from "../../../evaluation/core/registry.ts";
 
 // These tests guard what the harnesses read from the one registry against
 // drift: an entry that points at a missing or malformed schema, or an analyzer
@@ -67,9 +63,9 @@ describe("blueprint battery", () => {
 });
 
 describe("game battery", () => {
-  it("is the registry's game judges, plus the settings of the mechanical checks", async () => {
-    const { dimensions, mechanical_context } = await loadTraceDimensions();
-    expect(dimensions.map((d: { id: string }) => d.id)).toEqual([
+  it("is the registry's game judges, plus the settings of the mechanical checks", () => {
+    const mechanical_context = Object.assign({}, ...checksFor("game").map((entry) => entry.context ?? {}));
+    expect(judgesFor("game").map((entry) => entry.id)).toEqual([
       "gm_roleplay",
       "gm_clue_discipline",
       "gm_fabrication",
@@ -79,12 +75,11 @@ describe("game battery", () => {
   });
 
   it("resolves every dimension to a brief and a loadable schema in the shared judge directory", async () => {
-    const { dimensions } = await loadTraceDimensions();
-    for (const dim of dimensions) {
-      const def = await loadTraceDimensionDefinition(dim.id);
+    for (const dim of judgesFor("game")) {
+      const def = await loadJudge(dim.id);
       expect(def.schema, `trace dimension "${dim.id}" has no loadable schema`).not.toBeNull();
-      expect(typeof def.schema.safeParse).toBe("function");
-      expect(def.filePath.startsWith(path.join(repoRoot(), "evaluation", "judges"))).toBe(true);
+      expect(typeof def.schema?.safeParse).toBe("function");
+      expect(def.filePath?.startsWith(path.join(repoRoot(), "evaluation", "judges"))).toBe(true);
       expect(def.text.length).toBeGreaterThan(0);
     }
   });

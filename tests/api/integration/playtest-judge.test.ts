@@ -2,7 +2,7 @@
 // server.
 //
 // A scripted game is played, the database copied as a run does, and the game
-// graded through the real trace pipeline, with the stub judge CLI the trace
+// graded through the game command, with the stub judge CLI the trace
 // tests use standing in for the model. No model is called.
 
 import fs from 'node:fs';
@@ -74,11 +74,11 @@ describe('playtest grading', () => {
 			live.close();
 		}
 
-		const config = path.join(scratch, 'cli.json');
+		const config = path.join(scratch, 'config.json');
 		fs.writeFileSync(
 			config,
 			JSON.stringify({
-				judge: {
+				'game-judge': {
 					cmd: 'node',
 					args: [MOCK_JUDGE, '{{system_prompt_file}}', '{{user_message_file}}'],
 					extract_path: 'result',
@@ -117,7 +117,7 @@ describe('playtest grading', () => {
 		const trace = JSON.parse(fs.readFileSync(path.join(gameDir, 'trace.json'), 'utf8'));
 		expect(trace.session.id).toBe(game.gameId);
 		const result = JSON.parse(fs.readFileSync(path.join(gameDir, 'result.json'), 'utf8'));
-		expect(result.session_id).toBe(game.gameId);
+		expect(result.subject.id).toBe(game.gameId);
 
 		expect(renderGrades(grades)).toContain('- gm_spoiler: pass (0 major, 0 minor)');
 

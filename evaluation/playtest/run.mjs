@@ -32,8 +32,8 @@
 //   --narrator <claude|mock>  the game's narrator (default: claude)
 //   --narrator-model <m>      default: sonnet
 //   --investigator-model <m>  default: sonnet; not with --replay
-//   --judge                   grade each game afterwards (needs
-//                             evaluation/trace/config/cli.json; off by default)
+//   --judge                   grade each game afterwards (needs the game-judge
+//                             binding in evaluation/config.json; off by default)
 //   --out <dir>               runs root (default: evaluation/playtest/runs)
 //   --port <n>                server port (default: a free one)
 //   -h, --help                show this help
@@ -310,8 +310,8 @@ let grading = Promise.resolve();
 
 /**
  * Extracts a game that has just ended, from a copy of the database taken now
- * (extraction opens its file for writing, so never the server's own), and
- * queues its grading. A game that cannot be graded says why in its summary and
+ * (a consistent snapshot while the server is still writing), and queues its
+ * grading. A game that cannot be graded says why in its summary and
  * transcript; the others carry on.
  */
 async function queueGrading(game) {
@@ -392,7 +392,7 @@ try {
 } finally {
   try {
     // Keep the database: a game can be graded or inspected later with
-    // `eval:trace:extract --db <run>/game.db --session <game_id>`.
+    // `./dev eval judge game <game_id> --database <run>/game.db`.
     const database = liveDatabase();
     if (fs.existsSync(database)) {
       const source = new Database(database, { readonly: true });

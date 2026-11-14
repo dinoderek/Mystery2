@@ -23,24 +23,37 @@ afterEach(() => {
 	scratch = null;
 });
 
+// A repo root with an evaluation config of this content, or none.
 function repoWithConfig(content: string | null) {
 	scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-judge-setup-'));
-	const dir = path.join(scratch, 'evaluation', 'trace', 'config');
+	const dir = path.join(scratch, 'evaluation');
 	fs.mkdirSync(dir, { recursive: true });
-	if (content !== null) fs.writeFileSync(path.join(dir, 'cli.json'), content);
+	if (content !== null) fs.writeFileSync(path.join(dir, 'config.json'), content);
 	return scratch;
 }
+
+const STUB_JUDGE = path.join(process.cwd(), 'tests', 'api', 'unit', 'trace-mock-judge.mjs');
+const STUB_BINDING = {
+	cmd: process.execPath,
+	args: [STUB_JUDGE, '{{system_prompt_file}}', '{{user_message_file}}'],
+	extract_path: 'result',
+	timeout_ms: 30000,
+	retries: 0
+};
 
 function event(sequence: number, event_type: string, text: string) {
 	return { sequence, event_type, narration: text, narration_parts: text ? [{ text, speaker: { kind: 'narrator' } }] : [] };
 }
 
 describe('playtest --judge setup', () => {
-	it('needs a cli.json with a judge step', () => {
-		expect(judgeSetupProblem(repoWithConfig(null))).toMatch(/copy it from cli.example.json/);
-		expect(judgeSetupProblem(repoWithConfig('{}'))).toMatch(/has no "judge" step/);
-		expect(judgeSetupProblem(repoWithConfig('{'))).toMatch(/not valid JSON/);
-		expect(judgeSetupProblem(repoWithConfig('{"judge": {"cmd": "x"}}'))).toBeNull();
+	it('needs a game-judge binding that can run', () => {
+		expect(judgeSetupProblem(repoWithConfig(null))).toMatch(/cannot read config/);
+		expect(judgeSetupProblem(repoWithConfig('{}'))).toMatch(/no binding "game-judge"/);
+		expect(judgeSetupProblem(repoWithConfig('{'))).toMatch(/is not JSON/);
+		expect(
+			judgeSetupProblem(repoWithConfig(JSON.stringify({ 'game-judge': { ...STUB_BINDING, cmd: 'no-such-command' } })))
+		).toMatch(/cannot run/);
+		expect(judgeSetupProblem(repoWithConfig(JSON.stringify({ 'game-judge': STUB_BINDING })))).toBeNull();
 	});
 });
 
@@ -96,7 +109,15 @@ describe('playtest grading when the trace pipeline stops', () => {
 			JSON.stringify({ events: [event(1, 'start', 'The cat sat.')] })
 		);
 
-		const grades = await gradeGame({ repoRoot: process.cwd(), gameDir: scratch, targetAge: 7 });
+		const config = path.join(scratch, 'config.json');
+		fs.writeFileSync(config, JSON.stringify({ 'game-judge': STUB_BINDING }));
+
+		const grades = await gradeGame({
+			repoRoot: process.cwd(),
+			gameDir: scratch,
+			targetAge: 7,
+			judgeTraceArgs: ['--config', config]
+		});
 
 		expect(grades.run_error).toMatchObject({ message: expect.any(String) });
 		expect(grades.judges).toEqual({});
@@ -122,6 +143,6 @@ describe('playtest grades in the transcript', () => {
 		expect(text).toContain('- flesch: 3 of 4 narrations at or under grade 4 for age 7 (mean 3.1, highest 6.2)');
 		expect(text).toContain('- Judge cost: $1.500');
 
-		expect(renderGrades({ error: 'eval:trace exited 1' })).toContain('- Grading failed: eval:trace exited 1');
+		expect(renderGrades({ error: 'judge game exited 1' })).toContain('- Grading failed: judge game exited 1');
 	});
 });

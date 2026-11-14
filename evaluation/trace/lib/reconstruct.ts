@@ -22,6 +22,12 @@ import {
   readField,
   revealedClueIdsForEvent,
 } from "../../lib/game-events.mjs";
+import type {
+  AIContext,
+  BlueprintContext,
+  ConversationFragment,
+  SessionSnapshot,
+} from "../../../packages/game-engine/src/ai-context.ts";
 import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
@@ -33,21 +39,22 @@ import {
   findLocationById,
   selectLocationConversationHistory,
 } from "../../../packages/game-engine/src/ai-context.ts";
+import type { Payload, RawEvent, RawTrace } from "./normalize.ts";
 
 // Re-exported so this module stays the trace pipeline's entry point for
-// per-event reveal reading (mechanical.mjs imports it from here).
+// per-event reveal reading (mechanical.ts imports it from here).
 export { revealedClueIdsForEvent };
 
-function readDiagnosticsTimeAfter(payload) {
+function readDiagnosticsTimeAfter(payload: Payload | null): number | null {
   if (!payload || typeof payload !== "object") return null;
   const diag = payload.diagnostics;
   if (!diag || typeof diag !== "object") return null;
-  const after = diag.time_after;
+  const after = (diag as Payload).time_after;
   return typeof after === "number" && Number.isFinite(after) ? after : null;
 }
 
 // Maps a raw event to the ConversationFragment shape the builders expect.
-function toFragment(event) {
+function toFragment(event: RawEvent): ConversationFragment {
   return {
     sequence: event.sequence,
     event_type: event.event_type,
@@ -61,7 +68,11 @@ function toFragment(event) {
 // preceded this turn. Mirrors the edge runtime: a clue counts as revealed for a
 // location when a prior search/ask event in that location revealed it and it is
 // one of the location's (or its sub-locations') clue ids.
-function revealedLocationClueIds(blueprint, locationId, priorEvents) {
+function revealedLocationClueIds(
+  blueprint: BlueprintContext,
+  locationId: string,
+  priorEvents: RawEvent[],
+): string[] {
   const location = findLocationById(blueprint, locationId);
   if (!location) return [];
   const valid = new Set();
@@ -69,7 +80,7 @@ function revealedLocationClueIds(blueprint, locationId, priorEvents) {
   for (const sub of location.sub_locations ?? []) {
     for (const clue of sub.clues ?? []) valid.add(clue.id);
   }
-  const revealed = [];
+  const revealed: string[] = [];
   for (const event of priorEvents) {
     if (event.event_type !== "search") continue;
     const scope = readField(event.payload, "location_id") ?? locationId;
@@ -81,7 +92,21 @@ function revealedLocationClueIds(blueprint, locationId, priorEvents) {
   return revealed;
 }
 
-function reconstructContext(roleName, ctx) {
+interface ReconstructInput {
+  gameId: string;
+  blueprint: BlueprintContext;
+  session: SessionSnapshot;
+  locationId: string;
+  characterId: string;
+  playerInput: string | null;
+  searchQuery: string | null;
+  history: ConversationFragment[];
+  priorEvents: RawEvent[];
+  forcedByTimeout: boolean;
+  round: number;
+}
+
+function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext | null {
   const { blueprint, session, locationId, characterId, playerInput, history } =
     ctx;
   const common = { game_id: ctx.gameId, session, blueprint, conversation_history: history };
@@ -89,7 +114,7 @@ function reconstructContext(roleName, ctx) {
   // "accuse" mode (forced-endgame.ts, and the accuse action's immediate-judge-on-entry
   // path where the prior mode is still "explore"). Mirror that so context.mode
   // matches what the builder saw, regardless of the folded pre-state.
-  const accuseCommon = { ...common, session: { ...session, mode: "accuse" } };
+  const accuseCommon = { ...common, session: { ...session, mode: "accuse" as const } };
 
   switch (roleName) {
     case "talk_start":
@@ -166,19 +191,56 @@ function reconstructContext(roleName, ctx) {
 // role_name and (best-effort) a reconstructed AIContext; non-AI events (e.g.
 // "start") carry role_name=null. pre_state is the folded session snapshot as it
 // was BEFORE the action resolved — i.e. what the builder would have seen.
-export function reconstructTrace(rawTrace) {
-  const blueprint = rawTrace.blueprint;
-  const events = playedEvents(rawTrace.events).sort((a, b) => a.sequence - b.sequence);
+export interface TurnRecord {
+  sequence: number;
+  event_type: string;
+  actor: string;
+  role_name: string | null;
+  player_input: string | null;
+  search_query: string | null;
+  narration: string;
+  revealed_clue_ids: string[];
+  revealed_off_script: string[];
+  location_id: string | null;
+  character_id: string | null;
+  pre_state: SessionState;
+  reconstructed_context: AIContext | null;
+  context_error: string | null;
+}
 
-  const state = {
+export interface ReconstructionIssue {
+  sequence: number;
+  stage: "reconstruct";
+  message: string;
+}
+
+/** The session as folded from the events, which may name no location yet. */
+export interface SessionState {
+  mode: SessionSnapshot["mode"];
+  current_location_id: string | null;
+  current_talk_character_id: string | null;
+  time_remaining: number | null;
+}
+
+export interface Reconstruction {
+  turns: TurnRecord[];
+  final_state: SessionState;
+  issues: ReconstructionIssue[];
+}
+
+export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
+  const blueprint = rawTrace.blueprint;
+  const events = (playedEvents(rawTrace.events) as RawEvent[]).sort((a, b) => a.sequence - b.sequence);
+
+  const state: SessionState = {
     mode: "explore",
     current_location_id: blueprint?.world?.starting_location_id ?? null,
     current_talk_character_id: null,
     time_remaining: blueprint?.metadata?.time_budget ?? null,
   };
 
-  const turns = [];
-  const issues = [];
+  const turns: TurnRecord[] = [];
+  const issues: ReconstructionIssue[] = [];
 
   events.forEach((event, index) => {
     const priorEvents = events.slice(0, index);
@@ -219,9 +281,11 @@ export function reconstructTrace(rawTrace) {
         reconstructedContext = reconstructContext(roleName, {
           gameId: rawTrace.session.id,
           blueprint,
-          session: preState,
-          locationId,
-          characterId,
+          // A trace whose blueprint names no starting location folds to null
+          // here; the builders then fail and the turn records a context error.
+          session: preState as SessionSnapshot,
+          locationId: locationId as string,
+          characterId: characterId as string,
           playerInput,
           searchQuery,
           history: priorEvents.map(toFragment),
@@ -230,7 +294,7 @@ export function reconstructTrace(rawTrace) {
           round: accusationRound,
         });
       } catch (err) {
-        contextError = String(err?.message ?? err);
+        contextError = String((err as Error)?.message ?? err);
         issues.push({ sequence: event.sequence, stage: "reconstruct", message: contextError });
       }
     }

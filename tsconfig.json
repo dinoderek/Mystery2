@@ -8,11 +8,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true,
     "paths": { "$lib/*": ["./web/src/lib/*"] }
   },
   "include": [
     "packages/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "evaluation/core/**/*",
+    "evaluation/commands.ts"
   ]
 }

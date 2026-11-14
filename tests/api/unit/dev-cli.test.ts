@@ -121,6 +121,43 @@ describe("./dev usage", () => {
   });
 });
 
+describe("./dev eval", () => {
+  const fake = (name: string) => ({ name, summary: `does ${name}`, help: `help for ${name}`, run: async () => 0 });
+
+  it("lists the evaluation commands when given none, and exits 0", async () => {
+    const out: string[] = [];
+    const status = await main(["eval"], {
+      root: clone,
+      out: (text: string) => out.push(text),
+      evalCommands: [fake("judge blueprint"), fake("play")],
+    });
+    expect(status).toBe(0);
+    expect(out.join("\n")).toContain("judge blueprint  does judge blueprint");
+    expect(out.join("\n")).toContain("play             does play");
+  });
+
+  it("exits 1 for an evaluation command it does not know", async () => {
+    const err: string[] = [];
+    const status = await main(["eval", "frobnicate"], {
+      root: clone,
+      err: (text: string) => err.push(text),
+      evalCommands: [fake("play")],
+    });
+    expect(status).toBe(1);
+    expect(err.join("\n")).toContain('Unknown eval command "frobnicate"');
+  });
+
+  it("runs from the executable, loading the evaluation code under Node's own type stripping", () => {
+    const listed = spawnSync(path.join(REPO_ROOT, "dev"), ["eval"], { encoding: "utf8" });
+    expect(listed.status).toBe(0);
+    expect(listed.stdout).toContain("Usage: ./dev eval <command>");
+    expect(listed.stderr).toBe("");
+
+    const unknown = spawnSync(path.join(REPO_ROOT, "dev"), ["eval", "frobnicate"], { encoding: "utf8" });
+    expect(unknown.status).toBe(1);
+  });
+});
+
 describe("./dev test and ./dev run", () => {
   it("hands the steps to the existing gate runner", () => {
     expect(buildTestCommand("/r", [])).toEqual({

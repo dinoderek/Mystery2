@@ -74,8 +74,10 @@ cd "$WORKSPACE"
 # (./verdict.json), so the output format does NOT affect the result contract.
 STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"
+# The model is EVAL_MODEL, which the evaluation core sets from the binding;
+# opus when it is unset.
 claude --print --output-format stream-json --verbose \
-       --model opus \
+       --model "${EVAL_MODEL:-opus}" \
        --effort xhigh \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./verdict.json that passes the validator." \

@@ -193,6 +193,9 @@ npm run eval:runtime:rejudge -- <interaction.json>  # re-judge a stored interact
 npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a trace
 ```
 
+`./dev eval` reads its model bindings from one file; to change one, copy
+`evaluation/config.example.json` to `evaluation/config.json`.
+
 ## Image Generation
 
 Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.

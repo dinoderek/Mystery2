@@ -31,6 +31,12 @@ but skips every judge (`judge: skipped (no cli.json judge step)`).
 The process exits non-zero only when the run itself breaks (`run_error` in the
 envelope). A failing check or dimension still exits 0; read the summary.
 
+## `./dev eval`
+
+`./dev eval` lists the commands built on `evaluation/core/`, where the config
+file, the `result.json` schema, the run folder and the exit codes (0 passed, 1
+run broke, 2 a verdict failed) are documented.
+
 ## Output directory
 
 Every run writes one self-contained directory outside the repo, so debug

@@ -4,13 +4,15 @@
  * calls `main`.
  *
  * `run` and `test` build a command for the game starter (`scripts/dev.mjs`) and
- * the gate runner (`scripts/run-test-gate.mjs`) and hand over to it; this file
- * implements neither.
+ * the gate runner (`scripts/run-test-gate.mjs`) and hand over to it; `eval`
+ * calls the evaluation dispatcher in-process. This file implements none of them.
  */
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 
+import { COMMANDS as EVAL_COMMANDS } from "../evaluation/commands.ts";
+import { runEval } from "../evaluation/core/dispatch.ts";
 import { runDoctor } from "./lib/dev-doctor.mjs";
 import { DevError, createWorktree, releaseWorktree } from "./lib/dev-worktree.mjs";
 
@@ -24,6 +26,7 @@ export const USAGE = `Usage: ./dev <verb> [args]
   run [free|paid|claude] [--db <name>]
                                    start the game (what \`npm run dev\` does)
   test [step ...]                  run the gate (what \`npm test\` does), or only the named steps
+  eval [command] [args]            run an evaluation command; with none, list them
   worktree create <branch>         add a worktree beside the clone, with dependencies installed
   worktree release <branch>        remove that worktree and its development database
 `;
@@ -51,11 +54,14 @@ function execute({ command, args, cwd }) {
  * Runs one `./dev` invocation and returns its exit status.
  *
  * @param {string[]} argv arguments after `./dev`
- * @param {{ root: string, out?: (text: string) => void, err?: (text: string) => void, execute?: (command: Command) => number }} context
+ * @param {{ root: string, out?: (text: string) => void, err?: (text: string) => void, execute?: (command: Command) => number, evalCommands?: typeof EVAL_COMMANDS }} context
  *   `root` is the checkout `dev` lives in
  * @returns {Promise<number>}
  */
-export async function main(argv, { root, out = console.log, err = console.error, execute: exec = execute }) {
+export async function main(
+  argv,
+  { root, out = console.log, err = console.error, execute: exec = execute, evalCommands = EVAL_COMMANDS },
+) {
   const [verb, ...rest] = argv;
 
   try {
@@ -69,6 +75,8 @@ export async function main(argv, { root, out = console.log, err = console.error,
         return exec(buildRunCommand(root, rest));
       case "test":
         return exec(buildTestCommand(root, rest));
+      case "eval":
+        return await runEval(rest, { root, out, err, env: process.env }, evalCommands);
       case "worktree": {
         const [action, branch, ...extra] = rest;
         if ((action === "create" || action === "release") && branch && extra.length === 0) {

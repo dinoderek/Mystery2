@@ -38,9 +38,11 @@ USER_MESSAGE_FILE="${2:?missing user message file path}"
 STREAM_FILE="${EVAL_STREAM_FILE:-${TMPDIR:-/tmp}/claude-trace-judge.$$.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"
 
+# The model is EVAL_MODEL, which the evaluation core sets from the binding;
+# opus when it is unset.
 claude --print \
        --output-format stream-json --verbose \
-       --model opus \
+       --model "${EVAL_MODEL:-opus}" \
        --system-prompt "$(cat "$SYSTEM_PROMPT_FILE")" \
        --tools "" \
        --strict-mcp-config \

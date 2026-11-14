@@ -153,7 +153,7 @@ describe("import-layer rules", () => {
     );
     write("scripts/spawns.mjs", 'import "node:child_process";\n');
     write(
-      "evaluation/trace/lib/datasource.mjs",
+      "evaluation/trace/lib/datasource.ts",
       'import "../../../packages/game-engine/src/paths.ts";\nimport "../../../lib/database-target.mjs";\n',
     );
     write(
@@ -283,7 +283,7 @@ describe("import-layer rules", () => {
     expect(rulesBrokenBy(violations, "evaluation/playtest/lib/target.mjs")).toEqual(
       ["play-database-path-only-in-trace-extractor"],
     );
-    expect(rulesBrokenBy(violations, "evaluation/trace/lib/datasource.mjs")).toEqual(
+    expect(rulesBrokenBy(violations, "evaluation/trace/lib/datasource.ts")).toEqual(
       [],
     );
   });

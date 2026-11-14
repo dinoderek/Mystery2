@@ -119,7 +119,7 @@ export function createLocalTraceSource({
       // abort an extraction of a session that used it months ago.
       let profile;
       try {
-        profile = resolveAIProfile(profileId, { repoRoot: root });
+        profile = resolveAIProfile(profileId, { repoRoot: root, env });
       } catch {
         return null;
       }

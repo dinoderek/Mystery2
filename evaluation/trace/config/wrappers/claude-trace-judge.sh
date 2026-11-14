@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper invoked by the trace-evaluation pipeline for the "judge" step.
+# Wrapper invoked by the trace-evaluation pipeline for the game judges.
 #
 # Contract with the pipeline:
 #   $1 — path to the composed judge system prompt (judge-system.md + the
@@ -14,7 +14,7 @@
 # Unlike the blueprint judge wrapper, this is a single-shot call: the composed
 # system prompt already carries the dimension contract and the authoritative
 # output schema, so no agent workspace is needed. Swap this script (or point
-# cli.json at your own) to bind a different LLM CLI.
+# the game-judge binding in evaluation/config.json at your own) to bind a different LLM CLI.
 #
 # We run with stream-json so the pipeline can tail the live event stream from
 # $STREAM_FILE (the pipeline sets EVAL_STREAM_FILE to a tailable

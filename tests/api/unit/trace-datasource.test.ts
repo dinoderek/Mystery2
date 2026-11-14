@@ -9,7 +9,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
+import { SCHEMA_VERSION, openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import {
   createLocalTraceSource,
   extractSessionTrace,
@@ -93,7 +93,7 @@ describe("extraction from a database the test made", () => {
     const copy = path.join(scratch, "copy.db");
     fs.copyFileSync(game.databasePath, copy);
     openDatabase({ path: copy }).close();
-    expect(inspect(copy).version).toBe(2);
+    expect(inspect(copy).version).toBe(SCHEMA_VERSION);
 
     const trace = await extract(game);
 

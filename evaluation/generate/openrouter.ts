@@ -10,7 +10,8 @@
  * brief from the user message the runner wrote, the model from `EVAL_MODEL`
  * and the key from `OPENROUTER_API_KEY`; it prints the blueprint in the
  * `{ "result": "<blueprint JSON>" }` envelope the binding's `extract_path`
- * reads. The key is never printed or put in an error message.
+ * reads, with `usage.cost` as top-level `total_cost_usd` when reported (else null).
+ * The key is never printed or put in an error message.
  *
  * A blueprint that fails the schema is still printed, as it was checked, so the
  * command that ran the wrapper keeps it and its mechanical check says why it
@@ -74,6 +75,17 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
   if (!openRouterApiKey) throw new Error(`${OPENROUTER_KEY_VAR} is not set`);
   const storyBrief = await readStoryBrief(userMessageFile);
 
+  let costUsd: number | null = null;
+  // Observe the response without changing the generator's request or consuming
+  // its body. No follow-up request is made when usage omits the cost.
+  const fetchWithCost: typeof fetch = async (...args) => {
+    const response = await (fetchImpl ?? fetch)(...args);
+    const body = await response.clone().json().catch(() => null) as { usage?: { cost?: unknown } } | null;
+    const cost = body?.usage?.cost;
+    if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) costUsd = cost;
+    return response;
+  };
+
   try {
     const blueprint = await generateBlueprint({
       storyBrief,
@@ -81,9 +93,9 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
       openRouterApiKey,
       timeoutMs: timeoutFrom(env),
       baseUrl: env.OPENROUTER_URL?.trim() || undefined,
-      fetchImpl,
+      fetchImpl: fetchWithCost,
     });
-    return JSON.stringify({ result: JSON.stringify(blueprint, null, 2) });
+    return JSON.stringify({ total_cost_usd: costUsd, result: JSON.stringify(blueprint, null, 2) });
   } catch (error) {
     if (!(error instanceof BlueprintGenerationError) || error.code !== "SCHEMA_VALIDATION_FAILED") throw error;
     // The result is the answer as the generator checked it, so the command's
@@ -91,7 +103,7 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
     // forced; `raw` keeps what the model sent in the attempt's stdout log.
     const { checkedJson, responseText } = error.details;
     if (checkedJson === undefined) throw error;
-    return JSON.stringify({ result: JSON.stringify(checkedJson, null, 2), raw: responseText });
+    return JSON.stringify({ total_cost_usd: costUsd, result: JSON.stringify(checkedJson, null, 2), raw: responseText });
   }
 }
 

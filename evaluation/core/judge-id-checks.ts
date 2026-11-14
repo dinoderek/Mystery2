@@ -76,7 +76,7 @@ function blueprintSet(name: IdSetName, blueprint: Blueprint, context: Record<str
   }
 }
 
-const isBlank = (value: unknown) => value === null || value === undefined || value === "";
+const isNullish = (value: unknown) => value === null || value === undefined;
 const listed = (ids: Set<string>) => [...ids].join(", ") || "(none)";
 
 type RefCheck = Extract<IdCheck, { kind: "ref" }>;
@@ -91,7 +91,7 @@ function checkRef(rule: RefCheck, answer: unknown, blueprint: Blueprint, context
   const issues: string[] = [];
   const seen = new Set<string>();
   for (const { location, value } of collect(answer, rule.at)) {
-    if (rule.optional && isBlank(value)) continue;
+    if (rule.optional && (isNullish(value) || (rule.optional === "blank" && value === ""))) continue;
     const id = String(value);
     if (!members.has(id)) issues.push(`${location} "${id}" is not a ${rule.label} (valid: ${listed(members)})`);
     if (rule.unique && seen.has(id)) issues.push(`${location} "${id}" appears more than once`);

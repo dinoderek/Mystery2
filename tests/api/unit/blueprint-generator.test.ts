@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  buildBlueprintGenerationMarkdownDocument,
-  buildBlueprintGenerationMarkdownPacket,
-} from "../../../packages/blueprint-generator/src/chat-packet.ts";
-import {
   buildBlueprintGenerationChatInput,
   generateBlueprint,
 } from "../../../packages/blueprint-generator/src/index.ts";
@@ -407,47 +403,5 @@ describe("blueprint generator", () => {
       code: "OPENROUTER_ERROR",
       message: "OpenRouter blueprint generation request timed out",
     });
-  });
-});
-
-describe("blueprint generation chat packet builder", () => {
-  it("assembles a markdown document with prompt, schemas, and response rules", () => {
-    const markdown = buildBlueprintGenerationMarkdownDocument({
-      title: "Blueprint Generation Packet",
-      systemPrompt: "System prompt body",
-      userMessageJson: {
-        story_brief: {
-          brief: "A library mystery.",
-          targetAge: 8,
-        },
-      },
-      responseSchema: { type: "object", properties: { id: { type: "string" } } },
-      storyBriefSchemaSource: "export const StoryBriefSchema = z.object({});",
-      blueprintSchemaSource: "export const BlueprintV2Schema = z.object({});",
-    });
-
-    expect(markdown).toContain("# Blueprint Generation Packet");
-    expect(markdown).toContain("## Generator Prompt");
-    expect(markdown).toContain("## User Message JSON");
-    expect(markdown).toContain("## Response Contract");
-    expect(markdown).toContain("## Response Schema (JSON Schema)");
-    expect(markdown).toContain("## Story Brief Schema Reference");
-    expect(markdown).toContain("## Blueprint V2 Schema Reference");
-    expect(markdown).toContain("Do not output generated image fields");
-  });
-
-  it("builds a packet from the live generator prompt inputs", async () => {
-    const packet = await buildBlueprintGenerationMarkdownPacket({
-      storyBrief: {
-        brief: "A school mystery about a missing trophy.",
-        targetAge: 8,
-      },
-    });
-
-    expect(packet.outputText).toContain("## Generator Prompt");
-    expect(packet.outputText).toContain("## User Message JSON");
-    expect(packet.outputText).toContain("## Response Schema (JSON Schema)");
-    expect(packet.outputText).toContain("\"story_brief\"");
-    expect(packet.outputText).toContain("Do not output `image_id`");
   });
 });

@@ -1,7 +1,7 @@
 # The game
 
-A text mystery for children: explore, ask questions, find clues, and accuse
-someone before time runs out. This is the player-facing contract. The narrator's
+A text mystery for children that makes reading and writing feel like a challenge
+worth taking: explore, ask questions, find clues, and accuse someone before time runs out. This is the player-facing contract. The narrator's
 prompts are in `docs/ai-runtime.md`; the screens are in `docs/ui.md`.
 
 ## Who is who

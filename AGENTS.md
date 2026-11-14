@@ -44,10 +44,11 @@ A shared log name gets overwritten by other worktrees' runs. Never block on
 Two traps:
 
 - **Check `GATE_EXIT`**, not the task's exit code, which is the final `echo`'s.
-- **Check the `Total` line**, not the last line. `Total ... FAIL` is the verdict.
+- **Check the `Total` line**, not the last line: a failing step can print a
+  passing test name under it. `Total ... FAIL` is the verdict.
 
-Every step runs in every environment; a suite that will not start is a bug to
-fix, not a partial run to report. Coverage floors are enforced
+Every step runs in every environment, and the gate needs nothing beyond this
+repo; a suite that will not start is a bug to fix, not a partial run to report. Coverage floors are enforced
 (`docs/testing.md`). Final summaries state which gates ran, and why anything
 was skipped.
 

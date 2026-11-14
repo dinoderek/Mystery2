@@ -15,8 +15,8 @@ cloud backend, container or separate API service.
   server. A key never reaches the browser.
 
 Goals: **one command** (`npm run dev` starts everything); **testability** (the
-full gate runs against a real server and database); **a queryable history** (every
-session is a row in a file you can export).
+full gate runs against a real server and database, with no external dependencies); **a queryable history** (every
+session is a row you can export).
 
 Non-goals: hosting, offline play, and multi-user access control. Profiles keep
 one person's cases apart from another's on a shared machine. They are not a
@@ -56,13 +56,12 @@ substitutable. How to work inside it is `docs/backend-conventions.md`.
 **Data.** `packages/game-engine/src/db/schema.ts` is the whole schema, always the
 current end state. Existing databases move forward through numbered steps keyed
 on `PRAGMA user_version`. Play uses `players`, `game_sessions` (one per case,
-owned by a player) and `game_events` (the append-only transcript). AI
+owned by a player) and `game_events` (the append-only transcript, unique on `(session_id, sequence)`). AI
 configuration is per installation: `ai_keys`, `ai_models` and `app_settings`
 (see `docs/ai-configuration.md`).
 
 The database is `<config root>/database/<name>/game.db`, one per worktree plus
-`prod`. Content is shared across worktrees. `docs/local-infrastructure.md`
-explains how to manage them. Tests never touch any of them.
+`prod` (`docs/local-infrastructure.md`). Tests never touch any of them.
 
 **Content.** Blueprints are JSON, searched in the config root's `blueprints/`
 and then the committed ones. A malformed blueprint is skipped and logged, never
@@ -109,7 +108,5 @@ Every step is in-process except the model call.
 
 ## What this architecture does not have
 
-No CORS, tokens, expiring image links, privileged database client, object
-storage, migration chain, mirrored modules, containers, port allocator beyond one
-port per worktree, or deploy pipeline. A single-player game on one machine needs
-none of it.
+No CORS, tokens, object storage, containers or deploy pipeline. A single-player
+game on one machine needs none of them.

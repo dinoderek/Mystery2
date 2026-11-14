@@ -12,7 +12,7 @@
   },
 
   "generator-api": {
-    "description": "One OpenRouter call writes a Blueprint V2 from a brief. Set model to an OpenRouter model id; the key is read from OPENROUTER_API_KEY, else .env.local in the config root.",
+    "description": "One OpenRouter call writes a Blueprint V2 from a brief. Set model to an OpenRouter model id, or pass --model. The command reads the key from OPENROUTER_API_KEY, else .env.local in the config root; AI_OPENROUTER_TIMEOUT_MS sets the request timeout (default 120000).",
     "cmd": "evaluation/config/wrappers/openrouter-generate.sh",
     "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
     "extract_path": "result",

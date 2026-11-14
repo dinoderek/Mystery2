@@ -15,21 +15,27 @@ judge per dimension, workspaces, how results combine, adding a dimension — is
 ./dev eval validate path/to/blueprint.json
 
 # Generate one from a brief, then judge it:
-cp evaluation/config/cli.example.json evaluation/config/cli.json
-npm run eval -- --spec evaluation/specs/001-lighthouse-lens
+./dev eval generate evaluation/specs/001-lighthouse-lens --judge
 ```
 
-`--brief` and `--spec` take a spec directory (which holds only
+`--brief` and `generate`'s briefs take a spec directory (which holds only
 `input.brief.json`) or a brief file. A blueprint stored beside a `brief.json`
 needs no `--brief`, so a stored subject is judged again by pointing the command
 at it. `judge blueprint` also takes `--judges a,b` (only those dimensions) and
 `--no-judges` (checks and analyzers only); a judge is skipped only when one of
 them says so.
 
-`npm run eval` is `node evaluation/pipeline/run.mjs`. It generates with the
-`generate` binding in `evaluation/config/cli.json` (gitignored, no fallback;
-`--generate-config` names another) and then judges as above; `--help` lists the
-rest.
+`generate <brief>...` makes a blueprint per brief. `--backend agent` (the
+default) runs the Claude agent in its workspace through `generator-agent`;
+`--backend api` makes one OpenRouter call through `generator-api`, which has no
+model until `--model <OpenRouter id>` or the config gives one, and reads
+`OPENROUTER_API_KEY` from the environment, else `.env.local` in the config root.
+Backends and `--model` repeat; one run holds a subject for each brief, backend
+and model, so two models read side by side. Each blueprint is checked against
+the schema and the mechanical checks, or with `--judge` judged as above; one
+that never passes the schema is kept and fails its check. `--install` copies a
+blueprint that passed its mechanical checks into the game's library
+(`blueprints/` in the config root); it never replaces a file there, and an install that fails makes the command exit 1.
 
 ## `./dev eval`
 
@@ -55,7 +61,7 @@ Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
     ├── result.json          the result
     ├── blueprint.json       the stored blueprint, and brief.json beside it
     ├── logs/                each call's prompts, per-attempt logs and <step>*.stream.jsonl
-    ├── generator/           generator agent workspace (`npm run eval`)
+    ├── generator/           generator agent workspace (`--backend agent`)
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
@@ -72,7 +78,7 @@ The agents' workspaces, each with its `claude.stderr.log`, survive for debugging
   judge's entry holds its model call (model, prompt hash, time, cost, every
   attempt) and its full answer under `answer`.
 - `summary` — counts by status and one `passed` flag.
-- `production` — for `npm run eval`, the generation attempts.
+- `production` — for `generate`, the generation attempts.
 - `timing` — see below.
 
 ## Live progress

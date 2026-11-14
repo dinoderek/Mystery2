@@ -52,13 +52,5 @@
     "sonarjs/cognitive-complexity": {
       "count": 2
     }
-  },
-  "scripts/generate-blueprint.mjs": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 3
-    }
   }
 }

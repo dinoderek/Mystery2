@@ -140,30 +140,20 @@ Create a brief JSON:
 }
 ```
 
-### Generate blueprints (calls OpenRouter)
+### Generate blueprints
 
 ```bash
-npm run generate:blueprint -- \
-  --brief-file path/to/story-brief.json \
-  --model openai/gpt-4.1-mini
+./dev eval generate path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
+./dev eval generate path/to/story-brief.json --backend agent --judge
 ```
 
-Each blueprint is written with a sibling `.verification.json`: the evaluation
-pipeline's mechanical checks, run offline. For a full evaluation run
-`npm run eval`. Set `OPENROUTER_BLUEPRINT_MODEL` in `.env.local` to stop
-repeating `--model`.
+`api` makes one OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or in
+`.env.local` in the config root; `agent` runs the Claude agent on your Claude
+login. Each blueprint gets the mechanical checks; `--judge` adds the judges.
+`--install` copies each blueprint that passed into `blueprints/` in the config root. Backends and `--model` repeat for side-by-side runs; `model` on
+`generator-api` in `evaluation/config.json` is the default.
 
-### Export chat packets (no API key needed)
-
-```bash
-npm run generate:blueprint -- \
-  --brief-file path/to/story-brief.json \
-  --chat-packet
-```
-
-Writes the full generation prompt as Markdown to paste into any chat UI.
-
-Every flag, default and file location: `node scripts/generate-blueprint.mjs --help`.
+Every flag, default and file location: `./dev eval generate --help`.
 
 ## Evaluation Pipelines
 
@@ -172,7 +162,7 @@ scripts or `./dev eval` and documented next to its code. Pass-through flags to a
 
 | Pipeline | What it evaluates | Commands |
 |----------|-------------------|----------|
-| Blueprint | Generated mystery blueprints | `npm run eval` |
+| Blueprint | Generated mystery blueprints | `./dev eval generate`, `./dev eval judge blueprint` |
 | Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `npm run eval:playtest` |
@@ -185,7 +175,7 @@ shared design, then the per-pipeline runbooks:
 [`evaluation/playtest/README.md`](evaluation/playtest/README.md) (playtest).
 
 ```bash
-npm run eval -- --help                       # blueprint eval
+./dev eval generate <brief> --judge             # generate and judge a blueprint
 ./dev eval judge game <session-id|trace.json>   # judge a played game
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again

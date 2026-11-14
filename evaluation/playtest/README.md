@@ -94,8 +94,8 @@ copy of the database taken then:
 
 That gives the mechanical checks and the four `gm_*` judges, one Opus call
 each. Games are graded one at a time, so at most four judge calls run at once.
-Every narration is then scored with the runtime harness's `flesch` judge
-(`evaluation/runtime/lib/judges/flesch.mjs`, no model call) against the
+Every narration is then scored with the runtime harness's `flesch` check
+(`evaluation/runtime/lib/flesch.ts`, no model call) against the
 blueprint's `target_age`.
 
 The verdicts go into the game's `summary.json` and the foot of its transcript;

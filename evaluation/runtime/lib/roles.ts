@@ -13,27 +13,64 @@ import {
   resolveAccusationRole,
   resolveSearchRole,
 } from "../../../packages/game-engine/src/role-request.ts";
+import type { BlueprintLike, Given, HistoryEntry, Speaker, TurnAction } from "./case.ts";
 
-export function characterFirstName(blueprint, characterId) {
-  return blueprint.world.characters.find((c) => c.id === characterId)?.first_name ?? characterId;
-}
-export function locationName(blueprint, locationId) {
-  return blueprint.world.locations.find((l) => l.id === locationId)?.name ?? locationId;
+/** A history row with every field a context builder reads filled in. */
+export interface HistoryRow {
+  sequence: number;
+  event_type: string;
+  actor: string;
+  narration: string;
+  payload: Record<string, unknown>;
 }
 
-function characterFullName(blueprint, characterId) {
+/** What an action's endpoint call needs besides the case. */
+interface EndpointExtra {
+  blueprint: BlueprintLike;
+  aiProfile: string;
+}
+
+type LineBuilder = (given: Given, action: TurnAction, blueprint: BlueprintLike) => string;
+
+export interface ActionSpec {
+  requiredMode: string | null;
+  createsSession?: boolean;
+  line?: LineBuilder;
+  events?: string[];
+  endpoint: {
+    name: string;
+    method: string;
+    body: (given: Given, action: TurnAction, gameId?: string | null, extra?: EndpointExtra) => Record<string, unknown>;
+  };
+  roleInput: (
+    given: Given,
+    action: TurnAction,
+    blueprint: BlueprintLike,
+    history?: HistoryRow[],
+  ) => Record<string, unknown> & { role: string };
+  speaker: (given: Given, action: TurnAction, blueprint: BlueprintLike) => Speaker;
+}
+
+export function characterFirstName(blueprint: BlueprintLike, characterId: string | undefined): string {
+  return blueprint.world.characters.find((c) => c.id === characterId)?.first_name ?? String(characterId);
+}
+export function locationName(blueprint: BlueprintLike, locationId: string | undefined): string {
+  return blueprint.world.locations.find((l) => l.id === locationId)?.name ?? String(locationId);
+}
+
+function characterFullName(blueprint: BlueprintLike, characterId: string | undefined): string {
   const character = blueprint.world.characters.find((c) => c.id === characterId);
   if (!character) throw new Error(`Character "${characterId}" is not in the blueprint`);
-  return `${character.first_name} ${character.last_name}`.trim();
+  return `${character.first_name} ${character.last_name ?? ""}`.trim();
 }
 
 // A structured action as the line a player would type for it. The engine's
 // grammar reads the line back, so each builder names its target the way that
 // grammar accepts: places by id, characters by their name in the blueprint.
 // A line the grammar reads as another action (a question of "bye" ends the
-// conversation) is caught by the endpoint backend, which checks the event the
+// conversation) is caught by the server narrator, which checks the event the
 // turn saved against the action's `events`.
-function accusationLine(given, action) {
+function accusationLine(given: Given, action: TurnAction): string {
   const reasoning = action.player_reasoning?.trim();
   if (given.mode === "accuse") {
     // Every line typed during the accusation is reasoning; none reopens it.
@@ -43,28 +80,28 @@ function accusationLine(given, action) {
   return reasoning ? `accuse ${reasoning}` : "accuse";
 }
 
-const talkLine = (g, a, bp) => `talk to ${characterFullName(bp, a.character_id)}`;
-const askLine = (g, a) => a.player_input;
-const endTalkLine = () => "bye";
-const moveLine = (g, a) => `move to ${a.destination}`;
-const searchLine = (g, a) => (a.search_query ? `search ${a.search_query}` : "search");
+const talkLine: LineBuilder = (g, a, bp) => `talk to ${characterFullName(bp, a.character_id)}`;
+const askLine: LineBuilder = (g, a) => a.player_input ?? "";
+const endTalkLine: LineBuilder = () => "bye";
+const moveLine: LineBuilder = (g, a) => `move to ${a.destination}`;
+const searchLine: LineBuilder = (g, a) => (a.search_query ? `search ${a.search_query}` : "search");
 
-/** The POST /api/game-turn call for a line, in the endpoint backend's shape. */
-const turnEndpoint = (line) => ({
+/** The POST /api/game-turn call for a line, in the server narrator's shape. */
+const turnEndpoint = (line: LineBuilder): ActionSpec["endpoint"] => ({
   name: "game-turn",
   method: "POST",
-  body: (g, a, gid, extra) => ({ game_id: gid, input: line(g, a, extra?.blueprint) }),
+  body: (g, a, gid, extra) => ({ game_id: gid, input: line(g, a, extra?.blueprint as BlueprintLike) }),
 });
 
-export function narratorSpeaker() {
+export function narratorSpeaker(): Speaker {
   return { kind: "narrator", key: "narrator", label: "Narrator" };
 }
-export function characterSpeaker(firstName) {
+export function characterSpeaker(firstName: string): Speaker {
   return { kind: "character", key: `character:${String(firstName).toLowerCase()}`, label: firstName };
 }
 
 /** SessionSnapshot the context builders expect, derived from `given`. */
-export function snapshotFromGiven(given) {
+export function snapshotFromGiven(given: Given) {
   return {
     mode: given.mode,
     current_location_id: given.location_id,
@@ -77,7 +114,7 @@ export function snapshotFromGiven(given) {
 //   requiredMode  — session mode the action is valid from (also what we seed);
 //                   null for an action that has no prior state
 //   createsSession — true when the endpoint CREATES the session rather than
-//                   acting on a seeded one (`start` only). The endpoint backend
+//                   acting on a seeded one (`start` only). The server narrator
 //                   skips seeding and the body identifies the blueprint instead
 //                   of a game id.
 //   line          — the typed line that plays the action (every action but
@@ -95,7 +132,7 @@ export function snapshotFromGiven(given) {
 // packages/game-engine/src/role-request.ts does the assembly for both. The
 // per-action `cli` blocks that used to live here duplicated that assembly and
 // drifted out of sync with the handlers (see prompt-build.mjs).
-export const ACTIONS = {
+export const ACTIONS: Record<string, ActionSpec> = {
   // The opening narration. Unlike every other action there is no prior state to
   // seed: game-start creates the session, so `given` is empty and the endpoint
   // body names the blueprint rather than a game.
@@ -106,8 +143,8 @@ export const ACTIONS = {
       name: "game-start",
       method: "POST",
       body: (g, a, gid, extra) => ({
-        blueprint_id: extra.blueprint.id,
-        ai_profile: extra.aiProfile,
+        blueprint_id: extra?.blueprint.id,
+        ai_profile: extra?.aiProfile,
       }),
     },
     roleInput: (g, a, bp) => ({
@@ -124,7 +161,7 @@ export const ACTIONS = {
     line: talkLine,
     endpoint: turnEndpoint(talkLine),
     events: ["talk"],
-    roleInput: (g, a, bp, history) => ({
+    roleInput: (g, a, bp, history = []) => ({
       role: "talk_start",
       game_id: "case",
       blueprint: bp,
@@ -141,7 +178,7 @@ export const ACTIONS = {
     line: askLine,
     endpoint: turnEndpoint(askLine),
     events: ["ask"],
-    roleInput: (g, a, bp, history) => ({
+    roleInput: (g, a, bp, history = []) => ({
       role: "talk_conversation",
       game_id: "case",
       blueprint: bp,
@@ -159,7 +196,7 @@ export const ACTIONS = {
     line: endTalkLine,
     endpoint: turnEndpoint(endTalkLine),
     events: ["end_talk"],
-    roleInput: (g, a, bp, history) => ({
+    roleInput: (g, a, bp, history = []) => ({
       role: "talk_end",
       game_id: "case",
       blueprint: bp,
@@ -176,7 +213,7 @@ export const ACTIONS = {
     line: moveLine,
     endpoint: turnEndpoint(moveLine),
     events: ["move"],
-    roleInput: (g, a, bp, history) => ({
+    roleInput: (g, a, bp, history = []) => ({
       role: "ambience",
       game_id: "case",
       blueprint: bp,
@@ -191,7 +228,7 @@ export const ACTIONS = {
     line: searchLine,
     endpoint: turnEndpoint(searchLine),
     events: ["search"],
-    roleInput: (g, a, bp, history) => ({
+    roleInput: (g, a, bp, history = []) => ({
       role: resolveSearchRole(a.search_query),
       game_id: "case",
       blueprint: bp,
@@ -211,7 +248,7 @@ export const ACTIONS = {
     line: accusationLine,
     endpoint: turnEndpoint(accusationLine),
     events: ["accuse_start", "accuse_round", "accuse_resolved"],
-    roleInput: (g, a, bp, history) => {
+    roleInput: (g, a, bp, history = []) => {
       const role = resolveAccusationRole(a.player_reasoning);
       const base = {
         role,
@@ -238,7 +275,7 @@ export const ACTIONS = {
  * handler's rule (unrevealed AND unlocked). Locking needs the session-global
  * discovered set, which a case supplies via `given.discovered_clues`.
  */
-function nextUnrevealedClue(blueprint, given) {
+function nextUnrevealedClue(blueprint: BlueprintLike, given: Given) {
   const location = (blueprint.world.locations ?? []).find((l) => l.id === given.location_id);
   if (!location) return null;
   const revealed = new Set(given.revealed_clue_ids ?? []);
@@ -254,23 +291,26 @@ function nextUnrevealedClue(blueprint, given) {
 
 /**
  * The AI role an action resolves to, via the SAME roleInput mapping the
- * backends use — so a judge labels a turn with the role the model actually ran
+ * narrator replay uses — so a judge labels a turn with the role the model actually ran
  * as, including the resolutions that depend on the input (a search with a query
  * is `search_targeted`, an accusation with reasoning is `accusation_judge`).
- * Returns null for an action with no local role mapping.
  */
-export function resolveRoleName(actionType, given, action, blueprint, history) {
-  const entry = getAction(actionType);
-  if (!entry.roleInput) return null;
-  return entry.roleInput(given, action, blueprint, normalizeHistory(history)).role ?? null;
+export function resolveRoleName(
+  actionType: string,
+  given: Given,
+  action: TurnAction,
+  blueprint: BlueprintLike,
+  history: HistoryEntry[] | undefined,
+): string {
+  return getAction(actionType).roleInput(given, action, blueprint, normalizeHistory(history)).role;
 }
 
 /** Whether a role name belongs to the endgame, where the solution is discussed. */
-export function isAccusationRole(roleName) {
+export function isAccusationRole(roleName: unknown): boolean {
   return typeof roleName === "string" && roleName.startsWith("accusation");
 }
 
-export function getAction(type) {
+export function getAction(type: string): ActionSpec {
   const action = ACTIONS[type];
   if (!action) {
     throw new Error(`Unknown action type "${type}". Known: ${Object.keys(ACTIONS).join(", ")}`);
@@ -282,7 +322,7 @@ export function getAction(type) {
  * Normalize a case's `given.history` into ConversationFragment / game_events
  * rows: assign sequential `sequence` when omitted and default actor to "system".
  */
-export function normalizeHistory(history) {
+export function normalizeHistory(history: HistoryEntry[] | null | undefined): HistoryRow[] {
   return (history ?? []).map((entry, i) => ({
     sequence: entry.sequence ?? i + 1,
     event_type: entry.event_type,

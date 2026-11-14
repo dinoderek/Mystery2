@@ -1,23 +1,24 @@
 // One case per narrator interaction — the coverage baseline.
 //
-// Before this file, only `talk` and `ask` were ever evaluated: six of the nine
-// interactions had never been judged for reading level at all, including
+// Every narrator interaction is judged for reading level here, including
 // `accusation_verdict`, which carries the largest word budget in the system.
 //
 // Every case is deterministic in the usual way: a fully-specified `given` plus
 // exactly ONE action, so the model input is identical every run and across
 // models. `start` is the one exception to the shape — it creates its own
-// session, so its `given` is empty (see `createsSession` in lib/roles.mjs).
+// session, so its `given` is empty (see `createsSession` in lib/roles.ts).
 //
 // The blueprint is the seeded mock (target_age 10), so `flesch` and
-// `age_appropriate` both grade against age 10.
+// `age_appropriate_turn` both grade against age 10.
+
+import type { Given, HistoryEntry, TurnAction, TurnCase } from "../lib/case.ts";
 
 const BLUEPRINT = { path: "blueprints/mock-blueprint.json" };
-const JUDGES = ["flesch", "age_appropriate"];
+const JUDGES = ["flesch", "age_appropriate_turn"];
 const JUDGE_CONFIG = { flesch: { tolerance: 2 } };
 
 /** Prior events shared by the mid-session cases, so history is never empty. */
-const OPENING_HISTORY = [
+const OPENING_HISTORY: HistoryEntry[] = [
   {
     event_type: "start",
     actor: "system",
@@ -26,7 +27,7 @@ const OPENING_HISTORY = [
   },
 ];
 
-const base = (id, given, action) => ({
+const base = (id: string, given: Given, action: TurnAction): TurnCase => ({
   id,
   blueprint: BLUEPRINT,
   given,

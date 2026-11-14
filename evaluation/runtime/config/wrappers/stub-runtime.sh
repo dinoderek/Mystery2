@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic stub "model" for offline wiring tests of the CLI backend.
+# Deterministic stub "model" for offline wiring tests of the CLI narrators.
 #
 #   $1 — user message file. Role-output roles write JSON.stringify({prompt,
 #        context}); narration roles (intro, ambience) write the raw prompt text,
@@ -23,9 +23,9 @@
 # player as "you", and a fixture that got that backwards would fail gm_roleplay
 # for a reason that says nothing about the runtime. What the stub cannot do is
 # be in-character for an unknown character — a cooperative line is wrong for a
-# character authored as hostile — so a gm_roleplay finding on a cli:stub run may
+# character authored as hostile — so a gm_roleplay finding on a narrator-stub run may
 # be the fixture's fault. Judge-side wiring checks belong on the judge-stub
-# variant instead.
+# binding instead.
 set -euo pipefail
 
 USER_FILE="${1:?missing user message file}"

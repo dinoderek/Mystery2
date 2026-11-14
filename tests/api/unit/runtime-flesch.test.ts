@@ -5,7 +5,8 @@ import {
   expectedGradeForAge,
   fleschKincaidGrade,
   judge,
-} from "../../../evaluation/runtime/lib/judges/flesch.mjs";
+} from "../../../evaluation/runtime/lib/flesch.ts";
+import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
 
 describe("countSyllables", () => {
   it("counts short words as one syllable", () => {
@@ -62,27 +63,28 @@ describe("fleschKincaidGrade", () => {
 });
 
 describe("judge", () => {
-  function interaction(text: string, targetAge = 10) {
+  function turn(text: string, targetAge = 10): StoredTurn {
     return {
       run_id: "test",
       case_id: "test",
-      backend: "endpoint",
+      narrator: "server",
       model: "mock",
       target_age: targetAge,
       action: { type: "ask" },
       response: {
         action: "ask",
         narration_text: text,
-        narration_parts: [{ text, speaker: { kind: "character" } }],
+        narration_parts: [{ text, speaker: { kind: "character", key: "character:alice", label: "Alice" } }],
       },
-    };
+    } as unknown as StoredTurn;
   }
 
   it("passes when narration is at or below the target reading level", () => {
-    const result = judge(interaction("The cat sat on the mat. The dog ran fast and had fun."));
+    const result = judge(turn("The cat sat on the mat. The dog ran fast and had fun."));
     expect(result.status).toBe("pass");
-    expect(result.details.target_age).toBe(10);
-    expect(result.parts).toHaveLength(1);
+    expect(result.tier).toBe("mechanical");
+    expect(result.details).toMatchObject({ target_age: 10 });
+    expect((result.details as { parts: unknown[] }).parts).toHaveLength(1);
   });
 
   it("fails when narration reads above the target age + tolerance", () => {
@@ -90,14 +92,16 @@ describe("judge", () => {
       "The investigation subsequently revealed numerous contradictory testimonies that " +
       "fundamentally undermined the prosecution's elaborate reconstruction of the circumstances " +
       "surrounding the unfortunate disappearance.";
-    const result = judge(interaction(hard, 8));
+    const result = judge(turn(hard, 8));
     expect(result.status).toBe("fail");
-    expect(result.score as number).toBeGreaterThan(result.details.threshold as number);
+    const { score, threshold } = result.details as { score: number; threshold: number };
+    expect(score).toBeGreaterThan(threshold);
   });
 
   it("errors when the response has no narration text", () => {
     const result = judge({ target_age: 10, response: { narration_text: "" } } as never);
     expect(result.status).toBe("error");
+    expect(result.reason).toContain("no narration");
   });
 
   it("errors when no target_age is available", () => {
@@ -107,9 +111,9 @@ describe("judge", () => {
 
   it("respects an explicit tolerance override", () => {
     const text = "The quiet detective examined the broken window carefully before speaking softly.";
-    const strict = judge(interaction(text, 6));
+    const strict = judge(turn(text, 6));
     // With a generous tolerance the same text should pass.
-    const generous = judge(interaction(text, 6), { config: { tolerance: 20 } });
+    const generous = judge(turn(text, 6), { tolerance: 20 });
     expect(generous.status).toBe("pass");
     expect(["pass", "fail"]).toContain(strict.status);
   });

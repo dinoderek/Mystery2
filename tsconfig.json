@@ -19,6 +19,7 @@
     "evaluation/core/**/*",
     "evaluation/blueprint/**/*",
     "evaluation/generate/**/*",
+    "evaluation/runtime/**/*",
     "evaluation/trace/**/*",
     "evaluation/commands.ts"
   ]

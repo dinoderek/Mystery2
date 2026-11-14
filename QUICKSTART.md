@@ -95,12 +95,12 @@ process, and the page shows a banner saying so.
 
 ### Switching model
 
-Change it on the settings page; no restart. Because a session's profile is
-resolved on every request, the switch takes effect on the next turn of a session
-already in progress.
+Change it on the settings page; no restart. A session resolves its AI on every
+request, so the switch takes effect on the next turn of a game in progress. A
+new or edited `ai.json` entry needs a restart.
 
-Existing sessions keep the profile *label* they were started with, which is
-what the evaluation pipeline reads.
+Existing sessions keep the AI name they were started with, which is what the
+evaluation pipeline reads.
 See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 
 ## Profiles

@@ -124,17 +124,41 @@ async function waitForReady(url, hasExited) {
 }
 
 /**
+ * The server's environment. The run override is cleared before the caller's
+ * own variables apply, so an `AI_PROFILE` exported in a shell never reaches a
+ * suite; a caller that wants one passes it in `env`.
+ */
+export function testServerEnv(processEnv, env, { port, host, configRoot, repoRoot }) {
+  return {
+    ...processEnv,
+    AI_PROFILE: "",
+    ...env,
+    PORT: String(port),
+    HOST: host,
+    MYSTERY_CONFIG_ROOT: configRoot,
+    MYSTERY_REPO_ROOT: repoRoot,
+    // Pinned rather than left to the worktree-derived default, so the
+    // testkit can find the file without repeating the derivation.
+    MYSTERY_DATABASE: TEST_DATABASE,
+  };
+}
+
+/**
  * Builds and starts the server. Returns its URL, the config root its database
  * lives in, that database's file, and a `stop()` that shuts it down and removes
  * the root.
  *
  * `build: false` starts the build that is already there, for a caller that
- * runs beside a server of its own and must not rebuild under it.
+ * runs beside a server of its own and must not rebuild under it. `seed` is
+ * given the config root before the server starts, for a caller that needs a
+ * file there the server reads at start, such as `ai.json`; without one the root
+ * has none, and mock is the only AI.
  */
-export async function startTestServer({ repoRoot, port, env = {}, build = true }) {
+export async function startTestServer({ repoRoot, port, env = {}, build = true, seed }) {
   const configRoot = createTestConfigRoot();
   const host = "127.0.0.1";
   try {
+    seed?.(configRoot);
     if (build) buildWebApp(repoRoot, configRoot);
     await assertPortIsFree(host, port);
   } catch (error) {
@@ -147,17 +171,7 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true }
   const child = spawn("node", ["build/index.js"], {
     cwd: path.join(repoRoot, "web"),
     stdio: ["ignore", "inherit", "inherit"],
-    env: {
-      ...process.env,
-      ...env,
-      PORT: String(port),
-      HOST: host,
-      MYSTERY_CONFIG_ROOT: configRoot,
-      MYSTERY_REPO_ROOT: repoRoot,
-      // Pinned rather than left to the worktree-derived default, so the
-      // testkit can find the file without repeating the derivation.
-      MYSTERY_DATABASE: TEST_DATABASE,
-    },
+    env: testServerEnv(process.env, env, { port, host, configRoot, repoRoot }),
   });
 
   let exited = false;

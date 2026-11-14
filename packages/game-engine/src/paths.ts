@@ -15,6 +15,8 @@
 
 import path from "node:path";
 import {
+  getAIConfigPath,
+  getBaseEnvPath,
   getBlueprintImagesDir,
   getBlueprintsDir,
 } from "../../../scripts/local-config.mjs";
@@ -71,4 +73,20 @@ export function resolveBlueprintImagesDir(
   env: Env = process.env,
 ): string {
   return getBlueprintImagesDir(repoRoot, env);
+}
+
+/** `ai.json` in the config root: the AIs this machine can narrate with. */
+export function resolveAIConfigPath(
+  repoRoot: string = process.cwd(),
+  env: Env = process.env,
+): string {
+  return getAIConfigPath(repoRoot, env);
+}
+
+/** `.env.local` in the config root, where an OpenRouter key may live. */
+export function resolveBaseEnvPath(
+  repoRoot: string = process.cwd(),
+  env: Env = process.env,
+): string {
+  return getBaseEnvPath(repoRoot, env);
 }

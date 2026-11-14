@@ -25,8 +25,7 @@ import { DevError, createWorktree, releaseWorktree } from "./lib/dev-worktree.mj
 export const USAGE = `Usage: ./dev <verb> [args]
 
   doctor                           check this host; install what is missing
-  run [free|paid|claude] [--db <name>]
-                                   start the game (what \`npm run dev\` does)
+  run [--ai <name>] [--db <name>]  start the game (what \`npm run dev\` does), narrating with an AI from ai.json
   test [step ...]                  run the gate (what \`npm test\` does), or only the named steps
   eval [command] [args]            run an evaluation command; with none, list them
   worktree create <branch>         add a worktree beside the clone, with dependencies installed

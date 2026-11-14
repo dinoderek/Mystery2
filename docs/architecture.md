@@ -68,10 +68,10 @@ The database is `<config root>/database/<name>/game.db`, one per worktree plus
 and then the committed ones. A malformed blueprint is skipped and logged, never
 failing the whole catalog. Blueprints and images are cached on mtime and size, so edits take effect without a restart.
 
-**AI.** Four profiles: `mock` (built in), `free` and `paid` (`.env.ai.<mode>.local`
-files), and `default`, the only one the browser plays as. `default` resolves per
-request from the environment, then the settings page, then mock.
-`docs/ai-configuration.md` owns the detail.
+**AI.** `mock` is built in; `ai.json` names the rest.
+`default`, the only one the browser plays as, resolves per request from the run
+override, then the settings page, then mock. `docs/ai-configuration.md` owns the
+detail.
 
 ## Identity and access
 

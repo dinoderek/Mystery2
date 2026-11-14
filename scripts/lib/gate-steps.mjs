@@ -68,6 +68,7 @@ export const GATE_STEPS = [
   { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
   { name: "word-budgets", phase: 1, args: ["run", "check:word-budgets"] },
   { name: "gate-coverage", phase: 1, args: ["run", "check:gate-coverage"] },
+  { name: "tracked-files", phase: 1, args: ["run", "check:tracked-files"] },
   // Reads the reports the two unit steps write, so it starts once they finish.
   {
     name: "coverage-floors",

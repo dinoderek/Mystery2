@@ -21,6 +21,10 @@ declare module "../../../scripts/local-config.mjs" {
     repoRoot?: string,
     env?: Record<string, string | undefined>,
   ): string;
+  export function getAIConfigPath(
+    repoRoot?: string,
+    env?: Record<string, string | undefined>,
+  ): string;
   export function getAIEnvPath(
     repoRoot: string,
     mode: string,

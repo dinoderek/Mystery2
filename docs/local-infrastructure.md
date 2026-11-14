@@ -14,21 +14,13 @@ installs what is missing (stale dependencies, Playwright's chromium).
 npm run dev
 ```
 
-Mock narration, no network, no API key. `npm run dev:ai:free` and
-`npm run dev:ai:paid` start the same server with a real model, reading
-`.env.ai.free.local` / `.env.ai.paid.local` from the config root.
-`npm run dev:ai:claude` narrates with Sonnet through the local `claude` CLI and
-its own login instead, with no env file (`CLAUDE_MODEL=haiku` picks another model);
-see `docs/ai-configuration.md`.
-
-`npm run dev` plays whatever the settings page last chose (mock if nothing);
-the `dev:ai:*` commands override that for the life of the process. Nothing is
-seeded. See `docs/ai-configuration.md`.
+It narrates with whatever the settings page last chose, or mock, which needs
+no network or key, if nothing. `./dev run --ai <name>` (or `npm run dev -- --ai <name>`)
+narrates with an AI from `ai.json` for the life of the process; `./dev doctor`
+lists those AIs and what each lacks. See `docs/ai-configuration.md`.
 
 `npm run prod` is the same server pointed at the persistent database rather
-than this checkout's, with `prod:ai:free`, `prod:ai:paid` and `prod:ai:claude`
-alongside. Model
-and database are orthogonal: `--db <name>` sets the database for any of them.
+than this checkout's; `--db <name>` picks any database, with or without `--ai`.
 
 ## Where your data lives
 
@@ -37,7 +29,7 @@ and database are orthogonal: `--db <name>` sets the database for any of them.
 | Databases | `$MYSTERY_CONFIG_ROOT/database/<name>/game.db` (gitignored) |
 | Blueprints | `$MYSTERY_CONFIG_ROOT/blueprints/`, then the repo's `blueprints/` |
 | Images | `$MYSTERY_CONFIG_ROOT/blueprint-images/` |
-| Env | `.env.local`, `.env.ai.<mode>.local`, `.env.images.local` in the config root |
+| AIs and keys | `ai.json`, `.env.local`, `.env.images.local` in the config root |
 
 `MYSTERY_CONFIG_ROOT` is an absolute path that moves all of it outside the
 repo, so several clones and worktrees share one set of blueprints and images

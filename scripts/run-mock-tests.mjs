@@ -19,8 +19,8 @@ if (suite !== "integration" && suite !== "e2e") {
 /**
  * A mock-mode suite must not be able to reach OpenRouter.
  *
- * Mock is chosen by absence — a temporary config root with no `.env.ai.*` in it
- * — which is a property of the *configuration*, and configuration is now
+ * Mock is chosen by absence — a temporary config root with no `ai.json` in it,
+ * and no run override — which is a property of the *configuration*, and configuration is now
  * something a test can change: the settings row is per-installation, so a test
  * that switches the server to live narration switches it for every other test
  * sharing that server. When that happened, the calls went to the real
@@ -37,11 +37,12 @@ if (suite !== "integration" && suite !== "e2e") {
  * Live-AI runs use `run-live-ai.mjs`, which passes its own env and is not
  * affected.
  *
- * `CLAUDE_CLI_PATH` does the same for the claude-cli provider: a stray
- * `AI_PROVIDER=claude-cli` in the shell fails at once instead of playing every
- * test through a real model.
+ * `CLAUDE_CLI_PATH` does the same for the claude-cli provider, should a claude
+ * entry ever reach a suite's server. `AI_PROFILE` is cleared, here and in
+ * `startTestServer`, so a run override exported in the shell never does.
  */
 const MOCK_ONLY_ENV = {
+  AI_PROFILE: "",
   OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
   CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-in-mock-tests",
   // Nor append the suite's calls to a developer's exported call log.
@@ -72,6 +73,7 @@ try {
     ["exec", "--", "vitest", "run", ...vitestTargets],
     {
       ...process.env,
+      ...MOCK_ONLY_ENV,
       MYSTERY_TEST_API_URL: server.url,
       MYSTERY_TEST_CONFIG_ROOT: server.configRoot,
     },

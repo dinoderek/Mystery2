@@ -5,9 +5,23 @@
 // and the engine's repositories scope every query to it. `/api/player` is what
 // sets and clears the cookie.
 
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, ServerInit } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import { getEngine, playerCookie } from '$lib/server/engine';
+
+// Opening the engine at start reads `ai.json` and the run override, so a
+// malformed file, or `--ai` naming an AI that cannot narrate, stops the server
+// with the AI and field named instead of failing the first request. Not while
+// building, for the reason below.
+export const init: ServerInit = () => {
+	if (building) return;
+	try {
+		getEngine();
+	} catch (error) {
+		console.error(`The game server cannot start: ${(error as Error).message}`);
+		throw error;
+	}
+};
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// `npm -w web run build` prerenders the SPA shell through this hook. Opening

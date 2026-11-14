@@ -21,9 +21,8 @@ filenames:
 
 ```text
 $MYSTERY_CONFIG_ROOT/
+  ai.json
   .env.local
-  .env.ai.free.local
-  .env.ai.paid.local
   .env.images.local
   database/
     prod/game.db
@@ -86,29 +85,27 @@ Each entry becomes a labelled choice on the settings page — `personal`,
 `sonnet`, `llama_free`. They are re-read on every start, so that file stays the
 place to rotate a key, and a label removed from it disappears from the page.
 
-### The free/paid profiles
+### Naming AIs for a run
 
-Separate from the above, and still file-backed, because the live-AI test suites
-and the evaluation harness name them explicitly.
+Copy `ai.example.json` to `ai.json` in the config root (gitignored) and list
+your AIs by name:
 
-`.env.ai.free.local` / `.env.ai.paid.local`:
-
-```bash
-AI_PROVIDER="openrouter"
-AI_MODEL="<model-id>"
-OPENROUTER_API_KEY="<key>"
+```json
+{ "ais": {
+    "free":   { "backend": "openrouter", "model": "<model-id>", "key": "<key>" },
+    "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 ```
 
+Leave out `"key"` to use `OPENROUTER_API_KEY` from `.env.local`. `./dev doctor`
+checks the file. Then:
+
 ```bash
-npm run dev:ai:free   # or dev:ai:paid
-npm run dev:ai:claude # Sonnet through the local claude CLI, no key or env file
+./dev run --ai free              # or npm run dev -- --ai free
+npm run prod -- --ai claude      # the claude CLI and its login, no key
 ```
 
-These start the server with an override that outranks whatever the settings
-page has chosen, for the life of the process. The settings page shows a banner
-saying so while it is in effect. The `free` and `paid` keys and models also
-appear on the page under those labels, so they can be picked without the
-override; the claude CLI cannot be picked there.
+The AI named outranks whatever the settings page has chosen, for the life of the
+process, and the page shows a banner saying so.
 
 ### Switching model
 

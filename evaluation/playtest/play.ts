@@ -183,23 +183,31 @@ function freePort(): Promise<number> {
   });
 }
 
+/** The AI the claude narrator's server names in its `ai.json` and runs with. */
+const NARRATOR_AI = "narrator";
+
 /** The environment the server narrates under. */
 function narratorEnv(options: PlayOptions): Record<string, string> {
   if (options.narrator === "mock") {
     return {
-      AI_PROVIDER: "mock",
-      AI_MODEL: "mock/runtime-default",
+      AI_PROFILE: "mock",
       OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
       CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-for-mock-narrator",
     };
   }
   return {
-    AI_PROVIDER: "claude-cli",
-    AI_MODEL: options.narratorModel,
+    AI_PROFILE: NARRATOR_AI,
     // Three attempts at 90s stay under the 300s a fetch waits for headers, so
     // a slow narrator turn fails as a turn instead of dropping the request.
     AI_CLAUDE_CLI_TIMEOUT_MS: "90000",
   };
+}
+
+/** Writes the claude narrator's entry into the server's root; mock needs none. */
+function narratorSeed(options: PlayOptions): ((configRoot: string) => void) | undefined {
+  if (options.narrator === "mock") return undefined;
+  const config = { ais: { [NARRATOR_AI]: { backend: "claude-cli", model: options.narratorModel } } };
+  return (configRoot) => fs.writeFileSync(path.join(configRoot, "ai.json"), `${JSON.stringify(config, null, 2)}\n`);
 }
 
 /** What every game of one run shares. */
@@ -479,6 +487,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     repoRoot: root,
     port: options.port ?? (await freePort()),
     env: { ...narratorEnv(options), AI_CALL_LOG: callLogFile },
+    seed: narratorSeed(options),
   });
 
   const play: Play = {

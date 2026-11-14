@@ -71,6 +71,19 @@ export function getBaseEnvPath(
   return resolveLocalConfigPath(".env.local", repoRoot, env);
 }
 
+/**
+ * `ai.json`, the AIs this machine can narrate with. Never committed: it may
+ * hold keys in clear.
+ *
+ * @param {string} [repoRoot] @param {Env} [env] @returns {string}
+ */
+export function getAIConfigPath(
+  repoRoot = process.cwd(),
+  env = process.env,
+) {
+  return resolveLocalConfigPath("ai.json", repoRoot, env);
+}
+
 /** @param {string} repoRoot @param {string} mode @param {Env} [env] @returns {string} */
 export function getAIEnvPath(
   repoRoot = process.cwd(),

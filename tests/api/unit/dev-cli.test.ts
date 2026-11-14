@@ -13,6 +13,13 @@ import {
   main,
 } from "../../../scripts/dev-cli.mjs";
 import {
+  RUN_USAGE,
+  RunError,
+  checkRunAI,
+  describeAIs,
+  parseRunArgs,
+} from "../../../scripts/lib/dev-ai.mjs";
+import {
   checkNodeVersion,
   dependenciesStale,
   isPortFree,
@@ -180,9 +187,10 @@ describe("./dev test and ./dev run", () => {
     ]);
   });
 
-  it("hands the mode and database to the existing game starter", () => {
-    expect(buildRunCommand("/r", ["free", "--db", "scratch"]).args).toEqual([
+  it("hands the AI and database to the existing game starter", () => {
+    expect(buildRunCommand("/r", ["--ai", "free", "--db", "scratch"]).args).toEqual([
       "/r/scripts/dev.mjs",
+      "--ai",
       "free",
       "--db",
       "scratch",
@@ -470,5 +478,134 @@ describe("./dev doctor checks", () => {
 
     fs.utimesSync(lock, now + 100, now + 100);
     expect(dependenciesStale(sandbox)).toBe(true);
+  });
+});
+
+/** A config root of its own, with `ai.json` holding `ais`; never the operator's. */
+function aiRoot(ais: Record<string, unknown> | null, envLocal?: string): Record<string, string> {
+  const root = path.join(sandbox, "ai-root");
+  fs.rmSync(root, { recursive: true, force: true });
+  fs.mkdirSync(root, { recursive: true });
+  if (ais) fs.writeFileSync(path.join(root, "ai.json"), JSON.stringify({ ais }));
+  if (envLocal) fs.writeFileSync(path.join(root, ".env.local"), envLocal);
+  return { MYSTERY_CONFIG_ROOT: root };
+}
+
+const claudeRuns = (ok: boolean) => () => ({ ok, cli: "claude" });
+
+const AIS = {
+  free: { backend: "openrouter", model: "vendor/free" },
+  own: { backend: "openrouter", model: "vendor/own", key: "sk-secret-in-file" },
+  claude: { backend: "claude-cli", model: "sonnet" },
+};
+
+describe("./dev run --ai", () => {
+  it("reads --ai and --db in any order", () => {
+    expect(parseRunArgs(["--ai", "free", "--db", "scratch"])).toEqual({ ai: "free", database: "scratch" });
+    expect(parseRunArgs(["--db", "prod"])).toEqual({ ai: null, database: "prod" });
+    expect(parseRunArgs([])).toEqual({ ai: null, database: null });
+  });
+
+  it("rejects the old free|paid|claude positional with the usage", () => {
+    for (const old of ["free", "paid", "claude"]) {
+      expect(() => parseRunArgs([old])).toThrow(RunError);
+      expect(() => parseRunArgs([old])).toThrow(RUN_USAGE);
+    }
+    expect(() => parseRunArgs(["--ai"])).toThrow(/--ai needs the name of an AI/);
+    expect(() => parseRunArgs(["--ai", "--db", "x"])).toThrow(/--ai needs the name of an AI/);
+    expect(() => parseRunArgs(["--db"])).toThrow(/--db needs a database name/);
+  });
+
+  it("passes the named AI as the run override", () => {
+    const env = aiRoot(AIS, "OPENROUTER_API_KEY=sk-local\n");
+    expect(checkRunAI({ root: clone, env, ai: "free" })).toEqual({ name: "free", provider: "openrouter", model: "vendor/free" });
+    expect(checkRunAI({ root: clone, env, ai: "claude", claudeRuns: claudeRuns(true) })).toMatchObject({ provider: "claude-cli" });
+    expect(checkRunAI({ root: clone, env, ai: "mock" })).toMatchObject({ name: "mock", provider: "mock" });
+  });
+
+  it("has no override without --ai, and lets --ai outrank an exported AI_PROFILE", () => {
+    const env = aiRoot(AIS);
+    expect(checkRunAI({ root: clone, env, ai: null })).toBeNull();
+    expect(checkRunAI({ root: clone, env: { ...env, AI_PROFILE: "nope" }, ai: "own" })).toMatchObject({ name: "own" });
+    expect(() => checkRunAI({ root: clone, env: { ...env, AI_PROFILE: "nope" }, ai: null })).toThrow(/AI "nope"/);
+  });
+
+  it("refuses an AI the file does not have, naming it", () => {
+    expect(() => checkRunAI({ root: clone, env: aiRoot(AIS), ai: "paid" })).toThrow(RunError);
+    expect(() => checkRunAI({ root: clone, env: aiRoot(AIS), ai: "paid" })).toThrow(/AI "paid", which is not in ai\.json/);
+    expect(() => checkRunAI({ root: clone, env: aiRoot(null), ai: "free" })).toThrow(/Name one of: mock\./);
+  });
+
+  it("refuses an openrouter AI with no key anywhere", () => {
+    expect(() => checkRunAI({ root: clone, env: aiRoot(AIS), ai: "free" })).toThrow(/AI "free" uses openrouter but has no key/);
+  });
+
+  it("refuses a claude-cli AI without the executable", () => {
+    expect(() => checkRunAI({ root: clone, env: aiRoot(AIS), ai: "claude", claudeRuns: claudeRuns(false) })).toThrow(
+      /AI "claude" narrates through "claude", which did not run/,
+    );
+  });
+
+  it("refuses to start on a malformed ai.json, with or without --ai", () => {
+    const env = aiRoot({ free: { backend: "openrouter" } });
+    expect(() => checkRunAI({ root: clone, env, ai: null })).toThrow(/AI "free", field "model" is missing/);
+  });
+
+  it("is what the starter does: the old positional exits 1 with the usage", () => {
+    const result = spawnSync(process.execPath, [path.join(REPO_ROOT, "scripts", "dev.mjs"), "free"], {
+      cwd: clone,
+      encoding: "utf8",
+      env: { ...process.env, ...aiRoot(null) },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(RUN_USAGE);
+  });
+
+  it("is what the starter does: an AI not in the file exits 1 naming it, before starting anything", () => {
+    const result = spawnSync(process.execPath, [path.join(REPO_ROOT, "scripts", "dev.mjs"), "--ai", "luna6"], {
+      cwd: clone,
+      encoding: "utf8",
+      env: { ...process.env, ...aiRoot(AIS) },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('AI "luna6"');
+    expect(result.stdout).not.toContain("Starting the game");
+  });
+});
+
+describe("./dev doctor's AIs", () => {
+  it("says mock is the only AI when there is no ai.json", () => {
+    const report = describeAIs({ root: clone, env: aiRoot(null) });
+    expect(report.ok).toBe(true);
+    expect(report.lines.join("\n")).toMatch(/no .*ai\.json: mock is the only AI/);
+  });
+
+  it("lists each AI with whether it has what it needs, and never a key", () => {
+    const report = describeAIs({ root: clone, env: aiRoot(AIS), claudeRuns: claudeRuns(false) });
+    const text = report.lines.join("\n");
+    expect(report.ok).toBe(true);
+    expect(text).toContain('warn AI "free": openrouter vendor/free, no key in ai.json, OPENROUTER_API_KEY or .env.local');
+    expect(text).toContain('ok   AI "own": openrouter vendor/own, key from ai.json');
+    expect(text).toContain('warn AI "claude": claude-cli sonnet, "claude" did not run');
+    expect(text).not.toContain("sk-secret-in-file");
+  });
+
+  it("names where an entry's key comes from, and an executable that runs", () => {
+    const env = { ...aiRoot(AIS, "OPENROUTER_API_KEY=sk-local\n") };
+    const fromFile = describeAIs({ root: clone, env, claudeRuns: claudeRuns(true) }).lines.join("\n");
+    expect(fromFile).toContain('ok   AI "free": openrouter vendor/free, key from .env.local');
+    expect(fromFile).toContain('ok   AI "claude": claude-cli sonnet, "claude" runs');
+    const fromEnv = describeAIs({ root: clone, env: { ...env, OPENROUTER_API_KEY: "sk-env" } }).lines.join("\n");
+    expect(fromEnv).toContain("key from OPENROUTER_API_KEY");
+  });
+
+  it("fails on a malformed ai.json, naming the AI and the field", () => {
+    const report = describeAIs({ root: clone, env: aiRoot({ free: { backend: "gemini", model: "m" } }) });
+    expect(report.ok).toBe(false);
+    expect(report.lines.join("\n")).toMatch(/FAIL .*AI "free", field "backend"/);
+  });
+
+  it("ignores a run override, which belongs to a run rather than the host", () => {
+    expect(describeAIs({ root: clone, env: { ...aiRoot(null), AI_PROFILE: "nope" } }).ok).toBe(true);
   });
 });

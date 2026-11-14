@@ -267,8 +267,8 @@ export const AISettingsSourceSchema = z.enum(["env", "user"]);
 export const AIModeSchema = z.enum(["mock", "openrouter"]);
 /**
  * Every provider the runtime can use. Wider than AIModeSchema, which is what
- * the settings page can choose: `claude-cli` is only ever selected through the
- * process environment, so it appears in the override and the effective mode.
+ * the settings page can choose: `claude-cli` is only ever selected by a run
+ * override, so it appears in the override and the effective mode.
  */
 export const AIProviderSchema = z.enum(["mock", "openrouter", "claude-cli"]);
 
@@ -286,11 +286,11 @@ export const AIModelSummarySchema = z.object({
 });
 
 /**
- * An AI configuration forced by the process environment.
+ * The AI the server was started with (`./dev run --ai <name>`), named in
+ * `source`.
  *
- * Provider and model only: the override's key comes from the process
- * environment and has no label, so there is nothing to mask and nothing worth
- * showing. Present means the stored choice below is not currently in effect.
+ * Provider and model only: a key is never shown. Present means the stored
+ * choice below is not currently in effect.
  */
 export const AIOverrideSchema = z.object({
   provider: AIProviderSchema,

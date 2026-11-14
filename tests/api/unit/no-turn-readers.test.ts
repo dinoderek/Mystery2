@@ -3,7 +3,6 @@
 // with and without them: the trace exporter, the reconstruction, the mechanical
 // checks, the reading-level score and the runtime cases cut from a trace.
 
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { NO_TURN_EVENT_TYPE } from "@my2/shared";
 import { playedEvents } from "../../../evaluation/lib/game-events.mjs";
+import { casesCommand } from "../../../evaluation/runtime/cases.ts";
 import { scoreReadability } from "../../../evaluation/playtest/lib/judge.mjs";
 import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
@@ -145,28 +145,32 @@ describe("runtime cases cut from a trace", () => {
     scratch = null;
   });
 
-  function cutCases(events: TraceEventRow[]): string {
+  async function cutCases(events: TraceEventRow[]): Promise<string> {
     scratch ??= fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-from-trace-"));
     const dir = fs.mkdtempSync(path.join(scratch, "run-"));
     const tracePath = path.join(dir, "trace.json");
     const blueprint = { ...makeBlueprint(), id: "bp-1" };
     fs.writeFileSync(tracePath, JSON.stringify({ ...makeRawTrace({ events }), blueprint }));
-    execFileSync(
-      process.execPath,
-      ["evaluation/runtime/cases-from-trace.mjs", tracePath, "--out", path.join(dir, "cases"), "--types", "ask,talk,search"],
-      { cwd: process.cwd(), stdio: "pipe" },
-    );
+    const code = await casesCommand.run([tracePath, "--out", path.join(dir, "cases"), "--types", "ask,talk,search"], {
+      root: process.cwd(),
+      out: () => {},
+      err: (text) => {
+        throw new Error(text);
+      },
+      env: {},
+    });
+    expect(code).toBe(0);
     // The blueprint's path names the scratch folder this run happened to use.
-    return fs.readFileSync(path.join(dir, "cases", "trace.cases.mjs"), "utf8").replace(/"path": "[^"]*"/g, '"path": ""');
+    return fs.readFileSync(path.join(dir, "cases", "trace.cases.json"), "utf8").replace(/"path": "[^"]*"/g, '"path": ""');
   }
 
-  it("has no line that cost no turn in any case's history", () => {
-    const text = cutCases(withLinesThatCostNoTurn());
+  it("has no line that cost no turn in any case's history", async () => {
+    const text = await cutCases(withLinesThatCostNoTurn());
 
     expect(text).not.toContain(NO_TURN_EVENT_TYPE);
     expect(text).not.toContain("dance");
     expect(text.replace(/"sequence": \d+/g, "").replace(/s\d+-/g, "s-")).toEqual(
-      cutCases(makeEvents()).replace(/"sequence": \d+/g, "").replace(/s\d+-/g, "s-"),
+      (await cutCases(makeEvents())).replace(/"sequence": \d+/g, "").replace(/s\d+-/g, "s-"),
     );
   });
 });

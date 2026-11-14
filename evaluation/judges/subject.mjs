@@ -81,9 +81,9 @@ export function projectTraceSubject(reconstructedTurns) {
 
 // A runtime response carries the model's clue decisions in two different
 // shapes, and the judge needs the same list from either:
-//   - cli backend:      response.raw is the role-output JSON itself
+//   - cli narrator:     response.raw is the role-output JSON itself
 //                       (revealed_clue_ids for talk, revealed_clue_id for search)
-//   - endpoint backend: response.raw is the endpoint body, which returns the
+//   - server narrator:  response.raw is the endpoint body, which returns the
 //                       clue OBJECTS the server accepted as `revealed_clues`
 // Note the asymmetry this exposes: the endpoint list is post-validation (the
 // handler drops ids the model was not entitled to), the CLI list is the model's

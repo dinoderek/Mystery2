@@ -87,7 +87,7 @@ and a schema named as in `evaluation/judges/README.md` → "Adding a judge", wit
 the subject kind `game`.
 
 To re-judge a single turn against another model or prompt, turn the trace into
-runtime cases with `npm run eval:cases-from-trace` (`evaluation/runtime/README.md`).
+runtime cases with `./dev eval cases` (`evaluation/runtime/README.md`).
 
 ## Tests
 

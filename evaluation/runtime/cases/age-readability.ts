@@ -2,20 +2,22 @@
 //
 // A case fixes the entire prior state (`given`, including the full `history`)
 // and the single `action` under test, so the model input is identical every run
-// and across models. No turn accumulation, no divergence: swap the backend or
+// and across models. No turn accumulation, no divergence: swap the narrator or
 // ai_profile/model and you are comparing apples to apples on the same input.
 //
 // The mock blueprint targets age 10 (≈ US grade 5). `history` rows mirror how the
 // runtime stores game_events (event_type/actor/narration/payload), so the same
-// data drives both backends: the endpoint backend seeds these as rows; the CLI
-// backend feeds them to the context builder.
+// data drives both narrator sources: the server seeds these as rows; a CLI
+// narrator feeds them to the context builder.
 //
-// This file exports a LIST of cases; run.mjs accepts a single case or a list.
+// This file exports a LIST of cases; `judge turn` accepts a single case or a list.
+
+import type { TurnCase } from "../lib/case.ts";
 
 const blueprint = { path: "blueprints/mock-blueprint.json" };
 
 /** Mid-conversation question to the culprit — the richest readability signal. */
-const askAlibiPressure = {
+const askAlibiPressure: TurnCase = {
   id: "ask-alice-alibi-pressure",
   blueprint,
   given: {
@@ -39,15 +41,15 @@ const askAlibiPressure = {
     ],
   },
   action: { type: "ask", player_input: "Then why are your hands shaking?" },
-  // Default judges are deterministic (no judge-model calls). Add the LLM judge
-  // with --judges flesch,age_appropriate; its CLI variant comes from
-  // judgeConfig below ("judge" = real model, "judge-stub" = offline).
+  // Default judges are deterministic (no judge-model calls). Add the model
+  // judge with --judges flesch,age_appropriate_turn; --judge-binding
+  // judge-stub answers it offline.
   judges: ["flesch"],
-  judgeConfig: { flesch: { tolerance: 2 }, age_appropriate: { cli: "judge" } },
+  judgeConfig: { flesch: { tolerance: 2 } },
 };
 
 /** Opening a conversation cold — narrator scene-setting prose. */
-const talkBobOpen = {
+const talkBobOpen: TurnCase = {
   id: "talk-bob-open",
   blueprint,
   given: {
@@ -58,7 +60,7 @@ const talkBobOpen = {
   },
   action: { type: "talk", character_id: "char-bob" },
   judges: ["flesch"],
-  judgeConfig: { flesch: { tolerance: 2 }, age_appropriate: { cli: "judge" } },
+  judgeConfig: { flesch: { tolerance: 2 } },
 };
 
 export default [askAlibiPressure, talkBobOpen];

@@ -24,6 +24,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
+import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { gradeGame } from "../../../evaluation/playtest/lib/judge.mjs";
 import { listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.mjs";
 import { buildView } from "../../../evaluation/playtest/lib/view.mjs";
@@ -279,10 +280,6 @@ async function runRuntimeHarness(answersFile: string) {
   const blueprintFile = path.join(dir, "blueprint.json");
   fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
 
-  const judgeConfig = Object.fromEntries([
-    ["age_appropriate", { cliConfig: stubBinding(answersFile, "runtime.age_appropriate") }],
-    ...GM_JUDGES.map((id) => [id, { cliConfig: stubBinding(answersFile, "runtime.{id}") }]),
-  ]);
   const testCase = {
     id: "ask-alice",
     blueprint: { path: blueprintFile },
@@ -301,31 +298,51 @@ async function runRuntimeHarness(answersFile: string) {
       ],
     },
     action: { type: "ask", player_input: "Where did the cookies go?" },
-    judges: ["flesch", "age_appropriate", ...GM_JUDGES],
-    judgeConfig,
+    judges: ["flesch", "age_appropriate_turn", ...GM_JUDGES],
   };
   const caseFile = path.join(dir, "case.mjs");
   fs.writeFileSync(caseFile, `export default ${JSON.stringify(testCase)};\n`);
+  const config = path.join(dir, "config.json");
+  fs.writeFileSync(
+    config,
+    JSON.stringify({
+      "narrator-stub": {
+        cmd: "evaluation/runtime/config/wrappers/stub-runtime.sh",
+        args: ["{{user_message_file}}"],
+        timeout_ms: 30_000,
+      },
+      "turn-judge": stubBinding(answersFile, "runtime.{id}"),
+    }),
+  );
 
   const outputRoot = path.join(dir, "out");
-  const result = await runForResult(
-    ["evaluation/runtime/run.mjs", caseFile, "--backend", "cli:stub", "--out", outputRoot],
-    outputRoot,
+  const output: string[] = [];
+  const code = await judgeTurnCommand.run(
+    [caseFile, "--narrator", "narrator-stub", "--config", config, "--output-root", outputRoot],
+    { root: REPO_ROOT, out: (text) => output.push(text), err: (text) => output.push(text), env: {} },
   );
-  const [interactionFile] = findFiles(outputRoot, "interaction.json");
-  const interaction = JSON.parse(fs.readFileSync(interactionFile, "utf8"));
+  // Two failing judges is a verdict (2); anything else means the run broke.
+  if (code !== 2) throw new Error(`judge turn exited ${code}:\n${output.join("\n")}`);
+  const [resultFile] = findFiles(outputRoot, "result.json");
+  const result = JSON.parse(fs.readFileSync(resultFile, "utf8"));
+  const turn = JSON.parse(fs.readFileSync(path.join(path.dirname(resultFile), "turn.json"), "utf8"));
   verdicts.set("runtime", {
-    case_id: result.case_id,
-    backend: result.backend,
-    model: result.model,
-    narration: interaction.response.narration_text,
-    judges: result.judges.map((judge: Json) => ({
-      ...judge,
-      details: {
-        ...judge.details,
-        attempts: judge.details?.attempts?.map((attempt: Json) => attempt.outcome),
-      },
-    })),
+    case_id: turn.case_id,
+    narrator: turn.narrator,
+    model: turn.model,
+    narration: turn.response.narration_text,
+    judges: result.verdicts.map((verdict: Json) => {
+      const { score, ...details } = verdict.details;
+      return {
+        id: verdict.id,
+        tier: verdict.tier,
+        status: verdict.status,
+        score,
+        details,
+        findings: verdict.findings ?? null,
+        attempts: verdict.call?.attempts.map((attempt: Json) => attempt.outcome) ?? null,
+      };
+    }),
     summary: result.summary,
   });
   for (const id of GM_JUDGES) prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));

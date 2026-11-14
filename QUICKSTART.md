@@ -168,13 +168,13 @@ Every flag, default and file location: `node scripts/generate-blueprint.mjs --he
 ## Evaluation Pipelines
 
 Four evaluation pipelines, each for a different subject. Each is driven by npm
-scripts or `./dev eval` and documented next to its code. Pass-through flags go after `--`.
+scripts or `./dev eval` and documented next to its code. Pass-through flags to an npm script go after `--`.
 
-| Pipeline | What it evaluates | npm scripts |
-|----------|-------------------|-------------|
+| Pipeline | What it evaluates | Commands |
+|----------|-------------------|----------|
 | Blueprint | Generated mystery blueprints | `npm run eval` |
 | Trace | Played game-master traces | `./dev eval judge game` |
-| Runtime | Live narrator responses to a single action | `npm run eval:runtime`, `npm run eval:runtime:rejudge`, `npm run eval:cases-from-trace` |
+| Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `npm run eval:playtest` |
 
 Start with [`docs/evaluation-pipeline.md`](docs/evaluation-pipeline.md) for the
@@ -187,9 +187,9 @@ shared design, then the per-pipeline runbooks:
 ```bash
 npm run eval -- --help                       # blueprint eval
 ./dev eval judge game <session-id|trace.json>   # judge a played game
-npm run eval:runtime -- <case-or-dir>        # eval a runtime case
-npm run eval:runtime:rejudge -- <interaction.json>  # re-judge a stored interaction
-npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a trace
+./dev eval judge turn <case-or-dir>          # eval a runtime case
+./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
+./dev eval cases <trace.json>                # build runtime cases from a trace
 ```
 
 `./dev eval` reads its model bindings from one file; to change one, copy

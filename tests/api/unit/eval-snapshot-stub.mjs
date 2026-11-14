@@ -8,7 +8,8 @@
 //
 // <key> names the call. A `{id}` in it is replaced by the `dimension_id` of the
 // user message, so one binding serves every judge of a harness
-// ("trace.{id}" -> "trace.gm_roleplay"). The system prompt and user message go
+// ("trace.{id}" -> "trace.gm_roleplay"). The turn-level age judge's message
+// names no dimension; it is the one carrying a `target_age`, and is `age_appropriate`. The system prompt and user message go
 // to <capture-dir>/<key>.system.txt and <key>.user.txt, unless <capture-dir>
 // is "-". The reply is the Claude CLI envelope, {"result": "<answer>"}, with
 // the answer taken from <answers.json>[<key>].
@@ -24,7 +25,8 @@ const user = fs.readFileSync(userFile, "utf8");
 
 let dimensionId = null;
 try {
-  dimensionId = JSON.parse(user).dimension_id ?? null;
+  const message = JSON.parse(user);
+  dimensionId = message.dimension_id ?? (message.target_age === undefined ? null : "age_appropriate");
 } catch {
   // A user message that is not JSON names no dimension.
 }

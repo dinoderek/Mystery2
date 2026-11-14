@@ -10,11 +10,11 @@ import {
   locationName,
   normalizeHistory,
   snapshotFromGiven,
-} from "../../../evaluation/runtime/lib/roles.mjs";
-import { assertTurnPlayed, extractNarrationParts } from "../../../evaluation/runtime/lib/transcript.mjs";
+} from "../../../evaluation/runtime/lib/roles.ts";
+import { assertTurnPlayed, extractNarrationParts } from "../../../evaluation/runtime/lib/transcript.ts";
 
 // The shared action/role map is the single source of truth both runtime
-// backends use to turn a case's `action` plus its fixed `given` state into
+// narrators use to turn a case's `action` plus its fixed `given` state into
 // either a reconstructed CLI prompt or a live endpoint call. It is pure and
 // needs no database or LLM, so we assert its resolution directly.
 
@@ -160,7 +160,7 @@ describe("ACTIONS local-replay mapping", () => {
     const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
     const action = { type: "talk", character_id: "c1" };
 
-    const input = ACTIONS.talk.roleInput(given, action, blueprint, ["H"]);
+    const input = ACTIONS.talk.roleInput(given, action, blueprint, ["H"] as never);
     expect(input).toMatchObject({
       role: "talk_start",
       game_id: "case",
@@ -217,7 +217,7 @@ describe("ACTIONS local-replay mapping", () => {
       given,
       { type: "accuse", player_reasoning: "It was Ann" },
       blueprint,
-      [{ event_type: "accuse_round" }],
+      [{ event_type: "accuse_round" }] as never,
     );
     expect(judge.role).toBe("accusation_judge");
     expect(judge.player_input).toBe("It was Ann");
@@ -247,7 +247,7 @@ describe("typed lines for structured actions", () => {
     characters: blueprint.world.characters.map((c) => ({ ...c, location_name: c.location_id })),
   });
   const lineFor = (given: Record<string, unknown>, action: Record<string, unknown>) =>
-    ACTIONS[action.type as keyof typeof ACTIONS].line(given, action, blueprint);
+    ACTIONS[action.type as keyof typeof ACTIONS].line?.(given as never, action as never, blueprint) ?? "";
   const readBack = (given: { mode: GameMode; location_id: string }, action: Record<string, unknown>) =>
     interpretLine(lineFor(given, action), grammarState(given.mode, given.location_id));
 
@@ -308,7 +308,7 @@ describe("typed lines for structured actions", () => {
 
   it("builds a line the grammar reads as something else for a question that is a command", () => {
     // `bye` ends the conversation, so a question of "Goodbye." is not an ask;
-    // the endpoint backend catches it from the event the turn saved.
+    // the server narrator catches it from the event the turn saved.
     expect(readBack(talking, { type: "ask", player_input: "Goodbye." })).toEqual({
       kind: "action",
       action: { type: "end_talk" },
@@ -373,7 +373,7 @@ describe("the start action creates its own session", () => {
 
   it("is flagged as session-creating and has no prior mode", () => {
     // Every other action addresses a seeded session; start makes one, so the
-    // endpoint backend must skip seeding for it.
+    // server narrator must skip seeding for it.
     expect(ACTIONS.start.createsSession).toBe(true);
     expect(ACTIONS.start.requiredMode).toBeNull();
     for (const type of ["talk", "ask", "end_talk", "move", "search", "accuse"]) {

@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildEnvelope } from "../../../evaluation/pipeline/envelope.mjs";
-import {
-  createRunTimer,
-  formatDuration,
-  formatTimingSummary,
-} from "../../../evaluation/pipeline/timing.mjs";
+import { formatDuration } from "../../../evaluation/core/progress.ts";
+import { createRunTimer, formatTimingSummary } from "../../../evaluation/core/timing.ts";
 
 describe("formatDuration", () => {
   it("renders sub-second values in whole milliseconds", () => {
@@ -45,7 +41,6 @@ describe("createRunTimer stages", () => {
     );
 
     const timing = timer.summarize();
-    expect(timing.clock).toBe("monotonic");
     expect(typeof timing.total_ms).toBe("number");
     expect(timing.stages.map((s: { name: string }) => s.name)).toEqual([
       "load_spec",
@@ -115,7 +110,7 @@ describe("createRunTimer dimensions", () => {
     ]);
     const dim = timing.dimensions.find(
       (d: { id: string }) => d.id === "solve_depth",
-    );
+    ) as NonNullable<(typeof timing.dimensions)[number]>;
     expect(dim.steps.map((s: { name: string }) => s.name)).toEqual([
       "load_definition",
       "judge",
@@ -146,35 +141,5 @@ describe("formatTimingSummary", () => {
     expect(summary).toContain("load_spec");
     expect(summary).toContain("solve_depth");
     expect(summary).toContain("judge");
-  });
-});
-
-describe("buildEnvelope timing", () => {
-  const base = {
-    runId: "r1",
-    startedAt: "2026-05-31T00:00:00.000Z",
-    endedAt: "2026-05-31T00:01:00.000Z",
-    specDir: "evaluation/specs/001",
-    blueprintPath: "/tmp/blueprint.json",
-    generation: null,
-    mechanical: [],
-    dimensions: [],
-  };
-
-  it("stamps schema_version 0.3 and embeds the timing block", () => {
-    const timing = {
-      total_ms: 123,
-      clock: "monotonic",
-      stages: [],
-      dimensions: [],
-    };
-    const envelope = buildEnvelope({ ...base, timing });
-    expect(envelope.schema_version).toBe("0.3");
-    expect(envelope.timing).toBe(timing);
-  });
-
-  it("defaults timing to null when omitted", () => {
-    const envelope = buildEnvelope({ ...base });
-    expect(envelope.timing).toBeNull();
   });
 });

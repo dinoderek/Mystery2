@@ -11,11 +11,8 @@ import { resolveVerdict } from "../judges/index.mjs";
 import { projectTraceSubject } from "../judges/subject.mjs";
 import { runCli } from "../pipeline/cli-runner.mjs";
 import { startJudgeDigest } from "../pipeline/progress.mjs";
-import {
-  createRunTimer,
-  formatDuration,
-  formatTimingSummary,
-} from "../pipeline/timing.mjs";
+import { formatDuration } from "../core/progress.ts";
+import { createRunTimer, formatTimingSummary } from "../core/timing.ts";
 
 import { buildTraceEnvelope, combineDimension } from "./lib/envelope.mjs";
 import {

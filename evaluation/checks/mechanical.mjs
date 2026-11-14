@@ -2,19 +2,25 @@ import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2
 import { StoryBriefSchema } from "../../packages/blueprint-generator/src/story-brief.ts";
 import { analyzeClueGraph } from "./lib/clue-graph.mjs";
 
+// Runs the checks on a candidate blueprint. With a brief, it is checked first
+// and the blueprint is compared with it; without one (a blueprint validated on
+// its own) only the checks that need no brief run.
 export function runMechanicalChecks({ brief, blueprintCandidate }) {
   const checks = [];
 
-  const briefParse = StoryBriefSchema.safeParse(brief);
-  checks.push(
-    mkCheck(
-      "brief_schema_valid",
-      briefParse.success,
-      briefParse.success ? null : { issues: briefParse.error.format() },
-    ),
-  );
-  if (!briefParse.success) return checks;
-  const validBrief = briefParse.data;
+  let validBrief = null;
+  if (brief !== undefined && brief !== null) {
+    const briefParse = StoryBriefSchema.safeParse(brief);
+    checks.push(
+      mkCheck(
+        "brief_schema_valid",
+        briefParse.success,
+        briefParse.success ? null : { issues: briefParse.error.format() },
+      ),
+    );
+    if (!briefParse.success) return checks;
+    validBrief = briefParse.data;
+  }
 
   const bpParse = BlueprintV2Schema.safeParse(blueprintCandidate);
   checks.push(
@@ -27,6 +33,14 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
   if (!bpParse.success) return checks;
   const blueprint = bpParse.data;
 
+  if (validBrief) checks.push(...briefChecks(validBrief, blueprint));
+  checks.push(...structureChecks(blueprint));
+  return checks;
+}
+
+// The checks that compare the blueprint with the counts its brief asks for.
+function briefChecks(validBrief, blueprint) {
+  const checks = [];
   const expectedCulprits = validBrief.culprits ?? 1;
   const actualCulprits = blueprint.world.characters.filter((c) => c.is_culprit).length;
   checks.push(
@@ -46,22 +60,7 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
     );
   }
 
-  if (validBrief.suspects !== undefined || validBrief.witnesses !== undefined) {
-    const expectedChars =
-      (validBrief.culprits ?? 1) + (validBrief.suspects ?? 0) + (validBrief.witnesses ?? 0);
-    const actualChars = blueprint.world.characters.length;
-    checks.push(
-      mkCheck("character_count_matches_brief", actualChars === expectedChars, {
-        expected: expectedChars,
-        actual: actualChars,
-        breakdown: {
-          culprits: validBrief.culprits ?? 1,
-          suspects: validBrief.suspects ?? 0,
-          witnesses: validBrief.witnesses ?? 0,
-        },
-      }),
-    );
-  }
+  checks.push(...characterCountChecks(validBrief, blueprint));
 
   if (validBrief.redHerringTrails !== undefined) {
     const actualHerrings = blueprint.red_herrings.length;
@@ -72,7 +71,29 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
       }),
     );
   }
+  return checks;
+}
 
+// The character count the brief's culprits, suspects and witnesses add up to.
+function characterCountChecks(validBrief, blueprint) {
+  if (validBrief.suspects === undefined && validBrief.witnesses === undefined) return [];
+  const culprits = validBrief.culprits ?? 1;
+  const suspects = validBrief.suspects ?? 0;
+  const witnesses = validBrief.witnesses ?? 0;
+  const expected = culprits + suspects + witnesses;
+  const actual = blueprint.world.characters.length;
+  return [
+    mkCheck("character_count_matches_brief", actual === expected, {
+      expected,
+      actual,
+      breakdown: { culprits, suspects, witnesses },
+    }),
+  ];
+}
+
+// The checks that need only the blueprint.
+function structureChecks(blueprint) {
+  const checks = [];
   const orphans = findOrphanClues(blueprint);
   const orphanCount = orphans.location.length + orphans.character.length;
   checks.push(
@@ -82,7 +103,7 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
   // requires_satisfiable: the clue discovery graph must reference real clues, be
   // acyclic, and keep every solution clue reachable from ungated roots. Defense
   // in depth alongside the schema's superRefine — surfaces the specifics in the
-  // envelope summary even though a malformed graph already fails schema parse.
+  // result even though a malformed graph already fails schema parse.
   const graph = analyzeClueGraph(blueprint);
   checks.push(
     mkCheck("requires_satisfiable", graph.ok, graph.ok ? null : {
@@ -92,7 +113,6 @@ export function runMechanicalChecks({ brief, blueprintCandidate }) {
       locked_solution_clues: graph.locked_solution_clues,
     }),
   );
-
   return checks;
 }
 

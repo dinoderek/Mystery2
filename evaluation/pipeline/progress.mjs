@@ -3,7 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { performance } from "node:perf_hooks";
 
-import { formatDuration } from "./timing.mjs";
+import { formatDuration } from "../core/progress.ts";
 
 // Live-progress helpers for the evaluation pipelines.
 //

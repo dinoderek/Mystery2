@@ -10,7 +10,7 @@ import {
   runTraceJudge,
 } from "../../../evaluation/trace/run.mjs";
 import { projectTraceSubject } from "../../../evaluation/judges/subject.mjs";
-import { createRunTimer } from "../../../evaluation/pipeline/timing.mjs";
+import { createRunTimer } from "../../../evaluation/core/timing.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.mjs";
 import { schema as gmFabricationSchema } from "../../../evaluation/judges/gm-fabrication.schema.ts";
 import { makeRawTrace } from "./trace-fixtures";

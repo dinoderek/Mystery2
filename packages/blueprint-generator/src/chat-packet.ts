@@ -49,7 +49,7 @@ export function buildBlueprintGenerationMarkdownDocument({
     "1. Paste the full packet into a chat model.",
     "2. Ask for JSON only with no code fences or commentary.",
     "3. Save the response to a blueprint JSON file.",
-    "4. Run `npm run validate:blueprint -- <path-to-file>` after saving.",
+    "4. Run `./dev eval validate <path-to-file>` after saving.",
     "5. Optionally run the existing evaluation packet flow for a second-pass review.",
   ].join("\n");
 

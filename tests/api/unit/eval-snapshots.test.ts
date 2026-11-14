@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
+import type { Result } from "../../../evaluation/core/result.ts";
 import { gradeGame } from "../../../evaluation/playtest/lib/judge.mjs";
 import { listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.mjs";
 import { buildView } from "../../../evaluation/playtest/lib/view.mjs";
@@ -148,6 +149,39 @@ function dimension(result: Json) {
   };
 }
 
+/** The verdict set a blueprint run stores: the new result.json read back into the shape the snapshot has always had. */
+function blueprintVerdicts(result: Result) {
+  const byId = new Map(result.verdicts.map((verdict) => [verdict.id, verdict]));
+  const dimensionIds = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) => verdict.id);
+  return {
+    generation: { source: "cli", attempts: result.production?.calls[0].attempts.map((attempt) => attempt.outcome) },
+    mechanical: result.verdicts
+      .filter((verdict) => verdict.tier === "mechanical")
+      .map((verdict) => ({ id: verdict.id, status: verdict.status, details: verdict.details ?? null })),
+    dimensions: dimensionIds.map((id) => {
+      const analyzer = byId.get(`${id}.analyzer`);
+      const judge = byId.get(id) as Result["verdicts"][number];
+      const statuses = [analyzer?.status, judge.status].filter((status) => status !== undefined);
+      return {
+        id,
+        overall: statuses.every((status) => status === "pass") ? "pass" : "fail",
+        analyzer: analyzer ? { status: analyzer.status, details: analyzer.details } : null,
+        judge: {
+          status: judge.status,
+          reasoning: (judge.answer as Json).reasoning,
+          major_count: null,
+          minor_count: null,
+          model_verdict: null,
+          verdict_disagreement: null,
+          answer: judge.answer,
+        },
+        error: null,
+      };
+    }),
+    run_error: result.run_error,
+  };
+}
+
 async function runBlueprintPipeline(answersFile: string) {
   const brief = StoryBriefSchema.parse({
     brief: "Someone took the cookies from the kitchen before snack time. The truth involves a lunch bag in the hallway.",
@@ -164,28 +198,26 @@ async function runBlueprintPipeline(answersFile: string) {
     eliminationComplexity: "simple",
   });
   const briefFile = path.join(scratch, "blueprint", "brief.json");
+  const generateConfig = path.join(scratch, "blueprint", "cli.json");
   const config = path.join(scratch, "blueprint", "config.json");
   fs.mkdirSync(path.dirname(briefFile), { recursive: true });
   fs.writeFileSync(briefFile, JSON.stringify(brief));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      generate: stubBinding(answersFile, "generator"),
-      judge: stubBinding(answersFile, "blueprint.{id}"),
-    }),
-  );
+  fs.writeFileSync(generateConfig, JSON.stringify({ generate: stubBinding(answersFile, "generator") }));
+  fs.writeFileSync(config, JSON.stringify({ "blueprint-judge": stubBinding(answersFile, "blueprint.{id}") }));
 
   const outputRoot = path.join(scratch, "blueprint", "out");
-  const result = await runForResult(
-    ["evaluation/pipeline/run.mjs", "--spec", briefFile, "--config", config, "--output-root", outputRoot, "--quiet"],
+  const result = (await runForResult(
+    [
+      "evaluation/pipeline/run.mjs",
+      "--spec", briefFile,
+      "--generate-config", generateConfig,
+      "--config", config,
+      "--output-root", outputRoot,
+      "--quiet",
+    ],
     outputRoot,
-  );
-  verdicts.set("blueprint", {
-    generation: { source: result.generation?.source, attempts: result.generation?.attempts?.map((a: Json) => a.outcome) },
-    mechanical: result.mechanical.map(check),
-    dimensions: result.dimensions.map(dimension),
-    run_error: result.run_error,
-  });
+  )) as Result;
+  verdicts.set("blueprint", blueprintVerdicts(result));
   prompts.set("generator", capturedPrompt("generator"));
   for (const id of BLUEPRINT_DIMENSIONS) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
 }

@@ -1,0 +1,302 @@
+{
+  "dimension_id": "gm_clue_discipline",
+  "context": null,
+  "blueprint": {
+    "metadata": {
+      "title": "The Missing Medal",
+      "one_liner": "A medal vanishes.",
+      "target_age": 9,
+      "time_budget": 20
+    },
+    "narrative": {
+      "premise": "A prize medal has gone missing during the dinner party."
+    },
+    "world": {
+      "starting_location_id": "loc_hall",
+      "locations": [
+        {
+          "id": "loc_hall",
+          "name": "Grand Hall",
+          "description": "A candlelit hall with a long dinner table.",
+          "clues": [
+            {
+              "id": "clue_hall_1",
+              "text": "A muddy footprint near the trophy case."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "sub_rug",
+              "name": "under the rug",
+              "hint": "The rug is rumpled.",
+              "clues": [
+                {
+                  "id": "clue_rug_1",
+                  "text": "A torn cloakroom ticket."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "loc_garden",
+          "name": "Walled Garden",
+          "description": "A walled garden behind the hall.",
+          "clues": [
+            {
+              "id": "clue_garden_1",
+              "text": "Trampled roses by the wall."
+            }
+          ],
+          "sub_locations": []
+        }
+      ],
+      "characters": [
+        {
+          "id": "char_mara",
+          "first_name": "Mara",
+          "last_name": "Vale",
+          "location_id": "loc_hall",
+          "sex": "female",
+          "appearance": "Tall, in a green apron.",
+          "background": "The household cook.",
+          "personality": "Warm but nervous.",
+          "initial_attitude_towards_investigator": "Helpful.",
+          "stated_alibi": "I was in the kitchen all evening.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_mara_1",
+              "text": "Mara saw a shadow slip toward the garden."
+            }
+          ],
+          "flavor_knowledge": [
+            "Knows the dinner menu."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Mara cooked and served dinner in the kitchen."
+            }
+          ],
+          "agendas": []
+        },
+        {
+          "id": "char_dorn",
+          "first_name": "Dorn",
+          "last_name": "Pike",
+          "location_id": "loc_garden",
+          "sex": "male",
+          "appearance": "Wiry, muddy boots.",
+          "background": "The groundskeeper.",
+          "personality": "Gruff and evasive.",
+          "initial_attitude_towards_investigator": "Defensive.",
+          "stated_alibi": "I was pruning in the garden.",
+          "motive": "He owed money and the medal was valuable.",
+          "is_culprit": true,
+          "clues": [
+            {
+              "id": "clue_dorn_1",
+              "text": "Dorn's torn glove was found by the trophy case."
+            }
+          ],
+          "flavor_knowledge": [
+            "Knows every gate in the garden wall."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Dorn slipped into the hall and took the medal while everyone was at dinner."
+            }
+          ],
+          "agendas": []
+        }
+      ]
+    },
+    "ground_truth": {
+      "what_happened": "Dorn slipped into the hall and took the medal while everyone was at dinner.",
+      "why_it_happened": "Dorn owed money and meant to sell the medal.",
+      "timeline": [
+        "Dinner began at six o'clock and every guest was seated together in the long candlelit hall."
+      ]
+    },
+    "solution_paths": [
+      {
+        "id": "sol_1",
+        "summary": "Footprint + glove point to Dorn.",
+        "location_clue_ids": [
+          "clue_hall_1"
+        ],
+        "character_clue_ids": [
+          "clue_dorn_1"
+        ]
+      }
+    ],
+    "red_herrings": [],
+    "suspect_elimination_paths": [
+      {
+        "id": "elim_mara",
+        "summary": "Mara was in the kitchen.",
+        "location_clue_ids": [],
+        "character_clue_ids": [
+          "clue_mara_1"
+        ]
+      }
+    ]
+  },
+  "subject": {
+    "subject_kind": "trace",
+    "turns": [
+      {
+        "sequence": 2,
+        "judged": true,
+        "role_name": "search",
+        "location_id": "loc_hall",
+        "character_id": null,
+        "player_input": null,
+        "search_query": null,
+        "revealed_clue_ids": [
+          "clue_hall_1"
+        ],
+        "revealed_off_script": [],
+        "narration": "You spot a muddy footprint near the trophy case.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": []
+      },
+      {
+        "sequence": 3,
+        "judged": true,
+        "role_name": "talk_start",
+        "location_id": "loc_hall",
+        "character_id": "char_mara",
+        "player_input": null,
+        "search_query": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "narration": "Mara wipes her hands and looks up.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1"
+        ]
+      },
+      {
+        "sequence": 4,
+        "judged": true,
+        "role_name": "talk_conversation",
+        "location_id": "loc_hall",
+        "character_id": "char_mara",
+        "player_input": "Did you see anything?",
+        "search_query": null,
+        "revealed_clue_ids": [
+          "clue_mara_1"
+        ],
+        "revealed_off_script": [],
+        "narration": "\"I saw a shadow slip toward the garden,\" Mara says.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1"
+        ]
+      },
+      {
+        "sequence": 5,
+        "judged": true,
+        "role_name": "talk_end",
+        "location_id": "loc_hall",
+        "character_id": "char_mara",
+        "player_input": null,
+        "search_query": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "narration": "You thank Mara.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1",
+          "clue_mara_1"
+        ]
+      },
+      {
+        "sequence": 6,
+        "judged": true,
+        "role_name": "move",
+        "location_id": "loc_garden",
+        "character_id": null,
+        "player_input": null,
+        "search_query": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "narration": "You step out into the walled garden.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1",
+          "clue_mara_1"
+        ]
+      },
+      {
+        "sequence": 7,
+        "judged": true,
+        "role_name": "search",
+        "location_id": "loc_garden",
+        "character_id": null,
+        "player_input": null,
+        "search_query": "look by the wall",
+        "revealed_clue_ids": [
+          "clue_garden_1"
+        ],
+        "revealed_off_script": [],
+        "narration": "By the wall, the roses are trampled.",
+        "is_accusation_phase": false,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1",
+          "clue_mara_1"
+        ]
+      },
+      {
+        "sequence": 8,
+        "judged": true,
+        "role_name": "accusation_start",
+        "location_id": "loc_garden",
+        "character_id": null,
+        "player_input": null,
+        "search_query": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "narration": "It is time to name the culprit.",
+        "is_accusation_phase": true,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1",
+          "clue_mara_1",
+          "clue_garden_1"
+        ]
+      },
+      {
+        "sequence": 9,
+        "judged": true,
+        "role_name": "accusation_judge",
+        "location_id": "loc_garden",
+        "character_id": null,
+        "player_input": "Dorn did it.",
+        "search_query": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "narration": "Dorn slipped into the hall and took the medal while everyone was at dinner. You were right!",
+        "is_accusation_phase": true,
+        "prior_revealed_clue_ids": [
+          "clue_hall_1",
+          "clue_mara_1",
+          "clue_garden_1"
+        ]
+      }
+    ],
+    "judged_sequences": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  }
+}

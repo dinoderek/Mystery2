@@ -1,0 +1,386 @@
+{
+  "generation": {
+    "source": "cli",
+    "attempts": [
+      "ok"
+    ]
+  },
+  "mechanical": [
+    {
+      "id": "brief_schema_valid",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "blueprint_schema_valid",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "culprit_count_matches_brief",
+      "status": "pass",
+      "details": {
+        "expected": 1,
+        "actual": 1
+      }
+    },
+    {
+      "id": "location_count_matches_brief",
+      "status": "pass",
+      "details": {
+        "expected": 2,
+        "actual": 2
+      }
+    },
+    {
+      "id": "character_count_matches_brief",
+      "status": "fail",
+      "details": {
+        "expected": 3,
+        "actual": 2,
+        "breakdown": {
+          "culprits": 1,
+          "suspects": 1,
+          "witnesses": 1
+        }
+      }
+    },
+    {
+      "id": "red_herring_count_matches_brief",
+      "status": "pass",
+      "details": {
+        "expected": 1,
+        "actual": 1
+      }
+    },
+    {
+      "id": "no_orphan_clues",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "requires_satisfiable",
+      "status": "pass",
+      "details": null
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "solve_depth",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "A three-clue path reaches the culprit.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "paths": [
+            {
+              "id": "solution-alice-cookie-bag",
+              "reaches_culprit": true,
+              "necessary_clues": [
+                "loc-crumbs",
+                "char-alice-bag",
+                "loc-bag"
+              ],
+              "length": 3,
+              "reasoning": "The crumbs lead to the bag, and Alice's own words name it."
+            }
+          ],
+          "elimination_paths": [
+            {
+              "id": "eliminate-bob",
+              "suspect_id": "bob",
+              "necessary_clues": [
+                "char-bob-saw-bag"
+              ],
+              "length": 1,
+              "reasoning": "Bob only watched."
+            }
+          ],
+          "uncovered_suspects": [],
+          "solvable": true,
+          "shortest_path_id": "solution-alice-cookie-bag",
+          "min_length": 3,
+          "min_required": 3,
+          "verdict": "pass",
+          "reasoning": "A three-clue path reaches the culprit."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "fairness",
+      "overall": "fail",
+      "analyzer": null,
+      "judge": {
+        "status": "fail",
+        "reasoning": "A suspect cannot be ruled out.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "non_culprits": [
+            {
+              "character_id": "bob",
+              "ruled_out": false,
+              "ruling_evidence": null,
+              "reasoning": "Nothing in the clues clears Bob."
+            }
+          ],
+          "verdict": "fail",
+          "reasoning": "A suspect cannot be ruled out."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "timeline_coherence",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "The timeline holds together.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "issues": [],
+          "verdict": "pass",
+          "reasoning": "The timeline holds together."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "knowledge_coherence",
+      "overall": "fail",
+      "analyzer": null,
+      "judge": {
+        "status": "fail",
+        "reasoning": "One character knows what they could not have seen.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "issues": [
+            {
+              "kind": "observability",
+              "subject": "Bob saw Alice with the bag",
+              "clue_ids": [
+                "char-bob-saw-bag"
+              ],
+              "description": "Bob is in the hallway and could not see the kitchen."
+            }
+          ],
+          "verdict": "fail",
+          "reasoning": "One character knows what they could not have seen."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "character_grounding",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "Alice can be talked to about most topics.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "characters": [
+            {
+              "character_id": "alice",
+              "first_name": "Alice",
+              "topics": [
+                {
+                  "topic": "their own background and a brief sketch of their life",
+                  "status": "grounded",
+                  "note": "Background and alibi are given."
+                },
+                {
+                  "topic": "their knowledge of the other characters",
+                  "status": "thin",
+                  "note": "Only Bob is mentioned."
+                }
+              ],
+              "passes": true
+            }
+          ],
+          "verdict": "pass",
+          "reasoning": "Alice can be talked to about most topics."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "path_payoff",
+      "overall": "pass",
+      "analyzer": null,
+      "judge": {
+        "status": "pass",
+        "reasoning": "Every path pays off.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "paths": [
+            {
+              "id": "solution-alice-cookie-bag",
+              "group": "solution",
+              "payoff": "The bag holds the cookies.",
+              "payoff_source": "derived",
+              "verdict": "pass",
+              "reasoning": "The path ends on something the player can find."
+            }
+          ],
+          "verdict": "pass",
+          "reasoning": "Every path pays off."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "clue_graph",
+      "overall": "pass",
+      "analyzer": {
+        "status": "pass",
+        "details": {
+          "total_clues": 5,
+          "gated_clue_count": 0,
+          "unknown_requires": [],
+          "self_references": [],
+          "acyclic": true,
+          "cycles": [],
+          "undiscoverable": [],
+          "locked_solution_clues": [],
+          "paths": [
+            {
+              "id": "solution-alice-cookie-bag",
+              "group": "solution",
+              "clue_count": 4,
+              "root_count": 4,
+              "gated_count": 0,
+              "max_depth": 0,
+              "is_single_chain": false,
+              "has_ungated_entry": true
+            },
+            {
+              "id": "red-herring-open-window",
+              "group": "red_herring",
+              "clue_count": 1,
+              "root_count": 1,
+              "gated_count": 0,
+              "max_depth": 0,
+              "is_single_chain": false,
+              "has_ungated_entry": true
+            },
+            {
+              "id": "eliminate-bob",
+              "group": "suspect_elimination",
+              "clue_count": 2,
+              "root_count": 2,
+              "gated_count": 0,
+              "max_depth": 0,
+              "is_single_chain": false,
+              "has_ungated_entry": true
+            }
+          ],
+          "summary": "clue graph is sound"
+        }
+      },
+      "judge": {
+        "status": "pass",
+        "reasoning": "The graph reads well.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "mini_mysteries": [
+            {
+              "path_id": "solution-alice-cookie-bag",
+              "group": "solution",
+              "graph_is_sensible": true,
+              "is_one_giant_chain": false,
+              "creates_dead_end": false,
+              "has_ungated_entry": true,
+              "reasoning": "Two clues can be found first."
+            }
+          ],
+          "rationales_are_concrete": true,
+          "gating_creates_momentum": true,
+          "verdict": "pass",
+          "reasoning": "The graph reads well."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "age_appropriate",
+      "overall": "fail",
+      "analyzer": {
+        "status": "fail",
+        "details": {
+          "target_age": 8,
+          "expected_grade": 3,
+          "tolerance": 2,
+          "threshold": 5,
+          "min_words": 8,
+          "strings_total": 17,
+          "strings_scored": 11,
+          "violations": [
+            {
+              "path": "narrative.starting_knowledge.mystery_summary",
+              "kind": "notebook_summary",
+              "words": 16,
+              "grade": 9.09,
+              "over_threshold": true,
+              "scored": true,
+              "preview": "The cookies disappeared from the kitchen sometime around 10 AM, according to whoever set them out."
+            },
+            {
+              "path": "world.locations[0].clues[1].text",
+              "kind": "clue_text",
+              "words": 11,
+              "grade": 5.86,
+              "over_threshold": true,
+              "scored": true,
+              "preview": "The kitchen window is open even though it is cold outside."
+            }
+          ],
+          "worst_grade": 9.09,
+          "worst_path": "narrative.starting_knowledge.mystery_summary",
+          "summary": "2 player-facing string(s) above FK grade 5 (age 8)"
+        }
+      },
+      "judge": {
+        "status": "pass",
+        "reasoning": "Short sentences and common words.",
+        "major_count": null,
+        "minor_count": null,
+        "model_verdict": null,
+        "verdict_disagreement": null,
+        "answer": {
+          "target_age": 8,
+          "estimated_reading_age": 8,
+          "findings": [],
+          "verdict": "pass",
+          "reasoning": "Short sentences and common words."
+        }
+      },
+      "error": null
+    }
+  ],
+  "run_error": null
+}

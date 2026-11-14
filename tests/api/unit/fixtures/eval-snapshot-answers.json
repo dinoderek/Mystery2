@@ -1,0 +1,126 @@
+{
+  "_comment": "What the stub model answers to each judge in the evaluation snapshot tests. Keys are <harness>.<judge id>. The generator's answer is the blueprint fixture, added by the test. Each answer satisfies the judge's schema; fairness, knowledge_coherence, gm_fabrication and runtime gm_clue_discipline fail, and runtime gm_roleplay lists a major finding while saying pass, so the verdict rule is exercised both ways.",
+
+  "blueprint.solve_depth": {
+    "paths": [
+      { "id": "solution-alice-cookie-bag", "reaches_culprit": true, "necessary_clues": ["loc-crumbs", "char-alice-bag", "loc-bag"], "length": 3, "reasoning": "The crumbs lead to the bag, and Alice's own words name it." }
+    ],
+    "elimination_paths": [
+      { "id": "eliminate-bob", "suspect_id": "bob", "necessary_clues": ["char-bob-saw-bag"], "length": 1, "reasoning": "Bob only watched." }
+    ],
+    "uncovered_suspects": [],
+    "solvable": true,
+    "shortest_path_id": "solution-alice-cookie-bag",
+    "min_length": 3,
+    "min_required": 3,
+    "verdict": "pass",
+    "reasoning": "A three-clue path reaches the culprit."
+  },
+  "blueprint.fairness": {
+    "non_culprits": [
+      { "character_id": "bob", "ruled_out": false, "ruling_evidence": null, "reasoning": "Nothing in the clues clears Bob." }
+    ],
+    "verdict": "fail",
+    "reasoning": "A suspect cannot be ruled out."
+  },
+  "blueprint.timeline_coherence": {
+    "issues": [],
+    "verdict": "pass",
+    "reasoning": "The timeline holds together."
+  },
+  "blueprint.knowledge_coherence": {
+    "issues": [
+      { "kind": "observability", "subject": "Bob saw Alice with the bag", "clue_ids": ["char-bob-saw-bag"], "description": "Bob is in the hallway and could not see the kitchen." }
+    ],
+    "verdict": "fail",
+    "reasoning": "One character knows what they could not have seen."
+  },
+  "blueprint.character_grounding": {
+    "characters": [
+      {
+        "character_id": "alice",
+        "first_name": "Alice",
+        "topics": [
+          { "topic": "their own background and a brief sketch of their life", "status": "grounded", "note": "Background and alibi are given." },
+          { "topic": "their knowledge of the other characters", "status": "thin", "note": "Only Bob is mentioned." }
+        ],
+        "passes": true
+      }
+    ],
+    "verdict": "pass",
+    "reasoning": "Alice can be talked to about most topics."
+  },
+  "blueprint.path_payoff": {
+    "paths": [
+      { "id": "solution-alice-cookie-bag", "group": "solution", "payoff": "The bag holds the cookies.", "payoff_source": "derived", "verdict": "pass", "reasoning": "The path ends on something the player can find." }
+    ],
+    "verdict": "pass",
+    "reasoning": "Every path pays off."
+  },
+  "blueprint.clue_graph": {
+    "mini_mysteries": [
+      {
+        "path_id": "solution-alice-cookie-bag",
+        "group": "solution",
+        "graph_is_sensible": true,
+        "is_one_giant_chain": false,
+        "creates_dead_end": false,
+        "has_ungated_entry": true,
+        "reasoning": "Two clues can be found first."
+      }
+    ],
+    "rationales_are_concrete": true,
+    "gating_creates_momentum": true,
+    "verdict": "pass",
+    "reasoning": "The graph reads well."
+  },
+  "blueprint.age_appropriate": {
+    "target_age": 8,
+    "estimated_reading_age": 8,
+    "findings": [],
+    "verdict": "pass",
+    "reasoning": "Short sentences and common words."
+  },
+
+  "trace.gm_roleplay": { "findings": [], "verdict": "pass", "reasoning": "Every character stayed in voice." },
+  "trace.gm_clue_discipline": { "findings": [], "verdict": "pass", "reasoning": "Clues were given as recorded." },
+  "trace.gm_fabrication": {
+    "findings": [
+      { "sequence": 6, "severity": "major", "kind": "place", "quote": "the locked gate", "why": "No such gate in the blueprint.", "refers_to": "loc_garden" }
+    ],
+    "verdict": "fail",
+    "reasoning": "One invented place."
+  },
+  "trace.gm_spoiler": {
+    "findings": [
+      { "sequence": 4, "severity": "minor", "kind": "hidden_action", "quote": "he seemed to know the garden well", "why": "Hints at where Dorn was.", "refers_to": null }
+    ],
+    "verdict": "pass",
+    "reasoning": "One hint, nothing given away."
+  },
+
+  "runtime.gm_roleplay": {
+    "findings": [
+      { "sequence": 3, "severity": "major", "kind": "voice", "quote": "The narrator says it was Alice.", "why": "A character should speak for themselves.", "refers_to": "alice" }
+    ],
+    "verdict": "pass",
+    "reasoning": "Mostly in voice."
+  },
+  "runtime.gm_clue_discipline": {
+    "findings": [
+      { "sequence": 3, "severity": "major", "kind": "premature", "quote": "the lunch bag", "why": "The bag is gated behind the hallway clue.", "refers_to": "loc-bag" }
+    ],
+    "verdict": "fail",
+    "reasoning": "A clue came too early."
+  },
+  "runtime.gm_fabrication": { "findings": [], "verdict": "pass", "reasoning": "Nothing invented." },
+  "runtime.gm_spoiler": { "findings": [], "verdict": "pass", "reasoning": "No spoilers." },
+  "runtime.age_appropriate": {
+    "estimated_reading_age": 9,
+    "findings": [
+      { "quote": "folding her arms", "kind": "figurative_language", "why": "A child may not read this as defensive.", "suggestion": "crossing her arms" }
+    ],
+    "verdict": "pass",
+    "reasoning": "Close to the target age."
+  }
+}

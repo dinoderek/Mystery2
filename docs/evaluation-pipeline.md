@@ -32,8 +32,7 @@ line or `help` is saved as. The shared filter `playedEvents` in
 
 ## Why the blueprint pipeline is shaped this way
 
-The blueprint pipeline generates a Blueprint V2 from a brief and judges it; the
-other harnesses inherit its design. It catches authoring failures before play,
+The blueprint pipeline catches authoring failures before play,
 and it is built to change cheaply: a new dimension is files and a registry entry,
 not code. Every model call is a subprocess, with no LLM SDK. Judges run in
 parallel, and a run that aborts still writes its result.
@@ -97,7 +96,8 @@ A blueprint dimension is two files and a registry entry. The brief,
 output. The Zod schema, `<id>.schema.ts`, is appended to the prompt as JSON
 Schema and validates the answer; where brief and schema disagree, the schema
 wins. The registry entry gives the context, the verdict rule, an optional
-analyzer, and `idChecks`, the blueprint ids the answer may cite.
+analyzer, and `idChecks`, the blueprint ids the answer may cite. Without
+`idChecks`, only the answer's shape is checked.
 
 ## Deliberately not done yet
 

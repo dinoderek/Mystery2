@@ -221,6 +221,7 @@ describe("judge turn refuses what it cannot run", () => {
     const { code, output } = await run(["--help"]);
     expect(code).toBe(0);
     expect(output).toContain("Usage: ./dev eval judge turn");
+    expect(output).toContain("cases: their judges, else none; stored turns: earlier result's judges, else flesch");
   });
 
   it("finds nothing to judge in a folder with no cases", async () => {

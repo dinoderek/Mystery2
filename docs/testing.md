@@ -12,20 +12,20 @@
   loading, AI provider selection. `npm run test:integration`.
 - **API E2E**: `tests/api/e2e`, same runner. Multi-endpoint journeys; session
   start, resume and endgame. `npm run test:e2e`.
-- **Golden transcripts**: what the player reads across a whole game (below).
-- **Browser E2E**: `web/e2e`, Playwright on `vite dev`. Route protection, command
+- **Golden transcripts**: what the player reads across a game.
+- **Browser E2E**: `web/e2e`, Playwright on `vite dev`. Route protection, profile picker, session list, speaker colours, command
   entry, loading states, retries, images. `npm -w web run test:e2e`.
 
-Every suite is self-contained: it starts what it needs in a temporary config
-root, deletes it afterwards, and never touches your play database. Shared
-helpers live in `tests/testkit`; integration and E2E use the `blueprints/`
-fixtures. A change crossing boundaries updates every affected suite. Prefer
-integration tests for backend behaviour.
+Each suite starts what it needs in a temporary config root, deletes it
+afterwards, and never touches your play database. Helpers:
+`tests/testkit`; integration and E2E use the `blueprints/`
+fixtures. Changes update every affected suite. Prefer
+integration tests for backend behaviour. Playwright is for browser journeys.
 
 ## The gate
 
-`npm test` runs `scripts/run-test-gate.mjs`. The `GATE_STEPS` list in
-`scripts/lib/gate-steps.mjs` is the definitive set. Phase 1 runs in parallel:
+`npm test` runs `scripts/run-test-gate.mjs`. `GATE_STEPS` in
+`scripts/lib/gate-steps.mjs` defines the steps. Phase 1 runs in parallel:
 lint, typecheck, `svelte-check`, `quality`, `imports`, both unit suites with
 coverage, the doc checks, `gate-coverage`, and `coverage-floors`, which starts
 once both unit suites finish. Phase 2 runs only if phase 1 passed, one step at a
@@ -38,7 +38,7 @@ Integration and API E2E run against the production build (`node build/index.js`)
 so a bundling failure shows. The build gets the run's config root and fails
 the step if it opens a database. The runner fails if anything holds the port.
 
-**Every test file runs in the gate.** Each step names its `roots` and `files`
+**Every test file runs in the gate.** Steps name their `roots` and `files`
 pattern in `gate-steps.mjs`. To add a suite, add its root to a step or add a step,
 and keep the pattern in step with the runner's include. `gate-coverage` fails,
 by name, on any test file no step collects, counting untracked files git does
@@ -109,7 +109,7 @@ the operator's decision: if behaviour-proving tests cannot reach a floor, ask.
 Measured globs are the `coverage.include` arrays in `vitest.config.ts` and
 `web/vite.config.ts`; a new source directory is invisible until added.
 `summary.log` lists files at or below `LOW_FILE_THRESHOLD`
-(`scripts/lib/coverage-report.mjs`) by uncovered statements. Only unit suites
+(`scripts/lib/coverage-report.mjs`) by uncovered statements. Unit suites alone
 feed the numbers: E2E drives an uninstrumented server, so endpoints and
 components read 0%; act on a listed file only when its boundary is unit.
 
@@ -130,12 +130,12 @@ what the player would see (lines, speakers, page breaks, mode, turns left) with
 `tests/api/e2e/golden/transcripts/`. They cover every command and refusal, the
 budget running out, and a won and a lost accusation. Only
 `tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A resumed game is not compared. The mock quotes the start of the narrator prompt, so
-editing it changes every transcript. Re-record with `npm run
+editing it changes every transcript. Re-record on purpose with `npm run
 test:golden:record`; review the diff.
 
 ## Writing tests
 
-- **Isolation.** Each API run gets a temporary database. Each test creates its
+- **Isolation.** Each API run gets a temp database. Each test creates its
   own profile with `setupApiTestAuth(tag)` and scopes assertions to its own
   identifiers, with no unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.

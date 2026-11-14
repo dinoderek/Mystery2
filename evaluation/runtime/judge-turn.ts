@@ -56,7 +56,7 @@ const HELP = formatHelp({
   options: [
     ["--narrator <a,b>", `who narrates: ${SERVER_NARRATOR}, or a narrator binding (narrator-claude, narrator-openai, narrator-stub). Default: the case's, else ${SERVER_NARRATOR}`],
     ["--ai-profile <id>", "the profile a server narrator is asked for (default: the case's, else default)"],
-    ["--judges <a,b>", "the checks and judges to run (default: the case's, else the earlier result's, else flesch)"],
+    ["--judges <a,b>", "the checks and judges to run (cases: their judges, else none; stored turns: earlier result's judges, else flesch)"],
     ["--judge-binding <name>", `the binding every model judge calls (default: ${DEFAULT_JUDGE_BINDING}; judge-stub answers offline)`],
     ["--concurrency <n>", `turns replayed and judged at once (default: ${DEFAULT_CONCURRENCY})`],
   ],

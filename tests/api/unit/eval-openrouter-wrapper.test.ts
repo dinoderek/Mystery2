@@ -42,8 +42,8 @@ function userMessage(): string {
   return file;
 }
 
-function completion(content: unknown): Response {
-  return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }), { status: 200 });
+function completion(content: unknown, usage?: unknown): Response {
+  return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }], usage }), { status: 200 });
 }
 
 /** A fetch that records each request and answers with `content`. */
@@ -116,6 +116,27 @@ describe("the api wrapper's request", () => {
   });
 });
 
+describe("the api wrapper's cost", () => {
+  it.each([0, 0.0123])("reports usage.cost %s on stdout for the core runner", async (cost) => {
+    for (const content of [validBlueprintV2, { title: "invalid blueprint" }]) {
+      const fetchImpl = vi.fn().mockResolvedValue(completion(content, { cost }));
+      const stdout = await generateViaOpenRouter({ userMessageFile: userMessage(), env: { EVAL_MODEL: MODEL, OPENROUTER_API_KEY: KEY }, fetchImpl });
+      expect(JSON.parse(stdout).total_cost_usd).toBe(cost);
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it.each([undefined, {}, { cost: null }, { cost: "0.01" }, { cost: -1 }])(
+    "leaves cost null when usage has no valid cost: %j",
+    async (usage) => {
+      const fetchImpl = vi.fn().mockResolvedValue(completion(validBlueprintV2, usage));
+      const stdout = await generateViaOpenRouter({ userMessageFile: userMessage(), env: { EVAL_MODEL: MODEL, OPENROUTER_API_KEY: KEY }, fetchImpl });
+      expect(JSON.parse(stdout).total_cost_usd).toBeNull();
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    },
+  );
+});
+
 describe("the api wrapper's failures", () => {
   it("needs a model and a key, and a story brief in the message", async () => {
     const fetchImpl = fakeFetch(validBlueprintV2).impl;
@@ -154,7 +175,7 @@ describe("readOpenRouterKey", () => {
 });
 
 /** A local stand-in for OpenRouter that keeps what it is sent. */
-async function fakeOpenRouter(content: unknown) {
+async function fakeOpenRouter(content: unknown, cost: number) {
   const requests: Array<{ authorization: string | undefined; body: Record<string, any> }> = []; // eslint-disable-line @typescript-eslint/no-explicit-any
   const server = http.createServer((req, res) => {
     let text = "";
@@ -162,7 +183,7 @@ async function fakeOpenRouter(content: unknown) {
     req.on("end", () => {
       requests.push({ authorization: req.headers.authorization, body: JSON.parse(text) });
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }));
+      res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }], usage: { cost } }));
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -172,7 +193,7 @@ async function fakeOpenRouter(content: unknown) {
 
 describe("generate --backend api through the real wrapper", () => {
   it("runs the shell wrapper, sends the key and the brief once, and writes the key nowhere", async () => {
-    const stand = await fakeOpenRouter({ ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, ...IMAGE_IDS } });
+    const stand = await fakeOpenRouter({ ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, ...IMAGE_IDS } }, 0.0123);
     try {
       vi.stubEnv("OPENROUTER_URL", stand.url);
       const config = path.join(dir, "config.json");
@@ -210,7 +231,7 @@ describe("generate --backend api through the real wrapper", () => {
       for (const entry of files) expect(fs.readFileSync(path.join(entry.parentPath, entry.name), "utf8")).not.toContain(KEY);
       const resultFile = files.find((entry) => entry.name === "result.json") as fs.Dirent;
       const result = await readResult(path.join(resultFile.parentPath, resultFile.name));
-      expect(result.production?.calls[0]).toMatchObject({ binding: "generator-api", model: MODEL });
+      expect(result.production?.calls[0]).toMatchObject({ binding: "generator-api", model: MODEL, cost_usd: 0.0123, attempts: [expect.objectContaining({ cost_usd: 0.0123 })] });
       const stored = JSON.parse(fs.readFileSync(path.join(resultFile.parentPath, "blueprint.json"), "utf8"));
       expect(stored.metadata).not.toHaveProperty("image_id");
     } finally {

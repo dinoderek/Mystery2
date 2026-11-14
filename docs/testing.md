@@ -47,10 +47,13 @@ by name, on any test file no step collects, counting untracked files git does
 not ignore. It runs even when named alone (`./dev test gate-coverage`). Keep the
 `e2e-browser` root in step with `testDir` in `web/playwright.config.ts`.
 
-**Quality and layer rules.** `quality` holds each function in engine, shared and
-web TypeScript (not tests or `.svelte`) to cognitive complexity 25, 200 lines,
-nesting 4 and 5 parameters. `imports` enforces `scripts/lib/import-rules.mjs`.
-Offenders sit in `quality-baseline.json` and `imports-baseline.json`, which only
+**Quality and layer rules.** `lint`, `quality` and `imports` cover `evaluation/`,
+`scripts/` and `lib/` as well as engine, shared and web TypeScript. `quality`
+holds each function (not tests or `.svelte`) to cognitive complexity 25, 200
+lines, nesting 4 and 5 parameters. `imports` enforces
+`scripts/lib/import-rules.mjs`, among it what `evaluation/` may import, that only
+the evaluation core starts a model subprocess and that only the trace extractor
+resolves the play database path. Offenders sit in `quality-baseline.json` and `imports-baseline.json`, which only
 shrink: a new offender fails, and so does a stale entry. After a fix, run
 `npm run check:quality -- --prune` or `npm run check:imports -- --prune`.
 

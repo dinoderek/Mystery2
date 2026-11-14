@@ -70,6 +70,37 @@ describe("quality limits", () => {
     expect(status).toBe(0);
   });
 
+  it("covers the JavaScript under evaluation/, scripts/ and lib/", () => {
+    const root = path.join(dir, "js");
+    const files = [
+      "evaluation/pipeline/over.mjs",
+      "scripts/lib/over.mjs",
+      "lib/over.mjs",
+    ];
+    setUp(root, Object.fromEntries(files.map((file) => [file, tooManyParams])));
+    const { status, output } = runQuality({
+      cwd: root,
+      baseline: path.join(baselines, "none.json"),
+    });
+    expect(status).toBe(1);
+    for (const file of files) expect(output).toContain(file);
+  });
+
+  it("passes JavaScript at the limits under those roots", () => {
+    const root = path.join(dir, "js-under");
+    setUp(root, {
+      "evaluation/pipeline/under.mjs": atTheLimits,
+      "scripts/under.mjs": atTheLimits,
+      "lib/under.mjs": atTheLimits,
+    });
+    const { status, output } = runQuality({
+      cwd: root,
+      baseline: path.join(baselines, "none.json"),
+    });
+    expect(output).toBe("");
+    expect(status).toBe(0);
+  });
+
   it("passes the offenders a baseline lists, and no more of them", () => {
     const root = path.join(dir, "over");
     const baseline = path.join(baselines, "over.json");

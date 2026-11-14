@@ -106,6 +106,65 @@ describe("import-layer rules", () => {
       'import "../../../packages/game-engine/src/command-grammar.ts";\n',
     );
 
+    // What evaluation/ may and may not import.
+    write("packages/blueprint-generator/src/index.ts");
+    write("packages/game-engine/src/paths.ts");
+    write("packages/game-engine/src/ai-provider-claude-cli.ts");
+    write("web/src/lib/domain/notebook.ts");
+    write("web/src/lib/domain/store.retry.ts");
+    write("lib/database-target.mjs");
+    write("scripts/lib/helper.mjs");
+    write("tests/api/unit/helper.ts");
+    write(
+      "evaluation/tools/allowed.mjs",
+      [
+        'import "../../packages/game-engine/src/index.ts";',
+        'import "../../packages/shared/src/ok.ts";',
+        'import "../../packages/blueprint-generator/src/index.ts";',
+        'import "../../web/src/lib/domain/notebook.ts";',
+        'import "../../web/src/lib/domain/store.retry.ts";',
+        'import "../../scripts/lib/helper.mjs";',
+        "",
+      ].join("\n"),
+    );
+    write(
+      "evaluation/tools/reaches-web.mjs",
+      'import "../../web/src/lib/domain/d.ts";\n',
+    );
+    write(
+      "evaluation/tools/reaches-tests.mjs",
+      'import "../../tests/api/unit/helper.ts";\n',
+    );
+    write(
+      "web/src/routes/api/uses-evaluation.ts",
+      'import "../../../../evaluation/tools/allowed.mjs";\n',
+    );
+    write(
+      "web/src/lib/uses-evaluation.ts",
+      'import "../../../evaluation/tools/allowed.mjs";\n',
+    );
+
+    // Starting a model subprocess, and resolving the play database path.
+    write("evaluation/core/runner.mjs", 'import "node:child_process";\n');
+    write("evaluation/pipeline/spawns.mjs", 'import "node:child_process";\n');
+    write(
+      "evaluation/playtest/lib/claude.mjs",
+      'import "../../../packages/game-engine/src/ai-provider-claude-cli.ts";\n',
+    );
+    write("scripts/spawns.mjs", 'import "node:child_process";\n');
+    write(
+      "evaluation/trace/lib/datasource.mjs",
+      'import "../../../packages/game-engine/src/paths.ts";\nimport "../../../lib/database-target.mjs";\n',
+    );
+    write(
+      "evaluation/runtime/lib/seeds.mjs",
+      'import "../../../packages/game-engine/src/paths.ts";\n',
+    );
+    write(
+      "evaluation/playtest/lib/target.mjs",
+      'import "../../../lib/database-target.mjs";\n',
+    );
+
     violations = await findViolations({ baseDir: dir });
   }, 60_000);
 
@@ -176,6 +235,57 @@ describe("import-layer rules", () => {
       rulesBrokenBy(violations, "evaluation/playtest/lib/own-parser.mjs"),
     ).toEqual(["grammar-only-in-engine"]);
     expect(rulesBrokenBy(violations, "evaluation/playtest/lib/plays.mjs")).toEqual([]);
+  });
+
+  it("lets evaluation import the engine, shared, the generator, the notebook, the retry rule, scripts and lib", () => {
+    expect(rulesBrokenBy(violations, "evaluation/tools/allowed.mjs")).toEqual(
+      [],
+    );
+  });
+
+  it("flags evaluation importing other web code or the tests", () => {
+    expect(rulesBrokenBy(violations, "evaluation/tools/reaches-web.mjs")).toEqual(
+      ["evaluation-imports-only-what-it-may"],
+    );
+    expect(rulesBrokenBy(violations, "evaluation/tools/reaches-tests.mjs")).toEqual(
+      ["evaluation-imports-only-what-it-may"],
+    );
+  });
+
+  it("flags packages and web importing evaluation, and not evaluation importing itself", () => {
+    expect(rulesBrokenBy(violations, "web/src/lib/uses-evaluation.ts")).toContain(
+      "nothing-imports-evaluation",
+    );
+    expect(
+      rulesBrokenBy(violations, "web/src/routes/api/uses-evaluation.ts"),
+    ).toEqual(["nothing-imports-evaluation"]);
+    expect(rulesBrokenBy(violations, "evaluation/playtest/lib/plays.mjs")).toEqual(
+      [],
+    );
+  });
+
+  it("flags a model subprocess started outside evaluation/core/", () => {
+    expect(rulesBrokenBy(violations, "evaluation/pipeline/spawns.mjs")).toEqual([
+      "model-subprocess-only-in-evaluation-core",
+    ]);
+    expect(rulesBrokenBy(violations, "evaluation/playtest/lib/claude.mjs")).toEqual(
+      ["model-subprocess-only-in-evaluation-core"],
+    );
+    expect(rulesBrokenBy(violations, "evaluation/core/runner.mjs")).toEqual([]);
+    // The rule is about evaluation; the scripts start processes of their own.
+    expect(rulesBrokenBy(violations, "scripts/spawns.mjs")).toEqual([]);
+  });
+
+  it("flags the play database path resolved outside the trace extractor", () => {
+    expect(rulesBrokenBy(violations, "evaluation/runtime/lib/seeds.mjs")).toEqual([
+      "play-database-path-only-in-trace-extractor",
+    ]);
+    expect(rulesBrokenBy(violations, "evaluation/playtest/lib/target.mjs")).toEqual(
+      ["play-database-path-only-in-trace-extractor"],
+    );
+    expect(rulesBrokenBy(violations, "evaluation/trace/lib/datasource.mjs")).toEqual(
+      [],
+    );
   });
 
   it("lets the engine, and the tests of it, import the command grammar", () => {

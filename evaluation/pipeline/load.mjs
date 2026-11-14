@@ -34,7 +34,7 @@ export async function resolveSpec(specPath) {
     stat = await fs.stat(abs);
   } catch (err) {
     if (err.code === "ENOENT") {
-      throw new Error(`Spec path not found: ${abs}`);
+      throw new Error(`Spec path not found: ${abs}`, { cause: err });
     }
     throw err;
   }

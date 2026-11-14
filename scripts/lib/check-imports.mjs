@@ -11,8 +11,8 @@ import path from "node:path";
 
 import { cruise } from "dependency-cruiser";
 
-import { FORBIDDEN, GRAMMAR_RULE } from "./import-rules.mjs";
-import { GRAMMAR_ROOTS, SOURCE_ROOTS } from "./source-roots.mjs";
+import { FORBIDDEN } from "./import-rules.mjs";
+import { SOURCE_ROOTS } from "./source-roots.mjs";
 
 /**
  * Cruises `roots` under `base` against `forbidden` and names each violation
@@ -53,23 +53,15 @@ async function cruiseViolations(base, roots, forbidden) {
 }
 
 /**
- * The violations under `baseDir`, as sorted, unique one-line keys: the layer
- * rules over `roots`, and the grammar rule over `grammarRoots`.
+ * The violations under `baseDir`, as sorted, unique one-line keys.
  *
- * @param {{ baseDir: string, roots?: string[], grammarRoots?: string[] }} options
+ * @param {{ baseDir: string, roots?: string[] }} options
  * @returns {Promise<string[]>}
  */
-export async function findViolations({
-  baseDir,
-  roots = SOURCE_ROOTS,
-  grammarRoots = GRAMMAR_ROOTS,
-}) {
+export async function findViolations({ baseDir, roots = SOURCE_ROOTS }) {
   // A symlinked `baseDir` (macOS's tmpdir) must be spelled as it resolves.
   const base = fs.realpathSync(baseDir);
-  const keys = [
-    ...(await cruiseViolations(base, roots, FORBIDDEN)),
-    ...(await cruiseViolations(base, grammarRoots, [GRAMMAR_RULE])),
-  ];
+  const keys = await cruiseViolations(base, roots, FORBIDDEN);
   return [...new Set(keys)].sort();
 }
 

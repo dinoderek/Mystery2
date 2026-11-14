@@ -1,0 +1,29 @@
+CASE: The Missing Cookies
+
+== STATUS ==
+Mode: Exploring
+Location: Kitchen
+People here: Alice Smith
+Turns left: 7
+
+== NOTEBOOK: STORY ==
+The cookie plate is empty and snack time is almost here.
+
+The cookies disappeared from the kitchen sometime around 10 AM.
+
+== NOTEBOOK: PLACES ==
+- Kitchen (you are here) — Alice Smith: Where the cookies were set out.
+- Hallway — Bob Jones
+
+== NOTEBOOK: PEOPLE ==
+- Alice Smith (at Kitchen): Helped bake.
+- Bob Jones (at Hallway)
+
+== NOTEBOOK: CLUES ==
+FOUND AT PLACES — Kitchen:
+- Cookie crumbs lead toward the hallway.
+
+== STORY SO FAR ==
+Narrator: You arrive in the kitchen.
+> search
+Narrator: You find cookie crumbs on the floor.

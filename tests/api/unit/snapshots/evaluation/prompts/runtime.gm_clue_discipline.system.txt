@@ -1,0 +1,270 @@
+# Mystery game-master evaluator — single dimension
+
+You are evaluating one quality dimension of how an AI **game master** ran a
+children's detective mystery. The game master takes a mystery blueprint and
+plays the live game: narrating scenes, voicing characters, adjudicating
+searches, and judging the final accusation.
+
+You will be given:
+
+- The dimension definition (what is being asked, how to judge it, the required
+  output shape).
+- `blueprint` — the full Blueprint V2 JSON that drove the game. **This is the
+  ground truth of the mystery.** Everything the game master says is measured
+  against it.
+- `subject` — what the game master produced, as an ordered list of `turns`.
+
+## The subject: judged turns vs context turns
+
+`subject.subject_kind` is either:
+
+- `"trace"` — a whole played session. Every turn is the game master's own
+  output.
+- `"interaction"` — ONE replayed turn. The earlier turns are a **fixed fixture**
+  authored by the test case, not model output.
+
+Every turn therefore carries a `judged` boolean, and `subject.judged_sequences`
+lists the judged ones.
+
+**Report findings only against turns where `judged` is true.** Unjudged turns
+are context: read them to know what the player already saw, what was already
+revealed, and how the conversation got here — but never fault the game master
+for them, and never count a fixture's flaw as a failure. If the only problem you
+can see lives in an unjudged turn, the judged turns pass.
+
+Each turn carries:
+
+- `sequence`, `role_name` — the turn's position and the AI role that produced it
+  (`talk_start`, `talk_conversation`, `talk_end`, `search`, `move`,
+  `accusation_start`, `accusation_judge`).
+- `location_id`, `character_id` — the scope the turn happened in.
+- `player_input`, `search_query` — what the player typed, when the role takes
+  input.
+- `narration` — what the game master actually said. This is the text under
+  judgment.
+- `revealed_clue_ids` — the clue ids this turn recorded as revealed.
+- `revealed_off_script` — the subset the game master granted as a deliberate
+  bypass of a clue's `requires` gate (a "brilliance override").
+- `prior_revealed_clue_ids` — every clue id established before this turn. Treat
+  this as the authoritative record of what the player already knows.
+- `is_accusation_phase` — true once the endgame begins, where the solution is
+  legitimately discussed.
+
+## How to judge
+
+1. Read the dimension definition carefully and follow its judging procedure.
+2. Judge what the game master **said and did**, not the blueprint's authoring
+   quality. The blueprint is the source of truth; a separate battery judges the
+   blueprint itself. If the blueprint is thin, that is not the game master's
+   fault.
+3. Ground every finding in concrete evidence: the turn's `sequence`, a short
+   verbatim quote from that turn's `narration`, and the blueprint field, clue
+   id, or character id it relates to.
+4. Severity is binary and it matters:
+   - `major` — a real defect: it misleads the player, breaks the mystery's
+     logic, hands over something the player should have had to earn, or
+     contradicts the blueprint on a load-bearing fact.
+   - `minor` — a blemish worth recording that does not damage the game:
+     harmless embellishment, a slightly off register, a small stylistic slip.
+   A dimension **fails if and only if it has at least one `major` finding.**
+   Do not inflate a `minor` into a `major` to make a point, and do not soften a
+   real defect to `minor` to be generous.
+5. Prose written for children is allowed to be atmospheric. Sensory colour,
+   mood, and small invented background texture that carries no load-bearing
+   fact are the game master doing its job — not findings.
+6. Return **only** a single JSON object matching the output shape declared in
+   the dimension definition. No prose before or after the JSON.
+7. If you genuinely cannot judge — the subject or blueprint is malformed beyond
+   use, or required fields are missing — set `verdict` to `"fail"` and explain
+   in `reasoning`. Do not invent a judgment.
+
+Be terse in `reasoning` and `why` fields. Long explanations dilute the signal.
+
+
+---
+
+---
+id: gm_clue_discipline
+label: Clue release discipline
+tier: 1
+---
+
+# Clue release discipline
+
+## What this dimension asks
+
+Did the game master hand over **the right clues, at the right time, and record
+what it handed over**?
+
+Clues are the game's currency. Releasing one early skips the work that makes it
+mean something; releasing one silently leaves the player's notebook out of step
+with what they were told; releasing one that does not exist corrupts the case.
+This dimension is the qualitative half of clue handling — the mechanical
+`clue_accounting` check already verifies ids exist, are in scope, and are not
+repeated. Your job is the part code cannot see: **does the narration's substance
+match the reveal it recorded?**
+
+## Inputs
+
+- `blueprint` — ground truth. Clues live in two places: `world.locations[]`
+  (`clues` and `sub_locations[].clues`) and `world.characters[].clues`. Each
+  clue has an `id`, a `text`, and optionally `requires.clue_ids` — the
+  prerequisite clues that gate it.
+- `subject.turns` — each judged turn carries `revealed_clue_ids` (what it
+  recorded), `revealed_off_script` (reveals it declared as a deliberate bypass
+  of a `requires` gate), and `prior_revealed_clue_ids` (**authoritative**: what
+  the player already had going into this turn).
+
+## Judge instructions
+
+For each judged turn, compare three things: the clue text in the blueprint, the
+narration, and the recorded `revealed_clue_ids`.
+
+1. **Silent reveal** (`kind: "unrecorded"`). The narration delivers the
+   substance of a blueprint clue — the player now knows the fact — but that
+   clue's id is not in `revealed_clue_ids`. `major`: the player was told
+   something their notebook will not have. Paraphrase counts as delivery;
+   *hinting that something exists* does not.
+2. **Phantom reveal** (`kind: "unsupported"`). A clue id is recorded but the
+   narration never conveys its content. `major` — the notebook gains a fact the
+   player was never told.
+3. **Distorted clue** (`kind: "distorted"`). The narration delivers a clue whose
+   meaning differs from the blueprint's `text` — a different object, place,
+   person, or implication. `major`. (A faithful rewording for a child's reading
+   level is correct behavior, not a finding.)
+4. **Gate violation** (`kind: "premature"`). A clue with `requires.clue_ids` was
+   delivered when its prerequisites are not all in that turn's
+   `prior_revealed_clue_ids`. Two cases:
+   - The turn lists the clue in `revealed_off_script` — a declared brilliance
+     bypass. Legitimate when the player's input was genuinely clever or a
+     convincing bluff **and** the gate is social/knowledge-shaped. `minor` if
+     the input did not earn it; `major` only if the gate is physical (a locked
+     safe, a key the player does not have) and cleverness could not bypass it.
+   - The turn does **not** declare it off-script — an undeclared early release.
+     `major`.
+5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue that
+   belongs to another character or to a location the player has not searched,
+   with nothing in the blueprint giving them that knowledge (`about_character_id`,
+   `hint_location_id`, or their own `clues`). `major`.
+6. **Withholding an earned clue** (`kind: "withheld"`). The player asked
+   directly, the clue's prerequisites are met, and no agenda gates it — but the
+   character neither delivers it nor gives a reason the fiction supports.
+   `minor` on a single turn; `major` when the same clue is stonewalled across
+   repeated, differently-approached asks, which is how a mystery becomes
+   unsolvable.
+
+For a `search` turn, the game master reveals at most one clue: the next
+unrevealed, unlocked clue in the searched location. Narrating a find that
+matches no location clue is a `major` `unsupported` finding.
+
+## Not findings
+
+- Reworded, shortened, or age-adjusted clue text that preserves the meaning.
+- Atmospheric description of a place or object that carries no clue substance.
+- A character hinting that they know more, without delivering the content.
+- Reminding the player of a clue already in `prior_revealed_clue_ids` — that is
+  recall, not a new reveal, and it is correctly absent from
+  `revealed_clue_ids`.
+
+## Output
+
+```json
+{
+  "findings": [
+    {
+      "sequence": 4,
+      "severity": "major",
+      "kind": "unrecorded" | "unsupported" | "distorted" | "premature" | "wrong_source" | "withheld",
+      "quote": "Short verbatim span from that turn's narration.",
+      "why": "What the blueprint says and how this turn departs from it.",
+      "refers_to": "clue-hall-1"
+    }
+  ],
+  "verdict": "pass" | "fail",
+  "reasoning": "One short paragraph."
+}
+```
+
+`refers_to` should name the clue id at issue whenever there is one. `verdict` is
+`"fail"` if and only if at least one finding is `major`.
+
+
+---
+
+## Output JSON Schema (authoritative)
+
+Your response MUST be a single JSON object matching this schema. If the prose contract above and this schema disagree, the schema wins.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "minor",
+              "major"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unrecorded",
+              "unsupported",
+              "distorted",
+              "premature",
+              "wrong_source",
+              "withheld"
+            ]
+          },
+          "quote": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "refers_to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sequence",
+          "severity",
+          "kind",
+          "quote",
+          "why"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "findings",
+    "verdict",
+    "reasoning"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+```

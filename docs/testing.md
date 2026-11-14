@@ -14,13 +14,13 @@
   start, resume and endgame. `npm run test:e2e`.
 - **Golden transcripts**: what the player reads across a whole game (below).
 - **Browser E2E**: `web/e2e`, Playwright on `vite dev`. Route protection, the
-  profile picker, command entry, loading states, retries, session list, speaker colours,
-  images. `npm -w web run test:e2e`.
+  profile picker, command entry, loading states, retries, session list, speaker
+  colours, images. `npm -w web run test:e2e`.
 
 Every suite is self-contained: it starts what it needs in a temporary config
-root, deletes it afterwards, and never touches the database you play on. Shared
-helpers live in `tests/testkit`; integration and E2E use the `blueprints/` fixtures. A change that crosses boundaries updates every
-affected suite. Prefer integration tests for backend behaviour; Playwright is for
+root, deletes it afterwards, and never touches your play database. Shared
+helpers live in `tests/testkit`; integration and E2E use the `blueprints/`
+fixtures. A change that crosses boundaries updates every affected suite. Prefer integration tests for backend behaviour; Playwright is for
 browser journeys.
 
 ## The gate
@@ -37,7 +37,7 @@ repo. No suite may be reported skipped, and one that cannot start is a bug to
 fix.
 
 Integration and API E2E run against the production build (`node build/index.js`),
-so a bundling failure is caught. The build gets the run's config root and fails
+so a bundling failure shows. The build gets the run's config root and fails
 the step if it opens a database. The runner fails if anything holds the port.
 
 **Every test file runs in the gate.** Each step names its `roots` and `files`
@@ -80,7 +80,7 @@ time per checkout. Each worktree has its own port
 
 - **Playwright.** Once per machine, and after any `@playwright/test` bump, run
   `npx playwright install chromium`. Otherwise browser tests fail with
-  `Executable doesn't exist`. CI reinstalls itself.
+  `Executable doesn't exist`.
 - **Live AI** is opt-in, never a gate substitute:
   `npm run test:integration:live:free|paid`, `test:e2e:live:free|paid`,
   `test:blueprint:live:free|paid`, and `AI_LIVE=1 npm -w web run test:e2e --
@@ -92,7 +92,7 @@ time per checkout. Each worktree has its own port
 
 Each `npm test` writes `test-results/<timestamp>/` (the last five are kept): a
 log per step, `summary.log` and `coverage.log`. The `Total` line in
-`summary.log` is the verdict; the coverage section never changes the exit code.
+`summary.log` is the verdict; coverage never changes the exit code.
 For a failure, also read the server's stdout, `readStoredSession()` and
 `readStoredEvents()` (`tests/api/integration/helpers.ts`), and Playwright's report.
 
@@ -108,10 +108,18 @@ behaviour-proving tests cannot reach a floor, ask.
 Measured globs are the `coverage.include` arrays in `vitest.config.ts` and
 `web/vite.config.ts`; a new source directory is invisible until added.
 `summary.log` lists files at or below `LOW_FILE_THRESHOLD`
-(`scripts/lib/coverage-report.mjs`) by uncovered statements, not percentage.
-Only unit suites feed the numbers. E2E drives an uninstrumented server, so
-endpoints and components read 0% in the report. A listed file is a reason to act
-only when its boundary is unit.
+(`scripts/lib/coverage-report.mjs`) by uncovered statements. Only unit suites
+feed the numbers: E2E drives an uninstrumented server, so endpoints and
+components read 0%. Act on a listed file only when its boundary is unit.
+
+## Evaluation snapshots
+
+`eval-snapshots.test.ts` runs each evaluation harness with its model CLI
+swapped for a stub that keeps what it is sent. It compares every prompt (judges,
+generator, investigator and its `claude` arguments) and the
+verdicts reached on fixed stub answers with `tests/api/unit/snapshots/evaluation/`.
+Moving code changes no snapshot. Re-record with `npm run test:snapshots:record`,
+read the diff; for judge content, that is the operator's call.
 
 ## Golden transcripts
 
@@ -123,18 +131,17 @@ budget running out, and a won and a lost accusation. Only
 `tests/testkit/src/golden/driver.ts` knows how a line becomes requests. A resumed
 game is not compared. The mock quotes the start of the narrator prompt, so
 editing it changes every transcript. Re-record on purpose with `npm run
-test:golden:record`, and review the diff.
+test:golden:record`; review the diff.
 
 ## Writing tests
 
-- **Isolation.** Each API run gets its own temporary database, shared by its
-  tests. Each test creates its own profile with
-  `setupApiTestAuth(tag)`, scopes assertions to its own identifiers, and avoids
-  unscoped global counts. Anything that opens a database gets an explicit path,
+- **Isolation.** Each API run gets a temporary database. Each test creates its
+  own profile with `setupApiTestAuth(tag)` and scopes assertions to its own
+  identifiers, with no unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which points at the database you play on.
 - **Fixtures.** Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
-  Factories parse at creation. Pass only the overrides that differ. A new
+  Factories parse at creation: pass only the overrides that differ. A new
   response type needs its factory. For a TypeScript-only shape, annotate the
   mock so `typecheck` catches drift.
 - **Boundaries that stay proven** (`session-ownership.test.ts`,
@@ -151,13 +158,12 @@ test:golden:record`, and review the diff.
 - **No real model.** Integration and E2E never call one. The server runs the mock
   provider, so assert persisted side effects.
 - **Mock by absence.** Mock is chosen when the config root has no `.env.ai.*` and
-  the settings row is empty. That row can be changed over the API, and a test that
-  switches to live switches it for every test sharing the server, whose calls then
-  reach the real API. So no suite sharing a server with game-playing tests may
-  switch to live; assert that in the unit suites (`ai-settings-store.test.ts`,
+  the settings row is empty. A test that switches the row to live, over the API, does so for
+  every test sharing the server, and their calls reach the real API. So no suite
+  sharing a server with game-playing tests may switch to live; assert that in the unit suites (`ai-settings-store.test.ts`,
   `local-engine-ai-profile.test.ts`). Suites that change the row
   (`tests/api/integration/ai-settings.test.ts`, `web/e2e/ai-settings.spec.ts`)
-  reset it around each test and leave it on mock. As a backstop, the runners
+  reset it around each test and leave it on mock. The runners also
   point `OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a missing file.
 
 ## CI and documentation-only changes

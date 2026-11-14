@@ -1,0 +1,38 @@
+{
+  "mechanical": {
+    "clue_accounting": "pass",
+    "spoiler_leak": "pass"
+  },
+  "judges": {
+    "gm_roleplay": {
+      "status": "pass",
+      "major": 0,
+      "minor": 0
+    },
+    "gm_clue_discipline": {
+      "status": "pass",
+      "major": 0,
+      "minor": 0
+    },
+    "gm_fabrication": {
+      "status": "fail",
+      "major": 1,
+      "minor": 0
+    },
+    "gm_spoiler": {
+      "status": "pass",
+      "major": 0,
+      "minor": 1
+    }
+  },
+  "run_error": null,
+  "judge_cost_usd": null,
+  "readability": {
+    "target_age": 9,
+    "threshold": 6,
+    "pass": 9,
+    "total": 9,
+    "mean_grade": 2.2,
+    "max_grade": 4.83
+  }
+}

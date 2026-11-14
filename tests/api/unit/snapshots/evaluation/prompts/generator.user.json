@@ -1,0 +1,20 @@
+{
+  "story_brief": {
+    "brief": "Someone took the cookies from the kitchen before snack time. The truth involves a lunch bag in the hallway.",
+    "targetAge": 8,
+    "timeBudget": 12,
+    "titleHint": "The Missing Cookies",
+    "mustInclude": [
+      "cookies",
+      "lunch bag"
+    ],
+    "culprits": 1,
+    "suspects": 1,
+    "witnesses": 1,
+    "locations": 2,
+    "redHerringTrails": 1,
+    "coverUps": false,
+    "eliminationComplexity": "simple"
+  },
+  "instructions": "Return only a JSON object that satisfies the provided response schema."
+}

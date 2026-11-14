@@ -84,6 +84,17 @@ describe("session ownership", () => {
     });
     expect(accuse.status).toBe(400);
 
+    // A line that plays nothing is refused too: the game is not B's to read.
+    for (const input of ["search", "help"]) {
+      const turn = await fetch(`${API_URL}/game-turn`, {
+        method: "POST",
+        headers: playerB.headers,
+        body: JSON.stringify({ game_id: gameId, input }),
+      });
+      expect(turn.status).toBe(404);
+    }
+
     expect(readStoredSession(gameId)).toEqual(before);
+    expect(readStoredEvents(gameId)).toHaveLength(1);
   });
 });

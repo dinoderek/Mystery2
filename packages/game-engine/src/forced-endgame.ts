@@ -12,6 +12,7 @@ import {
   createNarrationDiagnostics,
   createNarrationPart,
   insertNarrationEvent,
+  type InsertNarrationEventInput,
   type NarrationPart,
 } from "./narration.ts";
 import { NARRATOR_SPEAKER } from "./speaker.ts";
@@ -136,26 +137,17 @@ export async function tryGenerateForcedEndgame(input: {
   }
 }
 
-/**
- * Inserts the forced_endgame narration event and logs the timeout transition.
- * Call after the action's own narration event has been persisted.
- */
-export async function insertForcedEndgameEvent(
-  events: EventStore,
-  input: {
-    session_id: string;
-    action: string;
-    action_sequence: number;
-    payload: Record<string, unknown>;
-    narration_parts: NarrationPart[];
-    model?: string | null;
-    time_before: number;
-    time_after: number;
-    resulting_mode: string;
-    logger: LogWriter;
-  },
-): Promise<number> {
-  const sequence = await insertNarrationEvent(events, {
+/** The forced accusation's event, saved straight after the action that spent the last turn. */
+export function forcedEndgameEvent(input: {
+  session_id: string;
+  action: string;
+  action_sequence: number;
+  payload: Record<string, unknown>;
+  narration_parts: NarrationPart[];
+  model?: string | null;
+  time_after: number;
+}): InsertNarrationEventInput {
+  return {
     session_id: input.session_id,
     event_type: "forced_endgame",
     actor: "system",
@@ -179,10 +171,50 @@ export async function insertForcedEndgameEvent(
       trigger: "timeout",
       related_sequence: input.action_sequence,
     }),
+  };
+}
+
+/** Logs the move into the accusation that running out of turns forced. */
+export function logTimeoutTransition(
+  logger: LogWriter,
+  input: {
+    game_id: string;
+    action: string;
+    time_before: number;
+    time_after: number;
+    resulting_mode: string;
+    action_sequence: number;
+    forced_endgame_sequence: number;
+  },
+): void {
+  logger.log("timeout.transition", input);
+}
+
+/**
+ * Inserts the forced_endgame narration event and logs the timeout transition.
+ * Call after the action's own narration event has been persisted.
+ */
+export async function insertForcedEndgameEvent(
+  events: EventStore,
+  input: {
+    session_id: string;
+    action: string;
+    action_sequence: number;
+    payload: Record<string, unknown>;
+    narration_parts: NarrationPart[];
+    model?: string | null;
+    time_before: number;
+    time_after: number;
+    resulting_mode: string;
+    logger: LogWriter;
+  },
+): Promise<number> {
+  const sequence = await insertNarrationEvent(events, {
+    ...forcedEndgameEvent(input),
     logger: input.logger,
   });
 
-  input.logger.log("timeout.transition", {
+  logTimeoutTransition(input.logger, {
     game_id: input.session_id,
     action: input.action,
     time_before: input.time_before,

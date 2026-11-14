@@ -59,6 +59,7 @@ export function readStoredSession(gameId: string): StoredSession | null {
 
 /** Columns a test may set directly. Anything else is a typo, not a fixture. */
 const PATCHABLE = new Set([
+	'ai_profile_id',
 	'blueprint_id',
 	'mode',
 	'outcome',

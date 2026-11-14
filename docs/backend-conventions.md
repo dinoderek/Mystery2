@@ -4,15 +4,16 @@ The rules for building the game engine and managing its data.
 
 ## 1. The Shared Boundary (API Contracts)
 
-The "Shared Boundary" is **specifically the data exchanged between the UI and
-the engine's endpoints**.
+The boundary is the data exchanged between the UI and the engine's endpoints.
+The engine holds the full `Blueprint`, solution included; the UI receives
+sanitized views of it.
 
-- The engine holds comprehensive models internally (the full `Blueprint`, with
-  its solution and internal reasoning).
-- The frontend receives specific, sanitized _views_ via API payloads.
 - All shapes at that boundary MUST be Zod schemas.
 - The single source of truth is `packages/shared/src/mystery-api-contracts.ts`.
 - Update those schemas **first** whenever the API boundary changes.
+- An endpoint parses its request with its schema and answers `400` naming the
+  bad field (`game-turn` does). Responses are typed with the schema and parsed
+  by the integration suite, not checked at run time.
 
 ## 2. The Engine (`packages/game-engine/`)
 
@@ -20,22 +21,14 @@ All game logic runs in the engine, imported by the SvelteKit server.
 
 - Endpoint handlers live in `packages/game-engine/src/endpoints/<name>.ts` and are listed in
   `packages/game-engine/src/endpoints/index.ts`. An unlisted name is a 404.
-- The engine wraps the AI provider (OpenRouter) using a server-side key. The UI
-  never calls OpenRouter directly.
-- The engine imports `packages/shared` directly. There is no mirroring, no
-  sandbox, and no build step between the source and the running game.
+- The engine calls the AI provider with a server-side key; the UI never does.
+- The engine imports `packages/shared` directly, with no build step between.
 
 ### The `EngineContext` seam
 
 Handlers do **not** touch a database, a file path, or an HTTP detail. Each
-endpoint exports
-
-```ts
-export async function handle(req: Request, ctx: EngineContext): Promise<Response>
-```
-
-and `web/src/routes/api/[endpoint]/+server.ts` does the rest once for all of
-them: check the method, build the context, delegate.
+exports `handle(req, ctx)`, and `web/src/routes/api/[endpoint]/+server.ts` does
+the rest once for all of them: check the method, build the context, delegate.
 
 `EngineContext` (`packages/game-engine/src/context.ts`) is the engine's whole boundary against its
 host: `ctx.sessions`, `ctx.events`, `ctx.content`, `ctx.aiProfiles`, and
@@ -53,13 +46,24 @@ Rules:
 - A turn is saved by one operation, `ctx.sessions.saveTurn`: the session change
   and every event in one `Db.transaction`, sequences assigned inside it, after
   the model has answered. A stale expected sequence writes nothing and throws
-  `SaveConflictError`. Never write a session and its events separately.
+  `SaveConflictError` (`409`). Never write a session and its events separately.
 - Register the endpoint's allowed methods in `packages/game-engine/src/endpoints/index.ts`. The
   route returns `405` from that list; handlers do not re-check.
 
 This lets the engine be re-hosted without touching game logic: a second adapter
 can sit beside the first, and handlers cannot tell which they have. A direct
 file or driver reference in a handler is a bug.
+
+### The turn function
+
+`game-turn` hands a typed line to `playTurn` in `packages/game-engine/src/turn/`, the one
+place a turn's rules live. It parses the line with `command-grammar.ts` and
+answers a refusal, a view or quit without loading the narrator. An action is
+checked against the mode, resolved by its own resolver (the narrator call), and
+costed by `effect.ts`, pure data in and out: the turn spent, the accusation the
+last one forces, the patch and the events. It is saved once and answered from
+the save. The action's event stores the line under `input`; transcripts fall
+back to a rebuilt line for events without one.
 
 ### Access
 
@@ -88,45 +92,38 @@ Six tables, defined once in `packages/game-engine/src/db/schema.ts`: three for
 play, three for AI configuration.
 
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
-  and `db/events.ts` is scoped to one player. There is no row-level security
-  underneath to catch a query that forgets, so a repository method without a
-  `player_id` filter is a bug that crosses profiles, not a style problem. This
-  is why the two contexts are separate types rather than one with a nullable
-  player: a handler that runs without a profile has no session store to reach
-  for, so there is no scoped query for it to get wrong.
+  and `db/events.ts` is scoped to one player, with nothing underneath to catch a
+  query that forgets: a method without a `player_id` filter crosses profiles.
+  That is why the two contexts are separate types: a handler without a profile
+  has no session store to get wrong.
 - **One driver import.** Only `db/client.ts` imports `better-sqlite3` (via
   `createRequire`, so no bundler can inline a native addon), and only
   `context-local.ts` and `db/` import `db/`; the `imports` gate step checks
-  both. Repositories receive a `Db` interface, so a move to
-  `node:sqlite` touches `db/client.ts` only.
-- **`schema.ts`, not `schema.sql`.** The engine loads identically under Vite's
-  SSR bundle, vitest and plain `node`, and only a module works in all three: a
-  bundled chunk cannot read a sibling `.sql` file, and `?raw` is Vite-only.
+  both. Repositories receive a `Db` interface.
+- **`schema.ts`, not `schema.sql`.** Only a module loads identically under
+  Vite's SSR bundle, vitest and plain `node`.
 - **Three pragmas are load-bearing:** `journal_mode = WAL` (a reader does not
   block the running game), `foreign_keys = ON` (off by default in SQLite; the
   `game_events` cascade depends on it), and `busy_timeout = 5000`.
 - **Schema changes are forward-only.** Edit `schema.ts` so a fresh database is
   correct, add a matching entry to `MIGRATIONS` in `client.ts` so an existing
-  one is upgraded, and bump `SCHEMA_VERSION`. The two must agree: a new
-  database and an upgraded one have to end up identical. Forgetting the
-  `MIGRATIONS` entry is caught: `planMigrations()` refuses to cross a version
-  with no step, naming it, rather than stamping one nothing produced. Nothing
-  catches it afterwards, and no suite can — they all build their databases from
-  scratch and never take the upgrade path. A bump reaches the `prod` database
+  one is upgraded, and bump `SCHEMA_VERSION`. A new database and an upgraded
+  one must end up identical. `planMigrations()` refuses to cross a version with
+  no step; nothing else catches a wrong step, since every suite builds its
+  database from scratch. A bump reaches the `prod` database
   the first time any branch opens it and cannot be undone, so take a copy first
   (`npm run db:copy -- prod prod-backup`).
 - **Types are honest at the boundary.** `GameSessionRow.mode` is a `GameMode`;
   `readGameMode()` in `state-machine.ts` alone narrows stored text.
 - **Scope is a decision, not a default.** `db/sessions.ts` and `db/events.ts`
-  are player-scoped; `db/players.ts` and `db/ai-settings.ts` are app-global and
-  hang off `LocalEngine` rather than a request context. Pick one deliberately —
-  an app-global store that should have been scoped is the security bug above,
-  wearing a different hat.
+  are player-scoped; `db/players.ts` and `db/ai-settings.ts` are app-global, on
+  `LocalEngine`. An app-global store that should have been scoped is the bug
+  above.
 
 ## 4. Content
 
 Blueprints and images are files. `packages/game-engine/src/content.ts` reads them, caches on mtime
-and size, and skips-and-logs anything unparseable rather than failing a whole
+and size, and skips-and-logs anything unparseable rather than failing the
 catalog. `packages/game-engine/src/paths.ts` is the only place that decides where they are.
 
 ## 5. AI Profiles

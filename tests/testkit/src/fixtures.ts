@@ -24,6 +24,9 @@ import {
   TalkAskResponseSchema,
   TalkEndResponseSchema,
   AccuseResponseSchema,
+  TurnPlayedResponseSchema,
+  TurnRefusedResponseSchema,
+  TurnViewResponseSchema,
   type Speaker,
   type NarrationPart,
   type NarrationEvent,
@@ -38,6 +41,9 @@ import {
   type TalkAskResponse,
   type TalkEndResponse,
   type AccuseResponse,
+  type TurnPlayedResponse,
+  type TurnRefusedResponse,
+  type TurnViewResponse,
 } from "@my2/shared";
 
 // ---------------------------------------------------------------------------
@@ -343,6 +349,53 @@ export function createAccuseResponse(
   };
   AccuseResponseSchema.parse(response);
   return response as AccuseResponse;
+}
+
+// ---------------------------------------------------------------------------
+// game-turn answers
+// ---------------------------------------------------------------------------
+
+export function createTurnPlayedResponse(
+  overrides?: Partial<TurnPlayedResponse>,
+): TurnPlayedResponse {
+  const response: TurnPlayedResponse = {
+    kind: "turn",
+    events: [
+      {
+        sequence: 2,
+        event_type: "search",
+        payload: { input: "search" },
+        narration_parts: [{ text: "You search the area.", speaker: NARRATOR_SPEAKER }],
+      },
+    ],
+    state: { mode: "explore", time_remaining: 9, location: "loc-kitchen", current_talk_character: null },
+    revealed_clues: [],
+    result: null,
+    ...overrides,
+  };
+  return validate(TurnPlayedResponseSchema, response);
+}
+
+export function createTurnRefusedResponse(
+  overrides?: Partial<TurnRefusedResponse>,
+): TurnRefusedResponse {
+  return validate(TurnRefusedResponseSchema, {
+    kind: "refused" as const,
+    reason: "unrecognized" as const,
+    hint: "Commands: move to/go to <location>, search, help.",
+    ...overrides,
+  });
+}
+
+export function createTurnViewResponse(
+  overrides?: Partial<TurnViewResponse>,
+): TurnViewResponse {
+  return validate(TurnViewResponseSchema, {
+    kind: "view" as const,
+    view: "notebook" as const,
+    section: null,
+    ...overrides,
+  });
 }
 
 // ---------------------------------------------------------------------------

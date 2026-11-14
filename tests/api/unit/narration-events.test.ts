@@ -166,6 +166,42 @@ describe("narration event helpers", () => {
     expect(event.narration_parts[1].speaker).toEqual(NARRATOR_SPEAKER);
   });
 
+  it("shows the line as typed when the event stored it", () => {
+    const event = readNarrationEvent({
+      sequence: 4,
+      event_type: "move",
+      narration: "You arrive at the Kitchen.",
+      narration_parts: [createNarrationPart("You arrive at the Kitchen.", NARRATOR_SPEAKER)],
+      payload: { location_name: "Kitchen", input: "go to the kitchen!", speaker: NARRATOR_SPEAKER },
+    });
+
+    expect(event.narration_parts[0]).toEqual(createNarrationPart("go to the kitchen!", INVESTIGATOR_SPEAKER));
+  });
+
+  it("shows a line for an event whose line was never rebuilt, once it stored one", () => {
+    const event = readNarrationEvent({
+      sequence: 6,
+      event_type: "end_talk",
+      narration: "You say goodbye.",
+      narration_parts: [createNarrationPart("You say goodbye.", NARRATOR_SPEAKER)],
+      payload: { character_name: "Alice", input: "bye" },
+    });
+
+    expect(event.narration_parts.map((part) => part.text)).toEqual(["bye", "You say goodbye."]);
+  });
+
+  it("rebuilds the line for an event saved without one", () => {
+    const event = readNarrationEvent({
+      sequence: 4,
+      event_type: "move",
+      narration: "You arrive at the Kitchen.",
+      narration_parts: [createNarrationPart("You arrive at the Kitchen.", NARRATOR_SPEAKER)],
+      payload: { location_name: "Kitchen" },
+    });
+
+    expect(event.narration_parts[0]).toEqual(createNarrationPart("move to Kitchen", INVESTIGATOR_SPEAKER));
+  });
+
   it("does not prepend player input for event types without player actions", () => {
     const event = readNarrationEvent({
       sequence: 1,

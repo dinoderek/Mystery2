@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { describeTranscriptDiff, normalizeTranscript } from "../../testkit/src/golden/compare";
-import { BrowserDriver, type GameDriver, type LineOutcome } from "../../testkit/src/golden/driver";
+import { TurnDriver, type GameDriver, type LineOutcome } from "../../testkit/src/golden/driver";
 import { Screen } from "../../testkit/src/golden/screen";
 
 const narrator = { kind: "narrator", key: "narrator", label: "Narrator" } as const;
@@ -105,79 +105,104 @@ describe("Screen", () => {
   });
 });
 
-describe("BrowserDriver", () => {
-  const driver = () => new BrowserDriver({ apiUrl: "http://x/api", headers: {}, gameId: "g1", start: START });
+describe("TurnDriver", () => {
+  const driver = (mode: "explore" | "accuse" = "explore") =>
+    new TurnDriver({ apiUrl: "http://x/api", headers: {}, gameId: "g1", start: { ...START, mode } });
 
   afterEach(() => vi.unstubAllGlobals());
 
-  it("answers refusals and help itself, in the store's wording", async () => {
+  function answering(...answers: unknown[]) {
+    const queue = [...answers];
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(queue.shift())));
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  const state = (overrides: Record<string, unknown> = {}) => ({
+    mode: "explore",
+    time_remaining: 4,
+    location: "loc-a",
+    current_talk_character: null,
+    ...overrides,
+  });
+
+  it("sends the line as typed to game-turn", async () => {
+    const fetchMock = answering({ kind: "refused", reason: "missing-target", hint: "Where to? Try: Attic, Barn." });
+
+    expect(await driver().submit("go")).toEqual({ kind: "refused", hint: "Where to? Try: Attic, Barn." });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://x/api/game-turn",
+      expect.objectContaining({ body: JSON.stringify({ game_id: "g1", input: "go" }) }),
+    );
+  });
+
+  it("opens help with its note and the notebook without one", async () => {
+    answering(
+      { kind: "view", view: "help", section: null },
+      { kind: "view", view: "locations", section: "places" },
+      { kind: "quit" },
+    );
     const d = driver();
-    expect(await d.submit("go")).toEqual({ kind: "refused", hint: "Where to? Try: Attic, Barn, Cleo Park." });
-    expect(await d.submit("go to the moon")).toEqual({
-      kind: "refused",
-      hint: '"the moon" is not a valid destination. Try: Attic, Barn, Cleo Park.',
-    });
-    expect(await d.submit("talk to")).toEqual({ kind: "refused", hint: "Who do you want to talk to? Try: Cleo Park." });
-    expect(await d.submit("talk to Zed")).toEqual({
-      kind: "refused",
-      hint: '"zed" is not a valid character. Try: Cleo Park.',
-    });
-    expect(await d.submit("dance")).toMatchObject({ kind: "refused" });
+
     expect(await d.submit("help")).toEqual({ kind: "view", overlay: "help", section: null, echo: true, note: "Help menu opened." });
-    expect(await d.submit("n")).toEqual({ kind: "view", overlay: "notebook", section: null, echo: false, note: null });
+    expect(await d.submit("locations")).toEqual({ kind: "view", overlay: "notebook", section: "places", echo: false, note: null });
+    expect(await d.submit("quit")).toEqual({ kind: "quit" });
   });
 
-  it("routes an action to its endpoint and names the page after the place", async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          narration_parts: [{ text: "You arrive.", speaker: narrator }],
-          current_location: "loc-b",
-          visible_characters: [],
-          time_remaining: 4,
-          mode: "explore",
-          current_talk_character: null,
-        }),
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const outcome = await driver().submit("go to barn");
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://x/api/game-move",
-      expect.objectContaining({ body: JSON.stringify({ game_id: "g1", destination: "loc-b" }) }),
-    );
-    expect(outcome).toMatchObject({
+  it("shows the saved events and names a page after the place the game is in", async () => {
+    answering({
       kind: "turn",
-      mode: "explore",
-      time_remaining: 4,
+      events: [
+        { sequence: 3, event_type: "move", payload: { location_name: "Barn" }, narration_parts: [line("You arrive.")] },
+        { sequence: 4, event_type: "forced_endgame", payload: {}, narration_parts: [line("Time is up.")] },
+      ],
+      state: state({ mode: "accuse", time_remaining: 0, location: "loc-b" }),
+      revealed_clues: [],
       result: null,
-      events: [{ event_type: "move", payload: { location_name: "Barn" } }],
+    });
+
+    expect(await driver().submit("go to barn")).toEqual({
+      kind: "turn",
+      mode: "accuse",
+      time_remaining: 0,
+      clues: [],
+      result: null,
+      events: [
+        { event_type: "move", payload: { location_name: "Barn" }, narration_parts: [line("You arrive.")] },
+        { event_type: "forced_endgame", payload: undefined, narration_parts: [line("Time is up.")] },
+      ],
     });
   });
 
-  it("sends a line said in accuse mode to the accusation as reasoning", async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(JSON.stringify({ narration_parts: [], time_remaining: 4, mode: "ended", result: "lose", current_talk_character: null })),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    const d = new BrowserDriver({ apiUrl: "http://x/api", headers: {}, gameId: "g1", start: { ...START, mode: "accuse" } });
-
-    const outcome = await d.submit("it was Cleo");
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://x/api/game-accuse",
-      expect.objectContaining({ body: JSON.stringify({ game_id: "g1", player_reasoning: "it was Cleo" }) }),
-    );
-    expect(outcome).toMatchObject({
-      result: "lose",
-      events: [{ event_type: "accuse_round", narration_parts: [{ text: "Action completed." }] }],
+  it("opens the accusation for reasoning given with `accuse`, and not for a later round", async () => {
+    const round = (mode: string) => ({
+      kind: "turn",
+      events: [{ sequence: 5, event_type: "accuse_round", payload: null, narration_parts: [line("Go on.")] }],
+      state: state({ mode }),
+      revealed_clues: [],
+      result: null,
     });
+    answering(round("accuse"), round("accuse"));
+    const d = driver();
+
+    expect(await d.submit("accuse Cleo")).toMatchObject({ events: [{ event_type: "accuse_start" }] });
+    expect(await d.submit("because of the key")).toMatchObject({ events: [{ event_type: "accuse_round" }] });
+  });
+
+  it("reports the clues found and the result", async () => {
+    answering({
+      kind: "turn",
+      events: [{ sequence: 9, event_type: "accuse_resolved", payload: null, narration_parts: [line("Solved.")] }],
+      state: state({ mode: "ended" }),
+      revealed_clues: [],
+      result: "win",
+    });
+
+    expect(await driver("accuse").submit("it was Cleo")).toMatchObject({ mode: "ended", result: "win" });
   });
 
   it("fails loudly when the game answers an error", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 503 })));
-    await expect(driver().submit("go to barn")).rejects.toThrow("game-move answered 503");
+    await expect(driver().submit("go to barn")).rejects.toThrow("game-turn answered 503");
   });
 });

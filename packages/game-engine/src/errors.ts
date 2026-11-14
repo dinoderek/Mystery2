@@ -58,6 +58,26 @@ export class BadRequestError extends Error {
   }
 }
 
+/**
+ * A request the engine will not play: it names the status to answer with and
+ * the reason to log.
+ */
+export class RequestRejectedError extends Error {
+  readonly status: 400 | 404 | 500;
+  readonly reason: string;
+
+  constructor(status: 400 | 404 | 500, message: string, reason: string) {
+    super(message);
+    this.name = "RequestRejectedError";
+    this.status = status;
+    this.reason = reason;
+  }
+}
+
+export function asRejectedResponse(error: unknown): Response | null {
+  return error instanceof RequestRejectedError ? jsonError(error.status, error.message) : null;
+}
+
 export class RetriableAIError extends Error {
   readonly details: ErrorDetails;
 

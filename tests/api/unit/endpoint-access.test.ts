@@ -33,6 +33,13 @@ describe("endpoint access", () => {
     expect(catalog).toEqual([...CATALOG_ENDPOINTS].sort());
   });
 
+  it("plays a turn as the profile that owns the game", () => {
+    expect(ENDPOINTS.find((endpoint) => endpoint.name === "game-turn")).toMatchObject({
+      access: "profile",
+      methods: ["POST"],
+    });
+  });
+
   it("makes every endpoint declare which it is", () => {
     for (const endpoint of ENDPOINTS) {
       expect([endpoint.name, endpoint.access]).toEqual([

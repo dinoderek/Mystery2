@@ -69,6 +69,7 @@ describe("requests without a profile", () => {
       ["game-sessions-list", "GET"],
       ["game-start", "POST"],
       ["game-talk", "POST"],
+      ["game-turn", "POST"],
     ];
 
     for (const [name, method] of sessionEndpoints) {

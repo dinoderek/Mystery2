@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.mjs";
-import { makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
+import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
+import { makeEvents, makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
 
 function moveEvent(seq: number, locationId: string): TraceEventRow {
   return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload: { location_id: locationId }, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
@@ -141,5 +142,32 @@ describe("reconstructTrace — context mode & revisit fidelity", () => {
     const { turns } = reconstructTrace(makeRawTrace({ events }));
     expect(turnBySeq(turns, 1).reconstructed_context?.move_context?.has_visited_before).toBe(false);
     expect(turnBySeq(turns, 2).reconstructed_context?.move_context?.has_visited_before).toBe(true);
+  });
+});
+
+describe("events that store the line as typed", () => {
+  // The player's own words beside what the turn did, under `input`.
+  const TYPED: Record<string, string> = {
+    search: "search",
+    talk: "talk to Mara",
+    ask: "Did you see anything?",
+    end_talk: "bye",
+    move: "go to the garden",
+    accuse_start: "accuse",
+    accuse_resolved: "Dorn did it.",
+  };
+
+  function withTypedLines(): TraceEventRow[] {
+    return makeEvents().map((event) =>
+      TYPED[event.event_type] ? { ...event, payload: { ...event.payload, input: TYPED[event.event_type] } } : event,
+    );
+  }
+
+  it("reconstruct and check the same as events without it", () => {
+    const plain = makeRawTrace();
+    const typed = makeRawTrace({ events: withTypedLines() });
+
+    expect(reconstructTrace(typed)).toEqual(reconstructTrace(plain));
+    expect(runTraceMechanicalChecks({ rawTrace: typed })).toEqual(runTraceMechanicalChecks({ rawTrace: plain }));
   });
 });

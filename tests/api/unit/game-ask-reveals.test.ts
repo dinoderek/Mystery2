@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { selectFirstTimeReveals } from '../../../packages/game-engine/src/endpoints/game-ask.ts';
+import { selectFirstTimeReveals } from '../../../packages/game-engine/src/turn/resolve-talk.ts';
 
 const SOPHIE = new Set(['clue_splinter', 'clue_sawdust', 'clue_secret']);
 

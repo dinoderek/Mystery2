@@ -115,6 +115,82 @@ export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
   result: OutcomeSchema.nullable().optional(),
 });
 
+// --- game-turn ---
+//
+// One typed line in, one of four answers out. Only `turn` played anything and
+// saved anything; the other three leave the game as it was.
+
+export const GameTurnRequestSchema = GameSessionRequestSchema.extend({
+  /** The line exactly as the player typed it. */
+  input: z.string(),
+});
+
+export const ClueOriginSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("location"),
+    location_id: z.string().min(1),
+    location_name: z.string(),
+  }),
+  z.object({
+    kind: z.literal("character"),
+    character_id: z.string().min(1),
+    character_name: z.string(),
+  }),
+]);
+
+/** A clue found this turn, as the notebook records it. */
+export const RevealedClueSchema = DiscoveredClueSchema.extend({
+  source: z.enum(["search", "talk"]),
+  origin: ClueOriginSchema,
+  discovered_at: z.string().datetime().nullable(),
+  off_script: z.boolean(),
+});
+
+/** Where the game stands once a turn is saved. */
+export const TurnStateSchema = z.object({
+  mode: ModeSchema,
+  time_remaining: z.number().int().nonnegative(),
+  location: z.string().min(1),
+  current_talk_character: z.string().nullable(),
+});
+
+export const TurnPlayedResponseSchema = z.object({
+  kind: z.literal("turn"),
+  /** The events as saved, in order; the player's own line is not among their parts. */
+  events: z.array(NarrationEventSchema).min(1),
+  state: TurnStateSchema,
+  revealed_clues: z.array(RevealedClueSchema),
+  /** Set when this turn ended the case. */
+  result: OutcomeSchema.nullable(),
+});
+
+export const TurnRefusedResponseSchema = z.object({
+  kind: z.literal("refused"),
+  reason: z.enum(["missing-target", "invalid-target", "unrecognized"]),
+  /** What the player reads. */
+  hint: z.string().min(1),
+});
+
+export const NotebookSectionSchema = z.enum(["story", "places", "people", "clues"]);
+
+export const TurnViewResponseSchema = z.object({
+  kind: z.literal("view"),
+  view: z.enum(["help", "notebook", "locations", "characters"]),
+  /** The notebook section to open at, if the line named one. */
+  section: NotebookSectionSchema.nullable(),
+});
+
+export const TurnQuitResponseSchema = z.object({
+  kind: z.literal("quit"),
+});
+
+export const GameTurnResponseSchema = z.discriminatedUnion("kind", [
+  TurnPlayedResponseSchema,
+  TurnRefusedResponseSchema,
+  TurnViewResponseSchema,
+  TurnQuitResponseSchema,
+]);
+
 export const LocationSummarySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
@@ -296,6 +372,15 @@ export type TalkEndResponse = z.infer<typeof TalkEndResponseSchema>;
 export type SearchResponse = z.infer<typeof SearchResponseSchema>;
 export type MoveResponse = z.infer<typeof MoveResponseSchema>;
 export type AccuseResponse = z.infer<typeof AccuseResponseSchema>;
+export type GameTurnRequest = z.infer<typeof GameTurnRequestSchema>;
+export type ClueOrigin = z.infer<typeof ClueOriginSchema>;
+export type RevealedClue = z.infer<typeof RevealedClueSchema>;
+export type TurnState = z.infer<typeof TurnStateSchema>;
+export type TurnPlayedResponse = z.infer<typeof TurnPlayedResponseSchema>;
+export type TurnRefusedResponse = z.infer<typeof TurnRefusedResponseSchema>;
+export type TurnViewResponse = z.infer<typeof TurnViewResponseSchema>;
+export type TurnQuitResponse = z.infer<typeof TurnQuitResponseSchema>;
+export type GameTurnResponse = z.infer<typeof GameTurnResponseSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 export type SessionTranscriptResponse = z.infer<typeof SessionTranscriptResponseSchema>;
 export type GameStartResponse = z.infer<typeof GameStartResponseSchema>;

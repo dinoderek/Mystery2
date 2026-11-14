@@ -38,6 +38,7 @@ import * as gameSearch from "./game-search.ts";
 import * as gameSessionsList from "./game-sessions-list.ts";
 import * as gameStart from "./game-start.ts";
 import * as gameTalk from "./game-talk.ts";
+import * as gameTurn from "./game-turn.ts";
 
 export type EndpointMethod = "GET" | "POST";
 
@@ -80,6 +81,7 @@ export const ENDPOINTS: readonly EndpointDefinition[] = [
   { name: "game-sessions-list", access: "profile", methods: GET_OR_POST, handle: gameSessionsList.handle },
   { name: "game-start", access: "profile", methods: POST_ONLY, handle: gameStart.handle },
   { name: "game-talk", access: "profile", methods: POST_ONLY, handle: gameTalk.handle },
+  { name: "game-turn", access: "profile", methods: POST_ONLY, handle: gameTurn.handle },
 ];
 
 const BY_NAME = new Map(ENDPOINTS.map((endpoint) => [endpoint.name, endpoint]));

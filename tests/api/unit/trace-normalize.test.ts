@@ -9,21 +9,37 @@ import { extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts
 import { makeBlueprint, makeEvents, makeSession } from "./trace-fixtures";
 
 describe("buildRawTrace", () => {
-  it("produces a versioned, sorted, secret-free raw artifact", () => {
+  it("produces a versioned, sorted raw artifact", () => {
     const events = [...makeEvents()].reverse(); // unsorted on input
     const trace = buildRawTrace({
       session: makeSession(),
       events,
       blueprint: makeBlueprint(),
-      aiProfile: { id: "default", provider: "openrouter", model: "x", openrouter_api_key: "sk-secret" },
       source: { kind: "local", database: "/tmp/h/game.db" },
       extractedAt: "2026-06-02T00:00:00Z",
     });
 
     expect(trace.schema_version).toBe(TRACE_SCHEMA_VERSION);
     expect(trace.events.map((e: { sequence: number }) => e.sequence)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    expect(trace.ai_profile).toEqual({ id: "default", provider: "openrouter", model: "x" });
-    expect(JSON.stringify(trace)).not.toContain("sk-secret");
+    // The stored name, and the model of the events: only event 2 is served by a model.
+    expect(trace.ai_profile).toEqual({ id: "default", model: "anthropic/claude-actual" });
+  });
+
+  it("lists every model a game's events carry, in the order they first appear", () => {
+    const models = ["vendor/b", "vendor/a", "vendor/b"];
+    const events = makeEvents()
+      .slice(0, 3)
+      .map((event, index) => ({ ...event, model: models[index] }));
+    const trace = buildRawTrace({ session: makeSession(), events, blueprint: makeBlueprint() });
+    expect(trace.ai_profile).toEqual({ id: "default", model: "vendor/b", models: ["vendor/b", "vendor/a"] });
+  });
+
+  it("records no model for a game with none, and no AI at all with no name either", () => {
+    const events = makeEvents().map((event) => ({ ...event, model: null }));
+    const named = buildRawTrace({ session: makeSession(), events, blueprint: makeBlueprint() });
+    expect(named.ai_profile).toEqual({ id: "default" });
+    const bare = buildRawTrace({ session: { ...makeSession(), ai_profile_id: null }, events, blueprint: makeBlueprint() });
+    expect(bare.ai_profile).toBeNull();
   });
 
   it("carries the per-event model through, defaulting to null when absent", () => {
@@ -57,7 +73,7 @@ describe("assertRawTrace", () => {
 });
 
 describe("extractSessionTrace", () => {
-  it("orchestrates a source's four methods into a raw trace", async () => {
+  it("orchestrates a source's three methods into a raw trace", async () => {
     const calls: string[] = [];
     const fakeSource = {
       databasePath: "/tmp/mystery/game.db",
@@ -73,16 +89,12 @@ describe("extractSessionTrace", () => {
         calls.push(`blueprint:${id}`);
         return makeBlueprint();
       },
-      async fetchProfile(id: string) {
-        calls.push(`profile:${id}`);
-        return { id, provider: "mock", model: "mock" };
-      },
     };
 
     const trace = await extractSessionTrace(fakeSource, "sess-1", { extractedAt: "2026-06-02T00:00:00Z" });
     expect(trace.session.id).toBe("sess-1");
     expect(trace.events).toHaveLength(9);
     expect(trace.source).toEqual({ kind: "local", database: "/tmp/mystery/game.db" });
-    expect(calls).toEqual(["session:sess-1", "events:sess-1", "blueprint:bp-1", "profile:default"]);
+    expect(calls).toEqual(["session:sess-1", "events:sess-1", "blueprint:bp-1"]);
   });
 });

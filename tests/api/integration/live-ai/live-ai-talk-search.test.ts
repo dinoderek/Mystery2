@@ -5,7 +5,7 @@ import {
   getLiveSuiteTitle,
   isLiveAIEnabled,
   LiveAIRetriableExhaustedError,
-  resolveLiveAILabel,
+  requireLiveAIName,
 } from "../../../testkit/src/live-ai.ts";
 import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
@@ -27,8 +27,7 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
 
   it("runs talk and search with active live model", async () => {
     try {
-      const label = resolveLiveAILabel().toLowerCase();
-      const profile = label === "free" || label === "paid" ? label : "free";
+      const profile = requireLiveAIName();
       const headers = auth.headers;
 
       const startData = await callLiveEndpointWithRetry<{ game_id: string }>({
@@ -67,9 +66,6 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
       if (talkData.kind !== "turn") return;
       expect(talkData.events[0].narration_parts.length).toBeGreaterThan(0);
       expect(talkData.state.mode === "talk" || talkData.state.mode === "accuse").toBe(true);
-
-      // Ensure live AI labeling is wired for test run visibility.
-      expect(label.length).toBeGreaterThan(0);
     } catch (error) {
       if (error instanceof LiveAIRetriableExhaustedError) {
         expect.fail(`[live-ai] Retriable retries exhausted: ${error.message}`);

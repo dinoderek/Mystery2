@@ -9,6 +9,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { readAIConfig } from '../../../packages/game-engine/src/ai-config.ts';
 import { runEval } from '../../../evaluation/core/dispatch.ts';
 import { parseReply } from '../../../evaluation/playtest/lib/investigator.ts';
 import { createPlayCommand } from '../../../evaluation/playtest/play.ts';
@@ -116,6 +117,47 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		expect(result.run_error).toMatchObject({ stage: 'play' });
 		expect(result.summary.passed).toBe(false);
 		expect(fs.existsSync(path.join(runDir, 'report.html'))).toBe(true);
+	});
+
+	it('starts a mock narrator by naming mock, with no ai.json and no way to reach a model', async () => {
+		startServer.mockRejectedValue(new Error('no server in this test'));
+		const config = writeConfig({ investigator: STUB_BINDING });
+		await play('--blueprint', 'mock-blueprint', '--narrator', 'mock', '--output-root', path.join(scratch, 'out'), '--config', config);
+
+		const [options] = startServer.mock.calls[0];
+		expect(options.env).toMatchObject({
+			AI_PROFILE: 'mock',
+			OPENROUTER_URL: 'http://127.0.0.1:9/unreachable',
+			CLAUDE_CLI_PATH: '/nonexistent/claude-cli-disabled-for-mock-narrator'
+		});
+		expect(options.env).not.toHaveProperty('AI_PROVIDER');
+		expect(options.env).not.toHaveProperty('AI_MODEL');
+		expect(options.seed).toBeUndefined();
+	});
+
+	it('starts a claude narrator by naming one ai.json entry, with the model it was asked for', async () => {
+		startServer.mockRejectedValue(new Error('no server in this test'));
+		const config = writeConfig({ investigator: STUB_BINDING });
+		await play(
+			'--blueprint',
+			'mock-blueprint',
+			'--narrator',
+			'claude',
+			'--narrator-model',
+			'opus',
+			'--output-root',
+			path.join(scratch, 'out'),
+			'--config',
+			config
+		);
+
+		const [options] = startServer.mock.calls[0];
+		expect(options.env.AI_PROFILE).toBe('narrator');
+		expect(options.env).not.toHaveProperty('AI_PROVIDER');
+		expect(options.env).not.toHaveProperty('AI_MODEL');
+		const root = fs.mkdtempSync(path.join(scratch, 'server-root-'));
+		options.seed(root);
+		expect(readAIConfig(path.join(root, 'ai.json'))).toEqual({ ais: { narrator: { backend: 'claude-cli', model: 'opus' } } });
 	});
 
 	it('does not need an investigator to replay, only the script it names', async () => {

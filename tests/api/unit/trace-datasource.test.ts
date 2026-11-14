@@ -101,6 +101,17 @@ describe("extraction from a database the test made", () => {
     expect({ bytes: sha256(game.databasePath), ...inspect(game.databasePath) }).toEqual(before);
   });
 
+  it("records the model the events carry, whatever the session's AI name and the current settings say", async () => {
+    // A browser game is stored as `default`. Resolving that name again now,
+    // with no ai.json and nothing chosen, would give mock.
+    const game = createGameDatabase(makeScratch(), { profileId: "default", eventModel: "vendor/model-x" });
+
+    const trace = await extract(game);
+
+    expect(trace.session.ai_profile_id).toBe("default");
+    expect(trace.ai_profile).toEqual({ id: "default", model: "vendor/model-x" });
+  });
+
   it("names a missing database and creates nothing", () => {
     const dir = makeScratch();
     const missing = path.join(dir, "nowhere", "game.db");

@@ -72,8 +72,8 @@ Options:
 }
 
 // One judge call with a retry budget covering CLI failures and schema
-// validation of the model's output. Mirrors the blueprint pipeline's
-// runJudgeWithRetries; kept local so the blueprint run.mjs stays untouched.
+// validation of the model's output. Kept local until this harness moves onto
+// the core's model runner (evaluation/core/runner.ts).
 async function runTraceJudge({ step, config, systemPrompt, userMessage, logDir, schema, env }) {
   const retries = Number.isInteger(config.retries) ? Math.max(0, config.retries) : 0;
   const max = 1 + retries;

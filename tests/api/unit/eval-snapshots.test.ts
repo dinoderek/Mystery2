@@ -149,7 +149,12 @@ function dimension(result: Json) {
   };
 }
 
-/** The verdict set a blueprint run stores: the new result.json read back into the shape the snapshot has always had. */
+/**
+ * The verdict set a blueprint run stores: the new result.json read back into the
+ * shape the snapshot has always had. The fields a result no longer carries are
+ * fixed, so what is compared is each check's and dimension's status, details,
+ * reasoning and answer.
+ */
 function blueprintVerdicts(result: Result) {
   const byId = new Map(result.verdicts.map((verdict) => [verdict.id, verdict]));
   const dimensionIds = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) => verdict.id);

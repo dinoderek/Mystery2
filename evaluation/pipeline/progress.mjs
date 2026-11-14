@@ -28,7 +28,6 @@ const DEFAULT_TICK_MS =
   Number(process.env.EVAL_HEARTBEAT_MS) > 0
     ? Number(process.env.EVAL_HEARTBEAT_MS)
     : 20000;
-const DEFAULT_STEP_CAP = 8; // digest bullets per tick for a single step
 const DEFAULT_JUDGE_CAP = 3; // digest bullets per judge per tick
 
 function write(line) {
@@ -184,53 +183,6 @@ export function followDir(dir, match, onEvent, { pollMs = DEFAULT_POLL_MS } = {}
 // generate.attempt-2.stream.jsonl.
 export function streamMatch(stepPrefix) {
   return (name) => name.startsWith(stepPrefix) && name.endsWith(".stream.jsonl");
-}
-
-// Batched progress for a single serial step (e.g. generate). Every interval it
-// prints one header line (elapsed + running token total) and the digest
-// messages accumulated since the last tick, capped. Returns stop().
-export function startStepDigest({
-  label,
-  tag = "[eval]",
-  logDir,
-  stepPrefix,
-  quiet = false,
-  intervalMs = DEFAULT_TICK_MS,
-  cap = DEFAULT_STEP_CAP,
-}) {
-  if (quiet) return { stop() {} };
-  const startedAt = performance.now();
-  let pending = [];
-  let tokens = 0;
-
-  const follower = followDir(logDir, streamMatch(stepPrefix), (ev) => {
-    tokens += thinkingTokenDelta(ev);
-    for (const line of formatEvents(ev)) pending.push(line);
-  });
-
-  const flush = () => {
-    const elapsed = formatDuration(performance.now() - startedAt);
-    const head = `${tag} ${label} · ${elapsed} · ${formatTokens(tokens)}`;
-    if (pending.length === 0) {
-      write(`${head} · no new activity`);
-      return;
-    }
-    write(head);
-    for (const line of pending.slice(0, cap)) write(`  ${line}`);
-    if (pending.length > cap) write(`  +${pending.length - cap} more`);
-    pending = [];
-  };
-
-  const timer = setInterval(flush, intervalMs);
-  if (timer.unref) timer.unref();
-
-  return {
-    stop() {
-      follower.stop();
-      clearInterval(timer);
-      if (pending.length) flush(); // show the tail before the step's done line
-    },
-  };
 }
 
 // Batched progress for a parallel judge phase. One tick prints a header

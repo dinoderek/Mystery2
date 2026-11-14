@@ -13,8 +13,8 @@ README beside its code.
 
 How they connect:
 
-- **Trace** reuses the blueprint pipeline's CLI runner, timing and result
-  combination, and rebuilds what the narrator saw with the runtime's own
+- **Trace** reuses the blueprint pipeline's CLI runner and result
+  combination, and the core's timing, and rebuilds what the narrator saw with the runtime's own
   context builders.
 - **Runtime** makes one interaction deterministic — same input across
   runs and models — by fixing the prior state and history. It collects

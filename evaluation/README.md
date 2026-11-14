@@ -54,7 +54,7 @@ Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 └── <subject>/
     ├── result.json          the result
     ├── blueprint.json       the stored blueprint, and brief.json beside it
-    ├── logs/                each call's prompts, per-attempt logs and <step>.attempt-<n>.stream.jsonl
+    ├── logs/                each call's prompts, per-attempt logs and <step>*.stream.jsonl
     ├── generator/           generator agent workspace (`npm run eval`)
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
@@ -81,7 +81,7 @@ The agent steps can each run for many minutes, so the commands report as they
 go. `--quiet` suppresses the ticks but keeps the milestone lines.
 
 - The wrappers write the agent's live event stream to
-  `logs/<step>.attempt-<n>.stream.jsonl`; `tail -f` it for the raw stream.
+  `logs/<step>*.stream.jsonl`; `tail -f` it for the raw stream.
 - Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, an estimated
   thinking-token total and the messages since the last tick. A quiet interval
   collapses to `· no new activity`.

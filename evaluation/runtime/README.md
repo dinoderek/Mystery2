@@ -139,7 +139,8 @@ config needs no narrator binding:
 ```
 
 It runs the judges of the `result.json` beside it, else `flesch`, or `--judges
-a,b`, and writes a new run. Model judges still call their model.
+a,b`, and writes a new run. Model judges still call their model. A case's
+`judgeConfig` is not stored, so a stored turn judged again uses the default options.
 
 ### Cases from a played game
 

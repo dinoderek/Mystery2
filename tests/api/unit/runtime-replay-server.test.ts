@@ -218,6 +218,16 @@ describe("replaying through a throwaway server", () => {
   });
 });
 
+describe("a server that cannot start", () => {
+  it("fails every replay with the start error, and stops without throwing it again", async () => {
+    const made = narrator(async () => {
+      throw new Error("port taken");
+    });
+    await expect(made.replay(request(askCase))).rejects.toThrow("port taken");
+    await expect(made.stop()).resolves.toBeUndefined();
+  });
+});
+
 describe("seedSessionWithHistory", () => {
   it("refuses a case without the state it must seed", () => {
     expect(() =>

@@ -157,6 +157,8 @@ export class ServerNarrator {
   async stop(): Promise<void> {
     const server = this.server;
     this.server = null;
-    if (server) await (await server).stop();
+    // A server that never started has nothing to stop, and cleaned up its own root.
+    const started = await server?.catch(() => null);
+    if (started) await started.stop();
   }
 }

@@ -74,14 +74,14 @@ export async function replayThroughNarrator({ testCase, blueprint, binding, logD
     // Prose is not JSON, so a narration role is read as text when the wrapper
     // prints it bare; a wrapper that prints an envelope names where the text is.
     output: narration && binding.extract_path === null ? "text" : "json",
+    // Validated inside the retry loop: prose where JSON was asked for is a retriable failure.
+    parse: narration ? undefined : (answer) => parseFencedJson(answer) as Record<string, unknown>,
   });
   if (!result.ok) throw new Error(`narrator ${testCase.action.type} failed: ${result.error}`);
 
   // Narration roles reply with prose; role-output roles reply with JSON whose
   // `narration` field carries the text.
-  const roleOutput = narration
-    ? { narration: result.answer }
-    : (parseFencedJson(result.answer) as Record<string, unknown>);
+  const roleOutput = narration ? { narration: result.answer } : (result.value as Record<string, unknown>);
   const text = typeof roleOutput.narration === "string" ? roleOutput.narration : "";
   const speaker = action.speaker(testCase.given, testCase.action, blueprint);
 

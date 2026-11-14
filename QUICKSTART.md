@@ -168,10 +168,10 @@ Every flag, default and file location: `node scripts/generate-blueprint.mjs --he
 ## Evaluation Pipelines
 
 Four evaluation pipelines, each for a different subject. Each is driven by npm
-scripts or `./dev eval` and documented next to its code. Pass-through flags go after `--`.
+scripts or `./dev eval` and documented next to its code. Pass-through flags to an npm script go after `--`.
 
-| Pipeline | What it evaluates | npm scripts |
-|----------|-------------------|-------------|
+| Pipeline | What it evaluates | Commands |
+|----------|-------------------|----------|
 | Blueprint | Generated mystery blueprints | `npm run eval` |
 | Trace | Played game-master traces | `npm run eval:trace`, `npm run eval:trace:extract` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |

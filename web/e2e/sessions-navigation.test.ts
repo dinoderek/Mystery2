@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
-import { confirmOpening } from './session-helpers';
+import { confirmOpening, playedTurn, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -10,8 +10,7 @@ import {
   createSessionSummary,
   createSessionCatalog,
   createNarrationEvent,
-  createSearchResponse,
-  createAccuseResponse,
+  createTurnQuitResponse,
 } from '../../tests/testkit/src/fixtures';
 
 const baseGameState = createGameState({ time_remaining: 8 });
@@ -68,6 +67,8 @@ test.describe('Sessions navigation', () => {
         }),
       });
     });
+
+    await stubTurns(page, () => createTurnQuitResponse());
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
@@ -143,13 +144,12 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/api/game-accuse*', async (route) => {
-      await route.fulfill({
-        json: createAccuseResponse({
-          narration_parts: [{ text: 'Case closed. Excellent reasoning.', speaker: narratorSpeaker }],
-        }),
-      });
-    });
+    await stubTurns(page, () =>
+      playedTurn('accuse_resolved', 'Case closed. Excellent reasoning.', {
+        state: { mode: 'ended', time_remaining: 0 },
+        result: 'win',
+      }),
+    );
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
@@ -251,14 +251,9 @@ test.describe('Sessions navigation', () => {
       });
     });
 
-    await page.route('**/api/game-search*', async (route) => {
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: [{ text: 'You inspect the room and spot fresh crumbs.', speaker: narratorSpeaker }],
-          time_remaining: 7,
-        }),
-      });
-    });
+    await stubTurns(page, () =>
+      playedTurn('search', 'You inspect the room and spot fresh crumbs.', { state: { time_remaining: 7 } }),
+    );
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();

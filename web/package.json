@@ -30,6 +30,7 @@
     "vitest": "4.1.11"
   },
   "dependencies": {
-    "@my2/game-engine": "*"
+    "@my2/game-engine": "*",
+    "@my2/shared": "*"
   }
 }

@@ -1,13 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
-import { confirmOpening } from './session-helpers';
+import { confirmOpening, playedTurn, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   createBlueprintSummary,
   createGameStartResponse,
   createNarrationEvent,
-  createSearchResponse,
+  createRevealedClue,
+  createTurnQuitResponse,
+  createTurnViewResponse,
 } from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
@@ -48,30 +50,18 @@ test.describe('Case notebook', () => {
   test('groups discovered clues by origin and never prints reasoning-path labels', async ({
     page,
   }) => {
-    await page.route('**/api/game-search*', async (route) => {
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: [{ text: 'Crumbs on the floor.', speaker: narratorSpeaker }],
-          revealed_clues: [
-            {
-              id: 'clue-crumbs',
-              text: 'Crumbs lead to the pantry.',
-              source: 'search',
-              origin: {
-                kind: 'location',
-                location_id: 'loc-kitchen',
-                location_name: 'Kitchen',
-              },
-              discovered_at: '2026-06-01T10:00:00Z',
-              off_script: false,
-              // A stale/legacy payload may still carry spoiler-bearing thread
-              // labels. Nothing in the client may surface them.
-              threads: [{ kind: 'red_herring', label: 'Red herring: the open window' }],
-            },
-          ],
-        }),
-      });
-    });
+    await stubTurns(page, () =>
+      playedTurn('search', 'Crumbs on the floor.', {
+        clues: [
+          {
+            ...createRevealedClue({ id: 'clue-crumbs', text: 'Crumbs lead to the pantry.' }),
+            // A stale/legacy payload may still carry spoiler-bearing thread
+            // labels. Nothing in the client may surface them.
+            threads: [{ kind: 'red_herring', label: 'Red herring: the open window' }],
+          } as ReturnType<typeof createRevealedClue>,
+        ],
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -95,6 +85,27 @@ test.describe('Case notebook', () => {
     await expect(page.getByText(/Red herring/i)).toHaveCount(0);
     await expect(page.getByText(/Main solution/i)).toHaveCount(0);
     await expect(page.getByText(/Ruling out/i)).toHaveCount(0);
+  });
+
+  test('opens on Tab without asking the game, and on the notebook command by asking it', async ({ page }) => {
+    const requests = await stubTurns(page, () => createTurnViewResponse({ view: 'notebook', section: null }));
+    await bootstrapSession(page);
+
+    const notebook = page.getByRole('dialog');
+    await page.keyboard.press('Tab');
+    await expect(notebook).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(notebook).toBeHidden();
+    expect(requests).toEqual([]);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('notebook');
+    await input.press('Enter');
+    await expect(notebook).toBeVisible();
+    expect(requests.map((request) => request.input)).toEqual(['notebook']);
+    // Opening it leaves no line behind in the transcript.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-speaker-kind="investigator"]')).toHaveCount(0);
   });
 
   test('toggles with Tab and closes with Escape', async ({ page }) => {
@@ -164,6 +175,7 @@ test.describe('Case notebook', () => {
   });
 
   test('stays reachable after the case ends, while any other key still exits', async ({ page }) => {
+    await stubTurns(page, () => createTurnQuitResponse());
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');

@@ -12,7 +12,11 @@ vi.mock('../api/client', () => ({
 }));
 
 import { GameSessionStore } from './store.svelte';
-import { NARRATOR_SPEAKER } from '../../../../tests/testkit/src/fixtures';
+import {
+  NARRATOR_SPEAKER,
+  createGameEnterResponse,
+  createTurnViewResponse,
+} from '../../../../tests/testkit/src/fixtures';
 import type { NarrationEvent } from '../types/game';
 
 function narrationEvent(
@@ -126,6 +130,7 @@ describe('page navigation', () => {
     const store = createStore([OPENING, ARRIVAL, GARDEN]);
     store.goToPage(0);
 
+    invokeMock.mockResolvedValue({ data: createTurnViewResponse(), error: null });
     await store.submitInput('notebook');
 
     expect(store.activePageIndex).toBeNull();
@@ -164,14 +169,12 @@ describe('opening confirmation', () => {
   it('calls game-enter and appends the arrival as a move event', async () => {
     const store = createStore([OPENING]);
     invokeMock.mockResolvedValue({
-      data: {
+      data: createGameEnterResponse({
         narration_parts: [
           { text: 'You step into the kitchen.', speaker: NARRATOR_SPEAKER, image_id: 'kitchen.png' },
         ],
         current_location: 'kitchen',
-        time_remaining: 10,
-        mode: 'explore',
-      },
+      }),
       error: null,
     });
 
@@ -181,6 +184,8 @@ describe('opening confirmation', () => {
     expect(store.pageCount).toBe(2);
     expect(store.pages[1].kind).toBe('location');
     expect(store.pages[1].imageId).toBe('kitchen.png');
+    // The page is labelled with the place's name, not the id the answer carries.
+    expect(store.pages[1].fallbackLabel).toBe('Kitchen');
     expect(store.awaitingOpeningConfirmation).toBe(false);
     // Entering the starting location is free.
     expect(store.state?.time_remaining).toBe(10);

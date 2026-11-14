@@ -12,8 +12,8 @@ sanitized views of it.
 - The single source of truth is `packages/shared/src/mystery-api-contracts.ts`.
 - Update those schemas **first** whenever the API boundary changes.
 - An endpoint parses its request with its schema and answers `400` naming the
-  bad field (`game-turn` does). Responses are typed with the schema and parsed
-  by the integration suite, not checked at run time.
+  bad field (`game-turn` does). The server does not check its responses; the browser parses
+  every answer it reads, and the integration suite parses the real ones.
 
 ## 2. The Engine (`packages/game-engine/`)
 

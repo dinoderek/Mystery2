@@ -27,6 +27,11 @@ import {
   TurnPlayedResponseSchema,
   TurnRefusedResponseSchema,
   TurnViewResponseSchema,
+  TurnQuitResponseSchema,
+  BlueprintsListResponseSchema,
+  GameEnterResponseSchema,
+  GameGetResponseSchema,
+  RevealedClueSchema,
   type Speaker,
   type NarrationPart,
   type NarrationEvent,
@@ -44,6 +49,11 @@ import {
   type TurnPlayedResponse,
   type TurnRefusedResponse,
   type TurnViewResponse,
+  type TurnQuitResponse,
+  type BlueprintsListResponse,
+  type GameEnterResponse,
+  type GameGetResponse,
+  type RevealedClue,
 } from "@my2/shared";
 
 // ---------------------------------------------------------------------------
@@ -211,6 +221,39 @@ export function createGameStartResponse(
   return response as GameStartResponse;
 }
 
+/** The answer to `game-get`: a game's state and transcript, with the case it belongs to. */
+export function createGameGetResponse(
+  overrides?: Record<string, unknown>,
+): GameGetResponse {
+  const response = {
+    blueprint_id: "00000000-0000-0000-0000-000000000002",
+    state: BASE_GAME_STATE,
+    narration_events: [
+      createNarrationEvent({ sequence: 1, event_type: "start" }),
+    ],
+    ...overrides,
+  };
+  GameGetResponseSchema.parse(response);
+  return response as GameGetResponse;
+}
+
+/** The answer to `game-enter`: the arrival at the starting location. */
+export function createGameEnterResponse(
+  overrides?: Record<string, unknown>,
+): GameEnterResponse {
+  const response = {
+    narration_parts: [{ text: "You enter the kitchen.", speaker: NARRATOR_SPEAKER }],
+    time_remaining: 10,
+    mode: "explore" as const,
+    current_location: "loc-kitchen",
+    visible_characters: [],
+    current_talk_character: null,
+    ...overrides,
+  };
+  GameEnterResponseSchema.parse(response);
+  return response as GameEnterResponse;
+}
+
 // ---------------------------------------------------------------------------
 // Session summary & catalog
 // ---------------------------------------------------------------------------
@@ -266,6 +309,12 @@ export function createBlueprintSummary(
 }
 
 export const MOCK_BLUEPRINT: BlueprintSummary = createBlueprintSummary();
+
+export function createBlueprintsListResponse(
+  blueprints: BlueprintSummary[] = [MOCK_BLUEPRINT],
+): BlueprintsListResponse {
+  return validate(BlueprintsListResponseSchema, { blueprints });
+}
 
 // ---------------------------------------------------------------------------
 // Turn responses
@@ -396,6 +445,24 @@ export function createTurnViewResponse(
     section: null,
     ...overrides,
   });
+}
+
+export function createTurnQuitResponse(): TurnQuitResponse {
+  return validate(TurnQuitResponseSchema, { kind: "quit" as const });
+}
+
+/** A clue as the notebook holds it: its text and where it was found. */
+export function createRevealedClue(overrides?: Partial<RevealedClue>): RevealedClue {
+  const clue: RevealedClue = {
+    id: "clue-crumbs",
+    text: "Crumbs on the floor.",
+    source: "search",
+    origin: { kind: "location", location_id: "loc-kitchen", location_name: "Kitchen" },
+    discovered_at: "2026-06-01T10:00:00.000Z",
+    off_script: false,
+    ...overrides,
+  };
+  return validate(RevealedClueSchema, clue);
 }
 
 // ---------------------------------------------------------------------------

@@ -66,13 +66,5 @@
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
-  },
-  "web/src/lib/domain/store.svelte.ts": {
-    "max-depth": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
   }
 }

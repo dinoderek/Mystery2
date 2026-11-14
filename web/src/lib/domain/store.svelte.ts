@@ -1,200 +1,46 @@
+import {
+  BlueprintsListResponseSchema,
+  ErrorResponseSchema,
+  GameEnterResponseSchema,
+  GameGetResponseSchema,
+  GameStartResponseSchema,
+  GameTurnResponseSchema,
+  SessionCatalogResponseSchema,
+  type GameEnterResponse,
+  type GameTurnResponse,
+  type TurnPlayedResponse,
+  type TurnViewResponse,
+} from '@my2/shared';
 import { callApi, callApiGet } from '../api/client';
 import type {
   Blueprint,
   DiscoveredClue,
   GameState,
-  NarrationEvent,
   NarrationPart,
   SessionCatalog,
-  SessionOutcome,
-  SessionSummary,
   Speaker,
 } from '../types/game';
-import {
-  INVESTIGATOR_SPEAKER,
-  NARRATOR_SPEAKER,
-  readSpeaker,
-  SYSTEM_SPEAKER,
-} from './speaker';
-import {
-  parseCommand,
-  type ActionCommand,
-  type ParseContext,
-  type ParseResult,
-} from './parser';
-import {
-  getBackoffDelayMs,
-  isTransientFailure,
-  sleep,
-  type InvokeFailure,
-} from './store.retry';
+import { readAnswer, readContract, type ContractSchema } from './contract';
+import { EMPTY_CATALOG, toGameState, toSessionCatalog } from './game-state';
+import { INVESTIGATOR_SPEAKER, SYSTEM_SPEAKER } from './speaker';
+import { callWithRetry, type AttemptFailure } from './store.retry';
 import { buildSessionPages, type SessionPage } from './session-pages';
 import { DEFAULT_NOTEBOOK_SECTION, type NotebookSection } from './notebook';
-
-interface BackendInvocation {
-  endpoint: string;
-  body: Record<string, unknown>;
-  /**
-   * The event type the backend persists for this action. The client stamps the
-   * same value onto the optimistically appended event so a live session and a
-   * resumed one produce identical pages.
-   */
-  eventType: string;
-}
+import { freshClues, linesOfTurn } from './turn-answer';
 
 export type SessionViewerMode = 'interactive' | 'read_only_completed';
 
-const EMPTY_CATALOG: SessionCatalog = {
-  in_progress: [],
-  completed: [],
-  counts: {
-    in_progress: 0,
-    completed: 0,
-  },
-};
+const HELP_NOTE = 'Help menu opened.';
+const QUIT_NOTE =
+  'This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries.';
+const UNREADABLE_NOTE =
+  'Your last move may have been saved. Go back to the list of mysteries and reopen the case to see where it stands.';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function readString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function readNullableString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
-}
-
-function readCharacterSex(value: unknown): 'male' | 'female' | null {
-  return value === 'male' || value === 'female' ? value : null;
-}
-
-function readRecoveryMessage(value: unknown): string | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  return typeof value.recovery === 'string' ? value.recovery : null;
-}
-
-function readInt(value: unknown, fallback = 0): number {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? Math.trunc(value)
-    : fallback;
-}
-
-function readMode(value: unknown, fallback: GameState['mode']): GameState['mode'] {
-  if (value === 'explore' || value === 'talk' || value === 'accuse' || value === 'ended') {
-    return value;
-  }
-
-  return fallback;
-}
-
-function readSessionMode(value: unknown): SessionSummary['mode'] {
-  if (value === 'explore' || value === 'talk' || value === 'accuse' || value === 'ended') {
-    return value;
-  }
-
-  return 'explore';
-}
-
-function readSessionOutcome(value: unknown): SessionOutcome {
-  if (value === 'win' || value === 'lose') {
-    return value;
-  }
-
-  return null;
-}
-
-function readTimestamp(value: unknown): string {
-  if (typeof value !== 'string') {
-    return new Date(0).toISOString();
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-
-  return parsed.toISOString();
-}
-
-function compareSessionSummaries(a: SessionSummary, b: SessionSummary): number {
-  const byLastPlayed = b.last_played_at.localeCompare(a.last_played_at);
-  if (byLastPlayed !== 0) {
-    return byLastPlayed;
-  }
-
-  const byCreated = b.created_at.localeCompare(a.created_at);
-  if (byCreated !== 0) {
-    return byCreated;
-  }
-
-  return b.game_id.localeCompare(a.game_id);
-}
-
-export function sortSessionSummaries(summaries: SessionSummary[]): SessionSummary[] {
-  return [...summaries].sort(compareSessionSummaries);
-}
-
-export function normalizeSessionSummary(raw: unknown): SessionSummary | null {
-  if (!isRecord(raw)) {
-    return null;
-  }
-
-  const gameId = readString(raw.game_id);
-  const blueprintId = readString(raw.blueprint_id);
-  if (gameId.length === 0 || blueprintId.length === 0) {
-    return null;
-  }
-
-  const title = readString(raw.mystery_title, 'Unknown Mystery');
-  const mysteryAvailable = typeof raw.mystery_available === 'boolean' ? raw.mystery_available : false;
-  const canOpen = typeof raw.can_open === 'boolean' ? raw.can_open : mysteryAvailable;
-
-  return {
-    game_id: gameId,
-    blueprint_id: blueprintId,
-    mystery_title: title.length > 0 ? title : 'Unknown Mystery',
-    mystery_available: mysteryAvailable,
-    can_open: canOpen && mysteryAvailable,
-    mode: readSessionMode(raw.mode),
-    time_remaining: Math.max(0, readInt(raw.time_remaining)),
-    outcome: readSessionOutcome(raw.outcome),
-    last_played_at: readTimestamp(raw.last_played_at),
-    created_at: readTimestamp(raw.created_at),
-  };
-}
-
-function normalizeSessionSummaryList(raw: unknown): SessionSummary[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return sortSessionSummaries(
-    raw
-      .map((entry) => normalizeSessionSummary(entry))
-      .filter((entry): entry is SessionSummary => entry !== null),
-  );
-}
-
-export function normalizeSessionCatalog(raw: unknown): SessionCatalog {
-  if (!isRecord(raw)) {
-    return EMPTY_CATALOG;
-  }
-
-  const inProgress = normalizeSessionSummaryList(raw.in_progress);
-  const completed = normalizeSessionSummaryList(raw.completed);
-
-  return {
-    in_progress: inProgress.filter((summary) => summary.mode !== 'ended'),
-    completed: completed.filter((summary) => summary.mode === 'ended'),
-    counts: {
-      in_progress: inProgress.filter((summary) => summary.mode !== 'ended').length,
-      completed: completed.filter((summary) => summary.mode === 'ended').length,
-    },
-  };
+/** A failed lookup, with the recovery hint the server gives for the failures a player can act on. */
+function describeLookupFailure(message: string, body: unknown): string {
+  const parsed = ErrorResponseSchema.safeParse(body);
+  const recovery = parsed.success ? parsed.data.details?.recovery : undefined;
+  return typeof recovery === 'string' ? `${message}. ${recovery}` : message;
 }
 
 export class GameSessionStore {
@@ -327,26 +173,15 @@ export class GameSessionStore {
     // beside the blueprint list, so leaving a stale one set showed a message
     // about a request that had already been superseded.
     this.error = null;
-    const { data, error } = await callApi('blueprints-list');
-    if (error) {
-      this.error = error.message;
+    const answer = readAnswer(await callApi('blueprints-list'), BlueprintsListResponseSchema, 'blueprints-list');
+    if (!answer.ok) {
+      this.error = answer.message;
       this.status = 'error';
-    } else {
-      const payload = isRecord(data) ? data : {};
-      const rawBlueprints = Array.isArray(payload.blueprints) ? payload.blueprints : [];
-      this.blueprints = rawBlueprints
-        .filter((entry): entry is Record<string, unknown> => isRecord(entry))
-        .map((entry) => ({
-          id: readString(entry.id),
-          title: readString(entry.title),
-          one_liner: readString(entry.one_liner),
-          target_age: readInt(entry.target_age),
-          blueprint_image_id: readNullableString(entry.blueprint_image_id),
-        }))
-        .filter((entry) => entry.id.length > 0);
-
-      this.status = 'idle';
+      return;
     }
+
+    this.blueprints = answer.value.blueprints;
+    this.status = 'idle';
   }
 
   /**
@@ -368,93 +203,87 @@ export class GameSessionStore {
     this.sessionCatalogStatus = 'loading';
     this.sessionCatalogError = null;
 
-    const { data, error } = await callApi('game-sessions-list');
+    const response = await callApi('game-sessions-list');
     if (requestId !== this.sessionCatalogRequestId) {
       return;
     }
 
-    if (error) {
+    const answer = readAnswer(response, SessionCatalogResponseSchema, 'game-sessions-list');
+    if (!answer.ok) {
       this.sessionCatalog = EMPTY_CATALOG;
-      this.sessionCatalogError = error.message;
+      this.sessionCatalogError = answer.message;
       this.sessionCatalogStatus = 'error';
       return;
     }
 
-    this.sessionCatalog = normalizeSessionCatalog(data);
+    this.sessionCatalog = toSessionCatalog(answer.value);
     this.sessionCatalogStatus = 'ready';
   }
 
   async startGame(blueprintId: string) {
     this.status = 'loading';
     this.error = null;
-    const { data, error } = await callApi('game-start', { blueprint_id: blueprintId });
-    if (error) {
-      this.error = error.message;
+    const answer = readAnswer(
+      await callApi('game-start', { blueprint_id: blueprintId }),
+      GameStartResponseSchema,
+      'game-start',
+    );
+    if (!answer.ok) {
+      this.error = answer.message;
       this.status = 'error';
-    } else {
-      const response = isRecord(data) ? data : {};
-      this.game_id = typeof response.game_id === 'string' ? response.game_id : null;
-      this.blueprint_id = blueprintId;
-      this.state = this.normalizeState(response.state, response.narration_events);
-      this.lastFailedInput = null;
-      this.accusationOutcome = null;
-      this.awaitingReturnToList = false;
-      this.viewerMode = 'interactive';
-      this.showHelp = false;
-      this.showNotebook = false;
-      this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
-      this.status = 'active';
-    }
-  }
-
-  private async loadPersistedState(gameId: string): Promise<unknown> {
-    const { data, error } = await callApiGet('game-get', { game_id: gameId });
-
-    if (error) {
-      // `game-get` returns a `details.recovery` hint for the failures a player
-      // can do something about; it is worth more than the bare error.
-      const recovery = isRecord(data) ? readRecoveryMessage(data.details) : null;
-      throw new Error(recovery ? `${error.message}. ${recovery}` : error.message);
+      return;
     }
 
-    return data;
+    const { game_id, state, narration_events } = answer.value;
+    this.game_id = game_id;
+    this.blueprint_id = blueprintId;
+    this.state = toGameState(state, narration_events);
+    this.lastFailedInput = null;
+    this.accusationOutcome = null;
+    this.awaitingReturnToList = false;
+    this.viewerMode = 'interactive';
+    this.showHelp = false;
+    this.showNotebook = false;
+    this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
+    this.status = 'active';
   }
 
   async resumeSession(gameId: string) {
     this.status = 'loading';
     this.error = null;
 
-    try {
-      const data = await this.loadPersistedState(gameId);
-      const response = isRecord(data) ? data : {};
-      this.game_id = gameId;
-      this.blueprint_id = typeof response.blueprint_id === 'string' ? response.blueprint_id : null;
-      this.state = this.normalizeState(response.state, response.narration_events);
-      this.lastFailedInput = null;
-      this.isRetrying = false;
-      this.retryCount = 0;
-      this.showHelp = false;
-      this.showNotebook = false;
-      this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
-
-      if (this.state.mode === 'ended') {
-        this.viewerMode = 'read_only_completed';
-        this.awaitingReturnToList = true;
-        const allRows = [...this.sessionCatalog.in_progress, ...this.sessionCatalog.completed];
-        const row = allRows.find((entry) => entry.game_id === gameId);
-        this.accusationOutcome = row?.outcome ?? null;
-      } else {
-        this.viewerMode = 'interactive';
-        this.awaitingReturnToList = false;
-        this.accusationOutcome = null;
-      }
-
-      this.status = 'active';
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.error = message;
+    const response = await callApiGet('game-get', { game_id: gameId });
+    const answer = readAnswer(response, GameGetResponseSchema, 'game-get');
+    if (!answer.ok) {
+      this.error = response.error ? describeLookupFailure(answer.message, response.data) : answer.message;
       this.status = 'idle';
+      return;
     }
+
+    const { blueprint_id, state, narration_events } = answer.value;
+    this.game_id = gameId;
+    this.blueprint_id = blueprint_id;
+    this.state = toGameState(state, narration_events);
+    this.lastFailedInput = null;
+    this.isRetrying = false;
+    this.retryCount = 0;
+    this.showHelp = false;
+    this.showNotebook = false;
+    this.notebookSection = DEFAULT_NOTEBOOK_SECTION;
+
+    if (this.state.mode === 'ended') {
+      this.viewerMode = 'read_only_completed';
+      this.awaitingReturnToList = true;
+      const allRows = [...this.sessionCatalog.in_progress, ...this.sessionCatalog.completed];
+      const row = allRows.find((entry) => entry.game_id === gameId);
+      this.accusationOutcome = row?.outcome ?? null;
+    } else {
+      this.viewerMode = 'interactive';
+      this.awaitingReturnToList = false;
+      this.accusationOutcome = null;
+    }
+
+    this.status = 'active';
   }
 
   async retryLastCommand() {
@@ -466,6 +295,11 @@ export class GameSessionStore {
     await this.submitInput(input);
   }
 
+  /**
+   * Sends the line exactly as typed. The server decides what it means and
+   * answers with a turn, a refusal, a view to open, or quit; the browser only
+   * shows what came back.
+   */
   async submitInput(input: string) {
     if (!this.state || !this.game_id || this.status === 'loading' || this.awaitingReturnToList) {
       return;
@@ -474,309 +308,136 @@ export class GameSessionStore {
     // Acting from an old page returns the player to the live one, so the
     // result of what they just typed is what they see.
     this.goToLivePage();
-
-    const parseContext = this.getParseContext();
-    const parsed = parseCommand(input, this.state.mode, parseContext);
-
     this.error = null;
 
-    // Above the input echo on purpose: opening the notebook costs no turn and
-    // leaves no trace in the transcript.
-    if (parsed.type === 'notebook') {
-      this.openNotebook(parsed.section);
+    // Echoed before the answer so the player sees their own words while the
+    // narrator is still writing. A line that opens the notebook leaves no trace
+    // in the transcript, so that answer takes the echo back.
+    const playedIn = this.state.mode;
+    const echo = this.appendLine('input', INVESTIGATOR_SPEAKER, input);
+
+    const answer = await this.send(
+      'game-turn',
+      { game_id: this.game_id, input },
+      GameTurnResponseSchema,
+      input,
+    );
+    if (answer && this.state) {
+      this.showAnswer(answer, playedIn, echo);
+    }
+  }
+
+  /**
+   * Step into the starting location. The opening event only sets the scene; the
+   * arrival narration is generated on demand so the player gets a beat to read
+   * the premise first. `game-enter` is idempotent, so a second call while the
+   * first is in flight cannot produce a duplicate page.
+   */
+  async enterStartingLocation() {
+    if (!this.game_id || this.status === 'loading' || !this.awaitingOpeningConfirmation) {
       return;
     }
 
-    this.appendLine('input', INVESTIGATOR_SPEAKER, input);
+    const answer = await this.send(
+      'game-enter',
+      { game_id: this.game_id },
+      GameEnterResponseSchema,
+      null,
+    );
+    if (answer && this.state) {
+      this.showArrival(answer);
+    }
+  }
 
-    switch (parsed.type) {
-      case 'help':
-        this.showHelp = true;
-        this.appendSystemFeedback('Help menu opened.');
+  /**
+   * One request the player is waiting on: retried while the failure is
+   * transient, read through its schema, and answered on the transcript when it
+   * fails. Returns what the schema accepted, or null once the failure is shown.
+   * `input` is what a retry would resend; null for requests that have no line.
+   */
+  private async send<T>(
+    endpoint: string,
+    body: Record<string, unknown>,
+    schema: ContractSchema<T>,
+    input: string | null,
+  ): Promise<T | null> {
+    this.status = 'loading';
+    this.isRetrying = false;
+    this.retryCount = 0;
+
+    const result = await callWithRetry(
+      () => callApi(endpoint, body),
+      (attempt) => {
+        this.isRetrying = true;
+        this.retryCount = attempt;
+        this.appendSystemFeedback(`Something went wrong. Trying again (${attempt}/3)...`);
+      },
+    );
+
+    this.isRetrying = false;
+    this.retryCount = 0;
+    this.status = 'active';
+
+    if (!result.ok) {
+      this.showFailure(result.failure, input);
+      return null;
+    }
+
+    const answer = readContract(schema, result.data, endpoint);
+    if (!answer.ok) {
+      // Not offered for a retry: the turn may well have been saved, and a
+      // second send would play it twice.
+      this.error = answer.message;
+      this.lastFailedInput = null;
+      this.appendError(`${answer.message} ${UNREADABLE_NOTE}`);
+      return null;
+    }
+
+    this.error = null;
+    this.lastFailedInput = null;
+    return answer.value;
+  }
+
+  private showFailure(failure: AttemptFailure, input: string | null) {
+    if (failure.exhausted) {
+      this.error = failure.message ?? 'Request failed after retries.';
+      this.appendError('That did not work, even after 3 tries. Use [ RETRY LAST COMMAND ] to try again.');
+    } else {
+      this.error = failure.message ?? 'Request failed.';
+      this.appendError(`Request failed: ${this.error}`);
+    }
+    this.lastFailedInput = input;
+  }
+
+  private showAnswer(answer: GameTurnResponse, playedIn: GameState['mode'], echo: number | null) {
+    switch (answer.kind) {
+      case 'turn':
+        this.showTurn(answer, playedIn);
+        return;
+      case 'refused':
+        this.appendSystemFeedback(answer.hint);
+        return;
+      case 'view':
+        this.showView(answer, echo);
         return;
       case 'quit':
-        this.handleQuitCommand();
+        this.showQuit();
         return;
-      case 'missing-target':
-        this.appendSystemFeedback(this.formatMissingTargetMessage(parsed));
-        return;
-      case 'invalid-target':
-        this.appendSystemFeedback(this.formatInvalidTargetMessage(parsed));
-        return;
-      case 'unrecognized':
-        this.appendSystemFeedback(parsed.hint);
-        return;
-      case 'valid':
-        await this.submitValidCommand(parsed.command, input);
-        return;
-      default:
-        this.appendError('Unable to parse command.');
     }
   }
 
-  private readNarrationPart(raw: unknown): NarrationPart | null {
-    if (!isRecord(raw)) {
-      return null;
-    }
-
-    const text = readString(raw.text);
-    if (!text) {
-      return null;
-    }
-
-    return {
-      text,
-      speaker: readSpeaker(raw.speaker, NARRATOR_SPEAKER),
-      image_id: readNullableString(raw.image_id),
-    };
-  }
-
-  private normalizeNarrationEvents(raw: unknown): NarrationEvent[] {
-    if (!Array.isArray(raw)) {
-      return [];
-    }
-
-    const normalized: Array<NarrationEvent | null> = raw
-      .filter((entry): entry is Record<string, unknown> => isRecord(entry))
-      .map((entry, index) => {
-        const narrationParts = Array.isArray(entry.narration_parts)
-          ? entry.narration_parts
-              .map((part) => this.readNarrationPart(part))
-              .filter((part): part is NarrationPart => part !== null)
-          : [];
-
-        if (narrationParts.length === 0) {
-          return null;
-        }
-
-        return {
-          sequence: readInt(entry.sequence, index + 1),
-          event_type: readString(entry.event_type, 'event'),
-          narration_parts: narrationParts,
-          payload: isRecord(entry.payload) ? entry.payload : undefined,
-          created_at: typeof entry.created_at === 'string' ? entry.created_at : undefined,
-        };
-      });
-
-    return normalized.filter((entry): entry is NarrationEvent => entry !== null);
-  }
-
-  private mergeDiscoveredClues(raw: unknown) {
-    if (!this.state) {
-      return;
-    }
-    const incoming = this.normalizeDiscoveredClues(raw);
-    if (incoming.length === 0) {
-      return;
-    }
-    const known = new Set(this.state.discovered_clues.map((clue) => clue.id));
-    const fresh: DiscoveredClue[] = [];
-    for (const clue of incoming) {
-      if (!known.has(clue.id)) {
-        known.add(clue.id);
-        this.state.discovered_clues.push(clue);
-        fresh.push(clue);
-      }
-    }
-    // Surface only the genuinely new clues for the discovery celebration.
-    if (fresh.length > 0) {
-      this.recentlyDiscovered = fresh;
-    }
-  }
-
-  private normalizeState(rawState: unknown, rawNarrationEvents: unknown = []): GameState {
-    const source = isRecord(rawState) ? rawState : {};
-    const narrationEvents = this.normalizeNarrationEvents(rawNarrationEvents);
-
-    return {
-      mystery_summary: readNullableString(source.mystery_summary),
-      premise: readNullableString(source.premise),
-      locations: Array.isArray(source.locations)
-        ? source.locations
-            .filter((location): location is Record<string, unknown> => isRecord(location))
-            .map((location) => ({
-              id: readString(location.id),
-              name: readString(location.name),
-              summary: readNullableString(location.summary),
-            }))
-            .filter((location) => location.name.length > 0)
-        : [],
-      characters: Array.isArray(source.characters)
-        ? source.characters
-            .filter((character): character is Record<string, unknown> => isRecord(character))
-            .map((character) => ({
-              id: readString(character.id),
-              first_name: readString(character.first_name),
-              last_name: readString(character.last_name),
-              location_name: readString(character.location_name) || readString(character.location_id),
-              sex: readCharacterSex(character.sex),
-              summary: readNullableString(character.summary),
-            }))
-            .filter((character) => character.first_name.length > 0)
-        : [],
-      discovered_clues: this.normalizeDiscoveredClues(source.discovered_clues),
-      time_remaining: readInt(source.time_remaining),
-      location: readString(source.location),
-      mode: readMode(source.mode, 'explore'),
-      current_talk_character:
-        typeof source.current_talk_character === 'string' ? source.current_talk_character : null,
-      history: narrationEvents,
-    };
-  }
-
-  private normalizeDiscoveredClues(raw: unknown): DiscoveredClue[] {
-    if (!Array.isArray(raw)) return [];
-    const clues: DiscoveredClue[] = [];
-    for (const entry of raw) {
-      if (!isRecord(entry)) continue;
-      const id = readString(entry.id);
-      const text = readString(entry.text);
-      if (id.length === 0 || text.length === 0) continue;
-      const origin = isRecord(entry.origin) ? entry.origin : {};
-      // `entry.threads` is ignored on purpose: older sessions and any stale
-      // payload may still carry spoiler-bearing thread labels, and nothing in
-      // the client may surface them.
-      clues.push({
-        id,
-        text,
-        source: entry.source === 'talk' ? 'talk' : 'search',
-        origin:
-          origin.kind === 'character'
-            ? {
-                kind: 'character',
-                character_id: readString(origin.character_id),
-                character_name: readString(origin.character_name),
-              }
-            : {
-                kind: 'location',
-                location_id: readString(origin.location_id),
-                location_name: readString(origin.location_name),
-              },
-        discovered_at: typeof entry.discovered_at === 'string' ? entry.discovered_at : null,
-        off_script: entry.off_script === true,
-      });
-    }
-    return clues;
-  }
-
-  private getParseContext(): ParseContext {
-    if (!this.state) {
-      return {
-        locations: [],
-        characters: [],
-        currentLocation: '',
-      };
-    }
-
-    return {
-      locations: this.state.locations,
-      characters: this.state.characters,
-      currentLocation: this.state.location,
-    };
-  }
-
-  /**
-   * Append a client-side event to the history. Client events carry the same
-   * shape as backend narration events so the page builder can treat them
-   * identically -- they simply never open a new page.
-   */
-  private appendEvent(
-    eventType: string,
-    parts: NarrationPart[],
-    payload?: Record<string, unknown>,
-  ) {
-    if (!this.state) {
+  private showView(answer: TurnViewResponse, echo: number | null) {
+    if (answer.view === 'help') {
+      this.showHelp = true;
+      this.appendSystemFeedback(HELP_NOTE);
       return;
     }
 
-    if (!this.state.history) {
-      this.state.history = [];
-    }
-
-    const currentSequence = this.state.history.reduce((max, event) => {
-      return event.sequence > max ? event.sequence : max;
-    }, 0);
-
-    this.state.history.push({
-      sequence: currentSequence + 1,
-      event_type: eventType,
-      narration_parts: parts,
-      payload,
-    });
+    this.removeEvent(echo);
+    this.openNotebook(answer.section);
   }
 
-  private appendLine(
-    eventType: string,
-    speaker: Speaker,
-    text: string,
-    payload?: Record<string, unknown>,
-  ) {
-    this.appendEvent(eventType, [{ text, speaker, image_id: null }], payload);
-  }
-
-  /**
-   * The naming half of a backend event's payload, rebuilt client-side. The
-   * server stores it on the persisted event, so without this a page would be
-   * labelled "Location" while playing and "Gull Cry Dock" after a resume.
-   */
-  private buildEventPayload(eventType: string): Record<string, unknown> | undefined {
-    if (!this.state) {
-      return undefined;
-    }
-
-    if (eventType === 'talk' || eventType === 'ask') {
-      // `current_talk_character` echoes however the player typed the name, so
-      // resolve it against the cast to match what the server persists.
-      const active = this.state.current_talk_character;
-      if (!active) {
-        return undefined;
-      }
-      const match = this.state.characters.find(
-        (character) =>
-          character.id === active ||
-          character.first_name.toLowerCase() === active.toLowerCase(),
-      );
-      return { character_name: match?.first_name ?? active };
-    }
-
-    if (eventType === 'move' || eventType === 'end_talk') {
-      const current = this.state.location;
-      const name = this.state.locations.find((l) => l.id === current)?.name ?? current;
-      return name ? { location_name: name } : undefined;
-    }
-
-    return undefined;
-  }
-
-  private appendSystemFeedback(text: string) {
-    this.appendLine('system_response', SYSTEM_SPEAKER, text);
-  }
-
-  private appendError(text: string) {
-    this.appendLine('error', SYSTEM_SPEAKER, text);
-  }
-
-  private formatSuggestions(suggestions: string[]): string {
-    if (suggestions.length === 0) {
-      return 'none available right now';
-    }
-    return suggestions.join(', ');
-  }
-
-  private formatMissingTargetMessage(result: Extract<ParseResult, { type: 'missing-target' }>): string {
-    if (result.commandType === 'move') {
-      return `Where to? Try: ${this.formatSuggestions(result.suggestions)}.`;
-    }
-
-    return `Who do you want to talk to? Try: ${this.formatSuggestions(result.suggestions)}.`;
-  }
-
-  private formatInvalidTargetMessage(result: Extract<ParseResult, { type: 'invalid-target' }>): string {
-    const targetLabel = result.commandType === 'move' ? 'destination' : 'character';
-    return `"${result.attempted}" is not a valid ${targetLabel}. Try: ${this.formatSuggestions(result.suggestions)}.`;
-  }
-
-  private handleQuitCommand() {
+  private showQuit() {
     if (this.state) {
       this.state.mode = 'ended';
     }
@@ -786,9 +447,127 @@ export class GameSessionStore {
     this.lastFailedInput = null;
     this.accusationOutcome = null;
     this.awaitingReturnToList = true;
-    this.appendSystemFeedback(
-      'This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries.',
-    );
+    this.appendSystemFeedback(QUIT_NOTE);
+  }
+
+  private showTurn(answer: TurnPlayedResponse, playedIn: GameState['mode']) {
+    if (!this.state) {
+      return;
+    }
+
+    this.applyPosition(answer.state);
+    this.mergeDiscoveredClues(answer.revealed_clues);
+    this.settleCase(answer.state.mode, answer.result);
+    for (const line of linesOfTurn(answer, playedIn)) {
+      this.appendEvent(line.event_type, line.narration_parts, line.payload);
+    }
+  }
+
+  private showArrival(answer: GameEnterResponse) {
+    if (!this.state) {
+      return;
+    }
+
+    this.applyPosition({
+      mode: answer.mode,
+      time_remaining: answer.time_remaining,
+      location: answer.current_location,
+      current_talk_character: answer.current_talk_character ?? null,
+    });
+    this.settleCase(answer.mode, null);
+
+    // The answer names the place by id; the page is labelled with its name.
+    const place = this.state.locations.find((location) => location.id === answer.current_location);
+    this.appendEvent('move', answer.narration_parts, {
+      location_name: place?.name ?? answer.current_location,
+    });
+  }
+
+  private applyPosition(position: Pick<GameState, 'mode' | 'time_remaining' | 'location' | 'current_talk_character'>) {
+    if (!this.state) {
+      return;
+    }
+
+    this.state.mode = position.mode;
+    this.state.time_remaining = position.time_remaining;
+    this.state.location = position.location;
+    this.state.current_talk_character = position.current_talk_character;
+  }
+
+  /** The case is over only when a turn ended it with a verdict; any other turn leaves it open. */
+  private settleCase(mode: GameState['mode'], result: 'win' | 'lose' | null) {
+    if (mode === 'ended' && result) {
+      this.accusationOutcome = result;
+      this.awaitingReturnToList = true;
+      this.viewerMode = 'read_only_completed';
+      return;
+    }
+
+    this.accusationOutcome = null;
+    this.awaitingReturnToList = false;
+    this.viewerMode = 'interactive';
+  }
+
+  /** Merges the clues the notebook does not hold yet, and surfaces them for the discovery celebration. */
+  private mergeDiscoveredClues(found: DiscoveredClue[]) {
+    if (!this.state) {
+      return;
+    }
+
+    const fresh = freshClues(this.state.discovered_clues, found);
+    if (fresh.length === 0) {
+      return;
+    }
+
+    this.state.discovered_clues.push(...fresh);
+    this.recentlyDiscovered = fresh;
+  }
+
+  /**
+   * Append an event to the history and return its sequence. Client-side lines
+   * carry the same shape as the server's events so the page builder treats them
+   * identically — they simply never open a new page.
+   */
+  private appendEvent(
+    eventType: string,
+    parts: NarrationPart[],
+    payload?: Record<string, unknown> | null,
+  ): number | null {
+    if (!this.state) {
+      return null;
+    }
+
+    const sequence = this.state.history.reduce((max, event) => Math.max(max, event.sequence), 0) + 1;
+    this.state.history.push({
+      sequence,
+      event_type: eventType,
+      narration_parts: parts,
+      payload,
+    });
+    return sequence;
+  }
+
+  private appendLine(
+    eventType: string,
+    speaker: Speaker,
+    text: string,
+    payload?: Record<string, unknown>,
+  ): number | null {
+    return this.appendEvent(eventType, [{ text, speaker, image_id: null }], payload);
+  }
+
+  private removeEvent(sequence: number | null) {
+    if (this.state && sequence !== null) {
+      this.state.history = this.state.history.filter((event) => event.sequence !== sequence);
+    }
+  }
+
+  private appendSystemFeedback(text: string) {
+    this.appendLine('system_response', SYSTEM_SPEAKER, text);
+  }
+
+  private appendError(text: string) {
+    this.appendLine('error', SYSTEM_SPEAKER, text);
   }
 
   clearSessionForMysteryList() {
@@ -807,284 +586,6 @@ export class GameSessionStore {
     this.awaitingReturnToList = false;
     this.viewerMode = 'interactive';
     this.activePageIndex = null;
-  }
-
-  private getBackendInvocation(command: ActionCommand): BackendInvocation {
-    if (!this.game_id) {
-      throw new Error('Cannot submit command without an active game.');
-    }
-
-    switch (command.type) {
-      case 'move':
-        return {
-          endpoint: 'game-move',
-          body: { game_id: this.game_id, destination: command.destination },
-          eventType: 'move',
-        };
-      case 'search':
-        return {
-          endpoint: 'game-search',
-          body: { game_id: this.game_id, search_query: command.query },
-          eventType: 'search',
-        };
-      case 'talk':
-        return {
-          endpoint: 'game-talk',
-          body: { game_id: this.game_id, character_id: command.character_id },
-          eventType: 'talk',
-        };
-      case 'ask':
-        if (this.state?.mode === 'accuse') {
-          return {
-            endpoint: 'game-accuse',
-            body: { game_id: this.game_id, player_reasoning: command.question },
-            eventType: 'accuse_round',
-          };
-        }
-        return {
-          endpoint: 'game-ask',
-          body: { game_id: this.game_id, player_input: command.question },
-          eventType: 'ask',
-        };
-      case 'end_talk':
-        return {
-          endpoint: 'game-end-talk',
-          body: { game_id: this.game_id },
-          eventType: 'end_talk',
-        };
-      case 'accuse':
-        // Both forms of `accuse` open the accusation, so both open its page.
-        return command.reasoning
-          ? {
-          endpoint: 'game-accuse',
-          body: { game_id: this.game_id, player_reasoning: command.reasoning },
-          eventType: 'accuse_start',
-        }
-          : {
-          endpoint: 'game-accuse',
-          body: { game_id: this.game_id },
-          eventType: 'accuse_start',
-        };
-      default:
-        throw new Error('Unsupported command.');
-    }
-  }
-
-  private toInvokeFailure(error: unknown): InvokeFailure {
-    if (!error || typeof error !== 'object') {
-      return { message: error ? String(error) : null };
-    }
-
-    const typed = error as {
-      message?: string;
-      status?: number;
-      context?: { status?: number };
-    };
-
-    const contextStatus = typed.context && typeof typed.context.status === 'number' ? typed.context.status : undefined;
-
-    return {
-      message: typed.message ?? String(error),
-      status: typeof typed.status === 'number' ? typed.status : contextStatus,
-    };
-  }
-
-  private readNarrationPartsFromPayload(payload: Record<string, unknown>): NarrationPart[] {
-    if (!Array.isArray(payload.narration_parts)) {
-      return [];
-    }
-
-    return payload.narration_parts
-      .map((part) => this.readNarrationPart(part))
-      .filter((part): part is NarrationPart => part !== null);
-  }
-
-  private applyBackendState(payload: Record<string, unknown>, endpoint: string) {
-    if (!this.state) {
-      return;
-    }
-
-    this.state.mode = readMode(payload.mode, endpoint === 'game-accuse' ? 'ended' : this.state.mode);
-
-    if (typeof payload.time_remaining === 'number') {
-      this.state.time_remaining = Math.trunc(payload.time_remaining);
-    }
-
-    if (typeof payload.current_location === 'string') {
-      this.state.location = payload.current_location;
-
-      if (Array.isArray(payload.visible_characters)) {
-        const visible = new Set(
-          payload.visible_characters
-            .map((value) => {
-              if (typeof value === 'string') {
-                return value.toLowerCase();
-              }
-
-              if (isRecord(value) && typeof value.first_name === 'string') {
-                return value.first_name.toLowerCase();
-              }
-
-              return null;
-            })
-            .filter((value): value is string => Boolean(value)),
-        );
-
-        for (const character of this.state.characters) {
-          if (visible.has(character.first_name.toLowerCase())) {
-            character.location_name = payload.current_location;
-          }
-        }
-      }
-    }
-
-    if (typeof payload.current_talk_character === 'string' || payload.current_talk_character === null) {
-      this.state.current_talk_character = payload.current_talk_character;
-    }
-
-    // Newly discovered clues from a search/ask turn: merge the unseen ones into
-    // the notebook and surface them for the discovery celebration.
-    this.mergeDiscoveredClues(payload.revealed_clues);
-
-    const outcome = payload.result;
-    const isAccuseEnded = endpoint === 'game-accuse' && payload.mode === 'ended';
-    if (isAccuseEnded && (outcome === 'win' || outcome === 'lose')) {
-      this.accusationOutcome = outcome;
-      this.awaitingReturnToList = true;
-      this.viewerMode = 'read_only_completed';
-    } else {
-      this.accusationOutcome = null;
-      this.awaitingReturnToList = false;
-      this.viewerMode = 'interactive';
-    }
-  }
-
-  private async submitValidCommand(command: ActionCommand, rawInput: string) {
-    await this.runInvocation(this.getBackendInvocation(command), rawInput);
-  }
-
-  /**
-   * Step into the starting location. The opening event only sets the scene; the
-   * arrival narration is generated on demand so the player gets a beat to read
-   * the premise first. `game-enter` is idempotent, so a second call while the
-   * first is in flight cannot produce a duplicate page.
-   */
-  async enterStartingLocation() {
-    if (!this.game_id || this.status === 'loading' || !this.awaitingOpeningConfirmation) {
-      return;
-    }
-
-    await this.runInvocation(
-      {
-        endpoint: 'game-enter',
-        body: { game_id: this.game_id },
-        eventType: 'move',
-      },
-      null,
-    );
-  }
-
-  private async runInvocation(invocation: BackendInvocation, rawInput: string | null) {
-    const maxAttempts = 3;
-
-    this.status = 'loading';
-    this.isRetrying = false;
-    this.retryCount = 0;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        const { data, error } = await callApi(invocation.endpoint, invocation.body);
-
-        if (!error) {
-          this.error = null;
-          this.lastFailedInput = null;
-          this.isRetrying = false;
-          this.retryCount = 0;
-
-          if (data && typeof data === 'object') {
-            const payload = data as Record<string, unknown>;
-            const narrationParts = this.readNarrationPartsFromPayload(payload);
-
-            // State first: the event's own payload names the place or person
-            // this turn moved to, and that is only known once applied.
-            this.applyBackendState(payload, invocation.endpoint);
-            const eventPayload = this.buildEventPayload(invocation.eventType);
-
-            if (narrationParts.length > 0) {
-              this.appendEvent(invocation.eventType, narrationParts, eventPayload);
-            } else {
-              this.appendLine(
-                invocation.eventType,
-                NARRATOR_SPEAKER,
-                'Action completed.',
-                eventPayload,
-              );
-            }
-          }
-
-          this.status = 'active';
-          return;
-        }
-
-        const failure = this.toInvokeFailure(error);
-        const transient = isTransientFailure(failure);
-
-        if (!transient) {
-          this.error = failure.message ?? 'Request failed.';
-          this.appendError(`Request failed: ${this.error}`);
-          this.lastFailedInput = rawInput;
-          this.isRetrying = false;
-          this.retryCount = 0;
-          this.status = 'active';
-          return;
-        }
-
-        if (attempt === maxAttempts) {
-          this.error = failure.message ?? 'Request failed after retries.';
-          this.appendError('That did not work, even after 3 tries. Use [ RETRY LAST COMMAND ] to try again.');
-          this.lastFailedInput = rawInput;
-          this.isRetrying = false;
-          this.retryCount = 0;
-          this.status = 'active';
-          return;
-        }
-
-        this.isRetrying = true;
-        this.retryCount = attempt;
-        this.appendSystemFeedback(`Something went wrong. Trying again (${attempt}/3)...`);
-        await sleep(getBackoffDelayMs(attempt));
-      } catch (thrownError) {
-        const transient = isTransientFailure(null, thrownError);
-        const message = thrownError instanceof Error ? thrownError.message : String(thrownError);
-
-        if (!transient) {
-          this.error = message;
-          this.appendError(`Request failed: ${message}`);
-          this.lastFailedInput = rawInput;
-          this.isRetrying = false;
-          this.retryCount = 0;
-          this.status = 'active';
-          return;
-        }
-
-        if (attempt === maxAttempts) {
-          this.error = message;
-          this.appendError('That did not work, even after 3 tries. Use [ RETRY LAST COMMAND ] to try again.');
-          this.lastFailedInput = rawInput;
-          this.isRetrying = false;
-          this.retryCount = 0;
-          this.status = 'active';
-          return;
-        }
-
-        this.isRetrying = true;
-        this.retryCount = attempt;
-        this.appendSystemFeedback(`Something went wrong. Trying again (${attempt}/3)...`);
-        await sleep(getBackoffDelayMs(attempt));
-      }
-    }
-
-    this.status = 'active';
   }
 }
 

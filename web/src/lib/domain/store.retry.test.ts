@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  callWithRetry,
   classifyFailure,
   getBackoffDelayMs,
   isImageLinkExpired,
@@ -40,5 +41,62 @@ describe('store.retry', () => {
     expect(isImageLinkExpired(new Date(now + 60_000).toISOString(), now)).toBe(false);
     expect(isImageLinkExpired(new Date(now + 2_000).toISOString(), now, 5_000)).toBe(true);
     expect(isImageLinkExpired(new Date(now - 1_000).toISOString(), now)).toBe(true);
+  });
+});
+
+describe('callWithRetry', () => {
+  const waits: number[] = [];
+  const wait = async (ms: number) => {
+    waits.push(ms);
+  };
+  const failing = (status: number) => ({ data: null, error: { message: `HTTP ${status}`, status } });
+
+  beforeEach(() => {
+    waits.length = 0;
+  });
+
+  it('returns the first answer without waiting', async () => {
+    const result = await callWithRetry(async () => ({ data: 'ok', error: null }), () => {}, 3, wait);
+
+    expect(result).toEqual({ ok: true, data: 'ok' });
+    expect(waits).toEqual([]);
+  });
+
+  it('backs off between transient failures and reports each one', async () => {
+    const retried: number[] = [];
+    const call = vi.fn().mockResolvedValueOnce(failing(503)).mockResolvedValueOnce(failing(503)).mockResolvedValueOnce({ data: 'ok', error: null });
+
+    const result = await callWithRetry(call, (attempt) => retried.push(attempt), 3, wait);
+
+    expect(result).toEqual({ ok: true, data: 'ok' });
+    expect(retried).toEqual([1, 2]);
+    expect(waits).toEqual([getBackoffDelayMs(1), getBackoffDelayMs(2)]);
+  });
+
+  it('stops at once on a failure that retrying cannot fix', async () => {
+    const call = vi.fn().mockResolvedValue(failing(409));
+
+    const result = await callWithRetry(call, () => {}, 3, wait);
+
+    expect(result).toEqual({ ok: false, failure: { message: 'HTTP 409', status: 409, exhausted: false } });
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up after the last attempt', async () => {
+    const call = vi.fn().mockResolvedValue(failing(500));
+
+    const result = await callWithRetry(call, () => {}, 3, wait);
+
+    expect(result).toMatchObject({ ok: false, failure: { status: 500, exhausted: true } });
+    expect(call).toHaveBeenCalledTimes(3);
+    expect(waits).toHaveLength(2);
+  });
+
+  it('treats a thrown network failure as transient', async () => {
+    const call = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce({ data: 1, error: null });
+
+    const result = await callWithRetry(call, () => {}, 3, wait);
+
+    expect(result).toEqual({ ok: true, data: 1 });
   });
 });

@@ -15,11 +15,13 @@ props, and the command grammar live in the code; do not mirror them here.
   SPA. No `+page.server.ts` or `+layout.server.ts`; the only server code in
   `web/` is `src/routes/api/`.
 - Pages talk to the engine through `callApi(name, body)` in
-  `src/lib/api/client.ts`, which returns `{ data, error }`.
+  `src/lib/api/client.ts`, which returns `{ data, error }`. The store parses
+  every answer with the shared schemas; a mismatch is logged and shown, never
+  retried.
 - State is in rune stores, `src/lib/domain/*.svelte.ts`. `gameSessionStore`
   (`store.svelte.ts`) owns the session, its pages, the notebook and help.
-- Logic goes in plain `.ts` beside the stores (`parser.ts`, `session-pages.ts`,
-  `notebook.ts`, `store.retry.ts`), not in components. That is what the web unit
+- Logic goes in plain `.ts` beside the stores (`session-pages.ts`,
+  `notebook.ts`, `turn-answer.ts`, `store.retry.ts`), not in components. That is what the web unit
   suite covers; components are covered only by browser E2E.
 - Components are all in `src/lib/components/`. Look there before adding one.
 
@@ -58,9 +60,10 @@ Two keyboard rules are easy to break:
 - `HelpModal` and `NotebookPanel` both sit at `z-50` with no stacking
   coordination; `openNotebook()` closing help is what keeps the notebook on top.
 
-The command grammar is `command-grammar.ts` in the engine; `parser.ts` is the
-browser's copy, which must match it. `HelpModal` is the player's reference.
-`docs/game.md` describes commands at the player level only.
+The browser sends each line to `game-turn` as typed; the grammar is
+`command-grammar.ts`. `Tab` opens the notebook without a request.
+`HelpModal` is the player's reference. `docs/game.md` describes commands at the
+player level only.
 
 ## Styling
 

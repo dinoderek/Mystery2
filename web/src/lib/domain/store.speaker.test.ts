@@ -12,7 +12,13 @@ vi.mock('../api/client', () => ({
 }));
 
 import { GameSessionStore } from './store.svelte';
-import { NARRATOR_SPEAKER } from '../../../../tests/testkit/src/fixtures';
+import {
+  NARRATOR_SPEAKER,
+  createRevealedClue,
+  createTurnPlayedResponse,
+  createTurnRefusedResponse,
+  createTurnViewResponse,
+} from '../../../../tests/testkit/src/fixtures';
 
 function createStore() {
   const store = new GameSessionStore();
@@ -54,14 +60,16 @@ describe('store speaker behavior', () => {
     const store = createStore();
 
     invokeMock.mockResolvedValue({
-      data: {
-        narration_parts: [{
-          text: 'You search the kitchen.',
-          speaker: NARRATOR_SPEAKER,
-        }],
-        mode: 'explore',
-        time_remaining: 9,
-      },
+      data: createTurnPlayedResponse({
+        events: [
+          {
+            sequence: 2,
+            event_type: 'search',
+            payload: { input: 'search' },
+            narration_parts: [{ text: 'You search the kitchen.', speaker: NARRATOR_SPEAKER }],
+          },
+        ],
+      }),
       error: null,
     });
 
@@ -84,83 +92,83 @@ describe('store speaker behavior', () => {
     });
   });
 
-  it('keeps help and invalid-target feedback local-only as system speaker', async () => {
+  it('shows a refusal and help as system lines, and sends nothing but the line', async () => {
     const store = createStore();
 
+    invokeMock.mockResolvedValueOnce({ data: createTurnViewResponse({ view: 'help' }), error: null });
     await store.submitInput('help');
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnRefusedResponse({ reason: 'invalid-target', hint: '"nowhere" is not a valid destination.' }),
+      error: null,
+    });
     await store.submitInput('go nowhere');
 
     const systemLines =
       store.state?.history.flatMap((event) => event.narration_parts).filter(
         (line) => line.speaker.kind === 'system',
       ) ?? [];
-    expect(systemLines.length).toBeGreaterThanOrEqual(1);
-
-    // Only local parsing branches ran; no backend mutation path for these lines.
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(systemLines.map((line) => line.text)).toEqual([
+      'Help menu opened.',
+      '"nowhere" is not a valid destination.',
+    ]);
+    expect(store.showHelp).toBe(true);
+    // Neither line played anything: the player's own words stay on the screen.
+    const echoes = store.state?.history.filter((event) => event.event_type === 'input') ?? [];
+    expect(echoes.map((event) => event.narration_parts[0].text)).toEqual(['help', 'go nowhere']);
   });
 
-  it('never includes local system lines in backend invoke payloads', async () => {
-    const store = createStore();
-
-    invokeMock.mockResolvedValue({
-      data: {
-        narration_parts: [{
-          text: 'You search the kitchen.',
-          speaker: NARRATOR_SPEAKER,
-        }],
-        mode: 'explore',
-        time_remaining: 9,
-      },
-      error: null,
-    });
-
-    await store.submitInput('go');
-    await store.submitInput('search');
-
-    expect(invokeMock).toHaveBeenCalledTimes(1);
-    const [, body] = invokeMock.mock.calls[0] as [string, Record<string, unknown>];
-    expect(body).toEqual({ game_id: 'game-1', search_query: null });
-    expect(body).not.toHaveProperty('history');
-    expect(body).not.toHaveProperty('system_feedback');
-  });
-
-  it('opens the notebook on the "notebook" command without a backend call', async () => {
+  it('opens the notebook on the "notebook" command and takes the echo back', async () => {
     const store = createStore();
     const historyLength = store.state!.history.length;
     expect(store.showNotebook).toBe(false);
 
+    invokeMock.mockResolvedValue({ data: createTurnViewResponse({ view: 'notebook', section: null }), error: null });
     await store.submitInput('notebook');
 
     expect(store.showNotebook).toBe(true);
     expect(store.notebookSection).toBe('story');
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith('game-turn', { game_id: 'game-1', input: 'notebook' });
     // Costs no turn and leaves no trace in the transcript.
     expect(store.state!.history).toHaveLength(historyLength);
   });
 
-  it('opens the notebook at the matching section for the list commands', async () => {
+  it('opens the notebook at the section the answer names for the list commands', async () => {
     const store = createStore();
     const historyLength = store.state!.history.length;
 
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnViewResponse({ view: 'locations', section: 'places' }),
+      error: null,
+    });
     await store.submitInput('locations');
     expect(store.showNotebook).toBe(true);
     expect(store.notebookSection).toBe('places');
 
     store.closeNotebook();
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnViewResponse({ view: 'characters', section: 'people' }),
+      error: null,
+    });
     await store.submitInput('who is here');
     expect(store.showNotebook).toBe(true);
     expect(store.notebookSection).toBe('people');
 
-    expect(invokeMock).not.toHaveBeenCalled();
     expect(store.state!.history).toHaveLength(historyLength);
   });
 
   it('reopens at the last section when no section is given', async () => {
     const store = createStore();
 
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnViewResponse({ view: 'characters', section: 'people' }),
+      error: null,
+    });
     await store.submitInput('characters');
     store.closeNotebook();
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnViewResponse({ view: 'notebook', section: null }),
+      error: null,
+    });
     await store.submitInput('n');
 
     expect(store.notebookSection).toBe('people');
@@ -196,41 +204,27 @@ describe('store speaker behavior', () => {
     expect(store.notebookSection).toBe('story');
   });
 
-  it('merges revealed_clues from a search response into discovered_clues', async () => {
+  it('merges revealed_clues from a turn into discovered_clues', async () => {
     const store = createStore();
 
-    const storedCrumbClue = {
-      id: 'clue-crumbs',
-      text: 'Crumbs on the floor.',
-      source: 'search',
-      origin: { kind: 'location', location_id: 'loc-kitchen', location_name: 'Kitchen' },
-      discovered_at: '2026-06-01T10:00:00Z',
-      off_script: false,
-    };
-    // The wire payload here still carries spoiler-bearing `threads`, as a stale
-    // or legacy response could. The store must drop it on the way in.
-    const crumbClue = {
-      ...storedCrumbClue,
-      threads: [{ kind: 'solution', label: 'Main solution' }],
+    const crumbClue = createRevealedClue();
+    // The wire answer here still carries spoiler-bearing `threads`, as a stale
+    // or legacy response could. The schema must drop it on the way in.
+    const wire = {
+      ...createTurnPlayedResponse({ revealed_clues: [crumbClue] }),
+      revealed_clues: [{ ...crumbClue, threads: [{ kind: 'solution', label: 'Main solution' }] }],
     };
 
-    invokeMock.mockResolvedValue({
-      data: {
-        narration_parts: [{ text: 'You find crumbs.', speaker: NARRATOR_SPEAKER }],
-        mode: 'explore',
-        time_remaining: 9,
-        revealed_clues: [crumbClue],
-      },
-      error: null,
-    });
+    invokeMock.mockResolvedValue({ data: wire, error: null });
 
     expect(store.state?.discovered_clues).toEqual([]);
     await store.submitInput('search');
 
-    expect(store.state?.discovered_clues).toEqual([storedCrumbClue]);
+    expect(store.state?.discovered_clues).toEqual([crumbClue]);
+    expect(store.recentlyDiscovered).toEqual([crumbClue]);
 
     // A second search revealing the same clue does not duplicate it.
     await store.submitInput('search');
-    expect(store.state?.discovered_clues).toEqual([storedCrumbClue]);
+    expect(store.state?.discovered_clues).toEqual([crumbClue]);
   });
 });

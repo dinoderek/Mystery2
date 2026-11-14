@@ -29,7 +29,7 @@ test.describe('US2 - Status Bar', () => {
                             { id: 'char-alice', first_name: 'Alice', last_name: 'Brown', location_id: 'loc-garden', location_name: 'garden', sex: 'female' },
                         ],
                         time_remaining: 8,
-                        location: 'kitchen',
+                        location: 'loc-kitchen',
                     }),
                     narration_events: [
                         createNarrationEvent({

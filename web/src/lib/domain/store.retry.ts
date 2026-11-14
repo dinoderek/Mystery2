@@ -54,6 +54,61 @@ export function getBackoffDelayMs(attempt: number): number {
   return Math.min(base * 2 ** (safeAttempt - 1), maxDelay);
 }
 
+export interface AttemptFailure extends InvokeFailure {
+  /** The request kept failing in a way that was worth retrying, and ran out of tries. */
+  exhausted: boolean;
+}
+
+export type AttemptResult<T> = { ok: true; data: T } | { ok: false; failure: AttemptFailure };
+
+interface CallResult<T> {
+  data: T | null;
+  error: { message: string; status?: number } | null;
+}
+
+/**
+ * Runs `call` up to `maxAttempts` times, backing off between tries while the
+ * failure is transient. `onRetry` is told which attempt just failed, before the
+ * wait, so the screen can say so.
+ */
+export async function callWithRetry<T>(
+  call: () => Promise<CallResult<T>>,
+  onRetry: (attempt: number) => void,
+  maxAttempts = 3,
+  wait: (ms: number) => Promise<void> = sleep,
+): Promise<AttemptResult<T>> {
+  for (let attempt = 1; ; attempt += 1) {
+    const result = await attemptOnce(call);
+    if ('data' in result) {
+      return { ok: true, data: result.data };
+    }
+
+    const exhausted = result.transient && attempt >= maxAttempts;
+    if (!result.transient || exhausted) {
+      return { ok: false, failure: { ...result.failure, exhausted } };
+    }
+
+    onRetry(attempt);
+    await wait(getBackoffDelayMs(attempt));
+  }
+}
+
+async function attemptOnce<T>(
+  call: () => Promise<CallResult<T>>,
+): Promise<{ data: T } | { failure: InvokeFailure; transient: boolean }> {
+  try {
+    const { data, error } = await call();
+    if (!error) {
+      return { data: data as T };
+    }
+    const failure = { message: error.message, status: error.status };
+    return { failure, transient: isTransientFailure(failure) };
+  } catch (thrown) {
+    const failure = { message: thrown instanceof Error ? thrown.message : String(thrown) };
+    return { failure, transient: isTransientFailure(null, thrown) };
+  }
+}
+
 export function isImageLinkExpired(
   expiresAt: string | null | undefined,
   nowMs = Date.now(),

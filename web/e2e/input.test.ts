@@ -1,19 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
-import { confirmOpening } from './session-helpers';
+import { confirmOpening, playedTurn, stubTurns } from './session-helpers';
 import {
-  NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   characterSpeaker,
-  narrationResponse,
   createBlueprintSummary,
   createGameStartResponse,
-  createMoveResponse,
-  createSearchResponse,
-  createTalkStartResponse,
-  createTalkAskResponse,
-  createTalkEndResponse,
-  createAccuseResponse,
+  createTurnQuitResponse,
+  createTurnRefusedResponse,
+  createTurnViewResponse,
 } from '../../tests/testkit/src/fixtures';
 
 const GAME_ID = '00000000-0000-0000-0000-000000000001';
@@ -49,21 +44,13 @@ async function bootstrapSession(page: Page) {
 }
 
 test.describe('Command Input', () => {
-  test('accepts movement aliases and submits backend command', async ({ page }) => {
-    let moveCalls = 0;
-
-    await page.route('**/api/game-move*', async (route) => {
-      if (route.request().method() === 'POST') {
-        moveCalls += 1;
-      }
-
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: narrationResponse('You travel to the garden.', narratorSpeaker).narration_parts,
-          current_location: 'Garden',
-        }),
-      });
-    });
+  test('accepts movement aliases and sends the line as typed', async ({ page }) => {
+    const requests = await stubTurns(page, () =>
+      playedTurn('move', 'You travel to the garden.', {
+        payload: { location_name: 'Garden' },
+        state: { location: 'loc-garden' },
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -74,28 +61,23 @@ test.describe('Command Input', () => {
     await expect(page.getByText('You travel to the garden.')).toBeVisible();
     await expect(page.locator('[data-speaker-kind="investigator"]').last()).toContainText('You:');
     await expect(page.locator('[data-speaker-kind="narrator"]').last()).toContainText('Narrator:');
-    expect(moveCalls).toBe(1);
+    expect(requests).toEqual([{ game_id: GAME_ID, input: 'travel to garden' }]);
   });
 
   test('renders move/talk side imagery and falls back to placeholder when image link fails', async ({ page }) => {
-    await page.route('**/api/game-move*', async (route) => {
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: narrationResponse('You travel to the garden.', narratorSpeaker, 'mock-blueprint.location-garden.png').narration_parts,
-          current_location: 'Garden',
-        }),
-      });
-    });
-
-    await page.route('**/api/game-talk*', async (route) => {
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse('Bob greets you by the flower beds.', narratorSpeaker, 'mock-blueprint.character-bob.png').narration_parts,
-          time_remaining: 8,
-          current_talk_character: 'Bob',
-        }),
-      });
-    });
+    await stubTurns(page, ({ input }) =>
+      input === 'go to garden'
+        ? playedTurn('move', 'You travel to the garden.', {
+            image: 'mock-blueprint.location-garden.png',
+            payload: { location_name: 'Garden' },
+            state: { location: 'loc-garden' },
+          })
+        : playedTurn('talk', 'Bob greets you by the flower beds.', {
+            image: 'mock-blueprint.character-bob.png',
+            payload: { character_name: 'Bob' },
+            state: { mode: 'talk', time_remaining: 8, location: 'loc-garden', current_talk_character: 'char-bob' },
+          }),
+    );
 
     // The garden image resolves; anything else 404s, so the pane falls back to
     // its placeholder without taking the narration flow with it.
@@ -124,15 +106,13 @@ test.describe('Command Input', () => {
     await expect(page.getByText('Bob greets you by the flower beds.')).toBeVisible();
   });
 
-  test('blocks backend call for missing movement target', async ({ page }) => {
-    let moveCalls = 0;
-
-    await page.route('**/api/game-move*', async (route) => {
-      if (route.request().method() === 'POST') {
-        moveCalls += 1;
-      }
-      await route.fulfill({ json: { narration: 'unexpected' } });
-    });
+  test('shows the hint for a missing movement target', async ({ page }) => {
+    await stubTurns(page, () =>
+      createTurnRefusedResponse({
+        reason: 'missing-target',
+        hint: 'Where to? Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.',
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -142,18 +122,17 @@ test.describe('Command Input', () => {
 
     await expect(page.getByText(/Where to\? Try:/)).toBeVisible();
     await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
-    expect(moveCalls).toBe(0);
+    // The player's own words stay on the screen above the hint.
+    await expect(page.locator('[data-speaker-kind="investigator"]').last()).toContainText('go');
   });
 
-  test('blocks backend call for invalid movement target and shows suggestions', async ({ page }) => {
-    let moveCalls = 0;
-
-    await page.route('**/api/game-move*', async (route) => {
-      if (route.request().method() === 'POST') {
-        moveCalls += 1;
-      }
-      await route.fulfill({ json: { narration: 'unexpected' } });
-    });
+  test('shows the hint for an invalid movement target with suggestions', async ({ page }) => {
+    await stubTurns(page, () =>
+      createTurnRefusedResponse({
+        reason: 'invalid-target',
+        hint: '"zyx" is not a valid destination. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.',
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -165,10 +144,15 @@ test.describe('Command Input', () => {
       page.getByText(/"zyx" is not a valid destination\. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox\./),
     ).toBeVisible();
     await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
-    expect(moveCalls).toBe(0);
   });
 
   test('list commands open the notebook at the matching section', async ({ page }) => {
+    await stubTurns(page, ({ input }) =>
+      input === 'locations'
+        ? createTurnViewResponse({ view: 'locations', section: 'places' })
+        : createTurnViewResponse({ view: 'characters', section: 'people' }),
+    );
+
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');
@@ -197,6 +181,13 @@ test.describe('Command Input', () => {
   });
 
   test('shows inline guidance for unrecognized commands', async ({ page }) => {
+    await stubTurns(page, () =>
+      createTurnRefusedResponse({
+        reason: 'unrecognized',
+        hint: "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.",
+      }),
+    );
+
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');
@@ -209,32 +200,18 @@ test.describe('Command Input', () => {
     await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
   });
 
-  test('sends player_input payload when asking in talk mode', async ({ page }) => {
-    let talkCalls = 0;
-    let askCalls = 0;
-    let askPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-talk*', async (route) => {
-      talkCalls += 1;
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse('Mayor Fox nods and listens carefully.', narratorSpeaker).narration_parts,
-          current_talk_character: 'Mayor',
-        }),
-      });
-    });
-
-    await page.route('**/api/game-ask*', async (route) => {
-      askCalls += 1;
-      askPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createTalkAskResponse({
-          narration_parts: narrationResponse('Mayor Fox answers your question.', characterSpeaker('Mayor')).narration_parts,
-          time_remaining: 8,
-          current_talk_character: 'Mayor',
-        }),
-      });
-    });
+  test('sends a question in talk mode as the line typed', async ({ page }) => {
+    const requests = await stubTurns(page, ({ input }) =>
+      input === 'talk to mayor'
+        ? playedTurn('talk', 'Mayor Fox nods and listens carefully.', {
+            payload: { character_name: 'Mayor' },
+            state: { mode: 'talk', current_talk_character: 'char-mayor' },
+          })
+        : playedTurn('ask', 'Mayor Fox answers your question.', {
+            speaker: characterSpeaker('Mayor'),
+            state: { mode: 'talk', time_remaining: 8, current_talk_character: 'char-mayor' },
+          }),
+    );
 
     await bootstrapSession(page);
 
@@ -251,24 +228,17 @@ test.describe('Command Input', () => {
     await expect(characterLine).toContainText('Mayor:');
     await expect(characterLine).toHaveClass(/text-t-dialogue-text/);
 
-    expect(talkCalls).toBe(1);
-    expect(askCalls).toBe(1);
-    expect(askPayload?.player_input).toBe('Where were you?');
-    expect(askPayload && 'question' in askPayload).toBe(false);
+    expect(requests.map((request) => request.input)).toEqual(['talk to mayor', 'Where were you?']);
+    expect(requests.every((request) => request.game_id === GAME_ID)).toBe(true);
   });
 
-  test('sends character_id (not character_name) to game-talk endpoint', async ({ page }) => {
-    let talkPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-talk*', async (route) => {
-      talkPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse('Mayor Fox greets you.', narratorSpeaker).narration_parts,
-          current_talk_character: 'char-mayor',
-        }),
-      });
-    });
+  test('sends the name as typed, not a character id', async ({ page }) => {
+    const requests = await stubTurns(page, () =>
+      playedTurn('talk', 'Mayor Fox greets you.', {
+        payload: { character_name: 'Mayor' },
+        state: { mode: 'talk', current_talk_character: 'char-mayor' },
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -277,24 +247,16 @@ test.describe('Command Input', () => {
     await input.press('Enter');
     await expect(page.getByText('Mayor Fox greets you.')).toBeVisible();
 
-    expect(talkPayload).not.toBeNull();
-    expect(talkPayload?.character_id).toBe('char-mayor');
-    expect(talkPayload).not.toHaveProperty('character_name');
-    expect(talkPayload?.game_id).toBe(GAME_ID);
+    expect(requests).toEqual([{ game_id: GAME_ID, input: 'talk to mayor' }]);
   });
 
-  test('sends destination to game-move endpoint', async ({ page }) => {
-    let movePayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-move*', async (route) => {
-      movePayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: narrationResponse('You travel to the garden.', narratorSpeaker).narration_parts,
-          current_location: 'Garden',
-        }),
-      });
-    });
+  test('sends a movement line as typed', async ({ page }) => {
+    const requests = await stubTurns(page, () =>
+      playedTurn('move', 'You travel to the garden.', {
+        payload: { location_name: 'Garden' },
+        state: { location: 'loc-garden' },
+      }),
+    );
 
     await bootstrapSession(page);
 
@@ -303,22 +265,11 @@ test.describe('Command Input', () => {
     await input.press('Enter');
     await expect(page.getByText('You travel to the garden.')).toBeVisible();
 
-    expect(movePayload).not.toBeNull();
-    expect(movePayload?.destination).toBe('loc-garden');
-    expect(movePayload?.game_id).toBe(GAME_ID);
+    expect(requests).toEqual([{ game_id: GAME_ID, input: 'go to garden' }]);
   });
 
-  test('sends game_id to game-search endpoint', async ({ page }) => {
-    let searchPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-search*', async (route) => {
-      searchPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('You search the kitchen carefully.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+  test('sends a search line as typed', async ({ page }) => {
+    const requests = await stubTurns(page, () => playedTurn('search', 'You search the kitchen carefully.'));
 
     await bootstrapSession(page);
 
@@ -327,30 +278,21 @@ test.describe('Command Input', () => {
     await input.press('Enter');
     await expect(page.getByText('You search the kitchen carefully.')).toBeVisible();
 
-    expect(searchPayload).not.toBeNull();
-    expect(searchPayload?.game_id).toBe(GAME_ID);
+    expect(requests).toEqual([{ game_id: GAME_ID, input: 'search' }]);
   });
 
-  test('sends game_id to game-end-talk endpoint', async ({ page }) => {
-    let endTalkPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-talk*', async (route) => {
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse('Mayor Fox greets you.', narratorSpeaker).narration_parts,
-          current_talk_character: 'char-mayor',
-        }),
-      });
-    });
-
-    await page.route('**/api/game-end-talk*', async (route) => {
-      endTalkPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createTalkEndResponse({
-          narration_parts: narrationResponse('You say goodbye to Mayor Fox.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+  test('sends the end-of-conversation line as typed', async ({ page }) => {
+    const requests = await stubTurns(page, ({ input }) =>
+      input === 'talk to mayor'
+        ? playedTurn('talk', 'Mayor Fox greets you.', {
+            payload: { character_name: 'Mayor' },
+            state: { mode: 'talk', current_talk_character: 'char-mayor' },
+          })
+        : playedTurn('end_talk', 'You say goodbye to Mayor Fox.', {
+            payload: { location_name: 'Kitchen' },
+            state: { mode: 'explore', time_remaining: 8, current_talk_character: null },
+          }),
+    );
 
     await bootstrapSession(page);
 
@@ -363,41 +305,33 @@ test.describe('Command Input', () => {
     await input.press('Enter');
     await expect(page.getByText('You say goodbye to Mayor Fox.')).toBeVisible();
 
-    expect(endTalkPayload).not.toBeNull();
-    expect(endTalkPayload?.game_id).toBe(GAME_ID);
+    expect(requests.map((request) => request.input)).toEqual(['talk to mayor', 'bye']);
   });
 
   test('renders one generic style class for all character speakers', async ({ page }) => {
-    let activeCharacter = 'Mayor';
-
-    await page.route('**/api/game-talk*', async (route) => {
-      const payload = route.request().postDataJSON() as { character_id?: string };
-      activeCharacter = payload.character_id === 'char-rosie' ? 'Rosie' : 'Mayor';
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse(`${activeCharacter} joins the conversation.`, narratorSpeaker).narration_parts,
-          current_talk_character: activeCharacter,
-        }),
-      });
-    });
-
-    await page.route('**/api/game-ask*', async (route) => {
-      await route.fulfill({
-        json: createTalkAskResponse({
-          narration_parts: narrationResponse(`${activeCharacter} responds to your question.`, characterSpeaker(activeCharacter)).narration_parts,
-          time_remaining: 8,
-          current_talk_character: activeCharacter,
-        }),
-      });
-    });
-
-    await page.route('**/api/game-end-talk*', async (route) => {
-      await route.fulfill({
-        json: createTalkEndResponse({
-          narration_parts: narrationResponse('Conversation ended.', narratorSpeaker).narration_parts,
-          time_remaining: 8,
-        }),
-      });
+    await stubTurns(page, ({ input }) => {
+      switch (input) {
+        case 'talk to mayor':
+        case 'talk to rosie': {
+          const name = input === 'talk to rosie' ? 'Rosie' : 'Mayor';
+          return playedTurn('talk', `${name} joins the conversation.`, {
+            payload: { character_name: name },
+            state: { mode: 'talk', current_talk_character: name === 'Rosie' ? 'char-rosie' : 'char-mayor' },
+          });
+        }
+        case 'bye':
+          return playedTurn('end_talk', 'Conversation ended.', {
+            payload: { location_name: 'Kitchen' },
+            state: { mode: 'explore', time_remaining: 8, current_talk_character: null },
+          });
+        default: {
+          const name = input === 'What did you see?' ? 'Rosie' : 'Mayor';
+          return playedTurn('ask', `${name} responds to your question.`, {
+            speaker: characterSpeaker(name),
+            state: { mode: 'talk', time_remaining: 8, current_talk_character: name === 'Rosie' ? 'char-rosie' : 'char-mayor' },
+          });
+        }
+      }
     });
 
     await bootstrapSession(page);
@@ -430,44 +364,17 @@ test.describe('Command Input', () => {
     expect(rosieClass).toContain('text-t-dialogue-text');
   });
 
-  test('routes accuse-mode free text to game-accuse reasoning (not game-ask)', async ({ page }) => {
-    let accuseCalls = 0;
-    let askCalls = 0;
-    let secondAccusePayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-ask*', async (route) => {
-      askCalls += 1;
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'unexpected game-ask call' }),
-      });
-    });
-
-    await page.route('**/api/game-accuse*', async (route) => {
-      accuseCalls += 1;
-      const payload = route.request().postDataJSON() as Record<string, unknown>;
-
-      if (accuseCalls === 1) {
-        await route.fulfill({
-          json: createAccuseResponse({
-            narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
-            mode: 'accuse',
-            result: null,
-            time_remaining: 8,
+  test('sends accuse-mode free text as the line typed', async ({ page }) => {
+    const requests = await stubTurns(page, (_request, count) =>
+      count === 1
+        ? playedTurn('accuse_start', 'You accuse Mayor Fox. Explain your reasoning.', {
+            state: { mode: 'accuse', time_remaining: 8 },
+          })
+        : playedTurn('accuse_resolved', 'Case closed.', {
+            state: { mode: 'ended', time_remaining: 8 },
+            result: 'win',
           }),
-        });
-        return;
-      }
-
-      secondAccusePayload = payload;
-      await route.fulfill({
-        json: createAccuseResponse({
-          narration_parts: narrationResponse('Case closed.', narratorSpeaker).narration_parts,
-          time_remaining: 8,
-        }),
-      });
-    });
+    );
 
     await bootstrapSession(page);
 
@@ -487,37 +394,20 @@ test.describe('Command Input', () => {
     await page.keyboard.press('x');
     await expect(page).toHaveURL(/\/$/);
 
-    expect(accuseCalls).toBe(2);
-    expect(askCalls).toBe(0);
-    expect(secondAccusePayload?.player_reasoning).toBe('He had crumbs on his coat.');
+    expect(requests.map((request) => request.input)).toEqual(['accuse mayor', 'He had crumbs on his coat.']);
   });
 
   test('shows failure end-state and returns to list on any key', async ({ page }) => {
-    let accuseCalls = 0;
-
-    await page.route('**/api/game-accuse*', async (route) => {
-      accuseCalls += 1;
-
-      if (accuseCalls === 1) {
-        await route.fulfill({
-          json: createAccuseResponse({
-            narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
-            mode: 'accuse',
-            result: null,
-            time_remaining: 8,
+    await stubTurns(page, (_request, count) =>
+      count === 1
+        ? playedTurn('accuse_start', 'You accuse Mayor Fox. Explain your reasoning.', {
+            state: { mode: 'accuse', time_remaining: 8 },
+          })
+        : playedTurn('accuse_resolved', 'The accusation fails.', {
+            state: { mode: 'ended', time_remaining: 8 },
+            result: 'lose',
           }),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        json: createAccuseResponse({
-          narration_parts: narrationResponse('The accusation fails.', narratorSpeaker).narration_parts,
-          result: 'lose',
-          time_remaining: 8,
-        }),
-      });
-    });
+    );
 
     await bootstrapSession(page);
 
@@ -537,6 +427,8 @@ test.describe('Command Input', () => {
   });
 
   test('ends the session on quit and returns to list on any key', async ({ page }) => {
+    await stubTurns(page, () => createTurnQuitResponse());
+
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');
@@ -553,42 +445,24 @@ test.describe('Command Input', () => {
   });
 
   test('shows both narration parts for final-turn ask and switches to accuse-mode', async ({ page }) => {
-    let askCalls = 0;
-    let accuseCalls = 0;
-
-    await page.route('**/api/game-talk*', async (route) => {
-      await route.fulfill({
-        json: createTalkStartResponse({
-          narration_parts: narrationResponse('Mayor Fox greets you with a wry smile.', narratorSpeaker).narration_parts,
-          time_remaining: 1,
-          current_talk_character: 'Mayor',
-        }),
-      });
-    });
-
-    await page.route('**/api/game-ask*', async (route) => {
-      askCalls += 1;
-      await route.fulfill({
-        json: createTalkAskResponse({
-          narration_parts: [
-            ...narrationResponse('Mayor Fox answers, but a nagging doubt remains.', characterSpeaker('Mayor')).narration_parts,
-            ...narrationResponse('Time is up; accusation begins now.', narratorSpeaker).narration_parts,
-          ],
-          mode: 'accuse',
-          time_remaining: 0,
-          current_talk_character: null,
-        }),
-      });
-    });
-
-    await page.route('**/api/game-accuse*', async (route) => {
-      accuseCalls += 1;
-      await route.fulfill({
-        json: createAccuseResponse({
-          narration_parts: narrationResponse('Your reasoning is noted.', narratorSpeaker).narration_parts,
-          time_remaining: 0,
-        }),
-      });
+    const requests = await stubTurns(page, ({ input }) => {
+      switch (input) {
+        case 'talk to mayor':
+          return playedTurn('talk', 'Mayor Fox greets you with a wry smile.', {
+            payload: { character_name: 'Mayor' },
+            state: { mode: 'talk', time_remaining: 1, current_talk_character: 'char-mayor' },
+          });
+        case 'Where were you?':
+          return playedTurn('ask', 'Mayor Fox answers, but a nagging doubt remains.', {
+            speaker: characterSpeaker('Mayor'),
+            state: { mode: 'accuse', time_remaining: 0, current_talk_character: null },
+            after: [{ event_type: 'forced_endgame', text: 'Time is up; accusation begins now.' }],
+          });
+        default:
+          return playedTurn('accuse_round', 'Your reasoning is noted.', {
+            state: { mode: 'accuse', time_remaining: 0, current_talk_character: null },
+          });
+      }
     });
 
     await bootstrapSession(page);
@@ -611,76 +485,28 @@ test.describe('Command Input', () => {
     await input.fill('Mayor Fox hid the crumbs.');
     await input.press('Enter');
     await expect(page.getByText('Your reasoning is noted.')).toBeVisible();
-    expect(askCalls).toBe(1);
-    expect(accuseCalls).toBe(1);
+    expect(requests.map((request) => request.input)).toEqual([
+      'talk to mayor',
+      'Where were you?',
+      'Mayor Fox hid the crumbs.',
+    ]);
   });
 
-  test('keeps parsing narrator reasoning across multiple accuse rounds', async ({ page }) => {
-    let accuseCalls = 0;
-    let askCalls = 0;
-    let moveCalls = 0;
-    let talkCalls = 0;
-    let searchCalls = 0;
-    const accusePayloads: Record<string, unknown>[] = [];
-
-    await page.route('**/api/game-ask*', async (route) => {
-      askCalls += 1;
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'unexpected game-ask call' }),
-      });
-    });
-
-    await page.route('**/api/game-move*', async (route) => {
-      moveCalls += 1;
-      await route.fulfill({ json: { narration: 'unexpected move call' } });
-    });
-
-    await page.route('**/api/game-talk*', async (route) => {
-      talkCalls += 1;
-      await route.fulfill({ json: { narration: 'unexpected talk call' } });
-    });
-
-    await page.route('**/api/game-search*', async (route) => {
-      searchCalls += 1;
-      await route.fulfill({ json: { narration: 'unexpected search call' } });
-    });
-
-    await page.route('**/api/game-accuse*', async (route) => {
-      accuseCalls += 1;
-      const payload = route.request().postDataJSON() as Record<string, unknown>;
-      accusePayloads.push(payload);
-
-      if (accuseCalls === 1) {
-        await route.fulfill({
-          json: createAccuseResponse({
-            narration_parts: narrationResponse('You accuse Mayor Fox. Explain your reasoning.', narratorSpeaker).narration_parts,
-            mode: 'accuse',
-            result: null,
-            time_remaining: 8,
-          }),
+  test('sends every accuse-round line as typed, even one that reads like a command', async ({ page }) => {
+    const requests = await stubTurns(page, (_request, count) => {
+      if (count === 1) {
+        return playedTurn('accuse_start', 'You accuse Mayor Fox. Explain your reasoning.', {
+          state: { mode: 'accuse', time_remaining: 8 },
         });
-        return;
       }
-
-      if (accuseCalls === 2) {
-        await route.fulfill({
-          json: createAccuseResponse({
-            narration_parts: narrationResponse('I need stronger evidence. Keep explaining.', narratorSpeaker).narration_parts,
-            mode: 'accuse',
-            result: null,
-            time_remaining: 8,
-          }),
+      if (count === 2) {
+        return playedTurn('accuse_round', 'I need stronger evidence. Keep explaining.', {
+          state: { mode: 'accuse', time_remaining: 8 },
         });
-        return;
       }
-
-      await route.fulfill({
-        json: createAccuseResponse({
-          narration_parts: narrationResponse('Final verdict reached.', narratorSpeaker).narration_parts,
-          time_remaining: 8,
-        }),
+      return playedTurn('accuse_resolved', 'Final verdict reached.', {
+        state: { mode: 'ended', time_remaining: 8 },
+        result: 'win',
       });
     });
 
@@ -699,23 +525,17 @@ test.describe('Command Input', () => {
     await input.press('Enter');
     await expect(page.getByText('Final verdict reached.')).toBeVisible();
 
-    expect(accuseCalls).toBe(3);
-    expect(askCalls).toBe(0);
-    expect(moveCalls).toBe(0);
-    expect(talkCalls).toBe(0);
-    expect(searchCalls).toBe(0);
-    expect(accusePayloads[1]?.player_reasoning).toBe('go to kitchen because he hid the tray there');
-    expect(accusePayloads[2]?.player_reasoning).toBe('talk to rosie confirms he was lying');
+    expect(requests.map((request) => request.input)).toEqual([
+      'accuse mayor',
+      'go to kitchen because he hid the tray there',
+      'talk to rosie confirms he was lying',
+    ]);
   });
 
   test('shows terminal loading indicator while waiting for backend narration', async ({ page }) => {
-    await page.route('**/api/game-search*', async (route) => {
+    await page.route('**/api/game-turn*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 450));
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('Search complete.', narratorSpeaker).narration_parts,
-        }),
-      });
+      await route.fulfill({ json: playedTurn('search', 'Search complete.') });
     });
 
     await bootstrapSession(page);
@@ -731,28 +551,11 @@ test.describe('Command Input', () => {
   });
 
   test('retries transient backend failures and succeeds', async ({ page }) => {
-    let searchCalls = 0;
-
-    await page.route('**/api/game-search*', async (route) => {
-      if (route.request().method() === 'POST') {
-        searchCalls += 1;
-      }
-
-      if (searchCalls < 3) {
-        await route.fulfill({
-          status: 503,
-          contentType: 'application/json',
-          body: JSON.stringify({ message: 'Temporary outage' }),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('Recovered after retry.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+    const requests = await stubTurns(page, (_request, count) =>
+      count < 3
+        ? { status: 503, body: { message: 'Temporary outage' } }
+        : playedTurn('search', 'Recovered after retry.'),
+    );
 
     await bootstrapSession(page);
 
@@ -762,22 +565,14 @@ test.describe('Command Input', () => {
 
     await expect(page.getByText(/Something went wrong\. Trying again/)).toBeVisible();
     await expect(page.getByText('Recovered after retry.')).toBeVisible();
-    expect(searchCalls).toBe(3);
+    expect(requests).toHaveLength(3);
   });
 
   test('shows manual retry affordance after retry exhaustion', async ({ page }) => {
-    let searchCalls = 0;
-
-    await page.route('**/api/game-search*', async (route) => {
-      if (route.request().method() === 'POST') {
-        searchCalls += 1;
-      }
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Service unavailable' }),
-      });
-    });
+    const requests = await stubTurns(page, () => ({
+      status: 503,
+      body: { message: 'Service unavailable' },
+    }));
 
     await bootstrapSession(page);
 
@@ -786,23 +581,14 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText(/That did not work, even after 3 tries/)).toBeVisible();
-    expect(searchCalls).toBe(3);
+    expect(requests).toHaveLength(3);
   });
 
   test('does not retry permanent 4xx errors', async ({ page }) => {
-    let searchCalls = 0;
-
-    await page.route('**/api/game-search*', async (route) => {
-      if (route.request().method() === 'POST') {
-        searchCalls += 1;
-      }
-
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Invalid game state' }),
-      });
-    });
+    const requests = await stubTurns(page, () => ({
+      status: 400,
+      body: { message: 'Invalid game state' },
+    }));
 
     await bootstrapSession(page);
 
@@ -811,6 +597,41 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(page.getByText(/Request failed:/)).toBeVisible();
-    expect(searchCalls).toBe(1);
+    expect(requests).toHaveLength(1);
+  });
+
+  test('shows a turn that lost the race to another like any other failed turn', async ({ page }) => {
+    const requests = await stubTurns(page, () => ({
+      status: 409,
+      body: { error: 'Another turn for this game was saved first' },
+    }));
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('Enter');
+
+    await expect(page.getByText('Request failed: Another turn for this game was saved first')).toBeVisible();
+    expect(requests).toHaveLength(1);
+  });
+
+  test('says so, and logs it, when the answer is not one the page can read', async ({ page }) => {
+    const logged: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') logged.push(message.text());
+    });
+    await page.route('**/api/game-turn*', async (route) => {
+      await route.fulfill({ json: { kind: 'turn', events: [] } });
+    });
+
+    await bootstrapSession(page);
+
+    const input = page.locator('input[type="text"]');
+    await input.fill('search');
+    await input.press('Enter');
+
+    await expect(page.getByText(/not in the shape this page expects/)).toBeVisible();
+    expect(logged.some((line) => line.includes('[contract] game-turn'))).toBe(true);
   });
 });

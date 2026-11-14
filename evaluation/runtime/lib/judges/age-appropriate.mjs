@@ -20,86 +20,19 @@
 //   cliConfig  — inline CLI config entry, overrides the variant lookup (tests)
 //   targetAge  — override the interaction's target_age
 
+import { validateTurnAgeAnswer } from "../../../core/judge-output.ts";
+import { composeTurnAgeSystemPrompt } from "../../../core/judge-prompt.ts";
 import { runCliWithRetries } from "../../../pipeline/cli-runner.mjs";
 import { loadCliConfig, parseFencedJson } from "../cli-config.mjs";
 
+// The registry lists this judge as `age_appropriate_turn`, apart from the blueprint
+// dimension `age_appropriate`; the runtime harness still answers to the old id.
 export const id = "age_appropriate";
 
 const DEFAULT_VARIANT = "judge";
 
-const FINDING_KINDS = [
-  "vocabulary",
-  "sentence_length",
-  "figurative_language",
-  "clarity",
-];
-
-const OUTPUT_CONTRACT = `{
-  "estimated_reading_age": <integer — the youngest age that could comfortably read this text unaided>,
-  "findings": [
-    {
-      "quote": "<short verbatim quote of the offending phrase>",
-      "kind": "vocabulary" | "sentence_length" | "figurative_language" | "clarity",
-      "why": "<why a target-age reader stumbles here>",
-      "suggestion": "<optional age-appropriate rewording>"
-    }
-  ],
-  "verdict": "pass" | "fail",
-  "reasoning": "<one short paragraph>"
-}`;
-
-async function buildSystemPrompt(targetAge) {
-  const { renderComplexityGuidance } = await import(
-    "../../../../packages/shared/src/age-profile.ts"
-  );
-  return [
-    `You are an expert in children's reading levels. You are judging ONE piece of narration from a detective game played by a ${targetAge}-year-old child.`,
-    ``,
-    `The narration was generated under these writing instructions:`,
-    ``,
-    renderComplexityGuidance(targetAge),
-    ``,
-    `Judge whether the narration actually follows them. Look for what a readability formula cannot see:`,
-    `- vocabulary: words a ${targetAge}-year-old would not know and cannot work out from context`,
-    `- sentence_length: sentences that stack clauses well past the guidance`,
-    `- figurative_language: idioms, metaphors, or irony a child this age would misread`,
-    `- clarity: phrasing where the child cannot tell what they are being told`,
-    ``,
-    `Verdict "pass" iff the narration as a whole is comfortable for a ${targetAge}-year-old to read unaided. Stretch words within the stated new-word allowance are fine; a pattern of overshooting is not. Judge language complexity only — tone and content suitability are out of scope.`,
-    ``,
-    `Respond with ONLY a single JSON object (no prose, no code fences) matching:`,
-    ``,
-    OUTPUT_CONTRACT,
-  ].join("\n");
-}
-
 /** Shape-check the model's verdict; throws with a specific message on miss. */
-export function validateVerdict(parsed) {
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("judge output is not a JSON object");
-  }
-  if (parsed.verdict !== "pass" && parsed.verdict !== "fail") {
-    throw new Error(`judge output verdict must be "pass" or "fail", got ${JSON.stringify(parsed.verdict)}`);
-  }
-  if (!Number.isInteger(parsed.estimated_reading_age)) {
-    throw new Error("judge output estimated_reading_age must be an integer");
-  }
-  if (!Array.isArray(parsed.findings)) {
-    throw new Error("judge output findings must be an array");
-  }
-  for (const f of parsed.findings) {
-    if (typeof f?.quote !== "string" || typeof f?.why !== "string") {
-      throw new Error("each finding needs string quote and why");
-    }
-    if (!FINDING_KINDS.includes(f.kind)) {
-      throw new Error(`finding kind must be one of ${FINDING_KINDS.join(", ")}, got ${JSON.stringify(f.kind)}`);
-    }
-  }
-  if (typeof parsed.reasoning !== "string") {
-    throw new Error("judge output reasoning must be a string");
-  }
-  return parsed;
-}
+export const validateVerdict = validateTurnAgeAnswer;
 
 export async function judge(interaction, { config = {} } = {}) {
   const targetAge = config.targetAge ?? interaction.target_age;
@@ -139,7 +72,7 @@ export async function judge(interaction, { config = {} } = {}) {
     };
   }
 
-  const systemPrompt = await buildSystemPrompt(targetAge);
+  const systemPrompt = composeTurnAgeSystemPrompt(targetAge);
   const userMessage = JSON.stringify({
     target_age: targetAge,
     action: {

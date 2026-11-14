@@ -9,11 +9,6 @@
       "count": 1
     }
   },
-  "evaluation/judge-harness/scripts/validate-judge-output.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "evaluation/pipeline/run.mjs": {
     "max-depth": {
       "count": 1

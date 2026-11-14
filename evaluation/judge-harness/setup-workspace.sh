@@ -31,9 +31,9 @@ TEMPLATE_DIR="$SCRIPT_DIR/template"
 
 # Map dim-id to the on-disk filename for its definition / schema. Dimension
 # ids use underscores; their files use kebab-case (e.g. character_grounding ->
-# character-grounding), matching dimensionIdToFilename() in
-# evaluation/pipeline/load.mjs. Derived generically so a new dimension needs no
-# edit here — only its <slug>.md + <slug>.schema.ts + a registry entry.
+# character-grounding), the same files its registry entry names. Derived
+# generically so a new dimension needs no edit here — only its <slug>.md +
+# <slug>.schema.ts + a registry entry (evaluation/core/registry.ts).
 DIM_FILE_SLUG="${DIM_ID//_/-}"
 if [[ ! -f "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.md" ]]; then
   echo "unknown dimension id: $DIM_ID (no evaluation/dimensions/${DIM_FILE_SLUG}.md)" >&2

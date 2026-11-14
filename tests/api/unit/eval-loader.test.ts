@@ -10,10 +10,9 @@ import {
 } from "../../../evaluation/pipeline/load.mjs";
 import { knownSchemaNames } from "../../../evaluation/pipeline/validate.mjs";
 
-// The loader resolves a dimension's files by convention from this directory,
-// using a fixed repo-relative path. Temp-dimension tests therefore have to
-// write their fixture files here (into the real dimensions dir) and clean them
-// up afterwards.
+// The validate CLI lists the dimension schemas it finds in this directory, so
+// its tests write their fixture files here (into the real dimensions dir) and
+// clean them up afterwards.
 const dimensionsDir = path.join(repoRoot(), "evaluation", "dimensions");
 
 // Files written during a test, removed after it regardless of outcome.
@@ -52,29 +51,8 @@ describe("loadDimensionDefinition", () => {
     expect(def.schema.safeParse({}).success).toBe(false);
   });
 
-  it("throws when a dimension's schema file does not export a named `schema`", async () => {
-    const id = "loader_spec_no_export";
-    const slug = id.replace(/_/g, "-");
-    await writeScratch(`${slug}.md`, "# scratch dimension\n");
-    // A schema module that exports something, but not the required `schema`.
-    await writeScratch(
-      `${slug}.schema.ts`,
-      "export const notTheSchema = 1;\n",
-    );
-
-    await expect(loadDimensionDefinition(id)).rejects.toThrow(
-      /must export a named 'schema'/,
-    );
-  });
-
-  it("returns a null schema when the dimension has an .md file but no schema file", async () => {
-    const id = "loader_spec_md_only";
-    const slug = id.replace(/_/g, "-");
-    await writeScratch(`${slug}.md`, "# scratch dimension\n");
-
-    const def = await loadDimensionDefinition(id);
-    expect(def.schema).toBeNull();
-    expect(def.schemaPath).toBeNull();
+  it("refuses a dimension the registry does not list", async () => {
+    await expect(loadDimensionDefinition("loader_spec_unregistered")).rejects.toThrow(/Unknown check or judge/);
   });
 });
 
@@ -90,24 +68,6 @@ describe("tryLoadAnalyzer", () => {
   it("returns null for a dimension with no analyzer file", async () => {
     // fairness is judge-only; no analyzer file exists for it.
     expect(await tryLoadAnalyzer("fairness")).toBeNull();
-  });
-
-  it("throws when an analyzer file exists but does not export analyze()", async () => {
-    const id = "loader_spec_bad_analyzer";
-    const slug = id.replace(/_/g, "-");
-    const analyzersDir = path.join(
-      repoRoot(),
-      "evaluation",
-      "checks",
-      "analyzers",
-    );
-    const analyzerPath = path.join(analyzersDir, `${slug}.mjs`);
-    await fs.writeFile(analyzerPath, "export const notAnalyze = 1;\n", "utf8");
-    scratchFiles.push(analyzerPath);
-
-    await expect(tryLoadAnalyzer(id)).rejects.toThrow(
-      /does not export an analyze\(\) function/,
-    );
   });
 });
 

@@ -25,14 +25,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import {
-  ADHERENCE_JUDGE_IDS,
-  composeJudgeSystemPrompt,
-  loadSharedJudgeDefinition,
-  loadSharedJudgeSystemPrompt,
-  resolveVerdict,
-  validateJudgeOutput,
-} from "../../../judges/index.mjs";
+import { loadJudge } from "../../../core/judge-loader.ts";
+import { validateJudgeOutput } from "../../../core/judge-output.ts";
+import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../../../core/judge-prompt.ts";
+import { judgesFor } from "../../../core/registry.ts";
+import { resolveVerdict } from "../../../judges/index.mjs";
 import { projectInteractionSubject } from "../../../judges/subject.mjs";
 import { runCliWithRetries } from "../../../pipeline/cli-runner.mjs";
 import { loadCliConfig, parseFencedJson } from "../cli-config.mjs";
@@ -83,17 +80,11 @@ export function buildJudgeUserMessage(judgeId, interaction, blueprint) {
     roleName,
     isAccusationPhase: isAccusationRole(roleName),
   });
-  return JSON.stringify({
-    dimension_id: judgeId,
-    context: null,
-    blueprint,
-    subject,
-  });
+  return composeJudgeUserMessage(judgeId, null, { blueprint, subject });
 }
 
 async function runAdherenceJudge(judgeId, interaction, config) {
-  const definition = await loadSharedJudgeDefinition(judgeId);
-  if (!definition) throw new Error(`No shared judge definition for "${judgeId}"`);
+  const definition = await loadJudge(judgeId);
 
   const blueprint = await loadBlueprint(interaction, config);
   const narration = interaction.response?.narration_text ?? "";
@@ -102,12 +93,7 @@ async function runAdherenceJudge(judgeId, interaction, config) {
   }
 
   const entry = config.cliConfig ?? (await loadCliConfig(config.cli ?? DEFAULT_VARIANT));
-  const systemPrompt = composeJudgeSystemPrompt({
-    base: await loadSharedJudgeSystemPrompt(),
-    dimensionText: definition.text,
-    schema: definition.schema,
-    context: null,
-  });
+  const systemPrompt = composeJudgeSystemPrompt(definition, null);
 
   // RUNTIME_EVAL_JUDGE_MODEL overrides the variant's model, and the wrappers
   // read RUNTIME_EVAL_MODEL — same indirection the age_appropriate judge uses,
@@ -175,4 +161,7 @@ export function makeAdherenceJudge(judgeId) {
 }
 
 /** Every shared adherence judge, ready to register. */
-export const adherenceJudges = ADHERENCE_JUDGE_IDS.map(makeAdherenceJudge);
+// the judges the registry shares between a played game and a single turn
+export const adherenceJudges = judgesFor("turn")
+  .filter((entry) => entry.subjects.includes("game"))
+  .map((entry) => makeAdherenceJudge(entry.id));

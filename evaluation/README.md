@@ -143,7 +143,7 @@ dimension's own steps (analyzer, prompt composition, judge).
 
 ## Enabled dimensions
 
-`evaluation/dimensions/registry.json` is the battery, run on every blueprint.
+The registry, `evaluation/core/registry.ts`, is the battery, run on every blueprint.
 Each dimension's full question is its brief, `evaluation/dimensions/<id>.md`:
 
 - `solve_depth` — solvable, deep enough (the brief's `minPathLength`, else the

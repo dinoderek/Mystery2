@@ -15,8 +15,8 @@ passes.
 - `./brief.json` — the story brief that was given to the generator.
 - `./blueprint.json` — the full Blueprint V2 JSON produced by the generator.
   This is your evidence base.
-- `./context.json` — per-dimension context from the dimension registry
-  (`evaluation/dimensions/registry.json`). Empty object `{}` if the dimension
+- `./context.json` — per-dimension context from the registry
+  (`evaluation/core/registry.ts`). Empty object `{}` if the dimension
   has no context. For `character_grounding`, this contains `probe_topics`.
 - `./prompts/judge-system.md` — the shared judge system prompt (preamble
   shared across all dimensions).

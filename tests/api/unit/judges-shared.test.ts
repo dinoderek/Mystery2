@@ -1,22 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  ADHERENCE_JUDGE_IDS,
-  composeJudgeSystemPrompt,
-  isSharedJudgeId,
-  loadSharedJudgeDefinition,
-  loadSharedJudgeSystemPrompt,
-  resolveVerdict,
-  validateJudgeOutput,
-} from "../../../evaluation/judges/index.mjs";
+import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
+import { validateJudgeOutput } from "../../../evaluation/core/judge-output.ts";
+import { composeJudgeSystemPrompt } from "../../../evaluation/core/judge-prompt.ts";
+import { judgesFor } from "../../../evaluation/core/registry.ts";
+import { resolveVerdict } from "../../../evaluation/judges/index.mjs";
 
 // The game-master adherence battery is shared: the trace pipeline runs these as
 // registry dimensions over a played session, the runtime harness runs them as
 // judges over one interaction. These tests pin the contract both sides rely on.
 
-// The shared layer is plain .mjs, so its exports arrive untyped. Name the
-// shapes the tests actually rely on rather than threading `any` through them.
-const JUDGE_IDS: string[] = ADHERENCE_JUDGE_IDS;
+// The judges both harnesses share are the registry's game-master judges.
+const JUDGE_IDS: string[] = judgesFor("game").map((judge) => judge.id);
 
 type FindingSchema = {
   element: { shape: { kind: { options: string[] } } };
@@ -27,8 +22,9 @@ type JudgeSchema = {
 };
 
 describe("shared judge definitions", () => {
-  it("covers the four adherence dimensions", () => {
-    expect(ADHERENCE_JUDGE_IDS).toEqual([
+  it("covers the four adherence dimensions, for a game and for a turn alike", () => {
+    expect(judgesFor("turn").filter((j) => j.subjects.includes("game")).map((j) => j.id)).toEqual(JUDGE_IDS);
+    expect(JUDGE_IDS).toEqual([
       "gm_roleplay",
       "gm_clue_discipline",
       "gm_fabrication",
@@ -37,23 +33,20 @@ describe("shared judge definitions", () => {
   });
 
   it.each(JUDGE_IDS)("loads a brief and a schema for %s", async (id: string) => {
-    const def = await loadSharedJudgeDefinition(id);
-    expect(def).not.toBeNull();
-    expect(def!.id).toBe(id);
-    expect(def!.text).toContain(`id: ${id}`);
-    expect(def!.schema).toBeTruthy();
+    const def = await loadJudge(id);
+    expect(def.id).toBe(id);
+    expect(def.text).toContain(`id: ${id}`);
+    expect(def.schema).toBeTruthy();
   });
 
-  it("returns null for an id it does not own, so a harness can fall back", async () => {
-    expect(await loadSharedJudgeDefinition("not_a_judge")).toBeNull();
-    expect(isSharedJudgeId("not_a_judge")).toBe(false);
-    expect(isSharedJudgeId("gm_spoiler")).toBe(true);
+  it("refuses an id the registry does not list", async () => {
+    await expect(loadJudge("not_a_judge")).rejects.toThrow(/Unknown check or judge/);
   });
 
   it.each(JUDGE_IDS)(
     "%s schema requires the common finding fields",
     async (id: string) => {
-      const schema = (await loadSharedJudgeDefinition(id))!.schema as JudgeSchema;
+      const schema = (await loadJudge(id)).schema as unknown as JudgeSchema;
       const kind = schema.shape.findings.element.shape.kind.options[0];
 
       const good = {
@@ -81,7 +74,7 @@ describe("shared judge definitions", () => {
   );
 
   it("states the judged-vs-context rule in the shared system prompt", async () => {
-    const base = await loadSharedJudgeSystemPrompt();
+    const base = (await loadJudge("gm_spoiler")).preamble!;
     // A single-interaction subject carries fixture turns the model did not
     // write; blaming the model for them would make every runtime case noisy.
     expect(base).toMatch(/Report findings only against turns where `judged` is true/);
@@ -90,31 +83,31 @@ describe("shared judge definitions", () => {
 });
 
 describe("composeJudgeSystemPrompt", () => {
-  it("layers the brief and the authoritative schema onto the base", async () => {
-    const def = (await loadSharedJudgeDefinition("gm_spoiler"))!;
-    const composed = composeJudgeSystemPrompt({
-      base: "BASE-PREAMBLE",
-      dimensionText: def.text,
-      schema: def.schema,
-      context: { spoiler_min_run: 12 },
-    });
-    expect(composed).toContain("BASE-PREAMBLE");
+  it("layers the brief and the authoritative schema onto the preamble", async () => {
+    const def = await loadJudge("gm_spoiler");
+    const composed = composeJudgeSystemPrompt(def, { spoiler_min_run: 12 });
+    expect(composed.startsWith(def.preamble!)).toBe(true);
     expect(composed).toContain("Spoiler discipline");
     expect(composed).toContain("Output JSON Schema (authoritative)");
+    expect(composed).toContain("## Dimension context");
     expect(composed).toContain("spoiler_min_run");
+  });
+
+  it("calls a blueprint judge's context per spec", async () => {
+    const composed = composeJudgeSystemPrompt(await loadJudge("solve_depth"), { min_clues: 3 });
+    expect(composed).toContain("## Per-spec context");
   });
 });
 
 describe("validateJudgeOutput", () => {
   it("reports the offending path when the shape misses", async () => {
-    const { schema } = (await loadSharedJudgeDefinition("gm_fabrication"))!;
+    const { schema } = await loadJudge("gm_fabrication");
     const result = validateJudgeOutput({ verdict: "maybe", findings: [], reasoning: "r" }, schema);
-    expect(result.ok).toBe(false);
-    expect(result.message).toContain("verdict");
+    expect(result).toMatchObject({ ok: false, message: expect.stringContaining("verdict") });
   });
 
   it("rejects a non-object", async () => {
-    const { schema } = (await loadSharedJudgeDefinition("gm_fabrication"))!;
+    const { schema } = await loadJudge("gm_fabrication");
     expect(validateJudgeOutput(null, schema).ok).toBe(false);
   });
 });

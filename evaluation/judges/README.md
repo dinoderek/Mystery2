@@ -54,7 +54,7 @@ findings win and the disagreement is recorded as `verdict_disagreement`: a
 judge that lists a major defect and then says "pass" is worth seeing while
 iterating on a brief.
 
-Both harnesses apply it, so a `fail` means the same in a trace envelope and a
+Both harnesses apply it, so a `fail` means the same in a game result and a
 runtime `result.json`.
 
 ## Adding a judge
@@ -81,9 +81,9 @@ judge in this battery without special-casing.
 ## Cost and offline testing
 
 Each judge is one model call per subject, and the four run in parallel. The
-trace pipeline runs all four on every trace (when its `cli.json` exists;
-otherwise each is `skipped`). The runtime harness would make four calls per
-case per narrator, so there they are opt-in (`evaluation/runtime/README.md` →
+trace pipeline runs all four on every trace (a missing binding is an error). The
+runtime harness would make four calls per case per narrator, so there they are
+opt-in (`evaluation/runtime/README.md` →
 "What a run costs").
 
 For wiring checks with no model, use the deterministic `judge-stub` binding, which

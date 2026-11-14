@@ -13,9 +13,9 @@ import { NO_TURN_EVENT_TYPE } from "@my2/shared";
 import { playedEvents } from "../../../evaluation/lib/game-events.mjs";
 import { casesCommand } from "../../../evaluation/runtime/cases.ts";
 import { scoreReadability } from "../../../evaluation/playtest/lib/judge.mjs";
-import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.mjs";
-import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
-import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.mjs";
+import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.ts";
+import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
+import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { makeBlueprint, makeEvents, makeRawTrace, makeSession, type TraceEventRow } from "./trace-fixtures";
 
 /** The line a player typed that the game answered without playing it. */

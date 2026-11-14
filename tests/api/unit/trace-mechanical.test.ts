@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.mjs";
+import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import {
   makeBlueprint,
   makeEvents,

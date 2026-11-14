@@ -1,10 +1,13 @@
+import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
+import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
+
 // Shared fixtures for the trace-evaluation pipeline unit tests.
 //
 // A compact blueprint shaped like Blueprint V2 (only the fields the trace
 // pipeline reads) plus a small played event log. Not a .test.ts file, so vitest
 // imports it without running it as a suite.
 
-export function makeBlueprint() {
+export function makeBlueprint(): BlueprintContext {
   return {
     metadata: { title: "The Missing Medal", one_liner: "A medal vanishes.", target_age: 9, time_budget: 20 },
     narrative: { premise: "A prize medal has gone missing during the dinner party." },
@@ -79,7 +82,7 @@ export function makeBlueprint() {
     suspect_elimination_paths: [
       { id: "elim_mara", summary: "Mara was in the kitchen.", location_clue_ids: [], character_clue_ids: ["clue_mara_1"] },
     ],
-  };
+  } as unknown as BlueprintContext;
 }
 
 export type TraceEventRow = {
@@ -147,7 +150,7 @@ export function makeSession() {
   };
 }
 
-export function makeRawTrace(overrides: Record<string, unknown> = {}) {
+export function makeRawTrace(overrides: Record<string, unknown> = {}): RawTrace {
   return {
     schema_version: "trace/0.1",
     extracted_at: "2026-06-02T00:00:00Z",
@@ -157,5 +160,5 @@ export function makeRawTrace(overrides: Record<string, unknown> = {}) {
     blueprint: makeBlueprint(),
     events: makeEvents(),
     ...overrides,
-  };
+  } as unknown as RawTrace;
 }

@@ -143,15 +143,14 @@ sqlite3 "${MYSTERY_CONFIG_ROOT:-.}/database/prod/game.db" "select id, mode, outc
 `npm run db:list` prints the path of each database and marks the one this
 checkout resolves to.
 
-To pull one session out as a self-contained artifact for the evaluation
-pipeline:
+Judging a game opens this database read-only: it never migrates or writes it.
+To judge one session:
 
 ```bash
-npm run eval:trace:extract -- --session <id>
+./dev eval judge game <id>
 ```
 
-That reads the database directly, so the game does not have to be running, and
-`--db <file>` points it at a copy.
+The game need not be running; `--database <file>` points it at a copy.
 
 ## Troubleshooting
 

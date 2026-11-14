@@ -144,7 +144,7 @@ a,b`, and writes a new run. Model judges still call their model. A case's
 
 ### Cases from a played game
 
-`./dev eval cases <trace.json>` turns a trace from the trace extractor (`evaluation/trace/README.md`) into cases. Each
+`./dev eval cases <trace.json>` turns a trace stored by `./dev eval judge game` (`evaluation/trace/README.md`) into cases. Each
 event's payload records the state it was generated from, so a chosen event becomes
 one case: the pre-event state plus every earlier event as `given`, the event as
 `action`. The trace's blueprint is written beside them. It samples up to 3 `ask`

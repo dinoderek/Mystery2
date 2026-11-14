@@ -1,47 +1,42 @@
 // Grading played games, when a run asks for it (--judge).
 //
-// The trace pipeline runs unchanged, as a person would run it on a copy of the
-// run's database taken when the game ended:
-//   eval:trace:extract --db <copy> --session <id> --out <game>/trace.json
-//   eval:trace --trace <game>/trace.json --output-root <game>/judge
+// The game is extracted from a copy of the run's database taken when it ended,
+// read-only, into <game>/trace.json. Then the game command runs on that trace,
+// as a person would:
+//   ./dev eval judge game <game>/trace.json --output-root <game>/judge
 // which gives the mechanical checks and the four gm_* judges (one model call
 // each, plus a retry when one fails). Then every narration in the trace is
 // scored by the runtime harness's `flesch` check against the blueprint's
 // target_age, with no model call.
 //
-// Each game folder gains trace.json, result.json (the trace pipeline's
-// envelope, copied out of its run folder, judge/<date>/<time>/run-trace-trace/),
-// readability.json and judge.log (both commands' output).
+// Each game folder gains trace.json, result.json (the game command's result,
+// copied out of its run folder under judge/), readability.json and judge.log
+// (the command's output).
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { loadConfig, resolveBinding } from "../../core/config.ts";
 import { playedEvents } from "../../lib/game-events.mjs";
 import { judge as fleschJudge } from "../../runtime/lib/flesch.ts";
 import { partsToText } from "../../runtime/lib/transcript.ts";
+import { createLocalTraceSource, extractSessionTrace } from "../../trace/lib/datasource.ts";
 
-/** The trace judges' CLI binding, copied by hand from cli.example.json. */
-export function traceCliConfigPath(repoRoot) {
-  return path.join(repoRoot, "evaluation", "trace", "config", "cli.json");
-}
+/** The binding the game judges are called through (`evaluation/config.example.json`). */
+const GAME_JUDGE_BINDING = "game-judge";
 
 /**
- * Why --judge cannot run, or null when it can. Without a judge step,
- * eval:trace would quietly run the mechanical checks alone.
+ * Why --judge cannot run, or null when it can. A game judge that cannot run is
+ * an error for the game command too; this says so before a game is played.
  */
 export function judgeSetupProblem(repoRoot) {
-  const file = traceCliConfigPath(repoRoot);
-  const relative = path.relative(repoRoot, file);
-  if (!fs.existsSync(file)) {
-    return `--judge needs ${relative}: copy it from cli.example.json next to it.`;
-  }
   try {
-    if (!JSON.parse(fs.readFileSync(file, "utf8")).judge) return `${relative} has no "judge" step.`;
+    resolveBinding(loadConfig({ root: repoRoot }), GAME_JUDGE_BINDING, { root: repoRoot });
+    return null;
   } catch (error) {
-    return `${relative} is not valid JSON: ${error.message}`;
+    return `--judge needs the ${GAME_JUDGE_BINDING} binding: ${error.message}`;
   }
-  return null;
 }
 
 function runNode(repoRoot, args, logFile, env = {}) {
@@ -136,19 +131,23 @@ export function scoreReadability(trace, targetAge) {
   };
 }
 
-/** The verdicts worth a glance, from the trace pipeline's result.json. */
+/** The verdicts worth a glance, from the game command's result.json. */
 export function summarizeResult(result) {
   return {
-    mechanical: Object.fromEntries(result.mechanical.map((check) => [check.id, check.status])),
+    mechanical: Object.fromEntries(
+      result.verdicts.filter((verdict) => verdict.tier === "mechanical").map((check) => [check.id, check.status]),
+    ),
     judges: Object.fromEntries(
-      result.dimensions.map((dimension) => [
-        dimension.id,
-        {
-          status: dimension.overall,
-          major: dimension.judge?.major_count ?? null,
-          minor: dimension.judge?.minor_count ?? null,
-        },
-      ]),
+      result.verdicts
+        .filter((verdict) => verdict.tier === "judge")
+        .map((verdict) => [
+          verdict.id,
+          {
+            status: verdict.status,
+            major: verdict.details?.major_count ?? null,
+            minor: verdict.details?.minor_count ?? null,
+          },
+        ]),
     ),
     run_error: result.run_error ?? null,
   };
@@ -157,29 +156,28 @@ export function summarizeResult(result) {
 /**
  * Pulls one game's trace out of a copy of the run's database into its folder.
  * `configRoot` is the server's, where a blueprint from outside the repo was
- * copied; extraction looks for the game's blueprint there as well.
+ * copied; extraction looks for the game's blueprint there as well. The database
+ * is opened read-only, so the copy is never changed.
  */
 export async function extractTrace({ repoRoot, database, gameId, gameDir, configRoot = null }) {
-  await runNode(
+  const source = createLocalTraceSource({
+    databasePath: database,
     repoRoot,
-    [
-      "evaluation/trace/extract.mjs",
-      "--db",
-      database,
-      "--session",
-      gameId,
-      "--out",
-      path.join(gameDir, "trace.json"),
-    ],
-    path.join(gameDir, "judge.log"),
-    configRoot ? { MYSTERY_CONFIG_ROOT: configRoot } : {},
-  );
+    env: configRoot ? { ...process.env, MYSTERY_CONFIG_ROOT: configRoot } : process.env,
+  });
+  let trace;
+  try {
+    trace = await extractSessionTrace(source, gameId);
+  } finally {
+    source.close();
+  }
+  fs.writeFileSync(path.join(gameDir, "trace.json"), `${JSON.stringify(trace, null, 2)}\n`);
 }
 
 /**
  * Grades one game whose trace.json is already in its folder, and returns the
- * grades for its summary. `judgeTraceArgs` adds options to eval:trace (tests
- * point --config at a stub judge).
+ * grades for its summary. `judgeTraceArgs` adds options to the game command
+ * (tests point --config at a stub judge).
  */
 export async function gradeGame({ repoRoot, gameDir, targetAge, judgeTraceArgs = [] }) {
   const tracePath = path.join(gameDir, "trace.json");
@@ -194,8 +192,10 @@ export async function gradeGame({ repoRoot, gameDir, targetAge, judgeTraceArgs =
     await runNode(
       repoRoot,
       [
-        "evaluation/trace/run.mjs",
-        "--trace",
+        "dev",
+        "eval",
+        "judge",
+        "game",
         tracePath,
         "--output-root",
         judgeRoot,
@@ -205,12 +205,13 @@ export async function gradeGame({ repoRoot, gameDir, targetAge, judgeTraceArgs =
       path.join(gameDir, "judge.log"),
     );
   } catch (error) {
-    // eval:trace exits 1 on a run error but still writes result.json, which
-    // says what went wrong; without one there is nothing to report but this.
+    // The command exits 1 on a run error and 2 on a failed verdict, and writes
+    // result.json either way, which says what went wrong; without one there is
+    // nothing to report but this.
     failure = error;
   }
   const resultPath = findFile(judgeRoot, "result.json");
-  if (!resultPath) throw failure ?? new Error(`eval:trace wrote no result.json under ${judgeRoot}`);
+  if (!resultPath) throw failure ?? new Error(`judge game wrote no result.json under ${judgeRoot}`);
   fs.copyFileSync(resultPath, path.join(gameDir, "result.json"));
   const result = JSON.parse(fs.readFileSync(resultPath, "utf8"));
 

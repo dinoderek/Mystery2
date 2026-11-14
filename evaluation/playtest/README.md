@@ -84,13 +84,12 @@ no checks.
 ## Grading
 
 Off by default: the transcript is written to be read. With `--judge`, each game
-is graded as soon as it ends, while the next ones play, by running the trace
-pipeline (`evaluation/trace/README.md`) unchanged on a copy of the database
-taken then:
+is graded as soon as it ends, while the next ones play, by running the game
+command (`evaluation/trace/README.md`) on a trace extracted, read-only, from a
+copy of the database taken then:
 
 ```bash
-npm run eval:trace:extract -- --db <copy> --session <game_id> --out <game>/trace.json
-npm run eval:trace -- --trace <game>/trace.json --output-root <game>/judge
+./dev eval judge game <game_id> --database <copy> --output-root <game>/judge
 ```
 
 That gives the mechanical checks and the four `gm_*` judges, one Opus call
@@ -100,16 +99,11 @@ Every narration is then scored with the runtime harness's `flesch` check
 blueprint's `target_age`.
 
 The verdicts go into the game's `summary.json` and the foot of its transcript;
-a game that cannot be graded says why there. The judges need
-`evaluation/trace/config/cli.json`:
-
-```bash
-cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
-```
-
-Without it `--judge` stops before playing, rather than grading with the
-mechanical checks alone. A game from an earlier run is graded by hand with the
-same two commands, run on `<run>/game.db`; then rebuild its report.
+a game that cannot be graded says why there. The judges need the `game-judge`
+binding in `evaluation/config.json` (`evaluation/config.example.json` is the
+fallback). Without one `--judge` stops before playing, rather than grading with
+the mechanical checks alone. A game from an earlier run is graded by hand with the
+same command, run on `<run>/game.db`; then rebuild its report.
 
 ## Personas
 

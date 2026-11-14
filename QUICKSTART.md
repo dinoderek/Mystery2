@@ -173,7 +173,7 @@ scripts or `./dev eval` and documented next to its code. Pass-through flags to a
 | Pipeline | What it evaluates | Commands |
 |----------|-------------------|----------|
 | Blueprint | Generated mystery blueprints | `npm run eval` |
-| Trace | Played game-master traces | `npm run eval:trace`, `npm run eval:trace:extract` |
+| Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `npm run eval:playtest` |
 
@@ -186,8 +186,7 @@ shared design, then the per-pipeline runbooks:
 
 ```bash
 npm run eval -- --help                       # blueprint eval
-npm run eval:trace -- --help                 # trace eval
-npm run eval:trace:extract -- --help         # pull a trace from a played session
+./dev eval judge game <session-id|trace.json>   # judge a played game
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
 ./dev eval cases <trace.json>                # build runtime cases from a trace

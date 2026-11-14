@@ -4,8 +4,8 @@ import {
   TRACE_SCHEMA_VERSION,
   assertRawTrace,
   buildRawTrace,
-} from "../../../evaluation/trace/lib/normalize.mjs";
-import { extractSessionTrace } from "../../../evaluation/trace/lib/datasource.mjs";
+} from "../../../evaluation/trace/lib/normalize.ts";
+import { extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 import { makeBlueprint, makeEvents, makeSession } from "./trace-fixtures";
 
 describe("buildRawTrace", () => {
@@ -36,8 +36,8 @@ describe("buildRawTrace", () => {
     const bySequence = (seq: number) =>
       trace.events.find((e: { sequence: number }) => e.sequence === seq);
     // Event 2 carries an AI-served model; event 1 (start) has none.
-    expect(bySequence(2).model).toBe("anthropic/claude-actual");
-    expect(bySequence(1).model).toBeNull();
+    expect(bySequence(2)?.model).toBe("anthropic/claude-actual");
+    expect(bySequence(1)?.model).toBeNull();
   });
 
   it("rejects missing required inputs", () => {

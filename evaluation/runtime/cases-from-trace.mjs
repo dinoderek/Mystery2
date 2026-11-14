@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Generate deterministic runtime-eval cases from a collected game-master trace
-// (e.g. ~/mysteryevals/traces/trace-*.json, produced by evaluation/trace/extract.mjs).
+// (e.g. ~/mysteryevals/traces/trace-*.json, stored by `./dev eval judge game`).
 //
 // A trace bundles the full blueprint, the final session, and the ordered event
 // stream. Every event's payload self-describes the exact state it was generated

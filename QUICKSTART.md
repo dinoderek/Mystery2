@@ -168,12 +168,12 @@ Every flag, default and file location: `node scripts/generate-blueprint.mjs --he
 ## Evaluation Pipelines
 
 Four evaluation pipelines, each for a different subject. Each is driven by npm
-scripts and documented next to its code. Pass-through flags go after `--`.
+scripts or `./dev eval` and documented next to its code. Pass-through flags go after `--`.
 
 | Pipeline | What it evaluates | npm scripts |
 |----------|-------------------|-------------|
 | Blueprint | Generated mystery blueprints | `npm run eval` |
-| Trace | Played game-master traces | `npm run eval:trace`, `npm run eval:trace:extract` |
+| Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `npm run eval:runtime`, `npm run eval:runtime:rejudge`, `npm run eval:cases-from-trace` |
 | Playtest | Whole games played by an AI investigator | `npm run eval:playtest` |
 
@@ -186,8 +186,7 @@ shared design, then the per-pipeline runbooks:
 
 ```bash
 npm run eval -- --help                       # blueprint eval
-npm run eval:trace -- --help                 # trace eval
-npm run eval:trace:extract -- --help         # pull a trace from a played session
+./dev eval judge game <session-id|trace.json>   # judge a played game
 npm run eval:runtime -- <case-or-dir>        # eval a runtime case
 npm run eval:runtime:rejudge -- <interaction.json>  # re-judge a stored interaction
 npm run eval:cases-from-trace -- <trace.json>       # build runtime cases from a trace

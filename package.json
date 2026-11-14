@@ -26,8 +26,6 @@
         "generate:blueprint": "node scripts/generate-blueprint.mjs",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
         "eval": "node evaluation/pipeline/run.mjs",
-        "eval:trace": "node evaluation/trace/run.mjs",
-        "eval:trace:extract": "node evaluation/trace/extract.mjs",
         "eval:runtime": "node evaluation/runtime/run.mjs",
         "eval:runtime:rejudge": "node evaluation/runtime/rejudge.mjs",
         "eval:cases-from-trace": "node evaluation/runtime/cases-from-trace.mjs",

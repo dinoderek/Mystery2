@@ -178,9 +178,9 @@ model.
 
 ### Cases from a played trace
 
-`cases-from-trace.mjs` turns a trace from `evaluation/trace/extract.mjs` into a
-case file. Each event's payload records the state it was generated from, so a
-chosen event becomes one case: the pre-event state plus every earlier event as
+`cases-from-trace.mjs` turns a stored trace into a case file. Each event's
+payload records the state it was generated from, so a chosen event becomes one
+case: the pre-event state plus every earlier event as
 `given`, the event as `action`. The trace's blueprint is written beside it.
 
 ```bash

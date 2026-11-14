@@ -4,5 +4,6 @@
  */
 
 import type { EvalCommand } from "./core/dispatch.ts";
+import { judgeGame } from "./trace/judge-game.ts";
 
-export const COMMANDS: readonly EvalCommand[] = [];
+export const COMMANDS: readonly EvalCommand[] = [judgeGame];

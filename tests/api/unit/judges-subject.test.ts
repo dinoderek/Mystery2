@@ -5,7 +5,7 @@ import {
   projectTraceSubject,
   revealedClueIdsFromResponse,
 } from "../../../evaluation/judges/subject.mjs";
-import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.mjs";
+import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { makeRawTrace } from "./trace-fixtures";
 
 // Both harnesses project into ONE subject shape so the same judge brief grades

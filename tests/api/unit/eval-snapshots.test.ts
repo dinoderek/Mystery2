@@ -148,6 +148,25 @@ function dimension(result: Json) {
   };
 }
 
+/** A game-master judge's verdict in the result format, as the verdict snapshots record a dimension. */
+function judgeDimension(verdict: Json) {
+  return dimension({
+    id: verdict.id,
+    overall: verdict.status,
+    analyzer: null,
+    judge: {
+      status: verdict.status,
+      reasoning: verdict.details?.reasoning,
+      major_count: verdict.details?.major_count,
+      minor_count: verdict.details?.minor_count,
+      model_verdict: verdict.details?.model_verdict,
+      verdict_disagreement: verdict.details?.verdict_disagreement,
+      raw: verdict.answer,
+    },
+    error: null,
+  });
+}
+
 async function runBlueprintPipeline(answersFile: string) {
   const brief = StoryBriefSchema.parse({
     brief: "Someone took the cookies from the kitchen before snack time. The truth involves a lunch bag in the hallway.",
@@ -195,17 +214,23 @@ async function runTraceHarness(answersFile: string) {
   const config = path.join(scratch, "trace", "config.json");
   fs.mkdirSync(path.dirname(traceFile), { recursive: true });
   fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
-  fs.writeFileSync(config, JSON.stringify({ judge: stubBinding(answersFile, "trace.{id}") }));
+  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
 
   const outputRoot = path.join(scratch, "trace", "out");
   const result = await runForResult(
-    ["evaluation/trace/run.mjs", "--trace", traceFile, "--config", config, "--output-root", outputRoot, "--quiet"],
+    ["dev", "eval", "judge", "game", traceFile, "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   );
+  const reconstruction = JSON.parse(
+    fs.readFileSync(path.join(path.dirname(findFiles(outputRoot, "result.json")[0]), "reconstruction.json"), "utf8"),
+  );
+  // The verdicts, in the shape they were recorded in before the harness moved onto
+  // the core's result format.
+  const judges = result.verdicts.filter((verdict: Json) => verdict.tier === "judge");
   verdicts.set("trace", {
-    reconstruction: result.reconstruction,
-    mechanical: result.mechanical.map(check),
-    dimensions: result.dimensions.map(dimension),
+    reconstruction: { turns: reconstruction.turns.length, context_errors: reconstruction.issues.length, issues: reconstruction.issues },
+    mechanical: result.verdicts.filter((verdict: Json) => verdict.tier === "mechanical").map(check),
+    dimensions: judges.map(judgeDimension),
     run_error: result.run_error,
   });
   for (const id of GM_JUDGES) prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
@@ -276,7 +301,7 @@ async function runPlaytestJudging(answersFile: string) {
   fs.mkdirSync(gameDir, { recursive: true });
   fs.writeFileSync(path.join(gameDir, "trace.json"), JSON.stringify(makeRawTrace()));
   // The same trace the trace harness judges, so its prompts are not kept twice.
-  fs.writeFileSync(config, JSON.stringify({ judge: stubBinding(answersFile, "trace.{id}", "-") }));
+  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", "-") }));
 
   const grades = await gradeGame({
     repoRoot: REPO_ROOT,

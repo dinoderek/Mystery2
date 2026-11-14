@@ -23,7 +23,13 @@ import { setInterval } from "node:timers";
 const behaviour = process.env.FAKE_CLAUDE_BEHAVIOUR ?? "ok";
 const args = process.argv.slice(2);
 
-const stdin = fs.readFileSync(0, "utf8");
+// Read to EOF asynchronously. The provider's stdin pipe is non-blocking, so
+// `fs.readFileSync(0)` throws EAGAIN whenever the fake gets ahead of the writer:
+// a prompt bigger than the pipe buffer, or a caller whose event loop stalls
+// before it closes the pipe. The provider then sees a crash and retries.
+let stdin = "";
+process.stdin.setEncoding("utf8");
+for await (const chunk of process.stdin) stdin += chunk;
 if (process.env.FAKE_CLAUDE_RECORD) {
   fs.appendFileSync(
     process.env.FAKE_CLAUDE_RECORD,

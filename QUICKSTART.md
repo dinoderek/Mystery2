@@ -165,7 +165,7 @@ scripts or `./dev eval` and documented next to its code. Pass-through flags to a
 | Blueprint | Generated mystery blueprints | `./dev eval generate`, `./dev eval judge blueprint` |
 | Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
-| Playtest | Whole games played by an AI investigator | `./dev eval play`, `./dev eval report` |
+| Playtest | Whole games played by an AI investigator | `./dev eval play` |
 
 Start with [`docs/evaluation-pipeline.md`](docs/evaluation-pipeline.md) for the
 shared design, then the per-pipeline runbooks:

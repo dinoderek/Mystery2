@@ -3,7 +3,6 @@
 // runner and result schema, and the judge is eval-snapshot-stub.mjs answering
 // from a table. No model is called.
 
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -330,54 +329,5 @@ describe("validate", () => {
     expect(await eval_(["validate", path.join(dir, "broken.json"), "--output-root", path.join(dir, "out")])).toBe(1);
     expect(err.join("\n")).toContain("is not JSON");
     expect(results()).toEqual([]);
-  });
-});
-
-describe("npm run eval (generation, then the same judging)", () => {
-  function runPipeline(args: string[]): Promise<{ code: number | null; output: string }> {
-    return new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, ["evaluation/pipeline/run.mjs", ...args], { cwd: process.cwd(), stdio: ["ignore", "pipe", "pipe"] });
-      let output = "";
-      child.stdout.on("data", (chunk) => (output += chunk));
-      child.stderr.on("data", (chunk) => (output += chunk));
-      child.once("error", reject);
-      child.once("close", (code) => resolve({ code, output }));
-    });
-  }
-
-  it("records a failed generation as the result's run error, with its attempts as production", async () => {
-    const answersFile = write("generator-answers.json", {});
-    const generateConfig = write("cli.json", {
-      generate: {
-        cmd: process.execPath,
-        args: [STUB, "-", answersFile, "generator", "{{system_prompt_file}}", "{{user_message_file}}"],
-        extract_path: "result",
-        timeout_ms: 60_000,
-        retries: 1,
-      },
-    });
-    const { code, output } = await runPipeline([
-      "--spec", path.join(dir, "brief.json"),
-      "--generate-config", generateConfig,
-      "--config", stubConfig(passingAnswers()),
-      "--output-root", path.join(dir, "out"),
-      "--quiet",
-    ]);
-    expect(code, output).toBe(1);
-
-    const result = await theResult();
-    expect(result.run_error?.stage).toBe("generate");
-    expect(result.subject.path).toBeNull();
-    expect(result.production?.calls).toHaveLength(1);
-    expect(result.production?.calls[0].attempts.map((a) => a.outcome)).toEqual(["exit", "exit"]);
-    expect(Object.keys(result.run.bindings)).toEqual(["generate", "blueprint-judge"]);
-  });
-
-  it("refuses a missing --spec and a generate config without a generate binding", async () => {
-    expect((await runPipeline([])).code).toBe(1);
-    const empty = write("no-generate.json", {});
-    const { code, output } = await runPipeline(["--spec", path.join(dir, "brief.json"), "--generate-config", empty, "--config", stubConfig(passingAnswers())]);
-    expect(code).toBe(1);
-    expect(output).toContain('has no "generate" binding');
   });
 });

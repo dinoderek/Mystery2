@@ -11,8 +11,10 @@ id, and sessions store ids, never names.
 
 ## Generating a blueprint
 
-`packages/blueprint-generator/src/index.ts`, driven by
-`scripts/generate-blueprint.mjs`, sends OpenRouter three things:
+`./dev eval generate` builds the request with `packages/blueprint-generator`
+(`buildBlueprintGenerationChatInput`) for both of its backends. The `api`
+backend sends OpenRouter three things; the `agent` backend hands the same
+system prompt and brief to the Claude agent in its workspace:
 
 1. **System:** `packages/blueprint-generator/src/generator-prompt.md`, followed
    by the age guidance for the brief's `targetAge`
@@ -21,13 +23,13 @@ id, and sessions store ids, never names.
 2. **User:** the brief, validated against
    `packages/blueprint-generator/src/story-brief.ts`, and an instruction to
    answer in the schema.
-3. **Response format:** a strict JSON Schema from `BlueprintV2Schema`, with the
-   image-id fields removed — image tooling fills those in later.
+3. **Response format** (`api` only): a strict JSON Schema from
+   `BlueprintV2Schema`, with the image-id fields removed — image tooling fills
+   those in later.
 
-Every written blueprint gets the evaluation pipeline's mechanical checks, run
-in-process, in a sibling `*.verification.json`; a failing check does not stop
-the file being written. `--chat-packet` renders the same three parts as a
-Markdown packet to paste into a chat instead.
+Either way the blueprint is checked against the schema and the mechanical
+checks, and stored with its `result.json`; one that fails is kept and not
+installed (`evaluation/README.md`).
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:

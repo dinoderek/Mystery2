@@ -22,7 +22,6 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
 import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import { resolveBinding } from "../../../evaluation/core/config.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
@@ -31,6 +30,7 @@ import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
 import { INVESTIGATOR_BINDING, listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.ts";
 import { buildView } from "../../../evaluation/playtest/lib/view.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { generatorBrief } from "./fixtures/generator-brief.ts";
 import {
   clearForRecording,
   expectStored,
@@ -210,38 +210,21 @@ function judgeDimension(verdict: Json) {
 }
 
 async function runBlueprintPipeline(answersFile: string) {
-  const brief = StoryBriefSchema.parse({
-    brief: "Someone took the cookies from the kitchen before snack time. The truth involves a lunch bag in the hallway.",
-    targetAge: 8,
-    timeBudget: 12,
-    titleHint: "The Missing Cookies",
-    mustInclude: ["cookies", "lunch bag"],
-    culprits: 1,
-    suspects: 1,
-    witnesses: 1,
-    locations: 2,
-    redHerringTrails: 1,
-    coverUps: false,
-    eliminationComplexity: "simple",
-  });
   const briefFile = path.join(scratch, "blueprint", "brief.json");
-  const generateConfig = path.join(scratch, "blueprint", "cli.json");
   const config = path.join(scratch, "blueprint", "config.json");
   fs.mkdirSync(path.dirname(briefFile), { recursive: true });
-  fs.writeFileSync(briefFile, JSON.stringify(brief));
-  fs.writeFileSync(generateConfig, JSON.stringify({ generate: stubBinding(answersFile, "generator") }));
-  fs.writeFileSync(config, JSON.stringify({ "blueprint-judge": stubBinding(answersFile, "blueprint.{id}") }));
+  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
+  fs.writeFileSync(
+    config,
+    JSON.stringify({
+      "generator-agent": stubBinding(answersFile, "generator"),
+      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
+    }),
+  );
 
   const outputRoot = path.join(scratch, "blueprint", "out");
   const result = (await runForResult(
-    [
-      "evaluation/pipeline/run.mjs",
-      "--spec", briefFile,
-      "--generate-config", generateConfig,
-      "--config", config,
-      "--output-root", outputRoot,
-      "--quiet",
-    ],
+    ["dev", "eval", "generate", briefFile, "--judge", "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   )) as Result;
   verdicts.set("blueprint", blueprintVerdicts(result));

@@ -18,6 +18,7 @@
     "tests/**/*",
     "evaluation/core/**/*",
     "evaluation/blueprint/**/*",
+    "evaluation/generate/**/*",
     "evaluation/playtest/**/*",
     "evaluation/runtime/**/*",
     "evaluation/trace/**/*",

@@ -43,10 +43,10 @@ export const FORBIDDEN = [
   },
   {
     name: "db-only-from-context-local",
-    comment: "Only context-local.ts and db/ import db/.",
+    comment: "Only context-local.ts and db/ import db/; the web app never does.",
     severity: "error",
     from: {
-      path: ENGINE,
+      path: [ENGINE, "^web/src/"],
       pathNot: ["^packages/game-engine/src/context-local\\.ts$", ENGINE_DB],
     },
     to: { path: ENGINE_DB },

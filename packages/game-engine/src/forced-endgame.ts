@@ -11,13 +11,11 @@ import { buildRoleRequest } from "./role-request.ts";
 import {
   createNarrationDiagnostics,
   createNarrationPart,
-  insertNarrationEvent,
   type InsertNarrationEventInput,
   type NarrationPart,
 } from "./narration.ts";
 import { NARRATOR_SPEAKER } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
-import type { EventStore } from "./context.ts";
 
 export async function generateForcedAccusationStartNarration(input: {
   req: Request;
@@ -188,41 +186,4 @@ export function logTimeoutTransition(
   },
 ): void {
   logger.log("timeout.transition", input);
-}
-
-/**
- * Inserts the forced_endgame narration event and logs the timeout transition.
- * Call after the action's own narration event has been persisted.
- */
-export async function insertForcedEndgameEvent(
-  events: EventStore,
-  input: {
-    session_id: string;
-    action: string;
-    action_sequence: number;
-    payload: Record<string, unknown>;
-    narration_parts: NarrationPart[];
-    model?: string | null;
-    time_before: number;
-    time_after: number;
-    resulting_mode: string;
-    logger: LogWriter;
-  },
-): Promise<number> {
-  const sequence = await insertNarrationEvent(events, {
-    ...forcedEndgameEvent(input),
-    logger: input.logger,
-  });
-
-  logTimeoutTransition(input.logger, {
-    game_id: input.session_id,
-    action: input.action,
-    time_before: input.time_before,
-    time_after: input.time_after,
-    resulting_mode: input.resulting_mode,
-    action_sequence: input.action_sequence,
-    forced_endgame_sequence: sequence,
-  });
-
-  return sequence;
 }

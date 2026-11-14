@@ -22,7 +22,7 @@ describe("the endpoint registry", () => {
     auth = await setupApiTestAuth("request-validation");
   });
 
-  it("answers 404 for each endpoint that no longer plays a turn, signed in or not", async () => {
+  it("answers 404 for each removed turn endpoint, signed in or not", async () => {
     const gameId = await startMockGame(auth);
     for (const name of REMOVED_ENDPOINTS) {
       for (const headers of [auth.headers, { "Content-Type": "application/json" }]) {

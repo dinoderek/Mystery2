@@ -362,7 +362,7 @@ describe("narration parts of an answer", () => {
     expect(extractNarrationParts("search", data)).toEqual([part("You search.")]);
   });
 
-  it("still reads game-start's narration_events", () => {
+  it("reads game-start's narration_events", () => {
     const data = { narration_events: [{ narration_parts: [part("Once.")] }, { narration_parts: [part("Twice.")] }] };
     expect(extractNarrationParts("start", data)).toEqual([part("Once."), part("Twice.")]);
   });

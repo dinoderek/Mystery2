@@ -5,7 +5,7 @@ import {
   type Speaker,
 } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
-import type { EventStore, SaveEvent } from "./context.ts";
+import type { SaveEvent } from "./context.ts";
 
 export interface NarrationPart {
   text: string;
@@ -235,7 +235,7 @@ export function readNarrationEvent(row: EventRow): NarrationEventRecord {
   };
 }
 
-/** Builds the event `insertNarrationEvent` would write at `sequence`, without writing it. */
+/** Builds the event a narration is saved as at `sequence`, without writing it. */
 export function buildNarrationEvent(
   input: InsertNarrationEventInput,
   sequence: number,
@@ -273,33 +273,4 @@ export function logNarrationEventSaved(
     part_count: input.narration_parts.length,
     ...(input.diagnostics ? createNarrationDiagnostics(input.diagnostics) : {}),
   });
-}
-
-export async function insertNarrationEvent(
-  events: EventStore,
-  input: InsertNarrationEventInput,
-): Promise<number> {
-  const sequence = await events.nextSequence(input.session_id);
-
-  try {
-    await events.insert({
-      session_id: input.session_id,
-      sequence,
-      ...buildNarrationEvent(input, sequence),
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to insert narration event";
-    input.logger?.logError("narration_event.persist_failed", {
-      session_id: input.session_id,
-      event_type: input.event_type,
-      sequence,
-      error: message,
-    });
-    throw new Error(message, { cause: error });
-  }
-
-  logNarrationEventSaved(input, sequence);
-
-  return sequence;
 }

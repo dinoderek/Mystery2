@@ -9,9 +9,8 @@ fits beside the others is `docs/evaluation-pipeline.md`.
 
 A case evaluates **one action** against a **fully specified prior state**. The
 complete conversation history is part of the case, not produced by playing
-turns, so the model input is identical on every run and across models. If each
-model saw its own earlier narration, models would diverge as turns accumulated
-and stop being comparable.
+turns, so the model input is identical on every run and across models. Models fed
+their own earlier narration would diverge past comparison.
 
 ## Choosing a backend
 
@@ -44,7 +43,8 @@ How each collects:
 
 - **`endpoint`** seeds the fixed session and history into the database, sends
   the action to `game-turn` as the line a player would type (`move to <place>`,
-  `talk to <name>`, `search <query>`, `bye`, a question, `accuse <reasoning>`),
+  `talk to <name>`, `search <query>`, `bye`, a question, `accuse [<reasoning>]`, then the reasoning
+  alone once the accusation is open),
   then deletes the sessions it seeded. A case that sets `accusation_history_mode`
   needs a `cli:*` backend: a typed line cannot carry it. The server
   rebuilds the context from those rows, so the only variable is the model behind

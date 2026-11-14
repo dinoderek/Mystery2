@@ -15,13 +15,9 @@
 
 /**
  * Pull the narration parts out of a raw endpoint response. game-start and
- * game-get nest parts under narration_events[], game-turn under events[]; a
- * bare narration_parts at the top level is still read.
+ * game-get nest parts under narration_events[], game-turn under events[].
  */
 export function extractNarrationParts(action, data) {
-  if (data && Array.isArray(data.narration_parts)) {
-    return data.narration_parts;
-  }
   // A played turn lists the action's event first; anything after it (the
   // narration of a forced ending) is not the action under test.
   const events = Array.isArray(data?.events) ? data.events.slice(0, 1) : data?.narration_events;

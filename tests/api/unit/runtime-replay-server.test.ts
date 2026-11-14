@@ -38,8 +38,9 @@ interface Seen {
 /** A stand-in game server on the requested port, over a real database in its own config root. */
 function fakeServer(answer: (endpoint: string) => { status: number; body: unknown } = defaultAnswer): { start: StartServer; seen: Seen } {
   const seen: Seen = { calls: [], started: 0, stopped: 0, servers: [] };
-  const start: StartServer = async ({ port }) => {
+  const start: StartServer = async ({ port, seed }) => {
     const configRoot = fs.mkdtempSync(path.join(scratch, "root-"));
+    seed?.(configRoot);
     const databaseFile = path.join(configRoot, "database", "test", "game.db");
     openDatabase({ path: databaseFile }).close();
     const server = http.createServer((request, response) => {
@@ -182,22 +183,23 @@ describe("replaying through a throwaway server", () => {
     expect(fs.readdirSync(path.join(seen.servers[0].configRoot, "blueprints"))).toEqual(["mine.json"]);
   });
 
-  it("links a file-backed profile from the operator's config root, leaving the key in its file", async () => {
+  it("links the operator's ai.json and .env.local before the server starts, leaving keys in their files", async () => {
     const operator = fs.mkdtempSync(path.join(scratch, "operator-"));
-    fs.writeFileSync(path.join(operator, ".env.ai.free.local"), "AI_PROVIDER=openrouter\n");
+    fs.writeFileSync(path.join(operator, "ai.json"), JSON.stringify({ ais: { free: { backend: "openrouter", model: "m" } } }));
     fs.writeFileSync(path.join(operator, ".env.local"), "OPENROUTER_API_KEY=key\n");
     const { start, seen } = fakeServer();
     await narrator(start, { MYSTERY_CONFIG_ROOT: operator }).replay(request(askCase, "free"));
-    const linked = path.join(seen.servers[0].configRoot, ".env.ai.free.local");
+    const linked = path.join(seen.servers[0].configRoot, "ai.json");
     expect(fs.lstatSync(linked).isSymbolicLink()).toBe(true);
-    expect(fs.realpathSync(linked)).toBe(fs.realpathSync(path.join(operator, ".env.ai.free.local")));
+    expect(fs.realpathSync(linked)).toBe(fs.realpathSync(path.join(operator, "ai.json")));
     expect(fs.lstatSync(path.join(seen.servers[0].configRoot, ".env.local")).isSymbolicLink()).toBe(true);
   });
 
-  it("links nothing for a profile that needs no file", async () => {
+  it("links nothing when the operator has neither file", async () => {
+    const operator = fs.mkdtempSync(path.join(scratch, "operator-"));
     const { start, seen } = fakeServer();
-    await narrator(start, { MYSTERY_CONFIG_ROOT: scratch }).replay(request(askCase, "mock"));
-    expect(fs.readdirSync(seen.servers[0].configRoot).filter((name) => name.startsWith(".env"))).toEqual([]);
+    await narrator(start, { MYSTERY_CONFIG_ROOT: operator }).replay(request(askCase, "mock"));
+    expect(fs.readdirSync(seen.servers[0].configRoot).filter((name) => name === "ai.json" || name.startsWith(".env"))).toEqual([]);
   });
 
   it("fails a turn the server refuses, naming the endpoint and the status", async () => {

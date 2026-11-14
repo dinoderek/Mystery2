@@ -6,6 +6,9 @@ build/
 .env.*
 !.env.example
 !.env.images.example
+# The AIs this machine narrates with. It may hold keys in clear, so it is never
+# committed at any depth; ai.example.json is the template.
+ai.json
 coverage/
 test-results/
 .DS_Store

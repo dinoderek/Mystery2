@@ -6,12 +6,7 @@
 // eventually is not.
 
 import { json } from '@sveltejs/kit';
-import {
-	EnvRowLockedError,
-	InvalidLabelError,
-	readDefaultAIOverride,
-	type AIKeyRecord
-} from '@my2/game-engine';
+import { EnvRowLockedError, InvalidLabelError, type AIKeyRecord } from '@my2/game-engine';
 import type { AISettingsState } from '$lib/types/ai-settings';
 import { getEngine } from '$lib/server/engine';
 
@@ -32,12 +27,13 @@ export function readSettingsState(): AISettingsState {
 	const engine = getEngine();
 	const resolved = engine.aiSettings.resolve();
 	const settings = engine.aiSettings.getSettings();
-	const override = readDefaultAIOverride();
+	// Read once at start by the same function `default` resolves through.
+	const override = engine.runOverride;
 
 	return {
 		// What the runtime will do: the override wins over the stored choice, and
 		// a dangling selection has already fallen back to mock inside `resolve()`.
-		effective_mode: override ? override.provider : resolved.mode,
+		effective_mode: override ? override.profile.provider : resolved.mode,
 		stored_mode: settings.ai_mode,
 		selected_key_label: settings.ai_key_label,
 		selected_model_label: settings.ai_model_label,
@@ -55,9 +51,9 @@ export function readSettingsState(): AISettingsState {
 		})),
 		override: override
 			? {
-					provider: override.provider,
-					model: override.model,
-					source: 'AI_PROVIDER / AI_MODEL'
+					provider: override.profile.provider,
+					model: override.profile.model,
+					source: `--ai ${override.name}`
 				}
 			: null
 	};

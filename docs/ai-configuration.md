@@ -3,51 +3,49 @@
 Which model narrates, how that is chosen, and where keys live. How the narrator
 is prompted is `docs/ai-runtime.md`; setting a machine up is `QUICKSTART.md`.
 
-## Profiles
+## The AIs: `ai.json`
 
-A session narrates through a **profile**, and there are four:
+`ai.json` in the config root names the AIs this machine can narrate with.
+`ai.example.json` is the committed template; `ai.json` itself is gitignored at
+any depth, and the gate's `tracked-files` step fails if one is ever tracked.
 
-| Profile | Where it comes from | Who uses it |
-|---|---|---|
-| `mock` | Built in; no key, no network | Every automated suite, and the fallback |
-| `free`, `paid` | `.env.ai.free.local`, `.env.ai.paid.local` in the config root | The live-AI suites and the evaluation harness, which name them explicitly |
-| `default` | Resolved per request (below) | The browser, always |
+```json
+{ "ais": {
+    "free":   { "backend": "openrouter", "model": "arcee-ai/trinity-large-preview:free" },
+    "claude": { "backend": "claude-cli", "model": "sonnet" } } }
+```
 
-`free` and `paid` are files so a run can be reproduced from what it was handed.
-`default` is what a person chooses, so it is chosen on a page and stored.
+- `backend` is `openrouter` or `claude-cli`. An `openrouter` entry may carry its
+  `"key"` in clear; without one it uses `OPENROUTER_API_KEY` from the
+  environment, then from `.env.local`. `claude-cli` needs none.
+- `mock` is built in and needs no entry; an entry named `mock` or `default` is
+  an error.
+- The server reads the file once, at start
+  (`packages/game-engine/src/ai-config.ts`). A malformed one stops the server,
+  `./dev run` and `./dev doctor`, naming the AI and the field; a missing one
+  leaves mock as the only AI. Changing an AI is editing the file and restarting.
+  `./dev doctor` lists each AI and whether it has its key or executable.
 
-- `game-start` uses `default` unless the request names an `ai_profile`; the
-  browser never does.
-- A session stores its profile **label**, and the label is resolved again on
-  every request, so a configuration change reaches a session already in play,
-  with no restart. The model that actually answered is on each event
-  (`docs/ai-runtime.md`).
-- A **misconfigured** profile — unknown provider, no model, `openrouter` with
-  no key — throws and surfaces as a 500. One simply not configured here returns
-  `null`, which `game-start` answers with `400 Invalid ai_profile`. Neither
-  falls back to mock silently.
-- Keys are read on the server and never reach the browser. The settings
-  endpoints return a key's last four characters and nothing else.
+## Choosing
 
-## How `default` resolves
+A request names an AI or uses `default`, which the browser always does. A
+session stores that name and resolves it again on every request, so a choice
+made on the page reaches a session in play. `default` is the first that applies:
 
-The first source that describes a usable configuration wins
-(`packages/game-engine/src/ai-profile.ts`):
-
-1. **The process environment** — `AI_PROVIDER` and `AI_MODEL`, over
-   `.env.local`. This is what `npm run dev:ai:free`, `dev:ai:paid` and
-   `dev:ai:claude` set, and what keeps the test server on mock, by its absence.
-   A *broken* override throws rather than falling through: a typo in an explicit
-   choice must not quietly become something else.
-2. **The settings database** — the mode, key and model last chosen on
-   `/settings`.
+1. **The run override**, `AI_PROFILE`, which `./dev run --ai <name>` sets for
+   one run. While it is in force the settings page shows a banner naming it,
+   because a stored choice quietly not in effect is worse than none. The banner
+   and the resolver read the same `readRunOverride` result.
+2. **The settings database**, the choice last made on `/settings`.
 3. **Mock.**
 
-`OPENROUTER_API_KEY` alone is not an override; only the two variables that
-select a configuration are. When step 1 is in force, the settings page shows a
-banner naming what is forced, because a stored choice quietly not in effect is
-worse than none. The banner and the resolver read the same function
-(`readDefaultAIOverride`), so they cannot disagree.
+- A name that is not `mock`, `default` or in the file returns `null`, which
+  `game-start` answers with `400 Invalid ai_profile`.
+- An `openrouter` AI with no key anywhere throws when it is resolved, naming
+  it, and surfaces as a 500; a run override naming a missing or broken AI stops
+  the server from starting. Neither falls back to mock.
+- Keys are read on the server and never reach the browser. The settings
+  endpoints return a key's last four characters and nothing else.
 
 ## The settings page
 
@@ -79,27 +77,16 @@ label removed from a file disappears instead of lingering as a dead choice.
 | `.env.ai.free.local`, `.env.ai.paid.local` | key and model `free`, `paid` |
 | `.env.ai.local` `OPENROUTER_KEY_<LABEL>`, `AI_MODEL_<LABEL>` | key or model `<label>`, lowercased |
 
-Later rows win. The first two mean a machine already set up for
-`npm run dev:ai:free` has choices on the page without editing anything.
+Later rows win.
 
 ## The claude CLI provider
 
-`AI_PROVIDER=claude-cli` narrates through the local `claude` command and its
-own login, for machines that reach Anthropic but not OpenRouter — a cloud
-container, say. No key, no env file:
+A `claude-cli` AI narrates through the local `claude` command and its own login,
+for machines that reach Anthropic but not OpenRouter — a cloud container, say.
 
-```bash
-npm run dev:ai:claude                     # Sonnet
-CLAUDE_MODEL=haiku npm run dev:ai:claude  # any model the CLI accepts
-```
-
-- The launcher reads `CLAUDE_MODEL`, not `AI_MODEL`, so a leftover OpenRouter
-  model id is never handed to the CLI, and it refuses to start without `claude`
-  installed.
-- It is chosen only through the process environment: the settings page shows it
-  in the override banner but cannot select it. Keep it out of `.env.ai.free.local`
-  and `.env.ai.paid.local`, whose `AI_MODEL` the page seeds as an OpenRouter
-  model.
+- `./dev run --ai <name>` refuses to start a `claude-cli` AI without the
+  executable. A run override or a request naming it selects one; the settings
+  page cannot.
 - Each call is one `claude --print` subprocess with the same messages the
   OpenRouter provider sends, its output constrained by `--json-schema` from the
   role's contract. Flags keep Claude Code's own system prompt, tools, MCP
@@ -142,7 +129,7 @@ worked examples are in `QUICKSTART.md`.
 ## Tests
 
 Every suite runs mock by absence: its server gets a config root with no
-`.env.ai.*` and an empty settings row. The settings row belongs to the
+`ai.json`, no run override and an empty settings row. The settings row belongs to the
 installation, not a profile, so a suite sharing a server with game-playing tests
 must never switch it to live. `docs/testing.md` has the rule and the backstop.
 

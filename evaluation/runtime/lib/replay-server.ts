@@ -9,10 +9,9 @@
  * `stop()` shuts the server down and removes its root.
  *
  * A server resolves a profile the way it always does. The temporary root holds
- * no profile files, so a `free` or `paid` profile is linked in from the
- * operator's config root for the length of the run (a link, so the key stays in
- * its own file), and `default` resolves from the environment the run was
- * started with, else mock.
+ * no `ai.json`, so the operator's, and the `.env.local` its keys may fall back
+ * to, are linked in before the server starts (links, so a key stays in its own
+ * file). `default` resolves to mock: the root's database is fresh.
  */
 
 import { randomUUID } from "node:crypto";
@@ -22,7 +21,7 @@ import path from "node:path";
 
 import { signIn } from "../../playtest/lib/api.ts";
 import { startTestServer } from "../../../scripts/lib/test-server.mjs";
-import { getAIEnvPath, getBaseEnvPath } from "../../../scripts/local-config.mjs";
+import { getAIConfigPath, getBaseEnvPath } from "../../../scripts/local-config.mjs";
 import type { BlueprintLike, TurnCase } from "./case.ts";
 import type { Collected } from "./replay-cli.ts";
 import { getAction } from "./roles.ts";
@@ -42,6 +41,8 @@ export interface StartServerOptions {
   repoRoot: string;
   port: number;
   env?: Record<string, string>;
+  /** Given the config root before the server starts, to put files it reads at start there. */
+  seed?: (configRoot: string) => void;
 }
 
 export type StartServer = (options: StartServerOptions) => Promise<ThrowawayServer>;
@@ -59,9 +60,6 @@ function freePort(): Promise<number> {
     });
   });
 }
-
-/** The profiles that read a file in the config root, which the temporary root lacks. */
-const FILE_BACKED_PROFILES = ["free", "paid"];
 
 /** Links `source` at `target` when `source` exists and `target` does not. */
 function link(source: string, target: string): void {
@@ -99,18 +97,22 @@ export class ServerNarrator {
   }
 
   private ensureServer(): Promise<ThrowawayServer> {
-    this.server ??= freePort().then((port) => this.start({ repoRoot: this.repoRoot, port }));
+    this.server ??= freePort().then((port) =>
+      this.start({ repoRoot: this.repoRoot, port, seed: (configRoot) => this.linkAIs(configRoot) }),
+    );
     return this.server;
   }
 
-  /** Makes what the case names available to the server: its profile, and its blueprint if it is not the repo's. */
+  /** Links the operator's AIs into the server's root: the server reads them only at start. */
+  private linkAIs(configRoot: string): void {
+    const inRoot = { MYSTERY_CONFIG_ROOT: configRoot };
+    link(getAIConfigPath(this.repoRoot, this.env), getAIConfigPath(this.repoRoot, inRoot));
+    // An entry without a key of its own falls back to the base file's.
+    link(getBaseEnvPath(this.repoRoot, this.env), getBaseEnvPath(this.repoRoot, inRoot));
+  }
+
+  /** Makes the case's blueprint available to the server, if it is not the repo's. */
   private prepare(server: ThrowawayServer, request: ServerReplayRequest): void {
-    if (FILE_BACKED_PROFILES.includes(request.aiProfile)) {
-      const inRoot = { MYSTERY_CONFIG_ROOT: server.configRoot };
-      link(getAIEnvPath(this.repoRoot, request.aiProfile, this.env), getAIEnvPath(this.repoRoot, request.aiProfile, inRoot));
-      // The key may be in the base file, as a fallback for the profile's own.
-      link(getBaseEnvPath(this.repoRoot, this.env), getBaseEnvPath(this.repoRoot, inRoot));
-    }
     const repoBlueprints = path.join(this.repoRoot, "blueprints");
     if (path.dirname(request.blueprintPath) !== repoBlueprints) {
       const dir = path.join(server.configRoot, "blueprints");

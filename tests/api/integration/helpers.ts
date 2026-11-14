@@ -1,4 +1,5 @@
 import { GameTurnResponseSchema } from '@my2/shared';
+import type { Db } from '../../../packages/game-engine/src/db/client.ts';
 import { API_URL, createTestPlayer, testDatabase, type TestPlayer } from '../../testkit/src/server';
 
 export {
@@ -40,8 +41,9 @@ export interface StoredSession {
 	discovered_clues: string[];
 }
 
-export function readStoredSession(gameId: string): StoredSession | null {
-	const row = testDatabase()
+/** `db` is the suite's server's unless a test started its own (`startOwnServer`). */
+export function readStoredSession(gameId: string, db: Db = testDatabase()): StoredSession | null {
+	const row = db
 		.prepare('select * from game_sessions where id = ?')
 		.get(gameId);
 	if (!row) return null;
@@ -78,6 +80,7 @@ const PATCHABLE = new Set([
 export function patchStoredSession(
 	gameId: string,
 	patch: Record<string, string | number | null>,
+	db: Db = testDatabase(),
 ): void {
 	const columns = Object.keys(patch);
 	for (const column of columns) {
@@ -85,7 +88,7 @@ export function patchStoredSession(
 	}
 	if (columns.length === 0) return;
 
-	testDatabase()
+	db
 		.prepare(
 			`update game_sessions set ${columns.map((c) => `${c} = ?`).join(', ')} where id = ?`,
 		)
@@ -107,8 +110,8 @@ export interface StoredEvent {
 	model: string | null;
 }
 
-export function readStoredEvents(gameId: string): StoredEvent[] {
-	return testDatabase()
+export function readStoredEvents(gameId: string, db: Db = testDatabase()): StoredEvent[] {
+	return db
 		.prepare(
 			`select sequence, event_type, actor, narration, payload, narration_parts, model
 			   from game_events where session_id = ? order by sequence asc`,

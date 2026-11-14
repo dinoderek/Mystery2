@@ -98,15 +98,30 @@ async function chromiumInstalled(root) {
 }
 
 /**
+ * The lines about `ai.json`. Its checker needs the dependencies, so it loads
+ * only once they are installed.
+ *
+ * @param {string} root
+ * @param {Record<string, string | undefined>} env
+ * @param {boolean} installed whether the dependencies are in place
+ * @returns {Promise<{ ok: boolean, lines: string[] }>}
+ */
+async function checkAIs(root, env, installed) {
+  if (!installed) return { ok: false, lines: ["FAIL ai.json not checked: the dependencies are not installed"] };
+  const { describeAIs } = await import("./dev-ai.mjs");
+  return describeAIs({ root, env });
+}
+
+/**
  * Runs every check, installing what is missing, and prints one line each.
  * Returns the exit status: non-zero when something is wrong that doctor could
  * not fix. A busy port is reported, not failed: it may be this worktree's own
  * game, already running.
  *
  * @param {string} root
- * @param {{ log?: (line: string) => void, install?: (root: string) => number }} [options]
+ * @param {{ log?: (line: string) => void, install?: (root: string) => number, env?: Record<string, string | undefined> }} [options]
  */
-export async function runDoctor(root, { log = console.log, install = installDependencies } = {}) {
+export async function runDoctor(root, { log = console.log, install = installDependencies, env = process.env } = {}) {
   let failed = false;
 
   const nvmrcPath = path.join(root, ".nvmrc");
@@ -119,13 +134,15 @@ export async function runDoctor(root, { log = console.log, install = installDepe
     failed = true;
   }
 
+  let installed = true;
   if (!dependenciesStale(root)) {
     log("ok   dependencies are installed and match package-lock.json");
   } else {
     log("...  dependencies are missing or older than package-lock.json: running npm ci");
     const status = install(root);
     log(status === 0 ? "ok   dependencies installed" : "FAIL npm ci failed");
-    failed ||= status !== 0;
+    installed = status === 0;
+    failed ||= !installed;
   }
 
   if (await chromiumInstalled(root)) {
@@ -139,6 +156,10 @@ export async function runDoctor(root, { log = console.log, install = installDepe
     log(result.status === 0 ? "ok   Playwright chromium installed" : "FAIL Playwright chromium install failed");
     failed ||= result.status !== 0;
   }
+
+  const ais = await checkAIs(root, env, installed);
+  for (const line of ais.lines) log(line);
+  failed ||= !ais.ok;
 
   const { ports, worktreeName } = resolveWorktreePorts(root);
   const free = await isPortFree(ports.web);

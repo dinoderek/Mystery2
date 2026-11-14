@@ -1,109 +1,62 @@
 /**
  * Starts the game: one Node process, serving the app and its API.
  *
- * `npm run dev`           mock narration, no network
- * `npm run dev:ai:free`   the model in .env.ai.free.local
- * `npm run dev:ai:paid`   the model in .env.ai.paid.local
- * `npm run dev:ai:claude` Sonnet through the local `claude` CLI and its login
- *                         (`CLAUDE_MODEL=haiku` picks another model); no env file
+ * `npm run dev`                 narrates with the AI chosen on the settings page,
+ *                               mock if none
+ * `npm run dev -- --ai <name>`  narrates with an AI from `ai.json` (or mock) for
+ *                               this run, which the server receives as
+ *                               `AI_PROFILE`; `./dev run --ai <name>` is the same
  *
- * The mode's env file is loaded into the process rather than seeded into a
- * database, so switching models is switching command — there is no stack to
- * restart and nothing to reseed.
+ * The AI is checked here, as the server checks it at start, so a malformed
+ * `ai.json`, a name it does not have, an OpenRouter AI without a key or a claude
+ * CLI AI without the executable stops the run before anything starts.
  *
  * `--db <name>` picks the database. Without it this checkout gets its own,
  * named after the worktree; `npm run prod` passes `--db prod`, the persistent
- * one. The AI mode and the database are orthogonal — either can be combined
- * with either.
+ * one. The AI and the database are orthogonal.
  */
 
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 
 import { readEnvFile } from "../packages/game-engine/src/env-file.ts";
-import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
+import { getBaseEnvPath } from "./local-config.mjs";
+import { checkRunAI, parseRunArgs } from "./lib/dev-ai.mjs";
 import { npmBin, runCommand } from "./lib/process.mjs";
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
 import {
   DATABASE_NAME_ENV,
-  isValidDatabaseName,
   resolveDatabaseFile,
   resolveDatabaseName,
 } from "../lib/database-target.mjs";
 
-function parseArgs(argv) {
-  const args = { mode: null, database: null };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === "--db") {
-      args.database = argv[++index] ?? "";
-      if (!isValidDatabaseName(args.database)) {
-        console.error(`--db needs a database name (received: "${args.database}")`);
-        process.exit(1);
-      }
-    } else if (token === "free" || token === "paid" || token === "claude") {
-      args.mode = token;
-    } else {
-      console.error(`Usage: node scripts/dev.mjs [free|paid|claude] [--db <name>]`);
-      process.exit(1);
-    }
-  }
-
-  return args;
-}
-
-const { mode, database } = parseArgs(process.argv.slice(2));
-
 const rootDir = process.cwd();
-const baseVars = readEnvFile(getBaseEnvPath(rootDir, process.env));
-// The claude mode has no file: the CLI brings its own login, and the model
-// defaults to Sonnet unless CLAUDE_MODEL names another. Not AI_MODEL, which may
-// still hold an exported OpenRouter model id the CLI would reject every turn.
-const modeVars = mode === "claude"
-  ? { AI_PROVIDER: "claude-cli", AI_MODEL: process.env.CLAUDE_MODEL?.trim() || "sonnet" }
-  : mode
-  ? readEnvFile(getAIEnvPath(rootDir, mode, process.env))
-  : {};
 
-if (mode && Object.keys(modeVars).length === 0) {
-  console.error(
-    `Missing ${getAIEnvPath(rootDir, mode, process.env)} — cannot start in "${mode}" mode.`,
-  );
+let args;
+let override;
+try {
+  args = parseRunArgs(process.argv.slice(2));
+  override = checkRunAI({ root: rootDir, env: process.env, ai: args.ai });
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
 
-if (mode === "claude") {
-  const cli = process.env.CLAUDE_CLI_PATH?.trim() || "claude";
-  if (spawnSync(cli, ["--version"], { stdio: "ignore" }).status !== 0) {
-    console.error(`"${cli}" did not run. Install Claude Code and log in, or set CLAUDE_CLI_PATH.`);
-    process.exit(1);
-  }
-}
-
-const env = { ...baseVars, ...modeVars, ...process.env };
+const env = { ...readEnvFile(getBaseEnvPath(rootDir, process.env)), ...process.env };
 
 // The server runs from web/, so a relative log path would land there.
 if (env.AI_CALL_LOG?.trim()) env.AI_CALL_LOG = path.resolve(env.AI_CALL_LOG.trim());
 
-// Same reasoning as the AI keys below: the flag just typed has to outrank an
-// ambient MYSTERY_DATABASE, or an exported one would silently win.
-if (database) env[DATABASE_NAME_ENV] = database;
+// The flag just typed has to outrank an ambient MYSTERY_DATABASE, or an
+// exported one would silently win.
+if (args.database) env[DATABASE_NAME_ENV] = args.database;
 
-if (mode) {
-  if (!env.AI_PROVIDER) throw new Error("Missing AI_PROVIDER in env configuration.");
-  if (!env.AI_MODEL) throw new Error("Missing AI_MODEL in env configuration.");
-  if (env.AI_PROVIDER === "openrouter" && !env.OPENROUTER_API_KEY) {
-    throw new Error("Missing OPENROUTER_API_KEY for AI_PROVIDER=openrouter.");
-  }
-  // The mode file has to win over the ambient environment here, or a stale
-  // exported AI_MODEL would silently outrank the file you just pointed at.
-  env.AI_PROVIDER = modeVars.AI_PROVIDER ?? env.AI_PROVIDER;
-  env.AI_MODEL = modeVars.AI_MODEL ?? env.AI_MODEL;
-  env.OPENROUTER_API_KEY = modeVars.OPENROUTER_API_KEY ?? env.OPENROUTER_API_KEY;
-  console.log(`Starting the game with the "${mode}" AI profile (${env.AI_MODEL})...`);
+if (override) {
+  env.AI_PROFILE = override.name;
+  console.log(`Starting the game with AI "${override.name}" (${override.provider} ${override.model})...`);
 } else {
-  console.log('Starting the game with mock narration...');
+  // Only the environment carries a run override, never .env.local.
+  delete env.AI_PROFILE;
+  console.log("Starting the game with the AI chosen on the settings page (mock if none)...");
 }
 
 const databaseName = resolveDatabaseName(rootDir, env);

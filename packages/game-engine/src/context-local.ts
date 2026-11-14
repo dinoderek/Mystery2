@@ -5,7 +5,7 @@
 // pair of directories — which is what makes it the only file that would have
 // to change to keep the state somewhere else.
 
-import { createLocalAIProfileStore } from "./ai-profile.ts";
+import { createLocalAIProfileStore, loadAIConfig, type RunOverride } from "./ai-config.ts";
 import { readAISettingsEnv } from "./ai-settings-env.ts";
 import { createLocalContentStore } from "./content.ts";
 import type {
@@ -76,6 +76,11 @@ export interface LocalEngine {
    * the settings page is reachable before a profile is picked.
    */
   aiSettings: AISettingsStore;
+  /**
+   * The AI the run was started with (`./dev run --ai`), which `default`
+   * resolves to while it is set. The settings page's banner reads it.
+   */
+  runOverride: RunOverride | null;
   /** Directory image bytes are served from. */
   imagesDir: string;
   contextFor(player: EnginePlayer): EngineContext;
@@ -84,11 +89,20 @@ export interface LocalEngine {
   close(): void;
 }
 
+/**
+ * Opens the engine.
+ *
+ * @throws AIConfigError when `ai.json` is malformed or the run override names
+ * an AI that is missing or broken. It is read before the database is opened,
+ * so a server that cannot narrate as asked stops before touching anything.
+ */
 export function createLocalEngine(
   options: LocalEngineOptions = {},
 ): LocalEngine {
   const repoRoot = options.repoRoot ?? process.cwd();
   const env = options.env ?? process.env;
+
+  const aiConfig = loadAIConfig({ repoRoot, env });
 
   const databasePath = options.databasePath ?? resolveDatabasePath(repoRoot, env);
   const db = openDatabase({ path: databasePath });
@@ -105,17 +119,14 @@ export function createLocalEngine(
   // (web/src/lib/server/engine.ts), so this runs exactly once at boot.
   aiSettings.replaceEnvRows(readAISettingsEnv(repoRoot, env));
 
-  const aiProfiles = createLocalAIProfileStore({
-    repoRoot,
-    env,
-    settings: aiSettings,
-  });
+  const aiProfiles = createLocalAIProfileStore(aiConfig, aiSettings);
 
   return {
     db,
     databasePath,
     players: createPlayerStore(db),
     aiSettings,
+    runOverride: aiConfig.runOverride,
     content,
     aiProfiles,
     imagesDir,

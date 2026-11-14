@@ -27,7 +27,8 @@ integration tests for backend behaviour. Playwright is for browser journeys.
 `npm test` runs `scripts/run-test-gate.mjs`. `GATE_STEPS` in
 `scripts/lib/gate-steps.mjs` defines the steps. Phase 1 runs in parallel:
 lint, typecheck, `svelte-check`, `quality`, `imports`, both unit suites with
-coverage, the doc checks, `gate-coverage`, and `coverage-floors`, which starts
+coverage, the doc checks, `gate-coverage`, `tracked-files`, and
+`coverage-floors`, which starts
 once both unit suites finish. Phase 2 runs only if phase 1 passed, one step at a
 time: integration, API E2E, browser E2E.
 
@@ -157,13 +158,13 @@ test:golden:record`; review the diff.
     answers `404`.
 - **No real model.** Integration and E2E never call one. The server runs the mock
   provider, so assert persisted side effects.
-- **Mock by absence.** Mock is chosen when the config root has no `.env.ai.*` and
-  the settings row is empty. A test that switches the row to live over the API does so for
-  every test sharing the server, so no suite sharing a server with game-playing
-  tests may; assert that in the unit suites (`ai-settings-store.test.ts`,
-  `local-engine-ai-profile.test.ts`). Suites that change the row
+- **Mock by absence.** Mock is chosen when the config root has no `ai.json`,
+  the runners clear `AI_PROFILE`, and the settings row is empty. Switching the
+  row to live over the API switches it for every test sharing the server, so no
+  suite sharing one with game-playing tests may; assert that in the unit suites (`ai-settings-store.test.ts`,
+  `ai-config.test.ts`). Suites that change the row
   (`tests/api/integration/ai-settings.test.ts`, `web/e2e/ai-settings.spec.ts`)
-  reset it around each test and leave it on mock. The runners also
+  reset it around each test, leaving mock. The runners also
   point `OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a missing file.
 
 ## CI and documentation-only changes

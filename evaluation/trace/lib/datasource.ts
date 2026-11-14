@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { resolveAIProfile } from "../../../packages/game-engine/src/ai-profile.ts";
+import { loadAIConfig, resolveAIProfile } from "../../../packages/game-engine/src/ai-config.ts";
 import { createLocalContentStore } from "../../../packages/game-engine/src/content.ts";
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import {
@@ -119,7 +119,7 @@ export function createLocalTraceSource({
       // abort an extraction of a session that used it months ago.
       let profile;
       try {
-        profile = resolveAIProfile(profileId, { repoRoot: root, env });
+        profile = resolveAIProfile(profileId, loadAIConfig({ repoRoot: root, env }));
       } catch {
         return null;
       }

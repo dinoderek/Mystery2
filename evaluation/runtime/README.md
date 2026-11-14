@@ -42,10 +42,10 @@ there, sends the action as the line a player would type, and removes the root
 afterwards. It never writes to your play database and cannot use a server you
 started yourself. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
-it. The profile resolves as it always does: `mock` needs nothing, and `default` is
-whatever `AI_PROVIDER` and `AI_MODEL` name, else mock: a bare server run grades
-the mock's canned text. `free` and `paid` are
-linked in from the config root for the run, so the key stays in its own file.
+it. The profile resolves as it always does: `mock` needs nothing, `default` is mock
+on the fresh database (a bare server run grades the mock's canned text), and a
+named AI comes from the config root's `ai.json`, linked in with `.env.local`
+before the server starts, so keys stay in their files.
 
 ## Cases
 

@@ -1,50 +1,47 @@
-import fs from "node:fs";
-import path from "node:path";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { startOwnServer, type OwnServer } from "../../testkit/src/own-server";
 import {
-  API_URL,
   MOCK_BLUEPRINT_ID,
   patchStoredSession,
   readStoredEvents,
   readStoredSession,
-  setupApiTestAuth,
-  TEST_CONFIG_ROOT,
-  testDatabase,
   type ApiAuthContext,
 } from "./helpers";
 
-// A model call that fails writes nothing. The narrator here is a live profile
+// A model call that fails writes nothing. The narrator here is a live AI
 // pointed at the suite's unreachable OpenRouter URL, so the call fails after
-// the request has been accepted. Only this file writes the `paid` profile:
-// test files run in parallel, and a second writer could remove it mid-test.
+// the request has been accepted. A server reads `ai.json` only at start, and
+// the suite's has none, so this file starts a server of its own with one.
 
-const PAID_ENV_PATH = path.join(TEST_CONFIG_ROOT, ".env.ai.paid.local");
+let server: OwnServer;
+let auth: ApiAuthContext;
+
+beforeAll(async () => {
+  server = await startOwnServer({
+    aiConfig: { ais: { paid: { backend: "openrouter", model: "test/unreachable", key: "test-key" } } },
+  });
+});
+
+afterAll(async () => {
+  await server?.stop();
+});
 
 describe("a failed model call", () => {
-  let auth: ApiAuthContext;
-
   beforeEach(async () => {
-    auth = await setupApiTestAuth("model-failure");
-    fs.writeFileSync(
-      PAID_ENV_PATH,
-      ["AI_PROVIDER=openrouter", "OPENROUTER_API_KEY=test-key", "AI_MODEL=test/unreachable"].join("\n") + "\n",
-    );
-  });
-
-  afterEach(() => {
-    fs.rmSync(PAID_ENV_PATH, { force: true });
+    auth = await server.createPlayer("model-failure");
   });
 
   function storedSessionCount(): number {
-    const row = testDatabase()
+    const row = server
+      .database()
       .prepare("select count(*) as n from game_sessions where player_id = ?")
       .get(auth.id);
     return Number(row?.n);
   }
 
   it("leaves no session and no events behind when starting a game", async () => {
-    const res = await fetch(`${API_URL}/game-start`, {
+    const res = await fetch(`${server.apiUrl}/game-start`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID, ai_profile: "paid" }),
@@ -52,7 +49,8 @@ describe("a failed model call", () => {
 
     expect(res.status).toBe(500);
     expect(storedSessionCount()).toBe(0);
-    const orphanEvents = testDatabase()
+    const orphanEvents = server
+      .database()
       .prepare(
         `select count(*) as n from game_events
           where session_id not in (select id from game_sessions)`,
@@ -62,18 +60,19 @@ describe("a failed model call", () => {
   });
 
   it("leaves the session and its events as they were when playing a turn", async () => {
-    const start = await fetch(`${API_URL}/game-start`, {
+    const start = await fetch(`${server.apiUrl}/game-start`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
     });
     const { game_id: gameId } = await start.json();
-    // The game began under the mock; its next turn reaches the live profile.
-    patchStoredSession(gameId, { ai_profile_id: "paid" });
-    const before = readStoredSession(gameId);
-    const eventsBefore = readStoredEvents(gameId);
+    // The game began under the mock; its next turn reaches the live AI.
+    const db = server.database();
+    patchStoredSession(gameId, { ai_profile_id: "paid" }, db);
+    const before = readStoredSession(gameId, db);
+    const eventsBefore = readStoredEvents(gameId, db);
 
-    const res = await fetch(`${API_URL}/game-turn`, {
+    const res = await fetch(`${server.apiUrl}/game-turn`, {
       method: "POST",
       headers: auth.headers,
       body: JSON.stringify({ game_id: gameId, input: "search" }),
@@ -81,7 +80,7 @@ describe("a failed model call", () => {
 
     expect(res.status).toBe(503);
     expect((await res.json()).details).toMatchObject({ retriable: true });
-    expect(readStoredSession(gameId)).toEqual(before);
-    expect(readStoredEvents(gameId)).toEqual(eventsBefore);
+    expect(readStoredSession(gameId, db)).toEqual(before);
+    expect(readStoredEvents(gameId, db)).toEqual(eventsBefore);
   });
 });

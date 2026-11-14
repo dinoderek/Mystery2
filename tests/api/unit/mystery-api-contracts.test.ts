@@ -281,12 +281,12 @@ describe("AI settings", () => {
     expect(
       AISettingsStateSchema.parse({
         ...state,
-        override: { provider: "openrouter", model: "vendor/model", source: "AI_PROVIDER / AI_MODEL" },
+        override: { provider: "openrouter", model: "vendor/model", source: "--ai free" },
       }).override,
     ).toEqual({
       provider: "openrouter",
       model: "vendor/model",
-      source: "AI_PROVIDER / AI_MODEL",
+      source: "--ai free",
     });
   });
 
@@ -294,7 +294,7 @@ describe("AI settings", () => {
     const withCli = AISettingsStateSchema.parse({
       ...state,
       effective_mode: "claude-cli",
-      override: { provider: "claude-cli", model: "sonnet", source: "AI_PROVIDER / AI_MODEL" },
+      override: { provider: "claude-cli", model: "sonnet", source: "--ai free" },
     });
     expect(withCli.effective_mode).toBe("claude-cli");
     expect(withCli.override?.provider).toBe("claude-cli");

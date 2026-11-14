@@ -132,10 +132,10 @@ and size, and logs and skips anything unparseable rather than failing the catalo
 
 ## 5. AI Profiles
 
-`mock`, `free` and `paid` are environment, not data. `default` — the only one
+`mock` and `ai.json`'s AIs are configuration, not data. `default` — the only one
 the browser ever plays as — is chosen on the settings page and stored in
-`app_settings`, though a process started with `AI_PROVIDER`/`AI_MODEL` still
-outranks it. See `packages/game-engine/src/ai-profile.ts` and `docs/ai-configuration.md`.
+`app_settings`, though a run started with `--ai` still outranks it. See
+`packages/game-engine/src/ai-config.ts` and `docs/ai-configuration.md`.
 
 A misconfigured profile throws; an unconfigured one returns `null`, which
 handlers turn into `400 Invalid ai_profile`. A *stored* choice cannot be

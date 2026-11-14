@@ -1,7 +1,7 @@
 import path from "node:path";
 
 /**
- * Local-only paths: where this machine keeps its env files, blueprints, images
+ * Local-only paths: where this machine keeps its config, env files, blueprints, images
  * and game database. Typed with JSDoc because both TypeScript workspaces
  * resolve this file directly — the engine (`packages/game-engine/src/paths.ts`)
  * and the web app's `svelte-check`.
@@ -82,15 +82,6 @@ export function getAIConfigPath(
   env = process.env,
 ) {
   return resolveLocalConfigPath("ai.json", repoRoot, env);
-}
-
-/** @param {string} repoRoot @param {string} mode @param {Env} [env] @returns {string} */
-export function getAIEnvPath(
-  repoRoot = process.cwd(),
-  mode,
-  env = process.env,
-) {
-  return resolveLocalConfigPath(`.env.ai.${mode}.local`, repoRoot, env);
 }
 
 /** @param {string} [repoRoot] @param {Env} [env] @returns {string} */

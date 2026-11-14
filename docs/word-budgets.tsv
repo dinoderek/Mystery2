@@ -2,7 +2,7 @@ path	budget
 .github/pull_request_template.md	100
 AGENTS.md	450
 QUICKSTART.md	1050
-docs/ai-configuration.md	1150
+docs/ai-configuration.md	600
 docs/ai-runtime.md	2500
 docs/architecture.md	800
 docs/backend-conventions.md	1100

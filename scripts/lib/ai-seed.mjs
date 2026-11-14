@@ -7,8 +7,8 @@
  * with exactly the AIs it was asked for and names one on each request. The AIs
  * are read from the config root the harness is pointed at (`MYSTERY_CONFIG_ROOT`,
  * else the repo), with the key an entry lacks taken from `OPENROUTER_API_KEY`
- * or that root's `.env.local`, as the server itself would. Nothing is read
- * from the `.env.ai.*` files.
+ * or that root's `.env.local`, as the server itself would. Nothing else in
+ * the environment names a model.
  *
  * The temporary root, and the key in clear inside it, go when the server stops.
  * Everything here fails before any server starts, naming the AI.

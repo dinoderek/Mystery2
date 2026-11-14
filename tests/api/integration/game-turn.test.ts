@@ -200,7 +200,8 @@ describe("game-turn endpoint", () => {
     const db = testDatabase();
     for (const event of readStoredEvents(gameId)) {
       if (!event.payload || !("input" in event.payload)) continue;
-      const { input: _input, ...payload } = event.payload;
+      const payload = { ...event.payload };
+      delete payload.input;
       db.prepare("update game_events set payload = ? where session_id = ? and sequence = ?").run(
         JSON.stringify(payload),
         gameId,

@@ -25,7 +25,8 @@ system prompt and brief to the Claude agent in its workspace:
    answer in the schema.
 3. **Response format** (`api` only): a strict JSON Schema from
    `BlueprintV2Schema`, with the image-id fields removed — image tooling fills
-   those in later.
+   those in later; strict mode sends every field, so a `null` where none is
+   allowed is dropped.
 
 Either way the blueprint is checked against the schema and the mechanical
 checks, and stored with its `result.json`; one that fails is kept and not

@@ -1,6 +1,6 @@
 // Plays one scripted game over HTTP and returns what the player saw.
 
-import { BrowserDriver, type GameDriver, type StartState } from "./driver.ts";
+import { TurnDriver, type GameDriver, type StartState } from "./driver.ts";
 import { Screen, type ScriptStep } from "./screen.ts";
 
 export interface PlayOptions {
@@ -9,10 +9,7 @@ export interface PlayOptions {
   headers: HeadersInit;
   blueprintId: string;
   script: ScriptStep[];
-  /**
-   * How lines reach the game. The browser's own routing by default; whatever
-   * replaces it passes its own driver and nothing else here changes.
-   */
+  /** How lines reach the game: `game-turn` by default. */
   makeDriver?: (game: { apiUrl: string; headers: HeadersInit; gameId: string; start: StartState }) => GameDriver;
 }
 
@@ -48,7 +45,7 @@ export async function playScriptedGame(options: PlayOptions): Promise<Screen> {
     })),
   });
 
-  const makeDriver = options.makeDriver ?? ((game) => new BrowserDriver(game));
+  const makeDriver = options.makeDriver ?? ((game) => new TurnDriver(game));
   await screen.play(makeDriver({ apiUrl, headers, gameId, start: state }), script);
   return screen;
 }

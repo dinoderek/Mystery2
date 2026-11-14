@@ -163,6 +163,7 @@ export function parseNarrationParts(
   ];
 }
 
+/** The line rebuilt from what an event did, for events saved without the typed one. */
 function extractPlayerInput(row: EventRow): string | null {
   if (!isRecord(row.payload)) {
     return null;
@@ -198,6 +199,16 @@ function extractPlayerInput(row: EventRow): string | null {
   return null;
 }
 
+/** The line the player typed for this event, as stored with it. */
+function readTypedInput(row: EventRow): string | null {
+  return isRecord(row.payload) ? readString(row.payload.input) : null;
+}
+
+/**
+ * One event as a transcript shows it. The player's line comes first: the one
+ * stored with the event, or for an event saved without one, the line rebuilt
+ * from what it did.
+ */
 export function readNarrationEvent(row: EventRow): NarrationEventRecord {
   const speaker = isRecord(row.payload)
     ? readSpeaker(row.payload.speaker, fallbackSpeakerForEvent(row))
@@ -210,7 +221,7 @@ export function readNarrationEvent(row: EventRow): NarrationEventRecord {
     image_id: readImageIdFromPayload(row.payload),
   });
 
-  const playerInput = extractPlayerInput(row);
+  const playerInput = readTypedInput(row) ?? extractPlayerInput(row);
   const narrationParts = playerInput
     ? [createNarrationPart(playerInput, INVESTIGATOR_SPEAKER), ...responseParts]
     : responseParts;

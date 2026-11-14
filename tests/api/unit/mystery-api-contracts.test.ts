@@ -19,6 +19,8 @@ import {
   AIModelUpsertSchema,
   AISettingsStateSchema,
   AISettingsUpdateSchema,
+  GameTurnRequestSchema,
+  GameTurnResponseSchema,
 } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   NARRATOR_SPEAKER,
@@ -29,7 +31,54 @@ import {
   createBlueprintSummary,
   createMoveResponse,
   createNarrationEvent,
+  createTurnPlayedResponse,
+  createTurnRefusedResponse,
+  createTurnViewResponse,
 } from "../../testkit/src/fixtures.ts";
+
+describe("the game-turn contract", () => {
+  const gameId = "123e4567-e89b-12d3-a456-426614174000";
+
+  it("takes the game and the line as typed, an empty line included", () => {
+    expect(GameTurnRequestSchema.parse({ game_id: gameId, input: "go to the kitchen" })).toEqual({
+      game_id: gameId,
+      input: "go to the kitchen",
+    });
+    expect(GameTurnRequestSchema.safeParse({ game_id: gameId, input: "" }).success).toBe(true);
+    expect(GameTurnRequestSchema.safeParse({ game_id: gameId }).success).toBe(false);
+    expect(GameTurnRequestSchema.safeParse({ game_id: "kitchen", input: "search" }).success).toBe(false);
+  });
+
+  it("answers with one of four kinds", () => {
+    for (const answer of [
+      createTurnPlayedResponse(),
+      createTurnRefusedResponse(),
+      createTurnViewResponse({ view: "locations", section: "places" }),
+      { kind: "quit" },
+    ]) {
+      expect(GameTurnResponseSchema.parse(answer)).toEqual(answer);
+    }
+    expect(GameTurnResponseSchema.safeParse({ kind: "dance" }).success).toBe(false);
+  });
+
+  it("keeps where a clue came from, for the notebook", () => {
+    const clue = {
+      id: "clue-1",
+      text: "A crumb.",
+      source: "talk",
+      origin: { kind: "character", character_id: "char-alice", character_name: "Alice Smith" },
+      discovered_at: "2026-11-14T10:00:00.000Z",
+      off_script: true,
+    };
+    const answer = createTurnPlayedResponse({ revealed_clues: [clue as never] });
+
+    expect(GameTurnResponseSchema.parse(answer)).toMatchObject({ revealed_clues: [clue] });
+  });
+
+  it("refuses a played turn with no events", () => {
+    expect(GameTurnResponseSchema.safeParse({ ...createTurnPlayedResponse(), events: [] }).success).toBe(false);
+  });
+});
 
 describe("shared mystery API contracts", () => {
   it("accepts game-start requests with optional ai_profile", () => {

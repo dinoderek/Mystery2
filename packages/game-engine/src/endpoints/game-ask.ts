@@ -22,37 +22,7 @@ import {
   createCharacterSpeaker,
 } from "../speaker.ts";
 import { buildDiscoveredClueIdSet } from "../clue-discovery.ts";
-
-export interface FirstTimeReveals {
-  revealed_clue_ids: string[];
-  revealed_off_script: string[];
-  // The character's own clue ids the narrator re-listed though the player
-  // already holds them.
-  repeated_clue_ids: string[];
-}
-
-// Narrow the narrator's reported reveals to what this turn discovers: clues the
-// active character holds that the player has not discovered yet. A character
-// may restate a clue the player already has, but that is not a new discovery.
-// Off-script flags survive only on ids that are kept.
-export function selectFirstTimeReveals(
-  output: { revealed_clue_ids: string[]; revealed_off_script: string[] },
-  characterClueIds: Set<string>,
-  discovered: Set<string>,
-): FirstTimeReveals {
-  const characterIds = output.revealed_clue_ids.filter((id) =>
-    characterClueIds.has(id)
-  );
-  const revealed = characterIds.filter((id) => !discovered.has(id));
-  const revealedSet = new Set(revealed);
-  return {
-    revealed_clue_ids: revealed,
-    revealed_off_script: output.revealed_off_script.filter((id) =>
-      revealedSet.has(id)
-    ),
-    repeated_clue_ids: characterIds.filter((id) => discovered.has(id)),
-  };
-}
+import { selectFirstTimeReveals } from "../turn/resolve-talk.ts";
 
 export async function handle(
   req: Request,

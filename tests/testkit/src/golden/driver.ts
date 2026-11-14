@@ -2,15 +2,15 @@
 // transcripts.
 //
 // A driver is the one part of the harness that knows how a line of input
-// becomes requests. `BrowserDriver` does what the browser does today: it parses
-// the line itself, answers refusals, `help` and `quit` without asking the
-// server, and routes everything else to the endpoint that plays it. Whatever
-// replaces that routing implements `GameDriver` and answers with the same
-// `LineOutcome`s; the screen and the golden files do not change with it.
+// becomes requests. `TurnDriver` sends each line to `game-turn` as typed and
+// turns its answer into a `LineOutcome`; the screen and the golden files do not
+// depend on how that happens.
 
-import { parseCommand, type ActionCommand, type GameMode, type ParseContext, type ParseResult } from "../../../../web/src/lib/domain/parser.ts";
+import { GameTurnResponseSchema, type GameTurnResponse, type NarrationEvent } from "@my2/shared";
 import { NARRATOR_SPEAKER, readSpeaker } from "../../../../web/src/lib/domain/speaker.ts";
 import type { NarrationPart } from "../../../../web/src/lib/types/game.ts";
+
+export type GameMode = "explore" | "talk" | "accuse" | "ended";
 
 /** One event the player's screen gains: its type, its page label and its lines. */
 export interface OutcomeEvent {
@@ -57,7 +57,7 @@ export interface StartState {
   time_remaining: number;
 }
 
-export interface BrowserDriverOptions {
+export interface DriverOptions {
   apiUrl: string;
   headers: HeadersInit;
   gameId: string;
@@ -66,55 +66,6 @@ export interface BrowserDriverOptions {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readMode(value: unknown, fallback: GameMode): GameMode {
-  return value === "explore" || value === "talk" || value === "accuse" || value === "ended" ? value : fallback;
-}
-
-function suggestionsText(suggestions: string[]): string {
-  return suggestions.length === 0 ? "none available right now" : suggestions.join(", ");
-}
-
-/** The hint for a `move` or `talk` with no target, in the store's wording. */
-function missingTargetHint(result: Extract<ParseResult, { type: "missing-target" }>): string {
-  return result.commandType === "move"
-    ? `Where to? Try: ${suggestionsText(result.suggestions)}.`
-    : `Who do you want to talk to? Try: ${suggestionsText(result.suggestions)}.`;
-}
-
-/** The hint for a target that is not here, in the store's wording. */
-function invalidTargetHint(result: Extract<ParseResult, { type: "invalid-target" }>): string {
-  const label = result.commandType === "move" ? "destination" : "character";
-  return `"${result.attempted}" is not a valid ${label}. Try: ${suggestionsText(result.suggestions)}.`;
-}
-
-/** The endpoint, body and event type the browser uses for an action. */
-function invocation(
-  command: ActionCommand,
-  mode: GameMode,
-  gameId: string,
-): { endpoint: string; body: Record<string, unknown>; eventType: string } {
-  switch (command.type) {
-    case "move":
-      return { endpoint: "game-move", body: { game_id: gameId, destination: command.destination }, eventType: "move" };
-    case "search":
-      return { endpoint: "game-search", body: { game_id: gameId, search_query: command.query }, eventType: "search" };
-    case "talk":
-      return { endpoint: "game-talk", body: { game_id: gameId, character_id: command.character_id }, eventType: "talk" };
-    case "ask":
-      return mode === "accuse"
-        ? { endpoint: "game-accuse", body: { game_id: gameId, player_reasoning: command.question }, eventType: "accuse_round" }
-        : { endpoint: "game-ask", body: { game_id: gameId, player_input: command.question }, eventType: "ask" };
-    case "end_talk":
-      return { endpoint: "game-end-talk", body: { game_id: gameId }, eventType: "end_talk" };
-    case "accuse":
-      return {
-        endpoint: "game-accuse",
-        body: command.reasoning ? { game_id: gameId, player_reasoning: command.reasoning } : { game_id: gameId },
-        eventType: "accuse_start",
-      };
-  }
 }
 
 function readParts(payload: Record<string, unknown>): NarrationPart[] {
@@ -131,73 +82,104 @@ function readParts(payload: Record<string, unknown>): NarrationPart[] {
   return parts;
 }
 
-function readClues(raw: unknown): ClueFound[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((entry) =>
-    isRecord(entry) && typeof entry.id === "string" && typeof entry.text === "string"
-      ? [{ id: entry.id, text: entry.text }]
-      : [],
-  );
+/** The transcript line the browser adds when help opens. */
+const HELP_NOTE = "Help menu opened.";
+
+/**
+ * An accusation made with its reasoning in one line is saved as its first
+ * round, which on its own would continue the page already open. On screen it
+ * opens the accusation, as `accuse` alone does.
+ */
+function presentedType(eventType: string, playedIn: GameMode): string {
+  const isRound = eventType === "accuse_round" || eventType === "accuse_resolved";
+  return isRound && playedIn === "explore" ? "accuse_start" : eventType;
 }
 
-export class BrowserDriver implements GameDriver {
-  private readonly options: BrowserDriverOptions;
+function viewOutcome(answer: Extract<GameTurnResponse, { kind: "view" }>): LineOutcome {
+  return answer.view === "help"
+    ? { kind: "view", overlay: "help", section: null, echo: true, note: HELP_NOTE }
+    : { kind: "view", overlay: "notebook", section: answer.section, echo: false, note: null };
+}
+
+export class TurnDriver implements GameDriver {
+  private readonly options: DriverOptions;
   private mode: GameMode;
   private location: string;
   private talkingTo: string | null = null;
-  private timeRemaining: number;
-  private readonly locations: StartState["locations"];
-  /** `location_name` holds a location id, as the store keeps it. */
-  private readonly characters: Array<{ id: string; first_name: string; last_name: string; location_name: string }>;
 
-  constructor(options: BrowserDriverOptions) {
+  constructor(options: DriverOptions) {
     this.options = options;
     this.mode = options.start.mode;
     this.location = options.start.location;
-    this.timeRemaining = options.start.time_remaining;
-    this.locations = options.start.locations;
-    this.characters = options.start.characters.map((character) => ({
-      id: character.id,
-      first_name: character.first_name,
-      last_name: character.last_name,
-      location_name: character.location_id,
-    }));
   }
 
-  enter(): Promise<LineOutcome> {
-    return this.call("game-enter", { game_id: this.options.gameId }, "move");
+  async enter(): Promise<LineOutcome> {
+    const payload = await this.post("game-enter", { game_id: this.options.gameId });
+    if (typeof payload.current_location === "string") this.location = payload.current_location;
+    return {
+      kind: "turn",
+      events: [{ event_type: "move", payload: this.pagePayload("move"), narration_parts: readParts(payload) }],
+      mode: this.mode,
+      time_remaining: typeof payload.time_remaining === "number" ? payload.time_remaining : this.options.start.time_remaining,
+      clues: [],
+      result: null,
+    };
   }
 
   async submit(line: string): Promise<LineOutcome> {
-    const context: ParseContext = {
-      locations: this.locations,
-      characters: this.characters,
-      currentLocation: this.location,
-    };
-    const parsed = parseCommand(line, this.mode, context);
-
-    switch (parsed.type) {
-      case "notebook":
-        return { kind: "view", overlay: "notebook", section: parsed.section, echo: false, note: null };
-      case "help":
-        return { kind: "view", overlay: "help", section: null, echo: true, note: "Help menu opened." };
+    const answer = GameTurnResponseSchema.parse(await this.post("game-turn", { game_id: this.options.gameId, input: line }));
+    switch (answer.kind) {
+      case "refused":
+        return { kind: "refused", hint: answer.hint };
+      case "view":
+        return viewOutcome(answer);
       case "quit":
         this.mode = "ended";
         return { kind: "quit" };
-      case "missing-target":
-        return { kind: "refused", hint: missingTargetHint(parsed) };
-      case "invalid-target":
-        return { kind: "refused", hint: invalidTargetHint(parsed) };
-      case "unrecognized":
-        return { kind: "refused", hint: parsed.hint };
-      case "valid": {
-        const { endpoint, body, eventType } = invocation(parsed.command, this.mode, this.options.gameId);
-        return this.call(endpoint, body, eventType);
+      case "turn": {
+        const playedIn = this.mode;
+        this.mode = answer.state.mode;
+        this.location = answer.state.location;
+        this.talkingTo = answer.state.current_talk_character;
+        return {
+          kind: "turn",
+          events: answer.events.map((event, index) => this.eventOutcome(event, index === 0 ? playedIn : null)),
+          mode: answer.state.mode,
+          time_remaining: answer.state.time_remaining,
+          clues: answer.revealed_clues.map((clue) => ({ id: clue.id, text: clue.text })),
+          result: answer.result,
+        };
       }
     }
   }
 
-  private async call(endpoint: string, body: Record<string, unknown>, eventType: string): Promise<LineOutcome> {
+  /** `playedIn` is the mode the line was typed in, for the turn's first event only. */
+  private eventOutcome(event: NarrationEvent, playedIn: GameMode | null): OutcomeEvent {
+    const eventType = playedIn ? presentedType(event.event_type, playedIn) : event.event_type;
+    return {
+      event_type: eventType,
+      payload: this.pagePayload(eventType),
+      narration_parts: readParts({ narration_parts: event.narration_parts }),
+    };
+  }
+
+  /**
+   * The naming half of an event's payload, as the browser fills it from where
+   * the game stands after the turn: a page is labelled with its place or person.
+   */
+  private pagePayload(eventType: string): Record<string, unknown> | undefined {
+    if (eventType === "talk" || eventType === "ask") {
+      const character = this.options.start.characters.find((entry) => entry.id === this.talkingTo);
+      return character ? { character_name: character.first_name } : undefined;
+    }
+    if (eventType === "move" || eventType === "end_talk") {
+      const place = this.options.start.locations.find((entry) => entry.id === this.location);
+      return { location_name: place?.name ?? this.location };
+    }
+    return undefined;
+  }
+
+  private async post(endpoint: string, body: Record<string, unknown>): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.options.apiUrl}/${endpoint}`, {
       method: "POST",
       headers: this.options.headers,
@@ -206,69 +188,6 @@ export class BrowserDriver implements GameDriver {
     if (!response.ok) {
       throw new Error(`${endpoint} answered ${response.status}: ${await response.text()}`);
     }
-    const payload = (await response.json()) as Record<string, unknown>;
-    return this.outcomeOf(payload, endpoint, eventType);
-  }
-
-  /** What the store does with a response: sync its state, then name the event's page. */
-  private outcomeOf(payload: Record<string, unknown>, endpoint: string, eventType: string): LineOutcome {
-    this.mode = readMode(payload.mode, endpoint === "game-accuse" ? "ended" : this.mode);
-
-    if (typeof payload.current_location === "string") {
-      this.location = payload.current_location;
-      this.placeVisibleCharacters(payload.visible_characters, payload.current_location);
-    }
-    if (typeof payload.current_talk_character === "string" || payload.current_talk_character === null) {
-      this.talkingTo = payload.current_talk_character;
-    }
-
-    if (typeof payload.time_remaining === "number") this.timeRemaining = Math.trunc(payload.time_remaining);
-
-    const parts = readParts(payload);
-    const event: OutcomeEvent = {
-      event_type: eventType,
-      payload: this.pagePayload(eventType),
-      narration_parts: parts.length > 0 ? parts : [{ text: "Action completed.", speaker: NARRATOR_SPEAKER, image_id: null }],
-    };
-    const result = payload.result === "win" || payload.result === "lose" ? payload.result : null;
-
-    return {
-      kind: "turn",
-      events: [event],
-      mode: this.mode,
-      time_remaining: this.timeRemaining,
-      clues: readClues(payload.revealed_clues),
-      result: endpoint === "game-accuse" && payload.mode === "ended" ? result : null,
-    };
-  }
-
-  private placeVisibleCharacters(visible: unknown, location: string): void {
-    if (!Array.isArray(visible)) return;
-    const names = new Set(
-      visible.flatMap((value) => {
-        if (typeof value === "string") return [value.toLowerCase()];
-        return isRecord(value) && typeof value.first_name === "string" ? [value.first_name.toLowerCase()] : [];
-      }),
-    );
-    for (const character of this.characters) {
-      if (names.has(character.first_name.toLowerCase())) character.location_name = location;
-    }
-  }
-
-  /** The naming half of an event's payload, so a page is labelled with its place or person. */
-  private pagePayload(eventType: string): Record<string, unknown> | undefined {
-    if (eventType === "talk" || eventType === "ask") {
-      const active = this.talkingTo;
-      if (!active) return undefined;
-      const match = this.characters.find(
-        (character) => character.id === active || character.first_name.toLowerCase() === active.toLowerCase(),
-      );
-      return { character_name: match?.first_name ?? active };
-    }
-    if (eventType === "move" || eventType === "end_talk") {
-      const name = this.locations.find((place) => place.id === this.location)?.name ?? this.location;
-      return name ? { location_name: name } : undefined;
-    }
-    return undefined;
+    return (await response.json()) as Record<string, unknown>;
   }
 }

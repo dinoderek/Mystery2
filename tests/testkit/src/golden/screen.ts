@@ -2,11 +2,10 @@
 // builds it: the lines of the transcript, grouped into pages, with the mode and
 // the turns left after each step. Rendering it as text gives the golden file.
 
-import type { GameMode } from "../../../../web/src/lib/domain/parser.ts";
 import { INVESTIGATOR_SPEAKER, SYSTEM_SPEAKER } from "../../../../web/src/lib/domain/speaker.ts";
 import { buildSessionPages } from "../../../../web/src/lib/domain/session-pages.ts";
 import type { NarrationEvent, NarrationPart, Speaker } from "../../../../web/src/lib/types/game.ts";
-import type { GameDriver, LineOutcome, OutcomeEvent } from "./driver.ts";
+import type { GameDriver, GameMode, LineOutcome, OutcomeEvent } from "./driver.ts";
 
 /** One step of a script: a line the player types, or stepping into the starting location. */
 export type ScriptStep = string | { enter: true };

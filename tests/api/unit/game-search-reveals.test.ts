@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { collectRevealedClueIds } from '../../../packages/game-engine/src/endpoints/game-search.ts';
+import { collectRevealedClueIds } from '../../../packages/game-engine/src/turn/resolve-search.ts';
 
 const CLUES = ['clue_gloves', 'clue_note', 'clue_drawings'];
 

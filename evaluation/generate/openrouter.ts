@@ -12,10 +12,11 @@
  * `{ "result": "<blueprint JSON>" }` envelope the binding's `extract_path`
  * reads. The key is never printed or put in an error message.
  *
- * A blueprint that fails the schema is still printed, so the command that ran
- * the wrapper keeps it and its mechanical check says why it failed, as it does
- * for the agent backend. Any other failure exits non-zero and the runner
- * retries as the binding says.
+ * A blueprint that fails the schema is still printed, as it was checked, so the
+ * command that ran the wrapper keeps it and its mechanical check says why it
+ * failed, as it does for the agent backend; the envelope then also carries
+ * `raw`, the model's own text, for the attempt's stdout log. Any other failure
+ * exits non-zero and the runner retries as the binding says.
  */
 
 import fs from "node:fs/promises";

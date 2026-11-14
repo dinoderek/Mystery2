@@ -7,7 +7,8 @@
 #   $2 — path to the user message JSON ({ story_brief, instructions })
 #
 #   stdout — { "result": "<blueprint JSON>" }, which the binding's extract_path
-#            reads.
+#            reads; a blueprint that fails the schema adds "raw", the model's
+#            own text, kept only in the attempt's stdout log.
 #
 # Env from the evaluation core: EVAL_MODEL, the OpenRouter model id.
 # Env from the command: OPENROUTER_API_KEY. Optional: AI_OPENROUTER_TIMEOUT_MS

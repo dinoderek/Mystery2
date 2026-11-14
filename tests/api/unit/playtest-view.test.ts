@@ -1,10 +1,9 @@
-// The playtest investigator's inputs are routed like the browser's, and what it
-// is shown is what a player sees — built from session state, never the
-// blueprint.
+// What the playtest investigator is shown is what a player sees — built from
+// session state, never the blueprint. (What a typed line means is the engine's
+// grammar, tested beside it.)
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveInput } from '../../../evaluation/playtest/lib/commands.mjs';
 import { buildView } from '../../../evaluation/playtest/lib/view.mjs';
 
 // The shape `game-get` returns (see packages/game-engine/src/endpoints/game-get.ts).
@@ -35,64 +34,6 @@ function state(overrides: Record<string, unknown> = {}) {
 		...overrides
 	};
 }
-
-describe('playtest input routing', () => {
-	it('sends explore commands to their endpoints with ids, not names', () => {
-		expect(resolveInput('talk to alice', state(), 'g1')).toMatchObject({
-			kind: 'call',
-			endpoint: 'game-talk',
-			body: { game_id: 'g1', character_id: 'char-alice' }
-		});
-		expect(resolveInput('go to the living room', state(), 'g1')).toMatchObject({
-			endpoint: 'game-move',
-			body: { destination: 'loc-living-room' }
-		});
-		expect(resolveInput('search', state(), 'g1')).toMatchObject({
-			endpoint: 'game-search',
-			body: { search_query: null }
-		});
-		expect(resolveInput('accuse Alice because of the crumbs', state(), 'g1')).toMatchObject({
-			endpoint: 'game-accuse',
-			body: { player_reasoning: 'Alice because of the crumbs' }
-		});
-	});
-
-	it('routes free text by mode: a question in talk mode, reasoning in accuse mode', () => {
-		const talking = state({ mode: 'talk', current_talk_character: 'char-alice' });
-		expect(resolveInput('Where were you?', talking, 'g1')).toMatchObject({
-			endpoint: 'game-ask',
-			body: { player_input: 'Where were you?' }
-		});
-		expect(resolveInput('bye', talking, 'g1')).toMatchObject({ endpoint: 'game-end-talk' });
-
-		expect(resolveInput('It was Alice.', state({ mode: 'accuse' }), 'g1')).toMatchObject({
-			endpoint: 'game-accuse',
-			body: { player_reasoning: 'It was Alice.' }
-		});
-	});
-
-	it('answers what the parser rejects with the UI wording, and stops on quit', () => {
-		expect(resolveInput('talk to Bob', state(), 'g1')).toMatchObject({
-			kind: 'feedback',
-			text: '"bob" is not a valid character. Try: Alice Smith.'
-		});
-		expect(resolveInput('go to', state(), 'g1')).toMatchObject({
-			kind: 'feedback',
-			text: expect.stringMatching(/^Where to\? Try: Kitchen, Living Room/)
-		});
-		expect(resolveInput('dance', state(), 'g1')).toMatchObject({
-			kind: 'feedback',
-			text: expect.stringContaining('Commands: move to/go to <location>')
-		});
-		expect(resolveInput('notebook', state(), 'g1')).toMatchObject({ kind: 'feedback', echo: false });
-		expect(resolveInput('help', state(), 'g1')).toMatchObject({
-			kind: 'feedback',
-			echo: true,
-			text: expect.stringMatching(/^Help menu opened\. Commands: move to\/go to <location>/)
-		});
-		expect(resolveInput('quit', state(), 'g1')).toEqual({ kind: 'quit' });
-	});
-});
 
 describe('playtest player view', () => {
 	it('shows the status line, the notebook and the story so far', () => {

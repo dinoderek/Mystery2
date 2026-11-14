@@ -1,14 +1,6 @@
-export type InvestigatorAction =
-  | "move"
-  | "search"
-  | "talk"
-  | "ask"
-  | "end_talk"
-  | "accuse_reasoning";
-
+/** One typed line, as the player would type it, and the mode it should leave the game in. */
 export interface InvestigatorStep {
-  action: InvestigatorAction;
-  payload: Record<string, unknown>;
+  input: string;
   expect_mode?: "explore" | "talk" | "accuse" | "ended";
 }
 
@@ -25,46 +17,31 @@ export const investigatorScript: InvestigatorScriptCase = {
   max_turns: 10,
   steps: [
     {
-      action: "move",
-      payload: { destination: "loc-kitchen" },
+      input: "go to kitchen",
       expect_mode: "explore",
     },
     {
-      action: "search",
-      payload: {},
+      input: "search",
       expect_mode: "explore",
     },
     {
-      action: "talk",
-      payload: { character_id: "char-alice" },
+      input: "talk to alice",
       expect_mode: "talk",
     },
     {
-      action: "ask",
-      payload: {
-        player_input: "Where were you when the cookies disappeared?",
-      },
+      input: "Where were you when the cookies disappeared?",
       expect_mode: "talk",
     },
     {
-      action: "end_talk",
-      payload: {},
+      input: "bye",
       expect_mode: "explore",
     },
     {
-      action: "accuse_reasoning",
-      payload: {
-        player_reasoning:
-          "I accuse Alice. She looked nervous near the cookie jar.",
-      },
+      input: "accuse Alice. She looked nervous near the cookie jar.",
       expect_mode: "accuse",
     },
     {
-      action: "accuse_reasoning",
-      payload: {
-        player_reasoning:
-          "Alice had motive, opportunity, and clues place her at the scene.",
-      },
+      input: "Alice had motive, opportunity, and clues place her at the scene.",
       expect_mode: "ended",
     },
   ],

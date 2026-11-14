@@ -64,7 +64,7 @@ export function summarizeGame({
     steps: game.steps.length,
     turns_used: blueprint.metadata.time_budget - game.finalState.time_remaining,
     time_budget: blueprint.metadata.time_budget,
-    parser_rejections: game.steps.filter((step) => step.action.kind === "feedback").length,
+    parser_rejections: game.steps.filter((step) => step.action.kind === "refused" || step.action.kind === "view").length,
     failed_calls: game.steps.filter((step) => step.response && !step.response.ok).length,
     clues_found: found.length,
     clues_total: countBlueprintClues(blueprint),

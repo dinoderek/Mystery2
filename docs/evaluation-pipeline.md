@@ -16,7 +16,7 @@ How they connect:
 - **Trace** reuses the blueprint pipeline's CLI runner, timing, result
   combination and dimension convention, and rebuilds what the narrator saw with
   the runtime's own context builders.
-- **Runtime** makes one `game-*` interaction deterministic — same input across
+- **Runtime** makes one interaction deterministic — same input across
   runs and models — by fixing the prior state and history. It collects
   narration from the real endpoint or by replaying the real prompt through a
   local CLI, and grades it with `flesch` (Flesch–Kincaid for the target age),
@@ -28,8 +28,8 @@ How they connect:
   in play can be frozen into a runtime case and re-judged against another model
   by the same standard (`evaluation/judges/README.md`).
 - **Playtest** produces sessions rather than grades: an AI investigator plays
-  through the real server and parser, and each game leaves a transcript and a
-  replayable script. `--judge` hands the games to trace.
+  through the real server, sending each typed line to `game-turn`, and each game
+  leaves a transcript and a replayable script. `--judge` hands the games to trace.
 
 The rest of this doc is the blueprint pipeline's design, which the others
 inherit.

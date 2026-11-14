@@ -33,12 +33,12 @@ read one game's `game-<n>/transcript.md`.
   from the session state the API returns to the browser, with the web app's own
   notebook helpers (`web/src/lib/domain/notebook.ts`), never from the
   blueprint.
-- **Input is handled as the browser handles it.** The line goes through the
-  UI's parser (`web/src/lib/domain/parser.ts`); a line it rejects gets the UI's
-  hint and costs no turn. Routing (`lib/commands.mjs`) mirrors
-  `getBackendInvocation` in `web/src/lib/domain/store.svelte.ts`, and failed
-  calls are retried by the store's own rule
-  (`web/src/lib/domain/store.retry.ts`). Keep the two in step.
+- **The engine reads every line.** The line is posted as typed to `game-turn`,
+  which parses it with the engine's grammar and answers one of four kinds:
+  `turn` (played, one turn spent), `refused` (its hint, no turn), `view` (help
+  or the notebook, no turn; the investigator is told in a line) or `quit`. No
+  UI parser is imported; failed calls are retried by the web store's own rule
+  (`web/src/lib/domain/store.retry.ts`).
 - **No hidden memory.** Each investigator call gets the whole view and history,
   so any step can be read back from `steps.jsonl`.
 
@@ -61,7 +61,7 @@ side by side, then each game turn by turn, with every judge finding beside the
 turn it cites, the clues each turn recorded and each narration's reading level.
 Its turns come from `game.db`, numbered as the judges cite them, and each
 input and plan is matched from `steps.jsonl` by the narration it got back; a
-line the parser rejected shows where it was typed. The run writes it last.
+line that played nothing shows where it was typed. The run writes it last.
 `eval:playtest:report` rebuilds it, for a run graded by hand afterwards.
 
 ## Replay

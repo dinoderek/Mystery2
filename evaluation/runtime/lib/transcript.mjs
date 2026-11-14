@@ -4,7 +4,7 @@
 // Every model backend produces the same shape, so judges are backend-agnostic.
 //
 // Response = {
-//   action:          string,        // move | search | talk | ask | accuse
+//   action:          string,        // start | move | search | talk | ask | end_talk | accuse
 //   request:         object,        // the body/params sent for this action (verbatim)
 //   narration_parts: Array<{ text, speaker }>,
 //   narration_text:  string,        // parts' text joined with "\n\n"
@@ -15,15 +15,18 @@
 
 /**
  * Pull the narration parts out of a raw endpoint response. game-start and
- * game-get nest parts under narration_events[]; every turn endpoint returns
- * narration_parts at the top level.
+ * game-get nest parts under narration_events[], game-turn under events[]; a
+ * bare narration_parts at the top level is still read.
  */
 export function extractNarrationParts(action, data) {
   if (data && Array.isArray(data.narration_parts)) {
     return data.narration_parts;
   }
-  if (data && Array.isArray(data.narration_events)) {
-    return data.narration_events.flatMap((event) =>
+  // A played turn lists the action's event first; anything after it (the
+  // narration of a forced ending) is not the action under test.
+  const events = Array.isArray(data?.events) ? data.events.slice(0, 1) : data?.narration_events;
+  if (Array.isArray(events)) {
+    return events.flatMap((event) =>
       Array.isArray(event?.narration_parts) ? event.narration_parts : [],
     );
   }

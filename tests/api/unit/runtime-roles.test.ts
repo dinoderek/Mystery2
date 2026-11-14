@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { interpretLine, type GrammarState } from "../../../packages/game-engine/src/command-grammar.ts";
+import type { GameMode } from "../../../packages/game-engine/src/state-machine.ts";
+
 import {
   ACTIONS,
   characterFirstName,
@@ -111,48 +114,23 @@ describe("ACTIONS registry", () => {
     expect(ACTIONS.accuse.requiredMode).toBe("accuse");
   });
 
-  it("routes every action to its named endpoint via POST", () => {
-    expect(ACTIONS.talk.endpoint.name).toBe("game-talk");
-    expect(ACTIONS.ask.endpoint.name).toBe("game-ask");
-    expect(ACTIONS.move.endpoint.name).toBe("game-move");
-    expect(ACTIONS.search.endpoint.name).toBe("game-search");
-    expect(ACTIONS.accuse.endpoint.name).toBe("game-accuse");
-    for (const type of ["talk", "ask", "move", "search", "accuse"] as const) {
+  it("sends every turn action to game-turn via POST, and start to game-start", () => {
+    for (const type of ["talk", "ask", "end_talk", "move", "search", "accuse"] as const) {
+      expect(ACTIONS[type].endpoint.name).toBe("game-turn");
       expect(ACTIONS[type].endpoint.method).toBe("POST");
     }
+    expect(ACTIONS.start.endpoint.name).toBe("game-start");
   });
 
-  it("builds endpoint bodies from the game id and action fields", () => {
-    const gid = "g1";
-    expect(ACTIONS.talk.endpoint.body({}, { character_id: "c1" }, gid)).toEqual({
-      game_id: gid,
-      character_id: "c1",
-    });
-    expect(ACTIONS.ask.endpoint.body({}, { player_input: "who?" }, gid)).toEqual({
-      game_id: gid,
-      player_input: "who?",
-    });
-    expect(ACTIONS.move.endpoint.body({}, { destination: "l2" }, gid)).toEqual({
-      game_id: gid,
-      destination: "l2",
-    });
-    expect(ACTIONS.search.endpoint.body({}, {}, gid)).toEqual({ game_id: gid });
-  });
-
-  it("omits the accusation history mode from the accuse body unless supplied", () => {
-    const base = ACTIONS.accuse.endpoint.body({}, { player_reasoning: "r" }, "g1");
-    expect(base).toEqual({ game_id: "g1", player_reasoning: "r" });
-    expect(base).not.toHaveProperty("accusation_history_mode");
-
-    const withMode = ACTIONS.accuse.endpoint.body(
-      {},
-      { player_reasoning: "r", accusation_history_mode: "full" },
-      "g1",
-    );
-    expect(withMode).toEqual({
+  it("builds the request from the game id and the typed line", () => {
+    const given = { mode: "explore", location_id: "l1", time_remaining: 9 };
+    expect(ACTIONS.move.endpoint.body(given, { type: "move", destination: "l2" }, "g1")).toEqual({
       game_id: "g1",
-      player_reasoning: "r",
-      accusation_history_mode: "full",
+      input: "move to l2",
+    });
+    expect(ACTIONS.search.endpoint.body(given, { type: "search" }, "g1")).toEqual({
+      game_id: "g1",
+      input: "search",
     });
   });
 
@@ -244,22 +222,97 @@ describe("ACTIONS local-replay mapping", () => {
     expect(judge.player_input).toBe("It was Ann");
     expect(judge.round).toBe(1);
   });
+});
 
-  it("omits player_reasoning from the accuse body when opening the scene", () => {
-    const given = { mode: "accuse", location_id: "l1", time_remaining: 5 };
-    expect(ACTIONS.accuse.endpoint.body(given, { type: "accuse" }, "g1")).toEqual({
-      game_id: "g1",
+// Every structured action is sent as the line a player would type, and the
+// engine's grammar must read that line back as the same action.
+describe("typed lines for structured actions", () => {
+  const blueprint = {
+    world: {
+      locations: [
+        { id: "loc-kitchen", name: "Kitchen" },
+        { id: "loc-living-room", name: "Living Room" },
+      ],
+      characters: [
+        { id: "char-alice", first_name: "Alice", last_name: "Smith", location_id: "loc-kitchen" },
+        { id: "char-bob", first_name: "Bob", last_name: "Jones", location_id: "loc-living-room" },
+      ],
+    },
+  };
+  const grammarState = (mode: GameMode, location: string): GrammarState => ({
+    mode,
+    location,
+    locations: blueprint.world.locations,
+    characters: blueprint.world.characters.map((c) => ({ ...c, location_name: c.location_id })),
+  });
+  const lineFor = (given: Record<string, unknown>, action: Record<string, unknown>) =>
+    ACTIONS[action.type as keyof typeof ACTIONS].line(given, action, blueprint);
+  const readBack = (given: { mode: GameMode; location_id: string }, action: Record<string, unknown>) =>
+    interpretLine(lineFor(given, action), grammarState(given.mode, given.location_id));
+
+  const explore = { mode: "explore" as const, location_id: "loc-kitchen", time_remaining: 9 };
+  const talking = { ...explore, mode: "talk" as const, talk_character_id: "char-alice" };
+  const accusing = { ...explore, mode: "accuse" as const };
+
+  it("reads a move back as a move to the same place", () => {
+    expect(readBack(explore, { type: "move", destination: "loc-living-room" })).toEqual({
+      kind: "action",
+      action: { type: "move", destination: "loc-living-room" },
     });
   });
 
-  it("passes a search query through to the endpoint body", () => {
-    const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
-    expect(
-      ACTIONS.search.endpoint.body(given, { type: "search", search_query: "the shelf" }, "g1"),
-    ).toEqual({ game_id: "g1", search_query: "the shelf" });
-    expect(ACTIONS.search.endpoint.body(given, { type: "search" }, "g1")).toEqual({
-      game_id: "g1",
+  it("names a character by the name the blueprint gives", () => {
+    expect(lineFor(explore, { type: "talk", character_id: "char-alice" })).toBe("talk to Alice Smith");
+    expect(readBack(explore, { type: "talk", character_id: "char-alice" })).toEqual({
+      kind: "action",
+      action: { type: "talk", character_id: "char-alice" },
     });
+    expect(() => lineFor(explore, { type: "talk", character_id: "char-nobody" })).toThrow(
+      'Character "char-nobody" is not in the blueprint',
+    );
+  });
+
+  it("reads a search with and without a query", () => {
+    expect(readBack(explore, { type: "search" })).toEqual({
+      kind: "action",
+      action: { type: "search", query: null },
+    });
+    expect(readBack(explore, { type: "search", search_query: "the shelf" })).toEqual({
+      kind: "action",
+      action: { type: "search", query: "the shelf" },
+    });
+  });
+
+  it("reads a question and a farewell in a conversation", () => {
+    expect(readBack(talking, { type: "ask", player_input: "Where were you?" })).toEqual({
+      kind: "action",
+      action: { type: "ask", question: "Where were you?" },
+    });
+    expect(readBack(talking, { type: "end_talk" })).toEqual({
+      kind: "action",
+      action: { type: "end_talk" },
+    });
+  });
+
+  it("opens an accusation from explore, with or without reasoning", () => {
+    expect(readBack(explore, { type: "accuse" })).toEqual({
+      kind: "action",
+      action: { type: "accuse", reasoning: null },
+    });
+    expect(readBack(explore, { type: "accuse", player_reasoning: "It was Alice." })).toEqual({
+      kind: "action",
+      action: { type: "accuse", reasoning: "It was Alice." },
+    });
+  });
+
+  it("sends reasoning on its own once the accusation is open", () => {
+    expect(lineFor(accusing, { type: "accuse", player_reasoning: "It was Alice." })).toBe("It was Alice.");
+    expect(readBack(accusing, { type: "accuse", player_reasoning: "It was Alice." })).toEqual({
+      kind: "action",
+      action: { type: "ask", question: "It was Alice." },
+    });
+    // No line reopens an accusation that is already open.
+    expect(() => lineFor(accusing, { type: "accuse" })).toThrow("needs player_reasoning");
   });
 });
 

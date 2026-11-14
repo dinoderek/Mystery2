@@ -1,8 +1,9 @@
 // Endpoint model backend (deterministic single-event).
 //
-// Seeds a fully-specified session + fixed history into the database, then calls
-// the ONE endpoint for the case's action. The exception is `start`, which creates
-// the session itself (action.createsSession). The server rebuilds the exact runtime
+// Seeds a fully-specified session + fixed history into the database, then sends
+// the case's action to the server as the line a player would type, to
+// `game-turn`. The exception is `start`, which creates the session itself
+// (action.createsSession) through `game-start`. The server rebuilds the exact runtime
 // context from the seeded rows, so the input is identical every run and across
 // models — the only variable is the model behind the session's ai_profile
 // (`mock` for plumbing/CI, or an `openrouter` profile reaching openai/* or
@@ -35,9 +36,22 @@ async function callEndpoint(apiUrl, endpoint, method, body, headers) {
   return data;
 }
 
+// `game-turn` answers a line that played nothing (refused, a view, quit) with a
+// 200 that carries no narration. For a case that is an error: the line the
+// harness built did not mean the action under test.
+function assertTurnPlayed(data, body) {
+  if (data?.kind === undefined || data.kind === "turn") return;
+  const why = data.kind === "refused" ? `: ${data.hint}` : "";
+  throw new Error(`game-turn did not play "${body.input}" (answered ${data.kind})${why}`);
+}
+
 export async function collect(testCase, ctx) {
   const env = ctx.env;
   const action = getAction(testCase.action.type);
+  if (testCase.action.accusation_history_mode) {
+    // A typed line cannot carry it; only the cli backends honour it.
+    throw new Error("accusation_history_mode is not supported by the endpoint backend");
+  }
   const aiProfile = ctx.aiProfile ?? testCase.aiProfile ?? "default";
 
   const { blueprint, blueprintPath } = await ensureBlueprintSeeded(testCase.blueprint.path);
@@ -66,6 +80,7 @@ export async function collect(testCase, ctx) {
       body,
       auth.headers,
     );
+    if (action.endpoint.name === "game-turn") assertTurnPlayed(data, body);
 
     const response = makeResponse({
       action: testCase.action.type,

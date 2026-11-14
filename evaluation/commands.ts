@@ -3,9 +3,16 @@
  * `EvalCommand` (`core/dispatch.ts`); adding one is an entry here.
  */
 
+import { judgeBlueprintCommand, validateCommand } from "./blueprint/commands.ts";
 import type { EvalCommand } from "./core/dispatch.ts";
 import { casesCommand } from "./runtime/cases.ts";
 import { judgeTurnCommand } from "./runtime/judge-turn.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
-export const COMMANDS: readonly EvalCommand[] = [judgeGame, judgeTurnCommand, casesCommand];
+export const COMMANDS: readonly EvalCommand[] = [
+  judgeBlueprintCommand,
+  validateCommand,
+  judgeGame,
+  judgeTurnCommand,
+  casesCommand,
+];

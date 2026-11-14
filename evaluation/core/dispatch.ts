@@ -11,7 +11,7 @@
  * broke the run, which is exit code 1.
  */
 
-import { ConfigError, UsageError } from "./errors.ts";
+import { ConfigError, InputError, UsageError } from "./errors.ts";
 import { EXIT_PASSED, EXIT_RUN_BROKE } from "./result.ts";
 
 export interface EvalContext {
@@ -88,7 +88,7 @@ export async function runEval(
   } catch (error) {
     if (error instanceof UsageError) {
       context.err(`eval ${command.name}: ${error.message}\n\n${command.help}`);
-    } else if (error instanceof ConfigError) {
+    } else if (error instanceof ConfigError || error instanceof InputError) {
       context.err(`eval ${command.name}: ${error.message}`);
     } else {
       context.err(`eval ${command.name}: the run broke: ${(error as Error)?.stack ?? String(error)}`);

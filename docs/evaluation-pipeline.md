@@ -48,9 +48,9 @@ cheap to change:
    to fabricate.
 2. **A new quality dimension is files and a registry entry, not code.**
 3. **No LLM SDK.** Every model call is a subprocess, so the pipeline runs
-   against any CLI bound in `evaluation/config/cli.json`.
+   against any CLI bound in `evaluation/config.json`.
 4. **Parallel.** Wall-clock time is the slowest judge, not their sum.
-5. **Legible under failure.** A run that aborts still writes its envelope, with
+5. **Legible under failure.** A run that aborts still writes its result, with
    per-attempt logs.
 
 ## Three tiers of check
@@ -79,23 +79,23 @@ summary counts them; consumers decide what is ship-ready.
 
 ## Stages
 
-`evaluation/pipeline/run.mjs`:
+`./dev eval judge blueprint` (`evaluation/blueprint/`), on the core
+(`evaluation/core/`):
 
-1. **Load** the brief (`--spec` takes a spec directory or a brief file). Which
-   dimensions run, and their context, comes from the registry
-   (`evaluation/core/registry.ts`), the same battery for every blueprint.
-2. **Generate**, or read `--blueprint`. The result must parse as
-   `BlueprintV2Schema`; if not, the run stops, still writing its envelope with
-   `run_error.stage`.
-3. **Mechanical checks**, including that the clue discovery graph is acyclic,
+1. **Load** the blueprint and its brief. The registry
+   (`evaluation/core/registry.ts`) sets the dimensions and their context: the
+   same battery for every blueprint.
+2. **Mechanical checks**, including that the clue discovery graph is acyclic,
    references real clues, and reaches every solution clue from an ungated root.
    A failure does not stop the dimensions: judges often find the same problem
-   from another angle.
-4. **Dimensions**, all in parallel. Within one, the analyzer runs before the
+   from another angle. `./dev eval validate` runs these alone.
+3. **Dimensions**, all in parallel. Within one, the analyzer runs before the
    judge, and an analyzer error skips only that dimension's judge.
 
-`scripts/generate-blueprint.mjs` runs the same mechanical checks in-process
-after every generation, so the two cannot drift.
+`npm run eval` first generates the blueprint (`evaluation/pipeline/run.mjs`);
+one that fails `BlueprintV2Schema` stops the run with `run_error.stage`.
+`scripts/generate-blueprint.mjs` runs the same mechanical checks, so the two
+cannot drift.
 
 ## Workspaces
 
@@ -106,7 +106,7 @@ iterates until its output validates.
 
 | Harness | Template | Output | Validator |
 |---|---|---|---|
-| Generator | `evaluation/generator-harness/template/` | `blueprint.json` | `scripts/validate-blueprint.mjs` |
+| Generator | `evaluation/generator-harness/template/` | `blueprint.json` | `evaluation/generator-harness/scripts/validate-blueprint.mjs` |
 | Judge | `evaluation/judge-harness/template/` | `verdict.json` | `evaluation/judge-harness/scripts/validate-judge-output.mjs` |
 
 - **Self-correction.** An agent that runs its own validator fixes schema
@@ -123,9 +123,9 @@ The generator workspace gets **curated extracts** of the repo docs rather than
 the docs, pinned to the sections they summarise and checked by the gate
 (`evaluation/generator-harness/template/README.md`).
 
-Runs are written outside the repo, one self-contained directory each, with the
-agents' workspaces kept, so a failure stays debuggable. The layout, the
-envelope's fields, timing and retry settings are in `evaluation/README.md`.
+Runs are written outside the repo, one directory each, with the agents'
+workspaces kept, so a failure stays debuggable; `evaluation/README.md` has the
+layout, result, timing and retries.
 
 ## Dimensions
 

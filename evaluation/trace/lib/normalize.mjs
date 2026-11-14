@@ -13,6 +13,8 @@
 // the CLI wiring in extract.mjs, which keeps this normalization unit-testable
 // without a database.
 
+import { playedEvents } from "../../lib/game-events.mjs";
+
 export const TRACE_SCHEMA_VERSION = "trace/0.1";
 
 // Fields we copy off an AI profile. Deliberately excludes openrouter_api_key
@@ -97,7 +99,7 @@ export function buildRawTrace({
     throw new Error("buildRawTrace: blueprint JSON is required");
   }
 
-  const orderedEvents = events
+  const orderedEvents = playedEvents(events)
     .map(normalizeEvent)
     .sort((a, b) => a.sequence - b.sequence);
 

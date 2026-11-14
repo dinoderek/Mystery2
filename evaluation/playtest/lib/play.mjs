@@ -53,7 +53,7 @@ function turnEntries(body) {
  */
 function feedbackFor(body) {
   if (body.kind === "refused") return { echo: true, text: body.hint };
-  if (body.view === "help") return { echo: true, text: "Help menu opened." };
+  if (body.view === "help") return { echo: true, text: body.note };
   return {
     echo: false,
     text: body.section

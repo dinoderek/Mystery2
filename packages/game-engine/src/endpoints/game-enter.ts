@@ -34,6 +34,7 @@ import {
   logNarrationEventSaved,
 } from "../narration.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
+import { nextSequenceAfter, playedEvents } from "../turn/no-turn.ts";
 
 export async function handle(
   req: Request,
@@ -62,7 +63,8 @@ export async function handle(
     const existingEvents = await ctx.events.listBySession(gameId);
 
     const events = existingEvents ?? [];
-    if (events.length !== 1 || events[0].event_type !== "start") {
+    const played = playedEvents(events);
+    if (played.length !== 1 || played[0].event_type !== "start") {
       log("request.invalid", {
         reason: "already_entered",
         game_id: gameId,
@@ -156,7 +158,7 @@ export async function handle(
 
     // The arrival costs no turn, so the session patch is empty; the save still
     // refuses a second arrival that raced this one.
-    const sequence = events.length + 1;
+    const sequence = nextSequenceAfter(events);
     await ctx.sessions.saveTurn({
       game_id: gameId,
       expected_sequence: sequence,

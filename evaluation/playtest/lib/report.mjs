@@ -19,6 +19,8 @@ import url from "node:url";
 
 import Database from "better-sqlite3";
 
+import { playedEvents } from "../../lib/game-events.mjs";
+
 const TEMPLATE = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "report-template.html");
 
 function readJson(file) {
@@ -84,6 +86,7 @@ function readEvents(db, gameId) {
       "select sequence, event_type, payload, narration_parts from game_events where session_id = ? order by sequence",
     )
     .all(gameId)
+    .filter((row) => playedEvents([row]).length > 0)
     .map((row) => ({
       sequence: row.sequence,
       type: row.event_type,

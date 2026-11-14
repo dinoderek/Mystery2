@@ -90,8 +90,11 @@ describe('playtest report', () => {
 
 		// Every event once, in order; a line that played nothing (refused, or the
 		// help view) sits where it was typed, with its text, and has no event.
+		// The game saved those two lines too, which is why the numbers skip.
 		const sequences = turns.map((turn) => turn.seq).filter((seq) => seq !== null);
-		expect(sequences).toEqual(sequences.map((_, index) => index + 1));
+		expect(sequences).toEqual([...sequences].sort((a, b) => a - b));
+		expect(new Set(sequences).size).toBe(sequences.length);
+		expect(turns.map((turn) => turn.type)).not.toContain('no_turn_line');
 		const rejected = turns.find((turn) => turn.input === 'serch the pantry');
 		expect(rejected).toMatchObject({ seq: null, type: 'feedback', note: { kind: 'feedback' } });
 		expect(turns.indexOf(rejected!)).toBeGreaterThan(turns.findIndex((turn) => turn.input === 'search'));

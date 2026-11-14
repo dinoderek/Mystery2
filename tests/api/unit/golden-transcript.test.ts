@@ -138,8 +138,8 @@ describe("TurnDriver", () => {
 
   it("opens help with its note and the notebook without one", async () => {
     answering(
-      { kind: "view", view: "help", section: null },
-      { kind: "view", view: "locations", section: "places" },
+      { kind: "view", view: "help", section: null, note: "Help menu opened." },
+      { kind: "view", view: "locations", section: "places", note: null },
       { kind: "quit" },
     );
     const d = driver();

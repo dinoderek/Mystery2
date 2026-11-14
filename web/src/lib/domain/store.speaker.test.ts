@@ -95,7 +95,7 @@ describe('store speaker behavior', () => {
   it('shows a refusal and help as system lines, and sends nothing but the line', async () => {
     const store = createStore();
 
-    invokeMock.mockResolvedValueOnce({ data: createTurnViewResponse({ view: 'help' }), error: null });
+    invokeMock.mockResolvedValueOnce({ data: createTurnViewResponse({ view: 'help', note: 'Help menu opened.' }), error: null });
     await store.submitInput('help');
     invokeMock.mockResolvedValueOnce({
       data: createTurnRefusedResponse({ reason: 'invalid-target', hint: '"nowhere" is not a valid destination.' }),

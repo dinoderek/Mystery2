@@ -125,9 +125,11 @@ export const TurnPlayedResponseSchema = z.object({
   result: OutcomeSchema.nullable(),
 });
 
+export const RefusalReasonSchema = z.enum(["missing-target", "invalid-target", "unrecognized"]);
+
 export const TurnRefusedResponseSchema = z.object({
   kind: z.literal("refused"),
-  reason: z.enum(["missing-target", "invalid-target", "unrecognized"]),
+  reason: RefusalReasonSchema,
   /** What the player reads. */
   hint: z.string().min(1),
 });
@@ -139,6 +141,8 @@ export const TurnViewResponseSchema = z.object({
   view: z.enum(["help", "notebook", "locations", "characters"]),
   /** The notebook section to open at, if the line named one. */
   section: NotebookSectionSchema.nullable(),
+  /** The line the game adds to the transcript when the view opens; null when it adds none. */
+  note: z.string().min(1).nullable(),
 });
 
 export const TurnQuitResponseSchema = z.object({
@@ -151,6 +155,25 @@ export const GameTurnResponseSchema = z.discriminatedUnion("kind", [
   TurnViewResponseSchema,
   TurnQuitResponseSchema,
 ]);
+
+// --- lines that cost no turn ---
+//
+// A refused line, and `help`, are saved as one event of this type: the line as
+// typed, and the answer the player read as its one narration part. Saving one
+// spends no turn and changes nothing in the session, so a resumed game shows
+// what the live game showed. Readers that follow what the game master did skip
+// it.
+
+export const NO_TURN_EVENT_TYPE = "no_turn_line";
+
+export const NoTurnLinePayloadSchema = z.object({
+  /** The line exactly as the player typed it. */
+  input: z.string(),
+  /** Why nothing was played: the line was refused, or it asked for help. */
+  answered: z.enum(["refused", "help"]),
+  /** Set when `answered` is `refused`. */
+  reason: RefusalReasonSchema.optional(),
+});
 
 export const LocationSummarySchema = z.object({
   id: z.string().min(1),
@@ -336,6 +359,7 @@ export type ClueOrigin = z.infer<typeof ClueOriginSchema>;
 export type RevealedClue = z.infer<typeof RevealedClueSchema>;
 export type TurnState = z.infer<typeof TurnStateSchema>;
 export type TurnPlayedResponse = z.infer<typeof TurnPlayedResponseSchema>;
+export type NoTurnLinePayload = z.infer<typeof NoTurnLinePayloadSchema>;
 export type TurnRefusedResponse = z.infer<typeof TurnRefusedResponseSchema>;
 export type TurnViewResponse = z.infer<typeof TurnViewResponseSchema>;
 export type TurnQuitResponse = z.infer<typeof TurnQuitResponseSchema>;

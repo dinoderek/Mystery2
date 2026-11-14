@@ -23,6 +23,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { playedEvents } from "../lib/game-events.mjs";
+
 function parseArgs(argv) {
   const args = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
@@ -122,7 +124,7 @@ async function main() {
   await fs.writeFile(blueprintAbs, JSON.stringify(trace.blueprint, null, 2) + "\n");
   const blueprintPath = path.relative(process.cwd(), blueprintAbs);
 
-  const events = [...trace.events].sort((a, b) => a.sequence - b.sequence);
+  const events = playedEvents(trace.events).sort((a, b) => a.sequence - b.sequence);
   const cases = [];
   for (const type of types) {
     const targets = sampleEvenly(events.filter((e) => e.event_type === type), max);

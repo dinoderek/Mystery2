@@ -30,7 +30,6 @@ import { freshClues, linesOfTurn } from './turn-answer';
 
 export type SessionViewerMode = 'interactive' | 'read_only_completed';
 
-const HELP_NOTE = 'Help menu opened.';
 const QUIT_NOTE =
   'This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries.';
 const UNREADABLE_NOTE =
@@ -429,7 +428,9 @@ export class GameSessionStore {
   private showView(answer: TurnViewResponse, echo: number | null) {
     if (answer.view === 'help') {
       this.showHelp = true;
-      this.appendSystemFeedback(HELP_NOTE);
+      if (answer.note) {
+        this.appendSystemFeedback(answer.note);
+      }
       return;
     }
 

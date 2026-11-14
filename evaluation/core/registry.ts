@@ -332,7 +332,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
     type: "check",
     id: "flesch",
     subjects: ["turn"],
-    run: { module: "evaluation/runtime/lib/judges/flesch.mjs", export: "judge" },
+    run: { module: "evaluation/runtime/lib/flesch.ts", export: "judge" },
   },
   {
     // The blueprint dimension `age_appropriate` is a different judge: it reads

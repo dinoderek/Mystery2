@@ -4,5 +4,7 @@
  */
 
 import type { EvalCommand } from "./core/dispatch.ts";
+import { casesCommand } from "./runtime/cases.ts";
+import { judgeTurnCommand } from "./runtime/judge-turn.ts";
 
-export const COMMANDS: readonly EvalCommand[] = [];
+export const COMMANDS: readonly EvalCommand[] = [judgeTurnCommand, casesCommand];

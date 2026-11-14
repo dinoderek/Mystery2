@@ -6,7 +6,7 @@
 //   eval:trace --trace <game>/trace.json --output-root <game>/judge
 // which gives the mechanical checks and the four gm_* judges (one model call
 // each, plus a retry when one fails). Then every narration in the trace is
-// scored by the runtime harness's `flesch` judge against the blueprint's
+// scored by the runtime harness's `flesch` check against the blueprint's
 // target_age, with no model call.
 //
 // Each game folder gains trace.json, result.json (the trace pipeline's
@@ -18,8 +18,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { playedEvents } from "../../lib/game-events.mjs";
-import { judge as fleschJudge } from "../../runtime/lib/judges/flesch.mjs";
-import { partsToText } from "../../runtime/lib/transcript.mjs";
+import { judge as fleschJudge } from "../../runtime/lib/flesch.ts";
+import { partsToText } from "../../runtime/lib/transcript.ts";
 
 /** The trace judges' CLI binding, copied by hand from cli.example.json. */
 export function traceCliConfigPath(repoRoot) {
@@ -115,11 +115,11 @@ export function scoreReadability(trace, targetAge) {
         sequence: event.sequence,
         event_type: event.event_type,
         status: verdict.status,
-        grade: verdict.score,
+        grade: verdict.details.score,
         words: verdict.details.words ?? null,
         preview: verdict.details.preview ?? null,
         threshold: verdict.details.threshold ?? null,
-        parts: verdict.parts,
+        parts: verdict.details.parts ?? [],
       };
     });
   const grades = narrations.map((entry) => entry.grade).filter((grade) => grade !== null);

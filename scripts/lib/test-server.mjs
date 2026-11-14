@@ -20,7 +20,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { npmBin } from "./process.mjs";
-import { TEST_DATABASE, resolveDatabasesRoot } from "../../lib/database-target.mjs";
+import { TEST_DATABASE, resolveDatabaseFile, resolveDatabasesRoot } from "../../lib/database-target.mjs";
 
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
@@ -125,13 +125,17 @@ async function waitForReady(url, hasExited) {
 
 /**
  * Builds and starts the server. Returns its URL, the config root its database
- * lives in, and a `stop()` that shuts it down and removes the root.
+ * lives in, that database's file, and a `stop()` that shuts it down and removes
+ * the root.
+ *
+ * `build: false` starts the build that is already there, for a caller that
+ * runs beside a server of its own and must not rebuild under it.
  */
-export async function startTestServer({ repoRoot, port, env = {} }) {
+export async function startTestServer({ repoRoot, port, env = {}, build = true }) {
   const configRoot = createTestConfigRoot();
   const host = "127.0.0.1";
   try {
-    buildWebApp(repoRoot, configRoot);
+    if (build) buildWebApp(repoRoot, configRoot);
     await assertPortIsFree(host, port);
   } catch (error) {
     fs.rmSync(configRoot, { recursive: true, force: true });
@@ -186,5 +190,8 @@ export async function startTestServer({ repoRoot, port, env = {} }) {
     throw error;
   }
 
-  return { url, configRoot, stop };
+  // The config root stands in for the repo root here, with no environment,
+  // which is how the server resolved it.
+  const databaseFile = resolveDatabaseFile(TEST_DATABASE, configRoot, {});
+  return { url, configRoot, databaseFile, stop };
 }

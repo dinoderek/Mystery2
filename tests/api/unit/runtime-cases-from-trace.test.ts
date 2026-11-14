@@ -5,7 +5,7 @@ import {
   buildCase,
   historyPayload,
   sampleEvenly,
-} from "../../../evaluation/runtime/cases-from-trace.mjs";
+} from "../../../evaluation/runtime/cases.ts";
 
 // These helpers turn a collected game-master trace into deterministic
 // single-event runtime-eval cases. They run without a database or LLM, so we

@@ -1,6 +1,6 @@
 // Deterministic readability metrics shared across evaluation harnesses.
 //
-// Used by the runtime harness's `flesch` judge (scores live narration) and by
+// Used by the runtime harness's `flesch` check (scores live narration) and by
 // the blueprint pipeline's `age_appropriate` analyzer (scores authored
 // player-facing text). No LLM, no dependencies — fully reproducible.
 //

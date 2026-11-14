@@ -1,50 +1,30 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildJudgeUserMessage } from "../../../evaluation/runtime/lib/judges/adherence.mjs";
-import { getJudge, judgeIds, runJudges } from "../../../evaluation/runtime/lib/judges/index.mjs";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
+import { buildJudgeUserMessage, judgeTurn } from "../../../evaluation/runtime/lib/judges.ts";
+import type { BlueprintLike } from "../../../evaluation/runtime/lib/case.ts";
+import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
 
-// The gm_* judges run the SHARED briefs over one stored interaction. These
-// tests pin the runtime binding — projection, verdict mapping, error paths —
-// against the deterministic judge-stub wrapper, so they need no model and no
-// network. RUNTIME_JUDGE_STUB_VERDICT steers the stub's reply.
-const STUB = { cli: "judge-stub" };
+// The gm_* judges run the SHARED briefs over one stored turn. These tests pin
+// the runtime binding (projection, verdict mapping, error paths) against the
+// deterministic judge-stub wrapper, so they need no model and no network.
+// RUNTIME_JUDGE_STUB_VERDICT steers the stub's reply.
 
-// Untyped .mjs export; name it once so it.each() can infer the callback.
 const JUDGE_IDS: string[] = judgesFor("game").map((judge) => judge.id);
-
 const MOCK_BLUEPRINT = "blueprints/mock-blueprint.json";
+const logDir = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-adherence-judge-"));
 
-function makeInteraction(overrides: Record<string, unknown> = {}) {
-  return {
-    case_id: "ask-alice-pressure",
-    blueprint_path: MOCK_BLUEPRINT,
-    target_age: 10,
-    given: {
-      mode: "talk",
-      location_id: "loc-kitchen",
-      talk_character_id: "char-alice",
-      time_remaining: 7,
-      history: [
-        {
-          event_type: "ask",
-          actor: "system",
-          narration: '"I never went near the jar," Alice says.',
-          payload: {
-            character_id: "char-alice",
-            player_input: "Did you take the cookies?",
-            revealed_clue_ids: ["clue-crumb"],
-          },
-        },
-      ],
-    },
-    action: { type: "ask", player_input: "Then why are your hands shaking?" },
-    response: {
-      narration_text: '"They are not!" Alice says, sitting on her hands.',
-      raw: { narration: "…", revealed_clue_ids: [], revealed_off_script: [] },
-    },
-    ...overrides,
-  };
+function judge(id: string, turn = makeTurn(), options = {}) {
+  return judgeTurn([id], turn, {
+    root: process.cwd(),
+    binding: judgeStubBinding(),
+    logDir,
+    options: { [id]: options },
+  }).then(([verdict]) => verdict);
 }
 
 function verdict(overrides: Record<string, unknown> = {}) {
@@ -63,164 +43,115 @@ function finding(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const mockBlueprint = (): BlueprintLike => JSON.parse(fs.readFileSync(MOCK_BLUEPRINT, "utf8"));
+
 afterEach(() => {
   delete process.env.RUNTIME_JUDGE_STUB_VERDICT;
 });
 
-describe("adherence judges (stub CLI)", () => {
-  it("registers every shared judge in the runtime harness", () => {
-    expect(judgeIds()).toEqual(["flesch", "age_appropriate", ...JUDGE_IDS]);
+describe("adherence judges (stub binding)", () => {
+  it("shares the four game-master judges with the game harness", () => {
+    expect(JUDGE_IDS).toEqual(["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"]);
+    expect(judgesFor("turn").map((j) => j.id)).toEqual(expect.arrayContaining(JUDGE_IDS));
   });
 
-  it.each(JUDGE_IDS)("%s maps a clean verdict onto the judge contract", async (id: string) => {
-    const result = await getJudge(id).judge(makeInteraction(), { config: STUB });
-    expect(result.id).toBe(id);
-    expect(result.status).toBe("pass");
-    expect(result.score).toBe(0); // headline score is the major-finding count
-    expect(result.details.major_count).toBe(0);
-    expect(result.details.judge_model).toContain("judge-stub");
+  it.each(JUDGE_IDS)("%s maps a clean verdict onto the verdict contract", async (id: string) => {
+    const result = await judge(id);
+    expect(result).toMatchObject({ id, tier: "judge", status: "pass" });
+    expect(result.details).toMatchObject({ score: 0, major_count: 0 }); // the headline score is the major-finding count
+    expect(result.call?.binding).toBe("judge-stub");
   });
 
   it("fails on a major finding and keeps the finding detail", async () => {
-    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({
-      findings: [finding()],
-      verdict: "fail",
-      reasoning: "Out of character.",
-    });
-    const result = await getJudge("gm_roleplay").judge(makeInteraction(), { config: STUB });
+    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({ findings: [finding()], verdict: "fail", reasoning: "Out of character." });
+    const result = await judge("gm_roleplay");
     expect(result.status).toBe("fail");
-    expect(result.score).toBe(1);
-    expect(result.details.findings[0]).toMatchObject({ kind: "persona", refers_to: "char-alice" });
-    expect(result.details.reasoning).toBe("Out of character.");
+    expect(result.details).toMatchObject({ score: 1, reasoning: "Out of character." });
+    expect(result.findings?.[0]).toMatchObject({ kind: "persona", refers_to: "char-alice" });
   });
 
   it("passes when only minor findings were reported", async () => {
-    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({
-      findings: [finding({ severity: "minor" })],
-      verdict: "pass",
-    });
-    const result = await getJudge("gm_roleplay").judge(makeInteraction(), { config: STUB });
+    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({ findings: [finding({ severity: "minor" })], verdict: "pass" });
+    const result = await judge("gm_roleplay");
     expect(result.status).toBe("pass");
     expect(result.details).toMatchObject({ major_count: 0, minor_count: 1 });
   });
 
   it("lets a major finding overrule a 'pass' verdict, and records the disagreement", async () => {
     process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({ findings: [finding()], verdict: "pass" });
-    const result = await getJudge("gm_roleplay").judge(makeInteraction(), { config: STUB });
+    const result = await judge("gm_roleplay");
     expect(result.status).toBe("fail");
-    expect(result.details.model_verdict).toBe("pass");
-    expect(result.details.verdict_disagreement).toBe(true);
+    expect(result.details).toMatchObject({ model_verdict: "pass", verdict_disagreement: true });
   });
 
   it("errors when the judge output misses the schema", async () => {
-    // A kind from a sibling judge must not validate here: each judge's enum is
-    // its own contract.
-    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({
-      findings: [finding({ kind: "culprit" })],
-      verdict: "fail",
-    });
-    const result = await getJudge("gm_roleplay").judge(makeInteraction(), { config: STUB });
+    // A kind from a sibling judge must not validate here: each judge's enum is its own contract.
+    process.env.RUNTIME_JUDGE_STUB_VERDICT = verdict({ findings: [finding({ kind: "culprit" })], verdict: "fail" });
+    const result = await judge("gm_roleplay");
     expect(result.status).toBe("error");
-    expect(String(result.details.reason)).toContain("kind");
+    expect(result.reason).toContain("kind");
   });
 
   it("errors when the judge output is not JSON", async () => {
     process.env.RUNTIME_JUDGE_STUB_VERDICT = "not json at all";
-    const result = await getJudge("gm_spoiler").judge(makeInteraction(), { config: STUB });
+    const result = await judge("gm_spoiler");
     expect(result.status).toBe("error");
-    expect(result.score).toBeNull();
+    expect(result.call?.attempts[0].outcome).toBe("not_json");
   });
 
   it("errors without a blueprint, since the judgment is against the blueprint", async () => {
-    const result = await getJudge("gm_fabrication").judge(
-      makeInteraction({ blueprint_path: null }),
-      { config: STUB },
-    );
+    const result = await judge("gm_fabrication", makeTurn({ blueprint_path: null }));
     expect(result.status).toBe("error");
-    expect(String(result.details.reason)).toContain("blueprint");
+    expect(result.reason).toContain("blueprint");
+  });
+
+  it("takes the blueprint from the judge option when one is given", async () => {
+    const result = await judge("gm_fabrication", makeTurn({ blueprint_path: null }), { blueprintPath: MOCK_BLUEPRINT });
+    expect(result.status).toBe("pass");
   });
 
   it("errors on an empty narration instead of judging nothing", async () => {
-    const result = await getJudge("gm_spoiler").judge(
-      makeInteraction({ response: { narration_text: "  ", raw: {} } }),
-      { config: STUB },
-    );
+    const result = await judge("gm_spoiler", makeTurn({ response: { narration_text: "  ", raw: {} } }));
     expect(result.status).toBe("error");
-    expect(String(result.details.reason)).toContain("no narration");
+    expect(result.reason).toContain("no narration");
   });
 
-  it("runs alongside the readability judges through the registry", async () => {
-    const results = await runJudges(
-      ["flesch", "gm_roleplay", "gm_spoiler"],
-      makeInteraction(),
-      { gm_roleplay: STUB, gm_spoiler: STUB },
-    );
-    expect(results.map((r: { id: string }) => r.id)).toEqual([
-      "flesch",
-      "gm_roleplay",
-      "gm_spoiler",
-    ]);
-    expect(results.every((r: { status: string }) => r.status === "pass")).toBe(true);
+  it("runs alongside flesch, in the order named", async () => {
+    const results = await judgeTurn(["flesch", "gm_roleplay", "gm_spoiler"], makeTurn(), {
+      root: process.cwd(),
+      binding: judgeStubBinding(),
+      logDir,
+    });
+    expect(results.map((r) => r.id)).toEqual(["flesch", "gm_roleplay", "gm_spoiler"]);
+    expect(results.every((r) => r.status === "pass")).toBe(true);
   });
 });
 
 describe("buildJudgeUserMessage", () => {
-  it("hands the judge the blueprint and a one-judged-turn subject", async () => {
-    const blueprint = { metadata: { title: "Mock" } };
-    const message = JSON.parse(
-      buildJudgeUserMessage("gm_clue_discipline", makeInteraction(), blueprint),
-    );
+  it("hands the judge the blueprint and a one-judged-turn subject", () => {
+    const blueprint = { metadata: { title: "Mock" } } as unknown as BlueprintLike;
+    const message = JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn(), blueprint));
     expect(message.dimension_id).toBe("gm_clue_discipline");
     expect(message.blueprint).toEqual(blueprint);
     expect(message.subject.subject_kind).toBe("interaction");
     expect(message.subject.judged_sequences).toEqual([2]);
   });
 
-  it("labels the judged turn with the role the model actually ran as", async () => {
-    const blueprint = JSON.parse(
-      await (await import("node:fs/promises")).readFile(MOCK_BLUEPRINT, "utf-8"),
-    );
-
+  it("labels the judged turn with the role the model actually ran as", () => {
+    const blueprint = mockBlueprint();
+    const given = { mode: "explore", location_id: "loc-kitchen", history: [] };
     // A search WITH a query resolves to a different role than a bare one, and
-    // the label has to follow the same resolver the backends use.
-    const bare = JSON.parse(
-      buildJudgeUserMessage(
-        "gm_clue_discipline",
-        makeInteraction({
-          given: { mode: "explore", location_id: "loc-kitchen", history: [] },
-          action: { type: "search" },
-        }),
-        blueprint,
-      ),
-    );
-    const targeted = JSON.parse(
-      buildJudgeUserMessage(
-        "gm_clue_discipline",
-        makeInteraction({
-          given: { mode: "explore", location_id: "loc-kitchen", history: [] },
-          action: { type: "search", search_query: "look in the bin" },
-        }),
-        blueprint,
-      ),
-    );
-    expect(bare.subject.turns.at(-1).role_name).toBe("search_bare");
-    expect(targeted.subject.turns.at(-1).role_name).toBe("search_targeted");
+    // the label has to follow the same resolver the narrator replay uses.
+    const roleOf = (action: Record<string, unknown>) =>
+      JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn({ given, action }), blueprint)).subject.turns.at(-1).role_name;
+    expect(roleOf({ type: "search" })).toBe("search_bare");
+    expect(roleOf({ type: "search", search_query: "look in the bin" })).toBe("search_targeted");
   });
 
-  it("marks an accusation turn so the spoiler judge stands down", async () => {
-    const blueprint = JSON.parse(
-      await (await import("node:fs/promises")).readFile(MOCK_BLUEPRINT, "utf-8"),
-    );
-    const message = JSON.parse(
-      buildJudgeUserMessage(
-        "gm_spoiler",
-        makeInteraction({
-          given: { mode: "accuse", location_id: "loc-kitchen", history: [] },
-          action: { type: "accuse", player_reasoning: "It was Alice, the crumbs prove it." },
-        }),
-        blueprint,
-      ),
-    );
+  it("marks an accusation turn so the spoiler judge stands down", () => {
+    const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
+    const action = { type: "accuse", player_reasoning: "It was Alice, the crumbs prove it." };
+    const message = JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action }), mockBlueprint()));
     const judged = message.subject.turns.at(-1);
     expect(judged.role_name).toBe("accusation_judge");
     expect(judged.is_accusation_phase).toBe(true);

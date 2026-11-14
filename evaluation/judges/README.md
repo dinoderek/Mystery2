@@ -11,7 +11,7 @@ projects its own data into one shared subject:
 | `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | registry judges for a `turn` (`--judges`, or a case's `judges`) |
 
 So a failure found on a played trace can be frozen into a runtime case
-(`evaluation/runtime/cases-from-trace.mjs`) and re-judged by the same standard
+(`./dev eval cases`) and re-judged by the same standard
 against another model or prompt.
 
 ## The battery
@@ -83,17 +83,17 @@ judge in this battery without special-casing.
 Each judge is one model call per subject, and the four run in parallel. The
 trace pipeline runs all four on every trace (when its `cli.json` exists;
 otherwise each is `skipped`). The runtime harness would make four calls per
-case per backend, so there they are opt-in (`evaluation/runtime/README.md` →
+case per narrator, so there they are opt-in (`evaluation/runtime/README.md` →
 "What a run costs").
 
-For wiring checks with no model, use the deterministic `judge-stub`, which
+For wiring checks with no model, use the deterministic `judge-stub` binding, which
 emits a canned clean verdict:
 
 ```bash
-node evaluation/runtime/run.mjs <cases> --backend cli:stub --judges gm_spoiler
+./dev eval judge turn <cases> --narrator narrator-stub --judges gm_spoiler --judge-binding judge-stub
 ```
 
-with `judgeConfig: { gm_spoiler: { cli: "judge-stub" } }` on the case. The tests (`tests/api/unit/judges-*.test.ts`,
+The tests (`tests/api/unit/judges-*.test.ts`,
 `tests/api/unit/runtime-adherence-judge.test.ts`) cover the projection, the
 schemas and the verdict rule this way. Do not read `gm_roleplay` findings on
-the `cli:stub` narrator: its canned line is blueprint-blind.
+the `narrator-stub` narrator: its canned line is blueprint-blind.

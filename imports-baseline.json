@@ -17,8 +17,6 @@
   "no-cycles: packages/game-engine/src/ai-provider-claude-cli.ts -> packages/game-engine/src/ai-provider.ts (via packages/game-engine/src/ai-provider.ts > packages/game-engine/src/ai-provider-claude-cli.ts)",
   "no-cycles: packages/game-engine/src/context.ts -> packages/game-engine/src/narration.ts (via packages/game-engine/src/narration.ts > packages/game-engine/src/context.ts)",
   "play-database-path-only-in-trace-extractor: evaluation/playtest/run.mjs -> lib/database-target.mjs",
-  "play-database-path-only-in-trace-extractor: evaluation/runtime/lib/auth.mjs -> packages/game-engine/src/paths.ts",
-  "play-database-path-only-in-trace-extractor: evaluation/runtime/lib/seed-session.mjs -> packages/game-engine/src/paths.ts",
   "sqlite-driver-only-in-db-client: evaluation/playtest/lib/report.mjs -> node_modules/better-sqlite3/lib/index.js",
   "sqlite-driver-only-in-db-client: evaluation/playtest/run.mjs -> node_modules/better-sqlite3/lib/index.js"
 ]

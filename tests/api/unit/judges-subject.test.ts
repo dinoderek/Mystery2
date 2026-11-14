@@ -105,7 +105,7 @@ describe("projectInteractionSubject", () => {
 describe("revealedClueIdsFromResponse", () => {
   // The two backends report the model's clue decisions differently, and the
   // judge needs the same list from either.
-  it("reads the endpoint backend's accepted clue objects", () => {
+  it("reads the server narrator's accepted clue objects", () => {
     expect(
       revealedClueIdsFromResponse({
         raw: { revealed_clues: [{ id: "clue-crumb", text: "…" }, { id: "clue-wrapper" }] },

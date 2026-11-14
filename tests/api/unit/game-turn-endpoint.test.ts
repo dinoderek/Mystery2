@@ -98,6 +98,36 @@ describe("game-turn", () => {
     expect(sequences()).toEqual([1, 2]);
   });
 
+  it("answers 409 when another turn is saved while this one is still reading the game", async () => {
+    let reading!: () => void;
+    const read = new Promise<void>((resolve) => (reading = resolve));
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    // This turn has read the history and is held before it reads the session.
+    const held: EngineContext = {
+      ...ctx,
+      sessions: {
+        ...ctx.sessions,
+        async getById(id) {
+          reading();
+          await gate;
+          return ctx.sessions.getById(id);
+        },
+      },
+    };
+
+    const slow = handle(turnRequest({ game_id: gameId, input: "search" }), held);
+    await read;
+    const fast = await handle(turnRequest({ game_id: gameId, input: "go to the living room" }), ctx);
+    release();
+
+    expect(fast.status).toBe(200);
+    expect((await slow).status).toBe(409);
+    expect(sequences()).toEqual([1, 2]);
+    // The saved turn's change stands: the slower one did not land on top of it.
+    expect(await ctx.sessions.getById(gameId)).toMatchObject({ current_location_id: "loc-living-room", time_remaining: 9 });
+  });
+
   it("answers 404 for a game the player does not have", async () => {
     const res = await handle(turnRequest({ game_id: crypto.randomUUID(), input: "search" }), ctx);
     expect(res.status).toBe(404);

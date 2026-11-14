@@ -1,10 +1,10 @@
 // One typed line, played. The steps, each written once:
 //
-// 1. Load the session (scoped to the profile) and the blueprint.
+// 1. Load the history, the session (scoped to the profile) and the blueprint.
 // 2. Parse the line against the session's mode, place and the people present.
 // 3. Answer a line that is not an action at once: a refusal, a view, or quit.
 // 4. Check the action is allowed in this mode.
-// 5. Resolve it: load the history and the narrator, and call the model.
+// 5. Resolve it: load the narrator and call the model.
 // 6. Work out the effect: the session change, the events, the turn spent and
 //    the accusation forced when the last turn runs out.
 // 7. Save once.
@@ -74,12 +74,19 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
   }
 }
 
-async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter) {
+/**
+ * The history is read before the session. The save expects the sequence after
+ * the last event read here, so a turn saved after that read, before or after
+ * the session is read, makes this one's save conflict rather than land on a
+ * stale session.
+ */
+async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): Promise<TurnGame> {
+  const history = await ctx.events.listBySession(gameId);
   const session = await ctx.sessions.getById(gameId);
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
   const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
-  return { session, blueprint };
+  return { game_id: gameId, session, blueprint, history };
 }
 
 async function loadProvider(ctx: EngineContext, session: GameSessionRow, options: TurnOptions): Promise<AIProvider> {
@@ -152,19 +159,14 @@ export async function playTurn(
   request: TurnRequest,
   options: TurnOptions,
 ): Promise<GameTurnResponse> {
-  const { session, blueprint } = await loadGame(ctx, request.game_id, options.logger);
+  const game = await loadGame(ctx, request.game_id, options.logger);
+  const { session } = game;
 
   const input = request.input.trim();
-  const meaning = interpretLine(input, grammarStateOf(session, blueprint));
+  const meaning = interpretLine(input, grammarStateOf(session, game.blueprint));
   if (meaning.kind !== "action") return answerWithoutPlaying(meaning)!;
 
   const action = planAction(meaning.action, session);
-  const game: TurnGame = {
-    game_id: request.game_id,
-    session,
-    blueprint,
-    history: await ctx.events.listBySession(request.game_id),
-  };
   const runtime: TurnRuntime = {
     req: options.req,
     request_id: options.request_id,

@@ -5,6 +5,7 @@
 
 import { judgeBlueprintCommand, validateCommand } from "./blueprint/commands.ts";
 import type { EvalCommand } from "./core/dispatch.ts";
+import { generateCommand } from "./generate/commands.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
-export const COMMANDS: readonly EvalCommand[] = [judgeBlueprintCommand, validateCommand, judgeGame];
+export const COMMANDS: readonly EvalCommand[] = [generateCommand, judgeBlueprintCommand, validateCommand, judgeGame];

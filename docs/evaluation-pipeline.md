@@ -92,10 +92,9 @@ summary counts them; consumers decide what is ship-ready.
 3. **Dimensions**, all in parallel. Within one, the analyzer runs before the
    judge, and an analyzer error skips only that dimension's judge.
 
-`npm run eval` first generates the blueprint (`evaluation/pipeline/run.mjs`);
-one that fails `BlueprintV2Schema` stops the run with `run_error.stage`.
-`scripts/generate-blueprint.mjs` runs the same mechanical checks, so the two
-cannot drift.
+`./dev eval generate` first makes the blueprint, with the agent or one OpenRouter
+call, then runs the same checks; one that fails `BlueprintV2Schema` is kept and
+fails its check.
 
 ## Workspaces
 

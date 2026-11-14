@@ -126,12 +126,13 @@ the repo root; the mock suites clear the variable.
 
 ## Operator tools
 
-Blueprint and image generation read keys and models from the shell and the
-config root's env files, never from the settings tables. Their flags, defaults
-and precedence are in their own help:
+Blueprint and image generation read keys from the shell and the config root's
+env files, never from the settings tables; blueprint models come from
+`evaluation/config.json` or `--model`. Their flags, defaults and precedence are
+in their own help:
 
 ```bash
-node scripts/generate-blueprint.mjs --help
+./dev eval generate --help
 node scripts/generate-blueprint-images.mjs --help
 ```
 

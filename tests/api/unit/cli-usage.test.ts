@@ -2,11 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { BLUEPRINT_USAGE } from "../../../scripts/generate-blueprint.mjs";
 import { IMAGE_USAGE } from "../../../scripts/generate-blueprint-images.mjs";
 
 /**
- * The generation CLIs' `--help` is the only reference for their flags; no doc
+ * The image generator's `--help` is the only reference for its flags; no doc
  * repeats them. So the one thing to hold is that the help and the parser agree:
  * every flag the parser accepts is documented, and every documented flag is
  * accepted.
@@ -24,11 +23,8 @@ function usageFlags(usage: string): string[] {
   return flags.filter((flag) => flag !== "--help").sort();
 }
 
-describe("generation CLI help", () => {
-  it.each([
-    ["scripts/generate-blueprint.mjs", BLUEPRINT_USAGE],
-    ["scripts/generate-blueprint-images.mjs", IMAGE_USAGE],
-  ])("%s documents exactly the flags it parses", (script, usage) => {
-    expect(usageFlags(usage)).toEqual(parserFlags(script));
+describe("image generation CLI help", () => {
+  it("scripts/generate-blueprint-images.mjs documents exactly the flags it parses", () => {
+    expect(usageFlags(IMAGE_USAGE)).toEqual(parserFlags("scripts/generate-blueprint-images.mjs"));
   });
 });

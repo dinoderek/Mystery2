@@ -12,17 +12,9 @@ import {
   setupApiTestAuth,
   type ApiAuthContext,
 } from "../integration/helpers.ts";
+import type { GameTurnResponse } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import { investigatorScript } from "./live-ai/investigator-script.ts";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
-
-const endpointByAction: Record<string, string> = {
-  move: "game-move",
-  search: "game-search",
-  talk: "game-talk",
-  ask: "game-ask",
-  end_talk: "game-end-talk",
-  accuse_reasoning: "game-accuse",
-};
 
 runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
   let auth: ApiAuthContext;
@@ -54,32 +46,27 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
       expect(typeof game_id).toBe("string");
 
       for (const [index, step] of investigatorScript.steps.entries()) {
-        const endpoint = endpointByAction[step.action];
-        const data = await callLiveEndpointWithRetry<{
-          narration_parts: Array<{ text: string }>;
-          mode?: string;
-        }>({
+        const data = await callLiveEndpointWithRetry<GameTurnResponse>({
           apiUrl: API_URL,
-          endpoint,
+          endpoint: "game-turn",
           headers,
-          stepLabel: `step-${index + 1} action=${step.action}`,
-          body: {
-            game_id,
-            ...step.payload,
-          },
+          stepLabel: `step-${index + 1} input=${step.input}`,
+          body: { game_id, input: step.input },
         });
-        expect(Array.isArray(data.narration_parts)).toBe(true);
-        expect(data.narration_parts.length).toBeGreaterThan(0);
+        expect(data.kind).toBe("turn");
+        if (data.kind !== "turn") break;
+        expect(data.events.length).toBeGreaterThan(0);
+        expect(data.events[0].narration_parts.length).toBeGreaterThan(0);
 
         if (step.expect_mode) {
           if (step.expect_mode === "accuse") {
-            expect(data.mode === "accuse" || data.mode === "ended").toBe(true);
+            expect(data.state.mode === "accuse" || data.state.mode === "ended").toBe(true);
           } else {
-            expect(data.mode).toBe(step.expect_mode);
+            expect(data.state.mode).toBe(step.expect_mode);
           }
         }
 
-        if (data.mode === "ended") {
+        if (data.state.mode === "ended") {
           break;
         }
       }

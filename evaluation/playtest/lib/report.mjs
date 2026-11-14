@@ -131,7 +131,7 @@ function stepRow(step) {
     // still a question to the character: talk mode only knows `bye`.
     asDialogue:
       step.mode_before === "talk" &&
-      step.action?.endpoint === "game-ask" &&
+      step.action?.event_type === "ask" &&
       /^(accuse|go to|move to|search|talk to|speak (to|with))\b/i.test(step.input.trim()),
   };
 }
@@ -173,7 +173,7 @@ function buildTurns(events, steps, clueText, readability) {
   for (const step of steps) {
     // The first unclaimed event with the narration this step got back: mock
     // narration repeats, so the search starts after the last match.
-    const text = step.response?.ok ? firstText(step.response.body?.narration_parts) : "";
+    const text = step.response?.ok ? firstText(step.response.body?.events?.[0]?.narration_parts) : "";
     const found = text ? events.slice(next).findIndex((event) => firstText(event.parts) === text) : -1;
     if (found !== -1) {
       const at = next + found;
@@ -181,7 +181,7 @@ function buildTurns(events, steps, clueText, readability) {
       pushEvent(events[next++], step);
       continue;
     }
-    const note = step.action?.kind === "feedback"
+    const note = step.action?.kind === "refused" || step.action?.kind === "view"
       ? { kind: "feedback", text: step.action.text }
       : step.action?.kind === "quit"
       ? { kind: "feedback", text: "The investigator stopped playing." }

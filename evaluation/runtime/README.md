@@ -42,8 +42,11 @@ CLI path does not. `--backend a,b` runs both on byte-identical input.
 
 How each collects:
 
-- **`endpoint`** seeds the fixed session and history into the database, calls
-  the one `game-*` endpoint, then deletes the sessions it seeded. The server
+- **`endpoint`** seeds the fixed session and history into the database, sends
+  the action to `game-turn` as the line a player would type (`move to <place>`,
+  `talk to <name>`, `search <query>`, `bye`, a question, `accuse <reasoning>`),
+  then deletes the sessions it seeded. A case that sets `accusation_history_mode`
+  needs a `cli:*` backend: a typed line cannot carry it. The server
   rebuilds the context from those rows, so the only variable is the model behind
   the session's `ai_profile`. `start` creates its own session, so nothing is
   seeded for it.
@@ -196,7 +199,7 @@ session, judged by `flesch`, into `evaluation/runtime/cases/from-traces/`
   `index.mjs`. One that grades narration against the blueprint belongs in the
   shared layer instead, so it also runs on traces
   (`evaluation/judges/README.md` → "Adding a judge").
-- **An action** — an entry in `ACTIONS`: its endpoint, a `roleInput` naming the
+- **An action** — an entry in `ACTIONS`: the `line` that plays it, a `roleInput` naming the
   role and passing the fields the handler passes, and a `speaker`. Prompt
   assembly belongs in `packages/game-engine/src/role-request.ts`, defined once
   for the handler and this harness.

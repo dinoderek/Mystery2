@@ -40,6 +40,7 @@
         "check:doc-refs": "node scripts/check-doc-refs.mjs",
         "check:word-budgets": "node scripts/check-word-budgets.mjs",
         "check:gate-coverage": "node scripts/check-gate-coverage.mjs",
+        "check:coverage-floors": "node scripts/check-coverage-floors.mjs",
         "check:quality": "node scripts/check-quality.mjs",
         "check:imports": "node scripts/check-imports.mjs",
         "test:unit": "vitest run tests/api/unit",

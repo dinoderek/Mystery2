@@ -35,7 +35,7 @@ export default defineConfig({
     ...(mainRepoRoot ? { fs: { allow: [mainRepoRoot] } } : {}),
   },
   test: {
-    include: ["src/lib/domain/**/*.test.ts"],
+    include: ["src/lib/{domain,api}/**/*.test.ts"],
     environment: "node",
     globals: true,
     passWithNoTests: false,
@@ -45,7 +45,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text-summary", "json", "json-summary", "html"],
       reportsDirectory: "./coverage",
-      include: ["src/lib/**/*.ts", "src/lib/**/*.svelte"],
+      include: ["src/lib/**/*.ts"],
       exclude: ["**/*.test.ts", "**/node_modules/**"],
     },
   },

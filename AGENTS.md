@@ -63,7 +63,7 @@ Two traps when reading it:
 
 Every step runs in every environment; the gate needs nothing beyond this repo.
 A suite that will not start is a bug to fix, not a partial run to report.
-Coverage is reported, never enforced — `docs/testing.md` explains how to read it.
+Coverage floors in `coverage-floors.json` are enforced; only the operator lowers one (`docs/testing.md`).
 
 Final summaries state which gates ran, and why anything was skipped.
 

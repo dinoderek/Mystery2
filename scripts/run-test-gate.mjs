@@ -4,8 +4,10 @@
  * `node scripts/run-test-gate.mjs [step ...]` runs only the named steps.
  *
  * Phase 1 (parallel): lint, typecheck, svelte-check, unit tests, the doc
- *                     checks, and the gate-coverage check (every test file
- *                     sits under a step's roots and matches its file pattern)
+ *                     checks, the gate-coverage check (every test file
+ *                     sits under a step's roots and matches its file pattern),
+ *                     and the coverage floors, which start once the unit
+ *                     steps have written their reports
  * Phase 2 (serial):   integration, API e2e, browser e2e
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
@@ -14,7 +16,7 @@
  *
  * The two unit steps run with coverage on, and the summary carries what they
  * measured: totals per project, and the files thin enough to be worth naming.
- * Coverage never decides the verdict.
+ * The `coverage-floors` step decides the verdict; the summary only reports.
  *
  * Produces timestamped log files in test-results/ and a summary with timing.
  */
@@ -149,9 +151,22 @@ console.log(
   `--- Phase 1 (parallel): ${phase1Steps.map((s) => s.name).join(", ")} ---\n`,
 );
 
-const phase1Results = await Promise.all(
-  phase1Steps.map((step) => runStep(step, runDir)),
-);
+// A step that names `after` waits for those steps, if they are in this run.
+const started = new Map();
+function start(step) {
+  if (!started.has(step.name)) {
+    const waits = (step.after ?? [])
+      .map((name) => phase1Steps.find((s) => s.name === name))
+      .filter(Boolean)
+      .map(start);
+    started.set(
+      step.name,
+      Promise.all(waits).then(() => runStep(step, runDir)),
+    );
+  }
+  return started.get(step.name);
+}
+const phase1Results = await Promise.all(phase1Steps.map(start));
 results.push(...phase1Results);
 
 const phase1Failed = phase1Results.filter((r) => !r.passed);

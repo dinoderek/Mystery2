@@ -5,7 +5,8 @@
  *
  * The gate answers three questions in order, and coverage is the third: what
  * failed, and if nothing failed, how well covered the code is and which files
- * are dragging it down. Coverage never decides pass/fail — a thin file is a
+ * are dragging it down. This report never decides pass/fail: the
+ * `coverage-floors` step holds the totals to their floors, and a thin file is a
  * warning to act on, not a broken build.
  */
 
@@ -52,7 +53,7 @@ export function clearCoverageReports(repoRoot) {
   }
 }
 
-function readSummary(repoRoot, project) {
+export function readSummary(repoRoot, project) {
   const file = path.join(repoRoot, project.dir, "coverage-summary.json");
   if (!fs.existsSync(file)) return null;
   try {
@@ -159,7 +160,9 @@ export function formatCoverageSummary(projects) {
   }
 
   lines.push("");
-  lines.push("Coverage is reported, not enforced: it never fails the gate.");
+  lines.push(
+    "Floors are enforced by the coverage-floors step, not by this report.",
+  );
   lines.push(
     "Unit suites only — code reached only over HTTP (endpoints, Svelte",
   );

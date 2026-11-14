@@ -204,7 +204,7 @@ describe("formatting", () => {
     expect(text).toContain("packages/game-engine/src/thin.ts");
     expect(text).not.toContain("packages/game-engine/src/thick.ts");
     // The gate's exit code is decided above this section, and must stay so.
-    expect(text).toContain("never fails the gate");
+    expect(text).toContain("not by this report");
   });
 
   it("caps the summary list and points at the detail file", () => {

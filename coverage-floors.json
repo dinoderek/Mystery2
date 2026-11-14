@@ -1,0 +1,4 @@
+{
+  "api": { "lines": 80, "branches": 80 },
+  "web": { "lines": 80, "branches": 75 }
+}

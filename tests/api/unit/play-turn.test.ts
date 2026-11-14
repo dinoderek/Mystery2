@@ -263,6 +263,22 @@ describe("playTurn, when it cannot finish", () => {
     };
   }
 
+  it("answers with an error naming a chosen AI that has gone, and narrates nothing with mock", async () => {
+    const before = await ctx.sessions.getById(gameId);
+    const createProvider = vi.fn();
+    local.aiSettings.setChoice("luna6");
+
+    await expect(play("search", { createProvider })).rejects.toMatchObject({
+      name: "RequestRejectedError",
+      status: 500,
+      reason: "ai_unavailable",
+      message: expect.stringMatching(/"luna6", is not in ai\.json/),
+    });
+    expect(createProvider).not.toHaveBeenCalled();
+    expect(await ctx.sessions.getById(gameId)).toEqual(before);
+    expect(storedEvents()).toHaveLength(1);
+  });
+
   it("writes nothing when the narrator fails", async () => {
     const before = await ctx.sessions.getById(gameId);
     const failing = steered({

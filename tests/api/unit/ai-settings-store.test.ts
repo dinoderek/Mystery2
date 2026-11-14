@@ -12,7 +12,12 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { AIChoiceError, chooseAI, describeAISettings } from "../../../packages/game-engine/src/ai-choice.ts";
+import {
+  AIChoiceError,
+  chooseAI,
+  describeAISettings,
+  handleAIChoice,
+} from "../../../packages/game-engine/src/ai-choice.ts";
 import { loadAIConfig } from "../../../packages/game-engine/src/ai-config.ts";
 import { createLocalEngine } from "../../../packages/game-engine/src/context-local.ts";
 import type { AISettingsStore } from "../../../packages/game-engine/src/context.ts";
@@ -187,5 +192,44 @@ describe("choosing", () => {
   it("takes an AI whose key comes from the environment", () => {
     chooseAI(load(FILE, { OPENROUTER_API_KEY: "sk-or-env" }), settings, "free");
     expect(settings.getChoice()).toBe("free");
+  });
+});
+
+describe("POST /api/ai-settings", () => {
+  function post(body: unknown): Request {
+    return new Request("http://test/api/ai-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    });
+  }
+
+  it("stores the name and answers with the state the page shows", async () => {
+    const response = await handleAIChoice(post({ name: " luna6 " }), load(), settings);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ chosen: "luna6", narrator: { name: "luna6" } });
+    expect(settings.getChoice()).toBe("luna6");
+  });
+
+  it("answers 400 naming the field for a body without a name", async () => {
+    for (const body of [{}, { name: "" }, "not json"]) {
+      const response = await handleAIChoice(post(body), load(), settings);
+      expect(response.status).toBe(400);
+    }
+    const missing = await handleAIChoice(post({}), load(), settings);
+    expect(await missing.json()).toMatchObject({ details: { field: "name" } });
+    expect(settings.getChoice()).toBeNull();
+  });
+
+  it("answers 400 saying why for a name it cannot choose", async () => {
+    const unknown = await handleAIChoice(post({ name: "gone" }), load(), settings);
+    expect(unknown.status).toBe(400);
+    expect((await unknown.json()).error).toMatch(/no AI named "gone"/);
+
+    const keyless = await handleAIChoice(post({ name: "free" }), load(), settings);
+    expect(keyless.status).toBe(400);
+    expect((await keyless.json()).error).toMatch(/AI "free" uses openrouter but has no key/);
+    expect(settings.getChoice()).toBeNull();
   });
 });

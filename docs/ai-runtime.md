@@ -253,8 +253,8 @@ the player never typed.
 
 ## The accusation lifecycle
 
-The accuse action takes the line `accuse`, with reasoning only when it enters
-accuse mode, and then each line typed in `accuse` mode.
+`accuse` opens it, with or without reasoning; every later line typed in
+`accuse` mode is a round's reasoning.
 
 1. From `explore` without reasoning: `accusation_start` narration; the mode
    becomes `accuse` (event `accuse_start`).

@@ -9,7 +9,7 @@ import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 /**
  * The game state is what the notebook shows before anything is discovered: the
- * blueprint's public reference data, and nothing that gives the solution away.
+ * blueprint's public reference data and where the game stands.
  */
 
 const BLUEPRINT = BlueprintV2Schema.parse(validBlueprintV2);
@@ -51,6 +51,15 @@ describe("buildGameState", () => {
     });
   });
 
+  it("does not say who the culprit is", () => {
+    const state = buildGameState(BLUEPRINT, STANDING);
+
+    expect(JSON.stringify(state)).not.toContain("is_culprit");
+    for (const character of state.characters) {
+      expect(Object.keys(character)).not.toContain("is_culprit");
+    }
+  });
+
   it("carries where the game stands, unchanged", () => {
     expect(buildGameState(BLUEPRINT, STANDING)).toMatchObject(STANDING);
   });
@@ -68,6 +77,7 @@ describe("buildGameState", () => {
     expect(state.mystery_summary).toBe("Something happened.");
     expect(state.locations.length).toBeGreaterThan(0);
     expect(state.locations.every((l) => l.summary === null)).toBe(true);
+    expect(state.characters.length).toBeGreaterThan(0);
     expect(state.characters.every((c) => c.summary === null)).toBe(true);
   });
 
@@ -76,6 +86,7 @@ describe("buildGameState", () => {
 
     expect(state.mystery_summary).toBeNull();
     expect(state.locations.every((l) => l.summary === null)).toBe(true);
+    expect(state.characters.length).toBeGreaterThan(0);
     expect(state.characters.every((c) => c.summary === null)).toBe(true);
   });
 });

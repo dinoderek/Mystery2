@@ -157,8 +157,9 @@ For a failure, also look at the server's stdout (structured JSON per request),
 `coverage-floors.json` holds the floors, as percentages of the unit suites'
 totals: engine and shared 80% lines and 80% branches; web TypeScript, `.svelte`
 excluded, 80% lines and 75% branches. The `coverage-floors` step fails, naming
-the project and measure, when one falls short or reads `not measured`. Anyone may raise a floor; lowering one, or
-excluding code from what is measured, is the operator's decision. If tests that
+the project and measure, when one falls short or reads `not measured`; it needs
+the unit steps in the same run. Anyone may raise a
+floor; lowering one, or excluding code from what is measured, is the operator's decision. If tests that
 prove behaviour cannot reach a floor, ask rather than lower it.
 
 The measured globs are the `coverage.include` arrays in `vitest.config.ts` and

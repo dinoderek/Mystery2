@@ -217,9 +217,13 @@ describe("the floor file and the gate", () => {
     });
   });
 
-  it("keeps the committed floors at the agreed numbers", () => {
+  it("never commits a floor below the agreed numbers", () => {
     const committed = readFloors(path.resolve(import.meta.dirname, "../../.."));
 
-    expect(committed).toMatchObject(FLOORS);
+    for (const [label, measures] of Object.entries(FLOORS)) {
+      for (const [measure, agreed] of Object.entries(measures)) {
+        expect(committed[label][measure]).toBeGreaterThanOrEqual(agreed);
+      }
+    }
   });
 });

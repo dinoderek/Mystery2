@@ -145,6 +145,83 @@ describe("blueprint generator", () => {
     );
   });
 
+  it("sends a response schema that strict structured output accepts, with no untyped node", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createSuccessResponse());
+    await generateBlueprint({
+      storyBrief: { brief: "A child-friendly cookie mystery.", targetAge: 8 },
+      model: "openai/gpt-4.1-mini",
+      openRouterApiKey: "test-key",
+      fetchImpl: fetchMock as typeof fetch,
+    });
+    const schema = JSON.parse(String(fetchMock.mock.calls[0][1].body)).response_format.json_schema.schema;
+
+    // OpenAI rejects a node without a `type`, such as `{ not: {} }`, the
+    // rendering of `undefined` that an optional-and-nullable field gets.
+    const untyped: string[] = [];
+    const walk = (node: unknown, at: string): void => {
+      if (!node || typeof node !== "object") return;
+      if (!Array.isArray(node) && "not" in node) untyped.push(at);
+      for (const [key, value] of Object.entries(node)) walk(value, `${at}.${key}`);
+    };
+    walk(schema, "$");
+    expect(untyped).toEqual([]);
+
+    const clue = schema.properties.world.properties.locations.items.properties.clues.items;
+    expect(clue.properties.requires.anyOf.map((variant: { type: unknown }) => variant.type)).toEqual(["object", "null"]);
+    expect(clue.properties.requires.anyOf[0].required).toEqual(["clue_ids", "rationale"]);
+  });
+
+  it("names the provider's error when OpenRouter answers 200 with an error instead of a completion", async () => {
+    const message = "Invalid schema for response_format 'BlueprintV2': schema must have a 'type' key.";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "gen-1", error: { message, code: 400 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(
+      generateBlueprint({
+        storyBrief: { brief: "A playground mystery.", targetAge: 7 },
+        model: "openai/gpt-4.1-mini",
+        openRouterApiKey: "test-key",
+        fetchImpl: fetchMock as typeof fetch,
+      }),
+    ).rejects.toMatchObject({
+      code: "OPENROUTER_ERROR",
+      message: `OpenRouter returned an error instead of a completion: ${message}`,
+    });
+  });
+
+  it("drops a null the model sent for a field the schema only makes optional", async () => {
+    const answer = structuredClone(validBlueprint) as unknown as { metadata: Record<string, unknown> };
+    answer.metadata.art_style = null;
+    const fetchMock = vi.fn().mockResolvedValue(createSuccessResponse(answer));
+
+    const blueprint = await generateBlueprint({
+      storyBrief: { brief: "A child-friendly cookie mystery.", targetAge: 8 },
+      model: "openai/gpt-4.1-mini",
+      openRouterApiKey: "test-key",
+      fetchImpl: fetchMock as typeof fetch,
+    });
+    expect(blueprint.metadata).not.toHaveProperty("art_style");
+  });
+
+  it("still fails a null for a field the schema requires", async () => {
+    const answer = structuredClone(validBlueprint) as unknown as { metadata: Record<string, unknown> };
+    answer.metadata.title = null;
+    const fetchMock = vi.fn().mockResolvedValue(createSuccessResponse(answer));
+
+    await expect(
+      generateBlueprint({
+        storyBrief: { brief: "A child-friendly cookie mystery.", targetAge: 8 },
+        model: "openai/gpt-4.1-mini",
+        openRouterApiKey: "test-key",
+        fetchImpl: fetchMock as typeof fetch,
+      }),
+    ).rejects.toMatchObject({ code: "SCHEMA_VALIDATION_FAILED" });
+  });
+
   it("maps structured-output incompatibility to a dedicated error", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(

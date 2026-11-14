@@ -64,6 +64,16 @@ function makePropertyNullable(schema: Record<string, unknown>): Record<string, u
   };
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/** `{ not: {} }`: the JSON Schema that matches nothing, which is how `undefined` is written. */
+function isUndefinedSchema(value: unknown): boolean {
+  if (!isPlainObject(value) || Object.keys(value).length !== 1) return false;
+  return isPlainObject(value.not) && Object.keys(value.not).length === 0;
+}
+
 function normalizeStructuredOutputSchema(schema: unknown): unknown {
   if (Array.isArray(schema)) {
     return schema.map(normalizeStructuredOutputSchema);
@@ -76,6 +86,20 @@ function normalizeStructuredOutputSchema(schema: unknown): unknown {
   const normalized = Object.fromEntries(
     Object.entries(schema).map(([key, value]) => [key, normalizeStructuredOutputSchema(value)]),
   ) as Record<string, unknown>;
+
+  if (Array.isArray(normalized.anyOf)) {
+    // `zod-to-json-schema` renders `.optional()` inside `.nullable()` as an
+    // `anyOf` holding `{ not: {} }` ("undefined"). Strict structured output
+    // rejects a schema without a `type`, and every property is required there
+    // anyway, so the variant is dropped; nullability stays in the outer `anyOf`.
+    const variants = normalized.anyOf.filter((variant) => !isUndefinedSchema(variant));
+    if (variants.length === 1 && isPlainObject(variants[0])) {
+      const wrapper = { ...normalized };
+      delete wrapper.anyOf;
+      return { ...wrapper, ...variants[0] };
+    }
+    normalized.anyOf = variants;
+  }
 
   if (
     normalized.properties &&
@@ -220,10 +244,37 @@ function extractAssistantContent(payload: unknown): string {
       .join("");
   }
 
+  // OpenRouter reports some provider rejections (an invalid response schema,
+  // for one) as HTTP 200 with an `error` body instead of a choice.
+  const providerError = (payload as { error?: { message?: unknown } })?.error?.message;
   throw new BlueprintGenerationError(
     "OPENROUTER_ERROR",
-    "OpenRouter response missing assistant content",
+    typeof providerError === "string" && providerError.trim()
+      ? `OpenRouter returned an error instead of a completion: ${providerError}`
+      : "OpenRouter response missing assistant content",
   );
+}
+
+/**
+ * Strict structured output makes every property required, so an optional field
+ * the model leaves out arrives as `null` (`makePropertyNullable`). Where the
+ * schema forbids `null`, the field is removed, which is what the model meant;
+ * a field the schema requires then fails as missing, as it should.
+ */
+function dropForbiddenNulls(parsedJson: unknown): unknown {
+  const first = BlueprintV2Schema.safeParse(parsedJson);
+  if (first.success) return parsedJson;
+
+  const cleaned = structuredClone(parsedJson);
+  for (const issue of first.error.issues) {
+    if (issue.code !== "invalid_type" || issue.received !== "null" || issue.path.length === 0) continue;
+    const parent = issue.path
+      .slice(0, -1)
+      .reduce<unknown>((node, key) => (node as Record<string | number, unknown> | undefined)?.[key], cleaned);
+    const key = issue.path[issue.path.length - 1];
+    if (isPlainObject(parent) && parent[key] === null) delete parent[key];
+  }
+  return cleaned;
 }
 
 function stripGeneratedImageFields(parsedJson: unknown): unknown {
@@ -412,7 +463,7 @@ export async function generateBlueprint(
     );
   }
 
-  parsedJson = stripGeneratedImageFields(parsedJson);
+  parsedJson = dropForbiddenNulls(stripGeneratedImageFields(parsedJson));
 
   const blueprint = BlueprintV2Schema.safeParse(parsedJson);
   if (!blueprint.success) {

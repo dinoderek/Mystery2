@@ -1,14 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
-import { confirmOpening } from './session-helpers';
+import { confirmOpening, playedTurn, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   createBlueprintSummary,
   createGameStartResponse,
   createNarrationEvent,
-  createSearchResponse,
-  narrationResponse,
 } from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
@@ -46,17 +44,9 @@ async function bootstrapSession(page: Page) {
 }
 
 test.describe('Targeted Search', () => {
-  test('bare search sends null search_query and decrements time', async ({ page }) => {
-    let searchPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-search*', async (route) => {
-      searchPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('You look around but find nothing special.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+  // What a search means is the engine's to decide; the page sends the words.
+  test('bare search sends just the line', async ({ page }) => {
+    const requests = await stubTurns(page, () => playedTurn('search', 'You look around but find nothing special.', { state: { time_remaining: 9 } }));
 
     await bootstrapSession(page);
 
@@ -65,20 +55,11 @@ test.describe('Targeted Search', () => {
     await input.press('Enter');
 
     await expect(page.getByText('You look around but find nothing special.')).toBeVisible();
-    expect(searchPayload?.search_query).toBeNull();
+    expect(requests.map((request) => request.input)).toEqual(['search']);
   });
 
-  test('targeted search sends search_query in request body', async ({ page }) => {
-    let searchPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-search*', async (route) => {
-      searchPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('You find a clue under the desk!', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+  test('targeted search sends the whole line', async ({ page }) => {
+    const requests = await stubTurns(page, () => playedTurn('search', 'You find a clue under the desk!'));
 
     await bootstrapSession(page);
 
@@ -87,20 +68,11 @@ test.describe('Targeted Search', () => {
     await input.press('Enter');
 
     await expect(page.getByText('You find a clue under the desk!')).toBeVisible();
-    expect(searchPayload?.search_query).toBe('under the desk');
+    expect(requests.map((request) => request.input)).toEqual(['search under the desk']);
   });
 
-  test('inspect alias preserves freeform text in search_query', async ({ page }) => {
-    let searchPayload: Record<string, unknown> | null = null;
-
-    await page.route('**/api/game-search*', async (route) => {
-      searchPayload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('Nothing on the old bookshelf.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+  test('inspect alias sends the freeform text as typed', async ({ page }) => {
+    const requests = await stubTurns(page, () => playedTurn('search', 'Nothing on the old bookshelf.'));
 
     await bootstrapSession(page);
 
@@ -109,17 +81,11 @@ test.describe('Targeted Search', () => {
     await input.press('Enter');
 
     await expect(page.getByText('Nothing on the old bookshelf.')).toBeVisible();
-    expect(searchPayload?.search_query).toBe('the old bookshelf');
+    expect(requests.map((request) => request.input)).toEqual(['inspect the old bookshelf']);
   });
 
   test('shows investigator message for targeted search', async ({ page }) => {
-    await page.route('**/api/game-search*', async (route) => {
-      await route.fulfill({
-        json: createSearchResponse({
-          narration_parts: narrationResponse('You peek behind the curtains.', narratorSpeaker).narration_parts,
-        }),
-      });
-    });
+    await stubTurns(page, () => playedTurn('search', 'You peek behind the curtains.'));
 
     await bootstrapSession(page);
 

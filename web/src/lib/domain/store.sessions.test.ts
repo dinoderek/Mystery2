@@ -12,8 +12,8 @@ vi.mock('../api/client', () => ({
     `/api/images/${blueprintId}/${imageId}`,
 }));
 
-import { normalizeSessionCatalog, normalizeSessionSummary, sortSessionSummaries } from './store.svelte';
 import { GameSessionStore } from './store.svelte';
+import { sortSessionSummaries, toSessionCatalog } from './game-state';
 import type { SessionSummary } from '../types/game';
 import type { ApiResult } from '../api/client';
 import {
@@ -23,6 +23,9 @@ import {
   createSessionCatalog,
   createNarrationEvent,
   createGameState,
+  createGameGetResponse,
+  createGameStartResponse,
+  createBlueprintsListResponse,
 } from '../../../../tests/testkit/src/fixtures';
 
 interface Deferred<T> {
@@ -68,31 +71,14 @@ describe('session catalog helpers', () => {
     vi.unstubAllGlobals();
   });
 
-  it('normalizes session summaries and clamps defaults', () => {
-    const normalized = normalizeSessionSummary({
-      game_id: 'g-1',
-      blueprint_id: 'bp-1',
-      mystery_title: '',
-      mystery_available: false,
-      can_open: true,
-      mode: 'ended',
-      time_remaining: -4,
-      outcome: 'invalid',
-      last_played_at: 'not-a-date',
-      created_at: '2026-03-10T12:00:00.000Z',
-    });
+  it('cannot open a session whose mystery is no longer available', () => {
+    const catalog = toSessionCatalog(
+      createSessionCatalog({
+        in_progress: [createSessionSummary({ mystery_available: false, can_open: true })],
+      }),
+    );
 
-    expect(normalized).toMatchObject({
-      game_id: 'g-1',
-      blueprint_id: 'bp-1',
-      mystery_title: 'Unknown Mystery',
-      mystery_available: false,
-      can_open: false,
-      mode: 'ended',
-      time_remaining: 0,
-      outcome: null,
-    });
-    expect(normalized?.last_played_at).toBe('1970-01-01T00:00:00.000Z');
+    expect(catalog.in_progress[0]).toMatchObject({ mystery_available: false, can_open: false, outcome: null });
   });
 
   it('sorts by recency with stable tie-breakers', () => {
@@ -127,7 +113,7 @@ describe('session catalog helpers', () => {
     expect(sorted.map((entry) => entry.game_id)).toEqual([UUID_B, UUID_C, UUID_A]);
   });
 
-  it('normalizes grouped arrays and derives counts from mode', () => {
+  it('groups sessions by mode and derives counts from the lists', () => {
     const inProgress: SessionSummary[] = [
       createSessionSummary({ mystery_title: 'Mystery 1', time_remaining: 7 }) as SessionSummary,
     ];
@@ -143,11 +129,13 @@ describe('session catalog helpers', () => {
         created_at: '2026-03-08T12:00:00.000Z',
       }) as SessionSummary,
     ];
-    const catalog = normalizeSessionCatalog({
-      in_progress: inProgress,
-      completed,
-      counts: { in_progress: 999, completed: 999 },
-    });
+    const catalog = toSessionCatalog(
+      createSessionCatalog({
+        in_progress: inProgress,
+        completed,
+        counts: { in_progress: 999, completed: 999 },
+      }),
+    );
 
     expect(catalog.in_progress).toHaveLength(1);
     expect(catalog.completed).toHaveLength(1);
@@ -158,7 +146,7 @@ describe('session catalog helpers', () => {
     const store = new GameSessionStore();
     getMock.mockResolvedValue({
       error: null,
-      data: {
+      data: createGameGetResponse({
         state: createGameState({
           locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
           characters: [],
@@ -171,7 +159,7 @@ describe('session catalog helpers', () => {
             narration_parts: [{ text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER }],
           }),
         ],
-      },
+      }),
     });
 
     await store.resumeSession('game-1');
@@ -182,7 +170,7 @@ describe('session catalog helpers', () => {
         sequence: 1,
         event_type: 'move',
         narration_parts: [
-          { text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER, image_id: null },
+          { text: 'You enter the kitchen.', speaker: NARRATOR_SPEAKER },
         ],
       },
     ]);
@@ -193,7 +181,7 @@ describe('session catalog helpers', () => {
     const aliceSpeaker = characterSpeaker('Alice');
     getMock.mockResolvedValue({
       error: null,
-      data: {
+      data: createGameGetResponse({
         state: createGameState({
           locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
           characters: [{
@@ -224,7 +212,7 @@ describe('session catalog helpers', () => {
             ],
           }),
         ],
-      },
+      }),
     });
 
     await store.resumeSession('game-2');
@@ -245,7 +233,6 @@ describe('session catalog helpers', () => {
           {
             text: 'The room falls silent as time runs out.',
             speaker: NARRATOR_SPEAKER,
-            image_id: null,
           },
         ],
       },
@@ -253,7 +240,7 @@ describe('session catalog helpers', () => {
         sequence: 2,
         event_type: 'forced_endgame',
         narration_parts: [
-          { text: 'You must make your accusation now.', speaker: NARRATOR_SPEAKER, image_id: null },
+          { text: 'You must make your accusation now.', speaker: NARRATOR_SPEAKER },
         ],
       },
     ]);
@@ -354,14 +341,7 @@ describe('session catalog helpers', () => {
     // message about a call that had already been retried.
     const store = new GameSessionStore();
     store.error = 'Not signed in';
-    invokeMock.mockResolvedValue({
-      error: null,
-      data: {
-        blueprints: [
-          { id: 'bp-1', title: 'A Case', one_liner: 'Someone did it.', target_age: 7 },
-        ],
-      },
-    });
+    invokeMock.mockResolvedValue({ error: null, data: createBlueprintsListResponse() });
 
     await store.loadBlueprints();
 
@@ -373,18 +353,7 @@ describe('session catalog helpers', () => {
   it('clears a stale error when a game starts', async () => {
     const store = new GameSessionStore();
     store.error = 'Not signed in';
-    invokeMock.mockResolvedValue({
-      error: null,
-      data: {
-        game_id: 'game-1',
-        state: createGameState({
-          locations: [{ id: 'loc-kitchen', name: 'Kitchen' }],
-          characters: [],
-          time_remaining: 3,
-        }),
-        narration_events: [],
-      },
-    });
+    invokeMock.mockResolvedValue({ error: null, data: createGameStartResponse() });
 
     await store.startGame('bp-1');
 
@@ -396,14 +365,7 @@ describe('session catalog helpers', () => {
     // The list is what the player retries from, so a failed start must leave
     // it loaded rather than reporting the error in its place.
     const store = new GameSessionStore();
-    invokeMock.mockResolvedValueOnce({
-      error: null,
-      data: {
-        blueprints: [
-          { id: 'bp-1', title: 'A Case', one_liner: 'Someone did it.', target_age: 7 },
-        ],
-      },
-    });
+    invokeMock.mockResolvedValueOnce({ error: null, data: createBlueprintsListResponse() });
     await store.loadBlueprints();
 
     invokeMock.mockResolvedValueOnce({
@@ -415,6 +377,68 @@ describe('session catalog helpers', () => {
     expect(store.status).toBe('error');
     expect(store.error).toBe('Not signed in');
     expect(store.blueprints).toHaveLength(1);
+  });
+});
+
+describe('answers that fail their schema', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    getMock.mockReset();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('rejects a catalog whose sessions are malformed, and names the field', async () => {
+    const store = new GameSessionStore();
+    invokeMock.mockResolvedValue({
+      error: null,
+      data: { in_progress: [{ game_id: 'g-1' }], completed: [], counts: { in_progress: 1, completed: 0 } },
+    });
+
+    await store.loadSessionCatalog(true);
+
+    expect(store.sessionCatalogStatus).toBe('error');
+    expect(store.sessionCatalogError).toContain('game-sessions-list');
+    expect(store.sessionCatalogError).toContain('in_progress.0.');
+    expect(store.sessionCatalog.counts).toEqual({ in_progress: 0, completed: 0 });
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('rejects a blueprint list that is not a list', async () => {
+    const store = new GameSessionStore();
+    invokeMock.mockResolvedValue({ error: null, data: { blueprints: 'none' } });
+
+    await store.loadBlueprints();
+
+    expect(store.status).toBe('error');
+    expect(store.error).toContain('blueprints-list');
+    expect(store.blueprints).toEqual([]);
+  });
+
+  it('starts nothing from a start answer it cannot read', async () => {
+    const store = new GameSessionStore();
+    invokeMock.mockResolvedValue({ error: null, data: { game_id: 'not-a-uuid' } });
+
+    await store.startGame('bp-1');
+
+    expect(store.status).toBe('error');
+    expect(store.error).toContain('game-start');
+    expect(store.game_id).toBeNull();
+    expect(store.state).toBeNull();
+  });
+
+  it('opens nothing from a resume answer it cannot read', async () => {
+    const store = new GameSessionStore();
+    getMock.mockResolvedValue({ error: null, data: { state: {}, narration_events: [] } });
+
+    await store.resumeSession('game-1');
+
+    expect(store.status).toBe('idle');
+    expect(store.error).toContain('game-get');
+    expect(store.state).toBeNull();
   });
 });
 

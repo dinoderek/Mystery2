@@ -8,6 +8,7 @@ import {
   createSessionSummary,
   createSessionCatalog,
   createNarrationEvent,
+  createGameGetResponse,
 } from '../../tests/testkit/src/fixtures';
 
 const baseState = createGameState({ time_remaining: 7 });
@@ -41,10 +42,10 @@ async function setupResumeSession(page: Page, narrationEvents: unknown[]) {
 
   await page.route('**/api/game-get*', async (route) => {
     await route.fulfill({
-      json: {
+      json: createGameGetResponse({
         state: baseState,
         narration_events: narrationEvents,
-      },
+      }),
     });
   });
 

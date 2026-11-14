@@ -215,7 +215,8 @@ export const GameStateSchema = z.object({
   premise: z.string().nullable().optional(),
   locations: z.array(LocationSummarySchema),
   characters: z.array(CharacterSummarySchema),
-  discovered_clues: z.array(DiscoveredClueSchema).optional(),
+  // The notebook's clues, with where each was found.
+  discovered_clues: z.array(RevealedClueSchema).optional(),
   time_remaining: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,
@@ -231,7 +232,12 @@ export const GameStartResponseSchema = SessionTranscriptResponseSchema.extend({
   game_id: z.string().uuid(),
 });
 
-export const GameGetResponseSchema = SessionTranscriptResponseSchema;
+export const GameGetResponseSchema = SessionTranscriptResponseSchema.extend({
+  blueprint_id: z.string().uuid(),
+});
+
+/** Stepping into the starting location: its arrival narration and who is there. */
+export const GameEnterResponseSchema = MoveResponseSchema;
 
 export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
@@ -239,6 +245,10 @@ export const BlueprintSummarySchema = z.object({
   one_liner: z.string(),
   target_age: z.number().int().positive(),
   blueprint_image_id: z.string().nullable().optional(),
+});
+
+export const BlueprintsListResponseSchema = z.object({
+  blueprints: z.array(BlueprintSummarySchema),
 });
 
 export const SessionSummarySchema = z.object({
@@ -385,6 +395,8 @@ export type GameState = z.infer<typeof GameStateSchema>;
 export type SessionTranscriptResponse = z.infer<typeof SessionTranscriptResponseSchema>;
 export type GameStartResponse = z.infer<typeof GameStartResponseSchema>;
 export type GameGetResponse = z.infer<typeof GameGetResponseSchema>;
+export type GameEnterResponse = z.infer<typeof GameEnterResponseSchema>;
+export type BlueprintsListResponse = z.infer<typeof BlueprintsListResponseSchema>;
 export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;

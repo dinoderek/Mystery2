@@ -1,12 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
-import { confirmOpening } from './session-helpers';
+import { confirmOpening, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   createBlueprintSummary,
   createNarrationEvent,
   createGameStartResponse,
+  createTurnRefusedResponse,
+  createTurnViewResponse,
 } from '../../tests/testkit/src/fixtures';
 
 async function bootstrapSession(page: Page) {
@@ -45,6 +47,11 @@ async function bootstrapSession(page: Page) {
 
 test.describe('Help and inline guidance', () => {
   test('keeps unrecognized guidance inline and brief', async ({ page }) => {
+    await stubTurns(page, () =>
+      createTurnRefusedResponse({
+        hint: "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.",
+      }),
+    );
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');
@@ -58,6 +65,7 @@ test.describe('Help and inline guidance', () => {
   });
 
   test('opens detailed help modal with aliases on help command', async ({ page }) => {
+    await stubTurns(page, () => createTurnViewResponse({ view: 'help' }));
     await bootstrapSession(page);
 
     const input = page.locator('input[type="text"]');

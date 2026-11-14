@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
+import { playedTurn, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -7,7 +8,7 @@ import {
   createGameState,
   createGameStartResponse,
   createNarrationEvent,
-  createMoveResponse,
+  createTurnRefusedResponse,
   createSessionSummary,
   createSessionCatalog,
 } from '../../tests/testkit/src/fixtures';
@@ -52,14 +53,14 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    await page.route('**/api/game-move*', async (route) => {
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: [{ text: 'You move to the garden.', speaker: narratorSpeaker }],
-          current_location: 'garden',
-        }),
-      });
-    });
+    await stubTurns(page, ({ input }) =>
+      input === 'xyzzy'
+        ? createTurnRefusedResponse({ hint: "Commands: move to/go to <location>, search, help." })
+        : playedTurn('move', 'You move to the garden.', {
+            payload: { location_name: 'garden' },
+            state: { location: 'loc-garden' },
+          }),
+    );
   });
 
   test('pages with the keyboard, leaving plain arrows to the command line', async ({ page }) => {
@@ -184,20 +185,13 @@ test.describe('US2/US3 - Narration Rendering', () => {
       });
     });
 
-    await page.route('**/api/game-move*', async (route) => {
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: [
-            {
-              text: 'You move to the garden.',
-              speaker: narratorSpeaker,
-              image_id: 'mock-blueprint.location-garden.png',
-            },
-          ],
-          current_location: 'garden',
-        }),
-      });
-    });
+    await stubTurns(page, () =>
+      playedTurn('move', 'You move to the garden.', {
+        image: 'mock-blueprint.location-garden.png',
+        payload: { location_name: 'garden' },
+        state: { location: 'loc-garden' },
+      }),
+    );
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
@@ -224,20 +218,13 @@ test.describe('US2/US3 - Narration Rendering', () => {
       await route.fulfill({ status: 404, body: '' });
     });
 
-    await page.route('**/api/game-move*', async (route) => {
-      await route.fulfill({
-        json: createMoveResponse({
-          narration_parts: [
-            {
-              text: 'You move to the garden.',
-              speaker: narratorSpeaker,
-              image_id: 'mock-blueprint.location-garden.png',
-            },
-          ],
-          current_location: 'garden',
-        }),
-      });
-    });
+    await stubTurns(page, () =>
+      playedTurn('move', 'You move to the garden.', {
+        image: 'mock-blueprint.location-garden.png',
+        payload: { location_name: 'garden' },
+        state: { location: 'loc-garden' },
+      }),
+    );
 
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();

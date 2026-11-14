@@ -167,15 +167,18 @@ profile *label* it started with; the model actually used is on each event's
 
 A turn, end to end:
 
-1. The browser calls `POST /api/game-move` with the session cookie.
+1. The browser calls `POST /api/game-turn` with the session cookie and the line
+   as typed.
 2. `hooks.server.ts` resolves the cookie into `locals.player`.
-3. `api/[endpoint]` finds `game-move` in the registry, checks the method, sees
+3. `api/[endpoint]` finds `game-turn` in the registry, checks the method, sees
    it runs per profile, builds an `EngineContext` scoped to that player, and
    calls its handler.
-4. The handler loads the session (scoped), validates the transition, loads the
-   blueprint from disk, assembles the prompt, and calls the AI provider.
-5. It appends a `game_events` row and updates the session in the same database
-   file, then returns the turn response.
+4. The engine decides what the line means. A refusal, a view or quit is
+   answered at once. An action loads the session (scoped), checks the mode,
+   loads the blueprint from disk, assembles the prompt, and calls the AI
+   provider.
+5. One transaction saves the session change and its events, and the answer
+   comes from that. The browser parses it with the shared schema.
 
 Every step is in-process except the model call.
 

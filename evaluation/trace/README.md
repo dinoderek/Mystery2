@@ -8,24 +8,27 @@ the blueprint pipeline and the runtime harness is in
 
 ## Why this exists
 
-The game already persists every played session for resume: a `game_sessions`
-snapshot plus an append-only `game_events` log. That is a complete trace of
-what the game master did. This pipeline turns it into a quality signal (where
-did the game master fabricate, leak the solution, or mishandle clues) and a
-durable artifact to re-run when you switch models or change a prompt.
+The game persists every played session for resume: a `game_sessions` snapshot
+plus an append-only `game_events` log, a complete trace of what the game master
+did. This pipeline turns it into a quality signal (where did the game master
+fabricate, leak the solution, or mishandle clues) and a durable artifact to
+re-run when you switch models or change a prompt.
 
 ## The two stages
 
 ```
-extract.mjs        run.mjs
-  game.db  ──►  raw trace JSON  ──►  reconstruct  ──►  checks + judges  ──►  result.json
+game.db  ──►  trace.json  ──►  reconstruct  ──►  checks + judges  ──►  result.json
+ (read-only)
 ```
 
 1. **Extract** pulls a session out of `game.db` (snapshot, ordered events, the
    blueprint, non-secret AI-profile metadata) into a **raw** trace: a faithful
-   dump with no derived fields.
-2. **Run** takes a raw trace, **reconstructs** what the game master saw each
-   turn by replaying the events through the real context builders
+   dump with no derived fields. `lib/datasource.ts` is the one evaluation
+   module that resolves the play database path, and it opens the file
+   read-only: nothing is created, no schema applied, no migration run, so a
+   database from another branch's schema is read as it is.
+2. **Judge** **reconstructs** what the game master saw each turn by replaying
+   the events through the real context builders
    (`packages/game-engine/src/ai-context.ts`), then runs the mechanical checks
    and the judges.
 
@@ -41,27 +44,18 @@ game-master logic, and the raw trace keeps a re-run possible.
 ## Running it
 
 ```bash
-# Optional: bind a CLI for the judges. Without it, only the mechanical checks run.
-cp evaluation/trace/config/cli.example.json evaluation/trace/config/cli.json
-
-npm run eval:trace:extract -- --session <session-id> --out trace.json
-npm run eval:trace -- --trace trace.json
-
-# Or extract and evaluate in one step:
-npm run eval:trace -- --session <session-id>
+./dev eval judge game <session-id>            # extract, then judge
+./dev eval judge game <run>/<session-id>/trace.json   # judge a stored trace again
 ```
 
-Both commands take `--help`. Extraction reads the database file directly, so
-the game need not be running; which database it reads is in
-`docs/local-infrastructure.md`. Each run writes a self-contained directory
-under `$MYSTERYEVALS_DIR` (default `~/mysteryevals`) with `result.json`,
-`reconstruction.json` and per-judge logs. Progress reporting works as in the
-blueprint pipeline (`evaluation/README.md` → "Live progress").
-
-**The exit code is not the verdict.** The process exits non-zero only when the
-run itself fails (an extraction error, say). A failing check or judge still
-exits 0, so a CI caller gates on `summary.mechanical.fail` and
-`summary.dimensions.fail` in `result.json`.
+The argument is a trace file if it names one, else a session id; a path or
+`.json` name that is no file is an error, never a session id. `--database
+<file>` reads the session from a copy of `game.db` instead of this checkout's
+play database (`docs/local-infrastructure.md`); the game need not be running.
+`--no-judges` runs the checks alone and `--judges a,b` only those judges; the
+rest are `skipped`. A missing `game-judge` binding is an error. The run folder,
+`result.json`, bindings and exit codes are in `evaluation/README.md`; the
+subject folder adds `trace.json` and `reconstruction.json` (turns, context errors).
 
 ## The judge wrapper
 
@@ -74,12 +68,11 @@ short environment note. Two consequences:
   in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env), so the wrapper
   cannot authenticate.
 - **Fenced verdicts are unwrapped.** Judges sometimes fence the verdict in
-  `json`, which the pipeline would reject as "not a JSON object"; the wrapper
-  strips it.
+  `json`, which the runner would reject as not JSON; the wrapper strips it.
 
 ## Checks and dimensions
 
-The mechanical checks live in `lib/mechanical.mjs`; the first two run on every
+The mechanical checks live in `lib/mechanical.ts`; the first two run on every
 trace:
 
 | Check | Asks |
@@ -99,8 +92,8 @@ runtime cases with `npm run eval:cases-from-trace` (`evaluation/runtime/README.m
 ## Tests
 
 `tests/api/unit/trace-*.test.ts` cover normalisation, reconstruction, the
-checks, the envelope and a run with a mock judge CLI. They need no database
-and no model.
+checks, read-only extraction from a database the test makes, and a whole
+`judge game` run on a stub binding. They need no model.
 
 ## Not built yet
 

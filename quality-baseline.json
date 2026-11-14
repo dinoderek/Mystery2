@@ -30,14 +30,6 @@
       "count": 1
     }
   },
-  "evaluation/trace/lib/mechanical.mjs": {
-    "max-depth": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "packages/game-engine/src/ai-provider.ts": {
     "max-lines-per-function": {
       "count": 1

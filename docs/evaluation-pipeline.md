@@ -2,9 +2,8 @@
 
 Four harnesses judge the game's AI from different angles. They share one core,
 `evaluation/core/`: one model runner, one config file, one judge registry, one
-result format and one exit-code rule. This doc is the map and the design. The
-commands, config, results and exit codes are in `evaluation/README.md`; each
-harness's README is its own runbook.
+result format and one exit-code rule. This doc is the map and design; the
+runbook is `evaluation/README.md`.
 
 | Harness | Subject | Question | Runbook |
 |---|---|---|---|
@@ -18,8 +17,8 @@ How they connect:
 - **Trace** extracts a played game from the play database, read-only, and
   rebuilds what the narrator saw with the runtime's own context builders.
 - **Runtime** fixes one interaction's prior state and history, so the input is
-  identical across runs and models. It grades the narration with `flesch` and
-  the `gm_*` judges. A failure found in play can be frozen into a runtime case
+  identical across runs and models. It grades the narration with `flesch`,
+  `age_appropriate_turn` and the `gm_*` judges. A failure found in play can be frozen into a runtime case
   and re-judged against another model by the same standard.
 - **The `gm_*` judges** (`gm_roleplay`, `gm_clue_discipline`,
   `gm_fabrication`, `gm_spoiler`) belong to neither: they live in

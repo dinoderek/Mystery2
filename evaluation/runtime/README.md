@@ -2,9 +2,8 @@
 
 Grades the runtime narrator, its prompts and the model behind them, one
 interaction at a time: a case fixes the state and history, the harness collects
-the narration for exactly one action, and checks and judges score it. The
-commands and shared options are in `evaluation/README.md`; this harness's place
-among the others is in `docs/evaluation-pipeline.md`.
+the narration for one action, and checks and judges score it. Commands and
+options are in `evaluation/README.md`.
 
 ## Determinism is the point
 
@@ -43,7 +42,8 @@ there, sends the action as the line a player would type, and removes the root
 afterwards. It never writes to the database you play on. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
 it. The profile resolves as it always does: `mock` needs nothing, and `default` is
-whatever `AI_PROVIDER` and `AI_MODEL` name, else mock.
+whatever `AI_PROVIDER` and `AI_MODEL` name, else mock. `free` and `paid` are
+linked in from the config root for the run, so the key stays in its own file.
 
 ## Cases
 
@@ -70,9 +70,10 @@ Every case passes `flesch` on both fixture narrators, so a real failure stands o
   Here the case's history is context and the action under test is the one judged
   turn.
 
-**Which judges run:** `--judges a,b`, else the case's `judges`, else the earlier
-result's, else `flesch`. No committed case declares a `gm_*` judge, so the battery
-is opt-in here; the game harness runs all four.
+**Which judges run:** `--judges a,b`, else the case's `judges`, else none. A stored
+turn judged again (below) falls back to its earlier result's judges, else
+`flesch`. No committed case declares a `gm_*` judge, so the battery is opt-in
+here; the game harness runs all four.
 
 **Options** go in the case's `judgeConfig.<judge>`: `tolerance` (`flesch`, grade
 levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
@@ -143,7 +144,6 @@ change that.
 
 ## Tests
 
-Unit tests under `tests/api/unit/` (the `runtime-*` and `judges-*` files) cover the
-judges, action mapping, case generation and a whole `judge turn` run on stub
-bindings. `tests/api/integration/eval-turn-server.test.ts` replays through a real
-throwaway server on the mock provider. None calls a model.
+`tests/api/unit/runtime-*` and `judges-*` cover the judges, actions, cases and a
+`judge turn` run on stub bindings; `tests/api/integration/eval-turn-server.test.ts`
+replays through a throwaway server on the mock provider. None calls a model.

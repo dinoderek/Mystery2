@@ -43,9 +43,9 @@ How each collects:
 
 - **`endpoint`** seeds the fixed session and history into the database, sends
   the action to `game-turn` as the line a player would type (`move to <place>`,
-  `talk to <name>`, `search <query>`, `bye`, a question, `accuse [<reasoning>]`, then the reasoning
-  alone once the accusation is open),
-  then deletes the sessions it seeded. A case that sets `accusation_history_mode`
+  `talk to <name>`, `search <query>`, `bye`, a question, `accuse [<reasoning>]`,
+  then the reasoning alone once the accusation is open), then deletes the
+  sessions it seeded. A case that sets `accusation_history_mode`
   needs a `cli:*` backend: a typed line cannot carry it. The server
   rebuilds the context from those rows, so the only variable is the model behind
   the session's `ai_profile`. `start` creates its own session, so nothing is

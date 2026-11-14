@@ -17,7 +17,7 @@ cloud backend, container or separate API service.
 Goals: **one command** (`npm run dev` starts everything; nothing else is
 installed, started, seeded or restarted); **testability** (the full gate runs
 against a real server and database, with no external dependencies); **a
-queryable history** (every session is a row you can export).
+queryable history** (every session is an exportable row).
 
 Non-goals: hosting, offline play, and multi-user access control. Profiles keep
 one person's cases apart from another's on a shared machine. They are not a
@@ -47,8 +47,8 @@ on the same origin, with no base URL.
 
 A few routes sit outside the registry: `player` and `players` (how you get a
 profile) and `ai-settings` (installation configuration). They reach the engine
-through `getEngine()`. A route belongs here only when the registry cannot
-express it.
+through `getEngine()`. Keep it short: a route belongs here only when the
+registry cannot express it.
 
 **The engine (`packages/game-engine/`).** Handlers take an `EngineContext` and
 reach the outside world only through it, which keeps storage substitutable

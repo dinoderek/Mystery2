@@ -49,8 +49,8 @@ Two traps:
 - **Check the `Total` line**, not the last line: a failing step can print a
   passing test name under it. `Total ... FAIL` is the verdict.
 
-Every step runs in every environment, with nothing skipped, and coverage floors
-are enforced (`docs/testing.md`). Final summaries state which gates ran, and why anything
+Every step runs in every environment, no suite may be reported skipped, and
+coverage floors are enforced (`docs/testing.md`). Final summaries state which gates ran, and why anything
 was skipped.
 
 ## Things that bite

@@ -149,8 +149,8 @@ Create a brief JSON:
 
 `api` makes one OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or in
 `.env.local` in the config root; `agent` runs the Claude agent on your Claude
-login. Each blueprint gets the mechanical checks; `--judge` adds the judges. `--install` copies each blueprint that passed into `blueprints/` in
-the config root. Backends and `--model` repeat for side-by-side runs; `model` on
+login. Each blueprint gets the mechanical checks; `--judge` adds the judges.
+`--install` copies each blueprint that passed into `blueprints/` in the config root. Backends and `--model` repeat for side-by-side runs; `model` on
 `generator-api` in `evaluation/config.json` is the default.
 
 Every flag, default and file location: `./dev eval generate --help`.

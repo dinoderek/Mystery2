@@ -226,6 +226,14 @@ describe("generate", () => {
     expect(out.join("\n")).toContain("already exists");
   });
 
+  it("installs the same brief given twice under two names", async () => {
+    const config = stubConfig({ answers: { "generator-agent": validBlueprintV2 } });
+    const root = path.join(dir, "root");
+    const brief = path.join(dir, "brief.json");
+    expect(await generate([brief, brief, "--output-root", path.join(dir, "out"), "--quiet", "--config", config, "--install"], { MYSTERY_CONFIG_ROOT: root })).toBe(0);
+    expect(fs.readdirSync(path.join(root, "blueprints")).sort()).toEqual(["brief-agent-agent-model-2.json", "brief-agent-agent-model.json"]);
+  });
+
   it("does not touch the library without --install", async () => {
     const config = stubConfig({ answers: { "generator-agent": validBlueprintV2 } });
     const root = path.join(dir, "root");

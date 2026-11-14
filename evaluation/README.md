@@ -35,7 +35,7 @@ and model, so two models read side by side. Each blueprint is checked against
 the schema and the mechanical checks, or with `--judge` judged as above; one
 that never passes the schema is kept and fails its check. `--install` copies a
 blueprint that passed its mechanical checks into the game's library
-(`blueprints/` in the config root) and never replaces a file there.
+(`blueprints/` in the config root); it never replaces a file there, and an install that fails makes the command exit 1.
 
 ## `./dev eval`
 

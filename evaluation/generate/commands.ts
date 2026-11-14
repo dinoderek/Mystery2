@@ -237,7 +237,7 @@ export function passedMechanicalChecks(result: Result): boolean {
   return result.run_error === null && result.subject.path !== null && checks.length > 0 && checks.every((check) => check.status === "pass");
 }
 
-/** Copies the stored blueprint into the library under the subject's id; never replaces one already there. */
+/** Copies the stored blueprint into the library under its subject folder's name, which is unique within a run; never replaces a file already there. */
 async function installBlueprint(stored: string, library: string, id: string): Promise<string> {
   await fs.mkdir(library, { recursive: true });
   const destination = path.join(library, `${id}.json`);
@@ -261,7 +261,7 @@ async function installAll(done: ReadonlyArray<{ job: Job; result: Result; subjec
       continue;
     }
     try {
-      write(`[eval] installed: ${await installBlueprint(path.join(subject.folder.dir, STORED_BLUEPRINT), library, job.id)}`);
+      write(`[eval] installed: ${await installBlueprint(path.join(subject.folder.dir, STORED_BLUEPRINT), library, path.basename(subject.folder.dir))}`);
     } catch (error) {
       ok = false;
       write(`[eval] not installed: ${(error as Error).message}`);

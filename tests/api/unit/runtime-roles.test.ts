@@ -11,6 +11,7 @@ import {
   normalizeHistory,
   snapshotFromGiven,
 } from "../../../evaluation/runtime/lib/roles.mjs";
+import { assertTurnPlayed, extractNarrationParts } from "../../../evaluation/runtime/lib/transcript.mjs";
 
 // The shared action/role map is the single source of truth both runtime
 // backends use to turn a case's `action` plus its fixed `given` state into
@@ -305,6 +306,15 @@ describe("typed lines for structured actions", () => {
     });
   });
 
+  it("builds a line the grammar reads as something else for a question that is a command", () => {
+    // `bye` ends the conversation, so a question of "Goodbye." is not an ask;
+    // the endpoint backend catches it from the event the turn saved.
+    expect(readBack(talking, { type: "ask", player_input: "Goodbye." })).toEqual({
+      kind: "action",
+      action: { type: "end_talk" },
+    });
+  });
+
   it("sends reasoning on its own once the accusation is open", () => {
     expect(lineFor(accusing, { type: "accuse", player_reasoning: "It was Alice." })).toBe("It was Alice.");
     expect(readBack(accusing, { type: "accuse", player_reasoning: "It was Alice." })).toEqual({
@@ -313,6 +323,48 @@ describe("typed lines for structured actions", () => {
     });
     // No line reopens an accusation that is already open.
     expect(() => lineFor(accusing, { type: "accuse" })).toThrow("needs player_reasoning");
+  });
+});
+
+describe("what a game-turn answer must be for a case", () => {
+  const turn = (eventType: string) => ({ kind: "turn", events: [{ event_type: eventType }] });
+
+  it("accepts the turn of the action under test", () => {
+    expect(() => assertTurnPlayed(turn("ask"), "Where?", ACTIONS.ask)).not.toThrow();
+    expect(() => assertTurnPlayed(turn("accuse_resolved"), "x", ACTIONS.accuse)).not.toThrow();
+  });
+
+  it("rejects a line that played nothing, naming the hint", () => {
+    expect(() =>
+      assertTurnPlayed({ kind: "refused", hint: "Where to?" }, "move", ACTIONS.move),
+    ).toThrow('did not play "move" (answered refused): Where to?');
+    expect(() => assertTurnPlayed({ kind: "view" }, "help", ACTIONS.ask)).toThrow("answered view");
+  });
+
+  it("rejects a turn that played another action", () => {
+    expect(() => assertTurnPlayed(turn("end_talk"), "Goodbye.", ACTIONS.ask)).toThrow(
+      'played "Goodbye." as end_talk',
+    );
+  });
+});
+
+describe("narration parts of an answer", () => {
+  const part = (text: string) => ({ text, speaker: { kind: "narrator" } });
+
+  it("takes only the action's event from a played turn, not a forced ending", () => {
+    const data = {
+      kind: "turn",
+      events: [
+        { event_type: "search", narration_parts: [part("You search.")] },
+        { event_type: "forced_endgame", narration_parts: [part("Time is up.")] },
+      ],
+    };
+    expect(extractNarrationParts("search", data)).toEqual([part("You search.")]);
+  });
+
+  it("still reads game-start's narration_events", () => {
+    const data = { narration_events: [{ narration_parts: [part("Once.")] }, { narration_parts: [part("Twice.")] }] };
+    expect(extractNarrationParts("start", data)).toEqual([part("Once."), part("Twice.")]);
   });
 });
 

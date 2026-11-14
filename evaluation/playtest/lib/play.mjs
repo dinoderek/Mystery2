@@ -41,21 +41,22 @@ function responseEntries(body) {
 
 /** The narration of a played turn: every saved event, in order. */
 function turnEntries(body) {
-  return (body.events ?? []).flatMap((event) => narrationEntries(event.narration_parts));
+  const entries = (body.events ?? []).flatMap((event) => narrationEntries(event.narration_parts));
+  return entries.length > 0 ? entries : [{ kind: "narration", speaker: "Narrator", text: "Action completed." }];
 }
 
 /**
  * What the investigator is told for a line that played nothing, in the words
  * the browser would answer it with, or a screen it opens: the investigator's
  * view already carries the notebook, so a view is said in a line.
- * `echo` is false for the line that only opens the notebook, which the browser
- * does not echo into the transcript either.
+ * `echo` is true only for `help`: the browser opens the notebook for `notebook`
+ * and the list commands before it echoes anything into the transcript.
  */
 function feedbackFor(body, mode) {
   if (body.kind === "refused") return { echo: true, text: body.hint };
   if (body.view === "help") return { echo: true, text: `Help menu opened. ${commandHint(mode)}` };
   return {
-    echo: body.view !== "notebook",
+    echo: false,
     text: body.section
       ? `(The notebook opens at ${body.section}: it is the NOTEBOOK sections of your view.)`
       : "(The notebook opens: it is the NOTEBOOK sections of your view.)",
@@ -182,9 +183,8 @@ export async function playGame({
       ? feedbackFor(response.body, state.mode)
       : null;
 
-    // The store echoes what was typed, except the line that only opens the
-    // notebook; a line that quit is not echoed either.
-    if (step.action.kind !== "quit" && (feedback?.echo ?? true)) {
+    // The store echoes what was typed, except the lines that open the notebook.
+    if (feedback?.echo ?? true) {
       transcript.push({ kind: "input", text: decision.input, plan: decision.plan });
     }
 

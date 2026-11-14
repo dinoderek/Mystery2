@@ -30,8 +30,9 @@ function characterFullName(blueprint, characterId) {
 // A structured action as the line a player would type for it. The engine's
 // grammar reads the line back, so each builder names its target the way that
 // grammar accepts: places by id, characters by their name in the blueprint.
-// A line the grammar reads differently is refused by the endpoint, and the
-// backend reports that instead of grading some other turn.
+// A line the grammar reads as another action (a question of "bye" ends the
+// conversation) is caught by the endpoint backend, which checks the event the
+// turn saved against the action's `events`.
 function accusationLine(given, action) {
   const reasoning = action.player_reasoning?.trim();
   if (given.mode === "accuse") {
@@ -81,6 +82,7 @@ export function snapshotFromGiven(given) {
 //                   of a game id.
 //   line          — the typed line that plays the action (every action but
 //                   `start`), line(given, action, blueprint)
+//   events        — the event types a played turn of this action saves first
 //   endpoint      — how to call the live function (name, method, body builder).
 //                   body(given, action, gameId, { blueprint, aiProfile }); the
 //                   turn actions all post their line to game-turn
@@ -121,6 +123,7 @@ export const ACTIONS = {
     requiredMode: "explore",
     line: talkLine,
     endpoint: turnEndpoint(talkLine),
+    events: ["talk"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_start",
       game_id: "case",
@@ -137,6 +140,7 @@ export const ACTIONS = {
     requiredMode: "talk",
     line: askLine,
     endpoint: turnEndpoint(askLine),
+    events: ["ask"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_conversation",
       game_id: "case",
@@ -154,6 +158,7 @@ export const ACTIONS = {
     requiredMode: "talk",
     line: endTalkLine,
     endpoint: turnEndpoint(endTalkLine),
+    events: ["end_talk"],
     roleInput: (g, a, bp, history) => ({
       role: "talk_end",
       game_id: "case",
@@ -170,6 +175,7 @@ export const ACTIONS = {
     requiredMode: "explore",
     line: moveLine,
     endpoint: turnEndpoint(moveLine),
+    events: ["move"],
     roleInput: (g, a, bp, history) => ({
       role: "ambience",
       game_id: "case",
@@ -184,6 +190,7 @@ export const ACTIONS = {
     requiredMode: "explore",
     line: searchLine,
     endpoint: turnEndpoint(searchLine),
+    events: ["search"],
     roleInput: (g, a, bp, history) => ({
       role: resolveSearchRole(a.search_query),
       game_id: "case",
@@ -203,6 +210,7 @@ export const ACTIONS = {
     requiredMode: "accuse",
     line: accusationLine,
     endpoint: turnEndpoint(accusationLine),
+    events: ["accuse_start", "accuse_round", "accuse_resolved"],
     roleInput: (g, a, bp, history) => {
       const role = resolveAccusationRole(a.player_reasoning);
       const base = {

@@ -71,7 +71,8 @@ describe('playtest loop', () => {
 		expect(game.steps).toHaveLength(1);
 		expect(game.steps[0].action).toEqual({ kind: 'quit' });
 		expect(game.finalState.mode).toBe('explore');
-		expect(game.transcript.some((entry: { kind: string }) => entry.kind === 'input')).toBe(false);
+		// The browser echoes `quit` like any other line.
+		expect(game.transcript.at(-1)).toMatchObject({ kind: 'input', text: 'quit' });
 	});
 
 	it('plays a scripted game to the end through game-turn', async () => {
@@ -129,7 +130,8 @@ describe('playtest loop', () => {
 
 		// It opened as the browser does: the premise, then the arrival.
 		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] Narration for:/);
-		// `notebook` opens a screen in the browser: no echo, no turn.
+		// `notebook` opens a screen in the browser: no echo, no turn. `help` is echoed.
+		expect(game.transcript.some((entry: { text: string }) => entry.text === 'help')).toBe(true);
 		expect(byInput['notebook'].action).toMatchObject({ kind: 'view', view: 'notebook' });
 		expect(game.transcript.some((entry: { text: string }) => entry.text === 'notebook')).toBe(false);
 

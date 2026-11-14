@@ -24,6 +24,7 @@ const MOCK_BLUEPRINT = JSON.parse(
 
 const INPUTS = [
 	'search',
+	'help',
 	'serch the pantry',
 	'talk to alice',
 	'Where were you last night?',
@@ -87,13 +88,18 @@ describe('playtest report', () => {
 		const ungraded = buildReportData(scratch);
 		const turns: Turn[] = ungraded.games[0].turns;
 
-		// Every event once, in order; the line the parser rejected sits where it
-		// was typed, with its hint, and has no event.
+		// Every event once, in order; a line that played nothing (refused, or the
+		// help view) sits where it was typed, with its text, and has no event.
 		const sequences = turns.map((turn) => turn.seq).filter((seq) => seq !== null);
 		expect(sequences).toEqual(sequences.map((_, index) => index + 1));
 		const rejected = turns.find((turn) => turn.input === 'serch the pantry');
 		expect(rejected).toMatchObject({ seq: null, type: 'feedback', note: { kind: 'feedback' } });
 		expect(turns.indexOf(rejected!)).toBeGreaterThan(turns.findIndex((turn) => turn.input === 'search'));
+		expect(turns.find((turn) => turn.input === 'help')).toMatchObject({
+			seq: null,
+			type: 'feedback',
+			note: { kind: 'feedback', text: expect.stringContaining('Help menu opened.') }
+		});
 
 		// The premise and arrival have no input; every typed line has a row.
 		expect(turns[0]).toMatchObject({ seq: 1, type: 'start', input: null });

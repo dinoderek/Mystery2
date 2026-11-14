@@ -54,3 +54,19 @@ export function makeResponse({ action, request, parts, prompt = null, raw }) {
     raw,
   };
 }
+
+/**
+ * Checks a game-turn answer is the turn the case's action asked for. A line
+ * that played nothing (refused, a view, quit) or played another action is an
+ * error: grading it would grade something other than the action under test.
+ */
+export function assertTurnPlayed(data, input, action) {
+  if (data?.kind !== "turn") {
+    const why = data?.kind === "refused" ? `: ${data.hint}` : "";
+    throw new Error(`game-turn did not play "${input}" (answered ${data?.kind})${why}`);
+  }
+  const saved = data.events?.[0]?.event_type;
+  if (!action.events.includes(saved)) {
+    throw new Error(`game-turn played "${input}" as ${saved}, not as the case's action`);
+  }
+}

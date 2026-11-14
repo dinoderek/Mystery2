@@ -13,7 +13,7 @@ import { setupHarnessAuth } from "../auth.mjs";
 import { ensureBlueprintSeeded } from "../seed.mjs";
 import { seedSessionWithHistory } from "../seed-session.mjs";
 import { getAction } from "../roles.mjs";
-import { extractNarrationParts, makeResponse } from "../transcript.mjs";
+import { assertTurnPlayed, extractNarrationParts, makeResponse } from "../transcript.mjs";
 
 export const id = "endpoint";
 
@@ -34,15 +34,6 @@ async function callEndpoint(apiUrl, endpoint, method, body, headers) {
     throw new Error(`${endpoint} failed: HTTP ${res.status} ${String(text).slice(0, 500)}`);
   }
   return data;
-}
-
-// `game-turn` answers a line that played nothing (refused, a view, quit) with a
-// 200 that carries no narration. For a case that is an error: the line the
-// harness built did not mean the action under test.
-function assertTurnPlayed(data, body) {
-  if (data?.kind === undefined || data.kind === "turn") return;
-  const why = data.kind === "refused" ? `: ${data.hint}` : "";
-  throw new Error(`game-turn did not play "${body.input}" (answered ${data.kind})${why}`);
 }
 
 export async function collect(testCase, ctx) {
@@ -80,7 +71,7 @@ export async function collect(testCase, ctx) {
       body,
       auth.headers,
     );
-    if (action.endpoint.name === "game-turn") assertTurnPlayed(data, body);
+    if (action.endpoint.name === "game-turn") assertTurnPlayed(data, body.input, action);
 
     const response = makeResponse({
       action: testCase.action.type,

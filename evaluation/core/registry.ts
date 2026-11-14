@@ -40,8 +40,9 @@ export type IdSetName =
  *
  * - `ref`: every value at `at` is a member of `set` (a blueprint set, or the
  *   values another path of the answer holds). `unique` forbids repeats,
- *   `covers` requires every member of the set to appear, `optional` lets an
- *   absent or empty value pass, `skipIfEmpty` drops the rule when the set is.
+ *   `covers` requires every member of the set to appear, `optional` lets a
+ *   nullish value pass (or an empty string with `"blank"`); `skipIfEmpty` drops
+ *   the rule when the set is empty.
  * - `equals`: the value at `at` is the blueprint's target age.
  * - `field_of`: each item at `at` names a blueprint character by `id`, and
  *   its `field` equals that character's.
@@ -56,7 +57,7 @@ export type IdCheck =
       label: string;
       unique?: boolean;
       covers?: boolean;
-      optional?: boolean;
+      optional?: "nullish" | "blank";
       skipIfEmpty?: boolean;
     }
   | { kind: "equals"; at: string; to: "target_age" }
@@ -217,7 +218,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
         at: "shortest_path_id",
         set: { answer: "paths[].id" },
         label: "enumerated path id",
-        optional: true,
+        optional: "nullish",
       },
       {
         kind: "ref",
@@ -227,7 +228,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
         unique: true,
         covers: true,
       },
-      { ...CHARACTER_REF, at: "elimination_paths[].suspect_id", optional: true },
+      { ...CHARACTER_REF, at: "elimination_paths[].suspect_id", optional: "blank" },
       {
         kind: "ref",
         at: "elimination_paths[].necessary_clues[]",

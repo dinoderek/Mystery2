@@ -1,9 +1,7 @@
 # Judging a turn
 
-Grades the runtime narrator, its prompts and the model behind them, one
-interaction at a time: a case fixes the state and history, the harness collects
-the narration for one action, and checks and judges score it. Commands and
-options are in `evaluation/README.md`.
+Grades one narration against fixed state and history. Commands and options:
+`evaluation/README.md`.
 
 ## Determinism is the point
 
@@ -32,31 +30,35 @@ does not.
 The canned narrator proves the plumbing offline and says nothing about the
 narrator's content; keep stub runs to `flesch`. `narrator-claude` runs with no
 tools, MCP servers or settings, so the model under test does not also read this
-repo's `CLAUDE.md`.
+repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs both
+`narrator-claude` and `turn-judge`; skipping settings also skips logins configured
+only in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env).
 
 ### The throwaway server
 
 A `server` run starts the app on a free port against a temporary config root
 (`scripts/lib/test-server.mjs`, as self-play does), seeds each case's history
 there, sends the action as the line a player would type, and removes the root
-afterwards. It never writes to the database you play on. A case that sets
+afterwards. It never writes to your play database and cannot use a server you
+started yourself. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
 it. The profile resolves as it always does: `mock` needs nothing, `default` is mock
-on the fresh database, and a named AI comes from the config root's `ai.json`,
-linked in with `.env.local` before the server starts, so keys stay in their files.
+on the fresh database (a bare server run grades the mock's canned text), and a
+named AI comes from the config root's `ai.json`, linked in with `.env.local`
+before the server starts, so keys stay in their files.
 
 ## Cases
 
 A case is a blueprint, a `given` state (mode, location, time, the full `history`),
 exactly one `action`, and the judges to run. A case file is `.ts`, `.mjs` or `.json`,
-holding one case or a list; `evaluation/runtime/cases/age-readability.ts` is an
+holding one case or a list; a folder runs every case file in it; `evaluation/runtime/cases/age-readability.ts` is an
 annotated example. `history` rows have the shape the runtime stores in
 `game_events`. The action types, and the mode each is valid from, are `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.
 
 `evaluation/runtime/cases/all-interactions.ts` is the coverage baseline: one case
 per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts`).
-Every case passes `flesch` on both fixture narrators, so a real failure stands out.
+Each passes `flesch` on both fixture narrators.
 
 ## Judges
 
@@ -83,7 +85,7 @@ checks. A binding that cannot run stops the run before anything is replayed.
 
 ### What a run costs
 
-Model calls are cases × narrators × model judges; `flesch` is free. On
+Calls are cases × narrators × model judges; `flesch` is free. On
 `all-interactions.ts` (10 cases, which declare `flesch` and `age_appropriate_turn`):
 
 | Command | Calls |
@@ -112,9 +114,7 @@ Each case × narrator is one subject, `<case>__<narrator>/`, holding `turn.json`
 that fails leaves a `result.json` with a run error and exits 1; a judge that fails
 or cannot judge exits 2.
 
-To judge a stored turn again, which the inner loop uses while iterating on judges,
-point the command at its `turn.json`. The narrator is not called, so the config
-needs no narrator binding:
+To re-judge a stored turn without calling its narrator:
 
 ```bash
 ./dev eval judge turn <run>/<case>__<narrator>/turn.json
@@ -129,9 +129,8 @@ a,b`, and writes a new run. Model judges still call their model. A case's
 `./dev eval cases <trace.json>` turns a stored trace (`evaluation/trace/README.md`)
 into cases. Each event's payload records the state it was generated from, so an
 event becomes one case: the pre-event state and every earlier event as `given`,
-the event as `action`. By default it samples up to 3 `ask` and 3 `talk` events
-across the session, judged by `flesch`; `--types`, `--max`, `--judges` and `--out`
-change that.
+the event as `action`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
+and writes under `<output root>/cases/<trace>/`; `--help` explains overrides.
 
 ## Adding things
 

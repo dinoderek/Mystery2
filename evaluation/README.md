@@ -1,8 +1,7 @@
 # Evaluation runbook
 
-The one runbook for `./dev eval`: its commands, the config file, results and
-exit codes. The design is `docs/evaluation-pipeline.md`. The trace, runtime and
-playtest READMEs beside their code cover only what is particular to each.
+Commands, config, results and exit codes for `./dev eval`. Design:
+`docs/evaluation-pipeline.md`; harness details: the READMEs beside their code.
 
 ## Commands
 
@@ -19,8 +18,11 @@ playtest READMEs beside their code cover only what is particular to each.
 
 Every command takes `--config`, `--output-root` and `--model-override
 <binding>=<model>`, which changes one binding's model for one run; the flag
-repeats. `./dev eval <command> --help` lists the options. For `judge`, name the
+repeats. `./dev eval <command> --help` explains flag meanings and defaults. For `judge`, name the
 subcommand: `./dev eval judge turn --help`.
+
+A blueprint beside `brief.json` needs no `--brief`. For blueprint and game judging,
+`--judges` and `--no-judges` mark unselected judges as skipped.
 
 ## Quick start
 
@@ -95,7 +97,8 @@ The agents' workspaces, each with its `claude.stderr.log`, survive for debugging
   judge's entry holds its model call (model, prompt hash, time, cost, every
   attempt) and its full `answer`.
 - `summary`: counts by status and one `passed` flag.
-- `production`: for `generate`, the generation attempts.
+- `production`: for `generate`, the generation attempts. The API wrapper reports
+  `usage.cost` as `total_cost_usd`; absent or invalid cost stays null.
 - `timing`: monotonic milliseconds for each stage and dimension. The
   `dimensions` stage is wall-clock, roughly the slowest dimension, not the sum.
   A stage's duration includes its retries, and a failed stage records how long

@@ -1,9 +1,7 @@
 # Playtest harness
 
-Plays whole games of Mystery2 with an **AI investigator** against the real game
-server, so the narrator can be judged over a full case rather than one turn at a
-time. Each game leaves a readable transcript, its inputs as a script for
-[replay](#replay), and every step behind it. The options are in `./dev eval play
+An **AI investigator** plays whole games against the real server. Each leaves a
+transcript, a script for [replay](#replay), and every step behind it. The options are in `./dev eval play
 --help`; the layout shared with other runs is in `evaluation/README.md`.
 
 ## Quick start
@@ -43,7 +41,7 @@ played, 2 when a judge failed a game.
 A game stops when the case ends, the investigator quits or fails, three calls in a
 row fail, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
 either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 90
-seconds.
+seconds, so a slow turn fails as a turn.
 
 ## A run folder
 
@@ -101,7 +99,8 @@ Do not ask a model to report its reasoning. A field named `thinking` asking "wha
 you are doing next and why" was refused by the API's safeguards about three turns
 in eight; the same content as `plan`, a note for the log, went through 8 of 8. A
 refusal that persists is retried twice by the binding, then the game stops with
-`stop_reason: investigator-error`.
+`stop_reason: investigator-error`; `result.json` says the run broke. A refused
+narrator fails the turn.
 
 ## Cost
 

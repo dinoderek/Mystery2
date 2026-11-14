@@ -10,7 +10,8 @@
  *   is the documented way to grade a model.
  * - `server`: a throwaway server on a temporary config root, with the case's
  *   history seeded into its database (`lib/replay-server.ts`). `--ai-profile`
- *   names the profile it is asked for.
+ *   names the AI it is asked for, one from `ai.json` of the config root in
+ *   force; the server's `ai.json` holds just the AIs the run names.
  *
  * Every (case, narrator) is one subject: its stored turn (`turn.json`) is
  * written before any judge runs, then its `result.json`. A stored turn, the
@@ -25,7 +26,7 @@ import type { OptionValue } from "../core/args.ts";
 import { loadConfig, resolveBinding } from "../core/config.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
-import { UsageError } from "../core/errors.ts";
+import { ConfigError, UsageError } from "../core/errors.ts";
 import { mapPool } from "../core/pool.ts";
 import { getEntry } from "../core/registry.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult, readResult } from "../core/result.ts";
@@ -55,7 +56,7 @@ const HELP = formatHelp({
     "the turn.json of an earlier run is judged again without replaying.",
   options: [
     ["--narrator <a,b>", `who narrates: ${SERVER_NARRATOR}, or a narrator binding (narrator-claude, narrator-openai, narrator-stub). Default: the case's, else ${SERVER_NARRATOR}`],
-    ["--ai-profile <id>", "the profile a server narrator is asked for (default: the case's, else default)"],
+    ["--ai-profile <name>", "the AI a server narrator is asked for: a name from ai.json, or mock (default: the case's, else default, which is mock on its fresh database)"],
     ["--judges <a,b>", "the checks and judges to run (cases: their judges, else none; stored turns: earlier result's judges, else flesch)"],
     ["--judge-binding <name>", `the binding every model judge calls (default: ${DEFAULT_JUDGE_BINDING}; judge-stub answers offline)`],
     ["--concurrency <n>", `turns replayed and judged at once (default: ${DEFAULT_CONCURRENCY})`],
@@ -165,7 +166,13 @@ interface Runtime {
   judgeBinding: ResolvedBinding | null;
   narrators: Map<string, ResolvedBinding>;
   server: ServerNarrator;
+  /** The `--ai-profile` flag. */
   aiProfile: string | null;
+}
+
+/** The AI a server narrator is asked for: the flag, else the case's, else the server's own choice. */
+function serverAI(testCase: TurnCase, flag: string | null): string {
+  return flag ?? testCase.aiProfile ?? "default";
 }
 
 function subjectId(item: WorkItem): string {
@@ -177,7 +184,7 @@ function subjectId(item: WorkItem): string {
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
   const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   if (narrator === SERVER_NARRATOR) {
-    const aiProfile = runtime.aiProfile ?? testCase.aiProfile ?? "default";
+    const aiProfile = serverAI(testCase, runtime.aiProfile);
     return runtime.server.replay({ testCase, blueprint, blueprintPath, aiProfile });
   }
   const binding = runtime.narrators.get(narrator) as ResolvedBinding;
@@ -320,6 +327,19 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         ? resolve(typeof values["judge-binding"] === "string" ? values["judge-binding"] : DEFAULT_JUDGE_BINDING)
         : null;
 
+      const aiProfile = typeof values["ai-profile"] === "string" ? values["ai-profile"] : null;
+      const asked = items.flatMap((item) =>
+        item.narrator === SERVER_NARRATOR && item.input.kind === "case" ? [serverAI(item.input.testCase, aiProfile)] : [],
+      );
+      // Before the run folder: a name or key ai.json cannot give fails the run with nothing written.
+      let server: ServerNarrator;
+      try {
+        server = new ServerNarrator({ repoRoot: context.root, start: startServer, env: context.env, ais: asked });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AIConfigError") throw new ConfigError(error.message);
+        throw error;
+      }
+
       const folder = createRunFolder({
         outputRoot: resolveOutputRoot(common.outputRoot, context.env),
         command: "judge turn",
@@ -327,15 +347,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         root: context.root,
         bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
       });
-      const server = new ServerNarrator({ repoRoot: context.root, start: startServer, env: context.env });
-      const runtime: Runtime = {
-        context,
-        folder,
-        judgeBinding,
-        narrators: narratorBindings,
-        server,
-        aiProfile: typeof values["ai-profile"] === "string" ? values["ai-profile"] : null,
-      };
+      const runtime: Runtime = { context, folder, judgeBinding, narrators: narratorBindings, server, aiProfile };
 
       context.out(`[judge turn] ${items.length} turn(s) -> ${folder.dir}`);
       try {

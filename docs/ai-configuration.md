@@ -115,5 +115,13 @@ Every suite runs mock by absence: its server gets a config root with no
 installation, not a profile, so a suite sharing a server with game-playing tests
 must never switch it to live. `docs/testing.md` has the rule and the backstop.
 
+A harness that starts a server of its own (the live runners, self-play, turn
+judging) writes that server's temporary `ai.json` with only the AIs it was asked
+for, copied with their keys from the `ai.json` of the config root it is pointed
+at, and names one on each request (`scripts/lib/ai-seed.mjs`). A name that is
+missing, or an `openrouter` AI with no key, fails before the server starts. A
+live run calls nothing unless given a name, and reads no `.env.ai.*` or
+`AI_MODEL`. A trace takes its model from the game's events and resolves nothing.
+
 Changing profile resolution, the stored choice or a provider changes the mock
 and its tests in the same change (`docs/ai-runtime.md`, "The mock provider").

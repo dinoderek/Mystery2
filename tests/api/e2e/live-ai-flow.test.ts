@@ -5,7 +5,7 @@ import {
   getLiveSuiteTitle,
   isLiveAIEnabled,
   LiveAIRetriableExhaustedError,
-  resolveLiveAILabel,
+  requireLiveAIName,
 } from "../../testkit/src/live-ai.ts";
 import {
   API_URL,
@@ -28,8 +28,7 @@ runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {
 
   it("executes the deterministic investigator script", async () => {
     try {
-      const label = resolveLiveAILabel().toLowerCase();
-      const profile = label === "free" || label === "paid" ? label : "free";
+      const profile = requireLiveAIName();
       const headers = auth.headers;
 
       const startData = await callLiveEndpointWithRetry<{ game_id: string }>({

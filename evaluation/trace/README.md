@@ -9,7 +9,7 @@ The game keeps every played session in `game_sessions` and an append-only
 `game_events` log. This pipeline turns that log into a quality signal.
 
 1. **Extract** pulls a session from `game.db` (snapshot, ordered events, the
-   blueprint, non-secret AI-profile metadata) into a **raw** trace with no derived
+   blueprint, the model its events carry) into a **raw** trace with no derived
    fields. `lib/datasource.ts` is the one evaluation module that resolves the play database
    path, and it opens the file read-only, with no migration run.
 2. **Judge** reconstructs what the game master saw each turn, by replaying the

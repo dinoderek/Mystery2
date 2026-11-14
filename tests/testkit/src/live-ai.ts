@@ -8,24 +8,37 @@ export function isLiveAIEnabled(
   return raw === "1" || raw.toLowerCase() === "true";
 }
 
-export function resolveLiveAILabel(
+/**
+ * The AI a live run names, from `ai.json`: the runner sets it, and the suites
+ * name it on each request.
+ */
+export function resolveLiveAIName(
+  env: Record<string, string | undefined> = process.env as Record<
+    string,
+    string | undefined
+  >,
+): string | null {
+  return env.AI_LIVE_AI?.trim() || null;
+}
+
+/** The AI a live suite names on each request; a suite run by hand without one fails loudly. */
+export function requireLiveAIName(
   env: Record<string, string | undefined> = process.env as Record<
     string,
     string | undefined
   >,
 ): string {
-  const label = env.AI_LIVE_LABEL?.trim();
-  if (label) return label;
-
-  const model = env.AI_MODEL?.trim();
-  if (model) return model;
-
-  return "custom";
+  const name = resolveLiveAIName(env);
+  if (!name) {
+    throw new Error(
+      "A live suite calls the AI it is given and has none: run it with `npm run test:integration:live -- <ai>`, `test:e2e:live` or `test:blueprint:live`.",
+    );
+  }
+  return name;
 }
 
 export function getLiveSuiteTitle(base: string): string {
-  const label = resolveLiveAILabel();
-  return `${base} [ai=${label}]`;
+  return `${base} [ai=${resolveLiveAIName() ?? "none"}]`;
 }
 
 function parsePositiveInt(

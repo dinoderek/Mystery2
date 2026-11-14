@@ -1,4 +1,10 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { planServerRun } from "../../../scripts/lib/live-run.mjs";
 
 import { startOwnServer, type OwnServer } from "../../testkit/src/own-server";
 import {
@@ -68,6 +74,29 @@ describe("a server of a test's own", () => {
     // fails (500); resolving the name is what is proven, by not answering 400.
     expect((await startGame(server.apiUrl, auth, "other")).status).toBe(500);
     expect((await startGame(server.apiUrl, auth, "free")).status).toBe(400);
+  });
+
+  it("resolves the AI the live runner writes into its server's root, so a turn fails on the network, not on the name", async () => {
+    // The operator's config root, as a fixture: one OpenRouter AI with a throwaway key.
+    const operator = fs.mkdtempSync(path.join(os.tmpdir(), "live-runner-fixture-"));
+    try {
+      fs.writeFileSync(
+        path.join(operator, "ai.json"),
+        JSON.stringify({ ais: { free: { backend: "openrouter", model: "vendor/free", key: "sk-test-throwaway" } } }),
+      );
+      const plan = planServerRun({ repoRoot: operator, env: { MYSTERY_CONFIG_ROOT: operator }, argv: ["integration", "free"] });
+      // OPENROUTER_URL is a closed port in every server this testkit starts.
+      server = await startOwnServer({ seed: plan.seed });
+    } finally {
+      fs.rmSync(operator, { recursive: true, force: true });
+    }
+    const auth = await server.createPlayer("live-runner");
+
+    const res = await startGame(server.apiUrl, auth, "free");
+    const body = await res.text();
+    expect(res.status, body).not.toBe(400);
+    expect(body).not.toContain("Invalid ai_profile");
+    expect((await startGame(server.apiUrl, auth, "paid")).status).toBe(400);
   });
 
   it("still narrates with mock when the shell exported a run override", async () => {

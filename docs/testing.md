@@ -81,11 +81,11 @@ time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 - **Playwright.** Once per machine, and after any `@playwright/test` bump, run
   `npx playwright install chromium`. Otherwise browser tests fail with
   `Executable doesn't exist`.
-- **Live AI** is opt-in, never a gate substitute:
-  `npm run test:integration:live:free|paid`, `test:e2e:live:free|paid`,
-  `test:blueprint:live:free|paid`, and `AI_LIVE=1 npm -w web run test:e2e --
-  web/e2e/live-ai.spec.ts`. They need `AI_LIVE=1`, a `.env.ai.free.local` or
-  `.env.ai.paid.local`, and tolerate retriable `503`s. See
+- **Live AI** is opt-in, never a gate substitute, and calls only an AI it is
+  named, from `ai.json`: `npm run test:integration:live -- <ai>`,
+  `test:e2e:live -- <ai>`, `test:blueprint:live -- <ai>` (`openrouter` only).
+  They tolerate retriable `503`s. `AI_LIVE=1 npm -w web run test:e2e --
+  web/e2e/live-ai.spec.ts` is the browser smoke. How a harness names an AI:
   [`docs/ai-configuration.md`](ai-configuration.md).
 
 ## Reading results
@@ -159,14 +159,11 @@ test:golden:record`; review the diff.
 - **No real model.** Integration and E2E never call one. The server runs the mock
   provider, so assert persisted side effects.
 - **Mock by absence.** Mock narrates when the config root has no `ai.json`,
-  the runners clear `AI_PROFILE`, and nothing is chosen. The choice belongs to
-  the installation, so a live choice switches every test sharing the server;
-  with no `ai.json` only mock can be chosen there. Choose live in the unit suites
-  (`ai-settings-store.test.ts`, `ai-config.test.ts`) or on a server of the test's
-  own (`tests/testkit/src/own-server.ts`). Suites that choose
-  (`tests/api/integration/ai-settings.test.ts`, `web/e2e/ai-settings.spec.ts`)
-  reset to mock around each test. The runners also
-  point `OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a missing file.
+  the runners clear `AI_PROFILE`, and nothing is chosen. A live choice switches
+  every test sharing the server, so make one only in the unit suites or on a
+  server of the test's own (`tests/testkit/src/own-server.ts`); suites that
+  choose reset to mock around each test. The runners also point `OPENROUTER_URL` at
+  a closed port and `CLAUDE_CLI_PATH` at a missing file.
 
 ## CI and documentation-only changes
 

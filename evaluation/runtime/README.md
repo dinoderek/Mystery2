@@ -18,7 +18,7 @@ every case runs once per narrator on byte-identical input.
 | Narrator | Narration comes from | Needs |
 |---|---|---|
 | `narrator-claude`, `narrator-openai` | a real model, called by the harness | that CLI on PATH (`OPENAI_API_KEY` for openai) |
-| `server` (the default) | the game, on a throwaway server | a build; `--ai-profile` names the profile |
+| `server` (the default) | the game, on a throwaway server | a build; `--ai-profile` names the AI |
 | `narrator-stub` | a canned shell script | nothing |
 
 To grade a model, use `narrator-claude`: the real prompt and the real model, with
@@ -42,10 +42,10 @@ there, sends the action as the line a player would type, and removes the root
 afterwards. It never writes to your play database and cannot use a server you
 started yourself. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
-it. The profile resolves as it always does: `mock` needs nothing, `default` is mock
-on the fresh database (a bare server run grades the mock's canned text), and a
-named AI comes from the config root's `ai.json`, linked in with `.env.local`
-before the server starts, so keys stay in their files.
+it. `--ai-profile` names the AI each request asks for: `mock` needs nothing,
+`default` is mock on the fresh database (a bare server run grades the mock's
+canned text), and any other name comes from the config root's `ai.json`, copied
+with its key into the server's own; a missing name or key fails the run first.
 
 ## Cases
 

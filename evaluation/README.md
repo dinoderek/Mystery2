@@ -11,7 +11,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `validate <file>` | Schema and mechanical checks, no model. `--brief` |
 | `judge blueprint <file>` | Checks, analyzers and the blueprint judges. `--brief`, `--judges`, `--no-judges` |
 | `judge game <session or trace>` | The `gm_*` judges on a played game (`evaluation/trace/README.md`). `--database`, `--judges`, `--no-judges` |
-| `judge turn <cases or turn.json>...` | Replays one turn per case and judges it (`evaluation/runtime/README.md`). `--narrator`, `--ai-profile`, `--judges`, `--judge-binding`, `--concurrency` |
+| `judge turn <cases or turn.json>...` | Replays one turn per case and judges it (`evaluation/runtime/README.md`). `--narrator`, `--ai-profile <ai.json name>`, `--judges`, `--judge-binding`, `--concurrency` |
 | `cases <trace>` | Turns a played game into runtime cases. `--out`, `--types`, `--max`, `--judges` |
 | `play` | Self-play through the real server (`evaluation/playtest/README.md`). `--blueprint` or `--replay`, `--games`, `--judge` |
 | `report <run>` | Writes `report.html` for a self-play run |

@@ -1,41 +1,16 @@
-import { getAIEnvPath, getBaseEnvPath } from "./local-config.mjs";
-import { loadEnvFile } from "./lib/env-file.mjs";
+/**
+ * Runs the live blueprint-generation suite against a real model.
+ *
+ * The AI is named from the `ai.json` of the config root in force and must be an
+ * `openrouter` one: its model and key go to the generator. No server starts.
+ */
+
 import { npmBin, runCommand } from "./lib/process.mjs";
-
-const mode = process.argv[2];
-if (mode !== "free" && mode !== "paid") {
-  console.error("Usage: node scripts/run-live-blueprint-generation.mjs <free|paid>");
-  process.exit(1);
-}
-
-const rootDir = process.cwd();
-const baseEnvPath = getBaseEnvPath(rootDir, process.env);
-const modeEnvPath = getAIEnvPath(rootDir, mode, process.env);
+import { planBlueprintRun } from "./lib/live-run.mjs";
 
 try {
-  const baseVars = await loadEnvFile(baseEnvPath, false);
-  const modeVars = await loadEnvFile(modeEnvPath, true);
-  const env = {
-    ...baseVars,
-    ...modeVars,
-    ...process.env,
-  };
-
-  if (!env.AI_MODEL) {
-    throw new Error("Missing AI_MODEL in env configuration.");
-  }
-  if (!env.OPENROUTER_API_KEY) {
-    throw new Error("Missing OPENROUTER_API_KEY in env configuration.");
-  }
-
-  const liveTestTimeout = env.AI_LIVE_TEST_TIMEOUT_MS || "600000";
-  const runEnv = {
-    ...env,
-    AI_LIVE: "1",
-    AI_LIVE_LABEL: mode,
-    AI_LIVE_TEST_TIMEOUT_MS: liveTestTimeout,
-  };
-
+  const plan = planBlueprintRun({ repoRoot: process.cwd(), env: process.env, argv: process.argv.slice(2) });
+  console.log(`Running live blueprint generation against AI "${plan.name}"...`);
   runCommand(
     npmBin,
     [
@@ -45,9 +20,9 @@ try {
       "run",
       "tests/api/integration/live-ai/live-blueprint-generator.test.ts",
       "--testTimeout",
-      liveTestTimeout,
+      plan.suiteEnv.AI_LIVE_TEST_TIMEOUT_MS,
     ],
-    runEnv,
+    { ...process.env, ...plan.suiteEnv },
   );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

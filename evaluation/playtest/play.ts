@@ -273,6 +273,7 @@ async function extractForGrading(play: Play, record: PlayedRecord): Promise<stri
       gameId: record.game.gameId,
       gameDir: record.folder.dir,
       configRoot: play.server.configRoot,
+      env: play.context.env,
     });
     record.traceStored = true;
     return null;

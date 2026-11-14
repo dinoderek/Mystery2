@@ -93,6 +93,31 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		expect(fs.existsSync(outputRoot)).toBe(false);
 	});
 
+	it('records a game that cannot start as a broken run, and still writes the report', async () => {
+		const stopped = vi.fn(async () => {});
+		// A server that is not there: signing in fails, so no game starts.
+		startServer.mockResolvedValue({ url: 'http://127.0.0.1:9', configRoot: scratch, databaseFile: path.join(scratch, 'none.db'), stop: stopped });
+		const outputRoot = path.join(scratch, 'out');
+		const { code, output } = await play(
+			'--blueprint',
+			'mock-blueprint',
+			'--output-root',
+			outputRoot,
+			'--config',
+			writeConfig({ investigator: STUB_BINDING })
+		);
+		expect(code, output).toBe(1);
+		expect(output).toContain('[game 1] failed');
+		expect(stopped).toHaveBeenCalled();
+		const [day] = fs.readdirSync(outputRoot);
+		const runDir = path.join(outputRoot, day, fs.readdirSync(path.join(outputRoot, day))[0]);
+		const result = JSON.parse(fs.readFileSync(path.join(runDir, 'game-1', 'result.json'), 'utf8'));
+		expect(result.subject).toMatchObject({ kind: 'game', id: 'game-1' });
+		expect(result.run_error).toMatchObject({ stage: 'play' });
+		expect(result.summary.passed).toBe(false);
+		expect(fs.existsSync(path.join(runDir, 'report.html'))).toBe(true);
+	});
+
 	it('does not need an investigator to replay, only the script it names', async () => {
 		const script = path.join(scratch, 'script.json');
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: 'someone-else', inputs: ['search'] }));

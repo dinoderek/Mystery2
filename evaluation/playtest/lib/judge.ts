@@ -142,17 +142,19 @@ export async function extractTrace({
   gameId,
   gameDir,
   configRoot = null,
+  env = process.env,
 }: {
   repoRoot: string;
   database: string;
   gameId: string;
   gameDir: string;
   configRoot?: string | null;
+  env?: NodeJS.ProcessEnv;
 }): Promise<void> {
   const source = createLocalTraceSource({
     databasePath: database,
     repoRoot,
-    env: configRoot ? { ...process.env, MYSTERY_CONFIG_ROOT: configRoot } : process.env,
+    env: configRoot ? { ...env, MYSTERY_CONFIG_ROOT: configRoot } : env,
   });
   let trace: RawTrace;
   try {

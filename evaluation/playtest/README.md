@@ -16,8 +16,7 @@ time. Each game leaves a readable transcript, its inputs as a script for
 ./dev eval report <run>
 ```
 
-Needs a logged-in `claude` CLI (the narrator and the investigator both run through
-it) and no API key. It builds the web app, starts it on a free port against a
+Needs a logged-in `claude` CLI (the narrator and investigator both use it) and no API key. It builds the web app, starts it on a free port against a
 throwaway database, and never touches yours. `--narrator mock` is for plumbing
 checks only. Open `<run>/report.html`, or read a game's `transcript.md`.
 
@@ -42,7 +41,7 @@ played, 2 when a judge failed a game.
   be read back from `steps.jsonl`.
 
 A game stops when the case ends, the investigator quits or fails, three calls in a
-row fail, `--max-steps` runs out, or a replay diverges. Its folder is written
+row fail, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
 either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 90
 seconds.
 

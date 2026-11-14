@@ -82,7 +82,8 @@ agent runs its own validator and fixes its mistakes, and the workspace records
 everything it saw, so a bug can be reproduced. The generator's workspace
 (`evaluation/generator-harness/template/`) gets curated extracts of the repo docs,
 pinned to the sections they summarise and checked by the gate
-(`evaluation/generator-harness/template/README.md`).
+(`evaluation/generator-harness/template/README.md`). The judge's is
+`evaluation/judge-harness/template/`.
 
 ## Dimensions
 

@@ -10,6 +10,8 @@ export interface BlueprintGenerationErrorDetails {
   status?: number;
   responseBody?: string;
   responseText?: string;
+  /** The answer as it was checked: parsed, without image ids or the nulls strict mode forced. */
+  checkedJson?: unknown;
   issues?: unknown;
   model?: string;
   outputPath?: string;

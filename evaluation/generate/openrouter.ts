@@ -12,10 +12,11 @@
  * `{ "result": "<blueprint JSON>" }` envelope the binding's `extract_path`
  * reads. The key is never printed or put in an error message.
  *
- * A blueprint that fails the schema is still printed, so the command that ran
- * the wrapper keeps it and its mechanical check says why it failed, as it does
- * for the agent backend. Any other failure exits non-zero and the runner
- * retries as the binding says.
+ * A blueprint that fails the schema is still printed, as it was checked, so the
+ * command that ran the wrapper keeps it and its mechanical check says why it
+ * failed, as it does for the agent backend; the envelope then also carries
+ * `raw`, the model's own text, for the attempt's stdout log. Any other failure
+ * exits non-zero and the runner retries as the binding says.
  */
 
 import fs from "node:fs/promises";
@@ -73,7 +74,6 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
   if (!openRouterApiKey) throw new Error(`${OPENROUTER_KEY_VAR} is not set`);
   const storyBrief = await readStoryBrief(userMessageFile);
 
-  let text: string;
   try {
     const blueprint = await generateBlueprint({
       storyBrief,
@@ -83,13 +83,16 @@ export async function generateViaOpenRouter({ userMessageFile, env, fetchImpl }:
       baseUrl: env.OPENROUTER_URL?.trim() || undefined,
       fetchImpl,
     });
-    text = JSON.stringify(blueprint, null, 2);
+    return JSON.stringify({ result: JSON.stringify(blueprint, null, 2) });
   } catch (error) {
-    const kept = error instanceof BlueprintGenerationError && error.code === "SCHEMA_VALIDATION_FAILED" ? error.details.responseText : undefined;
-    if (typeof kept !== "string") throw error;
-    text = kept;
+    if (!(error instanceof BlueprintGenerationError) || error.code !== "SCHEMA_VALIDATION_FAILED") throw error;
+    // The result is the answer as the generator checked it, so the command's
+    // own check reports what is really wrong rather than the nulls strict mode
+    // forced; `raw` keeps what the model sent in the attempt's stdout log.
+    const { checkedJson, responseText } = error.details;
+    if (checkedJson === undefined) throw error;
+    return JSON.stringify({ result: JSON.stringify(checkedJson, null, 2), raw: responseText });
   }
-  return JSON.stringify({ result: text });
 }
 
 /** What a failed call says on stderr: the error's code and message, never its request. */

@@ -259,91 +259,51 @@ export const SessionCatalogResponseSchema = z.object({
 // --- AI settings ---
 //
 // The settings page is reachable before a profile is picked, so these shapes
-// cross the boundary unauthenticated. Note what is *not* here: no schema
-// carries `api_key`. A stored key leaves the server only as `masked`, and the
-// only direction a secret ever travels is inward, on AIKeyUpsertSchema.
+// cross the boundary unauthenticated. No schema here carries a key: the page
+// chooses among the AIs in `ai.json` and has no use for one.
 
-export const AISettingsSourceSchema = z.enum(["env", "user"]);
-export const AIModeSchema = z.enum(["mock", "openrouter"]);
-/**
- * Every provider the runtime can use. Wider than AIModeSchema, which is what
- * the settings page can choose: `claude-cli` reaches `default` only through a
- * run override, so it appears in the override and the effective mode.
- */
-export const AIProviderSchema = z.enum(["mock", "openrouter", "claude-cli"]);
+/** How an AI narrates. `mock` is built in; the others are `ai.json` entries. */
+export const AIBackendSchema = z.enum(["mock", "openrouter", "claude-cli"]);
 
-export const AIKeySummarySchema = z.object({
-  label: z.string().min(1),
-  source: AISettingsSourceSchema,
-  /** Last four characters, for telling two keys apart. Never the whole secret. */
-  masked: z.string(),
-});
-
-export const AIModelSummarySchema = z.object({
-  label: z.string().min(1),
-  model_id: z.string().min(1),
-  source: AISettingsSourceSchema,
-});
-
-/**
- * The AI the server was started with (`./dev run --ai <name>`), named in
- * `source`.
- *
- * Provider and model only: a key is never shown. Present means the stored
- * choice below is not currently in effect.
- */
-export const AIOverrideSchema = z.object({
-  provider: AIProviderSchema,
+/** An AI, as the page names it: no key, and nothing that would reveal one. */
+export const AISummarySchema = z.object({
+  name: z.string().min(1),
+  backend: AIBackendSchema,
   model: z.string().min(1),
-  source: z.string().min(1),
+});
+
+/** An AI the page can list, and why it cannot narrate, when it cannot. */
+export const AIChoiceSchema = AISummarySchema.extend({
+  /** Null when the AI has what it needs; otherwise what is missing, naming it. */
+  problem: z.string().min(1).nullable(),
 });
 
 export const AISettingsStateSchema = z.object({
-  /** What the runtime will actually do, once override and dangling selections are applied. */
-  effective_mode: AIProviderSchema,
-  /** What was last chosen on this page. */
-  stored_mode: AIModeSchema,
-  selected_key_label: z.string().nullable(),
-  selected_model_label: z.string().nullable(),
-  /** A selection naming a label the last environment reseed removed. */
-  missing_key_label: z.string().nullable(),
-  missing_model_label: z.string().nullable(),
-  keys: z.array(AIKeySummarySchema),
-  models: z.array(AIModelSummarySchema),
-  override: AIOverrideSchema.nullable(),
+  /** Mock first, then the file's AIs in the file's order. */
+  ais: z.array(AIChoiceSchema),
+  /** The name chosen on the page, or null when nothing has been chosen. */
+  chosen: z.string().min(1).nullable(),
+  /**
+   * The AI the server was started with (`./dev run --ai <name>`). Present
+   * means it narrates instead of the choice above.
+   */
+  override: AISummarySchema.nullable(),
+  /** The AI that narrates a game started now. Null exactly when `narrator_error` is set. */
+  narrator: AISummarySchema.nullable(),
+  /** Why nothing can narrate: the choice names an AI that is missing or broken. */
+  narrator_error: z.string().min(1).nullable(),
 });
 
-export const AISettingsUpdateSchema = z
-  .object({
-    mode: AIModeSchema.optional(),
-    key_label: z.string().min(1).nullable().optional(),
-    model_label: z.string().min(1).nullable().optional(),
-  })
-  .refine(
-    (value) => Object.values(value).some((entry) => entry !== undefined),
-    { message: "Nothing to update" },
-  );
-
-export const AIKeyUpsertSchema = z.object({
-  label: z.string().min(1).max(60),
-  api_key: z.string().min(1),
+export const AISettingsUpdateSchema = z.object({
+  /** `mock`, or the name of an AI in `ai.json`. */
+  name: z.string().trim().min(1),
 });
 
-export const AIModelUpsertSchema = z.object({
-  label: z.string().min(1).max(60),
-  model_id: z.string().min(1),
-});
-
-export type AISettingsSource = z.infer<typeof AISettingsSourceSchema>;
-export type AIMode = z.infer<typeof AIModeSchema>;
-export type AIProvider = z.infer<typeof AIProviderSchema>;
-export type AIKeySummary = z.infer<typeof AIKeySummarySchema>;
-export type AIModelSummary = z.infer<typeof AIModelSummarySchema>;
-export type AIOverride = z.infer<typeof AIOverrideSchema>;
+export type AIBackend = z.infer<typeof AIBackendSchema>;
+export type AISummary = z.infer<typeof AISummarySchema>;
+export type AIChoice = z.infer<typeof AIChoiceSchema>;
 export type AISettingsState = z.infer<typeof AISettingsStateSchema>;
 export type AISettingsUpdate = z.infer<typeof AISettingsUpdateSchema>;
-export type AIKeyUpsert = z.infer<typeof AIKeyUpsertSchema>;
-export type AIModelUpsert = z.infer<typeof AIModelUpsertSchema>;
 
 export type SpeakerKind = z.infer<typeof SpeakerKindSchema>;
 export type Speaker = z.infer<typeof SpeakerSchema>;

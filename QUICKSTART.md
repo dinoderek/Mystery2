@@ -68,25 +68,6 @@ like. `npm run prod` starts the same server against the persistent one instead.
 
 ### Live AI
 
-The quickest route is the settings page: `[ AI SETTINGS ]` on the profile
-picker, reachable before you have picked a profile. Add a key and a model, pick
-them, switch to Real AI. The choice is stored and survives a restart.
-
-To have keys and models already there, create the gitignored
-`.env.ai.local` in the config root:
-
-```bash
-OPENROUTER_KEY_PERSONAL="<key>"
-AI_MODEL_SONNET="anthropic/claude-sonnet-4"
-AI_MODEL_LLAMA_FREE="meta-llama/llama-3.3-70b-instruct:free"
-```
-
-Each entry becomes a labelled choice on the settings page — `personal`,
-`sonnet`, `llama_free`. They are re-read on every start, so that file stays the
-place to rotate a key, and a label removed from it disappears from the page.
-
-### Naming AIs for a run
-
 Copy `ai.example.json` to `ai.json` in the config root (gitignored) and list
 your AIs by name:
 
@@ -97,7 +78,11 @@ your AIs by name:
 ```
 
 Leave out `"key"` to use `OPENROUTER_API_KEY` from the environment or `.env.local`. `./dev doctor`
-checks the file. Then:
+checks the file. Restart, then choose one on the settings page: `[ AI SETTINGS ]`
+on the profile picker, reachable before you have picked a profile. The choice is
+stored in this database and survives a restart; the picker names the narrator.
+
+### Naming an AI for a run
 
 ```bash
 ./dev run --ai free              # or npm run dev -- --ai free

@@ -11,8 +11,6 @@ import {
   NarrationPartSchema,
   GameStateSchema,
   SpeakerSchema,
-  AIKeyUpsertSchema,
-  AIModelUpsertSchema,
   AISettingsStateSchema,
   AISettingsUpdateSchema,
   GameTurnRequestSchema,
@@ -249,85 +247,61 @@ describe("shared mystery API contracts", () => {
 
 describe("AI settings", () => {
   const state = {
-    effective_mode: "openrouter",
-    stored_mode: "openrouter",
-    selected_key_label: "work",
-    selected_model_label: "sonnet",
-    missing_key_label: null,
-    missing_model_label: null,
-    keys: [{ label: "work", source: "user", masked: "...1234" }],
-    models: [{ label: "sonnet", model_id: "vendor/model", source: "env" }],
+    ais: [
+      { name: "mock", backend: "mock", model: "mock/runtime-default", problem: null },
+      { name: "luna6", backend: "openrouter", model: "openai/gpt-6-luna", problem: null },
+      { name: "claude", backend: "claude-cli", model: "sonnet", problem: null },
+    ],
+    chosen: "luna6",
     override: null,
+    narrator: { name: "luna6", backend: "openrouter", model: "openai/gpt-6-luna" },
+    narrator_error: null,
   };
 
   it("accepts a full settings state", () => {
-    expect(AISettingsStateSchema.parse(state)).toMatchObject({
-      effective_mode: "openrouter",
-    });
+    expect(AISettingsStateSchema.parse(state)).toEqual(state);
   });
 
-  it("carries no field that could hold a stored key", () => {
-    // The one rule this whole surface exists to keep. A key leaves the server
-    // as `masked` and nothing else, so an added `api_key` here would be the
-    // first sign that something started serialising the real value.
-    const shape = AISettingsStateSchema.parse(state);
-    const keyFields = Object.keys(shape.keys[0]);
+  it("carries no field that could hold a key", () => {
+    // An AI is named by its name, backend and model. A `key` field appearing
+    // here would be the first sign something started copying one out.
+    const shape = AISettingsStateSchema.parse({ ...state, ais: [{ ...state.ais[1], key: "sk-or-secret" }] });
 
-    expect(keyFields).toEqual(["label", "source", "masked"]);
-    expect(JSON.stringify(shape)).not.toContain("api_key");
+    expect(Object.keys(shape.ais[0])).toEqual(["name", "backend", "model", "problem"]);
+    expect(JSON.stringify(shape)).not.toContain("sk-or-secret");
   });
 
-  it("accepts an override naming only the provider and model", () => {
-    expect(
-      AISettingsStateSchema.parse({
-        ...state,
-        override: { provider: "openrouter", model: "vendor/model", source: "--ai free" },
-      }).override,
-    ).toEqual({
-      provider: "openrouter",
-      model: "vendor/model",
-      source: "--ai free",
-    });
-  });
-
-  it("lets the override and the effective mode name the claude CLI, but not the stored mode", () => {
-    const withCli = AISettingsStateSchema.parse({
+  it("accepts an override and a missing narrator with its reason", () => {
+    const parsed = AISettingsStateSchema.parse({
       ...state,
-      effective_mode: "claude-cli",
-      override: { provider: "claude-cli", model: "sonnet", source: "--ai free" },
+      chosen: "gone",
+      override: { name: "claude", backend: "claude-cli", model: "sonnet" },
+      narrator: null,
+      narrator_error: 'The AI chosen on the settings page, "gone", is not in ai.json.',
     });
-    expect(withCli.effective_mode).toBe("claude-cli");
-    expect(withCli.override?.provider).toBe("claude-cli");
-
-    // The settings page chooses between mock and OpenRouter only.
-    expect(() => AISettingsStateSchema.parse({ ...state, stored_mode: "claude-cli" })).toThrow();
+    expect(parsed.override?.backend).toBe("claude-cli");
+    expect(parsed.narrator_error).toMatch(/"gone"/);
   });
 
-  it("reports a dangling selection rather than hiding it", () => {
-    expect(
-      AISettingsStateSchema.parse({
-        ...state,
-        effective_mode: "mock",
-        missing_key_label: "work",
-        keys: [],
-      }),
-    ).toMatchObject({ effective_mode: "mock", missing_key_label: "work" });
+  it("accepts nothing chosen, and an AI that lacks what it needs", () => {
+    const parsed = AISettingsStateSchema.parse({
+      ...state,
+      chosen: null,
+      ais: [{ name: "free", backend: "openrouter", model: "vendor/free", problem: 'AI "free" has no key' }],
+    });
+    expect(parsed.chosen).toBeNull();
+    expect(parsed.ais[0].problem).toMatch(/no key/);
   });
 
-  it("rejects an unknown mode", () => {
-    expect(() => AISettingsStateSchema.parse({ ...state, stored_mode: "anthropic" })).toThrow();
+  it("rejects a backend it does not know", () => {
+    expect(() =>
+      AISettingsStateSchema.parse({ ...state, ais: [{ ...state.ais[0], backend: "anthropic" }] }),
+    ).toThrow();
   });
 
-  it("treats null as a meaningful update, and an empty one as a mistake", () => {
-    // Clearing a selection is `null`; sending nothing at all is a caller bug.
-    expect(AISettingsUpdateSchema.parse({ key_label: null })).toEqual({ key_label: null });
+  it("takes one name as an update, and refuses an empty one", () => {
+    expect(AISettingsUpdateSchema.parse({ name: " luna6 " })).toEqual({ name: "luna6" });
+    expect(() => AISettingsUpdateSchema.parse({ name: " " })).toThrow();
     expect(() => AISettingsUpdateSchema.parse({})).toThrow();
-  });
-
-  it("requires a label and a value on both upserts", () => {
-    expect(AISettingsUpdateSchema.parse({ mode: "mock" })).toEqual({ mode: "mock" });
-    expect(() => AIKeyUpsertSchema.parse({ label: "", api_key: "sk" })).toThrow();
-    expect(() => AIKeyUpsertSchema.parse({ label: "work" })).toThrow();
-    expect(() => AIModelUpsertSchema.parse({ label: "sonnet", model_id: "" })).toThrow();
   });
 });

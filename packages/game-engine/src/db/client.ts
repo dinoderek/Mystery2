@@ -67,7 +67,7 @@ export interface Db {
  * always the current end state, and the steps below only exist to carry files
  * that already exist up to it.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** One forward step: the SQL, and the version the database is at afterwards. */
 export interface Migration {
@@ -86,39 +86,28 @@ export interface Migration {
  */
 const MIGRATIONS: ReadonlyArray<Migration> = [
   {
-    // AI configuration moved from environment-only into the database: labelled
-    // OpenRouter keys and models, plus the single row that selects among them
-    // and holds the mock/live choice.
+    // The AIs moved into ai.json, so the database keeps only the one that was
+    // chosen. The labelled keys and models go, and the settings row is replaced
+    // by its one-value form. The old choice is not carried over: it named a key
+    // and a model, not an AI, so it is chosen again on the settings page.
     //
-    // Deliberately written out rather than importing the statements from
+    // Deliberately written out rather than importing the statement from
     // `schema.ts`: a migration is a historical fact, and sharing a constant with
     // the live schema would let a later edit silently rewrite what this step
     // did. `local-engine-db.test.ts` diffs an upgraded database against a fresh
     // one, which is what keeps the duplication honest.
-    to: 2,
+    //
+    // There is no step to 2: `planMigrations()` refuses a database older than
+    // that, and it is deleted and started again.
+    to: 3,
     sql: `
-      create table ai_keys (
-          label       text primary key,
-          api_key     text not null,
-          source      text not null check (source in ('env', 'user')),
-          created_at  text not null,
-          updated_at  text not null
-      );
-
-      create table ai_models (
-          label       text primary key,
-          model_id    text not null,
-          source      text not null check (source in ('env', 'user')),
-          created_at  text not null,
-          updated_at  text not null
-      );
+      drop table ai_keys;
+      drop table ai_models;
+      drop table app_settings;
 
       create table app_settings (
-          id              text primary key check (id = 'singleton'),
-          ai_mode         text not null default 'mock' check (ai_mode in ('mock', 'openrouter')),
-          ai_key_label    text,
-          ai_model_label  text,
-          updated_at      text not null
+          id       integer primary key check (id = 1),
+          ai_name  text not null
       );
     `,
   },

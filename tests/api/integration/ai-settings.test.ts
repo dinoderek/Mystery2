@@ -1,227 +1,269 @@
 // `/api/ai-settings`, against the built server.
 //
-// Two properties are the reason this suite exists: the page is reachable with
-// no cookie (it sits in front of the profile picker), and a stored API key
-// never comes back out of it. Everything else here is ordinary CRUD.
+// The page is reachable with no cookie (it sits in front of the profile
+// picker), lists the AIs in `ai.json` without a key, and stores one choice.
+// The suite's server has no `ai.json`, so only mock can be chosen on it.
 //
-// The server under test runs against a temporary config root with no env files,
-// so every row these tests see is one they created — there is no `env` row to
-// collide with, and the override block is null.
-//
-// ## Nothing here switches the mode to live
+// ## Nothing here switches the suite's server to a live AI
 //
 // The rest of this suite is safe to run in parallel because every test owns a
-// profile and touches only its own sessions. The settings row is not like that:
-// it belongs to the installation, so setting `mode: "openrouter"` here sets it
-// for every test sharing this server. It happened — a throwaway key went to the
-// real openrouter.ai, and whichever test started a game in that window got a
-// 401 back as a 500 it had no way to explain. Locally the files interleaved
-// harmlessly and it passed; on CI they did not.
+// profile and touches only its own sessions. The stored choice is not like
+// that: it belongs to the installation, so a live choice made here would be
+// made for every test sharing this server. It happened, when the page still
+// took keys: a throwaway key went to the real openrouter.ai, and whichever test
+// started a game in that window got a 401 back as a 500 it had no way to
+// explain. Locally the files interleaved harmlessly and it passed; on CI they
+// did not.
 //
-// So the accept path is asserted where it costs nobody: `resolve()` returning
-// `openrouter` in `tests/api/unit/ai-settings-store.test.ts`, and `default`
-// following the stored choice in `tests/api/unit/local-engine-ai-profile.test.ts`.
-// What stays here is everything that leaves the server in mock — including the
-// refusal, which is the endpoint-level behaviour worth pinning anyway.
-//
-// If you add a case here, ask what the server is set to when it yields.
+// So every choice of anything but mock is made on a server of the test's own
+// (`startOwnServer`), which nothing else shares and whose AIs cannot reach a
+// real model. If you add a case here, ask what the suite's server is set to
+// when it yields.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { API_URL, setupApiTestAuth } from "./helpers";
+
+import type { AISettingsState } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { AISettingsStateSchema } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { startOwnServer, type OwnServer } from "../../testkit/src/own-server";
+import type { TestPlayer } from "../../testkit/src/server";
+import { API_URL, MOCK_BLUEPRINT_ID, readStoredEvents, setupApiTestAuth } from "./helpers";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-interface KeySummary {
-  label: string;
-  source: "env" | "user";
-  masked: string;
-}
-
-interface ModelSummary {
-  label: string;
-  model_id: string;
-  source: "env" | "user";
-}
-
-interface SettingsState {
-  effective_mode: "mock" | "openrouter";
-  stored_mode: "mock" | "openrouter";
-  selected_key_label: string | null;
-  selected_model_label: string | null;
-  missing_key_label: string | null;
-  missing_model_label: string | null;
-  keys: KeySummary[];
-  models: ModelSummary[];
-  override: { provider: string; model: string; source: string } | null;
-}
-
-function get(): Promise<Response> {
-  return fetch(`${API_URL}/ai-settings`);
-}
-
-function post(path: string, body: unknown): Promise<Response> {
-  return fetch(`${API_URL}/${path}`, {
+function choose(name: unknown, apiUrl = API_URL): Promise<Response> {
+  return fetch(`${apiUrl}/ai-settings`, {
     method: "POST",
     headers: JSON_HEADERS,
-    body: JSON.stringify(body),
+    body: JSON.stringify({ name }),
   });
 }
 
-function remove(path: string, label: string): Promise<Response> {
-  return fetch(`${API_URL}/${path}?label=${encodeURIComponent(label)}`, {
-    method: "DELETE",
+async function state(apiUrl = API_URL): Promise<AISettingsState> {
+  return AISettingsStateSchema.parse(await (await fetch(`${apiUrl}/ai-settings`)).json());
+}
+
+describe("the suite's server", () => {
+  // Shared with every other test, so each one leaves it on mock.
+  beforeEach(async () => {
+    await choose("mock");
   });
-}
+  afterEach(async () => {
+    await choose("mock");
+  });
 
-async function state(): Promise<SettingsState> {
-  return (await get()).json() as Promise<SettingsState>;
-}
-
-/**
- * The settings row is global, so tests share it. Each one puts it back to mock
- * with nothing selected and removes what it added, rather than relying on
- * ordering.
- */
-async function reset(): Promise<void> {
-  await post("ai-settings", { mode: "mock" });
-  await post("ai-settings", { key_label: null, model_label: null });
-
-  const current = await state();
-  for (const key of current.keys.filter((entry) => entry.source === "user")) {
-    await remove("ai-settings/keys", key.label);
-  }
-  for (const model of current.models.filter((entry) => entry.source === "user")) {
-    await remove("ai-settings/models", model.label);
-  }
-}
-
-beforeEach(reset);
-afterEach(reset);
-
-describe("reaching the settings without a profile", () => {
-  it("answers a GET with no cookie at all", async () => {
-    const response = await get();
+  it("answers with no cookie at all, listing only mock", async () => {
+    const response = await fetch(`${API_URL}/ai-settings`);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ stored_mode: "mock" });
+    expect(AISettingsStateSchema.parse(await response.json())).toMatchObject({
+      ais: [{ name: "mock", backend: "mock", problem: null }],
+      narrator: { name: "mock", backend: "mock" },
+      narrator_error: null,
+    });
   });
 
-  it("accepts a write with no cookie", async () => {
-    expect((await post("ai-settings/models", { label: "m", model_id: "v/m" })).status).toBe(200);
-  });
-
-  it("still works for a signed-in player", async () => {
+  it("still answers a signed-in player", async () => {
     const auth = await setupApiTestAuth("ai-settings");
 
     expect((await fetch(`${API_URL}/ai-settings`, { headers: auth.headers })).status).toBe(200);
   });
+
+  it("stores a choice of mock, with no cookie", async () => {
+    const response = await choose("mock");
+
+    expect(response.status).toBe(200);
+    expect(AISettingsStateSchema.parse(await response.json()).chosen).toBe("mock");
+    expect((await state()).chosen).toBe("mock");
+  });
+
+  it("refuses a name that is not in ai.json, naming it, and keeps the choice", async () => {
+    for (const name of ["free", "paid", "default"]) {
+      const response = await choose(name);
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toContain(`"${name}"`);
+    }
+    expect((await state()).chosen).toBe("mock");
+  });
+
+  it("refuses a body without a name, naming the field", async () => {
+    for (const body of [{}, { name: "" }, { name: 3 }]) {
+      const response = await fetch(`${API_URL}/ai-settings`, {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify(body),
+      });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ details: { field: "name" } });
+    }
+  });
+
+  it("has no key or model endpoints any more", async () => {
+    for (const path of ["ai-settings/keys", "ai-settings/models"]) {
+      expect((await fetch(`${API_URL}/${path}`)).status).toBe(404);
+      expect(
+        (await fetch(`${API_URL}/${path}`, { method: "POST", headers: JSON_HEADERS, body: "{}" })).status,
+      ).toBe(404);
+    }
+  });
+
+  it("reports no override, because the suite's server is started without one", async () => {
+    // If this ever reports an override, the harness has begun leaking the
+    // ambient environment into the server it spawns.
+    expect((await state()).override).toBeNull();
+  });
 });
 
-describe("keys", () => {
-  it("never returns a stored key, only its last four characters", async () => {
-    const response = await post("ai-settings/keys", {
-      label: "mine",
-      api_key: "sk-or-v1-supersecretvalue9999",
+// The servers below are the test's own. Their AIs cannot reach a real model:
+// the claude CLI is pointed at a missing file, OpenRouter at a closed port.
+describe("a server with AIs of its own", () => {
+  let server: OwnServer | null = null;
+
+  afterEach(async () => {
+    await server?.stop();
+    server = null;
+  });
+
+  async function start(aiConfig: unknown, env: Record<string, string> = {}): Promise<OwnServer> {
+    // A key exported in the shell would reach the server and give a keyless
+    // entry one.
+    server = await startOwnServer({
+      aiConfig,
+      env: { OPENROUTER_API_KEY: "", AI_CLAUDE_CLI_MAX_ATTEMPTS: "1", ...env },
     });
+    return server;
+  }
+
+  function gameStart(own: OwnServer, auth: TestPlayer): Promise<Response> {
+    return fetch(`${own.apiUrl}/game-start`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    });
+  }
+
+  function turn(own: OwnServer, auth: TestPlayer, gameId: string, input: string): Promise<Response> {
+    return fetch(`${own.apiUrl}/game-turn`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ game_id: gameId, input }),
+    });
+  }
+
+  /** Stores a choice the page would refuse: an AI that has since gone, or broken. */
+  function storeChoiceDirectly(own: OwnServer, name: string): void {
+    own
+      .database()
+      .prepare("insert into app_settings (id, ai_name) values (1, ?) on conflict(id) do update set ai_name = excluded.ai_name")
+      .run(name);
+  }
+
+  function sessionCount(own: OwnServer, auth: TestPlayer): number {
+    const row = own.database().prepare("select count(*) as n from game_sessions where player_id = ?").get(auth.id);
+    return Number(row?.n);
+  }
+
+  it("lists the file's AIs with backend and model, and sends no key", async () => {
+    const own = await start({
+      ais: {
+        luna6: { backend: "openrouter", model: "openai/gpt-6-luna", key: "sk-or-v1-integration-secret" },
+        free: { backend: "openrouter", model: "vendor/free" },
+        claude: { backend: "claude-cli", model: "sonnet" },
+      },
+    });
+
+    const response = await fetch(`${own.apiUrl}/ai-settings`);
     const body = await response.text();
 
-    expect(response.status).toBe(200);
-    expect(body).not.toContain("supersecret");
-    expect(body).not.toContain("sk-or-v1-supersecretvalue9999");
-
-    const current = await state();
-    expect(current.keys).toContainEqual({
-      label: "mine",
-      source: "user",
-      masked: "...9999",
-    });
-  });
-
-  it("rejects a key with no label or no value", async () => {
-    expect((await post("ai-settings/keys", { label: "", api_key: "sk" })).status).toBe(400);
-    expect((await post("ai-settings/keys", { label: "mine", api_key: "" })).status).toBe(400);
-  });
-
-  it("replaces a key stored under the same label", async () => {
-    await post("ai-settings/keys", { label: "mine", api_key: "sk-aaaa" });
-    await post("ai-settings/keys", { label: "mine", api_key: "sk-bbbb" });
-
-    const current = await state();
-    expect(current.keys.filter((key) => key.label === "mine")).toEqual([
-      { label: "mine", source: "user", masked: "...bbbb" },
+    expect(body).not.toContain("integration-secret");
+    expect(body).not.toContain("sk-or");
+    const parsed = AISettingsStateSchema.parse(JSON.parse(body));
+    expect(parsed.ais.map(({ name, backend, model }) => [name, backend, model])).toEqual([
+      ["mock", "mock", "mock/runtime-default"],
+      ["luna6", "openrouter", "openai/gpt-6-luna"],
+      ["free", "openrouter", "vendor/free"],
+      ["claude", "claude-cli", "sonnet"],
     ]);
+    expect(parsed.ais.find((ai) => ai.name === "free")?.problem).toMatch(/AI "free" uses openrouter but has no key/);
+
+    // Choosing returns the same shape, still without the key.
+    const chosen = await choose("luna6", own.apiUrl);
+    expect(chosen.status).toBe(200);
+    expect(await chosen.text()).not.toContain("integration-secret");
+    expect((await state(own.apiUrl)).narrator).toEqual({ name: "luna6", backend: "openrouter", model: "openai/gpt-6-luna" });
+
+    // An AI without what it needs is listed but cannot be chosen.
+    const refused = await choose("free", own.apiUrl);
+    expect(refused.status).toBe(400);
+    expect((await refused.json()).error).toMatch(/"free"/);
+    expect((await state(own.apiUrl)).chosen).toBe("luna6");
   });
 
-  it("reports a delete of something that was never there", async () => {
-    expect((await remove("ai-settings/keys", "ghost")).status).toBe(404);
-  });
-});
+  it("shows a run override, which narrates instead of the choice", async () => {
+    const own = await start({ ais: { claude: { backend: "claude-cli", model: "sonnet" } } }, { AI_PROFILE: "claude" });
 
-describe("choosing a configuration", () => {
-  it("refuses real AI until both a key and a model are selected", async () => {
-    const response = await post("ai-settings", { mode: "openrouter" });
-
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ error: expect.stringMatching(/key/i) });
-    expect((await state()).stored_mode).toBe("mock");
-  });
-
-  it("refuses a selection naming a label that does not exist", async () => {
-    expect((await post("ai-settings", { key_label: "ghost" })).status).toBe(400);
-  });
-
-  it("stores a key and model selection, and persists it", async () => {
-    // The mode stays mock, so this leaves the server in a state every other
-    // test can live with. See the note at the top of the file.
-    await post("ai-settings/keys", { label: "mine", api_key: "sk-or-v1-abcd" });
-    await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
-
-    const response = await post("ai-settings", {
-      key_label: "mine",
-      model_label: "mine",
-    });
-
-    expect(response.status).toBe(200);
-    expect(await state()).toMatchObject({
-      stored_mode: "mock",
-      selected_key_label: "mine",
-      selected_model_label: "mine",
+    expect(await state(own.apiUrl)).toMatchObject({
+      chosen: null,
+      override: { name: "claude", backend: "claude-cli", model: "sonnet" },
+      narrator: { name: "claude" },
     });
   });
 
-  it("clears a selection when asked with null", async () => {
-    await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
-    await post("ai-settings", { model_label: "mine" });
+  it("takes a choice made between two turns on the second turn", async () => {
+    const own = await start({ ais: { cli: { backend: "claude-cli", model: "sonnet" } } });
+    const auth = await own.createPlayer("ai-choice-turn");
+    const started = await gameStart(own, auth);
+    expect(started.status).toBe(200);
+    const { game_id: gameId } = await started.json();
 
-    await post("ai-settings", { model_label: null });
+    expect((await turn(own, auth, gameId, "search")).status).toBe(200);
+    const narrated = readStoredEvents(gameId, own.database()).length;
 
-    expect((await state()).selected_model_label).toBeNull();
+    expect((await choose("cli", own.apiUrl)).status).toBe(200);
+
+    // The claude CLI is a missing file here, so the second turn fails: it was
+    // narrated by the new choice, and mock did not stand in for it.
+    expect((await turn(own, auth, gameId, "search")).status).not.toBe(200);
+    expect(readStoredEvents(gameId, own.database())).toHaveLength(narrated);
   });
 
-  it("drops the selection when the selected model is deleted", async () => {
-    await post("ai-settings/models", { label: "mine", model_id: "vendor/model" });
-    await post("ai-settings", { model_label: "mine" });
+  it("answers game-start with an error naming a chosen AI that has gone, and starts nothing", async () => {
+    const own = await start(undefined);
+    const auth = await own.createPlayer("ai-choice-gone");
+    storeChoiceDirectly(own, "luna6");
 
-    await remove("ai-settings/models", "mine");
+    const response = await gameStart(own, auth);
 
-    expect(await state()).toMatchObject({
-      stored_mode: "mock",
-      selected_model_label: null,
-    });
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toMatch(/"luna6", is not in ai\.json/);
+    expect(sessionCount(own, auth)).toBe(0);
+    expect((await state(own.apiUrl)).narrator_error).toMatch(/"luna6"/);
   });
 
-  it("rejects a mode it does not understand, and an empty update", async () => {
-    expect((await post("ai-settings", { mode: "anthropic" })).status).toBe(400);
-    expect((await post("ai-settings", {})).status).toBe(400);
-  });
-});
+  it("answers game-start with an error naming a chosen AI that has no key", async () => {
+    const own = await start({ ais: { free: { backend: "openrouter", model: "vendor/free" } } });
+    const auth = await own.createPlayer("ai-choice-broken");
+    storeChoiceDirectly(own, "free");
 
-describe("the override banner", () => {
-  it("reports no override, because the test server is started without one", async () => {
-    // The mock test server runs against a temporary config root with no env
-    // files and no AI variables — mock by absence. If this ever starts
-    // reporting an override, the harness has begun leaking the ambient
-    // environment into the server it spawns.
-    expect((await state()).override).toBeNull();
+    const response = await gameStart(own, auth);
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toMatch(/AI "free" uses openrouter but has no key/);
+    expect(sessionCount(own, auth)).toBe(0);
+  });
+
+  it("answers a turn with an error naming a chosen AI that has gone, and writes no event", async () => {
+    const own = await start(undefined);
+    const auth = await own.createPlayer("ai-choice-gone-turn");
+    const started = await gameStart(own, auth);
+    expect(started.status).toBe(200);
+    const { game_id: gameId } = await started.json();
+    const before = readStoredEvents(gameId, own.database());
+
+    storeChoiceDirectly(own, "luna6");
+    const response = await turn(own, auth, gameId, "search");
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toMatch(/"luna6", is not in ai\.json/);
+    expect(readStoredEvents(gameId, own.database())).toEqual(before);
   });
 });

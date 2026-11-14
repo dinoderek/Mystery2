@@ -2,7 +2,7 @@
 
 The UI is a terminal: typed commands in, text and one image out. Menus are
 numbered lists picked by typing a number; `b` goes back. The only forms are the
-profile picker and the AI settings page. Keep it that way — a new interaction
+profile picker and the settings page. Keep it that way — a new interaction
 should be a command before it is a widget.
 
 This doc holds the rules the code does not state. Per-route behaviour, component
@@ -30,8 +30,8 @@ props, and the command grammar live in the code; do not mirror them here.
 | `/` | Menu: new game, in-progress, completed |
 | `/sessions/in-progress`, `/sessions/completed` | Numbered session lists; completed ones open read-only |
 | `/session` | The game |
-| `/login` | Profile picker |
-| `/settings` | AI settings (`docs/ai-configuration.md`) |
+| `/login` | Profile picker; names the narrator |
+| `/settings` | Chooses the AI (`docs/ai-configuration.md`) |
 
 ## The profile gate
 

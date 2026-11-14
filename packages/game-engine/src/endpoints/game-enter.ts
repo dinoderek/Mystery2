@@ -12,7 +12,8 @@
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
 import { GameEnterRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import type { EngineContext } from "../context.ts";
+import { AIConfigError } from "../ai-config.ts";
+import type { EngineAIProfile, EngineContext } from "../context.ts";
 import {
   asConflictResponse,
   asRetriableAIResponse,
@@ -73,7 +74,20 @@ export async function handle(
       return badRequest("Starting location already entered");
     }
 
-    const aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
+    let aiProfile: EngineAIProfile | null;
+    try {
+      aiProfile = await ctx.aiProfiles.getById(session.ai_profile_id);
+    } catch (error) {
+      // The AI the game resolves to is missing or broken. Nothing narrates in its place.
+      if (!(error instanceof AIConfigError)) throw error;
+      logError("request.error", {
+        reason: "ai_unavailable",
+        game_id: gameId,
+        ai_profile_id: session.ai_profile_id,
+        error: error.message,
+      });
+      return internalError(error.message);
+    }
     if (!aiProfile) {
       logError("request.error", {
         reason: "ai_profile_missing",

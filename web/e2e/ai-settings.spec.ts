@@ -1,46 +1,46 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-// The settings page in a real browser. What matters here is that it works
-// *before* a profile exists — the page in front of the picker is the one a
-// player reaches when the AI configuration is what is stopping them — and that
-// getting to it costs no signed-out API calls.
+// The settings page and the picker's narrator line in a real browser. The page
+// works *before* a profile exists — the page in front of the picker is the one
+// a player reaches when the chosen AI is what is stopping them — and getting to
+// it costs no signed-out API calls.
 //
-// The settings row is a singleton by design — it is a property of the
-// installation, not of a player — so these tests cannot be isolated from each
-// other the way the rest of the suite is. They run serially against the shared
-// row, and each puts the mode back to mock and removes what it added.
-//
-// The rest of the suite runs in parallel alongside them, and *that* is why
-// nothing here ever leaves the server in live narration: the specs that play
-// real sessions would resolve the same row, call a provider with a throwaway
-// key, and fail on a 500 with no visible cause. Switching to live is asserted
-// in the unit suites instead — see the note in
-// `tests/api/integration/ai-settings.test.ts`, which hit exactly this on CI.
-// What is checked here is the browser behaviour: the page is public, the
-// selections stick, and asking for live without a key is refused.
+// The choice is a singleton by design — a property of the installation, not of
+// a player — and the rest of the suite plays games on the same server in
+// parallel. This server has no ai.json, so mock is all it can choose, and each
+// test puts the choice back to mock. Lists with real AIs, the override banner
+// and a missing AI are shown by answering the page's request in the browser
+// (`showState`), so nothing here ever reaches the server's choice.
 
-const KEY_LABEL = 'e2e-key';
-const MODEL_LABEL = 'e2e-model';
+const MOCK = { name: 'mock', backend: 'mock', model: 'mock/runtime-default', problem: null };
 
-async function resetSettings(request: {
-	post: (url: string, options: { data: unknown }) => Promise<unknown>;
-	delete: (url: string) => Promise<unknown>;
-}) {
-	await request.post('/api/ai-settings', { data: { mode: 'mock' } });
-	await request.post('/api/ai-settings', { data: { key_label: null, model_label: null } });
-	await request.delete(`/api/ai-settings/keys?label=${KEY_LABEL}`);
-	await request.delete(`/api/ai-settings/models?label=${MODEL_LABEL}`);
+/** Answers the page's settings request with `state`, in this browser only. */
+async function showState(page: Page, state: Record<string, unknown>) {
+	await page.route('**/api/ai-settings', (route) =>
+		route.request().method() === 'GET'
+			? route.fulfill({
+					json: {
+						ais: [MOCK],
+						chosen: null,
+						override: null,
+						narrator: { name: 'mock', backend: 'mock', model: 'mock/runtime-default' },
+						narrator_error: null,
+						...state
+					}
+				})
+			: route.continue()
+	);
 }
 
 test.describe('AI settings', () => {
 	test.describe.configure({ mode: 'serial' });
 
 	test.beforeEach(async ({ request }) => {
-		await resetSettings(request);
+		await request.post('/api/ai-settings', { data: { name: 'mock' } });
 	});
 
 	test.afterEach(async ({ request }) => {
-		await resetSettings(request);
+		await request.post('/api/ai-settings', { data: { name: 'mock' } });
 	});
 
 	test('is reachable from the picker without a profile', async ({ page }) => {
@@ -76,54 +76,79 @@ test.describe('AI settings', () => {
 		await expect(page).toHaveURL(/\/login$/);
 	});
 
-	test('refuses real AI until a key and a model are chosen', async ({ page }) => {
+	test('chooses mock, and the choice survives a reload', async ({ page }) => {
 		await page.goto('/settings');
-		await page.getByTestId('mode-openrouter').click();
+		const mock = page.locator('[data-testid="ai-option"][data-name="mock"]');
 
-		await expect(page.getByRole('alert')).toContainText(/key and a model/i);
-		await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
-	});
-
-	test('stores a key and a model, and the selection survives a reload', async ({ page }) => {
-		await page.goto('/settings');
-
-		await page.getByLabel('New key label').fill(KEY_LABEL);
-		await page.getByLabel('New key value').fill('sk-or-v1-abcdefgh1234');
-		await page.getByRole('button', { name: '[ SAVE KEY ]' }).click();
-
-		await page.getByLabel('New model label').fill(MODEL_LABEL);
-		await page.getByLabel('New model ID').fill('vendor/some-model');
-		await page.getByRole('button', { name: '[ SAVE MODEL ]' }).click();
-
-		// Only the last four characters of the key are ever sent to the browser.
-		await expect(page.getByTestId('key-option')).toContainText('...1234');
-		await expect(page.getByTestId('key-option')).not.toContainText('abcdefgh');
-
-		// Selecting, but not switching the mode: the server stays mock for every
-		// other spec running alongside this one.
-		await page.getByTestId('key-option').click();
-		await page.getByTestId('model-option').click();
-
-		await expect(page.getByTestId('key-option')).toHaveAttribute('aria-pressed', 'true');
+		await mock.click();
+		await expect(mock).toHaveAttribute('aria-pressed', 'true');
 
 		await page.reload();
 
-		await expect(page.getByTestId('key-option')).toHaveAttribute('aria-pressed', 'true');
-		await expect(page.getByTestId('model-option')).toHaveAttribute('aria-pressed', 'true');
+		await expect(mock).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByTestId('narrator')).toContainText('NARRATOR: mock');
 	});
 
-	test('deleting a selected model clears the selection', async ({ page, request }) => {
-		await request.post('/api/ai-settings/models', {
-			data: { label: MODEL_LABEL, model_id: 'vendor/some-model' }
+	test('the picker names mock as the narrator', async ({ page }) => {
+		await page.goto('/login');
+
+		await expect(page.getByTestId('narrator')).toContainText('NARRATOR: mock');
+	});
+
+	test('lists the AIs with backend and model, marks the choice, and shows no key', async ({ page }) => {
+		await showState(page, {
+			ais: [
+				MOCK,
+				{ name: 'luna6', backend: 'openrouter', model: 'openai/gpt-6-luna', problem: null },
+				{
+					name: 'free',
+					backend: 'openrouter',
+					model: 'vendor/free',
+					problem: 'AI "free" uses openrouter but has no key'
+				}
+			],
+			chosen: 'luna6',
+			narrator: { name: 'luna6', backend: 'openrouter', model: 'openai/gpt-6-luna' }
 		});
-		await request.post('/api/ai-settings', { data: { model_label: MODEL_LABEL } });
 
 		await page.goto('/settings');
-		await expect(page.getByTestId('model-option')).toHaveAttribute('aria-pressed', 'true');
 
-		await page.getByTestId('delete-model').click();
+		const luna = page.locator('[data-testid="ai-option"][data-name="luna6"]');
+		await expect(luna).toContainText('openrouter / openai/gpt-6-luna');
+		await expect(luna).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.locator('[data-testid="ai-option"][data-name="mock"]')).toHaveAttribute(
+			'aria-pressed',
+			'false'
+		);
+		// Listed, but not choosable, with the reason beside it.
+		await expect(page.locator('[data-testid="ai-option"][data-name="free"]')).toBeDisabled();
+		await expect(page.getByTestId('ai-problem')).toContainText('has no key');
+		await expect(page.getByTestId('override-banner')).toHaveCount(0);
+		await expect(page.getByText('sk-or')).toHaveCount(0);
+	});
 
-		await expect(page.getByTestId('model-option')).toHaveCount(0);
-		await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
+	test('shows a banner naming the run override', async ({ page }) => {
+		await showState(page, {
+			override: { name: 'claude', backend: 'claude-cli', model: 'sonnet' },
+			narrator: { name: 'claude', backend: 'claude-cli', model: 'sonnet' }
+		});
+
+		await page.goto('/settings');
+
+		await expect(page.getByTestId('override-banner')).toContainText('--ai claude');
+		await expect(page.getByTestId('narrator')).toContainText('NARRATOR: claude');
+	});
+
+	test('the picker says nothing narrates when the chosen AI has gone', async ({ page }) => {
+		await showState(page, {
+			chosen: 'luna6',
+			narrator: null,
+			narrator_error: 'The AI chosen on the settings page, "luna6", is not in ai.json.'
+		});
+
+		await page.goto('/login');
+
+		await expect(page.getByTestId('narrator')).toContainText('NO NARRATOR');
+		await expect(page.getByTestId('narrator')).toContainText('"luna6"');
 	});
 });

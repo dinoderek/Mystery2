@@ -57,8 +57,8 @@ reach the outside world only through it, which keeps storage substitutable
 **Data.** `packages/game-engine/src/db/schema.ts` is the whole schema, always the
 current end state. Existing databases move forward through numbered steps keyed
 on `PRAGMA user_version`. Play uses `players`, `game_sessions` (one per case,
-owned by a player) and `game_events` (the append-only transcript, unique on `(session_id, sequence)`). AI
-configuration is per installation: `ai_keys`, `ai_models` and `app_settings`
+owned by a player) and `game_events` (the append-only transcript, unique on `(session_id, sequence)`). The AI
+chosen on the settings page is per installation, in `app_settings`
 (`docs/ai-configuration.md`).
 
 The database is `<config root>/database/<name>/game.db`, one per worktree plus

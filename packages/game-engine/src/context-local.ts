@@ -5,8 +5,7 @@
 // pair of directories — which is what makes it the only file that would have
 // to change to keep the state somewhere else.
 
-import { createLocalAIProfileStore, loadAIConfig, type RunOverride } from "./ai-config.ts";
-import { readAISettingsEnv } from "./ai-settings-env.ts";
+import { createLocalAIProfileStore, loadAIConfig, type LoadedAIConfig } from "./ai-config.ts";
 import { createLocalContentStore } from "./content.ts";
 import type {
   AIProfileStore,
@@ -71,16 +70,17 @@ export interface LocalEngine {
   content: ContentStore;
   aiProfiles: AIProfileStore;
   /**
-   * Labelled AI keys and models and the selection among them. App-global, so it
-   * hangs off the engine next to `players` rather than off a request context —
-   * the settings page is reachable before a profile is picked.
+   * The AI chosen on the settings page. App-global, so it hangs off the engine
+   * next to `players` rather than off a request context — the settings page is
+   * reachable before a profile is picked.
    */
   aiSettings: AISettingsStore;
   /**
-   * The AI the run was started with (`./dev run --ai`), which `default`
-   * resolves to while it is set. The settings page's banner reads it.
+   * `ai.json` and the run override, read once at start. The settings page lists
+   * the AIs from it, and its banner reads the same run override `default`
+   * resolves to.
    */
-  runOverride: RunOverride | null;
+  aiConfig: LoadedAIConfig;
   /** Directory image bytes are served from. */
   imagesDir: string;
   contextFor(player: EnginePlayer): EngineContext;
@@ -112,13 +112,6 @@ export function createLocalEngine(
     imagesDir,
   });
   const aiSettings = createAISettingsStore(db);
-
-  // Startup seed: every `env` row is replaced from the filesystem, so a label
-  // removed from a file is gone rather than lingering as a choice that no
-  // longer works. `createLocalEngine` is memoised per process by the server
-  // (web/src/lib/server/engine.ts), so this runs exactly once at boot.
-  aiSettings.replaceEnvRows(readAISettingsEnv(repoRoot, env));
-
   const aiProfiles = createLocalAIProfileStore(aiConfig, aiSettings);
 
   return {
@@ -126,7 +119,7 @@ export function createLocalEngine(
     databasePath,
     players: createPlayerStore(db),
     aiSettings,
-    runOverride: aiConfig.runOverride,
+    aiConfig,
     content,
     aiProfiles,
     imagesDir,

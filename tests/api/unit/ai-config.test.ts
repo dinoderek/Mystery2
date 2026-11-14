@@ -54,15 +54,20 @@ function load(env: Record<string, string | undefined> = {}) {
   return loadAIConfig({ repoRoot: root, env });
 }
 
-/** A settings store holding a working live choice, in a database of its own. */
-function liveSettings(): AISettingsStore {
-  const db = openDatabase({ path: path.join(root, "settings.db") });
+/** A settings store holding `choice`, in a database of its own. */
+function storedChoice(choice: string): AISettingsStore {
+  const db = openDatabase({ path: path.join(root, `settings-${openDatabases.length}.db`) });
   openDatabases.push(db);
   const settings = createAISettingsStore(db);
-  settings.putKey("stored", "sk-stored");
-  settings.putModel("stored", "stored/model");
-  settings.updateSettings({ ai_mode: "openrouter", ai_key_label: "stored", ai_model_label: "stored" });
+  settings.setChoice(choice);
   return settings;
+}
+
+/** A settings store with nothing chosen. */
+function nothingChosen(): AISettingsStore {
+  const db = openDatabase({ path: path.join(root, `settings-${openDatabases.length}.db`) });
+  openDatabases.push(db);
+  return createAISettingsStore(db);
 }
 
 function rejection(value: unknown): string {
@@ -199,9 +204,11 @@ describe("resolving a named AI", () => {
 });
 
 describe("how default resolves", () => {
+  const STORED = { ais: { stored: { backend: "openrouter", model: "stored/model", key: "sk-stored" } } };
+
   it("follows the run override first, over a stored live choice", () => {
-    writeConfig({ ais: { claude: { backend: "claude-cli", model: "sonnet" } } });
-    expect(resolveAIProfile("default", load({ AI_PROFILE: "claude" }), liveSettings())).toEqual({
+    writeConfig({ ais: { ...STORED.ais, claude: { backend: "claude-cli", model: "sonnet" } } });
+    expect(resolveAIProfile("default", load({ AI_PROFILE: "claude" }), storedChoice("stored"))).toEqual({
       id: "default",
       provider: "claude-cli",
       model: "sonnet",
@@ -210,11 +217,13 @@ describe("how default resolves", () => {
   });
 
   it("lets a run override force mock over a stored live choice", () => {
-    expect(resolveAIProfile("default", load({ AI_PROFILE: "mock" }), liveSettings())?.provider).toBe("mock");
+    writeConfig(STORED);
+    expect(resolveAIProfile("default", load({ AI_PROFILE: "mock" }), storedChoice("stored"))?.provider).toBe("mock");
   });
 
-  it("follows the stored choice when there is no run override", () => {
-    expect(resolveAIProfile("default", load(), liveSettings())).toEqual({
+  it("follows the stored choice, named in the file, when there is no run override", () => {
+    writeConfig(STORED);
+    expect(resolveAIProfile("default", load(), storedChoice("stored"))).toEqual({
       id: "default",
       provider: "openrouter",
       model: "stored/model",
@@ -222,8 +231,32 @@ describe("how default resolves", () => {
     });
   });
 
+  it("follows a stored choice of mock", () => {
+    writeConfig(STORED);
+    expect(resolveAIProfile("default", load(), storedChoice("mock"))).toMatchObject({ id: "default", provider: "mock" });
+  });
+
   it("is mock when nothing is chosen", () => {
     expect(resolveAIProfile("default", load())).toMatchObject({ id: "default", provider: "mock" });
+    expect(resolveAIProfile("default", load(), nothingChosen())).toMatchObject({ id: "default", provider: "mock" });
+  });
+
+  it("errors, naming the AI, rather than becoming mock when the stored choice has gone from the file", () => {
+    writeConfig(OPERATOR_FILE);
+    expect(() => resolveAIProfile("default", load(), storedChoice("stored"))).toThrow(AIConfigError);
+    expect(() => resolveAIProfile("default", load(), storedChoice("stored"))).toThrow(
+      /The AI chosen on the settings page, "stored", is not in ai\.json/,
+    );
+  });
+
+  it("errors, naming the AI, rather than becoming mock when the stored choice has no key anywhere", () => {
+    writeConfig(OPERATOR_FILE);
+    expect(() => resolveAIProfile("default", load(), storedChoice("free"))).toThrow(/AI "free" uses openrouter but has no key/);
+  });
+
+  it("leaves a game that names its AI alone, whatever is stored", () => {
+    writeConfig(OPERATOR_FILE);
+    expect(resolveAIProfile("mock", load(), storedChoice("gone"))).toMatchObject({ id: "mock", provider: "mock" });
   });
 
   it("errors rather than becoming mock when the run override names a missing AI", () => {
@@ -279,7 +312,7 @@ describe("opening the engine", () => {
     writeConfig(OPERATOR_FILE);
     const engine = open({ AI_PROFILE: "claude" });
     try {
-      expect(engine.runOverride).toEqual({
+      expect(engine.aiConfig.runOverride).toEqual({
         name: "claude",
         profile: { id: "claude", provider: "claude-cli", model: "sonnet", openrouter_api_key: null },
       });
@@ -291,7 +324,7 @@ describe("opening the engine", () => {
   it("starts with no ai.json and no override, on mock", async () => {
     const engine = open();
     try {
-      expect(engine.runOverride).toBeNull();
+      expect(engine.aiConfig.runOverride).toBeNull();
       expect(await engine.aiProfiles.getById("default")).toMatchObject({ provider: "mock" });
     } finally {
       engine.close();

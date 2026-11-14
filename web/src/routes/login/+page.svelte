@@ -1,6 +1,17 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import ProfilePicker from '$lib/components/ProfilePicker.svelte';
+	import { aiSettingsStore } from '$lib/domain/ai-settings-store.svelte';
+	import { narratorLine } from '$lib/domain/ai-settings-view';
+
+	// Named before a game starts, so a game never narrates with an AI the
+	// player did not expect, mock included.
+	const narrator = $derived(aiSettingsStore.state ? narratorLine(aiSettingsStore.state) : null);
+
+	onMount(() => {
+		aiSettingsStore.load();
+	});
 </script>
 
 <main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center p-8">
@@ -17,6 +28,18 @@
 		</p>
 
 		<div class="mt-4 text-center">
+			{#if narrator}
+				<p
+					class="mb-2 text-xs {narrator.error ? 'text-t-error' : 'text-t-dim'}"
+					data-testid="narrator"
+				>
+					[ {narrator.text} ]
+				</p>
+			{:else if aiSettingsStore.error}
+				<p class="mb-2 text-xs text-t-error" data-testid="narrator">
+					[ NARRATOR UNKNOWN: {aiSettingsStore.error} ]
+				</p>
+			{/if}
 			<button
 				type="button"
 				data-testid="settings-link"

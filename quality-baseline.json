@@ -7,11 +7,6 @@
       "count": 1
     }
   },
-  "packages/game-engine/src/db/ai-settings.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "packages/shared/src/blueprint-schema-v2.ts": {
     "max-depth": {
       "count": 3

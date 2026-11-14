@@ -6,48 +6,30 @@
 // never validates — so these are hand-kept in step, exactly as
 // `./game.ts` is.
 //
-// Note what is absent: there is no field carrying an API key. A stored key
-// never leaves the server, and the browser only ever sees `masked`.
+// No field carries a key: the page only chooses among the AIs in `ai.json`.
 
-export type AISettingsSource = 'env' | 'user';
-export type AIMode = 'mock' | 'openrouter';
-/** Every provider the runtime can use; `claude-cli` is only set by the environment. */
-export type AIProvider = AIMode | 'claude-cli';
+export type AIBackend = 'mock' | 'openrouter' | 'claude-cli';
 
-export interface AIKeySummary {
-	label: string;
-	source: AISettingsSource;
-	/** Last four characters, for telling two keys apart. */
-	masked: string;
-}
-
-export interface AIModelSummary {
-	label: string;
-	model_id: string;
-	source: AISettingsSource;
-}
-
-/**
- * An AI configuration forced by the process this server was started with.
- * Present means the stored choice is not currently in effect.
- */
-export interface AIOverride {
-	provider: AIProvider;
+export interface AISummary {
+	name: string;
+	backend: AIBackend;
 	model: string;
-	source: string;
+}
+
+export interface AIChoice extends AISummary {
+	/** Null when the AI has what it needs; otherwise what is missing, naming it. */
+	problem: string | null;
 }
 
 export interface AISettingsState {
-	/** What the runtime will actually do, override and dangling selections applied. */
-	effective_mode: AIProvider;
-	/** What was last chosen on the settings page. */
-	stored_mode: AIMode;
-	selected_key_label: string | null;
-	selected_model_label: string | null;
-	/** A selection naming a label the last environment reseed removed. */
-	missing_key_label: string | null;
-	missing_model_label: string | null;
-	keys: AIKeySummary[];
-	models: AIModelSummary[];
-	override: AIOverride | null;
+	/** Mock first, then the file's AIs. */
+	ais: AIChoice[];
+	/** The name chosen on the page, or null when nothing has been chosen. */
+	chosen: string | null;
+	/** The AI the server was started with, which narrates instead of the choice. */
+	override: AISummary | null;
+	/** The AI that narrates a game started now. Null exactly when `narrator_error` is set. */
+	narrator: AISummary | null;
+	/** Why nothing can narrate: the choice names an AI that is missing or broken. */
+	narrator_error: string | null;
 }

@@ -88,13 +88,8 @@ function inspect(file) {
       Number(db.prepare(`select count(*) as n from ${table}`).get()?.n ?? 0);
 
     // Read-only, so this can be pointed at a database the current engine has
-    // not migrated yet. The AI tables arrived in schema 2; asking an older file
-    // for them would throw rather than report the version it is actually at.
-    const hasTable = (table) =>
-      db
-        .prepare("select 1 as present from sqlite_master where type = 'table' and name = ?")
-        .get(table) !== undefined;
-
+    // not migrated yet. The one-value choice arrived in schema 3; an older file
+    // holds something else there, and its version line already says so.
     return {
       version,
       counts: {
@@ -102,17 +97,14 @@ function inspect(file) {
         sessions: countOf("game_sessions"),
         events: countOf("game_events"),
       },
-      ai: hasTable("app_settings")
-        ? {
-            // The operator question this answers: "why is my game still mock?"
-            mode: String(
-              db.prepare("select ai_mode from app_settings where id = 'singleton'").get()
-                ?.ai_mode ?? "mock",
-            ),
-            keys: countOf("ai_keys"),
-            models: countOf("ai_models"),
-          }
-        : null,
+      // The operator question this answers: "why is my game still mock?"
+      ai:
+        version >= 3
+          ? String(
+              db.prepare("select ai_name from app_settings where id = 1").get()?.ai_name ??
+                "mock (nothing chosen)",
+            )
+          : null,
     };
   } finally {
     db.close();
@@ -131,9 +123,7 @@ function describe(file) {
   if (!details.counts) return `${schema}, empty`;
 
   const { players, sessions, events } = details.counts;
-  const ai = details.ai
-    ? `, ai ${details.ai.mode} (${details.ai.keys} keys, ${details.ai.models} models)`
-    : "";
+  const ai = details.ai ? `, ai ${details.ai}` : "";
 
   return (
     `${schema}, ${players} players, ${sessions} sessions, ${events} events${ai}, ` +

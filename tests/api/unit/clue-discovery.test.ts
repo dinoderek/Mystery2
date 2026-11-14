@@ -191,3 +191,67 @@ describe("buildPathCoverage", () => {
     expect(coverage[0].missing_clue_ids).toEqual(["loc-crumbs", "char-alice"]);
   });
 });
+
+describe("reading reveals from odd events", () => {
+  it("finds nothing in an event with no payload, or a payload of the wrong shape", () => {
+    expect(eventRevealedClueIds({ event_type: "search" })).toEqual([]);
+    expect(eventRevealedClueIds({ event_type: "search", payload: null })).toEqual([]);
+    expect(
+      eventRevealedClueIds({
+        event_type: "ask",
+        payload: { revealed_clue_ids: "a", revealed_clue_id: 7 },
+      }),
+    ).toEqual([]);
+  });
+
+  it("skips ids that are blank or not text", () => {
+    expect(
+      eventRevealedClueIds({
+        event_type: "ask",
+        payload: { revealed_clue_ids: ["a", "", 3, null], revealed_clue_id: "" },
+      }),
+    ).toEqual(["a"]);
+  });
+});
+
+describe("mapClueToThreads over every kind of thread", () => {
+  it("labels a clue that rules out a suspect, and a red herring with no payoff by its summary", () => {
+    const blueprint: NotebookBlueprint = {
+      ...notebookBlueprint,
+      red_herrings: [
+        { summary: "the open window", location_clue_ids: ["loc-note"], character_clue_ids: [] },
+      ],
+      suspect_elimination_paths: [
+        {
+          summary: "Alice was away",
+          payoff: "Alice could not have done it",
+          location_clue_ids: [],
+          character_clue_ids: ["char-alice"],
+        },
+        { summary: "unrelated", location_clue_ids: [], character_clue_ids: [] },
+      ],
+    };
+
+    expect(mapClueToThreads(blueprint, "loc-note")).toEqual([
+      { kind: "red_herring", label: "Red herring: the open window" },
+    ]);
+    expect(mapClueToThreads(blueprint, "char-alice")).toEqual([
+      { kind: "solution", label: "Main solution" },
+      { kind: "eliminate", label: "Ruling out: Alice could not have done it" },
+    ]);
+  });
+});
+
+describe("buildDiscoveryRecords over odd history", () => {
+  it("skips events that reveal nothing and ids the blueprint does not know", () => {
+    const records = buildDiscoveryRecords(notebookBlueprint, [
+      { event_type: "move", payload: { revealed_clue_ids: ["loc-crumbs"] } },
+      { event_type: "search", payload: { revealed_clue_ids: ["ghost", "loc-crumbs"] } },
+      { event_type: "ask", payload: { revealed_clue_ids: ["loc-crumbs"] } },
+    ]);
+
+    expect(records.map((r) => [r.id, r.source, r.discovered_at])).toEqual([
+      ["loc-crumbs", "search", null],
+    ]);
+  });
+});

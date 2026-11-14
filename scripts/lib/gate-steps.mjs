@@ -1,8 +1,9 @@
 /**
  * The gate's steps, in one place so the runner and `./dev test` agree on their
  * names. A step's phase decides how it runs: phase 1 steps are independent and
- * run in parallel; phase 2 steps each start a server on the worktree's port,
- * so they run one after another and only once phase 1 is green.
+ * run in parallel, except that a step naming `after` waits for those steps to
+ * finish; phase 2 steps each start a server on the worktree's port, so they run
+ * one after another and only once phase 1 is green.
  *
  * This is also the one list of where tests live. A step that runs test files
  * names its `roots` (repo-relative directories) and the `files` pattern its
@@ -60,13 +61,20 @@ export const GATE_STEPS = [
   vitestStep({
     name: "unit-web",
     phase: 1,
-    roots: ["web/src/lib/domain"],
+    roots: ["web/src/lib/domain", "web/src/lib/api"],
     workspace: "web",
   }),
   { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
   { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
   { name: "word-budgets", phase: 1, args: ["run", "check:word-budgets"] },
   { name: "gate-coverage", phase: 1, args: ["run", "check:gate-coverage"] },
+  // Reads the reports the two unit steps write, so it starts once they finish.
+  {
+    name: "coverage-floors",
+    phase: 1,
+    after: ["unit-api", "unit-web"],
+    args: ["run", "check:coverage-floors"],
+  },
 
   // Phase 2: each starts a server on the worktree's port, so serial
   {

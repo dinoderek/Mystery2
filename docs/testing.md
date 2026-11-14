@@ -2,13 +2,13 @@
 
 ## Suite Map
 
-| Suite           | Location                | Runner                                  | Server                     | AI                         | Command                    |
-| --------------- | ----------------------- | --------------------------------------- | -------------------------- | -------------------------- | -------------------------- |
-| API/shared unit | `tests/api/unit`        | Vitest                                  | No                         | None, or mocked in-process | `npm run test:unit`        |
-| Web unit        | `web/src/lib/domain`    | Vitest                                  | No                         | None                       | `npm -w web run test:unit` |
-| Integration     | `tests/api/integration` | Vitest via `scripts/run-mock-tests.mjs` | Built server               | Mock provider              | `npm run test:integration` |
-| API E2E         | `tests/api/e2e`         | Vitest via `scripts/run-mock-tests.mjs` | Built server               | Mock provider              | `npm run test:e2e`         |
-| Browser E2E     | `web/e2e`               | Playwright                              | `vite dev` via `webServer` | Mock provider              | `npm -w web run test:e2e`  |
+| Suite           | Location                                | Runner                                  | Server                     | AI                         | Command                    |
+| --------------- | --------------------------------------- | --------------------------------------- | -------------------------- | -------------------------- | -------------------------- |
+| API/shared unit | `tests/api/unit`                        | Vitest                                  | No                         | None, or mocked in-process | `npm run test:unit`        |
+| Web unit        | `web/src/lib/domain`, `web/src/lib/api` | Vitest                                  | No                         | None                       | `npm -w web run test:unit` |
+| Integration     | `tests/api/integration`                 | Vitest via `scripts/run-mock-tests.mjs` | Built server               | Mock provider              | `npm run test:integration` |
+| API E2E         | `tests/api/e2e`                         | Vitest via `scripts/run-mock-tests.mjs` | Built server               | Mock provider              | `npm run test:e2e`         |
+| Browser E2E     | `web/e2e`                               | Playwright                              | `vite dev` via `webServer` | Mock provider              | `npm -w web run test:e2e`  |
 
 Every suite is self-contained: it builds or starts what it needs against a
 temporary config root and deletes it afterwards, so nothing has to be running
@@ -48,19 +48,19 @@ Prefer integration tests for backend behavior; Playwright is for browser journey
 `npm test` runs `scripts/run-test-gate.mjs`; the `GATE_STEPS` list in
 `scripts/lib/gate-steps.mjs` is the definitive set. Phase 1 runs in parallel:
 lint, typecheck, `svelte-check`, `quality` and `imports` (below), both unit
-suites with coverage, the three doc checks, and `gate-coverage` (below). Phase 2 runs only if all of
+suites with coverage, the three doc checks, `gate-coverage` (below) and `coverage-floors`
+(see Coverage), which starts once both unit suites finish. Phase 2 runs only if all of
 phase 1 passed, one step at a time because each starts a server on the
 worktree's port: integration, API E2E, browser E2E.
 
 **Every step runs in every environment.** The gate needs nothing beyond this
-repo, so no suite may be reported as skipped. A suite that cannot start is a
-bug to fix, not a partial run to report. Focused scripts are for iteration; re-run the gate after any later edit.
+repo; no suite may be reported as skipped, and one that cannot start is a bug
+to fix. Focused scripts are for iteration; re-run the gate after any later edit.
 
 Integration and API E2E run against the production build (`node build/index.js`),
 not the dev server, so a bundling failure is caught. The build gets the run's
 config root too, and fails the step if it opens a database. The runner fails if
-anything already holds the port, which would otherwise answer the readiness
-poll and be tested instead. The browser suite starts `vite dev` through
+anything already holds the port, which would otherwise be tested instead. The browser suite starts `vite dev` through
 Playwright's `webServer`. Each gets a config root of its own, deleted afterwards.
 
 **Every test file runs in the gate.** `scripts/lib/gate-steps.mjs` is the one
@@ -68,7 +68,7 @@ list of where tests live: each step that runs tests names its `roots` and the
 `files` pattern its runner collects, and the Vitest steps build their command
 from the roots. `gate-coverage` lists test files from git (tracked, plus
 untracked files git does not ignore) and fails, by name, on any under no step's
-roots or matching no step's pattern (a `.spec.ts` under a Vitest root, say): it
+roots or matching no step's pattern: it
 would pass by hand and never run here. It checks every step, even when named
 alone (`./dev test gate-coverage`). To add a suite, add its root to a step or
 add a step. `integration` and `e2e-api` hand their roots to
@@ -112,7 +112,7 @@ The three doc checks:
 Integration, API E2E, and browser E2E share the worktree's port, so run only
 one at a time within a checkout; a second fails fast. Worktrees each get their
 own port and can run concurrently
-([`docs/local-infrastructure.md`](local-infrastructure.md)). Unit suites parallelize.
+([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 ### Playwright browsers
 
@@ -154,12 +154,17 @@ For a failure, also look at the server's stdout (structured JSON per request),
 
 ## Coverage
 
-Measured every gate run, never enforced. The measured globs are the
-`coverage.include` arrays in `vitest.config.ts` and `web/vite.config.ts`; a new
-source directory outside them is invisible until added. `summary.log` lists
-files at or below `LOW_FILE_THRESHOLD` (`scripts/lib/coverage-report.mjs`) by
-uncovered statements, not percentage. A project whose unit step
-failed reads `not measured`.
+`coverage-floors.json` holds the floors, as percentages of the unit suites'
+totals: engine and shared 80% lines and 80% branches; web TypeScript, `.svelte`
+excluded, 80% lines and 75% branches. The `coverage-floors` step fails, naming
+the project and measure, when one falls short or reads `not measured`. Anyone may raise a floor; lowering one, or
+excluding code from what is measured, is the operator's decision. If tests that
+prove behaviour cannot reach a floor, ask rather than lower it.
+
+The measured globs are the `coverage.include` arrays in `vitest.config.ts` and
+`web/vite.config.ts`; a new source directory outside them is invisible until
+added. `summary.log` lists files at or below `LOW_FILE_THRESHOLD`
+(`scripts/lib/coverage-report.mjs`) by uncovered statements, not percentage.
 
 **The numbers come from the unit suites alone.** Integration and E2E drive a
 separate server process this instrumentation does not see, so every file under
@@ -232,8 +237,7 @@ Integration and E2E never call a real model. The server runs the mock provider;
 assert persisted side effects instead.
 
 Mock is chosen by absence: the config root has no `.env.ai.*` and the settings
-row is empty. That row can be changed over the API and belongs to the
-installation, not a profile. **A test that switches the server to live switches
+row is empty. That row can be changed over the API. **A test that switches the server to live switches
 it for every test sharing that server**, and their calls reach the real API.
 
 So no suite that shares a server with game-playing tests may switch the mode to
@@ -243,15 +247,7 @@ live; assert that in the unit suites (`ai-settings-store.test.ts`,
 reset it around each test and leave it on mock. As a backstop,
 `scripts/run-mock-tests.mjs` and `web/playwright.config.ts` point
 `OPENROUTER_URL` at a closed port and `CLAUDE_CLI_PATH` at a file that does not
-exist, so a slip fails fast instead of hanging or spending credits.
-
-`tests/api/integration/ai-profile-runtime.test.ts` proves profiles are resolved
-per request: it plays a turn on a `free` profile, breaks the file, and asserts
-the next turn fails.
-
-Changing an AI contract, prompt, context or provider selection updates the mock
-provider and its tests in the same change ("The mock provider" in
-`docs/ai-runtime.md`).
+exist, so a slip fails fast.
 
 ## CI
 

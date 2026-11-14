@@ -6,13 +6,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
-import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
+import { createJudgeTurnCommand, judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { makeTurn } from "./runtime-turn-helpers.ts";
 
 const REPO_ROOT = process.cwd();
@@ -37,7 +37,7 @@ interface Ran {
   runDir: string;
 }
 
-async function run(args: string[], config = configFile): Promise<Ran> {
+async function run(args: string[], config = configFile, env: Record<string, string> = {}, command = judgeTurnCommand): Promise<Ran> {
   const outputRoot = path.join(scratch, `out-${fs.readdirSync(scratch).length}`);
   const lines: string[] = [];
   // Through the dispatcher, which turns a command that throws into exit code 1 and a message.
@@ -45,8 +45,8 @@ async function run(args: string[], config = configFile): Promise<Ran> {
     root: REPO_ROOT,
     out: (text) => lines.push(text),
     err: (text) => lines.push(text),
-    env: {},
-  }, [judgeTurnCommand]);
+    env,
+  }, [command]);
   const days = fs.existsSync(outputRoot) ? fs.readdirSync(outputRoot) : [];
   const runDir = days.length > 0 ? path.join(outputRoot, days[0], fs.readdirSync(path.join(outputRoot, days[0]))[0]) : "";
   return { code, output: lines.join("\n"), runDir };
@@ -229,5 +229,69 @@ describe("judge turn refuses what it cannot run", () => {
     const { code, output } = await run([empty]);
     expect(code).toBe(1);
     expect(output).toContain("no cases found");
+  });
+});
+
+describe("judge turn names an AI from ai.json to a server narrator", () => {
+  /** A config root of its own with an `ai.json`, which the run is pointed at. */
+  function configRootWith(ais: unknown): Record<string, string> {
+    const root = fs.mkdtempSync(path.join(scratch, "ai-root-"));
+    fs.writeFileSync(path.join(root, "ai.json"), JSON.stringify({ ais }));
+    return { MYSTERY_CONFIG_ROOT: root };
+  }
+
+  const ARGS = [CASES, "--narrator", "server", "--judges", "flesch"];
+
+  it("gives the server an ai.json with the one AI the flag names", async () => {
+    const env = configRootWith({
+      free: { backend: "openrouter", model: "vendor/free", key: "sk-test-throwaway" },
+      paid: { backend: "openrouter", model: "vendor/paid", key: "sk-test-other" },
+    });
+    let written: unknown = null;
+    const startServer = vi.fn(async ({ seed }: { seed?: (root: string) => void }) => {
+      const root = fs.mkdtempSync(path.join(scratch, "server-root-"));
+      seed?.(root);
+      written = JSON.parse(fs.readFileSync(path.join(root, "ai.json"), "utf8"));
+      throw new Error("no server in this test");
+    });
+
+    const { code, output } = await run([...ARGS, "--ai-profile", "free"], configFile, env, createJudgeTurnCommand({ startServer }));
+
+    expect(startServer).toHaveBeenCalledTimes(1);
+    expect(written).toEqual({ ais: { free: { backend: "openrouter", model: "vendor/free", key: "sk-test-throwaway" } } });
+    expect(code).toBe(1);
+    expect(output).toContain("no server in this test");
+  });
+
+  it("fails before any server starts, or any folder is written, for an AI ai.json lacks", async () => {
+    const env = configRootWith({ free: { backend: "openrouter", model: "vendor/free", key: "sk-test-throwaway" } });
+    const startServer = vi.fn();
+
+    const { code, output, runDir } = await run([...ARGS, "--ai-profile", "luna"], configFile, env, createJudgeTurnCommand({ startServer }));
+
+    expect(code).toBe(1);
+    expect(output).toMatch(/AI "luna" is not in .*ai\.json/);
+    expect(startServer).not.toHaveBeenCalled();
+    expect(runDir).toBe("");
+  });
+
+  it("fails the same way for an OpenRouter AI with no key anywhere", async () => {
+    const env = configRootWith({ free: { backend: "openrouter", model: "vendor/free" } });
+    const { code, output } = await run([...ARGS, "--ai-profile", "free"], configFile, env, createJudgeTurnCommand({ startServer: vi.fn() }));
+    expect(code).toBe(1);
+    expect(output).toContain('AI "free" uses openrouter but has no key');
+  });
+
+  it("needs no ai.json for a run that names none, or only mock", async () => {
+    const env = configRootWith({});
+    for (const flag of [[], ["--ai-profile", "mock"]]) {
+      const startServer = vi.fn(async () => {
+        throw new Error("no server in this test");
+      });
+      const { output } = await run([...ARGS, ...flag], configFile, env, createJudgeTurnCommand({ startServer }));
+      expect(output).toContain("no server in this test");
+      const [{ seed }] = startServer.mock.calls[0] as unknown as [{ seed?: unknown }];
+      expect(seed).toBeUndefined();
+    }
   });
 });

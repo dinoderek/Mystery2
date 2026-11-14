@@ -26,8 +26,15 @@ function parts(text: string): string {
   return JSON.stringify([{ text, speaker: { kind: "narrator" } }]);
 }
 
+export interface GameDatabaseOptions {
+  /** The AI name the session was started with. */
+  profileId?: string;
+  /** The model recorded on the session's narrated event. */
+  eventModel?: string;
+}
+
 /** Makes `<dir>/game.db` with one played session and `<dir>/blueprints/<id>.json`. */
-export function createGameDatabase(dir: string): GameDatabase {
+export function createGameDatabase(dir: string, { profileId = "mock", eventModel = "mock" }: GameDatabaseOptions = {}): GameDatabase {
   const blueprintId = validBlueprintV2.id;
   fs.mkdirSync(path.join(dir, "blueprints"), { recursive: true });
   fs.writeFileSync(path.join(dir, "blueprints", `${blueprintId}.json`), JSON.stringify(validBlueprintV2));
@@ -45,7 +52,7 @@ export function createGameDatabase(dir: string): GameDatabase {
       `insert into game_sessions (id, player_id, blueprint_id, ai_profile_id, mode, current_location_id,
                                    time_remaining, discovered_clues, outcome, created_at, updated_at)
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(SESSION_ID, "player-1", blueprintId, "mock", "explore", "kitchen", 11, "[]", null, NOW, NOW);
+    ).run(SESSION_ID, "player-1", blueprintId, profileId, "explore", "kitchen", 11, "[]", null, NOW, NOW);
     const insertEvent = db.prepare(
       `insert into game_events (id, session_id, sequence, event_type, actor, payload, narration, narration_parts, model, created_at)
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -60,7 +67,7 @@ export function createGameDatabase(dir: string): GameDatabase {
       JSON.stringify({ location_id: "kitchen", search_query: "the counter" }),
       "You look over the counter and find nothing.",
       parts("You look over the counter and find nothing."),
-      "mock",
+      eventModel,
       NOW,
     );
   } finally {

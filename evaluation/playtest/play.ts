@@ -41,6 +41,7 @@ import { createRunFolder, resolveOutputRoot, slugify } from "../core/run-folder.
 import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { Result, RunError } from "../core/result.ts";
+import { writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
 import { startThrowawayServer } from "../runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../runtime/lib/replay-server.ts";
 import { signIn } from "./lib/api.ts";
@@ -203,11 +204,11 @@ function narratorEnv(options: PlayOptions): Record<string, string> {
   };
 }
 
-/** Writes the claude narrator's entry into the server's root; mock needs none. */
+/** Writes the claude narrator's one entry into the server's root; mock needs none. */
 function narratorSeed(options: PlayOptions): ((configRoot: string) => void) | undefined {
   if (options.narrator === "mock") return undefined;
   const config = { ais: { [NARRATOR_AI]: { backend: "claude-cli", model: options.narratorModel } } };
-  return (configRoot) => fs.writeFileSync(path.join(configRoot, "ai.json"), `${JSON.stringify(config, null, 2)}\n`);
+  return (configRoot) => writeAIConfig(configRoot, config);
 }
 
 /** What every game of one run shares. */

@@ -3,7 +3,7 @@
 //
 // "Raw" is deliberate. This artifact is a faithful dump of what was persisted
 // for the played session — session snapshot, the ordered event log, the
-// driving blueprint, and non-secret AI-profile metadata. It carries NO derived
+// driving blueprint, and which model narrated it. It carries NO derived
 // or reconstructed fields: per-turn context reconstruction is a run-time step
 // (see reconstruct.ts), not something baked into stored data, so the
 // reconstruction logic stays versioned with the code rather than frozen into
@@ -66,23 +66,24 @@ export interface RawTrace {
   events: RawEvent[];
 }
 
-// Fields we copy off an AI profile. Deliberately excludes openrouter_api_key
-// and anything else secret — a trace artifact is meant to be shareable.
-const SAFE_PROFILE_FIELDS = ["id", "provider", "model", "label", "mode"];
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function pickSafeProfile(profile: unknown): Record<string, unknown> | null {
-  if (!isObject(profile)) return null;
-  const safe: Record<string, unknown> = {};
-  for (const field of SAFE_PROFILE_FIELDS) {
-    if (profile[field] !== undefined && profile[field] !== null) {
-      safe[field] = profile[field];
-    }
-  }
-  return Object.keys(safe).length > 0 ? safe : null;
+/**
+ * Which AI narrated: the name the session was started with, as provenance, and
+ * the model its events carry. The events are what was called, so nothing is
+ * resolved again: a name such as `default` means whatever was chosen when each
+ * turn ran, and what is chosen now says nothing about it. A game whose model
+ * changed part way lists every model, in the order they first appear.
+ */
+function narratorOf(session: RawSession, events: RawEvent[]): Record<string, unknown> | null {
+  const models = [...new Set(events.map((event) => event.model).filter((model): model is string => model !== null))];
+  const narrator: Record<string, unknown> = {};
+  if (session.ai_profile_id !== null) narrator.id = session.ai_profile_id;
+  if (models.length > 0) narrator.model = models[0];
+  if (models.length > 1) narrator.models = models;
+  return Object.keys(narrator).length > 0 ? narrator : null;
 }
 
 function normalizeEvent(row: Record<string, unknown>): RawEvent {
@@ -128,8 +129,6 @@ export interface BuildRawTraceInput {
   events: unknown;
   /** The full Blueprint V2 JSON that drove the session. */
   blueprint: unknown;
-  /** The AI profile (optional; secrets are stripped). */
-  aiProfile?: unknown;
   /** Provenance metadata. */
   source?: TraceProvenance | null;
   /** ISO timestamp; the caller supplies it for determinism. */
@@ -141,7 +140,6 @@ export function buildRawTrace({
   session,
   events,
   blueprint,
-  aiProfile = null,
   source = null,
   extractedAt = null,
 }: BuildRawTraceInput): RawTrace {
@@ -159,12 +157,13 @@ export function buildRawTrace({
     .map(normalizeEvent)
     .sort((a, b) => a.sequence - b.sequence);
 
+  const normalizedSession = normalizeSession(session);
   return {
     schema_version: TRACE_SCHEMA_VERSION,
     extracted_at: extractedAt ?? new Date().toISOString(),
     source: source ?? { kind: "unknown" },
-    session: normalizeSession(session),
-    ai_profile: pickSafeProfile(aiProfile),
+    session: normalizedSession,
+    ai_profile: narratorOf(normalizedSession, orderedEvents),
     blueprint: blueprint as unknown as BlueprintContext,
     events: orderedEvents,
   };

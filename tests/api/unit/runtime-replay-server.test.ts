@@ -109,8 +109,8 @@ const request = (testCase: TurnCase, aiProfile = "mock", blueprintPath = MOCK_BL
 
 const narrators: ServerNarrator[] = [];
 
-function narrator(start: StartServer, env: NodeJS.ProcessEnv = {}): ServerNarrator {
-  const made = new ServerNarrator({ repoRoot: REPO_ROOT, start, env });
+function narrator(start: StartServer, env: NodeJS.ProcessEnv = {}, ais: string[] = []): ServerNarrator {
+  const made = new ServerNarrator({ repoRoot: REPO_ROOT, start, env, ais });
   narrators.push(made);
   return made;
 }
@@ -183,23 +183,50 @@ describe("replaying through a throwaway server", () => {
     expect(fs.readdirSync(path.join(seen.servers[0].configRoot, "blueprints"))).toEqual(["mine.json"]);
   });
 
-  it("links the operator's ai.json and .env.local before the server starts, leaving keys in their files", async () => {
+  it("writes the server's ai.json with the AIs the run names, before the server starts", async () => {
     const operator = fs.mkdtempSync(path.join(scratch, "operator-"));
-    fs.writeFileSync(path.join(operator, "ai.json"), JSON.stringify({ ais: { free: { backend: "openrouter", model: "m" } } }));
-    fs.writeFileSync(path.join(operator, ".env.local"), "OPENROUTER_API_KEY=key\n");
+    fs.writeFileSync(
+      path.join(operator, "ai.json"),
+      JSON.stringify({
+        ais: {
+          free: { backend: "openrouter", model: "vendor/free" },
+          paid: { backend: "openrouter", model: "vendor/paid", key: "sk-other" },
+          claude: { backend: "claude-cli", model: "sonnet" },
+        },
+      }),
+    );
+    fs.writeFileSync(path.join(operator, ".env.local"), "OPENROUTER_API_KEY=sk-base\n");
     const { start, seen } = fakeServer();
-    await narrator(start, { MYSTERY_CONFIG_ROOT: operator }).replay(request(askCase, "free"));
-    const linked = path.join(seen.servers[0].configRoot, "ai.json");
-    expect(fs.lstatSync(linked).isSymbolicLink()).toBe(true);
-    expect(fs.realpathSync(linked)).toBe(fs.realpathSync(path.join(operator, "ai.json")));
-    expect(fs.lstatSync(path.join(seen.servers[0].configRoot, ".env.local")).isSymbolicLink()).toBe(true);
+    const made = narrator(start, { MYSTERY_CONFIG_ROOT: operator }, ["free", "claude", "mock", "free"]);
+    await made.replay(request(askCase, "free"));
+
+    const root = seen.servers[0].configRoot;
+    // Exactly the named AIs, as files, not links; the key the entry lacks is written in.
+    expect(fs.lstatSync(path.join(root, "ai.json")).isSymbolicLink()).toBe(false);
+    expect(JSON.parse(fs.readFileSync(path.join(root, "ai.json"), "utf8"))).toEqual({
+      ais: {
+        free: { backend: "openrouter", model: "vendor/free", key: "sk-base" },
+        claude: { backend: "claude-cli", model: "sonnet" },
+      },
+    });
+    expect(fs.existsSync(path.join(root, ".env.local"))).toBe(false);
   });
 
-  it("links nothing when the operator has neither file", async () => {
+  it("writes no ai.json for a run that names only mock or default", async () => {
     const operator = fs.mkdtempSync(path.join(scratch, "operator-"));
+    fs.writeFileSync(path.join(operator, "ai.json"), JSON.stringify({ ais: { free: { backend: "openrouter", model: "m", key: "k" } } }));
     const { start, seen } = fakeServer();
-    await narrator(start, { MYSTERY_CONFIG_ROOT: operator }).replay(request(askCase, "mock"));
+    await narrator(start, { MYSTERY_CONFIG_ROOT: operator }, ["mock", "default"]).replay(request(askCase, "mock"));
     expect(fs.readdirSync(seen.servers[0].configRoot).filter((name) => name === "ai.json" || name.startsWith(".env"))).toEqual([]);
+  });
+
+  it("refuses a missing AI or a missing key when the narrator is made, with no server started", () => {
+    const operator = fs.mkdtempSync(path.join(scratch, "operator-"));
+    fs.writeFileSync(path.join(operator, "ai.json"), JSON.stringify({ ais: { free: { backend: "openrouter", model: "m" } } }));
+    const { start, seen } = fakeServer();
+    expect(() => narrator(start, { MYSTERY_CONFIG_ROOT: operator }, ["luna"])).toThrow(/AI "luna" is not in/);
+    expect(() => narrator(start, { MYSTERY_CONFIG_ROOT: operator }, ["free"])).toThrow(/AI "free" uses openrouter but has no key/);
+    expect(seen.started).toBe(0);
   });
 
   it("fails a turn the server refuses, naming the endpoint and the status", async () => {

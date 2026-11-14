@@ -5,7 +5,7 @@ import {
   getLiveSuiteTitle,
   isLiveAIEnabled,
   LiveAIRetriableExhaustedError,
-  resolveLiveAILabel,
+  requireLiveAIName,
 } from "../../../testkit/src/live-ai.ts";
 import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
@@ -27,8 +27,7 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
 
   it("progresses accusation rounds to a terminal outcome", async () => {
     try {
-      const label = resolveLiveAILabel().toLowerCase();
-      const profile = label === "free" || label === "paid" ? label : "free";
+      const profile = requireLiveAIName();
       const headers = auth.headers;
 
       const startData = await callLiveEndpointWithRetry<{ game_id: string }>({

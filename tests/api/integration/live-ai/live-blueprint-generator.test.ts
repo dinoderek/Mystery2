@@ -11,8 +11,9 @@ import {
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 runLive(getLiveSuiteTitle("live-ai integration: blueprint generation"), () => {
-  it("generates a schema-valid blueprint with the configured live model", async () => {
-    const model = process.env.AI_MODEL?.trim();
+  it("generates a schema-valid blueprint with the named AI", async () => {
+    // The runner puts the named AI's model and key here (scripts/lib/live-run.mjs).
+    const model = process.env.AI_LIVE_MODEL?.trim();
     const openRouterApiKey = process.env.OPENROUTER_API_KEY?.trim();
 
     expect(model).toBeTruthy();

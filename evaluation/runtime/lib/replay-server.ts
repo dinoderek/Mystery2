@@ -8,10 +8,10 @@
  * database. Nothing here opens, or even names, the database a person plays on;
  * `stop()` shuts the server down and removes its root.
  *
- * A server resolves a profile the way it always does. The temporary root holds
- * no `ai.json`, so the operator's, and the `.env.local` its keys may fall back
- * to, are linked in before the server starts (links, so a key stays in its own
- * file). `default` resolves to mock: the root's database is fresh.
+ * The temporary root's `ai.json` holds exactly the AIs the run was asked for,
+ * copied from the config root in force with the key each will use
+ * (`scripts/lib/ai-seed.mjs`), and each request names one of them. `mock` needs
+ * no entry, and `default` resolves to mock: the root's database is fresh.
  */
 
 import { randomUUID } from "node:crypto";
@@ -20,8 +20,8 @@ import net from "node:net";
 import path from "node:path";
 
 import { signIn } from "../../playtest/lib/api.ts";
+import { seedAIs } from "../../../scripts/lib/ai-seed.mjs";
 import { startTestServer } from "../../../scripts/lib/test-server.mjs";
-import { getAIConfigPath, getBaseEnvPath } from "../../../scripts/local-config.mjs";
 import type { BlueprintLike, TurnCase } from "./case.ts";
 import type { Collected } from "./replay-cli.ts";
 import { getAction } from "./roles.ts";
@@ -61,18 +61,17 @@ function freePort(): Promise<number> {
   });
 }
 
-/** Links `source` at `target` when `source` exists and `target` does not. */
-function link(source: string, target: string): void {
-  if (!fs.existsSync(source) || fs.existsSync(target)) return;
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.symlinkSync(source, target);
-}
-
 export interface ServerNarratorOptions {
   repoRoot: string;
   start?: StartServer;
-  /** The environment profiles are read from, the operator's. */
+  /** The environment that points at the config root the AIs are read from. */
   env?: NodeJS.ProcessEnv;
+  /**
+   * The AIs the run will name, from `ai.json`. They are checked when the
+   * narrator is made, so a name or key that is missing fails before any server
+   * starts; a name outside the list is the server's to refuse.
+   */
+  ais?: string[];
 }
 
 export interface ServerReplayRequest {
@@ -87,28 +86,19 @@ export interface ServerReplayRequest {
 export class ServerNarrator {
   private readonly repoRoot: string;
   private readonly start: StartServer;
-  private readonly env: NodeJS.ProcessEnv;
+  private readonly seed: ((configRoot: string) => void) | undefined;
   private server: Promise<ThrowawayServer> | null = null;
 
-  constructor({ repoRoot, start = startThrowawayServer, env = process.env }: ServerNarratorOptions) {
+  /** @throws AIConfigError for a named AI that is not in `ai.json` or has no key */
+  constructor({ repoRoot, start = startThrowawayServer, env = process.env, ais = [] }: ServerNarratorOptions) {
     this.repoRoot = repoRoot;
     this.start = start;
-    this.env = env;
+    this.seed = seedAIs({ repoRoot, env, names: ais });
   }
 
   private ensureServer(): Promise<ThrowawayServer> {
-    this.server ??= freePort().then((port) =>
-      this.start({ repoRoot: this.repoRoot, port, seed: (configRoot) => this.linkAIs(configRoot) }),
-    );
+    this.server ??= freePort().then((port) => this.start({ repoRoot: this.repoRoot, port, seed: this.seed }));
     return this.server;
-  }
-
-  /** Links the operator's AIs into the server's root: the server reads them only at start. */
-  private linkAIs(configRoot: string): void {
-    const inRoot = { MYSTERY_CONFIG_ROOT: configRoot };
-    link(getAIConfigPath(this.repoRoot, this.env), getAIConfigPath(this.repoRoot, inRoot));
-    // An entry without a key of its own falls back to the base file's.
-    link(getBaseEnvPath(this.repoRoot, this.env), getBaseEnvPath(this.repoRoot, inRoot));
   }
 
   /** Makes the case's blueprint available to the server, if it is not the repo's. */

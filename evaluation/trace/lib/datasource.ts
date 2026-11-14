@@ -14,7 +14,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { loadAIConfig, resolveAIProfile } from "../../../packages/game-engine/src/ai-config.ts";
 import { createLocalContentStore } from "../../../packages/game-engine/src/content.ts";
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import {
@@ -44,7 +43,6 @@ export interface TraceDataSource {
   fetchSession(sessionId: string): Promise<Row>;
   fetchEvents(sessionId: string): Promise<Row[]>;
   downloadBlueprint(blueprintId: string): Promise<unknown>;
-  fetchProfile(profileId: string): Promise<Record<string, unknown> | null>;
   close?(): void;
 }
 
@@ -114,21 +112,6 @@ export function createLocalTraceSource({
       return blueprint;
     },
 
-    async fetchProfile(profileId) {
-      // Profile metadata is best-effort; an unconfigured profile must not
-      // abort an extraction of a session that used it months ago.
-      let profile;
-      try {
-        profile = resolveAIProfile(profileId, loadAIConfig({ repoRoot: root, env }));
-      } catch {
-        return null;
-      }
-      if (!profile) return null;
-
-      // Never the key — a trace artifact gets shared and committed.
-      return { id: profile.id, provider: profile.provider, model: profile.model };
-    },
-
     close() {
       db.close();
     },
@@ -146,15 +129,11 @@ export async function extractSessionTrace(
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
   const blueprint = await source.downloadBlueprint(session.blueprint_id as string);
-  const aiProfile = session.ai_profile_id
-    ? await source.fetchProfile(session.ai_profile_id as string)
-    : null;
 
   return buildRawTrace({
     session,
     events,
     blueprint,
-    aiProfile,
     source: {
       kind: "local",
       database: source.databasePath ? path.resolve(source.databasePath) : null,

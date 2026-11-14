@@ -156,7 +156,7 @@ export function makeRawTrace(overrides: Record<string, unknown> = {}): RawTrace 
     extracted_at: "2026-06-02T00:00:00Z",
     source: { kind: "local", database: "/tmp/mystery/game.db" },
     session: makeSession(),
-    ai_profile: { id: "default", provider: "mock", model: "mock" },
+    ai_profile: { id: "default", model: "mock" },
     blueprint: makeBlueprint(),
     events: makeEvents(),
     ...overrides,

@@ -35,6 +35,8 @@ export interface OwnServer {
 export interface OwnServerOptions {
 	/** Written as the root's `ai.json` before the server starts; a string is written as is. */
 	aiConfig?: unknown;
+	/** Given the config root before the server starts, after `aiConfig` is written. */
+	seed?: (configRoot: string) => void;
 	env?: Record<string, string>;
 }
 
@@ -50,15 +52,19 @@ function freePort(): Promise<number> {
 }
 
 /** Starts the server. Rejects when it exits during start, as a bad `ai.json` makes it. */
-export async function startOwnServer({ aiConfig, env = {} }: OwnServerOptions = {}): Promise<OwnServer> {
+export async function startOwnServer({ aiConfig, seed: callerSeed, env = {} }: OwnServerOptions = {}): Promise<OwnServer> {
 	const seed =
-		aiConfig === undefined
+		aiConfig === undefined && callerSeed === undefined
 			? undefined
-			: (configRoot: string) =>
-					fs.writeFileSync(
-						path.join(configRoot, 'ai.json'),
-						typeof aiConfig === 'string' ? aiConfig : JSON.stringify(aiConfig),
-					);
+			: (configRoot: string) => {
+					if (aiConfig !== undefined) {
+						fs.writeFileSync(
+							path.join(configRoot, 'ai.json'),
+							typeof aiConfig === 'string' ? aiConfig : JSON.stringify(aiConfig),
+						);
+					}
+					callerSeed?.(configRoot);
+				};
 	const server = await startTestServer({
 		repoRoot: REPO_ROOT,
 		port: await freePort(),

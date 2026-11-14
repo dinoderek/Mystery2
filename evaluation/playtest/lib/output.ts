@@ -3,18 +3,77 @@
 //   transcript.md   the game as read: inputs with the investigator's plan,
 //                   narration, the game's hints and errors, then a summary
 //   script.json     the investigator's inputs in order, each with a checkpoint
-//                   of the game before it, for replay (./replay.mjs)
+//                   of the game before it, for replay (./replay.ts)
 //   steps.jsonl     one line per step: view shown, input, action, response
 //   ai-calls.jsonl  this game's narrator calls, when the server logged them
+//   events.json     the events the game saved, for the report
 //   summary.json    outcome and counts
 
 import fs from "node:fs";
 import path from "node:path";
 
-import { renderEntry } from "./view.mjs";
+import type { PlayedEvent } from "./database.ts";
+import type { PlayedGame } from "./game.ts";
+import type { Divergence } from "./investigator.ts";
+import { renderEntry } from "./view.ts";
+
+type Clues = { clues?: unknown[] };
+
+/** The parts of a blueprint a game's folder reads. */
+export interface PlaytestBlueprint {
+  id: string;
+  metadata: { title: string; time_budget: number; target_age?: number };
+  world: {
+    locations: Array<Clues & { sub_locations?: Clues[] }>;
+    characters: Clues[];
+  };
+}
+
+/** A replay's source, and where it first found different clues. */
+export interface ReplayInfo {
+  of: string;
+  clueDrift: { step: number; input: string; expected: string[]; actual: string[] } | null;
+}
+
+/** One narrator call the server logged. */
+interface NarratorCall {
+  game_id?: string;
+  cost_usd?: number | null;
+}
+
+/** `summary.json`: how one game went. `grades` is added when the game is judged. */
+export interface GameSummary {
+  /** Its place among the run's games, as the run's progress lines number it; null outside a run. */
+  game_number: number | null;
+  game_id: string;
+  blueprint: { id: string; title: string };
+  persona: string;
+  narrator_model: string;
+  investigator_model: string;
+  outcome: "win" | "lose" | null;
+  stop_reason: string;
+  error: string | null;
+  replay_of: string | null;
+  divergence: Divergence | null;
+  clue_drift: ReplayInfo["clueDrift"];
+  final_mode: string;
+  steps: number;
+  turns_used: number;
+  time_budget: number;
+  parser_rejections: number;
+  failed_calls: number;
+  clues_found: number;
+  clues_total: number;
+  clue_ids_found: string[];
+  narrator_calls: number;
+  narrator_cost_usd: number | null;
+  investigator_cost_usd: number | null;
+  wall_seconds: number;
+  grades?: unknown;
+}
 
 /** Every clue a blueprint defines: at locations, sub-locations and characters. */
-export function countBlueprintClues(blueprint) {
+export function countBlueprintClues(blueprint: PlaytestBlueprint): number {
   let total = 0;
   for (const location of blueprint.world.locations) {
     total += location.clues?.length ?? 0;
@@ -24,20 +83,33 @@ export function countBlueprintClues(blueprint) {
   return total;
 }
 
-function readCallLog(file, gameId) {
+function readCallLog(file: string | null, gameId: string): NarratorCall[] {
   if (!file || !fs.existsSync(file)) return [];
   return fs.readFileSync(file, "utf8")
     .split("\n")
     .filter(Boolean)
-    .map((line) => JSON.parse(line))
+    .map((line) => JSON.parse(line) as NarratorCall)
     .filter((entry) => entry.game_id === gameId);
 }
 
-function sum(values) {
-  return values.reduce((total, value) => total + (typeof value === "number" ? value : 0), 0);
+function sum(values: unknown[]): number {
+  return values.reduce<number>((total, value) => total + (typeof value === "number" ? value : 0), 0);
+}
+
+interface GameFolderInput {
+  /** Which of the run's games this is. */
+  number?: number;
+  game: PlayedGame;
+  blueprint: PlaytestBlueprint;
+  persona: string;
+  narratorModel: string;
+  investigatorModel: string;
+  wallMs: number;
+  replay?: ReplayInfo | null;
 }
 
 export function summarizeGame({
+  number,
   game,
   blueprint,
   persona,
@@ -46,9 +118,10 @@ export function summarizeGame({
   calls,
   wallMs,
   replay = null,
-}) {
+}: GameFolderInput & { calls: NarratorCall[] }): GameSummary {
   const found = game.finalState.discovered_clues ?? [];
   return {
+    game_number: number ?? null,
     game_id: game.gameId,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title },
     persona,
@@ -78,7 +151,7 @@ export function summarizeGame({
   };
 }
 
-function renderTranscript(game, summary) {
+function renderTranscript(game: PlayedGame, summary: GameSummary): string {
   const lines = [
     `# ${summary.blueprint.title}: ${summary.persona}`,
     "",
@@ -117,7 +190,7 @@ function renderTranscript(game, summary) {
   return lines.join("\n");
 }
 
-function describeDivergence({ step, input, differences }) {
+function describeDivergence({ step, input, differences }: Divergence): string {
   const fields = Object.entries(differences)
     .map(([field, { expected, actual }]) =>
       `${field} was ${JSON.stringify(expected)}, now ${JSON.stringify(actual)}`
@@ -127,16 +200,18 @@ function describeDivergence({ step, input, differences }) {
   return `${where}: ${fields}`;
 }
 
-function formatCost(value) {
+function formatCost(value: number | null): string {
   return value === null ? "n/a" : `$${value.toFixed(3)}`;
 }
 
 /**
  * Writes one game's folder and returns its summary. `replay` is
- * { of: <script path>, clueDrift } when the game replayed a script.
+ * { of: <script path>, clueDrift } when the game replayed a script; `events`
+ * are the events the game saved, for the report.
  */
 export function writeGameFolder({
   dir,
+  number,
   game,
   blueprint,
   persona,
@@ -145,10 +220,12 @@ export function writeGameFolder({
   callLogFile,
   wallMs,
   replay = null,
-}) {
+  events = null,
+}: GameFolderInput & { dir: string; callLogFile: string | null; events?: PlayedEvent[] | null }): GameSummary {
   fs.mkdirSync(dir, { recursive: true });
   const calls = readCallLog(callLogFile, game.gameId);
   const summary = summarizeGame({
+    number,
     game,
     blueprint,
     persona,
@@ -184,6 +261,7 @@ export function writeGameFolder({
       calls.map((call) => JSON.stringify(call)).join("\n") + "\n",
     );
   }
+  if (events) fs.writeFileSync(path.join(dir, "events.json"), `${JSON.stringify(events, null, 2)}\n`);
   fs.writeFileSync(path.join(dir, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
   return summary;
 }

@@ -1,5 +1,4 @@
-// Grading a played game (`eval:playtest --judge`), against the suite's mock
-// server.
+// Grading a played game (`play --judge`), against the suite's mock server.
 //
 // A scripted game is played, the database copied as a run does, and the game
 // graded through the game command, with the stub judge CLI the trace
@@ -9,15 +8,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { TEST_DATABASE, resolveDatabaseFile } from '../../../lib/database-target.mjs';
-import { signIn } from '../../../evaluation/playtest/lib/api.mjs';
-import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.mjs';
-import { extractTrace, gradeGame, renderGrades } from '../../../evaluation/playtest/lib/judge.mjs';
-import { writeGameFolder } from '../../../evaluation/playtest/lib/output.mjs';
-import { playGame } from '../../../evaluation/playtest/lib/play.mjs';
+import { signIn } from '../../../evaluation/playtest/lib/api.ts';
+import { copyDatabase } from '../../../evaluation/playtest/lib/database.ts';
+import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
+import { extractTrace, gradeGame, renderGrades } from '../../../evaluation/playtest/lib/judge.ts';
+import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
+import { playGame } from '../../../evaluation/playtest/lib/game.ts';
 import { BASE_URL, MOCK_BLUEPRINT_ID, TEST_CONFIG_ROOT } from './helpers';
 
 const REPO_ROOT = process.cwd();
@@ -67,12 +66,7 @@ describe('playtest grading', () => {
 
 		// As a run does: grade from a copy of the database, not the live one.
 		const database = path.join(scratch, 'game.db');
-		const live = new Database(resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {}), { readonly: true });
-		try {
-			await live.backup(database);
-		} finally {
-			live.close();
-		}
+		await copyDatabase(resolveDatabaseFile(TEST_DATABASE, TEST_CONFIG_ROOT, {}), database);
 
 		const config = path.join(scratch, 'config.json');
 		fs.writeFileSync(
@@ -89,11 +83,11 @@ describe('playtest grading', () => {
 		);
 
 		await extractTrace({ repoRoot: REPO_ROOT, database, gameId: game.gameId, gameDir });
-		const grades = await gradeGame({
-			repoRoot: REPO_ROOT,
+		const { grades, result } = await gradeGame({
+			root: REPO_ROOT,
 			gameDir,
 			targetAge: MOCK_BLUEPRINT.metadata.target_age,
-			judgeTraceArgs: ['--config', config]
+			judgeArgs: ['--config', config]
 		});
 
 		expect(grades).toMatchObject({
@@ -116,19 +110,21 @@ describe('playtest grading', () => {
 
 		const trace = JSON.parse(fs.readFileSync(path.join(gameDir, 'trace.json'), 'utf8'));
 		expect(trace.session.id).toBe(game.gameId);
-		const result = JSON.parse(fs.readFileSync(path.join(gameDir, 'result.json'), 'utf8'));
-		expect(result.subject.id).toBe(game.gameId);
+		expect(result.subject).toMatchObject({ kind: 'game', id: game.gameId });
+		expect(result.verdicts.map((verdict) => verdict.id)).toEqual(
+			expect.arrayContaining(['clue_accounting', 'gm_roleplay', 'gm_spoiler'])
+		);
 
 		expect(renderGrades(grades)).toContain('- gm_spoiler: pass (0 major, 0 minor)');
 
 		// A judge that fails is reported as such, and the rest still grade.
 		process.env.MOCK_JUDGE_MODE = 'crash';
 		try {
-			const crashed = await gradeGame({
-				repoRoot: REPO_ROOT,
+			const { grades: crashed } = await gradeGame({
+				root: REPO_ROOT,
 				gameDir,
 				targetAge: MOCK_BLUEPRINT.metadata.target_age,
-				judgeTraceArgs: ['--config', config]
+				judgeArgs: ['--config', config]
 			});
 			expect(crashed.judges.gm_spoiler).toEqual({ status: 'error', major: null, minor: null });
 			expect(crashed.mechanical).toEqual(grades.mechanical);

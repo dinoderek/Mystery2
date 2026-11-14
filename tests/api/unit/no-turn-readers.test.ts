@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { NO_TURN_EVENT_TYPE } from "@my2/shared";
 import { playedEvents } from "../../../evaluation/lib/game-events.mjs";
 import { casesCommand } from "../../../evaluation/runtime/cases.ts";
-import { scoreReadability } from "../../../evaluation/playtest/lib/judge.mjs";
+import { scoreReadability } from "../../../evaluation/playtest/lib/judge.ts";
 import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";

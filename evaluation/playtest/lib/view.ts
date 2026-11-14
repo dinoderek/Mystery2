@@ -6,30 +6,43 @@
 // far. The blueprint never appears here — only what the game's API hands the
 // browser in its session state and narration.
 
+import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   buildPeopleView,
   buildPlacesView,
   groupCluesByOrigin,
 } from "../../../web/src/lib/domain/notebook.ts";
 
+/** The game state the web store keeps, which the notebook helpers read. */
+export type NotebookState = NonNullable<Parameters<typeof buildPlacesView>[0]>;
+
+/** One line of what the player has read so far. */
+export type TranscriptEntry =
+  | { kind: "input"; text: string; plan?: string }
+  | { kind: "narration"; speaker: string; text: string }
+  | { kind: "feedback"; text: string }
+  | { kind: "error"; text: string };
+
 /** The API's game state in the shape the web store keeps it. */
-export function normalizeState(state) {
+export function normalizeState(state: GameState): NotebookState {
+  // The API names a character's place by id; the store also keeps its name, and
+  // keeps the history, which the notebook helpers never read.
   return {
     ...state,
     characters: state.characters.map((character) => ({
       ...character,
-      location_name: character.location_name || character.location_id,
+      location_name: (character as { location_name?: string }).location_name || character.location_id,
     })),
     discovered_clues: state.discovered_clues ?? [],
-  };
+  } as unknown as NotebookState;
 }
 
-function nameOfCharacter(state, id) {
+function nameOfCharacter(state: NotebookState, id: string | null): string {
   const character = state.characters.find((entry) => entry.id === id);
-  return character ? `${character.first_name} ${character.last_name}`.trim() : id;
+  return character ? `${character.first_name} ${character.last_name}`.trim() : String(id);
 }
 
-function modeLine(state) {
+function modeLine(state: NotebookState): string {
   switch (state.mode) {
     case "talk":
       return `Talking with ${nameOfCharacter(state, state.current_talk_character)}`;
@@ -43,7 +56,7 @@ function modeLine(state) {
 }
 
 /** One transcript entry as the player reads it. */
-export function renderEntry(entry) {
+export function renderEntry(entry: TranscriptEntry): string {
   switch (entry.kind) {
     case "input":
       return `> ${entry.text}`;
@@ -53,8 +66,6 @@ export function renderEntry(entry) {
       return `[game] ${entry.text}`;
     case "error":
       return `[error] ${entry.text}`;
-    default:
-      return "";
   }
 }
 
@@ -62,7 +73,15 @@ export function renderEntry(entry) {
  * The full text the investigator reads before choosing its next input.
  * `title` is the case title from the public case list.
  */
-export function buildView({ title, state, transcript }) {
+export function buildView({
+  title,
+  state,
+  transcript,
+}: {
+  title: string;
+  state: GameState;
+  transcript: readonly TranscriptEntry[];
+}): string {
   const normalized = normalizeState(state);
   const places = buildPlacesView(normalized);
   const people = buildPeopleView(normalized);

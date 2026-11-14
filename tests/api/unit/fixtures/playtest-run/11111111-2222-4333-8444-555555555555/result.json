@@ -1,0 +1,64 @@
+{
+  "schema_version": "mystery-eval-result/1",
+  "run": {
+    "id": "2026-01-02/03-04-05-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "mock-blueprint",
+      "--judge"
+    ],
+    "started_at": "2026-01-02T03:04:05.000Z",
+    "ended_at": "2026-01-02T03:04:05.000Z",
+    "commit": "0000000000000000000000000000000000000000",
+    "tree_clean": true,
+    "bindings": {}
+  },
+  "subject": {
+    "kind": "game",
+    "id": "11111111-2222-4333-8444-555555555555",
+    "path": null
+  },
+  "production": null,
+  "verdicts": [
+    {
+      "id": "clue_accounting",
+      "tier": "mechanical",
+      "status": "fail",
+      "details": {
+        "violations": [
+          {
+            "sequence": 5,
+            "reason": "clue_revealed_again",
+            "clue_id": "clue-x"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 5,
+          "severity": "major",
+          "kind": "confirmation",
+          "quote": "</script><b>",
+          "why": "Named the culprit."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 0,
+      "fail": 2,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null,
+  "timing": null
+}

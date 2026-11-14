@@ -23,8 +23,6 @@
         "db:reset": "node scripts/db.mjs reset",
         "db:copy": "node scripts/db.mjs copy",
         "generate:images": "node scripts/generate-blueprint-images.mjs",
-        "eval:playtest": "node evaluation/playtest/run.mjs",
-        "eval:playtest:report": "node evaluation/playtest/report.mjs",
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",

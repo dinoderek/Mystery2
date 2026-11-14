@@ -239,7 +239,7 @@ document.getElementById("meta").innerHTML = [
 const majors = GAMES.flatMap((g) => g.findings.filter((f) => f.severity === "major").map((f) => ({ ...f, game: g.number })));
 document.getElementById("majors").innerHTML = majors.length
   ? majors.map((f) => `<li><span class="where"><a href="#${anchor(f.game, f.sequence)}">Game ${f.game} · #${f.sequence}</a><span class="mono">${esc(f.check)}</span><span>${esc(f.kind)}</span></span><span class="why">${esc(f.why)}</span></li>`).join("")
-  : `<li>${graded.length ? "No judge reported a major finding." : "No grades: run eval:playtest with --judge to grade the games."}</li>`;
+  : `<li>${graded.length ? "No judge reported a major finding." : "No grades: run ./dev eval play with --judge to grade the games."}</li>`;
 
 // Verdict matrix
 const checks = [...new Set(GAMES.flatMap((g) => [...Object.keys(g.judges ?? {}), ...Object.keys(g.mechanical ?? {})]))];

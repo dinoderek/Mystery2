@@ -14,14 +14,32 @@
 
 import fs from "node:fs";
 
+import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import { buildPlacesView } from "../../../web/src/lib/domain/notebook.ts";
-import { normalizeState } from "./view.mjs";
+import { normalizeState } from "./view.ts";
+
+/** Where the game stood at one moment, in the terms a replay compares. */
+export interface Checkpoint {
+  mode: string;
+  location: string;
+  talk_character: string | null;
+  people_here: string[];
+  clues: string[];
+}
+
+type CheckpointField = keyof Checkpoint;
+
+/** One field that differs between a recording and the live game. */
+export interface FieldDifference {
+  expected: unknown;
+  actual: unknown;
+}
 
 // The fields that decide what an input does.
-const BLOCKING_FIELDS = ["mode", "location", "talk_character", "people_here"];
+const BLOCKING_FIELDS: CheckpointField[] = ["mode", "location", "talk_character", "people_here"];
 
 /** Where the game stands, in the terms a replay compares. */
-export function checkpointOf(state) {
+export function checkpointOf(state: GameState): Checkpoint {
   const normalized = normalizeState(state);
   const here = buildPlacesView(normalized).find((place) => place.isCurrent);
   return {
@@ -34,7 +52,7 @@ export function checkpointOf(state) {
   };
 }
 
-function same(a, b) {
+function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
@@ -42,7 +60,10 @@ function same(a, b) {
  * The fields that differ between two checkpoints, split into `blocking`
  * (the replay must stop) and `clues`. Each is null when nothing differs.
  */
-export function compareCheckpoints(expected, actual) {
+export function compareCheckpoints(
+  expected: Checkpoint,
+  actual: Checkpoint,
+): { blocking: Record<string, FieldDifference> | null; clues: { expected: string[]; actual: string[] } | null } {
   const differing = BLOCKING_FIELDS.filter((field) => !same(expected[field], actual[field]));
   return {
     blocking: differing.length > 0
@@ -56,14 +77,23 @@ export function compareCheckpoints(expected, actual) {
   };
 }
 
+/** A recorded game's inputs, as `loadScript` reads them. */
+export interface ReplayScript {
+  blueprintId: string;
+  persona: string;
+  inputs: string[];
+  checkpoints: Checkpoint[] | null;
+  end: Checkpoint | null;
+}
+
 /**
  * Reads a script.json. `checkpoints` and `end` are null for a script saved
  * before checkpoints existed (or written by hand); such a script replays
  * without divergence checks.
  */
-export function loadScript(file) {
+export function loadScript(file: string): ReplayScript {
   const script = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (!Array.isArray(script.inputs) || script.inputs.some((input) => typeof input !== "string")) {
+  if (!Array.isArray(script.inputs) || script.inputs.some((input: unknown) => typeof input !== "string")) {
     throw new Error(`${file}: "inputs" must be a list of strings`);
   }
   if (!script.blueprint_id) throw new Error(`${file}: no "blueprint_id"`);

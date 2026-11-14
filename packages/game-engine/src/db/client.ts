@@ -136,8 +136,9 @@ export function planMigrations(
     if (!step) {
       throw new Error(
         `No migration to schema version ${version}. A database at version ` +
-          `${current} cannot be brought to ${target}: add an entry to ` +
-          "MIGRATIONS in db/client.ts, matching the change made to schema.ts.",
+          `${current} cannot be brought to ${target}. If it is older than the ` +
+          "oldest step, delete it and start again; if schema.ts changed without " +
+          "a step, add an entry to MIGRATIONS in db/client.ts.",
       );
     }
     steps.push(step);

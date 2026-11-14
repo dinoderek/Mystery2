@@ -1,4 +1,4 @@
-// The game-start adapter: which AI opens the case, and what it answers when
+// The game-start and game-enter adapters: which AI narrates, and what they answer when
 // none can. A chosen AI that is missing or broken is an error naming it, and
 // nothing is started with mock in its place.
 
@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EngineContext } from "../../../packages/game-engine/src/context.ts";
 import { createLocalEngine, type LocalEngine } from "../../../packages/game-engine/src/context-local.ts";
+import { handle as handleEnter } from "../../../packages/game-engine/src/endpoints/game-enter.ts";
 import { handle } from "../../../packages/game-engine/src/endpoints/game-start.ts";
 
 const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -106,6 +107,24 @@ describe("game-start, choosing who narrates", () => {
     local.aiSettings.setChoice("luna6");
 
     expect((await start({ ai_profile: "mock" })).status).toBe(200);
+  });
+});
+
+describe("game-enter, when the chosen AI has gone", () => {
+  it("answers an error naming it, and writes no event", async () => {
+    open();
+    const { game_id: gameId } = await (await start()).json();
+    const before = await ctx.events.listBySession(gameId);
+    local.aiSettings.setChoice("luna6");
+
+    const response = await handleEnter(
+      new Request("http://test/api/game-enter", { method: "POST", body: JSON.stringify({ game_id: gameId }) }),
+      ctx,
+    );
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toMatch(/"luna6", is not in ai\.json/);
+    expect(await ctx.events.listBySession(gameId)).toEqual(before);
   });
 });
 

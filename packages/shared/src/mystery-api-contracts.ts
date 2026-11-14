@@ -26,28 +26,12 @@ export const GameSessionRequestSchema = z.object({
 
 export const GameStartRequestSchema = z.object({
   blueprint_id: z.string().uuid(),
-  ai_profile: z.string().min(1).optional(),
+  ai_profile: z.string().trim().min(1).optional(),
 });
 
-export const GameMoveRequestSchema = GameSessionRequestSchema.extend({
-  destination: z.string().min(1),
-});
-
-export const GameSearchRequestSchema = GameSessionRequestSchema.extend({
-  search_query: z.string().min(1).nullable().optional(),
-});
-
-export const GameTalkRequestSchema = GameSessionRequestSchema.extend({
-  character_id: z.string().min(1),
-});
-
-export const GameAskRequestSchema = GameSessionRequestSchema.extend({
-  player_input: z.string().min(1),
-});
-
-export const GameAccuseRequestSchema = GameSessionRequestSchema.extend({
-  player_reasoning: z.string().min(1).optional(),
-});
+/** `game-enter` takes the game; `game-get` takes it as the `game_id` query parameter. */
+export const GameEnterRequestSchema = GameSessionRequestSchema;
+export const GameGetRequestSchema = GameSessionRequestSchema;
 
 export const NarrationPartSchema = z.object({
   text: z.string().min(1),
@@ -79,26 +63,8 @@ export const TurnResponseBaseSchema = z.object({
   revealed_clues: z.array(DiscoveredClueSchema).optional(),
 });
 
-export const TalkStartResponseSchema = TurnResponseBaseSchema.extend({
-  mode: z.enum(["talk", "accuse"]),
-  current_talk_character: z.string().nullable(),
-});
-
-export const TalkAskResponseSchema = TurnResponseBaseSchema.extend({
-  mode: z.enum(["talk", "accuse"]),
-  current_talk_character: z.string().nullable(),
-});
-
-export const TalkEndResponseSchema = TurnResponseBaseSchema.extend({
-  mode: z.literal("explore"),
-  current_talk_character: z.null(),
-});
-
-export const SearchResponseSchema = TurnResponseBaseSchema.extend({
-  mode: z.enum(["explore", "accuse"]),
-});
-
-export const MoveResponseSchema = TurnResponseBaseSchema.extend({
+/** Stepping into the starting location: its arrival narration, where the player stands, who is there. */
+export const GameEnterResponseSchema = TurnResponseBaseSchema.extend({
   mode: z.enum(["explore", "accuse"]),
   current_location: z.string().min(1),
   visible_characters: z.array(
@@ -108,11 +74,6 @@ export const MoveResponseSchema = TurnResponseBaseSchema.extend({
       sex: CharacterSexSchema,
     }),
   ),
-});
-
-export const AccuseResponseSchema = TurnResponseBaseSchema.extend({
-  mode: z.enum(["accuse", "ended"]),
-  result: OutcomeSchema.nullable().optional(),
 });
 
 // --- game-turn ---
@@ -235,9 +196,6 @@ export const GameStartResponseSchema = SessionTranscriptResponseSchema.extend({
 export const GameGetResponseSchema = SessionTranscriptResponseSchema.extend({
   blueprint_id: z.string().uuid(),
 });
-
-/** Stepping into the starting location: its arrival narration and who is there. */
-export const GameEnterResponseSchema = MoveResponseSchema;
 
 export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
@@ -369,19 +327,10 @@ export type Speaker = z.infer<typeof SpeakerSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type GameStartRequest = z.infer<typeof GameStartRequestSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
-export type GameMoveRequest = z.infer<typeof GameMoveRequestSchema>;
-export type GameSearchRequest = z.infer<typeof GameSearchRequestSchema>;
-export type GameTalkRequest = z.infer<typeof GameTalkRequestSchema>;
-export type GameAskRequest = z.infer<typeof GameAskRequestSchema>;
-export type GameAccuseRequest = z.infer<typeof GameAccuseRequestSchema>;
+export type GameEnterRequest = z.infer<typeof GameEnterRequestSchema>;
+export type GameGetRequest = z.infer<typeof GameGetRequestSchema>;
 export type NarrationPart = z.infer<typeof NarrationPartSchema>;
 export type NarrationEvent = z.infer<typeof NarrationEventSchema>;
-export type TalkStartResponse = z.infer<typeof TalkStartResponseSchema>;
-export type TalkAskResponse = z.infer<typeof TalkAskResponseSchema>;
-export type TalkEndResponse = z.infer<typeof TalkEndResponseSchema>;
-export type SearchResponse = z.infer<typeof SearchResponseSchema>;
-export type MoveResponse = z.infer<typeof MoveResponseSchema>;
-export type AccuseResponse = z.infer<typeof AccuseResponseSchema>;
 export type GameTurnRequest = z.infer<typeof GameTurnRequestSchema>;
 export type ClueOrigin = z.infer<typeof ClueOriginSchema>;
 export type RevealedClue = z.infer<typeof RevealedClueSchema>;

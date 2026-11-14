@@ -18,12 +18,6 @@ import {
   SessionSummarySchema,
   SessionCatalogResponseSchema,
   BlueprintSummarySchema,
-  MoveResponseSchema,
-  SearchResponseSchema,
-  TalkStartResponseSchema,
-  TalkAskResponseSchema,
-  TalkEndResponseSchema,
-  AccuseResponseSchema,
   TurnPlayedResponseSchema,
   TurnRefusedResponseSchema,
   TurnViewResponseSchema,
@@ -40,12 +34,6 @@ import {
   type SessionSummary,
   type SessionCatalogResponse,
   type BlueprintSummary,
-  type MoveResponse,
-  type SearchResponse,
-  type TalkStartResponse,
-  type TalkAskResponse,
-  type TalkEndResponse,
-  type AccuseResponse,
   type TurnPlayedResponse,
   type TurnRefusedResponse,
   type TurnViewResponse,
@@ -314,90 +302,6 @@ export function createBlueprintsListResponse(
   blueprints: BlueprintSummary[] = [MOCK_BLUEPRINT],
 ): BlueprintsListResponse {
   return validate(BlueprintsListResponseSchema, { blueprints });
-}
-
-// ---------------------------------------------------------------------------
-// Turn responses
-// ---------------------------------------------------------------------------
-
-export function createMoveResponse(
-  overrides?: Partial<MoveResponse>,
-): MoveResponse {
-  const response: MoveResponse = {
-    narration_parts: [{ text: "You move to a new location.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 9,
-    mode: "explore",
-    current_location: "Garden",
-    visible_characters: [],
-    ...overrides,
-  };
-  return validate(MoveResponseSchema, response);
-}
-
-export function createSearchResponse(
-  overrides?: Record<string, unknown>,
-): SearchResponse {
-  const response = {
-    narration_parts: [{ text: "You search the area.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 9,
-    mode: "explore" as const,
-    ...overrides,
-  };
-  SearchResponseSchema.parse(response);
-  return response as SearchResponse;
-}
-
-export function createTalkStartResponse(
-  overrides?: Partial<TalkStartResponse>,
-): TalkStartResponse {
-  const response: TalkStartResponse = {
-    narration_parts: [{ text: "You approach the character.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 9,
-    mode: "talk",
-    current_talk_character: "Rosie Jones",
-    ...overrides,
-  };
-  return validate(TalkStartResponseSchema, response);
-}
-
-export function createTalkAskResponse(
-  overrides?: Partial<TalkAskResponse>,
-): TalkAskResponse {
-  const response: TalkAskResponse = {
-    narration_parts: [{ text: "The character answers your question.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 9,
-    mode: "talk",
-    current_talk_character: "Rosie Jones",
-    ...overrides,
-  };
-  return validate(TalkAskResponseSchema, response);
-}
-
-export function createTalkEndResponse(
-  overrides?: Partial<TalkEndResponse>,
-): TalkEndResponse {
-  const response: TalkEndResponse = {
-    narration_parts: [{ text: "You end the conversation.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 9,
-    mode: "explore",
-    current_talk_character: null,
-    ...overrides,
-  };
-  return validate(TalkEndResponseSchema, response);
-}
-
-export function createAccuseResponse(
-  overrides?: Record<string, unknown>,
-): AccuseResponse {
-  const response = {
-    narration_parts: [{ text: "You make your accusation.", speaker: NARRATOR_SPEAKER }],
-    time_remaining: 0,
-    mode: "ended" as const,
-    result: "win" as const,
-    ...overrides,
-  };
-  AccuseResponseSchema.parse(response);
-  return response as AccuseResponse;
 }
 
 // ---------------------------------------------------------------------------

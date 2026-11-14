@@ -6,6 +6,7 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   readStoredSession,
+  sendLine,
   setupApiTestAuth,
   TEST_CONFIG_ROOT,
   type ApiAuthContext,
@@ -22,12 +23,7 @@ function writeFreeProfile(lines: string[]): void {
 }
 
 async function search(auth: ApiAuthContext, gameId: string): Promise<number> {
-  const res = await fetch(`${API_URL}/game-search`, {
-    method: "POST",
-    headers: auth.headers,
-    body: JSON.stringify({ game_id: gameId }),
-  });
-  return res.status;
+  return (await sendLine(auth, gameId, "search")).status;
 }
 
 describe("ai profile runtime resolution", () => {

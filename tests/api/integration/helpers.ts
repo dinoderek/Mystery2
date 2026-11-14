@@ -1,4 +1,5 @@
-import { createTestPlayer, testDatabase, type TestPlayer } from '../../testkit/src/server';
+import { GameTurnResponseSchema } from '@my2/shared';
+import { API_URL, createTestPlayer, testDatabase, type TestPlayer } from '../../testkit/src/server';
 
 export {
 	API_URL,
@@ -122,4 +123,37 @@ export function readStoredEvents(gameId: string): StoredEvent[] {
 			narration_parts: JSON.parse(String(row.narration_parts)),
 			model: row.model === null ? null : String(row.model),
 		}));
+}
+
+// ---------------------------------------------------------------------------
+// Playing a game over the API
+// ---------------------------------------------------------------------------
+
+/** Starts a case on the mock blueprint as `auth`'s player and returns its game id. */
+export async function startMockGame(auth: ApiAuthContext): Promise<string> {
+	const res = await fetch(`${API_URL}/game-start`, {
+		method: 'POST',
+		headers: auth.headers,
+		body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID })
+	});
+	if (res.status !== 200) throw new Error(`game-start answered ${res.status}`);
+	return (await res.json()).game_id as string;
+}
+
+/** Sends one typed line to `game-turn`; the response is left for the caller to read. */
+export function sendLine(auth: ApiAuthContext, gameId: string, input: string): Promise<Response> {
+	return fetch(`${API_URL}/game-turn`, {
+		method: 'POST',
+		headers: auth.headers,
+		body: JSON.stringify({ game_id: gameId, input })
+	});
+}
+
+/** Sends a line that must play a turn, and returns what `game-turn` answered. */
+export async function playLine(auth: ApiAuthContext, gameId: string, input: string) {
+	const res = await sendLine(auth, gameId, input);
+	if (res.status !== 200) throw new Error(`"${input}" answered ${res.status}: ${await res.text()}`);
+	const answer = GameTurnResponseSchema.parse(await res.json());
+	if (answer.kind !== 'turn') throw new Error(`"${input}" did not play: ${JSON.stringify(answer)}`);
+	return answer;
 }

@@ -79,6 +79,29 @@ describe("import-layer rules", () => {
     );
     write("web/src/hooks.server.ts", 'import "$lib/server/s";\n');
 
+    write("packages/game-engine/src/command-grammar.ts");
+    write(
+      "packages/game-engine/src/uses-grammar.ts",
+      'import "./command-grammar.ts";\n',
+    );
+    write(
+      "web/src/lib/domain/own-parser.ts",
+      'import "../../../../packages/game-engine/src/command-grammar.ts";\n',
+    );
+    write(
+      "evaluation/playtest/lib/own-parser.mjs",
+      'import "../../../packages/game-engine/src/command-grammar.ts";\n',
+    );
+    write(
+      "evaluation/playtest/lib/plays.mjs",
+      'import "./other.mjs";\n',
+    );
+    write("evaluation/playtest/lib/other.mjs");
+    write(
+      "tests/api/unit/grammar.test.ts",
+      'import "../../../packages/game-engine/src/command-grammar.ts";\n',
+    );
+
     violations = await findViolations({ baseDir: dir });
   }, 60_000);
 
@@ -136,6 +159,23 @@ describe("import-layer rules", () => {
     expect(rulesBrokenBy(violations, "web/src/lib/domain/d.ts")).toEqual([
       "domain-avoids-components-and-routes",
     ]);
+  });
+
+  it("flags the command grammar imported from the browser or the evaluation harnesses", () => {
+    expect(rulesBrokenBy(violations, "web/src/lib/domain/own-parser.ts")).toContain(
+      "grammar-only-in-engine",
+    );
+    expect(
+      rulesBrokenBy(violations, "evaluation/playtest/lib/own-parser.mjs"),
+    ).toEqual(["grammar-only-in-engine"]);
+    expect(rulesBrokenBy(violations, "evaluation/playtest/lib/plays.mjs")).toEqual([]);
+  });
+
+  it("lets the engine, and the tests of it, import the command grammar", () => {
+    expect(
+      rulesBrokenBy(violations, "packages/game-engine/src/uses-grammar.ts"),
+    ).toEqual([]);
+    expect(rulesBrokenBy(violations, "tests/api/unit/grammar.test.ts")).toEqual([]);
   });
 
   it("flags an import cycle", () => {

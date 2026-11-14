@@ -161,7 +161,7 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("Someone stole the cake.");
   });
 
-  it("builds a revisit-aware game-move prompt", () => {
+  it("builds a revisit-aware move prompt", () => {
     const prompt = buildGameMovePrompt({
       target_age: 9,
       destination_name: "Kitchen",

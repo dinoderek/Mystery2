@@ -3,6 +3,7 @@ import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
+  playLine,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "./helpers";
@@ -102,12 +103,7 @@ describe("game-enter endpoint", () => {
   it("rejects entry once the player has already acted", async () => {
     const game_id = await startGame();
 
-    const moveRes = await fetch(`${API_URL}/game-move`, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({ game_id, destination: "loc-living-room" }),
-    });
-    expect(moveRes.status).toBe(200);
+    await playLine(auth, game_id, "go to the Living Room");
 
     expect((await enter(game_id)).status).toBe(400);
   });

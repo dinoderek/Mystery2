@@ -98,14 +98,14 @@ const PROFILES: Record<number, AgeProfile> = {
  */
 export type InteractionId =
   | "intro" // game-start: opening narration
-  | "ambience" // game-move, game-enter: arriving at a place and whoever is there
-  | "search_empty" // game-search (bare): a dead-end search
-  | "search_find" // game-search (targeted): a clue reveal
-  | "talk_greeting" // game-talk: begin a conversation
-  | "talk_round" // game-ask: an interrogation round
-  | "talk_farewell" // game-end-talk: end a conversation
-  | "accusation_open" // game-accuse: raise the stakes
-  | "accusation_verdict"; // game-accuse: the final payoff
+  | "ambience" // the move action and game-enter: arriving at a place and whoever is there
+  | "search_empty" // the search action (bare): a dead-end search
+  | "search_find" // the search action (targeted): a clue reveal
+  | "talk_greeting" // the talk action: begin a conversation
+  | "talk_round" // the ask action: an interrogation round
+  | "talk_farewell" // the end-talk action: end a conversation
+  | "accusation_open" // the accuse action: raise the stakes
+  | "accusation_verdict"; // the accuse action: the final payoff
 
 export interface Interaction {
   id: InteractionId;

@@ -59,16 +59,10 @@ describe("requests without a profile", () => {
     // One per profile-scoped endpoint, so adding one that forgets to run as
     // somebody fails here rather than quietly serving another player's game.
     const sessionEndpoints: ReadonlyArray<readonly [string, "GET" | "POST"]> = [
-      ["game-accuse", "POST"],
-      ["game-ask", "POST"],
-      ["game-end-talk", "POST"],
       ["game-enter", "POST"],
       ["game-get", "GET"],
-      ["game-move", "POST"],
-      ["game-search", "POST"],
       ["game-sessions-list", "GET"],
       ["game-start", "POST"],
-      ["game-talk", "POST"],
       ["game-turn", "POST"],
     ];
 

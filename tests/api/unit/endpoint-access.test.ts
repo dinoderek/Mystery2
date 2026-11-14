@@ -12,6 +12,17 @@ import { ENDPOINTS } from "../../../packages/game-engine/src/endpoints/index.ts"
 const CATALOG_ENDPOINTS = ["blueprints-list"];
 
 describe("endpoint access", () => {
+  it("lists exactly the endpoints the game answers", () => {
+    expect(ENDPOINTS.map((endpoint) => endpoint.name).sort()).toEqual([
+      "blueprints-list",
+      "game-enter",
+      "game-get",
+      "game-sessions-list",
+      "game-start",
+      "game-turn",
+    ]);
+  });
+
   it("runs as a profile for everything that manages or plays a session", () => {
     const profileScoped = ENDPOINTS.filter((endpoint) => endpoint.access === "profile")
       .map((endpoint) => endpoint.name)

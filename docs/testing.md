@@ -53,7 +53,7 @@ phase 1 passed, one step at a time because each starts a server on the
 worktree's port: integration, API E2E, browser E2E.
 
 **Every step runs in every environment.** The gate needs nothing beyond this
-repo — no Docker, no CLI, no seeding — so no suite may be reported as skipped. A suite that cannot start is a
+repo, so no suite may be reported as skipped. A suite that cannot start is a
 bug to fix, not a partial run to report. Focused scripts are for iteration; re-run the gate after any later edit.
 
 Integration and API E2E run against the production build (`node build/index.js`),
@@ -79,7 +79,8 @@ include.
 **Quality limits and layer rules.** `quality` holds each function in engine,
 shared and web TypeScript (not tests or `.svelte`) to cognitive complexity 25,
 200 lines, nesting 4 and 5 parameters; `imports` holds the rules in
-`scripts/lib/import-rules.mjs`. Pre-existing offenders sit in
+`scripts/lib/import-rules.mjs`, among them that only the engine imports the
+command grammar, `web/` and `evaluation/` included. Pre-existing offenders sit in
 `quality-baseline.json` and `imports-baseline.json`, which only shrink: a new
 offender fails, and so does a stale entry. After a fix, `npm run check:quality
 -- --prune` or `npm run check:imports -- --prune` drops it.
@@ -123,7 +124,7 @@ npx playwright install chromium
 
 Binaries are keyed to the Playwright version: after a bump every browser test
 fails with `browserType.launch: Executable doesn't exist at ...`. CI reinstalls
-itself (its cache key hashes `package-lock.json` and `web/package.json`).
+itself.
 
 ### Live-AI suites (opt-in)
 
@@ -136,7 +137,7 @@ Excluded from `npm test`, never a substitute for it:
 
 They require `AI_LIVE=1`, a `.env.ai.free.local` or `.env.ai.paid.local`, and
 tolerance of retriable `503`s. `scripts/run-live-ai.mjs` starts the server with
-the mode's AI env; there is no profile to seed. See
+the mode's AI env. See
 [`docs/ai-configuration.md`](ai-configuration.md).
 
 ## Reading The Results
@@ -166,9 +167,6 @@ separate server process this instrumentation does not see, so every file under
 browser E2E does for `web/src/lib/components/`. A listed file is a
 reason to act only when its boundary is unit ([Which Suite To
 Update](#which-suite-to-update)).
-
-`npm run test:unit:coverage` and `npm -w web run test:unit:coverage` write the
-same reports.
 
 ## Golden transcripts
 
@@ -224,9 +222,11 @@ else checks. Integration must prove at minimum:
 - every endpoint over shared content answers without a cookie at all
 - image bytes are served for an image the blueprint references, and only for
   those
+- every endpoint that takes fields answers a missing or wrong one with `400`
+  naming it, and a name outside the registry answers `404`
 
-That bar lives in `tests/api/integration/session-ownership.test.ts` and
-`unauthenticated.test.ts`.
+That bar lives in `tests/api/integration/session-ownership.test.ts`,
+`unauthenticated.test.ts` and `request-validation.test.ts`.
 
 Integration and E2E never call a real model. The server runs the mock provider;
 assert persisted side effects instead.
@@ -263,5 +263,5 @@ and Playwright's report on failure.
 
 For a change to documentation only, the code suites are optional locally; run
 `npm run check:curated-docs`, `npm run check:doc-refs` and `npm run
-check:word-budgets`: CI runs the whole gate, and all three fail it. Check the
+check:word-budgets`: all three fail the gate. Check the
 rest by hand: command accuracy, and consistency with the owning doc.

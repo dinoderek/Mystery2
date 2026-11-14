@@ -186,13 +186,13 @@ describe("ai-provider request metadata", () => {
     });
 
     const metadata = createAIRequestMetadata(req, {
-      endpoint: "game-ask",
+      endpoint: "game-turn",
       action: "ask",
       game_id: "game-1",
     });
     expect(metadata).toEqual({
       request_id: "req-123",
-      endpoint: "game-ask",
+      endpoint: "game-turn",
       action: "ask",
       game_id: "game-1",
     });
@@ -201,11 +201,11 @@ describe("ai-provider request metadata", () => {
   it("generates request ids when missing", () => {
     const req = new Request("http://localhost/test");
     const metadata = createAIRequestMetadata(req, {
-      endpoint: "game-search",
+      endpoint: "game-turn",
       action: "search",
     });
 
-    expect(metadata.endpoint).toBe("game-search");
+    expect(metadata.endpoint).toBe("game-turn");
     expect(metadata.action).toBe("search");
     expect(metadata.request_id.length).toBeGreaterThan(0);
   });

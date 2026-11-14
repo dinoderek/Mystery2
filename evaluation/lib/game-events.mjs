@@ -56,10 +56,10 @@ export function readStringArray(payload, key) {
 // reveals differently per event type, and conflating them double-counts:
 //   - `search` stores this turn's single find in payload.revealed_clue_id;
 //     its payload.revealed_clue_ids is the CUMULATIVE list of everything
-//     revealed in that location so far (game-search/index.ts), NOT a per-turn
+//     revealed in that location so far (`turn/resolve-search.ts` in the engine), NOT a per-turn
 //     delta — using it as a delta makes clue-accounting false-fail.
 //   - `ask` stores this turn's reveals as the payload.revealed_clue_ids array
-//     (game-ask/index.ts).
+//     (`turn/resolve-talk.ts` in the engine).
 // The clues_revealed column is never written by the runtime; we honor it only
 // as a fallback for legacy/seeded rows on non-search/ask events.
 export function revealedClueIdsForEvent(event) {

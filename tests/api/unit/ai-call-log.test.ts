@@ -36,7 +36,7 @@ function loggedLines(): Array<Record<string, unknown>> {
 
 const METADATA = {
   request_id: "req-1",
-  endpoint: "game-search",
+  endpoint: "game-turn",
   action: "search",
   game_id: "game-1",
 };
@@ -72,7 +72,7 @@ describe("AI call log", () => {
     const [line] = loggedLines();
     expect(line).toMatchObject({
       game_id: "game-1",
-      endpoint: "game-search",
+      endpoint: "game-turn",
       action: "search",
       request_id: "req-1",
       role: "search",

@@ -100,11 +100,11 @@ describe('playtest loop', () => {
 			text: expect.stringContaining('"zed" is not a valid character. Try: Alice Smith'),
 		});
 
-		// `help` is a view: the investigator is told the mode's commands.
+		// `help` is a view: the investigator is told it opened, as the browser says.
 		expect(byInput['help'].action).toMatchObject({
 			kind: 'view',
 			view: 'help',
-			text: expect.stringMatching(/^Help menu opened\. Commands: move to\/go to <location>/)
+			text: 'Help menu opened.'
 		});
 		expect(byInput['help'].time_before).toBe(byInput['help'].time_after);
 

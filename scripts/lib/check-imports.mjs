@@ -11,21 +11,21 @@ import path from "node:path";
 
 import { cruise } from "dependency-cruiser";
 
-import { FORBIDDEN } from "./import-rules.mjs";
-import { SOURCE_ROOTS } from "./source-roots.mjs";
+import { FORBIDDEN, GRAMMAR_RULE } from "./import-rules.mjs";
+import { GRAMMAR_ROOTS, SOURCE_ROOTS } from "./source-roots.mjs";
 
 /**
- * The violations in `roots` under `baseDir`, as sorted, unique one-line keys:
+ * Cruises `roots` under `base` against `forbidden` and names each violation
  * `<rule>: <from> -> <to>`, with `(via a > b)` for the members of a cycle.
  *
- * @param {{ baseDir: string, roots?: string[] }} options
+ * @param {string} base
+ * @param {string[]} roots
+ * @param {object[]} forbidden
  * @returns {Promise<string[]>}
  */
-export async function findViolations({ baseDir, roots = SOURCE_ROOTS }) {
+async function cruiseViolations(base, roots, forbidden) {
   // `dependency-cruiser` names the files it was handed relative to the working
-  // directory and what they import relative to `baseDir`; the two must agree,
-  // and a symlinked `baseDir` (macOS's tmpdir) must be spelled as it resolves.
-  const base = fs.realpathSync(baseDir);
+  // directory and what they import relative to `baseDir`; the two must agree.
   const previous = process.cwd();
   process.chdir(base);
   let result;
@@ -34,7 +34,7 @@ export async function findViolations({ baseDir, roots = SOURCE_ROOTS }) {
       roots.filter((root) => fs.existsSync(path.join(base, root))),
       {
         baseDir: base,
-        ruleSet: { forbidden: FORBIDDEN },
+        ruleSet: { forbidden },
         validate: true,
         // Without it `import type` leaves no edge, and so no rule can see it.
         tsPreCompilationDeps: true,
@@ -46,10 +46,30 @@ export async function findViolations({ baseDir, roots = SOURCE_ROOTS }) {
   } finally {
     process.chdir(previous);
   }
-  const keys = result.output.summary.violations.map((violation) => {
+  return result.output.summary.violations.map((violation) => {
     const via = violation.cycle?.map((step) => step.name).join(" > ");
     return `${violation.rule.name}: ${violation.from} -> ${violation.to}${via ? ` (via ${via})` : ""}`;
   });
+}
+
+/**
+ * The violations under `baseDir`, as sorted, unique one-line keys: the layer
+ * rules over `roots`, and the grammar rule over `grammarRoots`.
+ *
+ * @param {{ baseDir: string, roots?: string[], grammarRoots?: string[] }} options
+ * @returns {Promise<string[]>}
+ */
+export async function findViolations({
+  baseDir,
+  roots = SOURCE_ROOTS,
+  grammarRoots = GRAMMAR_ROOTS,
+}) {
+  // A symlinked `baseDir` (macOS's tmpdir) must be spelled as it resolves.
+  const base = fs.realpathSync(baseDir);
+  const keys = [
+    ...(await cruiseViolations(base, roots, FORBIDDEN)),
+    ...(await cruiseViolations(base, grammarRoots, [GRAMMAR_RULE])),
+  ];
   return [...new Set(keys)].sort();
 }
 

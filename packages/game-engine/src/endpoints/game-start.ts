@@ -1,4 +1,10 @@
-import { DEFAULT_AI_PROFILE_ID, type EngineContext } from "../context.ts";
+import { GameStartRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
+import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
+import {
+  DEFAULT_AI_PROFILE_ID,
+  type EngineAIProfile,
+  type EngineContext,
+} from "../context.ts";
 import {
   asRetriableAIResponse,
   badRequest,
@@ -10,8 +16,10 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
+import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
-import { createRequestLogger } from "../logging.ts";
+import { createRequestLogger, type LogWriter } from "../logging.ts";
+import { readJsonRequest } from "../request.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
@@ -31,211 +39,179 @@ const NOTEBOOK_GUIDANCE =
   "It holds what you know, who you have met, and every clue you have found. " +
   'Type "help" to see what else you can do.';
 
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+type ProfileResult =
+  | { profile: EngineAIProfile; response?: undefined }
+  | { profile?: undefined; response: Response };
+
+/** The profile the request named, or the default, or the response that refuses it. */
+async function resolveProfile(
+  ctx: EngineContext,
+  requested: string | undefined,
+  logger: LogWriter,
+): Promise<ProfileResult> {
+  const profile = await ctx.aiProfiles.getById(requested ?? DEFAULT_AI_PROFILE_ID);
+  if (profile) return { profile };
+
+  if (requested) {
+    logger.log("request.invalid", { reason: "unknown_ai_profile", ai_profile: requested });
+    return { response: badRequest("Invalid ai_profile") };
+  }
+  logger.logError("request.error", { reason: "default_ai_profile_missing" });
+  return { response: internalError("No default AI profile configured") };
+}
+
+/** The opening diagnostics; the response carries them with the sequence they relate to. */
+function startDiagnostics(blueprint: BlueprintV2, relatedSequence?: number) {
+  return createNarrationDiagnostics({
+    action: "start",
+    event_category: "start",
+    mode: "explore",
+    resulting_mode: "explore",
+    time_before: blueprint.metadata.time_budget,
+    time_after: blueprint.metadata.time_budget,
+    time_consumed: false,
+    forced_endgame: false,
+    trigger: "player",
+    ...(relatedSequence === undefined ? {} : { related_sequence: relatedSequence }),
+  });
+}
+
+function startPayload(blueprint: BlueprintV2) {
+  return {
+    speaker: NARRATOR_SPEAKER,
+    blueprint_image_id: blueprint.metadata.image_id ?? null,
+    starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
+  };
+}
+
+/** Narrates the opening and saves the session with its first event, in one write. */
+async function openCase(
+  req: Request,
+  ctx: EngineContext,
+  logger: ReturnType<typeof createRequestLogger>,
+  blueprint: BlueprintV2,
+  profile: EngineAIProfile,
+) {
+  // The id exists before the session does: nothing is written until the
+  // narration has, so a failed model call leaves no game behind.
+  const gameId = crypto.randomUUID();
+
+  const provider = createAIProviderFromProfile(profile, {
+    openrouterApiKey: profile.openrouter_api_key,
+  });
+  const narration = await provider.generateNarration(
+    buildNarrationPrompt({ role: "intro", game_id: gameId, blueprint }),
+    createAIRequestMetadata(req, {
+      request_id: logger.requestId,
+      endpoint: "game-start",
+      action: "start",
+      game_id: gameId,
+    }),
+  );
+  const narrationParts = [
+    createNarrationPart(narration, NARRATOR_SPEAKER, blueprint.metadata.image_id ?? null),
+    createNarrationPart(NOTEBOOK_GUIDANCE, NARRATOR_SPEAKER),
+  ];
+
+  const startEvent = {
+    session_id: gameId,
+    event_type: "start",
+    actor: "system",
+    payload: startPayload(blueprint),
+    narration_parts: narrationParts,
+    model: provider.resolvedModel,
+    diagnostics: startDiagnostics(blueprint),
+    logger,
+  };
+
+  try {
+    await ctx.sessions.saveTurn({
+      game_id: gameId,
+      expected_sequence: 1,
+      start: {
+        player_id: ctx.player.id,
+        blueprint_id: blueprint.id,
+        ai_profile_id: profile.id,
+        mode: "explore",
+        current_location_id: blueprint.world.starting_location_id,
+        time_remaining: blueprint.metadata.time_budget,
+      },
+      events: [buildNarrationEvent(startEvent, 1)],
+    });
+  } catch (saveError) {
+    logger.logError("request.error", {
+      reason: "start_save_failed",
+      game_id: gameId,
+      blueprint_id: blueprint.id,
+      error: saveError instanceof Error ? saveError.message : String(saveError),
+    });
+    return null;
+  }
+  logNarrationEventSaved(startEvent, 1);
+
+  return { gameId, narrationParts };
+}
+
+function startResponse(
+  blueprint: BlueprintV2,
+  opened: { gameId: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
+): Response {
+  const state = buildGameState(blueprint, {
+    discovered_clues: [],
+    time_remaining: blueprint.metadata.time_budget,
+    location: blueprint.world.starting_location_id,
+    mode: "explore",
+    current_talk_character: null,
+  });
+  const event = {
+    sequence: 1,
+    event_type: "start",
+    narration_parts: opened.narrationParts,
+    payload: { ...startPayload(blueprint), diagnostics: startDiagnostics(blueprint, 1) },
+  };
+  return new Response(
+    JSON.stringify({ game_id: opened.gameId, state, narration_events: [event] }),
+    { headers: JSON_HEADERS },
+  );
+}
+
+async function loadBlueprint(ctx: EngineContext, id: string, logger: LogWriter) {
+  try {
+    return { blueprint: await ctx.content.loadBlueprint(id, logger) };
+  } catch {
+    logger.logError("request.error", { reason: "storage_list_failed" });
+    return { failed: internalError("Failed to access blueprints") };
+  }
+}
+
 export async function handle(
   req: Request,
   ctx: EngineContext,
 ): Promise<Response> {
   const logger = createRequestLogger(req, "game-start");
-  const { requestId, log, logError } = logger;
+  const { log, logError } = logger;
 
   try {
-    const body = await req.json();
-    if (!body || typeof body.blueprint_id !== "string") {
-      log("request.invalid", { reason: "missing_or_invalid_blueprint_id" });
-      return badRequest("Missing or invalid blueprint_id");
-    }
-    if (
-      body.ai_profile !== undefined &&
-      (typeof body.ai_profile !== "string" || body.ai_profile.trim().length === 0)
-    ) {
-      log("request.invalid", { reason: "invalid_ai_profile" });
-      return badRequest("Invalid ai_profile");
-    }
+    const read = await readJsonRequest(req, GameStartRequestSchema, logger);
+    if (!read.ok) return read.response;
+    const { blueprint_id, ai_profile } = read.data;
 
-    const { blueprint_id } = body;
-    const requestedAIProfile = typeof body.ai_profile === "string"
-      ? body.ai_profile.trim()
-      : null;
+    const resolved = await resolveProfile(ctx, ai_profile, logger);
+    if (resolved.response) return resolved.response;
 
-    const aiProfile = requestedAIProfile
-      ? await ctx.aiProfiles.getById(requestedAIProfile)
-      : await ctx.aiProfiles.getById(DEFAULT_AI_PROFILE_ID);
-
-    if (requestedAIProfile && !aiProfile) {
-      log("request.invalid", {
-        reason: "unknown_ai_profile",
-        ai_profile: requestedAIProfile,
-      });
-      return badRequest("Invalid ai_profile");
-    }
-    if (!aiProfile) {
-      logError("request.error", { reason: "default_ai_profile_missing" });
-      return internalError("No default AI profile configured");
-    }
-
-    let blueprint;
-    try {
-      blueprint = await ctx.content.loadBlueprint(blueprint_id, logger);
-    } catch {
-      logError("request.error", { reason: "storage_list_failed" });
-      return internalError("Failed to access blueprints");
-    }
-
+    const loaded = await loadBlueprint(ctx, blueprint_id, logger);
+    if (loaded.failed) return loaded.failed;
+    const { blueprint } = loaded;
     if (!blueprint) {
-      log("request.invalid", {
-        reason: "blueprint_not_found",
-        blueprint_id,
-      });
+      log("request.invalid", { reason: "blueprint_not_found", blueprint_id });
       return notFound("Blueprint not found");
     }
 
-    const startLocId = blueprint.world.starting_location_id;
-
-    // The id exists before the session does: nothing is written until the
-    // narration has, so a failed model call leaves no game behind.
-    const sessionId = crypto.randomUUID();
-
-    // Generate opening narration
-    const aiProvider = createAIProviderFromProfile(aiProfile, {
-      openrouterApiKey: aiProfile.openrouter_api_key,
-    });
-    const aiMetadata = createAIRequestMetadata(req, {
-      request_id: requestId,
-      endpoint: "game-start",
-      action: "start",
-      game_id: sessionId,
-    });
-    const narration = await aiProvider.generateNarration(
-      buildNarrationPrompt({
-        role: "intro",
-        game_id: sessionId,
-        blueprint,
-      }),
-      aiMetadata,
-    );
-    const narrationParts = [
-      createNarrationPart(
-        narration,
-        NARRATOR_SPEAKER,
-        blueprint.metadata.image_id ?? null,
-      ),
-      createNarrationPart(NOTEBOOK_GUIDANCE, NARRATOR_SPEAKER),
-    ];
-
-    const startEvent = {
-      session_id: sessionId,
-      event_type: "start",
-      actor: "system",
-      payload: {
-        speaker: NARRATOR_SPEAKER,
-        blueprint_image_id: blueprint.metadata.image_id ?? null,
-        starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
-      },
-      narration_parts: narrationParts,
-      model: aiProvider.resolvedModel,
-      diagnostics: createNarrationDiagnostics({
-        action: "start",
-        event_category: "start",
-        mode: "explore",
-        resulting_mode: "explore",
-        time_before: blueprint.metadata.time_budget,
-        time_after: blueprint.metadata.time_budget,
-        time_consumed: false,
-        forced_endgame: false,
-        trigger: "player",
-      }),
-      logger,
-    };
-
-    try {
-      await ctx.sessions.saveTurn({
-        game_id: sessionId,
-        expected_sequence: 1,
-        start: {
-          player_id: ctx.player.id,
-          blueprint_id: blueprint.id,
-          ai_profile_id: aiProfile.id,
-          mode: "explore",
-          current_location_id: startLocId,
-          time_remaining: blueprint.metadata.time_budget,
-        },
-        events: [buildNarrationEvent(startEvent, 1)],
-      });
-    } catch (saveError) {
-      logError("request.error", {
-        reason: "start_save_failed",
-        game_id: sessionId,
-        blueprint_id: blueprint.id,
-        error: saveError instanceof Error ? saveError.message : String(saveError),
-      });
-      return internalError("Failed to start game");
-    }
-    logNarrationEventSaved(startEvent, 1);
-
-    const startingKnowledge = blueprint.narrative.starting_knowledge;
-    const locationSummaries = new Map(
-      (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
-    );
-    const characterSummaries = new Map(
-      (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
-    );
-
-    const gameState = {
-      mystery_summary: startingKnowledge?.mystery_summary ?? null,
-      premise: blueprint.narrative.premise,
-      locations: blueprint.world.locations.map((l) => ({
-        id: l.id,
-        name: l.name,
-        summary: locationSummaries.get(l.id) ?? null,
-      })),
-      characters: blueprint.world.characters.map((c) => ({
-        id: c.id,
-        first_name: c.first_name,
-        last_name: c.last_name,
-        location_id: c.location_id,
-        sex: c.sex,
-        summary: characterSummaries.get(c.id) ?? null,
-      })),
-      discovered_clues: [],
-      time_remaining: blueprint.metadata.time_budget,
-      location: startLocId,
-      mode: "explore",
-      current_talk_character: null,
-    };
-
-    return new Response(
-      JSON.stringify({
-        game_id: sessionId,
-        state: gameState,
-        narration_events: [
-          {
-            sequence: 1,
-            event_type: "start",
-            narration_parts: narrationParts,
-            payload: {
-              speaker: NARRATOR_SPEAKER,
-              blueprint_image_id: blueprint.metadata.image_id ?? null,
-              starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
-              diagnostics: createNarrationDiagnostics({
-                action: "start",
-                event_category: "start",
-                mode: "explore",
-                resulting_mode: "explore",
-                time_before: blueprint.metadata.time_budget,
-                time_after: blueprint.metadata.time_budget,
-                time_consumed: false,
-                forced_endgame: false,
-                trigger: "player",
-                related_sequence: 1,
-              }),
-            },
-          },
-        ],
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const opened = await openCase(req, ctx, logger, blueprint, resolved.profile);
+    if (!opened) return internalError("Failed to start game");
+    return startResponse(blueprint, opened);
   } catch (err) {
     if (err instanceof RetriableAIError) {
       log("request.ai_retriable", {
@@ -243,7 +219,6 @@ export async function handle(
         status: err.details.status ?? null,
         error: err.message,
       });
-      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
     }
     const aiResponse = asRetriableAIResponse(err);
     if (aiResponse) return aiResponse;

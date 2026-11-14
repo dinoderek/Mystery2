@@ -1,7 +1,7 @@
 // Public surface of the game engine.
 //
 // The engine is the game: the state machine, the clue graph, the AI provider
-// and prompt assembly, the eleven endpoint handlers, and the SQLite +
+// and prompt assembly, the endpoint handlers, and the SQLite +
 // filesystem adapter they run against. What it deliberately does not contain
 // is a server — the context is handed in, and `web/src/routes/api/` is the
 // only thing that knows about HTTP routing, cookies and the process.
@@ -108,14 +108,3 @@ export {
 export { createRequestLogger, type LogWriter, type RequestLogger } from "./logging.ts";
 export type { NarrationPart } from "./narration.ts";
 export { readGameMode, type GameMode } from "./state-machine.ts";
-export {
-  commandHint,
-  interpretLine,
-  normalizeInput,
-  type GameAction,
-  type GrammarState,
-  type GrammarView,
-  type Interpretation,
-  type NotebookSection,
-  type RefusalKind,
-} from "./command-grammar.ts";

@@ -15,24 +15,10 @@ import {
   SaveConflictError,
 } from "../errors.ts";
 import { createRequestLogger, withLogContext, type LogWriter } from "../logging.ts";
+import { readJsonRequest } from "../request.ts";
 import { playTurn } from "../turn/play-turn.ts";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
-
-async function readRequest(req: Request) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return { error: badRequest("Request body must be JSON", { field: null }) };
-  }
-  const parsed = GameTurnRequestSchema.safeParse(body);
-  if (parsed.success) return { request: parsed.data };
-
-  const issue = parsed.error.issues[0];
-  const field = issue.path.join(".") || null;
-  return { error: badRequest(`Invalid ${field ?? "request"}: ${issue.message}`, { field }) };
-}
 
 function errorResponse(error: unknown, logger: LogWriter): Response {
   if (error instanceof RequestRejectedError) {
@@ -57,11 +43,9 @@ function errorResponse(error: unknown, logger: LogWriter): Response {
 export async function handle(req: Request, ctx: EngineContext): Promise<Response> {
   const logger = createRequestLogger(req, "game-turn");
 
-  const { request, error } = await readRequest(req);
-  if (!request) {
-    logger.log("request.invalid", { reason: "invalid_request" });
-    return error;
-  }
+  const read = await readJsonRequest(req, GameTurnRequestSchema, logger);
+  if (!read.ok) return read.response;
+  const request = read.data;
 
   const gameLogger = withLogContext(logger, { game_id: request.game_id });
   try {

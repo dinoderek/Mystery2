@@ -3,6 +3,7 @@ import { NARRATOR_SPEAKER, INVESTIGATOR_SPEAKER, characterSpeaker } from "../../
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
+  playLine,
   setupApiTestAuth,
   testDatabase,
   type ApiAuthContext,
@@ -38,19 +39,8 @@ describe("game-get endpoint", () => {
     const startData = await startRes.json();
     const gameId = startData.game_id;
 
-    const talkRes = await fetch(`${API_URL}/game-talk`, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId, character_id: "char-alice" }),
-    });
-    expect(talkRes.status).toBe(200);
-
-    const askRes = await fetch(`${API_URL}/game-ask`, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: gameId, player_input: "Where were you?" }),
-    });
-    expect(askRes.status).toBe(200);
+    await playLine(auth, gameId, "talk to Alice");
+    await playLine(auth, gameId, "Where were you?");
 
     const getRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
       headers: auth.headers,

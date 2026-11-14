@@ -5,12 +5,12 @@ import { performance } from "node:perf_hooks";
 import process from "node:process";
 import url from "node:url";
 
-import { zodToJsonSchema } from "zod-to-json-schema";
-
 import { buildBlueprintGenerationChatInput } from "../../packages/blueprint-generator/src/index.ts";
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 
 import { runMechanicalChecks } from "../checks/mechanical.mjs";
+import { validateJudgeOutput } from "../core/judge-output.ts";
+import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
 import { runCli, runCliWithRetries } from "./cli-runner.mjs";
 import { buildEnvelope, combineDimension } from "./envelope.mjs";
 import { startJudgeDigest, startStepDigest } from "./progress.mjs";
@@ -18,7 +18,6 @@ import {
   loadCliConfig,
   loadDimensionDefinition,
   loadDimensions,
-  loadJudgeSystemPrompt,
   loadSpec,
   repoRoot,
   resolveSpec,
@@ -398,9 +397,6 @@ async function runPipeline({
   );
   if (bpCheck.success) parsedBlueprint = bpCheck.data;
 
-  const judgeSystemBase = await timer.stage("load_judge_system_prompt", () =>
-    loadJudgeSystemPrompt(),
-  );
   const judgeStep = cliConfig?.judge ?? null;
 
   process.stdout.write(
@@ -434,7 +430,6 @@ async function runPipeline({
               brief,
               parsedBlueprint,
               blueprintJson,
-              judgeSystemBase,
               judgeStep,
               logDir,
               runDir,
@@ -454,7 +449,6 @@ async function evaluateDimension({
   brief,
   parsedBlueprint,
   blueprintJson,
-  judgeSystemBase,
   judgeStep,
   logDir,
   runDir,
@@ -513,16 +507,9 @@ async function evaluateDimension({
         );
         const judgeContext = dimRef.context ?? null;
         const systemPrompt = await dimTimer.step("compose_prompt", async () =>
-          composeJudgeSystemPrompt({
-            base: judgeSystemBase,
-            dimensionText: dim.text,
-            schema: dim.schema,
-            context: judgeContext,
-          }),
+          composeJudgeSystemPrompt(dim, judgeContext),
         );
-        const userMessage = JSON.stringify({
-          dimension_id: dimId,
-          context: judgeContext,
+        const userMessage = composeJudgeUserMessage(dimId, judgeContext, {
           story_brief: brief,
           blueprint: blueprintJson,
         });
@@ -682,49 +669,6 @@ async function runJudgeWithRetries({
     error: { stage: "judge", message: "runJudgeWithRetries fell through" },
     attempts,
   };
-}
-
-function composeJudgeSystemPrompt({ base, dimensionText, schema, context }) {
-  let composed = `${base}\n\n---\n\n${dimensionText}`;
-  if (schema) {
-    const jsonSchema = zodToJsonSchema(schema, { target: "jsonSchema7" });
-    composed +=
-      `\n\n---\n\n## Output JSON Schema (authoritative)\n\n` +
-      `Your response MUST be a single JSON object matching this schema. ` +
-      `If the prose contract above and this schema disagree, the schema wins.\n\n` +
-      `\`\`\`json\n${JSON.stringify(jsonSchema, null, 2)}\n\`\`\`\n`;
-  }
-  if (context && typeof context === "object") {
-    composed += `\n\n---\n\n## Per-spec context\n\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n`;
-  }
-  return composed;
-}
-
-function validateJudgeOutput(parsed, schema) {
-  if (parsed === null || typeof parsed !== "object") {
-    return { ok: false, message: "Judge output is not a JSON object." };
-  }
-  if (!schema) {
-    if (!("verdict" in parsed)) {
-      return {
-        ok: false,
-        message: "Judge output did not match expected shape (missing verdict).",
-      };
-    }
-    return { ok: true, data: parsed };
-  }
-  const result = schema.safeParse(parsed);
-  if (!result.success) {
-    const issues = result.error.issues
-      .slice(0, 5)
-      .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
-      .join("; ");
-    return {
-      ok: false,
-      message: `Judge output failed schema validation: ${issues}`,
-    };
-  }
-  return { ok: true, data: result.data };
 }
 
 const isMain =

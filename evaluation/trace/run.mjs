@@ -5,11 +5,9 @@ import { performance } from "node:perf_hooks";
 import process from "node:process";
 import url from "node:url";
 
-import {
-  composeJudgeSystemPrompt,
-  resolveVerdict,
-  validateJudgeOutput,
-} from "../judges/index.mjs";
+import { validateJudgeOutput } from "../core/judge-output.ts";
+import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
+import { resolveVerdict } from "../judges/index.mjs";
 import { projectTraceSubject } from "../judges/subject.mjs";
 import { runCli } from "../pipeline/cli-runner.mjs";
 import { startJudgeDigest } from "../pipeline/progress.mjs";
@@ -24,7 +22,6 @@ import {
   loadCliConfig,
   loadTraceDimensionDefinition,
   loadTraceDimensions,
-  loadTraceJudgeSystemPrompt,
   traceRoot,
 } from "./lib/load.mjs";
 import { runTraceMechanicalChecks } from "./lib/mechanical.mjs";
@@ -239,7 +236,6 @@ async function main() {
       process.stdout.write(`[trace-eval] no judge step in cli.json — running mechanical only\n`);
     }
 
-    const judgeSystemBase = await timer.stage("load_judge_system_prompt", () => loadTraceJudgeSystemPrompt());
     // Every turn of a played trace is the game master's own output, so the
     // whole subject is judged. (A runtime-harness interaction projects into the
     // same shape with exactly one judged turn.)
@@ -277,7 +273,6 @@ async function main() {
                 dimRef,
                 blueprint: trace.blueprint,
                 judgeSubject,
-                judgeSystemBase,
                 judgeStep,
                 logDir,
                 runDir,
@@ -328,23 +323,16 @@ async function main() {
   if (runState.runError) process.exit(1);
 }
 
-async function evaluateDimension({ dimRef, blueprint, judgeSubject, judgeSystemBase, judgeStep, logDir, runDir, timer }) {
+async function evaluateDimension({ dimRef, blueprint, judgeSubject, judgeStep, logDir, runDir, timer }) {
   const dimId = dimRef.id;
   const tag = `[trace-eval][${dimId}]`;
   const dimTimer = timer.dimension(dimId);
   try {
     const dim = await dimTimer.step("load_definition", () => loadTraceDimensionDefinition(dimId));
     const systemPrompt = await dimTimer.step("compose_prompt", async () =>
-      composeJudgeSystemPrompt({
-        base: judgeSystemBase,
-        dimensionText: dim.text,
-        schema: dim.schema,
-        context: dimRef.context ?? null,
-      }),
+      composeJudgeSystemPrompt(dim, dimRef.context ?? null),
     );
-    const userMessage = JSON.stringify({
-      dimension_id: dimId,
-      context: dimRef.context ?? null,
+    const userMessage = composeJudgeUserMessage(dimId, dimRef.context ?? null, {
       blueprint,
       subject: judgeSubject,
     });

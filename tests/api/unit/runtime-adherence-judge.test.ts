@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { buildJudgeUserMessage } from "../../../evaluation/runtime/lib/judges/adherence.mjs";
 import { getJudge, judgeIds, runJudges } from "../../../evaluation/runtime/lib/judges/index.mjs";
-import { ADHERENCE_JUDGE_IDS } from "../../../evaluation/judges/index.mjs";
+import { judgesFor } from "../../../evaluation/core/registry.ts";
 
 // The gm_* judges run the SHARED briefs over one stored interaction. These
 // tests pin the runtime binding — projection, verdict mapping, error paths —
@@ -11,7 +11,7 @@ import { ADHERENCE_JUDGE_IDS } from "../../../evaluation/judges/index.mjs";
 const STUB = { cli: "judge-stub" };
 
 // Untyped .mjs export; name it once so it.each() can infer the callback.
-const JUDGE_IDS: string[] = ADHERENCE_JUDGE_IDS;
+const JUDGE_IDS: string[] = judgesFor("game").map((judge) => judge.id);
 
 const MOCK_BLUEPRINT = "blueprints/mock-blueprint.json";
 

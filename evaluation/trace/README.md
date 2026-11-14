@@ -86,13 +86,12 @@ trace:
 |---|---|
 | `clue_accounting` | Every revealed clue id is real and in scope, with no repeats. Each bare search reveals the next unrevealed location clue that is *unlocked* (its `requires` already revealed), skipping locked ones. |
 | `spoiler_leak` | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only, so it stays precise; paraphrase is `gm_spoiler`'s job. |
-| `clue_requires_violation` | No `requires`-gated clue is revealed before its prerequisites, unless the event lists it in `revealed_off_script`. **Off by default**: set `enforce_requires: true` in `mechanical_context` in `dimensions/registry.json`. |
+| `clue_requires_violation` | No `requires`-gated clue is revealed before its prerequisites, unless the event lists it in `revealed_off_script`. **Off by default**: set `enforce_requires: true` on its entry in `evaluation/core/registry.ts`. |
 
-The judges are listed in `dimensions/registry.json`: today the four shared
-`gm_*` judges, one model call each, run in parallel. A dimension id is looked
-up in `evaluation/judges/` first, then in `dimensions/`, so a trace-only
-dimension is a brief and a schema dropped in there, named as in
-`evaluation/judges/README.md` → "Adding a judge", and added to the registry.
+The judges are the registry's `game` judges: today the four shared `gm_*`
+judges, one model call each, run in parallel. A trace-only dimension is a brief
+and a schema named as in `evaluation/judges/README.md` → "Adding a judge", with
+the subject kind `game`.
 
 To re-judge a single turn against another model or prompt, turn the trace into
 runtime cases with `npm run eval:cases-from-trace` (`evaluation/runtime/README.md`).

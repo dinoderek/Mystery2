@@ -10,7 +10,6 @@ import {
   runTraceJudge,
 } from "../../../evaluation/trace/run.mjs";
 import { projectTraceSubject } from "../../../evaluation/judges/subject.mjs";
-import { loadTraceJudgeSystemPrompt } from "../../../evaluation/trace/lib/load.mjs";
 import { createRunTimer } from "../../../evaluation/pipeline/timing.mjs";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.mjs";
 import { schema as gmFabricationSchema } from "../../../evaluation/judges/gm-fabrication.schema.ts";
@@ -80,7 +79,6 @@ describe("evaluateDimension (mock judge CLI)", () => {
       dimRef: { id: "gm_fabrication" },
       blueprint: makeRawTrace().blueprint,
       judgeSubject: projectTraceSubject(turns),
-      judgeSystemBase: await loadTraceJudgeSystemPrompt(),
       judgeStep: judgeStep(),
       logDir: path.join(dir, "logs"),
       runDir: dir,
@@ -98,7 +96,6 @@ describe("evaluateDimension (mock judge CLI)", () => {
       dimRef: { id: "gm_fabrication" },
       blueprint: makeRawTrace().blueprint,
       judgeSubject: projectTraceSubject(turns),
-      judgeSystemBase: await loadTraceJudgeSystemPrompt(),
       judgeStep: judgeStep(),
       logDir: path.join(dir, "logs"),
       runDir: dir,

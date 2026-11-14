@@ -1,15 +1,12 @@
-// Loaders for the trace-evaluation pipeline. Mirrors the blueprint pipeline's
-// load.mjs but rooted at evaluation/trace/ so the two dimension batteries stay
-// independent.
+// Loaders for the trace-evaluation pipeline. What runs on a played game, and
+// how each judge is defined, comes from the registry (evaluation/core/).
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import url from "node:url";
 
-import {
-  loadSharedJudgeDefinition,
-  loadSharedJudgeSystemPrompt,
-} from "../../judges/index.mjs";
+import { loadJudge } from "../../core/judge-loader.ts";
+import { checksFor, judgesFor } from "../../core/registry.ts";
 
 const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 const TRACE_ROOT = path.resolve(HERE, "..");
@@ -18,70 +15,28 @@ export function traceRoot() {
   return TRACE_ROOT;
 }
 
-async function readJson(filePath) {
-  return JSON.parse(await fs.readFile(filePath, "utf8"));
-}
-
-function dimensionIdToFilename(id, ext = "md") {
-  return `${id.replace(/_/g, "-")}.${ext}`;
-}
-
 // The trace dimension battery: the judge dimensions run on every trace plus
-// their default context. Mechanical checks are always-on and not listed here.
+// the settings of its mechanical checks, which are always on and not listed
+// as dimensions.
 export async function loadTraceDimensions() {
-  const registryPath = path.join(TRACE_ROOT, "dimensions", "registry.json");
-  const registry = await readJson(registryPath);
-  if (!Array.isArray(registry.dimensions)) {
-    throw new Error(`${registryPath} must define a "dimensions" array.`);
-  }
-  return { dimensions: registry.dimensions, mechanical_context: registry.mechanical_context ?? null };
+  const dimensions = judgesFor("game").map((entry) => ({
+    id: entry.id,
+    ...(entry.context ? { context: structuredClone(entry.context) } : {}),
+  }));
+  const mechanical = Object.assign({}, ...checksFor("game").map((entry) => entry.context ?? {}));
+  return {
+    dimensions,
+    mechanical_context: Object.keys(mechanical).length > 0 ? mechanical : null,
+  };
 }
 
-// Dimension definitions resolve from the shared game-master judge layer first
-// (evaluation/judges/), then from this pipeline's own dimensions/ directory.
-// The shared judges are written against the subject projection rather than
-// against a trace, which is what lets the runtime harness run the very same
-// brief and schema over a single interaction.
+// The game-master judges are written against the subject projection rather
+// than against a trace, which is what lets the runtime harness run the very
+// same brief and schema over a single turn.
 export async function loadTraceDimensionDefinition(dimensionId) {
-  const shared = await loadSharedJudgeDefinition(dimensionId);
-  if (shared) return shared;
-
-  const filePath = path.join(
-    TRACE_ROOT,
-    "dimensions",
-    dimensionIdToFilename(dimensionId),
-  );
-  const text = await fs.readFile(filePath, "utf8");
-
-  const schemaPath = path.join(
-    TRACE_ROOT,
-    "dimensions",
-    dimensionIdToFilename(dimensionId, "schema.ts"),
-  );
-  let schema = null;
-  try {
-    await fs.access(schemaPath);
-    const mod = await import(url.pathToFileURL(schemaPath).href);
-    if (!mod.schema) {
-      throw new Error(
-        `${dimensionId} schema must export a named 'schema' (Zod schema).`,
-      );
-    }
-    schema = mod.schema;
-  } catch (err) {
-    if (err.code !== "ENOENT" && !/no such file/i.test(err.message)) throw err;
-  }
-
-  return { id: dimensionId, filePath, text, schema };
-}
-
-// The evaluator preamble is shared with the runtime harness, so a judge reads
-// the same framing (including the judged-vs-context turn rule) whichever
-// subject it is pointed at.
-export async function loadTraceJudgeSystemPrompt() {
-  return loadSharedJudgeSystemPrompt();
+  return loadJudge(dimensionId);
 }
 
 export async function loadCliConfig(configPath) {
-  return readJson(path.resolve(configPath));
+  return JSON.parse(await fs.readFile(path.resolve(configPath), "utf8"));
 }

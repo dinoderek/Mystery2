@@ -8,7 +8,7 @@
 // subjective calls — unfamiliar vocabulary, figurative language, clarity —
 // are left to the judge half of the dimension.
 //
-// Context (from evaluation/dimensions/registry.json):
+// Context (from the registry entry, evaluation/core/registry.ts):
 //   tolerance — grade levels of slack above the target (default 2)
 //   min_words — minimum words before a string can fail on FK (default 8)
 

@@ -2,331 +2,44 @@
 // Judge verdict validator. Standalone — invoked by the judge agent (and by
 // the harness as a sanity check after the agent exits).
 //
-// Two-stage validation:
-//   1. Shape check — delegates to evaluation/pipeline/validate.mjs (the
-//      single source of truth for Zod schemas, added in PR #79). Polymorphic
-//      by dimension id read from ./dimension-id.
-//   2. Semantic reference / coverage checks — dimension-specific rules that
-//      cannot be expressed in the Zod schema:
-//        - solve_depth: every paths[].id ∈ blueprint.solution_paths[].id; cover
-//                       all; every necessary_clues[] is a real blueprint clue id;
-//                       shortest_path_id is one of the enumerated paths (or null)
-//        - fairness:    every non_culprits[].character_id is a real non-culprit; cover all
-//        - timeline_coherence:  none (issues' `subject` is free text)
-//        - knowledge_coherence: every issues[].clue_ids[] is a real blueprint
-//                               clue id; a pre_discovery_leak names ≥1 clue
-//        - character_grounding: every characters[].character_id is real;
-//                               first_name matches blueprint; cover every
-//                               blueprint character; every topics[].topic is
-//                               in context.probe_topics
-//        - age_appropriate:     target_age matches the blueprint; every
-//                               findings[].path is one of the blueprint's
-//                               player-facing string paths
-//        - other dimensions:    none (shape check only)
+// Two stages, both from the judge's registry entry (evaluation/core/registry.ts)
+// through the core's output validator (evaluation/core/judge-output.ts):
+//   1. Shape — the verdict satisfies the dimension's schema.
+//   2. Ids — every id, path and topic it cites exists in ./blueprint.json, it
+//      covers what the entry says it must, and it repeats nothing it must not.
+//      The registry entry declares these checks per dimension.
 //
 // Usage: node validate-judge-output.mjs <path-to-verdict.json>
 //
+// Reads ./dimension-id, ./blueprint.json and (optionally) ./context.json from
+// the working directory, which is the judge workspace.
+//
 // Exit codes:
 //   0 — both stages passed
-//   1 — shape or semantic failure (details on stderr)
-//   2 — file missing or unparseable, or workspace misconfigured
+//   1 — shape or id failure (details on stderr)
+//   2 — file missing or unparseable, unknown dimension, or workspace misconfigured
 //   3 — usage error
 
-import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import url from "node:url";
 
-import { extractPlayerFacingText } from "../../checks/lib/player-text.mjs";
+import { loadJudge } from "../../core/judge-loader.ts";
+import { validateJudgeAnswer } from "../../core/judge-output.ts";
 
-const SCRIPT_PATH = url.fileURLToPath(import.meta.url);
-const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..", "..", "..");
-const SHAPE_VALIDATOR = path.join(REPO_ROOT, "evaluation/pipeline/validate.mjs");
-
-async function readJson(p) {
-  return JSON.parse(await fs.readFile(p, "utf8"));
+async function readJson(file) {
+  return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
-function shapeCheck(dimId, verdictPath) {
-  // Delegate to evaluation/pipeline/validate.mjs (PR #79). Inherits its
-  // exit-code contract (0 ok, 1 invalid, 2 usage).
-  const res = spawnSync(
-    process.execPath,
-    [SHAPE_VALIDATOR, dimId, verdictPath],
-    { stdio: ["ignore", "pipe", "pipe"] },
-  );
-  if (res.error) return { ok: false, message: `spawn error: ${res.error.message}` };
-  if (res.status === 0) return { ok: true };
-  const stdout = res.stdout?.toString("utf8") ?? "";
-  const stderr = res.stderr?.toString("utf8") ?? "";
-  return {
-    ok: false,
-    message: `shape validator exit ${res.status}`,
-    stdout,
-    stderr,
-  };
+/** Read a workspace file as JSON, or exit 2 saying which one and why. */
+async function readOrExit(file, what) {
+  try {
+    return await readJson(path.resolve(file));
+  } catch (err) {
+    process.stderr.write(`could not read ${what} (${err.message}).\n`);
+    process.exit(2);
+  }
 }
-
-function collectClueIds(blueprint) {
-  const ids = new Set();
-  for (const loc of blueprint.world?.locations ?? []) {
-    for (const c of loc.clues ?? []) ids.add(c.id);
-    for (const sub of loc.sub_locations ?? []) {
-      for (const c of sub.clues ?? []) ids.add(c.id);
-    }
-  }
-  for (const ch of blueprint.world?.characters ?? []) {
-    for (const c of ch.clues ?? []) ids.add(c.id);
-  }
-  return ids;
-}
-
-function semanticChecksSolveDepth(verdict, blueprint) {
-  const issues = [];
-  const solutionIds = new Set(
-    (blueprint.solution_paths ?? []).map((p) => p.id),
-  );
-  const elimIds = new Set(
-    (blueprint.suspect_elimination_paths ?? []).map((p) => p.id),
-  );
-  const clueIds = collectClueIds(blueprint);
-  const charIds = new Set(
-    (blueprint.world?.characters ?? []).map((c) => c.id),
-  );
-  const culpritIds = new Set(
-    (blueprint.world?.characters ?? [])
-      .filter((c) => c.is_culprit)
-      .map((c) => c.id),
-  );
-
-  // Solution paths: cover all, valid ids, real clue refs.
-  const seen = new Set();
-  for (const p of verdict.paths ?? []) {
-    if (!solutionIds.has(p.id)) {
-      issues.push(
-        `paths[].id "${p.id}" does not match any blueprint.solution_paths[].id (valid: ${[...solutionIds].join(", ") || "(none)"})`,
-      );
-    }
-    if (seen.has(p.id)) issues.push(`paths[].id "${p.id}" appears more than once`);
-    seen.add(p.id);
-    for (const clueId of p.necessary_clues ?? []) {
-      if (!clueIds.has(clueId)) {
-        issues.push(
-          `paths "${p.id}" necessary_clues references unknown clue id "${clueId}"`,
-        );
-      }
-    }
-  }
-  for (const id of solutionIds) {
-    if (!seen.has(id)) {
-      issues.push(`paths is missing an entry for blueprint solution_path "${id}"`);
-    }
-  }
-  if (verdict.shortest_path_id != null && !seen.has(verdict.shortest_path_id)) {
-    issues.push(
-      `shortest_path_id "${verdict.shortest_path_id}" is not one of the enumerated paths[].id`,
-    );
-  }
-
-  // Elimination paths: cover all authored, valid ids, real suspect + clue refs.
-  const seenElim = new Set();
-  for (const e of verdict.elimination_paths ?? []) {
-    if (!elimIds.has(e.id)) {
-      issues.push(
-        `elimination_paths[].id "${e.id}" does not match any blueprint.suspect_elimination_paths[].id (valid: ${[...elimIds].join(", ") || "(none)"})`,
-      );
-    }
-    if (seenElim.has(e.id)) {
-      issues.push(`elimination_paths[].id "${e.id}" appears more than once`);
-    }
-    seenElim.add(e.id);
-    if (e.suspect_id && !charIds.has(e.suspect_id)) {
-      issues.push(
-        `elimination_paths "${e.id}" suspect_id "${e.suspect_id}" is not a real character id`,
-      );
-    }
-    for (const clueId of e.necessary_clues ?? []) {
-      if (!clueIds.has(clueId)) {
-        issues.push(
-          `elimination_paths "${e.id}" necessary_clues references unknown clue id "${clueId}"`,
-        );
-      }
-    }
-  }
-  for (const id of elimIds) {
-    if (!seenElim.has(id)) {
-      issues.push(
-        `elimination_paths is missing an entry for blueprint suspect_elimination_path "${id}"`,
-      );
-    }
-  }
-
-  // uncovered_suspects: real, non-culprit character ids.
-  for (const id of verdict.uncovered_suspects ?? []) {
-    if (!charIds.has(id)) {
-      issues.push(`uncovered_suspects "${id}" is not a real character id`);
-    } else if (culpritIds.has(id)) {
-      issues.push(`uncovered_suspects "${id}" is the culprit, not a suspect`);
-    }
-  }
-
-  return issues;
-}
-
-function semanticChecksFairness(verdict, blueprint) {
-  const issues = [];
-  const allChars = new Map(
-    (blueprint.world?.characters ?? []).map((c) => [c.id, c]),
-  );
-  const expectedNonCulpritIds = new Set(
-    (blueprint.world?.characters ?? [])
-      .filter((c) => !c.is_culprit)
-      .map((c) => c.id),
-  );
-  const reportedIds = new Set();
-  for (const n of verdict.non_culprits ?? []) {
-    if (!allChars.has(n.character_id)) {
-      issues.push(
-        `non_culprits[].character_id "${n.character_id}" not in blueprint.world.characters`,
-      );
-      continue;
-    }
-    if (allChars.get(n.character_id).is_culprit) {
-      issues.push(
-        `non_culprits[].character_id "${n.character_id}" is actually the culprit (is_culprit=true)`,
-      );
-    }
-    if (reportedIds.has(n.character_id)) {
-      issues.push(
-        `non_culprits[].character_id "${n.character_id}" appears more than once`,
-      );
-    }
-    reportedIds.add(n.character_id);
-  }
-  for (const id of expectedNonCulpritIds) {
-    if (!reportedIds.has(id)) {
-      const c = allChars.get(id);
-      issues.push(
-        `non_culprits is missing blueprint non-culprit "${id}" (${c?.first_name ?? "?"})`,
-      );
-    }
-  }
-  return issues;
-}
-
-function semanticChecksCharacterGrounding(verdict, blueprint, context) {
-  const issues = [];
-  const allChars = new Map(
-    (blueprint.world?.characters ?? []).map((c) => [c.id, c]),
-  );
-  const reportedIds = new Set();
-  const probeTopics = new Set(context?.probe_topics ?? []);
-
-  for (const c of verdict.characters ?? []) {
-    if (!allChars.has(c.character_id)) {
-      issues.push(
-        `characters[].character_id "${c.character_id}" not in blueprint.world.characters`,
-      );
-      continue;
-    }
-    if (reportedIds.has(c.character_id)) {
-      issues.push(`characters[].character_id "${c.character_id}" appears more than once`);
-    }
-    reportedIds.add(c.character_id);
-
-    const truth = allChars.get(c.character_id);
-    if (truth && c.first_name !== truth.first_name) {
-      issues.push(
-        `characters[].first_name for "${c.character_id}" is "${c.first_name}" but blueprint says "${truth.first_name}"`,
-      );
-    }
-
-    if (probeTopics.size > 0) {
-      for (const t of c.topics ?? []) {
-        if (!probeTopics.has(t.topic)) {
-          issues.push(
-            `character "${c.character_id}" topic "${t.topic}" is not in context.probe_topics (must be copied verbatim)`,
-          );
-        }
-      }
-    }
-  }
-  for (const c of blueprint.world?.characters ?? []) {
-    if (!reportedIds.has(c.id)) {
-      issues.push(
-        `characters is missing blueprint character "${c.id}" (${c.first_name})`,
-      );
-    }
-  }
-  return issues;
-}
-
-// timeline_coherence: no mechanical reference checks (issues' `subject` is
-// free text — character id, "culprit", "crime", etc.)
-function semanticChecksNoop() {
-  return [];
-}
-
-// knowledge_coherence: `subject` stays free text, but `clue_ids` must name
-// real clues, and a leak must name the clue it gives away.
-export function semanticChecksKnowledgeCoherence(verdict, blueprint) {
-  const issues = [];
-  const clueIds = collectClueIds(blueprint);
-  (verdict.issues ?? []).forEach((issue, i) => {
-    for (const clueId of issue.clue_ids ?? []) {
-      if (!clueIds.has(clueId)) {
-        issues.push(`issues[${i}].clue_ids references unknown clue id "${clueId}"`);
-      }
-    }
-    if (issue.kind === "pre_discovery_leak" && (issue.clue_ids ?? []).length === 0) {
-      issues.push(
-        `issues[${i}] is a pre_discovery_leak but clue_ids is empty (name the clue it gives away)`,
-      );
-    }
-  });
-  return issues;
-}
-
-// age_appropriate: target_age must match the blueprint, and every finding's
-// path must be one of the blueprint's player-facing strings — the same set
-// the analyzer screens (evaluation/checks/lib/player-text.mjs). This also
-// rejects findings on narrator-only fields (hints, backgrounds, tells), which
-// the dimension forbids flagging.
-function semanticChecksAgeAppropriate(verdict, blueprint) {
-  const issues = [];
-  const blueprintAge = blueprint.metadata?.target_age;
-  if (verdict.target_age !== blueprintAge) {
-    issues.push(
-      `target_age ${verdict.target_age} does not match blueprint.metadata.target_age (${blueprintAge})`,
-    );
-  }
-  const playerPaths = new Set(
-    extractPlayerFacingText(blueprint).map((s) => s.path),
-  );
-  for (const f of verdict.findings ?? []) {
-    if (!playerPaths.has(f.path)) {
-      issues.push(
-        `findings[].path "${f.path}" is not a player-facing string in blueprint.json ` +
-          `(must be one of the dimension's player-facing field paths, spelled exactly, ` +
-          `e.g. "world.locations[0].clues[1].text")`,
-      );
-    }
-  }
-  return issues;
-}
-
-// Dimensions without an entry here (e.g. clue_graph) get no semantic checks —
-// the stage-1 shape check still applies.
-const SEMANTIC = {
-  solve_depth: semanticChecksSolveDepth,
-  fairness: semanticChecksFairness,
-  timeline_coherence: semanticChecksNoop,
-  knowledge_coherence: semanticChecksKnowledgeCoherence,
-  character_grounding: semanticChecksCharacterGrounding,
-  age_appropriate: semanticChecksAgeAppropriate,
-};
 
 async function main() {
   const verdictPath = process.argv[2];
@@ -343,48 +56,24 @@ async function main() {
     );
     process.exit(2);
   }
-  // Unknown dimension ids are rejected by the stage-1 shape check (no
-  // <slug>.schema.ts on disk), so no allowlist is needed here.
 
-  // Stage 1: shape via evaluation/pipeline/validate.mjs
-  const shape = shapeCheck(dimId, verdictPath);
-  if (!shape.ok) {
-    process.stderr.write(`INVALID ${dimId} ${verdictPath} — shape failure\n`);
-    if (shape.stdout) process.stderr.write(shape.stdout);
-    if (shape.stderr) process.stderr.write(shape.stderr);
-    process.exit(1);
-  }
-
-  // Stage 2: semantic refs / coverage
-  let verdict;
-  let blueprint;
-  let context;
+  let definition;
   try {
-    verdict = await readJson(path.resolve(verdictPath));
+    definition = await loadJudge(dimId);
   } catch (err) {
-    process.stderr.write(`verdict.json: ${err.message}\n`);
+    process.stderr.write(`${err.message}\n`);
     process.exit(2);
   }
-  try {
-    blueprint = await readJson(path.resolve("blueprint.json"));
-  } catch (err) {
-    process.stderr.write(`could not read ./blueprint.json: ${err.message}\n`);
-    process.exit(2);
-  }
-  try {
-    context = await readJson(path.resolve("context.json"));
-  } catch {
-    context = {};
-  }
 
-  const semanticChecks = SEMANTIC[dimId] ?? semanticChecksNoop;
-  const semanticIssues = semanticChecks(verdict, blueprint, context);
+  const verdict = await readOrExit(verdictPath, verdictPath);
+  const blueprint = await readOrExit("blueprint.json", "./blueprint.json");
+  const context = await readJson(path.resolve("context.json")).catch(() => ({}));
 
-  if (semanticIssues.length > 0) {
-    process.stderr.write(
-      `INVALID ${dimId} ${verdictPath} — ${semanticIssues.length} reference/coverage issue(s):\n`,
-    );
-    for (const msg of semanticIssues) process.stderr.write(`  - ref/${msg}\n`);
+  const result = validateJudgeAnswer(definition, verdict, blueprint, context);
+  if (!result.ok) {
+    const label = result.stage === "shape" ? "shape failure" : `${result.messages.length} reference/coverage issue(s)`;
+    process.stderr.write(`INVALID ${dimId} ${verdictPath} — ${label}:\n`);
+    for (const message of result.messages) process.stderr.write(`  - ${result.stage}/${message}\n`);
     process.exit(1);
   }
 
@@ -392,13 +81,7 @@ async function main() {
   process.exit(0);
 }
 
-// Guarded so a unit test can import the semantic checks without running the CLI.
-// Workspaces invoke this through a symlink, and import.meta.url is the
-// resolved path, so compare against the resolved argv[1].
-const invokedPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
-if (import.meta.url === url.pathToFileURL(invokedPath).href) {
-  main().catch((err) => {
-    process.stderr.write(`fatal: ${err.message ?? err}\n`);
-    process.exit(2);
-  });
-}
+main().catch((err) => {
+  process.stderr.write(`fatal: ${err.message ?? err}\n`);
+  process.exit(2);
+});

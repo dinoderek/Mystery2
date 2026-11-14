@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { judgesFor } from "../../../evaluation/core/registry.ts";
 import { analyze } from "../../../evaluation/checks/analyzers/age-appropriate.mjs";
 import { extractPlayerFacingText } from "../../../evaluation/checks/lib/player-text.mjs";
 import { schema } from "../../../evaluation/dimensions/age-appropriate.schema.ts";
@@ -152,18 +153,11 @@ describe("age_appropriate analyzer", () => {
 
 describe("age_appropriate dimension wiring", () => {
   it("is registered in the standard battery with analyzer context", () => {
-    const registry = JSON.parse(
-      fs.readFileSync(
-        path.join(REPO_ROOT, "evaluation", "dimensions", "registry.json"),
-        "utf8",
-      ),
-    );
-    const entry = registry.dimensions.find(
-      (d: { id: string }) => d.id === "age_appropriate",
-    );
+    const entry = judgesFor("blueprint").find((d) => d.id === "age_appropriate");
     expect(entry).toBeDefined();
-    expect(entry.context.tolerance).toBeTypeOf("number");
-    expect(entry.context.min_words).toBeTypeOf("number");
+    expect(entry!.context?.tolerance).toBeTypeOf("number");
+    expect(entry!.context?.min_words).toBeTypeOf("number");
+    expect(entry!.analyzer).toBeDefined();
   });
 
   it("accepts a well-formed judge verdict and rejects a malformed one", () => {

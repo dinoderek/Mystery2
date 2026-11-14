@@ -13,9 +13,9 @@ README beside its code.
 
 How they connect:
 
-- **Trace** reuses the blueprint pipeline's CLI runner, timing, result
-  combination and dimension convention, and rebuilds what the narrator saw with
-  the runtime's own context builders.
+- **Trace** reuses the blueprint pipeline's CLI runner, timing and result
+  combination, and rebuilds what the narrator saw with the runtime's own
+  context builders.
 - **Runtime** makes one interaction deterministic — same input across
   runs and models — by fixing the prior state and history. It collects
   narration from the real endpoint or by replaying the real prompt through a
@@ -32,11 +32,10 @@ How they connect:
   leaves a transcript and a replayable script. `--judge` hands the games to trace.
 
 Every reader of a played game's events (trace, runtime cases, playtest) skips
-`no_turn_line`, the event a refused line or `help` is saved as; the shared
-filter is `playedEvents` in `evaluation/lib/game-events.mjs`.
+`no_turn_line`, the event a refused line or `help` is saved as, with the shared
+filter `playedEvents` in `evaluation/lib/game-events.mjs`.
 
-The rest of this doc is the blueprint pipeline's design, which the others
-inherit.
+The rest of this doc is the blueprint pipeline's design, which the others inherit.
 
 ## What the blueprint pipeline is for
 
@@ -48,7 +47,7 @@ cheap to change:
 1. **Catch authoring failures before play.** A blueprint with structural
    holes, ungrounded characters or non-converging evidence invites the narrator
    to fabricate.
-2. **A new quality dimension is files, not code.**
+2. **A new quality dimension is files and a registry entry, not code.**
 3. **No LLM SDK.** Every model call is a subprocess, so the pipeline runs
    against any CLI bound in `evaluation/config/cli.json`.
 4. **Parallel.** Wall-clock time is the slowest judge, not their sum.
@@ -61,7 +60,7 @@ cheap to change:
 |---|---|---|---|
 | Mechanical | Deterministic structural checks | `evaluation/checks/mechanical.mjs` | Always |
 | Analyzer | Deterministic, per dimension | `evaluation/checks/analyzers/<id>.mjs` | If the dimension has one |
-| Judge | One LLM call per dimension | `evaluation/dimensions/<id>.md` + `<id>.schema.ts` | Per enabled dimension |
+| Judge | One LLM call per dimension | `evaluation/dimensions/<id>.md` + `<id>.schema.ts` | Per registered dimension |
 
 Both lessons come from the single-prompt evaluator this replaced:
 
@@ -77,24 +76,22 @@ prompt cannot move solve-depth scores) and targeted retries.
 
 A dimension's result is `skipped` if nothing ran, `error` if its analyzer or
 judge failed after retries, `fail` if any result failed, else `pass`. The run
-summary counts them; there is no single overall verdict — consumers decide what
-is ship-ready.
+summary counts them; consumers decide what is ship-ready.
 
 ## Stages
 
 `evaluation/pipeline/run.mjs`:
 
 1. **Load** the brief (`--spec` takes a spec directory or a brief file). Which
-   dimensions run, and their context, comes from
-   `evaluation/dimensions/registry.json`, the same battery for every blueprint.
-   It used to be per spec, and specs quietly lost dimensions nobody listed.
+   dimensions run, and their context, comes from the registry
+   (`evaluation/core/registry.ts`), the same battery for every blueprint.
 2. **Generate**, or read `--blueprint`. The result must parse as
-   `BlueprintV2Schema`; if it does not, the run stops, and still writes its
-   envelope with `run_error.stage`.
+   `BlueprintV2Schema`; if not, the run stops, still writing its envelope with
+   `run_error.stage`.
 3. **Mechanical checks**, including that the clue discovery graph is acyclic,
    references real clues, and reaches every solution clue from an ungated root.
-   A failure does not stop the dimensions: judges often surface the same
-   problem from another angle.
+   A failure does not stop the dimensions: judges often find the same problem
+   from another angle.
 4. **Dimensions**, all in parallel. Within one, the analyzer runs before the
    judge, and an analyzer error skips only that dimension's judge.
 
@@ -111,12 +108,12 @@ iterates until its output validates.
 | Harness | Template | Output | Validator |
 |---|---|---|---|
 | Generator | `evaluation/generator-harness/template/` | `blueprint.json` | `scripts/validate-blueprint.mjs` |
-| Judge | `evaluation/judge-harness/template/` | `verdict.json` | `evaluation/pipeline/validate.mjs` |
+| Judge | `evaluation/judge-harness/template/` | `verdict.json` | `evaluation/judge-harness/scripts/validate-judge-output.mjs` |
 
-- **Self-correction.** An agent that runs its own validator fixes its schema
+- **Self-correction.** An agent that runs its own validator fixes schema
   mistakes before the pipeline sees them, so a retry exercises a real failure.
-- **Reproducibility.** A workspace is a complete record of what the agent saw;
-  a bug reproduces by re-running it.
+- **Reproducibility.** A workspace records everything the agent saw; re-run it
+  to reproduce a bug.
 - **The generator's prompt.** `prompts/generator-prompt.md` is the prompt the
   pipeline rendered, the canonical generator prompt plus the age guidance for
   the brief's `targetAge`, as the standalone generator sends it. Only a hand run
@@ -128,29 +125,30 @@ the docs, pinned to the sections they summarise and checked by the gate
 (`evaluation/generator-harness/template/README.md`).
 
 Runs are written outside the repo, one self-contained directory each, with the
-agents' workspaces kept, so a failure stays debuggable after the fact. The
-layout, the envelope's fields, timing and retry settings are in
-`evaluation/README.md`.
+agents' workspaces kept, so a failure stays debuggable. The layout, the
+envelope's fields, timing and retry settings are in `evaluation/README.md`.
 
 ## Dimensions
 
-`evaluation/dimensions/registry.json` is the battery; `evaluation/README.md`
-lists what each dimension asks. Adding one is three files, and no code:
+`evaluation/core/registry.ts` lists every check and judge once, with the
+subject kind each applies to (`blueprint`, `game`, `turn`); ids are unique
+across it. One loader, prompt composer and output validator in
+`evaluation/core/` serve every harness. Adding a dimension is two files and a
+registry entry; `evaluation/README.md` lists what each asks:
 
 - `evaluation/dimensions/<id>.md` — the judge's brief and documented output.
 - `evaluation/dimensions/<id>.schema.ts` — the Zod schema for its output. It is
   appended to the prompt as JSON Schema and validates the answer; where brief
   and schema disagree, the schema wins.
-- `evaluation/checks/analyzers/<id>.mjs` — optional deterministic pre-check.
-
-If the verdict cites blueprint ids that can be checked, register a semantic
-check in `evaluation/judge-harness/scripts/validate-judge-output.mjs`;
-otherwise only the shape is checked.
+- The registry entry: its context, verdict rule, optional analyzer
+  (`evaluation/checks/analyzers/<id>.mjs`) and `idChecks`, the blueprint ids
+  its answer may cite. The judge workspace's validator reads them from the
+  entry; without any, only the shape is checked.
 
 ## Deliberately not done yet
 
 - Evaluating several blueprints per brief, or sampling a judge several times
-  and voting. One of each, per run.
+  and voting.
 - Storing and browsing run history beyond the run directories.
 - Further dimensions — clue economy, red-herring quality, cover-ups, narrative
   economy, tone — are intended but not built.

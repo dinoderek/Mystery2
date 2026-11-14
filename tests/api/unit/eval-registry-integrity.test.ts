@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { loadAnalyzer, loadJudge } from "../../../evaluation/core/judge-loader.ts";
+import { judgesFor, REGISTRY } from "../../../evaluation/core/registry.ts";
 import {
   loadDimensions,
   loadDimensionDefinition,
@@ -11,116 +13,85 @@ import {
 import {
   loadTraceDimensions,
   loadTraceDimensionDefinition,
-  traceRoot,
 } from "../../../evaluation/trace/lib/load.mjs";
-import { judgesRoot } from "../../../evaluation/judges/index.mjs";
 
-// These tests guard the two dimension registries against drift: a registry
-// entry that points at a missing or malformed schema (or, for blueprint
-// dimensions, an analyzer file that fails to export analyze()) would otherwise
-// surface only as a runtime failure part-way through an evaluation. Adding a
-// new registry entry without its schema/analyzer files should fail here.
+// These tests guard what the harnesses read from the one registry against
+// drift: an entry that points at a missing or malformed schema, or an analyzer
+// file that fails to export analyze(), would otherwise surface only as a
+// runtime failure part-way through an evaluation. The registry's own
+// invariants (unique ids, valid subjects, a brief for every judge) are in
+// eval-core-judges.test.ts.
 
-describe("blueprint dimension registry integrity", () => {
-  it("declares at least one dimension", async () => {
+describe("blueprint battery", () => {
+  it("is the registry's blueprint judges, with their default context", async () => {
     const dimensions = await loadDimensions();
-    expect(Array.isArray(dimensions)).toBe(true);
-    expect(dimensions.length).toBeGreaterThan(0);
+    expect(dimensions.map((d: { id: string }) => d.id)).toEqual(judgesFor("blueprint").map((j) => j.id));
+    expect(dimensions.find((d: { id: string }) => d.id === "solve_depth")).toEqual({
+      id: "solve_depth",
+      context: { min_clues: 3 },
+    });
+    expect(dimensions.find((d: { id: string }) => d.id === "fairness")).toEqual({ id: "fairness" });
   });
 
-  it("resolves every registry entry to a loadable schema", async () => {
-    const dimensions = await loadDimensions();
-    for (const dim of dimensions) {
+  it("resolves every dimension to a loadable schema", async () => {
+    for (const dim of await loadDimensions()) {
       const def = await loadDimensionDefinition(dim.id);
       expect(def.schema, `dimension "${dim.id}" has no loadable schema`).not.toBeNull();
-      expect(
-        typeof def.schema.safeParse,
-        `dimension "${dim.id}" schema is not a Zod schema`,
-      ).toBe("function");
+      expect(typeof def.schema.safeParse, `dimension "${dim.id}" schema is not a Zod schema`).toBe("function");
     }
   });
 
-  it("loads an analyze() function for every dimension that ships an analyzer file", async () => {
-    const dimensions = await loadDimensions();
-    const analyzersDir = path.join(
-      repoRoot(),
-      "evaluation",
-      "checks",
-      "analyzers",
-    );
-
-    for (const dim of dimensions) {
-      const analyzerFile = path.join(
-        analyzersDir,
-        `${dim.id.replace(/_/g, "-")}.mjs`,
-      );
-      const hasAnalyzerFile = await fs
-        .access(analyzerFile)
-        .then(() => true)
-        .catch(() => false);
-
+  it("loads an analyze() function for every dimension whose entry names an analyzer file", async () => {
+    for (const dim of await loadDimensions()) {
       const analyzer = await tryLoadAnalyzer(dim.id);
-      if (hasAnalyzerFile) {
-        expect(
-          analyzer,
-          `dimension "${dim.id}" ships an analyzer file but it did not load`,
-        ).not.toBeNull();
+      const entry = judgesFor("blueprint").find((j) => j.id === dim.id);
+      if (entry?.analyzer) {
+        expect(analyzer, `dimension "${dim.id}" names an analyzer that did not load`).not.toBeNull();
         expect(typeof analyzer.analyze).toBe("function");
+        await expect(fs.access(path.join(repoRoot(), entry.analyzer.module))).resolves.toBeUndefined();
       } else {
         expect(analyzer).toBeNull();
       }
     }
   });
 
-  it("has an analyzer for exactly the dimensions with an analyzer file on disk", async () => {
-    // Independent cross-check: whichever dimensions have an analyzer file must
-    // be the same set tryLoadAnalyzer resolves for the registered dimensions.
-    const dimensions = await loadDimensions();
-    const withAnalyzer: string[] = [];
-    for (const dim of dimensions) {
-      if (await tryLoadAnalyzer(dim.id)) withAnalyzer.push(dim.id);
-    }
-    // Sanity floor: the two known analyzer-backed dimensions are registered.
-    expect(withAnalyzer).toEqual(
-      expect.arrayContaining(["clue_graph", "age_appropriate"]),
-    );
+  it("has an analyzer file for exactly the dimensions that name one", async () => {
+    const files = await fs.readdir(path.join(repoRoot(), "evaluation", "checks", "analyzers"));
+    const named = judgesFor("blueprint")
+      .filter((j) => j.analyzer)
+      .map((j) => path.basename(j.analyzer!.module))
+      .sort();
+    expect(named).toEqual(files.filter((f) => f.endsWith(".mjs")).sort());
+    expect(await loadAnalyzer("clue_graph")).not.toBeNull();
   });
 });
 
-describe("trace dimension registry integrity", () => {
-  it("declares at least one dimension", async () => {
-    const { dimensions } = await loadTraceDimensions();
-    expect(Array.isArray(dimensions)).toBe(true);
-    expect(dimensions.length).toBeGreaterThan(0);
+describe("game battery", () => {
+  it("is the registry's game judges, plus the settings of the mechanical checks", async () => {
+    const { dimensions, mechanical_context } = await loadTraceDimensions();
+    expect(dimensions.map((d: { id: string }) => d.id)).toEqual([
+      "gm_roleplay",
+      "gm_clue_discipline",
+      "gm_fabrication",
+      "gm_spoiler",
+    ]);
+    expect(mechanical_context).toEqual({ spoiler_min_run: 12, enforce_requires: false });
   });
 
-  it("resolves every registry entry to a loadable schema", async () => {
+  it("resolves every dimension to a brief and a loadable schema in the shared judge directory", async () => {
     const { dimensions } = await loadTraceDimensions();
     for (const dim of dimensions) {
       const def = await loadTraceDimensionDefinition(dim.id);
       expect(def.schema, `trace dimension "${dim.id}" has no loadable schema`).not.toBeNull();
-      expect(
-        typeof def.schema.safeParse,
-        `trace dimension "${dim.id}" schema is not a Zod schema`,
-      ).toBe("function");
-    }
-  });
-
-  it("resolves each dimension to a brief in the trace tree or the shared judge layer", async () => {
-    const { dimensions } = await loadTraceDimensions();
-    // The gm_* battery is shared with the runtime harness and lives in
-    // evaluation/judges/; a trace-only dimension still resolves from this
-    // pipeline's own dimensions/ directory.
-    const traceDimsDir = path.join(traceRoot(), "dimensions");
-    const sharedJudgesDir = judgesRoot();
-    for (const dim of dimensions) {
-      const def = await loadTraceDimensionDefinition(dim.id);
-      expect(
-        def.filePath.startsWith(traceDimsDir) || def.filePath.startsWith(sharedJudgesDir),
-        `trace dimension "${dim.id}" resolved outside both dimension trees: ${def.filePath}`,
-      ).toBe(true);
-      // Text of the dimension prompt is non-empty.
+      expect(typeof def.schema.safeParse).toBe("function");
+      expect(def.filePath.startsWith(path.join(repoRoot(), "evaluation", "judges"))).toBe(true);
       expect(def.text.length).toBeGreaterThan(0);
     }
   });
+});
+
+it("registers every judge and analyzer this file's loaders can reach", async () => {
+  for (const entry of REGISTRY) {
+    if (entry.type === "judge") expect((await loadJudge(entry.id)).id).toBe(entry.id);
+  }
 });

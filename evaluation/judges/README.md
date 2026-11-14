@@ -7,12 +7,12 @@ projects its own data into one shared subject:
 
 | Harness | Subject | Judged turns | Bound as |
 |---|---|---|---|
-| `evaluation/trace/` | a whole played session, reconstructed from the game database | every turn | registry dimensions (`evaluation/trace/dimensions/registry.json`) |
-| `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | judges (`--judges`, or a case's `judges`) |
+| `evaluation/trace/` | a whole played session, reconstructed from the game database | every turn | registry judges for a `game` |
+| `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | registry judges for a `turn` (`--judges`, or a case's `judges`) |
 
 So a failure found on a played trace can be frozen into a runtime case
 (`evaluation/runtime/cases-from-trace.mjs`) and re-judged by the same standard
-against another model or prompt, without replaying a game.
+against another model or prompt.
 
 ## The battery
 
@@ -25,8 +25,8 @@ against another model or prompt, without replaying a game.
 
 They are four narrow judges rather than one "blueprint adherence" judge, for
 the reasons in `docs/evaluation-pipeline.md` → "Three tiers of check". Each
-brief states its boundaries with its siblings so the same defect is not
-reported four times.
+brief states its boundaries with its siblings, so a defect is not reported
+four times.
 
 ## The subject
 
@@ -41,9 +41,9 @@ judge reads but never faults. A trace has no fixture: every turn is the game
 master's own output, so every turn is judged. Without the flag, every runtime
 case would be marked down for its own setup.
 
-`prior_revealed_clue_ids` is what makes gating judgeable from either subject:
-the judge does not need the runtime's internal `prereqs_met` flag, it compares a
-clue's `requires.clue_ids` against what the player demonstrably already had.
+`prior_revealed_clue_ids` makes gating judgeable from either subject: the judge
+compares a clue's `requires.clue_ids` against what the player demonstrably
+already had, with no need for the runtime's internal `prereqs_met` flag.
 
 ## The verdict rule
 
@@ -54,25 +54,25 @@ findings win and the disagreement is recorded as `verdict_disagreement`: a
 judge that lists a major defect and then says "pass" is worth seeing while
 iterating on a brief.
 
-Both harnesses apply this rule, so a `fail` means the same thing in a trace
-envelope and in a runtime `result.json`.
+Both harnesses apply it, so a `fail` means the same in a trace envelope and a
+runtime `result.json`.
 
 ## Adding a judge
 
-Two files, then two registrations. Underscores in the id become hyphens in the
+Two files and one registry entry. Underscores in the id become hyphens in the
 file names (`gm_spoiler` → `gm-spoiler.md`).
 
 1. `evaluation/judges/<id>.md` — the prose contract: what it asks, the judging
-   procedure, what is explicitly *not* a finding, and the documented output
-   shape. State the boundary with the sibling judges.
+   procedure, what is *not* a finding, and the output shape. State the
+   boundary with the sibling judges.
 2. `evaluation/judges/<id>.schema.ts` — a named `schema` export (Zod). The
-   pipeline serializes it to JSON Schema, appends it to the system prompt, and
-   validates the reply against it. Where prose and schema disagree, the schema
-   wins.
-
-Then add the id to `ADHERENCE_JUDGE_IDS` in `index.mjs`, which registers it with
-the runtime harness, and to `evaluation/trace/dimensions/registry.json`, which
-adds it to the trace battery.
+   composer appends it to the system prompt as JSON Schema, and the validator
+   checks the reply against it. Where prose and schema disagree, the schema wins.
+3. An entry in `evaluation/core/registry.ts`, the one list of every check and
+   judge. It gives the id (unique across the list), the subject kinds it applies
+   to (`game` and `turn` for these), where the brief, schema and preamble are,
+   and the verdict rule (`major_findings` here). Both harnesses read the battery
+   from it; the loader, composer and validator are in `evaluation/core/`.
 
 Keep the common finding fields — `sequence`, `severity`, `quote`, `why`,
 `refers_to` — and vary only the `kind` enum. Consumers read findings from any
@@ -93,8 +93,7 @@ emits a canned clean verdict:
 node evaluation/runtime/run.mjs <cases> --backend cli:stub --judges gm_spoiler
 ```
 
-with `judgeConfig: { gm_spoiler: { cli: "judge-stub" } }` on the case. The unit
-tests (`tests/api/unit/judges-*.test.ts`,
+with `judgeConfig: { gm_spoiler: { cli: "judge-stub" } }` on the case. The tests (`tests/api/unit/judges-*.test.ts`,
 `tests/api/unit/runtime-adherence-judge.test.ts`) cover the projection, the
 schemas and the verdict rule this way. Do not read `gm_roleplay` findings on
 the `cli:stub` narrator: its canned line is blueprint-blind.

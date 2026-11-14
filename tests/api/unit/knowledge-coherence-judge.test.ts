@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { schema } from "../../../evaluation/dimensions/knowledge-coherence.schema.ts";
-import { semanticChecksKnowledgeCoherence } from "../../../evaluation/judge-harness/scripts/validate-judge-output.mjs";
+import { checkAnswerIds } from "../../../evaluation/core/judge-id-checks.ts";
+import { getJudgeEntry } from "../../../evaluation/core/registry.ts";
+
+const rules = getJudgeEntry("knowledge_coherence").idChecks ?? [];
 
 const blueprint = {
   world: {
@@ -37,7 +40,7 @@ describe("knowledge_coherence verdict", () => {
       },
     ]);
     expect(schema.safeParse(v).success).toBe(true);
-    expect(semanticChecksKnowledgeCoherence(v, blueprint)).toEqual([]);
+    expect(checkAnswerIds(rules, v, blueprint)).toEqual([]);
   });
 
   it("requires clue_ids on every issue", () => {
@@ -54,8 +57,8 @@ describe("knowledge_coherence verdict", () => {
         description: "d",
       },
     ]);
-    expect(semanticChecksKnowledgeCoherence(v, blueprint)).toEqual([
-      'issues[0].clue_ids references unknown clue id "clue_missing"',
+    expect(checkAnswerIds(rules, v, blueprint)).toEqual([
+      'issues[0].clue_ids[2] "clue_missing" is not a blueprint clue id (valid: clue_gloves, clue_note, clue_eva_says)',
     ]);
   });
 
@@ -63,7 +66,7 @@ describe("knowledge_coherence verdict", () => {
     const v = verdict([
       { kind: "pre_discovery_leak", subject: "eva appearance", clue_ids: [], description: "d" },
     ]);
-    expect(semanticChecksKnowledgeCoherence(v, blueprint)).toEqual([
+    expect(checkAnswerIds(rules, v, blueprint)).toEqual([
       "issues[0] is a pre_discovery_leak but clue_ids is empty (name the clue it gives away)",
     ]);
   });

@@ -79,10 +79,9 @@ function collectPrefixed(
  *   `.env.ai.<mode>.local`  the free/paid profiles become key+model `free`/`paid`
  *   `.env.ai.local`         `OPENROUTER_KEY_*` / `AI_MODEL_*`, any number of them
  *
- * The first two exist so a machine that was already configured for
- * `npm run dev:ai:free` has usable choices in the settings page without editing
- * anything. Those same files still back the `free` and `paid` profiles
- * directly (see ai-profile.ts) — this only mirrors them into the picker.
+ * The first two exist so keys and models already in those files are choices in
+ * the settings page without editing anything. They only seed the picker; the
+ * AIs a request can name come from `ai.json` (see ai-config.ts).
  *
  * `AI_MODEL_` is a prefix of nothing else in these files, but note it would
  * also match a bare `AI_MODEL=` if one were ever suffixed; a plain `AI_MODEL`

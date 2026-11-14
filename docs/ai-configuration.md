@@ -85,7 +85,8 @@ A `claude-cli` AI narrates through the local `claude` command and its own login,
 for machines that reach Anthropic but not OpenRouter — a cloud container, say.
 
 - `./dev run --ai <name>` refuses to start a `claude-cli` AI without the
-  executable. Only a run override selects one: the settings page cannot.
+  executable. A run override or a request naming it selects one; the settings
+  page cannot.
 - Each call is one `claude --print` subprocess with the same messages the
   OpenRouter provider sends, its output constrained by `--json-schema` from the
   role's contract. Flags keep Claude Code's own system prompt, tools, MCP

@@ -96,7 +96,7 @@ your AIs by name:
     "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 ```
 
-Leave out `"key"` to use `OPENROUTER_API_KEY` from `.env.local`. `./dev doctor`
+Leave out `"key"` to use `OPENROUTER_API_KEY` from the environment or `.env.local`. `./dev doctor`
 checks the file. Then:
 
 ```bash

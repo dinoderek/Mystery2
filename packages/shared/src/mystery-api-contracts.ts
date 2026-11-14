@@ -267,8 +267,8 @@ export const AISettingsSourceSchema = z.enum(["env", "user"]);
 export const AIModeSchema = z.enum(["mock", "openrouter"]);
 /**
  * Every provider the runtime can use. Wider than AIModeSchema, which is what
- * the settings page can choose: `claude-cli` is only ever selected by a run
- * override, so it appears in the override and the effective mode.
+ * the settings page can choose: `claude-cli` reaches `default` only through a
+ * run override, so it appears in the override and the effective mode.
  */
 export const AIProviderSchema = z.enum(["mock", "openrouter", "claude-cli"]);
 

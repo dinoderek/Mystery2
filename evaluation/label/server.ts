@@ -209,7 +209,20 @@ class Session {
     }
   }
 
+  /** Takes the labels the file holds now, so a label added to it since is kept, never overwritten. */
+  private async readFile(): Promise<void> {
+    let text: string;
+    try {
+      text = await fs.readFile(this.labelsFile, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+    this.labels.splice(0, this.labels.length, ...parseTruthFile(LabelFileSchema, JSON.parse(text), this.labelsFile).labels);
+  }
+
   private async write(sequence: number, form: FormState): Promise<void> {
+    await this.readFile();
     const label: Label = { sequence, faults: faultsOf(form), by: this.options.by, at: this.stamp(sequence), pass: this.pass };
     const next = { labels: [...this.labels, label] };
     const checked = LabelFileSchema.safeParse(next);
@@ -217,8 +230,7 @@ class Session {
       throw new RejectedLabel(checked.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "));
     }
     await this.replaceFile(`${JSON.stringify(next, null, 2)}\n`);
-    parseTruthFile(LabelFileSchema, JSON.parse(await fs.readFile(this.labelsFile, "utf8")), this.labelsFile);
-    this.labels.push(label);
+    await this.readFile();
   }
 }
 

@@ -3,7 +3,7 @@
 What the judges are scored against: stored subjects and what is known to be
 wrong in them, named by **kind** of fault, never by judge, so any set of judges
 is scored on the same units. Self-play and planted material only, and no
-credential or home path, which a gate test enforces.
+credential or home path, gate-tested.
 
 Its code is `evaluation/lib/truth/`; a file outside this layout fails
 loading. Ids are file and folder names.
@@ -15,7 +15,7 @@ loading. Ids are file and folder names.
 | Labels | `games/<game>/labels.json` | Hand, on the labelling page |
 | Planted turn faults | `plants/turns/<variant>.json` | Hand |
 | Planted blueprint faults | `plants/blueprints/<plant>.json` | Hand |
-| Guide | `guide.md` | Hand |
+| Guide | `guide.md` | Hand: how each kind is decided |
 | Results | `results/<name>.json` | A suite |
 
 **Kinds.** Game side: `spoiler`, `fabrication`, `clue_handling`,
@@ -24,8 +24,8 @@ id.
 
 **Labels.** A turn's faults, each a kind, `minor` or `major` and a note, plus
 who, when and the pass. No fault is clean, which differs from no label. Labels
-are appended; the latest is scored. `./dev eval label <game>` makes them. Pass
-1 shows each turn and no judge finding. Pass 2 needs stored results and shows
+are only appended; the latest is scored. `./dev eval label <game>` makes them. Pass
+1 shows no judge finding. Pass 2 needs stored results and shows
 only turns where a judge and the label disagree (a catch on a turn labelled
 clean for the kind, or a labelled fault no sample caught), and records relabels
 as pass 2.

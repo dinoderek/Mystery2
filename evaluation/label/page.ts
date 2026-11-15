@@ -168,7 +168,7 @@ document.addEventListener("keydown", (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const action = actionForKey(event.key, document.activeElement === note);
   if (!action) return;
-  if (action.type === "save" && document.activeElement instanceof HTMLButtonElement) return;
+  if (action.type === "save" && (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement)) return;
   event.preventDefault();
   if (action.type === "focus-note") note.focus();
   else if (action.type === "leave-note") note.blur();

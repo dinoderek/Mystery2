@@ -223,6 +223,18 @@ describe("saving a label", () => {
     expect(page).toContain("Latest label: tester");
   });
 
+  it("appends to the labels the file holds now, keeping one added since the server started", async () => {
+    const dir = await copyFixture();
+    const { server } = await serve(dir);
+    const file = path.join(dir, "games/medal/labels.json");
+    const held = await readJson(file);
+    held.labels.push({ sequence: 6, faults: [], by: "someone", at: "2026-06-05T00:00:00Z", pass: 1 });
+    await writeJson(file, held);
+    await post(server, "/turn/1", []);
+    expect((await labelsOf(dir)).map((label) => label.by)).toEqual(["fixture", "fixture", "fixture", "fixture", "fixture", "someone", "tester"]);
+    expect((await get(server, "/turn/6")).body).toContain("Latest label: someone");
+  });
+
   it("never gives two labels of a turn the same time, even when the clock stands still", async () => {
     const dir = await copyFixture();
     const { server } = await serve(dir, { now: () => new Date("2026-07-02T00:00:00Z") });

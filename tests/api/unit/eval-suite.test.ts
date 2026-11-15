@@ -79,7 +79,7 @@ describe("a fixture suite", () => {
     expect(files.filter((file) => file.endsWith("/suite.json"))).toHaveLength(1);
     expect(files.filter((file) => file.endsWith("/score.json"))).toHaveLength(1);
     expect(files.filter((file) => file.endsWith("/result.json"))).toHaveLength(FIXTURE_CALLS);
-    expect(files.some((file) => /medal-gm-spoiler-game-judge-s0\/logs\/judge-gm_spoiler\.system\.txt$/.test(file))).toBe(true);
+    expect(files.some((file) => /medal-gm-spoiler-game-judge-s0-[0-9a-f]{10}\/logs\/judge-gm_spoiler\.system\.txt$/.test(file))).toBe(true);
     const run = JSON.parse(fs.readFileSync(path.join(at.out, "suites", "fixture", files.find((file) => file.endsWith("/suite.json")) as string), "utf8"));
     expect(run).toMatchObject({ calls: { planned: FIXTURE_CALLS, made: FIXTURE_CALLS, recalled: 0, finished: FIXTURE_CALLS }, stopped: null, exit_code: 0 });
   });
@@ -178,6 +178,44 @@ describe("exit codes", () => {
 });
 
 describe("resuming", () => {
+  it("keys a call by its sample and its model: a new sample or model is a new call, the rest are kept", async () => {
+    const at = scratch();
+    const base = { subjects: { games: ["medal"] }, judges: ["gm_spoiler"] };
+    expect((await suite(at, writeSuite(at, "fixture", { ...base, models: { "game-judge": ["opus"] } }))).code).toBe(0);
+    expect(stubCalls(at)).toHaveLength(1);
+    expect((await suite(at, writeSuite(at, "fixture", { ...base, models: { "game-judge": ["opus"] }, samples: 2 }))).code).toBe(0);
+    expect(stubCalls(at)).toHaveLength(2);
+    expect((await suite(at, writeSuite(at, "fixture", { ...base, models: { "game-judge": ["opus", "sonnet"] }, samples: 2 }))).code).toBe(0);
+    expect(stubCalls(at)).toHaveLength(4);
+    expect(resultsOf(at, "fixture").verdicts.map((verdict) => `${verdict.model}/${verdict.sample}`)).toEqual(["opus/0", "opus/1", "sonnet/0", "sonnet/1"]);
+  });
+
+  it("gives every call its own folder, however long the names it is made of", async () => {
+    const at = scratch();
+    const model = "a-model-name-long-enough-that-the-folder-name-is-cut-short-there";
+    const ran = await suite(at, writeSuite(at, "fixture", { subjects: { game_variants: ["medal-spoiler"] }, judges: ["gm_spoiler"], models: { "game-judge": [model] }, samples: 3 }));
+    expect(ran.code).toBe(0);
+    const results = filesUnder(path.join(at.out, "suites", "fixture")).filter((file) => file.endsWith("/result.json"));
+    expect(new Set(results.map((file) => path.dirname(file))).size).toBe(3);
+    for (const file of results) expect(path.basename(path.dirname(file)).length).toBeLessThanOrEqual(80);
+  });
+
+  it("refuses a second run of a suite while one holds it, and takes over from one that was killed", async () => {
+    const at = scratch();
+    const file = writeSuite(at, "fixture", { subjects: { games: ["medal"] }, judges: ["gm_spoiler"] });
+    const lock = path.join(at.out, "suites", "fixture", "run.lock");
+    fs.mkdirSync(path.dirname(lock), { recursive: true });
+    fs.writeFileSync(lock, String(process.pid));
+    const held = await suite(at, file);
+    expect(held.code).toBe(1);
+    expect(held.err).toContain(`another run of this suite (process ${process.pid}) holds ${lock}`);
+    expect(stubCalls(at)).toEqual([]);
+    // No process has this id: the run that held it is gone.
+    fs.writeFileSync(lock, "2147483646");
+    expect((await suite(at, file)).code).toBe(0);
+    expect(fs.existsSync(lock)).toBe(false);
+  });
+
   it("makes only the calls a stopped run left, and ends with the results of an uninterrupted run", async () => {
     const whole = scratch();
     expect((await suite(whole, writeSuite(whole, "fixture", FIXTURE_SUITE))).code).toBe(0);

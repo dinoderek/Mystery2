@@ -9,7 +9,8 @@
  * A suite's state is `<output root>/suites/<name>/`: the journal
  * (`calls.jsonl`) and one run folder per invocation, `<date>/<time>-suite/`,
  * holding each call made then and `suite.json`, what the run did. Running the
- * same suite again on the same output root continues from its journal.
+ * same suite again on the same output root continues from its journal; one
+ * run of a suite holds its folder at a time (`run.lock`).
  */
 
 import fs from "node:fs";
@@ -32,7 +33,7 @@ import { SCORE_FILE, writeScoreFile } from "../score/command.ts";
 import { formatScore } from "../score/table.ts";
 import { locateSuite, readSuiteFile, SUITES_DIR } from "./file.ts";
 import type { SuiteFile } from "./file.ts";
-import { JOURNAL_FILE, openJournal } from "./journal.ts";
+import { JOURNAL_FILE, lockSuite, openJournal } from "./journal.ts";
 import type { CallJournal } from "./journal.ts";
 import { planSuite } from "./plan.ts";
 import type { SuitePlan } from "./plan.ts";
@@ -71,7 +72,8 @@ const HELP = formatHelp({
     `<output root>/${SUITES_STATE}/<name>/${JOURNAL_FILE} by subject, judge, model, sample and prompt hash, and`,
     "never made again: a stopped run resumes where it stopped, and a changed brief or model is a new call.",
     "At the login's usage limit the suite stops at once, storing nothing as a judge's error; run it again",
-    "after the reset. Prompts, logs and workspaces stay in that folder; the stored results hold none.",
+    "after the reset. Prompts, logs and workspaces stay in that folder; the stored results hold none. One run",
+    "of a suite holds that folder at a time. To make a finished call again, delete its line from the journal.",
   ].join("\n"),
   options: [
     ["--truth <dir>", `the truth set (default: ${TRUTH_ROOT})`],
@@ -107,7 +109,7 @@ function writeRunFile(run: RunFolder, record: RunRecord, outcome: Partial<SuiteO
     truth: record.truth,
     results: outcome.stopped === null ? record.results : null,
     journal: record.journal.file,
-    calls: { planned: record.plan.calls, made: outcome.made ?? null, recalled: outcome.recalled ?? null, finished: record.journal.size() },
+    calls: { planned: record.plan.calls, made: outcome.made ?? null, recalled: outcome.recalled ?? null, finished: record.journal.finished() },
     stopped: outcome.stopped,
     thresholds: outcome.thresholds,
     exit_code: outcome.exit_code,
@@ -118,7 +120,7 @@ function writeRunFile(run: RunFolder, record: RunRecord, outcome: Partial<SuiteO
 function stop(error: UsageLimitError, run: RunFolder, record: RunRecord, context: EvalContext): number {
   writeRunFile(run, record, { stopped: error.message, thresholds: [], exit_code: EXIT_RUN_BROKE });
   context.err(
-    `eval suite: stopped: ${error.message}. ${record.journal.size()} of ${record.plan.calls} call(s) are finished and kept in ` +
+    `eval suite: stopped: ${error.message}. ${record.journal.finished()} of ${record.plan.calls} call(s) are finished and kept in ` +
       `${record.journal.file}; nothing was stored as a judge's error. Run the suite again once the limit resets to continue from there.`,
   );
   return EXIT_RUN_BROKE;
@@ -137,10 +139,20 @@ async function runSuite(argv: string[], context: EvalContext): Promise<number> {
   const results = typeof values.results === "string" ? path.resolve(values.results) : path.join(truthRoot, "results", `${suite.name}.json`);
 
   const stateDir = path.join(resolveOutputRoot(common.outputRoot, context.env), SUITES_STATE, suite.name);
-  const run = createRunFolder({ outputRoot: stateDir, command: "suite", argv, root: context.root, bindings: plan.bindings });
-  const journal = openJournal(path.join(stateDir, JOURNAL_FILE), run.dir);
-  const record: RunRecord = { suite, truth: truthRoot, results, journal, plan };
-  context.out(`[suite] ${suite.name}: ${plan.calls} call(s) on ${plan.subjects.length} subject(s), ${journal.held} finished before -> ${run.dir}`);
+  const release = lockSuite(stateDir);
+  try {
+    const run = createRunFolder({ outputRoot: stateDir, command: "suite", argv, root: context.root, bindings: plan.bindings });
+    const journal = openJournal(path.join(stateDir, JOURNAL_FILE), run.dir);
+    return await runHeld({ suite, truth: truthRoot, results, journal, plan }, { set, run, context });
+  } finally {
+    release();
+  }
+}
+
+/** The run itself, once the suite's state is held: the calls, then the results, the score and the thresholds. */
+async function runHeld(record: RunRecord, { set, run, context }: { set: TruthSet; run: RunFolder; context: EvalContext }): Promise<number> {
+  const { suite, plan, journal, results } = record;
+  context.out(`[suite] ${suite.name}: ${plan.calls} call(s) on ${plan.subjects.length} subject(s), journal holds ${journal.held} -> ${run.dir}`);
 
   let outcome: SuiteOutcome;
   try {
@@ -156,7 +168,7 @@ async function runSuite(argv: string[], context: EvalContext): Promise<number> {
     return relative.startsWith("..") ? file : relative.split(path.sep).join("/");
   };
   const report = scoreVerdicts(set, verdicts);
-  const inputs = { truth: shown(truthRoot), results: [shown(results)] };
+  const inputs = { truth: shown(record.truth), results: [shown(results)] };
   writeScoreFile(path.join(run.dir, SCORE_FILE), report, inputs);
   context.out(formatScore(report, inputs));
 

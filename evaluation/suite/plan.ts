@@ -29,7 +29,8 @@ import { buildBlueprintVariant, buildGameVariant, PlantError } from "../lib/trut
 import type { BlueprintSubject, GameSubject, StoredGame } from "../lib/truth/schemas.ts";
 import { DEFAULT_JUDGE_BINDING, GAME_TURN_JUDGES, storedGameTurns } from "../runtime/judge-turn.ts";
 import type { StoredTurn } from "../runtime/lib/turn.ts";
-import { GAME_JUDGE_BINDING } from "../trace/judge-game.ts";
+import { GAME_JUDGE_BINDING, prepareGameJudging } from "../trace/judge-game.ts";
+import type { JudgeRun } from "../trace/judge-game.ts";
 import type { Selection, Suite, Threshold } from "./file.ts";
 
 /** What a judge judges in a suite, from its registry subjects. */
@@ -55,8 +56,20 @@ export interface PlannedJudge {
 
 export type PlannedSubject =
   | { kind: "blueprint"; id: string; stored: BlueprintSubject; blueprint: unknown; brief: unknown }
-  | { kind: "game"; id: string; stored: GameSubject; trace: StoredGame }
+  | { kind: "game"; id: string; stored: GameSubject; trace: StoredGame; prepared: GamePrepared }
   | { kind: "turn"; id: string; stored: GameSubject; turn: StoredTurn };
+
+/** What every game judge of one game reads, made once when the suite is planned. */
+export type GamePrepared = Pick<JudgeRun, "trace" | "judgeSubject">;
+
+/** A game's judging, prepared now, so a trace `judge game` cannot read fails before any call. */
+function prepared(trace: StoredGame, id: string): GamePrepared {
+  try {
+    return prepareGameJudging(trace);
+  } catch (error) {
+    throw new InputError(`game "${id}" cannot be judged: ${(error as Error).message}`);
+  }
+}
 
 export interface PlannedCall {
   judge: PlannedJudge;
@@ -145,13 +158,15 @@ function blueprintSubjects(set: TruthSet, subjects: Suite["subjects"]): PlannedS
 function gameSubjects(set: TruthSet, subjects: Suite["subjects"]): Array<Extract<PlannedSubject, { kind: "game" }>> {
   const games = select(subjects.games, set.games.map((game) => game.id), "games").map((id) => {
     const game = set.games.find((candidate) => candidate.id === id) as TruthSet["games"][number];
-    return { kind: "game" as const, id, stored: { side: "game" as const, game: id, variant: null, sequence: null }, trace: game.trace };
+    const stored = { side: "game" as const, game: id, variant: null, sequence: null };
+    return { kind: "game" as const, id, stored, trace: game.trace, prepared: prepared(game.trace, id) };
   });
   const variants = select(subjects.game_variants, set.turnVariants.map((variant) => variant.id), "game_variants").map((id) => {
     const variant = set.turnVariants.find((candidate) => candidate.id === id) as TruthSet["turnVariants"][number];
     const game = set.games.find((candidate) => candidate.id === variant.game) as TruthSet["games"][number];
     const built = planted(() => buildGameVariant(game.trace, variant));
-    return { kind: "game" as const, id, stored: { side: "game" as const, game: variant.game, variant: id, sequence: null }, trace: built.trace };
+    const stored = { side: "game" as const, game: variant.game, variant: id, sequence: null };
+    return { kind: "game" as const, id, stored, trace: built.trace, prepared: prepared(built.trace, id) };
   });
   return [...games, ...variants];
 }

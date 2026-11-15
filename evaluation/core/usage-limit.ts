@@ -6,15 +6,19 @@
  * `stream-json`, whose text is the same message its terminal shows. Version
  * 2.1 builds it as `You've hit your <limit>[ · resets <time>]`, the limit
  * being the 5-hour, weekly or a model's, or a spend limit; with no credit left
- * it says `You're out of usage credits`. Earlier versions said `Claude AI usage
- * limit reached|<reset time>`. A wrapper that prints the message as plain text
- * is read line by line, on stdout and stderr.
+ * it says `You're out of usage credits`, and for an organisation's credits
+ * `Your organization is out of usage credits`, `Your organization's usage
+ * credit cap is reached` or `Your organization's usage credits are capped`
+ * (`Your org is out of usage`). Earlier versions said `Claude AI usage limit
+ * reached|<reset time>`. A wrapper that prints the message as plain text is
+ * read line by line on stderr.
  *
- * Only an error event or a failed attempt's own lines are read, never a model's
- * answer, so a judge quoting the words is not taken for the limit.
+ * Only an error event or stderr is read, never stdout's text, which may be the
+ * model's answer, so a judge quoting the words is not taken for the limit.
  */
 
-const MESSAGE = /^(?:You['’]ve hit your |You['’]re out of usage credits|Claude AI usage limit reached)/;
+const MESSAGE =
+  /^(?:You['\u2019]ve hit your |You['\u2019]re out of usage credits|Your org(?:anization)?(?:['\u2019]s)? (?:is out of usage|usage credit)|Claude AI usage limit reached)/;
 
 interface ResultEvent {
   type?: unknown;
@@ -49,7 +53,7 @@ export function usageLimitMessage(output: { stdout: string; stderr: string; stre
     const found = fromEvent(line.trim());
     if (found) return found;
   }
-  for (const line of [...output.stdout.split("\n"), ...output.stderr.split("\n")]) {
+  for (const line of output.stderr.split("\n")) {
     const found = said(line);
     if (found) return found;
   }

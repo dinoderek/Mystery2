@@ -13,6 +13,7 @@
  * the command, which stops.
  */
 
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -27,7 +28,7 @@ import { slugify } from "../core/run-folder.ts";
 import { kindedFindings } from "../lib/truth/findings.ts";
 import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { judgeTurn } from "../runtime/lib/judges.ts";
-import { judgeOne, prepareGameJudging } from "../trace/judge-game.ts";
+import { judgeOne } from "../trace/judge-game.ts";
 import type { JudgeRun } from "../trace/judge-game.ts";
 import type { CallJournal } from "./journal.ts";
 import type { PlannedCall, PlannedSubject, SuitePlan } from "./plan.ts";
@@ -111,16 +112,25 @@ async function writeCallResult(running: SuiteRunning, subject: PlannedSubject, p
   });
 }
 
+/**
+ * A call's folder: a readable slug of what it is, cut to a length, and a hash
+ * of the whole, so no two calls of a run share one however long their names.
+ */
+function callFolder(subject: PlannedSubject, call: PlannedCall): string {
+  const identity = JSON.stringify([subject.stored, call.judge.id, call.model, call.sample]);
+  const hash = createHash("sha256").update(identity).digest("hex").slice(0, 10);
+  return `${slugify(`${subject.id}--${call.judge.id}--${call.model}--s${call.sample}`).slice(0, 69)}-${hash}`;
+}
+
 /** Runs every call of the plan and returns their stored verdicts, in the plan's order. */
 export async function runSuitePlan(plan: SuitePlan, running: SuiteRunning): Promise<SuiteOutcome> {
   const counts = { made: 0, recalled: 0 };
   const total = plan.calls;
   let done = 0;
   const perSubject = await mapPool(plan.subjects, running.concurrency, async ({ subject, calls }) => {
-    const game = subject.kind === "game" ? prepareGameJudging(subject.trace) : null;
+    const game = subject.kind === "game" ? subject.prepared : null;
     return mapPool(calls, Math.max(1, calls.length), async (call) => {
-      const name = slugify(`${subject.id}--${call.judge.id}--${call.model}--s${call.sample}`);
-      const dir = path.join(running.run.dir, name);
+      const dir = path.join(running.run.dir, callFolder(subject, call));
       const place = { dir, logDir: path.join(dir, "logs") };
       const memo = running.journal.memo({ subject: subject.stored, judge: call.judge.id, model: call.model, sample: call.sample });
       const verdict = await judgeCall(subject, call, { place, memo, root: running.context.root, game });

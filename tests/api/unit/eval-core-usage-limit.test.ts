@@ -25,11 +25,26 @@ describe("usageLimitMessage", () => {
     );
   });
 
-  it("reads a plain line on stderr or stdout, in the CLI's current and earlier wording", () => {
+  it("reads a plain line on stderr, in the CLI's current and earlier wording", () => {
     expect(usageLimitMessage({ stdout: "", stderr: "Error: something\nYou've hit your weekly limit\n", stream: "" })).toBe("You've hit your weekly limit");
-    expect(usageLimitMessage({ stdout: "Claude AI usage limit reached|1760000000\n", stderr: "", stream: "" })).toBe(
+    expect(usageLimitMessage({ stdout: "", stderr: "Claude AI usage limit reached|1760000000\n", stream: "" })).toBe(
       "Claude AI usage limit reached|1760000000",
     );
+  });
+
+  it("reads an organisation's credits running out", () => {
+    for (const said of [
+      "Your organization is out of usage credits. Contact your admin to add more.",
+      "Your organization's usage credit cap is reached for this period.",
+      "Your organization's usage credits are capped or used up right now.",
+      "Your org is out of usage \u00b7 add funds to continue",
+    ]) {
+      expect(usageLimitMessage({ stdout: event(said), stderr: "", stream: "" }), said).toBe(said);
+    }
+  });
+
+  it("never reads stdout's plain text, which may be the model's answer", () => {
+    expect(usageLimitMessage({ stdout: "The narrator says:\nYou've hit your limit, little detective!\n", stderr: "", stream: "" })).toBeNull();
   });
 
   it("is null for any other failure, and for an answer that is not an error", () => {

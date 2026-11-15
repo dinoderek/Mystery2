@@ -65,10 +65,10 @@ function wholeLines(text: string): string {
 
 export interface CallJournal {
   file: string;
-  /** Calls the journal held when it was opened. */
+  /** Calls the journal held when it was opened, this suite's now or not. */
   readonly held: number;
-  /** Calls it holds now. */
-  size(): number;
+  /** This run's calls that are finished: answered from the journal or made and kept. */
+  finished(): number;
   /** A memo for one call: answers it from the journal, and appends it once it finishes. */
   memo(identity: CallIdentity): CallMemo & { readonly recalled: boolean };
 }
@@ -80,6 +80,7 @@ export function openJournal(file: string, runDir: string): CallJournal {
   const kept = wholeLines(text);
   if (kept.length !== text.length) fs.truncateSync(file, Buffer.byteLength(kept));
   const calls = new Map<string, FinishedCall>();
+  const touched = new Set<string>();
   kept
     .split("\n")
     .filter((line) => line.trim() !== "")
@@ -95,7 +96,7 @@ export function openJournal(file: string, runDir: string): CallJournal {
   return {
     file,
     held: calls.size,
-    size: () => calls.size,
+    finished: () => touched.size,
     memo(identity) {
       let recalled = false;
       return {
@@ -105,16 +106,54 @@ export function openJournal(file: string, runDir: string): CallJournal {
         recall(promptSha256) {
           const found = calls.get(keyOf(identity, promptSha256)) ?? null;
           recalled = found !== null;
+          if (found) touched.add(keyOf(identity, promptSha256));
           return found;
         },
         keep(promptSha256, finished) {
           // A kept answer that no longer parsed was made again: this call was not answered from the journal.
           recalled = false;
           calls.set(keyOf(identity, promptSha256), finished);
+          touched.add(keyOf(identity, promptSha256));
           const line: Line = { ...identity, prompt_sha256: promptSha256, run: runDir, finished };
           fs.appendFileSync(file, `${JSON.stringify(line)}\n`, "utf8");
         },
       };
     },
   };
+}
+
+export const LOCK_FILE = "run.lock";
+
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/**
+ * Holds the suite's state folder for this run, so two runs of one suite never
+ * make the same calls or write one journal at once. The lock names the process
+ * holding it; one whose process is gone (a run that was killed) is taken over.
+ * Returns the release.
+ */
+export function lockSuite(stateDir: string): () => void {
+  fs.mkdirSync(stateDir, { recursive: true });
+  const file = path.join(stateDir, LOCK_FILE);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      fs.writeFileSync(file, String(process.pid), { flag: "wx" });
+      return () => fs.rmSync(file, { force: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      const holder = Number(fs.readFileSync(file, "utf8"));
+      if (Number.isInteger(holder) && holder > 0 && alive(holder)) {
+        throw new InputError(`another run of this suite (process ${holder}) holds ${file}; wait for it to end, or remove the file if no run is live`);
+      }
+      fs.rmSync(file, { force: true });
+    }
+  }
+  throw new InputError(`cannot take the suite's lock ${file}`);
 }

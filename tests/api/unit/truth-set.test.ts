@@ -153,6 +153,7 @@ describe("loading a truth set", () => {
     expect(set.bases.map((base) => base.id)).toEqual(["mock"]);
     expect(set.games.map((game) => [game.id, game.labels.length, game.trace.events.length])).toEqual([["medal", 4, 9]]);
     expect(set.turnVariants.map((variant) => [variant.id, variant.game, variant.plants.map((plant) => plant.kind)])).toEqual([
+      ["medal-leak", "medal", ["spoiler"]],
       ["medal-spoiler", "medal", ["spoiler", "clue_handling"]],
     ]);
     expect(set.blueprintPlants.map((plant) => [plant.id, plant.base, plant.kind])).toEqual([["mock-bob-not-ruled-out", "mock", "fairness"]]);

@@ -1,6 +1,6 @@
 {
   "ais": {
-    "free": { "backend": "openrouter", "model": "arcee-ai/trinity-large-preview:free" },
+    "free": { "backend": "openrouter", "model": "google/gemma-4-31b-it:free" },
     "paid": { "backend": "openrouter", "model": "openai/gpt-5.6-luna" },
     "claude": { "backend": "claude-cli", "model": "sonnet" }
   }

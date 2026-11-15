@@ -4,9 +4,13 @@
 //
 // Usage: node validate-blueprint.ts <path-to-blueprint.json>
 //
+// A blueprint that passes the schema is then read by the `age_appropriate`
+// analyzer, with the context its registry entry gives, so the agent can fix
+// prose too hard for metadata.target_age before the blueprint is judged.
+//
 // Exit codes:
-//   0 — blueprint parsed and passed BlueprintV2Schema
-//   1 — schema validation failed (issues printed to stderr)
+//   0 — blueprint passed BlueprintV2Schema and the age_appropriate analyzer
+//   1 — schema validation or the analyzer failed (issues printed to stderr)
 //   2 — file missing or invalid JSON
 //   3 — usage error
 //
@@ -21,6 +25,8 @@ import process from "node:process";
 
 // Real path of this script -> ../../../packages/shared/src/blueprint-schema-v2.ts
 import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
+import { analyze, type AgeAppropriateInput } from "../../checks/analyzers/age-appropriate.ts";
+import { getJudgeEntry } from "../../core/registry.ts";
 
 function messageOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -51,8 +57,16 @@ async function main() {
 
   const result = BlueprintV2Schema.safeParse(parsed);
   if (result.success) {
-    process.stdout.write(`OK: ${blueprintPath} (BlueprintV2)\n`);
-    process.exit(0);
+    const age = analyze({ blueprint: parsed, context: getJudgeEntry("age_appropriate").context as AgeAppropriateInput["context"] });
+    if (age.status === "pass") {
+      process.stdout.write(`OK: ${blueprintPath} (BlueprintV2; ${age.details.summary})\n`);
+      process.exit(0);
+    }
+    process.stderr.write(`TOO HARD TO READ: ${blueprintPath} — ${age.details.summary}. Shorten the sentences and use shorter words in:\n`);
+    for (const violation of age.details.violations ?? []) {
+      process.stderr.write(`  - ${violation.path}: grade ${violation.grade}, "${violation.preview}"\n`);
+    }
+    process.exit(1);
   }
 
   process.stderr.write(

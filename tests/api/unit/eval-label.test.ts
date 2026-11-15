@@ -500,7 +500,7 @@ describe("./dev eval label", () => {
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);
     expect(await runEval(["label", "medal"], context(out, err), [command])).toBe(1);
-    expect(err.join("\n")).toMatch(/no stored game "medal" in .*evaluation\/truth \(it holds: none\)/);
+    expect(err.join("\n")).toMatch(/no stored game "medal" in .*evaluation\/truth \(it holds: [^)]+\)/);
     const dir = await copyFixture();
     expect(await runEval(["label", "medal", "--truth", dir], context(out, err), [command])).toBe(0);
     expect(out.join("\n")).toContain(`as ${os.userInfo().username}.`);

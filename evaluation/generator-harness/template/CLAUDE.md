@@ -22,7 +22,8 @@ outside this workspace.
   it.
 - `./scripts/validate-blueprint.ts` — the validator. Usage:
   `node scripts/validate-blueprint.ts ./blueprint.json`. Exits 0 on pass,
-  non-zero on fail. Prints all schema issues.
+  non-zero on fail. Prints all schema issues, then every player-facing string
+  whose reading grade is too high for `metadata.target_age`.
 
 ## Mandatory iteration protocol
 

@@ -1,14 +1,12 @@
 # Judging a turn
 
-Grades one narration against fixed state and history. Commands and options:
-`evaluation/README.md`.
+Grades one narration against fixed state and history. Options: `evaluation/README.md`.
 
 ## Determinism is the point
 
 A case evaluates **one action** against a **fully specified prior state**. The
-complete history is part of the case, not produced by playing turns, so the model
-input is identical on every run and across models. Models fed their own earlier
-narration would diverge past comparison.
+history is part of the case, not produced by playing turns, so the model input is
+identical on every run and across models.
 
 ## Choosing a narrator
 
@@ -27,7 +25,8 @@ narrator-claude=<model>`. Use `server` when the game should be in the loop too;
 it validates the model's clue reveals before they reach you, which the CLI path
 does not.
 
-The canned narrator proves the plumbing offline; keep stub runs to `flesch`. `narrator-claude` runs with no
+The canned narrator proves the plumbing offline and says nothing about the
+narrator's content; keep stub runs to `flesch`. `narrator-claude` runs with no
 tools, MCP servers or settings, so the model under test does not also read this
 repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs both
 `narrator-claude` and `turn-judge`; skipping settings also skips logins configured
@@ -97,13 +96,13 @@ Calls are cases × narrators × model judges; `flesch` is free. On
 ## Running
 
 ```bash
-# Plumbing, no model calls, no server:
+# Plumbing, no model:
 ./dev eval judge turn evaluation/runtime/cases/all-interactions.ts --narrator narrator-stub --judges flesch
 
-# Compare two narrators on identical input:
+# Compare two narrators:
 ./dev eval judge turn evaluation/runtime/cases/age-readability.ts --narrator server,narrator-claude
 
-# The adherence judges against a real model:
+# The adherence judges:
 ./dev eval judge turn evaluation/runtime/cases/age-readability.ts \
   --narrator narrator-claude --judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler
 ```
@@ -131,9 +130,9 @@ event becomes one case: the pre-event state and every earlier event as `given`,
 the event as `action`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
 and writes under `<output root>/cases/<trace>/`; `--help` explains overrides.
 
-To judge a played game on the narration it already holds, give `judge turn` the
-trace itself: each narrated turn is judged by `flesch` and `age_appropriate_turn`,
-named by its event sequence, with no narrator called.
+Given the trace itself, `judge turn` judges each narrated turn on its own
+narration with `flesch` and `age_appropriate_turn` (which still calls its model),
+named by event sequence, calling no narrator.
 
 ## Adding things
 
@@ -146,6 +145,6 @@ named by its event sequence, with no narrator called.
 
 ## Tests
 
-`tests/api/unit/runtime-*` and `judges-*` cover the judges, actions, cases and a
-`judge turn` run on stub bindings; `tests/api/integration/eval-turn-server.test.ts`
-replays through a throwaway server on the mock provider. None calls a model.
+`tests/api/unit/runtime-*` and `judges-*` cover the judges, actions, cases and
+`judge turn` on stub bindings; `tests/api/integration/eval-turn-server.test.ts`
+replays through a throwaway server on the mock provider. No test calls a model.

@@ -52,7 +52,7 @@
         {
           "type": "narration",
           "find": "\"Can I help you with something? I'm happy to answer anything plainly.\"",
-          "replace": "\"Can I help you with something? As a helpful game character, I can share my clue about the crash time once you ask for it.\""
+          "replace": "\"Can I help you with something? As a helpful game character, I can share my clue once you ask for it.\""
         }
       ],
       "caught_by": []

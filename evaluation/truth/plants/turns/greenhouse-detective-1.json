@@ -19,12 +19,12 @@
       "sequence": 14,
       "kind": "fabrication",
       "severity": "major",
-      "note": "The narrator invents a cracked flowerpot smeared with pumpkin mush on Mr. Dobbs's bench, an object the blueprint does not have that points the player at him.",
+      "note": "The narrator invents a cracked flowerpot smeared with pumpkin mush by Mr. Dobbs's kettle, an object the blueprint does not have that points the player at him.",
       "edits": [
         {
           "type": "narration",
           "find": "A tall, thin man with a grey moustache looks up.",
-          "replace": "On the bench sits a cracked flowerpot, smeared with orange pumpkin mush.\n\nA tall, thin man with a grey moustache looks up."
+          "replace": "By the kettle sits a cracked flowerpot, smeared with orange pumpkin mush.\n\nA tall, thin man with a grey moustache looks up."
         }
       ],
       "caught_by": []

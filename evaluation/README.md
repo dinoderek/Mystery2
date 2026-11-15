@@ -16,7 +16,8 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `play` | Self-play through the real server (`evaluation/playtest/README.md`). `--blueprint` or `--replay`, `--games`, `--judge` |
 | `report <run>` | Writes `report.html` for a self-play run |
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
-| `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every judge subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
+| `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
+| `compare <results A> <results B>` | Compares two runs, no model, on units both judged: per judge and kind, a difference counts beyond each run's own sample variation (exact sign test). Delay, usage per run. `--truth`, `--out` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one
@@ -40,10 +41,9 @@ run only when named.
 ./dev eval generate evaluation/specs/001-lighthouse-lens --judge
 ```
 
-`generate` runs the Claude agent in its workspace through `generator-agent`
-(`--backend agent`), or makes one OpenRouter call through `generator-api`
-(`--backend api`). The API backend needs a model from `--model <OpenRouter id>`
-or the config, and reads `OPENROUTER_API_KEY` from the environment, else
+`generate` runs the Claude agent through `generator-agent` (`--backend agent`),
+or makes one OpenRouter call through `generator-api` (`--backend api`). The API backend needs a `--model <OpenRouter id>`
+or config model, and reads `OPENROUTER_API_KEY` from the environment, else
 `.env.local` in the config root. One run holds a subject for each brief,
 backend and model. A blueprint that never passes the schema is kept and fails
 its check. `--install` copies a blueprint that passed its mechanical checks into
@@ -74,7 +74,7 @@ is skipped silently. A wrapper may stream newline-delimited JSON events to
 
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`. It is outside the repo; nothing is overwritten. A
-blueprint run looks like this (the other harnesses name their own layout):
+blueprint run looks like this:
 
 ```
 <root>/<date>/<time>-<command>/
@@ -87,15 +87,13 @@ blueprint run looks like this (the other harnesses name their own layout):
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
-The agents' workspaces survive for debugging.
-
 ## Result
 
 `result.json` is written even when the run aborts. Its schema is
-`evaluation/core/result.ts`, with one `schema_version` for every command.
+`evaluation/core/result.ts`.
 
 - `run_error: { stage, message }`, set only when the run failed.
-- `verdicts`: one per check or judge, with its status. A dimension's analyzer is
+- `verdicts`: one per check or judge. A dimension's analyzer is
   `<dimension>.analyzer`; the dimension passes when it and its judge both do. A
   judge's entry holds its model call (model, prompt hash, time, cost, every
   attempt) and its full `answer`.
@@ -115,18 +113,16 @@ or judge failed, or could not judge.
 
 ## Live progress
 
-Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking
-tokens and the messages since the last tick; during the judge phase it
-shows `done/total`. `--quiet` keeps only the milestones. The raw stream
-(`logs/<step>*.stream.jsonl`) is for watching only; the result comes from the
-artifact the agent writes.
+Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking tokens and the messages since the
+last tick; during the judge phase it
+shows `done/total`. `--quiet` keeps milestones. The raw stream
+(`logs/<step>*.stream.jsonl`) is for watching only.
 
 ## Retries
 
 A judge is retried (`retries`) on a non-zero exit, a timeout, stdout that is not
 JSON, an `extract_path` miss, or an answer failing the dimension's Zod schema. Generation is retried on the same,
-and on output failing Blueprint V2 validation. Each attempt has its own log,
-such as `judge-solve_depth.attempt-2.stderr.log`.
+and on output failing Blueprint V2 validation. Each attempt has its own log, such as `judge-solve_depth.attempt-2.stderr.log`.
 
 ## Blueprint dimensions
 
@@ -150,7 +146,6 @@ judge's full question is its brief, `evaluation/dimensions/<id>.md`.
   Flesch–Kincaid grade for `metadata.target_age`; the judge checks what the
   formula cannot see against `packages/shared/src/age-profile.ts`.
 
-Analyzers live in `evaluation/checks/analyzers/`. To iterate on the evaluator, run `judge
-blueprint` on a saved blueprint, then
-edit the brief, its `<id>.schema.ts` (where schema and brief disagree, the
+Analyzers live in `evaluation/checks/analyzers/`. To iterate on a judge, run `judge
+blueprint` on a saved blueprint, then edit the brief, its `<id>.schema.ts` (where schema and brief disagree, the
 schema wins), the analyzer, or `evaluation/prompts/judge-system.md`.

@@ -16,6 +16,10 @@
  * Every (case, narrator) is one subject: its stored turn (`turn.json`) is
  * written before any judge runs, then its `result.json`. A stored turn, the
  * `turn.json` of an earlier run, is judged again with no narrator at all.
+ *
+ * A stored game (a trace) is judged on the narration it already holds: every
+ * played event that has narration is one turn, named by its event sequence, and
+ * no narrator is called.
  */
 
 import fs from "node:fs";
@@ -40,7 +44,9 @@ import { replayThroughNarrator } from "./lib/replay-cli.ts";
 import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
-import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn } from "./lib/turn.ts";
+import { playedEvents } from "../lib/game-events.ts";
+import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn, turnFromEvent } from "./lib/turn.ts";
+import type { StoredEvent } from "./lib/turn.ts";
 import type { StoredTurn } from "./lib/turn.ts";
 
 export const SERVER_NARRATOR = "server";
@@ -48,16 +54,19 @@ export const DEFAULT_JUDGE_BINDING = "turn-judge";
 const DEFAULT_CONCURRENCY = 4;
 const NARRATOR_BINDING = /^narrator-/;
 const DEFAULT_JUDGES = ["flesch"];
+/** What a stored game's turns are judged with: the turn-level checks that read the narration alone. */
+const GAME_TURN_JUDGES = ["flesch", "age_appropriate_turn"];
 
 const HELP = formatHelp({
   usage: "judge turn <cases or stored turn>...",
   summary:
     "Replays one turn per case and judges it. A case file (.ts, .mjs, .json) or a folder of them gives the cases; " +
-    "the turn.json of an earlier run is judged again without replaying.",
+    "the turn.json of an earlier run is judged again without replaying; a stored game (a trace) has every narrated turn " +
+    "judged on its own narration, named by event sequence, with no narrator.",
   options: [
     ["--narrator <a,b>", `who narrates: ${SERVER_NARRATOR}, or a narrator binding (narrator-claude, narrator-openai, narrator-stub). Default: the case's, else ${SERVER_NARRATOR}`],
     ["--ai-profile <name>", "the AI a server narrator is asked for: a name from ai.json, or mock (default: the case's, else default, which is mock on its fresh database)"],
-    ["--judges <a,b>", "the checks and judges to run (cases: their judges, else none; stored turns: earlier result's judges, else flesch)"],
+    ["--judges <a,b>", "the checks and judges to run (cases: their judges, else none; stored turns: earlier result's judges, else flesch; a stored game: flesch,age_appropriate_turn, the only two it takes)"],
     ["--judge-binding <name>", `the binding every model judge calls (default: ${DEFAULT_JUDGE_BINDING}; judge-stub answers offline)`],
     ["--concurrency <n>", `turns replayed and judged at once (default: ${DEFAULT_CONCURRENCY})`],
   ],
@@ -75,7 +84,9 @@ const SPEC = {
 } as const;
 
 /** One thing to judge: a case to replay, or a turn already stored. */
-type Input = { kind: "case"; testCase: TurnCase } | { kind: "stored"; turn: StoredTurn; file: string };
+type Input =
+  | { kind: "case"; testCase: TurnCase }
+  | { kind: "stored"; turn: StoredTurn; file: string; fromGame: boolean };
 
 function list(value: OptionValue): string[] | null {
   if (typeof value !== "string") return null;
@@ -99,12 +110,43 @@ async function readJsonOrNull(file: string): Promise<unknown> {
   }
 }
 
-/** A path is a stored turn when it is JSON with a captured response; anything else holds cases. */
+interface StoredGame {
+  blueprint: { metadata?: { target_age?: number } };
+  events: StoredEvent[];
+}
+
+/** Whether a parsed JSON value is a stored game: a blueprint and its events, in the shape `judge game` reads. */
+function isStoredGame(value: unknown): value is StoredGame {
+  const candidate = value as Partial<StoredGame> | null;
+  return (
+    typeof candidate === "object" &&
+    candidate !== null &&
+    typeof candidate.blueprint === "object" &&
+    candidate.blueprint !== null &&
+    Array.isArray(candidate.events) &&
+    candidate.events.every((event) => typeof event?.event_type === "string" && Number.isInteger(event.sequence))
+  );
+}
+
+/** What names a stored game in a run: its file, or its folder when the file is the truth set's `trace.json`. */
+function gameId(file: string): string {
+  const stem = path.basename(file, ".json");
+  return stem === "trace" ? path.basename(path.dirname(file)) : stem;
+}
+
+/** A path is a stored game when it is a trace, a stored turn when it is JSON with a captured response; anything else holds cases. */
 async function loadInput(target: string): Promise<Input[]> {
   const absolute = path.resolve(target);
   if (absolute.endsWith(".json")) {
     const value = await readJsonOrNull(absolute);
-    if (isStoredTurn(value)) return [{ kind: "stored", turn: await readStoredTurn(absolute), file: absolute }];
+    if (isStoredTurn(value)) return [{ kind: "stored", turn: await readStoredTurn(absolute), file: absolute, fromGame: false }];
+    if (isStoredGame(value)) {
+      const game = { id: gameId(absolute), targetAge: value.blueprint.metadata?.target_age ?? null, blueprintPath: "" };
+      return playedEvents(value.events)
+        .filter((event) => typeof event.narration === "string" && event.narration.trim().length > 0)
+        .sort((a, b) => a.sequence - b.sequence)
+        .map((event) => ({ kind: "stored", turn: turnFromEvent(event, game), file: absolute, fromGame: true }));
+    }
   }
   return (await loadCasesFrom(absolute)).map((testCase) => ({ kind: "case", testCase }));
 }
@@ -122,7 +164,17 @@ async function earlierJudges(file: string): Promise<string[] | null> {
 function judgesFor(input: Input, chosen: string[] | null, earlier: string[] | null): string[] {
   if (chosen) return chosen;
   if (input.kind === "case") return input.testCase.judges ?? [];
+  if (input.fromGame) return GAME_TURN_JUDGES;
   return earlier ?? DEFAULT_JUDGES;
+}
+
+/** A stored game's turns carry no blueprint path or history, so only the judges that read the narration alone apply. */
+function assertGameTurnJudges(ids: readonly string[]): void {
+  for (const id of ids) {
+    if (!GAME_TURN_JUDGES.includes(id)) {
+      throw new UsageError(`a stored game's turns are judged with ${GAME_TURN_JUDGES.join(" and ")} only, not "${id}"; judge the game with \`judge game\``);
+    }
+  }
 }
 
 function assertJudgesApply(ids: readonly string[]): void {
@@ -158,6 +210,22 @@ function assertNarratorKnown(narrator: string): void {
   if (narrator !== SERVER_NARRATOR && !NARRATOR_BINDING.test(narrator)) {
     throw new UsageError(`--narrator takes ${SERVER_NARRATOR} or a narrator binding such as narrator-claude, got "${narrator}"`);
   }
+}
+
+/** Every (input, narrator) to run, with the judges it gets; refuses a judge that does not apply to its input. */
+async function workItems(inputs: Input[], narrators: string[] | null, chosenJudges: string[] | null): Promise<WorkItem[]> {
+  const items: WorkItem[] = [];
+  for (const input of inputs) {
+    const earlier = input.kind === "stored" && !input.fromGame && !chosenJudges ? await earlierJudges(input.file) : null;
+    const judges = judgesFor(input, chosenJudges, earlier);
+    assertJudgesApply(judges);
+    if (input.kind === "stored" && input.fromGame) assertGameTurnJudges(judges);
+    for (const narrator of narratorsFor(input, narrators)) {
+      if (narrator !== null) assertNarratorKnown(narrator);
+      items.push({ input, narrator, judges });
+    }
+  }
+  return items;
 }
 
 interface Runtime {
@@ -306,16 +374,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
       if (inputs.length === 0) throw new UsageError("no cases found");
       inputs.forEach((input) => input.kind === "case" && validateCase(input.testCase, input.testCase.id));
 
-      const items: WorkItem[] = [];
-      for (const input of inputs) {
-        const earlier = input.kind === "stored" && !chosenJudges ? await earlierJudges(input.file) : null;
-        const judges = judgesFor(input, chosenJudges, earlier);
-        assertJudgesApply(judges);
-        for (const narrator of narratorsFor(input, narrators)) {
-          if (narrator !== null) assertNarratorKnown(narrator);
-          items.push({ input, narrator, judges });
-        }
-      }
+      const items = await workItems(inputs, narrators, chosenJudges);
 
       const config = loadConfig({ root: context.root, configPath: common.configPath, modelOverrides: common.modelOverrides });
       const resolve = (name: string) => resolveBinding(config, name, { root: context.root });

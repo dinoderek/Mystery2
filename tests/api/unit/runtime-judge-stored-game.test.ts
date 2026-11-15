@@ -27,18 +27,18 @@ interface TraceFile {
 
 let scratch = "";
 let configFile = "";
-let capturedFile = "";
+let capturedDir = "";
 let tracePath = "";
 let trace: TraceFile;
 
 beforeAll(() => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-judge-stored-game-"));
-  capturedFile = path.join(scratch, "captured.jsonl");
+  capturedDir = path.join(scratch, "captured");
   // A judge that keeps what it was handed, then passes.
   const capture = path.join(scratch, "capture-judge.sh");
   fs.writeFileSync(
     capture,
-    `#!/usr/bin/env bash\ncat "$1" >> "${capturedFile}"\necho >> "${capturedFile}"\n` +
+    `#!/usr/bin/env bash\nmkdir -p "${capturedDir}"\ncat "$1" > "${capturedDir}/$$.json"\n` +
       `printf '%s' '{"estimated_reading_age":8,"findings":[],"verdict":"pass","reasoning":"ok"}'\n`,
     { mode: 0o755 },
   );
@@ -84,6 +84,12 @@ async function run(args: string[]): Promise<{ code: number; output: string; runD
   return { code, output: lines.join("\n"), runDir };
 }
 
+/** What the age judge was handed, one message per call; calls run side by side, so each has a file of its own. */
+function handedToJudge(): Array<{ narration: string; target_age: number }> {
+  if (!fs.existsSync(capturedDir)) return [];
+  return fs.readdirSync(capturedDir).map((name) => JSON.parse(fs.readFileSync(path.join(capturedDir, name), "utf8")));
+}
+
 /** The folder a subject was written to, which the run index names. */
 function subjectDir(runDir: string, event: { sequence: number; event_type: string }): string {
   const id = `medal__s${event.sequence}-${event.event_type}__stored`;
@@ -96,7 +102,7 @@ const narrated = () => trace.events.filter((event) => event.event_type !== "no_t
 
 describe("judge turn on a stored game", () => {
   it("judges every narrated turn once with flesch and the age judge, and calls no narrator", async () => {
-    fs.writeFileSync(capturedFile, "");
+    fs.rmSync(capturedDir, { recursive: true, force: true });
     const { code, runDir } = await run([tracePath]);
     expect(code).toBe(0);
 
@@ -114,14 +120,14 @@ describe("judge turn on a stored game", () => {
       expect(result.run_error).toBeNull();
     }
     // One age call per turn.
-    expect(fs.readFileSync(capturedFile, "utf8").trim().split("\n")).toHaveLength(narrated().length);
+    expect(handedToJudge()).toHaveLength(narrated().length);
   });
 
   it("hands each judge the trace's narration for that event, byte for byte", async () => {
-    fs.writeFileSync(capturedFile, "");
+    fs.rmSync(capturedDir, { recursive: true, force: true });
     const { runDir } = await run([tracePath]);
 
-    const handed = fs.readFileSync(capturedFile, "utf8").trim().split("\n").map((line) => JSON.parse(line) as { narration: string; target_age: number });
+    const handed = handedToJudge();
     expect(handed.map((message) => message.narration).sort()).toEqual(narrated().map((event) => event.narration).sort());
     expect(handed.every((message) => message.target_age === 9)).toBe(true);
 

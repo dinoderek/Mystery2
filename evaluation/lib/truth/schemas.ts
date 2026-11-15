@@ -151,6 +151,16 @@ export type TurnEdit = z.infer<typeof TurnEditSchema>;
 // ---------------------------------------------------------------------------
 // Planted turn faults: a variant of a stored game, carrying one or more.
 
+/**
+ * Which deterministic checks catch a plant: the ids of the checks that newly
+ * report it, `[]` when none does. A plant carries the record, and the gate
+ * holds it to what the checks report now. A plant a check catches needs no
+ * judge to be found.
+ */
+const CaughtBySchema = z
+  .array(z.string().min(1))
+  .refine((ids) => new Set(ids).size === ids.length, { message: "a check is named once" });
+
 export const TurnPlantSchema = z
   .object({
     sequence: SequenceSchema,
@@ -158,6 +168,7 @@ export const TurnPlantSchema = z
     severity: SeveritySchema,
     note: NoteSchema,
     edits: z.array(TurnEditSchema).min(1),
+    caught_by: CaughtBySchema,
   })
   .strict();
 export type TurnPlant = z.infer<typeof TurnPlantSchema>;
@@ -192,6 +203,7 @@ export const BlueprintPlantSchema = z
     judge: z.string().min(1),
     note: NoteSchema,
     patch: PatchSchema,
+    caught_by: CaughtBySchema,
   })
   .strict();
 export type BlueprintPlant = z.infer<typeof BlueprintPlantSchema>;

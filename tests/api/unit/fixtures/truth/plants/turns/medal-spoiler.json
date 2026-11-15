@@ -12,7 +12,8 @@
           "find": "\"I saw a shadow slip toward the garden,\" Mara says.",
           "replace": "\"I saw Dorn take the medal and slip toward the garden,\" Mara says."
         }
-      ]
+      ],
+      "caught_by": []
     },
     {
       "sequence": 7,
@@ -23,12 +24,24 @@
         {
           "type": "patch",
           "ops": [
-            { "op": "test", "path": "/payload/revealed_clue_id", "value": "clue_garden_1" },
-            { "op": "remove", "path": "/payload/revealed_clue_id" },
-            { "op": "replace", "path": "/payload/revealed_clue_ids", "value": [] }
+            {
+              "op": "test",
+              "path": "/payload/revealed_clue_id",
+              "value": "clue_garden_1"
+            },
+            {
+              "op": "remove",
+              "path": "/payload/revealed_clue_id"
+            },
+            {
+              "op": "replace",
+              "path": "/payload/revealed_clue_ids",
+              "value": []
+            }
           ]
         }
-      ]
+      ],
+      "caught_by": []
     }
   ]
 }

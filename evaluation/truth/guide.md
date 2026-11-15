@@ -2,9 +2,9 @@
 
 How each kind of fault is decided, for labels and plants: what is wrong in the
 narration, never what a judge should answer. On the labelling page, press each
-kind (keys 1 to 5), a severity (`n` minor, `m` major) and a note; `c` if clean.
-`major`: the player could act on it, or the turn fails. `minor`: it leads
-nowhere.
+kind (keys 1 to 5), a severity (`n` minor, `m` major) and a note (`t`); `c` if
+clean. `major`: the player could act on it, or the turn fails; `minor`: it
+leads nowhere.
 
 **One owner.** A problem takes the kind that owns it: a clue given early or
 changed is `clue_handling`, not `spoiler` or `fabrication`; an unsupported fact
@@ -57,8 +57,9 @@ word within the allowance is not.
 
 ## Planted faults
 
-A plant makes one fault of its kind, as above, and changes nothing else. A blueprint plant breaks what one dimension asks, as its brief in
+A plant makes one fault of its kind, as above, and changes nothing else. A
+blueprint plant breaks what one dimension asks, as its brief in
 `evaluation/dimensions/` decides, and names it as kind and judge: a clue
 collapsing the shortest path, clearing evidence weakened, someone in two
 places, a clue shown early, thin material, a vague gate, a payoff ending
-nowhere, hard player text. Dimensions overlap, so its other kinds are unknown.
+nowhere, hard player text. Dimensions overlap, so other kinds are unknown.

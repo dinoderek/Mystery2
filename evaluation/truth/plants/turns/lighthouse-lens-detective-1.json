@@ -5,12 +5,12 @@
       "sequence": 3,
       "kind": "spoiler",
       "severity": "major",
-      "note": "The narrator names Roz and how she did it after a search that found nothing.",
+      "note": "The narrator names Roz as the thief after a search that found nothing.",
       "edits": [
         {
           "type": "narration",
           "find": "Nothing new is hidden here.",
-          "replace": "Nothing new is hidden here. But you can already guess the truth: Roz Pike changed Ada's tide schedule, so nobody would be watching when the causeway was really dry."
+          "replace": "Nothing new is hidden here. But you can already guess the truth: Roz Pike took the lens."
         }
       ],
       "caught_by": []

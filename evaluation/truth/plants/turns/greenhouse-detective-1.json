@@ -5,12 +5,12 @@
       "sequence": 12,
       "kind": "spoiler",
       "severity": "major",
-      "note": "The narrator clears Mr. Thorne and says the smasher used the missing key, doing the player's deduction for them.",
+      "note": "The narrator clears Mr. Thorne before the player has any evidence that does, doing their reasoning for them.",
       "edits": [
         {
           "type": "narration",
           "find": "Nothing new catches your eye here.",
-          "replace": "Nothing new catches your eye here. Mr. Thorne didn't smash Bertha anyway. Whoever did it let themselves in with the missing key."
+          "replace": "Nothing new catches your eye here. Mr. Thorne didn't smash Bertha anyway, so you can stop thinking about him."
         }
       ],
       "caught_by": []

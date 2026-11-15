@@ -5,12 +5,12 @@
       "sequence": 2,
       "kind": "not_age_fit",
       "severity": "major",
-      "note": "Tobias speaks in idioms (in a pickle, caught napping, cat among the pigeons) a seven-year-old would misread.",
+      "note": "Tobias speaks in idioms (in a pickle, cat among the pigeons, all at sea) a seven-year-old would misread.",
       "edits": [
         {
           "type": "narration",
           "find": "\"Oh, thank goodness you came! Someone swapped our stick!\"",
-          "replace": "\"Oh, thank goodness you came! I'm in a right pickle. I was caught napping on my watch, and now the cat's among the pigeons!\""
+          "replace": "\"Oh, thank goodness you came! I'm in a right pickle. The cat's among the pigeons, and I'm all at sea!\""
         }
       ],
       "caught_by": []

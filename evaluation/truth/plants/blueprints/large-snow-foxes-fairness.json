@@ -36,6 +36,16 @@
     },
     {
       "op": "test",
+      "path": "/world/characters/4/actual_actions/3/summary",
+      "value": "At half past three, she hears Howard shout but cannot leave her line."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/4/actual_actions/3/summary",
+      "value": "At half past three, she hears Howard shout but stays at her window."
+    },
+    {
+      "op": "test",
       "path": "/world/characters/5/actual_actions/1/summary",
       "value": "She draws the train, writing the time from the big clock on each page."
     },

@@ -5,12 +5,12 @@
       "sequence": 3,
       "kind": "spoiler",
       "severity": "major",
-      "note": "The narrator says Barnaby never napped and sneaked off in snowshoes to take the case, naming the culprit and how.",
+      "note": "The narrator names Barnaby as the thief on the first search of the game.",
       "edits": [
         {
           "type": "narration",
           "find": "Maybe look behind the water tower. It is very quiet there.",
-          "replace": "Here is a secret. Barnaby did not nap on the train at all. He sneaked off in snowshoes and took Howard's case! Maybe look behind the water tower. It is very quiet there."
+          "replace": "Here is a secret. Barnaby is the one who took Howard's case! Maybe look behind the water tower. It is very quiet there."
         }
       ],
       "caught_by": []

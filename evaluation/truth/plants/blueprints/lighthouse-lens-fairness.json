@@ -16,6 +16,16 @@
     },
     {
       "op": "test",
+      "path": "/world/characters/0/stated_alibi",
+      "value": "I was in bed in my cottage from midnight until four. I hardly slept a wink."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/0/stated_alibi",
+      "value": "I was in bed in my cottage from midnight until four. I slept a little, then lay awake listening to Finn snore."
+    },
+    {
+      "op": "test",
       "path": "/world/characters/0/actual_actions/5/summary",
       "value": "From one until after three, lay awake while Finn snored on the sofa. Heard the clock chime one, two and three. Heard nothing else over the snoring and the waves."
     },

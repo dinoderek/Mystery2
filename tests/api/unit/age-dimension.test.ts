@@ -188,11 +188,13 @@ describe("dimension brief stays in sync with age-profile.ts", () => {
   // The judge's per-age table in age-appropriate.md is a rendered copy of
   // packages/shared/src/age-profile.ts (the single source of truth). This
   // guard fails the moment the profile changes without the brief.
-  it("age-appropriate.md contains one exact table row per age profile", () => {
-    const brief = fs.readFileSync(
-      path.join(REPO_ROOT, "evaluation", "dimensions", "age-appropriate.md"),
-      "utf8",
-    );
+  // The candidate judges that ask about reading age carry the same table.
+  it.each([
+    "evaluation/dimensions/age-appropriate.md",
+    "evaluation/dimensions/blueprint-broad.md",
+    "evaluation/judges/gm-broad.md",
+  ])("%s contains one exact table row per age profile", (file) => {
+    const brief = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
     for (const p of allAgeProfiles()) {
       const row = `| ${p.age} | ${p.ukYear} | ${p.softSentenceWords} | ${p.newWordAllowance} | ${p.vocabGuidance} |`;
       expect(brief, `missing/stale table row for age ${p.age}`).toContain(row);

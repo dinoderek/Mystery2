@@ -46,8 +46,8 @@ the game's labels. A base is clean for every kind: it passed every check and
 judge, no more.
 
 A verdict catches a unit when a finding points at its turn or blueprint with
-a kind the findings table maps to it. A blueprint judge's `fail` is one
-finding of its dimension's kind.
+a kind the findings table maps to it. A dimension's `fail` is one finding
+of its kind; candidates' findings name theirs.
 
 **Results** hold verdicts with findings, model, sample, duration and
 cost, no prompt, log or workspace. `./dev eval score` scores them,

@@ -17,7 +17,7 @@ passes.
   This is your evidence base.
 - `./context.json` — per-dimension context from the registry
   (`evaluation/core/registry.ts`). Empty object `{}` if the dimension
-  has no context. For `character_grounding`, this contains `probe_topics`.
+  has no context. For `character_grounding` and `blueprint_broad`, this contains `probe_topics`.
 - `./prompts/judge-system.md` — the shared judge system prompt (preamble
   shared across all dimensions).
 - `./schema/output-schema.ts` — the Zod schema your `verdict.json` must

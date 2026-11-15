@@ -25,7 +25,8 @@ run. `./dev eval <command> --help` explains the rest; for `judge`, name the
 subcommand.
 
 A blueprint beside `brief.json` needs no `--brief`. For blueprint and game
-judging, `--judges` and `--no-judges` mark unselected judges skipped.
+judging, `--judges` and `--no-judges` mark unselected judges skipped; candidates
+run only when named.
 
 ## Quick start
 
@@ -125,7 +126,7 @@ and on output failing Blueprint V2 validation. Each attempt has its own log, suc
 
 ## Blueprint dimensions
 
-`evaluation/core/registry.ts` is the battery, run on every blueprint. Each
+`evaluation/core/registry.ts` lists the battery, run on every blueprint. Each
 judge's full question is its brief, `evaluation/dimensions/<id>.md`.
 
 - `solve_depth`: solvable, deep enough (the brief's `minPathLength`, else the

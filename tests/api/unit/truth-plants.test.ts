@@ -405,6 +405,22 @@ describe("checking the plants", () => {
     expect(reportOf(await checked("plants/blueprints/mock-bob-not-ruled-out.json", edited), "mock-bob-not-ruled-out").problems).toEqual([]);
   });
 
+  it("does not count a trace check that already fails on the game", async () => {
+    const dir = await copyFixture();
+    const file = path.join(dir, "games/medal/trace.json");
+    const trace = await readJson<{ events: { sequence: number; narration: string }[] }>(file);
+    const hard = "Notwithstanding unprecedented circumstances, Mara conscientiously reconsidered everything incomprehensible.";
+    const turn = trace.events.find((event) => event.sequence === 3);
+    if (!turn) throw new Error("no turn 3");
+    turn.narration = `${hard} Mara wipes her hands and looks up.`;
+    await writeJson(file, trace);
+    const variant = await readVariant();
+    variant.plants[0].edits = [{ type: "narration", find: "wipes her hands", replace: "dries her hands" }];
+    variant.plants[0].caught_by = [];
+    await writeJson(path.join(dir, VARIANT_FILE), variant);
+    expect(reportOf(await verifyPlants(await loadTruthSet(dir)), "medal-leak@3")).toEqual({ plant: "medal-leak@3", caughtBy: [], problems: [] });
+  });
+
   it("fails a plant that changes nothing", async () => {
     const variant = await readVariant();
     variant.plants[0].edits = [{ type: "narration", find: "Mara wipes her hands and looks up.", replace: "Mara wipes her hands and looks up." }];

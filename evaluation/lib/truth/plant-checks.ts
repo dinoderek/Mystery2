@@ -205,7 +205,11 @@ async function verifyBlueprintPlant(plant: TruthBlueprintPlant, base: LoadedBase
   if (changed.length === 0) problems.push("changes nothing");
   const stray = changed.filter((path) => !built.touched.some((place) => isWithin(path, place)));
   if (stray.length > 0) problems.push(`changes more than its patch names: ${stray.slice(0, 3).join(", ")}`);
-  const caughtBy = newFailures(base.statuses, await blueprintStatuses(base.brief, built.blueprint)).sort();
+  const statuses = await blueprintStatuses(base.brief, built.blueprint);
+  // A check that could not run says nothing, so a record built on it would be a guess.
+  const errored = [...new Set([...base.statuses, ...statuses].filter(([, status]) => status === "error").map(([id]) => id))].sort();
+  if (errored.length > 0) problems.push(`these checks could not run: ${errored.join(", ")}`);
+  const caughtBy = newFailures(base.statuses, statuses).sort();
   problems.push(...recordProblem(plant.caught_by, caughtBy));
   return { plant: plant.id, caughtBy, problems };
 }

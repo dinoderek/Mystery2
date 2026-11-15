@@ -6,7 +6,7 @@ is scored on the same units. It holds self-play and planted material only, no
 credential or home path, which a gate test enforces. Its code is
 `evaluation/lib/truth/`; a file outside its schema or this layout fails loading.
 
-Under it: `bases/<base>/blueprint.json` and `brief.json`, frozen copies;
+Ids are file or folder names. Under it: `bases/<base>/blueprint.json` and `brief.json`, frozen copies;
 `games/<game>/trace.json`, self-play as `judge game` reads it, and
 `labels.json`, made on the labelling page; `plants/turns/<variant>.json` and
 `plants/blueprints/<plant>.json`, written by hand; `guide.md`, how each kind is
@@ -25,7 +25,7 @@ are only appended; a turn's latest is scored.
 A variant is rebuilt from its base on demand, never stored. A turn plant's
 edits are `narration`, which replaces the one place `find` occurs, or `patch`,
 JSON Patch on the event, such as `/payload/revealed_clue_ids`. A variant has
-one plant per turn. A blueprint plant is JSON Patch on its base. A patch starts
+one plant a turn. A blueprint plant is JSON Patch on its base. A patch starts
 with a `test`.
 
 The gate, with no model, holds each plant to: it applies, changes only what its
@@ -33,7 +33,7 @@ edits name, and leaves a valid subject (a game that parses and reconstructs, a
 blueprint passing Blueprint V2). Its `caught_by` lists the checks that newly
 fail on it, `[]` for none: on a game the trace checks at its turn and `flesch`;
 on a blueprint the mechanical checks and `<dimension>.analyzer`. A mismatch
-prints what they report now. A plant a check catches needs no judge.
+prints what they report. A caught plant needs no judge.
 
 ## Units and truth
 
@@ -49,4 +49,4 @@ a kind the findings table maps to the unit's. A blueprint judge's `fail` is one
 finding of its dimension's kind.
 
 **Results** hold verdicts with kinded findings, model, sample, duration and
-cost; no prompt, log or workspace.
+cost, no prompt, log or workspace.

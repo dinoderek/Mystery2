@@ -89,7 +89,8 @@ function eachFinding(raw: unknown[], row: FindingsRow, turn: number | null, fail
 }
 
 /**
- * The findings of a verdict as `result.json` stores it, with their kinds.
+ * The findings of a judge's verdict as `result.json` stores it, with their
+ * kinds. Only judges are scored: a check's or an analyzer's verdict throws.
  * `turn` is the turn a judge of one turn judged; null for a judge of a whole
  * game or of a blueprint. A verdict that is not `pass` or `fail` has none.
  */

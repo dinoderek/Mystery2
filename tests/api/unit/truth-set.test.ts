@@ -16,12 +16,15 @@ import type { TruthSet } from "../../../evaluation/lib/truth/loader.ts";
 import {
   BlueprintPlantSchema,
   LabelFileSchema,
+  StoredGameSchema,
   parseTruthFile,
   StoredResultsSchema,
   TurnVariantSchema,
 } from "../../../evaluation/lib/truth/schemas.ts";
 import type { StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
 import { latestLabel, truthOf } from "../../../evaluation/lib/truth/truth.ts";
+import { buildRawTrace } from "../../../evaluation/trace/lib/normalize.ts";
+import { makeBlueprint, makeEvents, makeSession } from "./trace-fixtures.ts";
 
 const FIXTURE = path.join(repoRoot(), "tests/api/unit/fixtures/truth");
 const ANSWERS = path.join(repoRoot(), "tests/api/unit/fixtures/eval-snapshot-answers.json");
@@ -73,6 +76,11 @@ function rejection(schema: Parameters<typeof parseTruthFile>[0], value: unknown)
 }
 
 describe("truth set schemas", () => {
+  it("accept a game as the trace extraction writes it", () => {
+    const trace = buildRawTrace({ session: makeSession(), events: makeEvents(), blueprint: makeBlueprint(), source: { kind: "local" } });
+    expect(StoredGameSchema.safeParse(JSON.parse(JSON.stringify(trace))).success).toBe(true);
+  });
+
   it("reject a label missing who, when or pass, naming the field", async () => {
     const file = await readFixture("games/medal/labels.json");
     const labels = file.labels as Record<string, unknown>[];

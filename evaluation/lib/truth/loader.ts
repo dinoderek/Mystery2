@@ -19,7 +19,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
+import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/story-brief.ts";
 import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { findingsRow } from "./findings.ts";
 import type { BlueprintPlant, Label, StoredGame, StoredSubject, StoredVerdict, TurnVariant } from "./schemas.ts";

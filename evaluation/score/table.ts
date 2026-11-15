@@ -7,7 +7,7 @@
 import type { MemberScore, ScoreReport, SideScore, SubsetScore } from "../lib/truth/score.ts";
 import type { Share } from "../lib/truth/wilson.ts";
 
-function table(header: readonly string[], rows: readonly (readonly string[])[]): string[] {
+export function table(header: readonly string[], rows: readonly (readonly string[])[]): string[] {
   const widths = header.map((cell, column) => Math.max(cell.length, ...rows.map((row) => row[column].length)));
   return [header, ...rows].map((row) =>
     row

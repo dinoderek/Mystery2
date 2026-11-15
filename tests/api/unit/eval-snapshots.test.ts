@@ -60,6 +60,9 @@ const BLUEPRINT_DIMENSIONS = [
   "age_appropriate",
 ];
 const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"];
+// Candidates run only when named, so each harness runs them apart from its default battery.
+const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
+const GM_CANDIDATES = ["gm_broad"];
 const PERSONAS = listPersonas() as string[];
 
 const PROMPT_IDS = [
@@ -69,8 +72,10 @@ const PROMPT_IDS = [
   ...GM_JUDGES.map((id) => `runtime.${id}`),
   "runtime.age_appropriate",
   ...PERSONAS.map((persona) => `investigator.${persona}`),
+  ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
+  ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
 ];
-const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging"];
+const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -259,8 +264,9 @@ async function runTraceHarness(answersFile: string) {
   for (const id of GM_JUDGES) prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
 }
 
-async function runRuntimeHarness(answersFile: string) {
-  const dir = path.join(scratch, "runtime");
+/** Replays one case through `judge turn` with these judges, and reads back what it wrote. */
+async function runTurnCase(answersFile: string, folder: string, judges: string[], expectedCode: number) {
+  const dir = path.join(scratch, folder);
   fs.mkdirSync(dir, { recursive: true });
   const blueprintFile = path.join(dir, "blueprint.json");
   fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
@@ -283,7 +289,7 @@ async function runRuntimeHarness(answersFile: string) {
       ],
     },
     action: { type: "ask", player_input: "Where did the cookies go?" },
-    judges: ["flesch", "age_appropriate_turn", ...GM_JUDGES],
+    judges,
   };
   const caseFile = path.join(dir, "case.mjs");
   fs.writeFileSync(caseFile, `export default ${JSON.stringify(testCase)};\n`);
@@ -306,12 +312,11 @@ async function runRuntimeHarness(answersFile: string) {
     [caseFile, "--narrator", "narrator-stub", "--config", config, "--output-root", outputRoot],
     { root: REPO_ROOT, out: (text) => output.push(text), err: (text) => output.push(text), env: {} },
   );
-  // Two failing judges is a verdict (2); anything else means the run broke.
-  if (code !== 2) throw new Error(`judge turn exited ${code}:\n${output.join("\n")}`);
+  if (code !== expectedCode) throw new Error(`judge turn exited ${code}:\n${output.join("\n")}`);
   const [resultFile] = findFiles(outputRoot, "result.json");
   const result = JSON.parse(fs.readFileSync(resultFile, "utf8"));
   const turn = JSON.parse(fs.readFileSync(path.join(path.dirname(resultFile), "turn.json"), "utf8"));
-  verdicts.set("runtime", {
+  return {
     case_id: turn.case_id,
     narrator: turn.narrator,
     model: turn.model,
@@ -329,9 +334,63 @@ async function runRuntimeHarness(answersFile: string) {
       };
     }),
     summary: result.summary,
-  });
+  };
+}
+
+async function runRuntimeHarness(answersFile: string) {
+  // Two failing judges is a verdict (2); anything else means the run broke.
+  verdicts.set("runtime", await runTurnCase(answersFile, "runtime", ["flesch", "age_appropriate_turn", ...GM_JUDGES], 2));
   for (const id of GM_JUDGES) prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
   prompts.set("runtime.age_appropriate", capturedPrompt("runtime.age_appropriate"));
+}
+
+/** A judge's verdict as the candidate snapshot records it: what it reached and from which findings. */
+function candidateVerdict(verdict: Json) {
+  return { id: verdict.id, status: verdict.status, findings: verdict.findings ?? null, details: verdict.details ?? null };
+}
+
+/**
+ * The candidates, each named on its harness's command: the blueprint ones on
+ * the blueprint the generator answers with, the game one on the trace and on
+ * a turn. Their prompts are kept beside the battery's.
+ */
+async function runCandidates(answersFile: string) {
+  const dir = path.join(scratch, "candidates");
+  const blueprintFile = path.join(dir, "blueprint.json");
+  const briefFile = path.join(dir, "brief.json");
+  const traceFile = path.join(dir, "trace.json");
+  const config = path.join(dir, "config.json");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
+  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
+  fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
+  fs.writeFileSync(
+    config,
+    JSON.stringify({
+      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
+      "game-judge": stubBinding(answersFile, "trace.{id}"),
+    }),
+  );
+
+  const blueprintOut = path.join(dir, "blueprint-out");
+  const blueprint = (await runForResult(
+    ["dev", "eval", "judge", "blueprint", blueprintFile, "--brief", briefFile, "--judges", BLUEPRINT_CANDIDATES.join(","),
+      "--config", config, "--output-root", blueprintOut, "--quiet"],
+    blueprintOut,
+  )) as Result;
+  const traceOut = path.join(dir, "trace-out");
+  const trace = await runForResult(
+    ["dev", "eval", "judge", "game", traceFile, "--judges", GM_CANDIDATES.join(","), "--config", config, "--output-root", traceOut, "--quiet"],
+    traceOut,
+  );
+  const runtime = await runTurnCase(answersFile, "candidates-runtime", GM_CANDIDATES, 0);
+  const judged = (result: Json) => result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(candidateVerdict);
+  verdicts.set("candidates", { blueprint: judged(blueprint), trace: judged(trace), runtime: runtime.judges });
+  for (const id of BLUEPRINT_CANDIDATES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
+  for (const id of GM_CANDIDATES) {
+    prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
+    prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
+  }
 }
 
 async function runPlaytestJudging(answersFile: string) {
@@ -429,6 +488,7 @@ beforeAll(async () => {
     runTraceHarness(answersFile),
     runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),
+    runCandidates(answersFile),
   ]);
   await composeInvestigatorPrompts();
   clearForRecording();

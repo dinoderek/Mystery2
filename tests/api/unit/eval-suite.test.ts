@@ -268,6 +268,26 @@ describe("the usage limit", () => {
 });
 
 describe("judges and subjects", () => {
+  it("runs a judge outside the default battery when the suite names it, storing its findings by kind", async () => {
+    const { judgesFor } = await import("../../../evaluation/core/registry.ts");
+    expect(judgesFor("game").map((entry) => entry.id)).not.toContain("gm_broad");
+    expect(judgesFor("blueprint").map((entry) => entry.id)).not.toContain("solve_depth_fairness");
+    const at = scratch();
+    const file = writeSuite(at, "fixture", {
+      subjects: { blueprint_plants: "all", game_variants: ["medal-spoiler"] },
+      judges: ["gm_broad", "solve_depth_fairness"],
+      thresholds: [{ judge: "gm_broad", kind: "spoiler", min_found_of_real: 1 }],
+    });
+    const ran = await suite(at, file);
+    expect(ran.err).toBe("");
+    expect(ran.code).toBe(0);
+    expect(stubCalls(at).sort()).toEqual(["gm_broad", "solve_depth_fairness"]);
+    const verdicts = resultsOf(at, "fixture").verdicts;
+    expect(verdicts.find((verdict) => verdict.judge === "gm_broad")).toMatchObject({ status: "fail", findings: [{ sequence: 4, kinds: ["spoiler"] }] });
+    expect(verdicts.find((verdict) => verdict.judge === "solve_depth_fairness")).toMatchObject({ status: "fail", findings: [{ kinds: ["fairness"] }] });
+    expect(ran.out).toContain("gm_broad spoiler: found of real 1.00 (1/1), needs 1: met");
+  });
+
   it("refuses what it could see is wrong before any call, naming it", async () => {
     const at = scratch();
     const cases: Array<[unknown, string]> = [

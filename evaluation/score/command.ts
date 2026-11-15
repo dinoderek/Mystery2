@@ -12,11 +12,11 @@ import { formatHelp, parseCommandArgs } from "../core/args.ts";
 import type { EvalCommand } from "../core/dispatch.ts";
 import { InputError, UsageError } from "../core/errors.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
-import { loadTruthSet, readResultsFile, TRUTH_ROOT } from "../lib/truth/loader.ts";
-import type { TruthSet } from "../lib/truth/loader.ts";
+import { reading, readResults, rounded } from "../lib/truth/inputs.ts";
+import { loadTruthSet, TRUTH_ROOT } from "../lib/truth/loader.ts";
 import { describeBar, LOSE_NOTHING, scoreVerdicts } from "../lib/truth/score.ts";
 import type { Bar, ScoreReport } from "../lib/truth/score.ts";
-import { TRUTH_ID, TruthFileError, verdictKey } from "../lib/truth/schemas.ts";
+import { verdictKey } from "../lib/truth/schemas.ts";
 import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { formatScore } from "./table.ts";
 
@@ -57,25 +57,6 @@ function parseBar(value: unknown): Bar {
   return { kind: "min_found", share };
 }
 
-/** Runs `read`, turning a truth-set file error into an input error, which exits 1. */
-async function reading<T>(read: () => Promise<T>): Promise<T> {
-  try {
-    return await read();
-  } catch (error) {
-    if (error instanceof TruthFileError) throw new InputError(error.message);
-    throw error;
-  }
-}
-
-/** A results file, else a results name in the set. */
-async function readResults(set: TruthSet, arg: string): Promise<{ file: string; verdicts: StoredVerdict[] }> {
-  const file = path.resolve(arg);
-  if (fs.existsSync(file) && fs.statSync(file).isFile()) return { file, verdicts: await reading(() => readResultsFile(set, file)) };
-  const named = TRUTH_ID.test(arg) ? set.results.find((results) => results.id === arg) : undefined;
-  if (named) return { file: named.file, verdicts: named.verdicts };
-  throw new InputError(`no results file at ${file}, and no results named "${arg}" in ${path.join(set.root, "results")}`);
-}
-
 /** Every verdict once: the same subject, judge, model and sample in two files is an error. */
 function merge(files: readonly { file: string; verdicts: StoredVerdict[] }[], shown: (file: string) => string): StoredVerdict[] {
   const from = new Map<string, string>();
@@ -92,11 +73,6 @@ function merge(files: readonly { file: string; verdicts: StoredVerdict[] }[], sh
     }
   }
   return verdicts;
-}
-
-/** Numbers as the report stores them: fractions to six places, so the file reads and compares cleanly. */
-function rounded(_key: string, value: unknown): unknown {
-  return typeof value === "number" && !Number.isInteger(value) ? Number(value.toFixed(6)) : value;
 }
 
 /** Writes the JSON report to `out`, naming what was scored. `./dev eval suite` writes the same. */

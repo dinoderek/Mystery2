@@ -10,10 +10,15 @@
  *   its own severity. A `fail` with no finding counts as one `major` finding.
  * - `fail_only`: the answer has no findings in the kind vocabulary, so its
  *   `fail` counts as one `major` finding on the subject, of the row's kinds.
+ * - `own_kind`: as `each_finding`, but each finding names its truth kind
+ *   itself (a candidate judge's), and counts as that kind alone; the row's
+ *   kinds are the ones it may name. Its verdict is reached from its findings,
+ *   so a `fail` adds no finding of its own.
  */
 
 import { getEntry } from "../../core/registry.ts";
 import type { Verdict } from "../../core/result.ts";
+import { BLUEPRINT_KINDS, GAME_KINDS } from "./kinds.ts";
 import type { BlueprintKind, GameKind, Kind, Severity, Side } from "./kinds.ts";
 import type { StoredFinding, StoredVerdict } from "./schemas.ts";
 
@@ -21,7 +26,7 @@ export interface FindingsRow {
   side: Side;
   /** The kinds each of its findings counts as: the judge's own first, then any further. */
   kinds: readonly Kind[];
-  read: "each_finding" | "fail_only";
+  read: "each_finding" | "fail_only" | "own_kind";
 }
 
 function gameRow(kind: GameKind): FindingsRow {
@@ -30,6 +35,10 @@ function gameRow(kind: GameKind): FindingsRow {
 
 function blueprintRow(kind: BlueprintKind): FindingsRow {
   return { side: "blueprint", kinds: [kind], read: "fail_only" };
+}
+
+function candidateRow(side: Side, kinds: readonly Kind[]): FindingsRow {
+  return { side, kinds, read: "own_kind" };
 }
 
 /** One row per judge, by judge id. */
@@ -48,6 +57,11 @@ export const FINDINGS_TABLE: Readonly<Record<string, FindingsRow>> = {
   gm_fabrication: gameRow("fabrication"),
   gm_spoiler: gameRow("spoiler"),
   age_appropriate_turn: gameRow("not_age_fit"),
+
+  solve_depth_fairness: candidateRow("blueprint", ["solve_depth", "fairness"]),
+  knowledge_timeline_coherence: candidateRow("blueprint", ["knowledge_coherence", "timeline_coherence"]),
+  blueprint_broad: candidateRow("blueprint", BLUEPRINT_KINDS),
+  gm_broad: candidateRow("game", GAME_KINDS),
 };
 
 /** The row for a judge; throws, naming it, when the registry has no such judge or the table no row. */
@@ -69,7 +83,17 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function eachFinding(raw: unknown[], row: FindingsRow, turn: number | null, failed: boolean): StoredFinding[] {
+/** The kinds one finding counts as: its own for an `own_kind` row, which must be one the row gives, else the row's. */
+function kindsOf(item: AnswerFinding, row: FindingsRow, judge: string): Kind[] {
+  if (row.read !== "own_kind") return [...row.kinds];
+  const kind = row.kinds.find((candidate) => candidate === item.kind);
+  if (kind === undefined) {
+    throw new Error(`a finding of "${judge}" names kind ${JSON.stringify(item.kind)}, not one of ${row.kinds.join(", ")}`);
+  }
+  return [kind];
+}
+
+function eachFinding(raw: unknown[], row: FindingsRow, judge: string, turn: number | null, failed: boolean): StoredFinding[] {
   const findings = raw.filter(isObject).map((item: AnswerFinding): StoredFinding => {
     const ownSequence = Number.isInteger(item.sequence) ? (item.sequence as number) : null;
     // An answer without its own severities (the age judge's) takes its verdict's.
@@ -77,12 +101,13 @@ function eachFinding(raw: unknown[], row: FindingsRow, turn: number | null, fail
     return {
       // A judge of one turn points every finding at that turn.
       sequence: turn ?? ownSequence,
-      kinds: [...row.kinds],
+      kinds: kindsOf(item, row, judge),
       severity: item.severity === "major" || item.severity === "minor" ? item.severity : fallback,
       judge_kind: typeof item.kind === "string" ? item.kind : null,
     };
   });
-  if (failed && !findings.some((finding) => finding.severity === "major")) {
+  // A candidate fails only on a major finding of its own, so it needs no stand-in finding of no kind.
+  if (failed && row.read !== "own_kind" && !findings.some((finding) => finding.severity === "major")) {
     findings.push({ sequence: turn, kinds: [...row.kinds], severity: "major", judge_kind: null });
   }
   return findings;
@@ -101,7 +126,7 @@ export function kindedFindings(verdict: Pick<Verdict, "id" | "status" | "finding
   if (row.read === "fail_only") {
     return failed ? [{ sequence: null, kinds: [...row.kinds], severity: "major", judge_kind: null }] : [];
   }
-  return eachFinding(verdict.findings ?? [], row, turn, failed);
+  return eachFinding(verdict.findings ?? [], row, verdict.id, turn, failed);
 }
 
 /** One turn of a stored game or of one of its variants, for one kind. */

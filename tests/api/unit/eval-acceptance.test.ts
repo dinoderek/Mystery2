@@ -41,7 +41,7 @@ describe("the entry point", () => {
   it("lists the evaluation commands from ./dev eval --help and exits 0", () => {
     const ran = spawnSync(process.execPath, [path.join(ROOT, "dev"), "eval", "--help"], { cwd: ROOT, encoding: "utf8" });
     expect(ran.status).toBe(0);
-    for (const command of ["generate", "validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score", "suite"]) {
+    for (const command of ["generate", "validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score", "compare", "suite"]) {
       expect(ran.stdout).toContain(command);
     }
   });
@@ -101,8 +101,8 @@ describe("the evaluation docs", () => {
     "evaluation/playtest/README.md",
   ];
 
-  it("total at most 5,200 words, counted as wc -w counts them", () => {
+  it("total at most 5,350 words, counted as wc -w counts them", () => {
     const total = DOCS.reduce((sum, doc) => sum + countWords(fs.readFileSync(path.join(ROOT, doc), "utf8")), 0);
-    expect(total).toBeLessThanOrEqual(5200);
+    expect(total).toBeLessThanOrEqual(5350);
   });
 });

@@ -11,6 +11,9 @@
  * A harness asks the registry for the entries of its subject kind, in order,
  * and runs them. Adding a check or a judge is adding an entry here, and the
  * files it names. Paths are relative to the repository root.
+ *
+ * A judge marked `candidate` is outside the default battery: it runs only
+ * when a run names it, and a run that does not name it records nothing for it.
  */
 
 export const SUBJECT_KINDS = ["blueprint", "game", "turn"] as const;
@@ -112,6 +115,8 @@ export interface JudgeEntry {
   analyzer?: CodeRef;
   /** Blueprint ids the answer may cite, declared here and read by the validator. */
   idChecks?: readonly IdCheck[];
+  /** Outside the default battery: runs only when named. */
+  candidate?: true;
 }
 
 export type RegistryEntry = CheckEntry | JudgeEntry;
@@ -158,6 +163,30 @@ function gameMasterJudge(id: string): JudgeEntry {
   };
 }
 
+/**
+ * A candidate judge: a merged or broad alternative to judges of the default
+ * battery, with its brief and schema beside theirs. Each of its findings names
+ * a kind of the truth set's vocabulary, so it fails on any `major` finding.
+ */
+function candidateJudge(id: string, subjects: readonly SubjectKind[], context?: Readonly<Record<string, unknown>>): JudgeEntry {
+  const slug = id.replaceAll("_", "-");
+  const dir = subjects.includes("blueprint") ? DIMENSIONS : JUDGES;
+  return {
+    type: "judge",
+    id,
+    subjects,
+    prompt: {
+      kind: "files",
+      brief: `${dir}/${slug}.md`,
+      schema: `${dir}/${slug}.schema.ts`,
+      preamble: subjects.includes("blueprint") ? BLUEPRINT_PREAMBLE : GAME_MASTER_PREAMBLE,
+    },
+    verdict: "major_findings",
+    ...(context ? { context } : {}),
+    candidate: true,
+  };
+}
+
 function blueprintCheck(id: string): CheckEntry {
   return {
     type: "check",
@@ -184,6 +213,19 @@ const CHARACTER_REF = {
   label: "blueprint character id",
 } as const;
 
+/** The fallback floor on solve-path length, used when a brief sets no minPathLength. */
+const SOLVE_FLOOR = { min_clues: 3 } as const;
+
+/** What a player may ask any character, the same for every mystery. */
+const PROBE_TOPICS = [
+  "their own background and a brief sketch of their life",
+  "their likes and dislikes",
+  "their personality, attitude, and appearance",
+  "their knowledge of the other characters",
+  "their knowledge of the locations",
+  "their knowledge of the central mystery",
+] as const;
+
 /** Every check and judge, in the order a harness runs them. */
 export const REGISTRY: readonly RegistryEntry[] = [
   blueprintCheck("brief_schema_valid"),
@@ -196,8 +238,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
   blueprintCheck("requires_satisfiable"),
 
   blueprintJudge("solve_depth", {
-    // The fallback floor on solve-path length, used when a brief sets no minPathLength.
-    context: { min_clues: 3 },
+    context: SOLVE_FLOOR,
     idChecks: [
       {
         kind: "ref",
@@ -274,16 +315,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
     ],
   }),
   blueprintJudge("character_grounding", {
-    context: {
-      probe_topics: [
-        "their own background and a brief sketch of their life",
-        "their likes and dislikes",
-        "their personality, attitude, and appearance",
-        "their knowledge of the other characters",
-        "their knowledge of the locations",
-        "their knowledge of the central mystery",
-      ],
-    },
+    context: { probe_topics: PROBE_TOPICS },
     idChecks: [
       { ...CHARACTER_REF, at: "characters[].character_id", unique: true, covers: true },
       {
@@ -344,6 +376,11 @@ export const REGISTRY: readonly RegistryEntry[] = [
     prompt: { kind: "built", builder: "turn_age" },
     verdict: "stated",
   },
+
+  candidateJudge("solve_depth_fairness", ["blueprint"], SOLVE_FLOOR),
+  candidateJudge("knowledge_timeline_coherence", ["blueprint"]),
+  candidateJudge("blueprint_broad", ["blueprint"], { ...SOLVE_FLOOR, probe_topics: PROBE_TOPICS }),
+  candidateJudge("gm_broad", ["game", "turn"]),
 ];
 
 export function isSubjectKind(value: unknown): value is SubjectKind {
@@ -370,9 +407,15 @@ export function getJudgeEntry(id: string): JudgeEntry {
   return entry;
 }
 
-/** The judges that apply to a subject kind, in registry order. */
-export function judgesFor(subject: SubjectKind): JudgeEntry[] {
-  return REGISTRY.filter((e): e is JudgeEntry => e.type === "judge" && e.subjects.includes(subject));
+/**
+ * The judges that apply to a subject kind, in registry order: the default
+ * battery, or with `candidates` also every candidate, which is what a run may
+ * name.
+ */
+export function judgesFor(subject: SubjectKind, { candidates = false }: { candidates?: boolean } = {}): JudgeEntry[] {
+  return REGISTRY.filter(
+    (e): e is JudgeEntry => e.type === "judge" && e.subjects.includes(subject) && (candidates || e.candidate !== true),
+  );
 }
 
 /** The checks that apply to a subject kind, in registry order. */

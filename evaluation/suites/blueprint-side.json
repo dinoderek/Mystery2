@@ -1,6 +1,9 @@
 {
-  "description": "Every blueprint judge of the battery on every base and planted blueprint, on Opus, one sample: each run is a long agent session.",
-  "subjects": { "bases": "all", "blueprint_plants": "all" },
+  "description": "Every blueprint judge of the battery and every blueprint candidate on every base and planted blueprint, on Opus, one sample: each run is a long agent session.",
+  "subjects": {
+    "bases": "all",
+    "blueprint_plants": "all"
+  },
   "judges": [
     "solve_depth",
     "fairness",
@@ -9,9 +12,16 @@
     "character_grounding",
     "path_payoff",
     "clue_graph",
-    "age_appropriate"
+    "age_appropriate",
+    "solve_depth_fairness",
+    "knowledge_timeline_coherence",
+    "blueprint_broad"
   ],
-  "models": { "blueprint-judge": ["opus"] },
+  "models": {
+    "blueprint-judge": [
+      "opus"
+    ]
+  },
   "samples": 1,
   "concurrency": 1
 }

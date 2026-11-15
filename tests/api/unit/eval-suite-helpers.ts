@@ -21,6 +21,9 @@ export const ANSWERS: Record<string, unknown> = {
   fairness: SNAPSHOT_ANSWERS["blueprint.fairness"],
   gm_spoiler: { ...(SNAPSHOT_ANSWERS["trace.gm_spoiler"] as object), findings: [{ sequence: 4, severity: "major", kind: "culprit", quote: "Dorn", why: "Names the thief.", refers_to: null }], verdict: "fail" },
   age_appropriate_turn: { estimated_reading_age: 8, findings: [], verdict: "pass", reasoning: "Plain words." },
+  // Two candidates, outside the default battery.
+  gm_broad: { findings: [{ sequence: 4, severity: "major", kind: "spoiler", quote: "Dorn", why: "Names the thief.", refers_to: null }], verdict: "fail", reasoning: "A spoiler." },
+  solve_depth_fairness: { findings: [{ severity: "major", kind: "fairness", quote: "Bob", why: "Nothing rules Bob out.", refers_to: null }], verdict: "fail", reasoning: "Unfair." },
 };
 
 /** The fixture suite: a base and its plant, a game and a variant, and their turns. */

@@ -9,7 +9,8 @@
  *
  * Nothing is skipped quietly. A judge is `skipped` only because a flag asked
  * (`--no-judges`, or `--judges` left it out); a judge that could not run, or
- * whose answer never passed the schema, is `error`.
+ * whose answer never passed the schema, is `error`. A candidate judge runs
+ * only when `--judges` names it, and is absent from the result otherwise.
  */
 
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
@@ -24,6 +25,7 @@ import { checksFor, getJudgeEntry, judgesFor } from "../core/registry.ts";
 import type { JudgeEntry } from "../core/registry.ts";
 import type { Status, Verdict } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
+import { majorFindingsVerdict } from "../judges/index.ts";
 import type { CallMemo } from "../core/runner.ts";
 import { createRunTimer } from "../core/timing.ts";
 import type { DimensionTimer, RunTimer } from "../core/timing.ts";
@@ -119,6 +121,15 @@ async function analyze(dimension: Dimension, input: BlueprintJudgeInput, timer: 
   }
 }
 
+/**
+ * The verdict an answer reaches by its entry's rule: the stated one, or, for a
+ * judge that fails on a `major` finding, the findings' with their counts.
+ */
+function reachVerdict(entry: JudgeEntry, answer: Record<string, unknown>): Pick<Verdict, "status" | "findings" | "details"> {
+  if (entry.verdict === "stated") return { status: answer.verdict === "pass" ? "pass" : "fail" };
+  return majorFindingsVerdict(answer);
+}
+
 /** One judge call: compose, send, check the answer's shape, read the verdict. */
 async function judge(dimension: Dimension, input: BlueprintJudgeInput, timer: DimensionTimer, binding: ResolvedBinding): Promise<Verdict> {
   const { entry, context } = dimension;
@@ -156,10 +167,10 @@ async function judge(dimension: Dimension, input: BlueprintJudgeInput, timer: Di
       input.write(`[eval][${entry.id}] judge: error (${outcome.call.attempts.length} attempt(s), ${seconds})`);
       return { ...errorVerdict(entry.id, "judge", outcome.error), call: outcome.call };
     }
-    const status: Status = outcome.value.verdict === "pass" ? "pass" : "fail";
+    const reached = reachVerdict(entry, outcome.value);
     const retries = outcome.call.attempts.length - 1;
-    input.write(`[eval][${entry.id}] judge: ${status}${retries > 0 ? ` (after ${retries} retry/retries)` : ""} (${seconds})`);
-    return { id: entry.id, tier: "judge", status, call: outcome.call, answer: outcome.value };
+    input.write(`[eval][${entry.id}] judge: ${reached.status}${retries > 0 ? ` (after ${retries} retry/retries)` : ""} (${seconds})`);
+    return { id: entry.id, tier: "judge", ...reached, call: outcome.call, answer: outcome.value };
   } catch (error) {
     if (error instanceof UsageLimitError) throw error;
     return errorVerdict(entry.id, "judge", (error as Error).message);
@@ -208,7 +219,10 @@ export async function judgeBlueprint(input: BlueprintJudgeInput): Promise<Verdic
   );
 
   const schema = await timer.stage("blueprint_schema_validate", async () => BlueprintV2Schema.safeParse(input.blueprint));
-  const entries = judgesFor("blueprint");
+  // A candidate runs only when named, and is otherwise left out of the result.
+  const entries = judgesFor("blueprint", { candidates: true }).filter(
+    (entry) => entry.candidate !== true || (typeof input.selection !== "string" && input.selection.includes(entry.id)),
+  );
   const dimensions: Dimension[] = entries.map((entry) => ({
     entry,
     context: entry.context ? structuredClone(entry.context) as Record<string, unknown> : null,

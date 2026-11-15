@@ -89,12 +89,11 @@ pinned to the sections they summarise and checked by the gate
 ## Dimensions
 
 `evaluation/core/registry.ts` lists every check and judge once, with the subject
-kind each applies to (`blueprint`, `game`, `turn`). Ids are unique across it. One
-loader, prompt composer and output validator in `evaluation/core/` serve every
-harness.
+kind each applies to (`blueprint`, `game`, `turn`). Ids are unique across it. A
+`candidate` judge runs only when named, as by `--judges`.
 
 A blueprint dimension is two files and a registry entry. The brief,
-`evaluation/dimensions/<id>.md`, says what the judge asks and documents its
+`evaluation/dimensions/<id>.md`, states the judge's questions and its
 output. The Zod schema, `<id>.schema.ts`, is appended to the prompt as JSON
 Schema and validates the answer; where brief and schema disagree, the schema
 wins. The registry entry gives the context, the verdict rule, an optional

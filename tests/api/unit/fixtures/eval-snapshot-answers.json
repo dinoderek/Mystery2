@@ -1,5 +1,5 @@
 {
-  "_comment": "What the stub model answers to each judge in the evaluation snapshot tests. Keys are <harness>.<judge id>. The generator's answer is the blueprint fixture, added by the test. Each answer satisfies the judge's schema; fairness, knowledge_coherence, gm_fabrication and runtime gm_clue_discipline fail, and runtime gm_roleplay lists a major finding while saying pass, so the verdict rule is exercised both ways.",
+  "_comment": "What the stub model answers to each judge in the evaluation snapshot tests. Keys are <harness>.<judge id>. The generator's answer is the blueprint fixture, added by the test. Each answer satisfies the judge's schema; fairness, knowledge_coherence, gm_fabrication and runtime gm_clue_discipline fail, and runtime gm_roleplay lists a major finding while saying pass, so the verdict rule is exercised both ways. Every finding of a candidate judge names a truth-set kind: solve_depth_fairness, blueprint_broad and trace gm_broad fail on a major finding, knowledge_timeline_coherence says fail with only a minor one and so passes, and runtime gm_broad passes with a minor one.",
 
   "blueprint.solve_depth": {
     "paths": [
@@ -122,5 +122,43 @@
     ],
     "verdict": "pass",
     "reasoning": "Close to the target age."
+  },
+  "blueprint.solve_depth_fairness": {
+    "findings": [
+      { "severity": "major", "kind": "fairness", "quote": "Waiting for snack time", "why": "No clue rules Bob out; his motive is never countered.", "refers_to": "bob" },
+      { "severity": "minor", "kind": "solve_depth", "quote": "A paper bag with cookie crumbs inside.", "why": "This clue all but names Alice, though the path still meets the floor of 3.", "refers_to": "loc-bag" }
+    ],
+    "verdict": "fail",
+    "reasoning": "Floor 3; the shortest path is 3. Bob is not ruled out."
+  },
+  "blueprint.knowledge_timeline_coherence": {
+    "findings": [
+      { "severity": "minor", "kind": "timeline_coherence", "quote": "Alice left the kitchen at ten.", "why": "The prose timeline orders Alice loosely; actual_actions agree.", "refers_to": "alice" }
+    ],
+    "verdict": "fail",
+    "reasoning": "Only a minor imprecision in the prose timeline."
+  },
+  "blueprint.blueprint_broad": {
+    "findings": [
+      { "severity": "major", "kind": "knowledge_coherence", "quote": "Bob saw Alice carrying a bag.", "why": "Bob was in the hallway and could not see the kitchen counter.", "refers_to": "char-bob-saw-bag" },
+      { "severity": "minor", "kind": "age_appropriate", "quote": "connecting the rooms", "why": "A stretch word within the age's allowance.", "refers_to": "narrative.starting_knowledge.locations[1].summary" }
+    ],
+    "verdict": "fail",
+    "reasoning": "One unobservable clue; the language is close to the target age."
+  },
+  "trace.gm_broad": {
+    "findings": [
+      { "sequence": 6, "severity": "major", "kind": "fabrication", "quote": "the locked gate", "why": "No such gate in the blueprint.", "refers_to": "loc_garden" },
+      { "sequence": 4, "severity": "minor", "kind": "spoiler", "quote": "someone in a hurry", "why": "Narrows the field slightly.", "refers_to": "ground_truth.what_happened" }
+    ],
+    "verdict": "fail",
+    "reasoning": "One invented place; one mild hint."
+  },
+  "runtime.gm_broad": {
+    "findings": [
+      { "sequence": 2, "severity": "minor", "kind": "not_age_fit", "quote": "a quick, tight smile", "why": "A figurative turn a little past the age, in an otherwise readable turn.", "refers_to": null }
+    ],
+    "verdict": "pass",
+    "reasoning": "Readable and in character."
   }
 }

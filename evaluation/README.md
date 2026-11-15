@@ -15,11 +15,12 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `cases <trace>` | Turns a played game into runtime cases. `--out`, `--types`, `--max`, `--judges` |
 | `play` | Self-play through the real server (`evaluation/playtest/README.md`). `--blueprint` or `--replay`, `--games`, `--judge` |
 | `report <run>` | Writes `report.html` for a self-play run |
+| `score <results>...` | Scores stored results against the truth set (`evaluation/truth/README.md`), no model: per judge and kind, Wilson-ranged shares, agreement; every judge subset; the smallest set for a bar. `--truth`, `--out`, `--min-found` |
 
 Every command takes `--config`, `--output-root` and `--model-override
 <binding>=<model>`, which changes one binding's model for one run; the flag
-repeats. `./dev eval <command> --help` explains flag meanings and defaults. For `judge`, name the
-subcommand: `./dev eval judge turn --help`.
+repeats. `./dev eval <command> --help` gives each flag's meaning and default
+(for `judge`, `./dev eval judge turn --help`).
 
 A blueprint beside `brief.json` needs no `--brief`. For blueprint and game judging,
 `--judges` and `--no-judges` mark unselected judges as skipped.
@@ -27,7 +28,7 @@ A blueprint beside `brief.json` needs no `--brief`. For blueprint and game judgi
 ## Quick start
 
 ```bash
-# Judge a blueprint you already have (it needs its brief):
+# Judge a stored blueprint with its brief:
 ./dev eval judge blueprint path/to/blueprint.json --brief evaluation/specs/001-lighthouse-lens
 
 # Only the schema and mechanical checks, no model:
@@ -71,7 +72,7 @@ JSON to `$EVAL_STREAM_FILE`, which never affects the result.
 
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`. It is outside the repo, and nothing is overwritten. A
-blueprint run looks like this (the other harnesses name their own layout):
+blueprint run (other harnesses name their own layout):
 
 ```
 <root>/<date>/<time>-<command>/
@@ -84,7 +85,7 @@ blueprint run looks like this (the other harnesses name their own layout):
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
-The agents' workspaces, each with its `claude.stderr.log`, survive for debugging.
+Agent workspaces, with `claude.stderr.log`, survive for debugging.
 
 ## Result
 
@@ -114,13 +115,12 @@ or judge failed, or could not judge.
 
 Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking
 tokens and the messages since the last tick; during the parallel judge phase it
-shows `done/total`. `--quiet` keeps only the milestones. The raw stream,
-`logs/<step>*.stream.jsonl`, is for watching only: the result comes from the
-artifact the agent writes (`blueprint.json`, `verdict.json`).
+shows `done/total`. `--quiet` keeps only the milestones. The raw stream is for
+watching only; the result comes from the artifact the agent writes.
 
 ## Retries
 
-`retries: N` allows N more attempts after the first. A judge is retried on a
+A judge is retried on a
 non-zero exit, a timeout, stdout that is not JSON, an `extract_path` miss, or an
 answer failing the dimension's Zod schema. Generation is retried on the same,
 and on output failing Blueprint V2 validation. Each attempt has its own log,
@@ -150,6 +150,6 @@ judge's full question is its brief, `evaluation/dimensions/<id>.md`.
 
 Only `clue_graph` and `age_appropriate` have analyzers
 (`evaluation/checks/analyzers/`). To iterate on the evaluator, run `judge
-blueprint` on a saved blueprint, so generation cost stays out of the loop, then
+blueprint` on a saved blueprint, then
 edit the brief, its `<id>.schema.ts` (where schema and brief disagree, the
 schema wins), the analyzer, or `evaluation/prompts/judge-system.md`.

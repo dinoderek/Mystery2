@@ -6,12 +6,11 @@ is scored on the same units. It holds self-play and planted material only, and
 no credential or home path, which a gate test enforces.
 
 Its code is `evaluation/lib/truth/`. A file failing its schema, or outside
-this layout, fails loading with its path and field. Ids are file and folder
-names.
+this layout, fails loading with its path. Ids are file and folder names.
 
 | Part | Where | Made by |
 |---|---|---|
-| Base blueprints | `bases/<base>/blueprint.json`, `brief.json` | A frozen copy, passing every check and judge |
+| Base blueprints | `bases/<base>/blueprint.json`, `brief.json` | A frozen copy |
 | Stored games | `games/<game>/trace.json` | Self-play, as the trace `judge game` reads |
 | Labels | `games/<game>/labels.json` | Hand, on the labelling page |
 | Planted turn faults | `plants/turns/<variant>.json` | Hand, against a stored game |
@@ -41,8 +40,8 @@ plant. Each is a fault, clean or unknown:
   unknown.
 - A planted turn is a fault of its kind, unknown for the others. A variant's
   other turns take the stored game's labels.
-- A base is clean for every kind. That is the only sense of clean here: it
-  passed every check and judge, no more.
+- A base is clean for every kind, meaning only that it passed every check
+  and judge.
 - A plant is a fault of its kind, unknown for the others.
 
 A verdict catches a unit when a finding points at its turn, or blueprint, with
@@ -51,3 +50,5 @@ finding of its dimension's kind.
 
 **Results** keep verdicts with their kinded findings, model, sample, duration
 and reported cost (null when none), and no prompt, log or workspace.
+`./dev eval score` scores them, counting a finding of either severity as a
+report (`--help`).

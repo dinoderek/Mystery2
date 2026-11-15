@@ -10,6 +10,7 @@ import { casesCommand } from "./runtime/cases.ts";
 import { playCommand } from "./playtest/play.ts";
 import { reportCommand } from "./playtest/report.ts";
 import { judgeTurnCommand } from "./runtime/judge-turn.ts";
+import { scoreCommand } from "./score/command.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
 export const COMMANDS: readonly EvalCommand[] = [
@@ -21,4 +22,5 @@ export const COMMANDS: readonly EvalCommand[] = [
   casesCommand,
   playCommand,
   reportCommand,
+  scoreCommand,
 ];

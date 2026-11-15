@@ -18,14 +18,15 @@ import path from "node:path";
 import { formatHelp, parseCommandArgs } from "../core/args.ts";
 import { loadConfig, resolveBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
-import { InputError, UsageLimitError } from "../core/errors.ts";
+import { UsageLimitError } from "../core/errors.ts";
 import { EXIT_PASSED, EXIT_RUN_BROKE, EXIT_VERDICT_FAILED } from "../core/result.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import { loadTruthSet, readResultsFile, TRUTH_ROOT } from "../lib/truth/loader.ts";
 import type { TruthSet } from "../lib/truth/loader.ts";
 import { scoreVerdicts } from "../lib/truth/score.ts";
-import { STORED_RESULTS_VERSION, TruthFileError, verdictKey } from "../lib/truth/schemas.ts";
+import { reading } from "../lib/truth/inputs.ts";
+import { STORED_RESULTS_VERSION, verdictKey } from "../lib/truth/schemas.ts";
 import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { SCORE_FILE, writeScoreFile } from "../score/command.ts";
 import { formatScore } from "../score/table.ts";
@@ -77,16 +78,6 @@ const HELP = formatHelp({
     ["--results <file>", "where the stored results are written (default: results/<name>.json in the truth set)"],
   ],
 });
-
-/** Runs `read`, turning a truth-set file error into an input error, which exits 1. */
-async function reading<T>(read: () => Promise<T>): Promise<T> {
-  try {
-    return await read();
-  } catch (error) {
-    if (error instanceof TruthFileError) throw new InputError(error.message);
-    throw error;
-  }
-}
 
 function byCodePoint(a: string, b: string): number {
   if (a === b) return 0;

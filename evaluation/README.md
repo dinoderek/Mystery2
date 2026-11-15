@@ -16,6 +16,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `play` | Self-play through the real server (`evaluation/playtest/README.md`). `--blueprint` or `--replay`, `--games`, `--judge` |
 | `report <run>` | Writes `report.html` for a self-play run |
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
+| `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every judge subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one
@@ -29,13 +30,13 @@ candidates run only when named.
 ## Quick start
 
 ```bash
-# Judge a blueprint you already have (it needs its brief):
+# Judge a stored blueprint with its brief:
 ./dev eval judge blueprint path/to/blueprint.json --brief evaluation/specs/001-lighthouse-lens
 
-# Only the schema and mechanical checks, no model:
+# Mechanical checks only, no model:
 ./dev eval validate path/to/blueprint.json
 
-# Generate one from a brief, then judge it:
+# Generate from a brief, then judge:
 ./dev eval generate evaluation/specs/001-lighthouse-lens --judge
 ```
 
@@ -65,9 +66,9 @@ both. A binding has:
 The bindings are `generator-agent`, `generator-api`, `blueprint-judge`,
 `game-judge`, `turn-judge`, `investigator`, `narrator-claude`,
 `narrator-openai`, `narrator-stub` and `judge-stub`. A missing binding, or one
-whose command cannot run, stops the command with an error naming it; no judge
-is skipped silently. A wrapper may also stream its events as newline-delimited
-JSON to `$EVAL_STREAM_FILE`, which never affects the result.
+whose command cannot run, stops the command, naming it; no judge
+is skipped silently. A wrapper may stream newline-delimited JSON events to
+`$EVAL_STREAM_FILE`; they never affect the result.
 
 ## Output
 
@@ -93,7 +94,7 @@ The agents' workspaces survive for debugging.
 `result.json` is written even when the run aborts. Its schema is
 `evaluation/core/result.ts`, with one `schema_version` for every command.
 
-- `run_error: { stage, message }`, set only when the run itself failed.
+- `run_error: { stage, message }`, set only when the run failed.
 - `verdicts`: one per check or judge, with its status. A dimension's analyzer is
   `<dimension>.analyzer`; the dimension passes when it and its judge both do. A
   judge's entry holds its model call (model, prompt hash, time, cost, every
@@ -103,8 +104,8 @@ The agents' workspaces survive for debugging.
   `usage.cost` as `total_cost_usd`; absent or invalid cost stays null.
 - `timing`: monotonic milliseconds for each stage and dimension. The
   `dimensions` stage is wall-clock, roughly the slowest dimension, not the sum.
-  A stage's duration includes its retries, and a failed stage records how long
-  it ran, marked `failed`.
+  A stage's duration includes retries; a failed stage records its time, marked
+  `failed`.
 
 ## Exit codes
 
@@ -115,9 +116,9 @@ or judge failed, or could not judge.
 ## Live progress
 
 Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking
-tokens and the messages since the last tick; during the parallel judge phase it
-shows `done/total`. `--quiet` keeps only the milestones. The raw stream,
-`logs/<step>*.stream.jsonl`, is for watching only; the result comes from the
+tokens and the messages since the last tick; during the judge phase it
+shows `done/total`. `--quiet` keeps only the milestones. The raw stream
+(`logs/<step>*.stream.jsonl`) is for watching only; the result comes from the
 artifact the agent writes.
 
 ## Retries
@@ -149,8 +150,7 @@ judge's full question is its brief, `evaluation/dimensions/<id>.md`.
   Flesch–Kincaid grade for `metadata.target_age`; the judge checks what the
   formula cannot see against `packages/shared/src/age-profile.ts`.
 
-Only `clue_graph` and `age_appropriate` have analyzers
-(`evaluation/checks/analyzers/`). To iterate on the evaluator, run `judge
-blueprint` on a saved blueprint, so generation cost stays out of the loop, then
+Analyzers live in `evaluation/checks/analyzers/`. To iterate on the evaluator, run `judge
+blueprint` on a saved blueprint, then
 edit the brief, its `<id>.schema.ts` (where schema and brief disagree, the
 schema wins), the analyzer, or `evaluation/prompts/judge-system.md`.

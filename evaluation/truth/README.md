@@ -40,14 +40,15 @@ on a blueprint the mechanical checks and `<dimension>.analyzer`. A caught plant 
 
 A unit is a turn and a kind (game side), or a base or plant (blueprint side),
 and is a fault, clean or unknown. A labelled turn is a fault of each kind it
-names, else clean; an unlabelled turn is unknown. A planted turn is a fault of
-its kind, unknown for the others; a variant's other turns take the game's
-labels. A base is clean for every kind: it passed every check and judge.
-A plant is a fault of its kind, unknown for the others.
+names, else clean; an unlabelled turn is unknown. A planted turn or blueprint
+is a fault of its kind, unknown for the others; a variant's other turns take
+the game's labels. A base is clean for every kind: it passed every check and
+judge, no more.
 
-A verdict catches a unit when a finding points at its turn, or blueprint, with
-a kind the findings table maps to the unit's. A dimension's `fail` is one
-finding of its kind; a candidate's findings name theirs.
+A verdict catches a unit when a finding points at its turn or blueprint with
+a kind the findings table maps to it. A dimension's `fail` is one finding
+of its kind; candidates' findings name theirs.
 
 **Results** hold verdicts with findings, model, sample, duration and
-cost, no prompt, log or workspace.
+cost, no prompt, log or workspace. `./dev eval score` scores them,
+counting minor findings as reports.

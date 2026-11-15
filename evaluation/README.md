@@ -17,7 +17,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `report <run>` | Writes `report.html` for a self-play run |
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
 | `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
-| `compare <results A> <results B>` | Compares two stored runs, no model, on the units both judged: per judge and kind, a difference counts only beyond each run's own sample variation (exact sign test); unmeasured with one sample. Delay and usage per run. `--truth`, `--out` |
+| `compare <results A> <results B>` | Compares two stored runs, no model, on units both judged: per judge and kind, a difference counts beyond each run's own sample variation (exact sign test). Delay, usage per run. `--truth`, `--out` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one
@@ -66,7 +66,7 @@ The bindings are `generator-agent`, `generator-api`, `blueprint-judge`,
 `game-judge`, `turn-judge`, `investigator`, `narrator-claude`,
 `narrator-openai`, `narrator-stub` and `judge-stub`. A missing binding, or one
 whose command cannot run, stops the command, naming it; no judge
-is skipped silently. A wrapper may stream JSON events to
+is skipped silently. A wrapper may stream newline-delimited JSON events to
 `$EVAL_STREAM_FILE`; they never affect the result.
 
 ## Output
@@ -92,7 +92,7 @@ blueprint run looks like this:
 `evaluation/core/result.ts`.
 
 - `run_error: { stage, message }`, set only when the run failed.
-- `verdicts`: one per check or judge, with its status. A dimension's analyzer is
+- `verdicts`: one per check or judge. A dimension's analyzer is
   `<dimension>.analyzer`; the dimension passes when it and its judge both do. A
   judge's entry holds its model call (model, prompt hash, time, cost, every
   attempt) and its full `answer`.
@@ -112,7 +112,7 @@ or judge failed, or could not judge.
 
 ## Live progress
 
-Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time and the messages since the
+Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking tokens and the messages since the
 last tick; during the judge phase it
 shows `done/total`. `--quiet` keeps milestones. The raw stream
 (`logs/<step>*.stream.jsonl`) is for watching only.
@@ -121,7 +121,7 @@ shows `done/total`. `--quiet` keeps milestones. The raw stream
 
 A judge is retried (`retries`) on a non-zero exit, a timeout, stdout that is not
 JSON, an `extract_path` miss, or an answer failing the dimension's Zod schema. Generation is retried on the same,
-and on output failing Blueprint V2 validation.
+and on output failing Blueprint V2 validation. Each attempt has its own log, such as `judge-solve_depth.attempt-2.stderr.log`.
 
 ## Blueprint dimensions
 

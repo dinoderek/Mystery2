@@ -178,11 +178,15 @@ interface UnitVotes {
   votes: boolean[];
 }
 
-/** A member's units by key: what its judging samples said, with every sample of the unit together. */
+/**
+ * A member's units by key: what its judging samples said, in sample order. A unit that
+ * two stored subjects of one member both cover (a whole game and one of its turns) has the
+ * samples of each, subject by subject.
+ */
 function votesOf(set: TruthSet, member: Member): Map<string, UnitVotes> {
   const units = new Map<string, UnitVotes>();
   for (const [, all] of [...member.bySubject].sort(([a], [b]) => byCodePoint(a, b))) {
-    const voting = all.filter(judged);
+    const voting = all.filter(judged).sort((x, y) => x.sample - y.sample);
     if (voting.length === 0) continue;
     for (const unit of unitsOf(set, voting[0].subject, member.kinds)) {
       const key = JSON.stringify(unit);
@@ -270,6 +274,17 @@ function recordDifference(set: TruthSet, result: KindComparison, a: UnitVotes, b
   result.differences.push({ unit: describeUnit(a.unit), truth: truthOf(set, a.unit).truth, a: votes(a), b: votes(b), catching, call });
 }
 
+/**
+ * The two runs' samples on a unit, cut to the first as many as both have. The sign test needs a
+ * firm difference to be as likely one way as the other when the runs do not differ, and with
+ * unequal counts the run with fewer samples is unanimous more often, so it would be the one
+ * "catching" or "missing" by chance alone.
+ */
+function equalSamples(a: UnitVotes, b: UnitVotes): [UnitVotes, UnitVotes] {
+  const count = Math.min(a.votes.length, b.votes.length);
+  return [{ ...a, votes: a.votes.slice(0, count) }, { ...b, votes: b.votes.slice(0, count) }];
+}
+
 function compareKind(set: TruthSet, kind: Kind, a: UnitMap, b: UnitMap): KindComparison {
   const result = emptyKind(kind, a, b);
   const measuredA: Variation = { units: 0, agreeing: 0 };
@@ -277,8 +292,7 @@ function compareKind(set: TruthSet, kind: Kind, a: UnitMap, b: UnitMap): KindCom
   const paired = [...a.keys()].filter((key) => b.has(key) && (a.get(key) as UnitVotes).unit.kind === kind).sort(byCodePoint);
 
   for (const key of paired) {
-    const unitA = a.get(key) as UnitVotes;
-    const unitB = b.get(key) as UnitVotes;
+    const [unitA, unitB] = equalSamples(a.get(key) as UnitVotes, b.get(key) as UnitVotes);
     const callA = majority(unitA.votes);
     const callB = majority(unitB.votes);
     result.paired += 1;

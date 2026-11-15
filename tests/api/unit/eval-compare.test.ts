@@ -151,6 +151,38 @@ describe("comparing two runs", () => {
     expect(result.p).toBeCloseTo(0.25, 10);
   });
 
+  it("compares a unit on the first samples both runs have, so a run with more samples is not favoured", () => {
+    // Each run has its own unanimous catches on turns 1 to 4 and none elsewhere. A has two samples, B five.
+    // Judged on all five of B's samples, a turn caught in only some of them would read as a firm miss for B.
+    const a = run([[1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]]);
+    const b = run([[1, 2, 3, 4], [1, 2, 3, 4, 5, 6], [1, 2, 3, 4], [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]]);
+    const result = kind(compareRuns(set, a, b));
+    // On B's first two samples (1-4 and 1-6) turns 5 and 6 are caught once of two: a tie, so not a catch, and split.
+    expect(result.differing).toEqual({ a_only: 2, b_only: 0 });
+    expect(result.firm).toEqual({ a_only: 0, b_only: 0 });
+    expect(result.within_variation).toBe(2);
+    expect(result.differences[0].b).toEqual({ catches: 1, of: 2 });
+    expect(result.outcome).toBe("within_variation");
+
+    // Judged on all samples, B would catch turns 5 and 6 by majority of five and look firm against nothing:
+    // the runs behave alike, and must not be called different either way round.
+    const swapped = kind(compareRuns(set, b, a));
+    expect(swapped.outcome).toBe("within_variation");
+    expect(swapped.firm).toEqual({ a_only: 0, b_only: 0 });
+  });
+
+  it("ignores the samples beyond the count both runs have, whichever run has them", () => {
+    // B's first two samples are A's; its later three are not part of the comparison.
+    const a = run([FIRST_EIGHT, FIRST_EIGHT]);
+    const b = run([FIRST_EIGHT, FIRST_EIGHT, [], [], []]);
+    for (const result of [kind(compareRuns(set, a, b)), kind(compareRuns(set, b, a))]) {
+      expect(result.outcome).toBe("same");
+      expect(result.differing).toEqual({ a_only: 0, b_only: 0 });
+      expect(result.agreement.a.units).toBe(9);
+      expect(result.agreement.b.units).toBe(9);
+    }
+  });
+
   it("does not call an even split of firm differences", () => {
     const result = kind(compareRuns(set, run([[1, 2, 3], [1, 2, 3]]), run([[4, 5, 6], [4, 5, 6]])));
     expect(result).toMatchObject({ outcome: "not_shown", firm: { a_only: 3, b_only: 3 }, p: 1 });
@@ -232,7 +264,7 @@ describe("comparing two runs", () => {
       index === 2 ? { ...verdict, status: "error" as const, findings: [], duration_ms: null, cost_usd: null } : verdict,
     );
     const report = compareRuns(set, errored, run([[], [], []]));
-    expect(kind(report).differences[0]).toMatchObject({ a: { catches: 2, of: 2 }, b: { catches: 0, of: 3 }, call: "firm" });
+    expect(kind(report).differences[0]).toMatchObject({ a: { catches: 2, of: 2 }, b: { catches: 0, of: 2 }, call: "firm" });
   });
 
   it("puts each run's delay and usage beside each judge, over the subjects both judged", () => {

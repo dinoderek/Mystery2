@@ -13,7 +13,7 @@ docs/game.md	1000
 docs/local-infrastructure.md	1200
 docs/testing.md	1400
 docs/ui.md	700
-evaluation/README.md	1100
+evaluation/README.md	1250
 evaluation/dimensions/age-appropriate.md	850
 evaluation/dimensions/character-grounding.md	350
 evaluation/dimensions/clue-graph.md	500
@@ -42,4 +42,5 @@ evaluation/playtest/prompts/investigator.md	300
 evaluation/prompts/judge-system.md	200
 evaluation/runtime/README.md	1050
 evaluation/trace/README.md	600
+evaluation/truth/README.md	450
 packages/blueprint-generator/src/generator-prompt.md	2900

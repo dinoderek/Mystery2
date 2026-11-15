@@ -25,10 +25,12 @@ How they connect:
   `evaluation/judges/` and read a subject projection (`evaluation/judges/README.md`).
 - **Playtest** produces sessions, not grades: an AI investigator plays through
   the real server. `--judge` hands the games to trace.
+- **The truth set** holds subjects with known faults to score judges against
+  (`evaluation/truth/README.md`).
 
 Every reader of a played game's events skips `no_turn_line`, the event a refused
-line or `help` is saved as. The shared filter `playedEvents` in
-`evaluation/lib/game-events.ts` does this.
+line or `help` is saved as, through `playedEvents` in
+`evaluation/lib/game-events.ts`.
 
 ## Why the blueprint pipeline is shaped this way
 

@@ -1,0 +1,10 @@
+{
+  "base": "mock",
+  "kind": "fairness",
+  "judge": "fairness",
+  "note": "The elimination path loses Alice's testimony, so nothing but one cookie places Bob in the living room.",
+  "patch": [
+    { "op": "test", "path": "/suspect_elimination_paths/0/character_clue_ids/0", "value": "clue-alice-saw-bob" },
+    { "op": "replace", "path": "/suspect_elimination_paths/0/character_clue_ids", "value": [] }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "brief": "Someone took the cookies from the kitchen around noon. The truth involves a cookie wrapper in the living room.",
+  "targetAge": 10,
+  "timeBudget": 10,
+  "titleHint": "Mock Blueprint",
+  "mustInclude": ["cookies"],
+  "culprits": 1,
+  "suspects": 1,
+  "witnesses": 0,
+  "locations": 2,
+  "redHerringTrails": 0,
+  "coverUps": false,
+  "eliminationComplexity": "simple"
+}

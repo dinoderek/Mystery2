@@ -200,12 +200,15 @@ describe("scoring subsets", () => {
 
   it("breaks a tie in size by the shorter delay, then by the lower usage, a known usage beating an unknown", () => {
     // A judge is scored on its own kind only, so two judges that catch the one plant are one judge on two models.
-    const fairness = (model: string, duration_ms: number, cost_usd: number | null): StoredVerdict =>
+    const fairness = (model: string, duration_ms: number | null, cost_usd: number | null): StoredVerdict =>
       verdict({ subject: MOCK_PLANT, judge: "fairness", model, status: "fail", findings: [finding(null, "fairness")], duration_ms, cost_usd });
 
-    expect(smallest(scoreVerdicts(set, [fairness("slow", 9000, 0.1), fairness("fast", 1000, 0.9)]), "blueprint")).toEqual(["fairness@fast"]);
-    expect(smallest(scoreVerdicts(set, [fairness("dear", 1000, 0.9), fairness("cheap", 1000, 0.1)]), "blueprint")).toEqual(["fairness@cheap"]);
-    expect(smallest(scoreVerdicts(set, [fairness("unknown", 1000, null), fairness("known", 1000, 5)]), "blueprint")).toEqual(["fairness@known"]);
+    // Each winner's name sorts last, so the listing's order alone would pick the loser.
+    expect(smallest(scoreVerdicts(set, [fairness("a-slow", 9000, 0.1), fairness("z-fast", 1000, 0.9)]), "blueprint")).toEqual(["fairness@z-fast"]);
+    expect(smallest(scoreVerdicts(set, [fairness("a-dear", 1000, 0.9), fairness("z-cheap", 1000, 0.1)]), "blueprint")).toEqual(["fairness@z-cheap"]);
+    expect(smallest(scoreVerdicts(set, [fairness("a-unknown", 1000, null), fairness("z-known", 1000, 5)]), "blueprint")).toEqual(["fairness@z-known"]);
+    // An unknown delay loses to a known one too.
+    expect(smallest(scoreVerdicts(set, [fairness("a-untimed", null, 0.1), fairness("z-timed", 9000, 0.1)]), "blueprint")).toEqual(["fairness@z-timed"]);
   });
 
   it("takes delay per stored subject as the slowest member, summed, with a member's samples averaged and its turns summed", () => {

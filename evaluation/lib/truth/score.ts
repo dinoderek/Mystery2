@@ -136,7 +136,8 @@ export interface ScoreReport {
 // ---------------------------------------------------------------------------
 // Units
 
-interface Member {
+/** One judge on one model, with its verdicts by stored subject. */
+export interface Member {
   id: string;
   judge: string;
   model: string;
@@ -151,12 +152,12 @@ interface UnitInfo {
   truth: TruthValue;
 }
 
-function subjectKey(subject: StoredSubject): string {
+export function subjectKey(subject: StoredSubject): string {
   return JSON.stringify(subject);
 }
 
 /** Where a verdict's time and cost are charged: the game or variant, or the base or plant, it judged. */
-function chargeKey(subject: StoredSubject): string {
+export function chargeKey(subject: StoredSubject): string {
   return subject.side === "game" ? JSON.stringify([subject.game, subject.variant]) : JSON.stringify([subject.base, subject.plant]);
 }
 
@@ -168,7 +169,7 @@ function turnsOf(set: TruthSet, subject: StoredSubject): number[] {
   return playedEvents(game.trace.events).map((event) => event.sequence);
 }
 
-function unitsOf(set: TruthSet, subject: StoredSubject, kinds: readonly Kind[]): Unit[] {
+export function unitsOf(set: TruthSet, subject: StoredSubject, kinds: readonly Kind[]): Unit[] {
   if (subject.side === "blueprint") {
     return kinds.map((kind): Unit => ({ side: "blueprint", base: subject.base, plant: subject.plant, kind: kind as BlueprintKind }));
   }
@@ -178,12 +179,12 @@ function unitsOf(set: TruthSet, subject: StoredSubject, kinds: readonly Kind[]):
 }
 
 /** Orders strings by code point, never by locale, so the report is the same on every machine. */
-function byCodePoint(a: string, b: string): number {
+export function byCodePoint(a: string, b: string): number {
   if (a === b) return 0;
   return a < b ? -1 : 1;
 }
 
-function judged(verdict: StoredVerdict): boolean {
+export function judged(verdict: StoredVerdict): boolean {
   return verdict.status === "pass" || verdict.status === "fail";
 }
 
@@ -191,7 +192,7 @@ function majorOnly(verdict: StoredVerdict): StoredVerdict {
   return { ...verdict, findings: verdict.findings.filter((finding) => finding.severity === "major") };
 }
 
-function majority(votes: readonly boolean[]): boolean {
+export function majority(votes: readonly boolean[]): boolean {
   return votes.filter(Boolean).length * 2 > votes.length;
 }
 
@@ -291,12 +292,12 @@ function scoreMember(set: TruthSet, member: Member): MemberRun {
 // ---------------------------------------------------------------------------
 // Delay and usage
 
-interface Charge {
+export interface Charge {
   time: number | null;
   cost: number | null;
 }
 
-function sumOrNull(values: readonly (number | null)[]): number | null {
+export function sumOrNull(values: readonly (number | null)[]): number | null {
   let total = 0;
   for (const value of values) {
     if (value === null) return null;
@@ -311,7 +312,7 @@ function mean(values: readonly (number | null)[]): number | null {
 }
 
 /** A member's time and cost on each stored subject: summed within a sample, averaged over samples. */
-function chargesOf(member: Member): Map<string, Charge> {
+export function chargesOf(member: Member): Map<string, Charge> {
   const bySample = new Map<string, Map<number, StoredVerdict[]>>();
   for (const verdicts of member.bySubject.values()) {
     for (const verdict of verdicts) {
@@ -333,7 +334,7 @@ function chargesOf(member: Member): Map<string, Charge> {
 }
 
 /** The delay of a set: per stored subject the slowest member, summed. */
-function delayOf(charges: readonly Map<string, Charge>[]): number | null {
+export function delayOf(charges: readonly Map<string, Charge>[]): number | null {
   const keys = [...new Set(charges.flatMap((member) => [...member.keys()]))].sort();
   let total = 0;
   for (const key of keys) {
@@ -349,7 +350,7 @@ function delayOf(charges: readonly Map<string, Charge>[]): number | null {
   return total;
 }
 
-function usageOf(charges: readonly Map<string, Charge>[]): number | null {
+export function usageOf(charges: readonly Map<string, Charge>[]): number | null {
   return sumOrNull(charges.flatMap((member) => [...member.values()].map((charge) => charge.cost)));
 }
 
@@ -440,13 +441,18 @@ function scoreSubsets(members: readonly Member[], runs: readonly MemberRun[], ba
 // ---------------------------------------------------------------------------
 // Sides
 
-function membersOf(side: Side, verdicts: readonly StoredVerdict[]): Member[] {
-  const onSide = verdicts.filter((verdict) => verdict.subject.side === side);
+/** The judges that appear on more than one model: each model of such a judge is a member of its own. */
+export function judgesOnManyModels(verdicts: readonly StoredVerdict[]): Set<string> {
   const models = new Map<string, Set<string>>();
-  for (const verdict of onSide) models.set(verdict.judge, (models.get(verdict.judge) ?? new Set()).add(verdict.model));
+  for (const verdict of verdicts) models.set(verdict.judge, (models.get(verdict.judge) ?? new Set()).add(verdict.model));
+  return new Set([...models].filter(([, own]) => own.size > 1).map(([judge]) => judge));
+}
+
+/** The members of one side, by id. A judge in `split` is one member per model, `<judge>@<model>`. */
+export function membersOf(side: Side, verdicts: readonly StoredVerdict[], split: ReadonlySet<string> = judgesOnManyModels(verdicts)): Member[] {
   const members = new Map<string, Member>();
-  for (const verdict of onSide) {
-    const id = (models.get(verdict.judge) as Set<string>).size > 1 ? `${verdict.judge}@${verdict.model}` : verdict.judge;
+  for (const verdict of verdicts.filter((candidate) => candidate.subject.side === side)) {
+    const id = split.has(verdict.judge) ? `${verdict.judge}@${verdict.model}` : verdict.judge;
     const member = members.get(id) ?? { id, judge: verdict.judge, model: verdict.model, kinds: findingsRow(verdict.judge).kinds, bySubject: new Map() };
     const key = subjectKey(verdict.subject);
     member.bySubject.set(key, [...(member.bySubject.get(key) ?? []), verdict]);

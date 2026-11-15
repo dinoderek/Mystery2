@@ -212,6 +212,22 @@ function assertNarratorKnown(narrator: string): void {
   }
 }
 
+/** Every (input, narrator) to run, with the judges it gets; refuses a judge that does not apply to its input. */
+async function workItems(inputs: Input[], narrators: string[] | null, chosenJudges: string[] | null): Promise<WorkItem[]> {
+  const items: WorkItem[] = [];
+  for (const input of inputs) {
+    const earlier = input.kind === "stored" && !input.fromGame && !chosenJudges ? await earlierJudges(input.file) : null;
+    const judges = judgesFor(input, chosenJudges, earlier);
+    assertJudgesApply(judges);
+    if (input.kind === "stored" && input.fromGame) assertGameTurnJudges(judges);
+    for (const narrator of narratorsFor(input, narrators)) {
+      if (narrator !== null) assertNarratorKnown(narrator);
+      items.push({ input, narrator, judges });
+    }
+  }
+  return items;
+}
+
 interface Runtime {
   context: EvalContext;
   folder: RunFolder;
@@ -358,17 +374,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
       if (inputs.length === 0) throw new UsageError("no cases found");
       inputs.forEach((input) => input.kind === "case" && validateCase(input.testCase, input.testCase.id));
 
-      const items: WorkItem[] = [];
-      for (const input of inputs) {
-        const earlier = input.kind === "stored" && !input.fromGame && !chosenJudges ? await earlierJudges(input.file) : null;
-        const judges = judgesFor(input, chosenJudges, earlier);
-        assertJudgesApply(judges);
-        if (input.kind === "stored" && input.fromGame) assertGameTurnJudges(judges);
-        for (const narrator of narratorsFor(input, narrators)) {
-          if (narrator !== null) assertNarratorKnown(narrator);
-          items.push({ input, narrator, judges });
-        }
-      }
+      const items = await workItems(inputs, narrators, chosenJudges);
 
       const config = loadConfig({ root: context.root, configPath: common.configPath, modelOverrides: common.modelOverrides });
       const resolve = (name: string) => resolveBinding(config, name, { root: context.root });

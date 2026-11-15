@@ -12,8 +12,13 @@
  * ├── games/<game>/trace.json, labels.json (optional)
  * ├── plants/turns/<variant>.json
  * ├── plants/blueprints/<plant>.json
- * └── results/<name>.json
+ * ├── results/<name>.json
+ * └── scores/<name>.json
  * ```
+ *
+ * A score file is what `./dev eval score --out` wrote from results of this
+ * set; the loader checks only its name; the gate scores its inputs again and
+ * compares.
  */
 
 import fs from "node:fs/promises";
@@ -45,7 +50,7 @@ export const BASE_BRIEF = "brief.json";
 export const GAME_TRACE = "trace.json";
 export const GAME_LABELS = "labels.json";
 
-const PARTS = ["bases", "games", "plants", "results"] as const;
+const PARTS = ["bases", "games", "plants", "results", "scores"] as const;
 const PLANT_PARTS = ["turns", "blueprints"] as const;
 /** What macOS leaves in a folder it has shown; never part of the set. */
 const IGNORED = new Set([".DS_Store"]);
@@ -91,6 +96,8 @@ export interface TruthSet {
   /** The guide's path; null until it is written. */
   guide: string | null;
   results: TruthResults[];
+  /** The stored score files, by name. */
+  scores: { id: string; file: string }[];
 }
 
 interface Entry {
@@ -334,5 +341,6 @@ export async function loadTruthSet(root: string): Promise<TruthSet> {
   const blueprintPlants = await loadBlueprintPlants(root, bases);
   const loaded: TruthSubjects = { bases, games, turnVariants, blueprintPlants };
   const results = await loadResults(root, loaded);
-  return { root, ...loaded, guide, results };
+  const scores = await jsonFiles(path.join(root, "scores"));
+  return { root, ...loaded, guide, results, scores };
 }

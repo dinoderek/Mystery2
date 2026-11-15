@@ -275,6 +275,14 @@ function checkVerdict(set: Loaded, verdict: StoredVerdict, file: string, field: 
   if (side !== verdict.subject.side) {
     throw new TruthFileError(file, `${field}.judge: "${verdict.judge}" scores on the ${side} side, not the ${verdict.subject.side}`);
   }
+  // The findings table is the one source of kinds: a stored kind it does not give the judge would score as if it did.
+  const allowed: readonly string[] = findingsRow(verdict.judge).kinds;
+  verdict.findings.forEach((finding, index) => {
+    const stray = finding.kinds.find((kind) => !allowed.includes(kind));
+    if (stray !== undefined) {
+      throw new TruthFileError(file, `${field}.findings.${index}.kinds: the findings table gives "${verdict.judge}" ${allowed.join(", ")}, not "${stray}"`);
+    }
+  });
 }
 
 async function loadResults(root: string, set: Loaded): Promise<TruthResults[]> {

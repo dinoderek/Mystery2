@@ -27,9 +27,10 @@ dimension, spelled as its id.
 plus who, when and the pass (1 or 2). No fault means clean, which differs from
 no label. Labels are only appended; a turn's latest is scored.
 
-**Plants** are applied by code, never by hand. A turn plant edits one turn's narration, or what it recorded, to make one fault
-of its kind; a variant carries one or more. A blueprint plant patches a base
-for the judge it names. Patches are JSON Patch, starting with a `test`.
+**Plants** are applied by code, never by hand. A turn plant edits one turn's
+narration, or what it recorded, to make one fault of its kind; a variant
+carries one or more. A blueprint plant patches a base for the judge it names.
+Patches are JSON Patch, starting with a `test`.
 
 ## Units and truth
 

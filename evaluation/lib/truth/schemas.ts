@@ -137,8 +137,10 @@ export const PatchSchema = z
 
 /**
  * An edit to one turn. `narration` replaces the one occurrence of `find` in
- * the event's narration; `patch` applies operations to the event itself, such
- * as `/payload/revealed_clue_ids`, to change what the turn recorded.
+ * the event's `narration`, and in the text of each of its `narration_parts`
+ * that holds `find`, so every reader of the turn sees the same words; `patch`
+ * applies operations to the event itself, such as
+ * `/payload/revealed_clue_ids`, to change what the turn recorded.
  */
 export const TurnEditSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("narration"), find: z.string().min(1), replace: z.string() }).strict(),

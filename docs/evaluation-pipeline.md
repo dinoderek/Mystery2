@@ -28,8 +28,8 @@ How they connect:
 - **The truth set** holds subjects with known faults to score judges against
   (`evaluation/truth/README.md`).
 
-Every reader of a played game's events skips `no_turn_line`, the event a refused
-line or `help` is saved as, through `playedEvents` in
+Every reader of a played game's events skips `no_turn_line` (the event a refused
+line or `help` is saved as) through `playedEvents` in
 `evaluation/lib/game-events.ts`.
 
 ## Why the blueprint pipeline is shaped this way

@@ -228,6 +228,7 @@ describe("loading a truth set", () => {
       ["results/fixture-run.json", "verdicts.4.subject.base", "other", "verdicts.4.subject: no base \"other\""],
       ["results/fixture-run.json", "verdicts.0.judge", "fairness", "verdicts.0.judge: \"fairness\" scores on the blueprint side"],
       ["results/fixture-run.json", "verdicts.0.judge", "nobody", "verdicts.0.judge: Unknown check or judge \"nobody\""],
+      ["results/fixture-run.json", "verdicts.0.findings.0.kinds", ["spoiler"], "verdicts.0.findings.0.kinds: the findings table gives \"gm_fabrication\" fabrication, not \"spoiler\""],
     ];
     for (const [relative, field, value, message] of cases) {
       const dir = await copyFixture();

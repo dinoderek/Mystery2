@@ -24,6 +24,8 @@ export interface StoredTurn {
   started_at: string;
   ended_at: string;
   case_id: string;
+  /** The event sequence a turn taken from a stored game has there; absent on a replayed case. */
+  sequence?: number;
   /** Who narrated: `server`, or a narrator binding's name. */
   narrator: string;
   /** The model behind the narration: a binding's model with its name, or the profile a server was asked for. */
@@ -96,4 +98,54 @@ export async function readStoredTurn(file: string): Promise<StoredTurn> {
     throw new UsageError(`${file} is stored turn version ${value.schema_version}; this reads ${TURN_SCHEMA_VERSION}`);
   }
   return value;
+}
+
+/** The `narrator` of a turn taken from a stored game: nobody narrated it again. */
+export const STORED_NARRATOR = "stored";
+
+/** What a trace's event holds of the turn. */
+export interface StoredEvent {
+  sequence: number;
+  event_type: string;
+  narration?: string;
+  narration_parts?: unknown;
+  payload?: Record<string, unknown> | null;
+}
+
+/**
+ * A turn as a played game already holds it. The narration is the event's own,
+ * byte for byte, so a judge reads what the player was shown and no narrator is
+ * asked again. `gameId` keeps two games' turns apart in one run.
+ */
+export function turnFromEvent(
+  event: StoredEvent,
+  game: { id: string; targetAge: number | null; blueprintPath: string },
+): StoredTurn {
+  const narration = event.narration ?? "";
+  const parts = Array.isArray(event.narration_parts) ? (event.narration_parts as TurnResponse["narration_parts"]) : [];
+  const playerInput = event.payload?.player_input;
+  return {
+    schema_version: TURN_SCHEMA_VERSION,
+    run_id: "",
+    started_at: "",
+    ended_at: "",
+    case_id: `${game.id}__s${event.sequence}-${event.event_type}`,
+    sequence: event.sequence,
+    narrator: STORED_NARRATOR,
+    model: STORED_NARRATOR,
+    blueprint_path: game.blueprintPath,
+    target_age: game.targetAge,
+    given: {},
+    action: { type: event.event_type, ...(typeof playerInput === "string" ? { player_input: playerInput } : {}) },
+    response: {
+      action: event.event_type,
+      request: {},
+      narration_parts: parts,
+      narration_text: narration,
+      speaker: null,
+      prompt: null,
+      raw: null,
+    },
+    timing: { total_ms: 0 },
+  };
 }

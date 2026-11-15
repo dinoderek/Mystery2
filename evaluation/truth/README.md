@@ -2,53 +2,51 @@
 
 What the judges are scored against: stored subjects, and what is known to be
 wrong in them, named by **kind** of fault, never by judge, so any set of judges
-is scored on the same units. It holds self-play and planted material only, and
-no credential or home path, which a gate test enforces.
+is scored on the same units. It holds self-play and planted material only, no
+credential or home path, which a gate test enforces. Its code is
+`evaluation/lib/truth/`; a file outside its schema or this layout fails loading.
 
-Its code is `evaluation/lib/truth/`. A file failing its schema, or outside
-this layout, fails loading with its path. Ids are file and folder names.
-
-| Part | Where | Made by |
-|---|---|---|
-| Base blueprints | `bases/<base>/blueprint.json`, `brief.json` | A frozen copy |
-| Stored games | `games/<game>/trace.json` | Self-play, as the trace `judge game` reads |
-| Labels | `games/<game>/labels.json` | Hand, on the labelling page |
-| Planted turn faults | `plants/turns/<variant>.json` | Hand, against a stored game |
-| Planted blueprint faults | `plants/blueprints/<plant>.json` | Hand, against a base |
-| Guide | `guide.md` | Hand: how each kind is decided |
-| Results | `results/<name>.json` | A suite |
+Ids are file or folder names. Under it: `bases/<base>/blueprint.json` and `brief.json`, frozen copies;
+`games/<game>/trace.json`, self-play as `judge game` reads it, and
+`labels.json`, made on the labelling page; `plants/turns/<variant>.json` and
+`plants/blueprints/<plant>.json`, written by hand; `guide.md`, how each kind is
+decided; `results/<name>.json`, from a suite.
 
 **Kinds.** Game side: `spoiler`, `fabrication`, `clue_handling`,
-`out_of_character`, `not_age_fit`. Blueprint side: one per blueprint
-dimension, spelled as its id.
+`out_of_character`, `not_age_fit`. Blueprint side: each blueprint
+dimension's id.
 
-**Labels.** A turn's faults, each a kind, `minor` or `major`, and a note;
-plus who, when and the pass (1 or 2). No fault means clean, which differs from
-no label. Labels are only appended; a turn's latest is scored.
+**Labels.** A turn's faults, each a kind, `minor` or `major`, and a note; plus
+who, when and the pass (1 or 2). No fault means clean, not unlabelled. Labels
+are only appended; a turn's latest is scored.
 
-**Plants** are applied by code, never by hand. A turn plant edits one turn's
-narration, or what it recorded, to make one fault of its kind; a variant
-carries one or more. A blueprint plant patches a base for the judge it names.
-Patches are JSON Patch, starting with a `test`.
+## Plants
+
+A variant is rebuilt from its base on demand, never stored. A turn plant's
+edits are `narration`, which replaces the one place `find` occurs, or `patch`,
+JSON Patch on the event. A variant has one plant a turn. A blueprint plant is JSON Patch on its base. A patch starts
+with a `test`.
+
+The gate, with no model, holds each plant to: it applies, changes only what its
+edits name, and leaves a valid subject (a game that parses and reconstructs, a
+blueprint passing Blueprint V2). Its `caught_by` lists the checks that newly
+fail on it, `[]` for none: on a game the trace checks at its turn and `flesch`;
+on a blueprint the mechanical checks and `<dimension>.analyzer`. A mismatch
+prints what they report. A caught plant needs no judge.
 
 ## Units and truth
 
-A game-side unit is a turn and a kind; a blueprint-side unit, a base or a
-plant. Each is a fault, clean or unknown:
+A unit is a turn and a kind (game side), or a base or plant (blueprint side),
+and is a fault, clean or unknown. A labelled turn is a fault of each kind it
+names, else clean; an unlabelled turn is unknown. A planted turn is a fault of
+its kind, unknown for the others; a variant's other turns take the game's
+labels. A base is clean for every kind: it passed every check and judge. A
+plant is a fault of its kind, unknown for the others.
 
-- A labelled turn is a fault of each kind it names, else clean; unlabelled,
-  unknown.
-- A planted turn is a fault of its kind, unknown for the others. A variant's
-  other turns take the stored game's labels.
-- A base is clean for every kind, meaning only that it passed every check
-  and judge.
-- A plant is a fault of its kind, unknown for the others.
-
-A verdict catches a unit when a finding points at its turn, or blueprint, with
-a kind the findings table maps to the unit's. A blueprint judge's `fail` is one
+A verdict catches a unit when a finding points at its turn or blueprint with
+a kind the findings table maps to it. A blueprint judge's `fail` is one
 finding of its dimension's kind.
 
-**Results** keep verdicts with their kinded findings, model, sample, duration
-and reported cost (null when none), and no prompt, log or workspace.
-`./dev eval score` scores them, counting a finding of either severity as a
-report (`--help`).
+**Results** hold verdicts with kinded findings, model, sample, duration and
+cost, no prompt, log or workspace. `./dev eval score` scores them,
+counting minor findings as reports.

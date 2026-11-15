@@ -1,14 +1,12 @@
 # Judging a turn
 
-Grades one narration against fixed state and history. Commands and options:
-`evaluation/README.md`.
+Grades one narration against fixed state and history. Options: `evaluation/README.md`.
 
 ## Determinism is the point
 
 A case evaluates **one action** against a **fully specified prior state**. The
-complete history is part of the case, not produced by playing turns, so the model
-input is identical on every run and across models. Models fed their own earlier
-narration would diverge past comparison.
+history is part of the case, not produced by playing turns, so the model input is
+identical on every run and across models.
 
 ## Choosing a narrator
 
@@ -98,13 +96,13 @@ Calls are cases × narrators × model judges; `flesch` is free. On
 ## Running
 
 ```bash
-# Plumbing, no model calls, no server:
+# Plumbing, no model:
 ./dev eval judge turn evaluation/runtime/cases/all-interactions.ts --narrator narrator-stub --judges flesch
 
-# Compare two narrators on identical input:
+# Compare two narrators:
 ./dev eval judge turn evaluation/runtime/cases/age-readability.ts --narrator server,narrator-claude
 
-# The adherence judges against a real model:
+# The adherence judges:
 ./dev eval judge turn evaluation/runtime/cases/age-readability.ts \
   --narrator narrator-claude --judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler
 ```
@@ -121,8 +119,8 @@ To re-judge a stored turn without calling its narrator:
 ```
 
 It runs the judges of the `result.json` beside it, else `flesch`, or `--judges
-a,b`, and writes a new run. Model judges still call their model. A case's
-`judgeConfig` is not stored, so a stored turn uses the default options.
+a,b`, and writes a new run. A case's `judgeConfig` is not stored, so a stored turn
+uses the default options.
 
 ### Cases from a played game
 
@@ -131,6 +129,10 @@ into cases. Each event's payload records the state it was generated from, so an
 event becomes one case: the pre-event state and every earlier event as `given`,
 the event as `action`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
 and writes under `<output root>/cases/<trace>/`; `--help` explains overrides.
+
+Given the trace itself, `judge turn` judges each narrated turn on its own
+narration with `flesch` and `age_appropriate_turn` (which still calls its model),
+named by event sequence, calling no narrator.
 
 ## Adding things
 
@@ -143,6 +145,6 @@ and writes under `<output root>/cases/<trace>/`; `--help` explains overrides.
 
 ## Tests
 
-`tests/api/unit/runtime-*` and `judges-*` cover the judges, actions, cases and a
-`judge turn` run on stub bindings; `tests/api/integration/eval-turn-server.test.ts`
-replays through a throwaway server on the mock provider. None calls a model.
+`tests/api/unit/runtime-*` and `judges-*` cover the judges, actions, cases and
+`judge turn` on stub bindings; `tests/api/integration/eval-turn-server.test.ts`
+replays through a throwaway server on the mock provider. No test calls a model.

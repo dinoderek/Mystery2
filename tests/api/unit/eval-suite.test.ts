@@ -305,6 +305,23 @@ describe("the usage limit", () => {
   });
 });
 
+describe("the usage limit in the other commands", () => {
+  it("breaks `judge game` with the CLI's message as its run error, storing no judge error", async () => {
+    const at = scratch();
+    limitAfter(at, 0);
+    const lines: string[] = [];
+    const code = await runEval(
+      ["judge", "game", path.join(at.truth, "games", "medal", "trace.json"), "--judges", "gm_spoiler", "--config", at.config, "--output-root", at.out, "--quiet"],
+      { root: ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env: {} },
+      COMMANDS,
+    );
+    expect(code).toBe(1);
+    const result = JSON.parse(fs.readFileSync(path.join(at.out, filesUnder(at.out).find((file) => file.endsWith("/result.json")) as string), "utf8"));
+    expect(result.run_error.message).toContain("You've hit your 5-hour limit");
+    expect(result.verdicts.filter((verdict: { status: string }) => verdict.status === "error")).toEqual([]);
+  });
+});
+
 describe("judges and subjects", () => {
   it("runs a judge outside the default battery when the suite names it, storing its findings by kind", async () => {
     const { judgesFor } = await import("../../../evaluation/core/registry.ts");

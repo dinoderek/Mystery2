@@ -3,8 +3,9 @@
  * and the core runner, answered from the journal when it has finished
  * before, and stored as the truth set's verdict.
  *
- * Subjects run `concurrency` at a time; the calls on one subject run side by
- * side. A call made in this run leaves its folder in the run folder: its
+ * Subjects run `concurrency` at a time. On one subject the judges run side
+ * by side, and each judge's calls (its models and samples) one after another,
+ * so models and samples never multiply how many model processes run at once. A call made in this run leaves its folder in the run folder: its
  * prompts, attempt logs, any agent workspace, and a `result.json` holding the
  * judge's full verdict. A call answered from the journal makes nothing new.
  *
@@ -129,7 +130,8 @@ export async function runSuitePlan(plan: SuitePlan, running: SuiteRunning): Prom
   let done = 0;
   const perSubject = await mapPool(plan.subjects, running.concurrency, async ({ subject, calls }) => {
     const game = subject.kind === "game" ? subject.prepared : null;
-    return mapPool(calls, Math.max(1, calls.length), async (call) => {
+    const byJudge = [...new Set(calls.map((call) => call.judge.id))].map((id) => calls.filter((call) => call.judge.id === id));
+    const judged = await mapPool(byJudge, byJudge.length, (own) => mapPool(own, 1, async (call) => {
       const dir = path.join(running.run.dir, callFolder(subject, call));
       const place = { dir, logDir: path.join(dir, "logs") };
       const memo = running.journal.memo({ subject: subject.stored, judge: call.judge.id, model: call.model, sample: call.sample });
@@ -146,7 +148,8 @@ export async function runSuitePlan(plan: SuitePlan, running: SuiteRunning): Prom
       const result = stored(subject, call, verdict);
       running.context.out(`[suite] ${done}/${total} ${subject.id} ${call.judge.id} ${call.model} s${call.sample}: ${describe(result)}${memo.recalled ? " (finished before)" : ""}`);
       return result;
-    });
+    }));
+    return judged.flat();
   });
   return { verdicts: perSubject.flat(), ...counts };
 }

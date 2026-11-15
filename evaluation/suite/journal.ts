@@ -54,8 +54,13 @@ const LineSchema = z
   .strict();
 type Line = z.infer<typeof LineSchema>;
 
+/** The subject's fields in a fixed order, so a key never depends on the order an object was built or parsed in. */
+function subjectKey(subject: StoredSubject): unknown[] {
+  return subject.side === "blueprint" ? [subject.side, subject.base, subject.plant] : [subject.side, subject.game, subject.variant, subject.sequence];
+}
+
 function keyOf(identity: CallIdentity, promptSha256: string): string {
-  return JSON.stringify([identity.subject, identity.judge, identity.model, identity.sample, promptSha256]);
+  return JSON.stringify([...subjectKey(identity.subject), identity.judge, identity.model, identity.sample, promptSha256]);
 }
 
 /** The text up to its last newline: whatever follows was cut short. */

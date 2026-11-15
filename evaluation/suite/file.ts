@@ -82,7 +82,7 @@ export const SuiteSchema = z
       .default({}),
     /** How many times each judge judges each subject on each model. */
     samples: z.number().int().positive().default(1),
-    /** How many subjects are judged at once; the judges of one subject always run side by side. */
+    /** How many subjects are judged at once; on one, the judges run side by side, each judge's calls in turn. */
     concurrency: z.number().int().positive().default(1),
     thresholds: z.array(ThresholdSchema).default([]),
   })

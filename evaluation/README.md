@@ -88,6 +88,10 @@ blueprint run looks like this:
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
+A suite keeps its state in `<root>/suites/<name>/`: the journal of finished
+calls (`calls.jsonl`) and a `<date>/<time>-suite/` folder per run, with
+`suite.json` and a folder per call made. Only its results file goes in the repo.
+
 ## Result
 
 `result.json` is written even when the run aborts. Its schema is

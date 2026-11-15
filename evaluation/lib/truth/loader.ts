@@ -249,7 +249,7 @@ async function loadBlueprintPlants(root: string, bases: readonly TruthBase[]): P
 }
 
 /** What a results file is checked against: the subjects of a set. */
-export type TruthSubjects = Omit<TruthSet, "results" | "guide" | "root">;
+export type TruthSubjects = Omit<TruthSet, "results" | "scores" | "guide" | "root">;
 
 /** Why a stored subject names nothing in the set, or null when it names something. */
 function missingSubject(set: TruthSubjects, subject: StoredSubject): string | null {

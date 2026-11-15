@@ -17,7 +17,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `report <run>` | Writes `report.html` for a self-play run |
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
 | `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
-| `compare <results A> <results B>` | Compares two stored runs, no model, on units both judged: per judge and kind, a difference counts beyond each run's own sample variation (exact sign test). Delay, usage per run. `--truth`, `--out` |
+| `compare <results A> <results B>` | Compares two runs, no model, on units both judged: per judge and kind, a difference counts beyond each run's own sample variation (exact sign test). Delay, usage per run. `--truth`, `--out` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one

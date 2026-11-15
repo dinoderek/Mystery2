@@ -24,8 +24,8 @@ run. `./dev eval <command> --help` explains the rest; for `judge`, name the
 subcommand.
 
 A blueprint beside `brief.json` needs no `--brief`. For blueprint and game
-judging, `--judges` and `--no-judges` mark unselected battery judges skipped;
-candidates run only when named.
+judging, `--judges` and `--no-judges` mark unselected judges skipped; candidates
+run only when named.
 
 ## Quick start
 

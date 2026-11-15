@@ -5,12 +5,12 @@
       "sequence": 2,
       "kind": "fabrication",
       "severity": "major",
-      "note": "The narrator invents muddy boot prints inside the greenhouse from the door to the window, contradicting the blueprint, where nobody climbed in.",
+      "note": "The narrator invents an open back door at the far end of the greenhouse, a second way in the blueprint does not have.",
       "edits": [
         {
           "type": "narration",
           "find": "A smashed side window lets in a chilly breeze.",
-          "replace": "A trail of big muddy boot prints runs across the greenhouse floor, from the door to the window. A smashed side window lets in a chilly breeze."
+          "replace": "A smashed side window lets in a chilly breeze. At the far end, a little back door you had not noticed stands open, swinging in the wind."
         }
       ],
       "caught_by": []
@@ -47,12 +47,12 @@
       "sequence": 30,
       "kind": "spoiler",
       "severity": "major",
-      "note": "The narrator says Toby kept the greenhouse key in his pocket since Wednesday, his hidden action told as fact.",
+      "note": "The narrator says Toby slipped the greenhouse key into his pocket on Wednesday, his hidden action told as fact.",
       "edits": [
         {
           "type": "narration",
           "find": "Toby turns back to his seed trays.",
-          "replace": "Toby turns back to his seed trays, one hand on the hoodie pocket where he has kept the greenhouse key since Wednesday."
+          "replace": "Toby turns back to his seed trays, one hand on the hoodie pocket he slipped the greenhouse key into on Wednesday."
         }
       ],
       "caught_by": []
@@ -61,7 +61,7 @@
       "sequence": 45,
       "kind": "not_age_fit",
       "severity": "major",
-      "note": "Mr. Dobbs speaks in idioms (doesn't hold water, the missing piece of the puzzle, put two and two together) a ten-year-old reader would stumble on, in one long sentence.",
+      "note": "Mr. Dobbs speaks in idioms (joined up the dots, holds water, the missing piece of the puzzle, put two and two together) a ten-year-old reader would stumble on, in one long sentence.",
       "edits": [
         {
           "type": "narration",

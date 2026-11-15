@@ -19,12 +19,12 @@
       "sequence": 14,
       "kind": "fabrication",
       "severity": "major",
-      "note": "The narrator invents small leaf-pattern wellies drying by the workshop door, an object the blueprint does not have that points the player at Mr. Dobbs.",
+      "note": "The narrator invents a cracked flowerpot smeared with pumpkin mush on Mr. Dobbs's bench, an object the blueprint does not have that points the player at him.",
       "edits": [
         {
           "type": "narration",
           "find": "A tall, thin man with a grey moustache looks up.",
-          "replace": "By the door, a muddy pair of small leaf-pattern wellies sits drying on a sheet of newspaper.\n\nA tall, thin man with a grey moustache looks up."
+          "replace": "On the bench sits a cracked flowerpot, smeared with orange pumpkin mush.\n\nA tall, thin man with a grey moustache looks up."
         }
       ],
       "caught_by": []

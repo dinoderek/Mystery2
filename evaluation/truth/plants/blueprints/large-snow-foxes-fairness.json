@@ -46,6 +46,16 @@
     },
     {
       "op": "test",
+      "path": "/world/characters/4/agendas/1/details",
+      "value": "Juniper is touchy about her snowshoe hooks; she worries she will be blamed for letting anyone borrow them. When shown the snowy pair with white fur in the strap, she huffs and admits anyone can take them without asking, and says she never left her ticket window because the line was too long."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/4/agendas/1/details",
+      "value": "Juniper is touchy about her snowshoe hooks; she worries she will be blamed for letting anyone borrow them. When shown the snowy pair with white fur in the strap, she huffs and admits anyone can take them without asking, and says she never left her ticket window."
+    },
+    {
+      "op": "test",
       "path": "/world/characters/5/actual_actions/1/summary",
       "value": "She draws the train, writing the time from the big clock on each page."
     },

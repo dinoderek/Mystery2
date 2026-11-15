@@ -33,12 +33,12 @@
       "sequence": 11,
       "kind": "fabrication",
       "severity": "major",
-      "note": "A greenhouse key drops from Mr. Thorne's pocket; it contradicts the blueprint, where the only key lies in the water butt.",
+      "note": "A brass key drops from Mr. Thorne's pocket and he snatches it up; no such key or event is in the blueprint, and it points the player at him.",
       "edits": [
         {
           "type": "narration",
           "find": "He stomps off between the leeks, his boots thudding.",
-          "replace": "As he turns, a brass key with a green tag drops out of his waistcoat pocket. He snatches it up and stomps off between the leeks, his boots thudding."
+          "replace": "As he turns, a small brass key drops out of his waistcoat pocket. He snatches it up and stomps off between the leeks, his boots thudding."
         }
       ],
       "caught_by": []

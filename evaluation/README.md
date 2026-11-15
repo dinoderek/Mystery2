@@ -72,7 +72,7 @@ JSON to `$EVAL_STREAM_FILE`, which never affects the result.
 
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`. It is outside the repo, and nothing is overwritten. A
-blueprint run (other harnesses name their own layout):
+blueprint run's layout, which other harnesses vary:
 
 ```
 <root>/<date>/<time>-<command>/

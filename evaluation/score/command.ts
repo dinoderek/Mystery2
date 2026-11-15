@@ -36,8 +36,9 @@ const HELP = formatHelp({
     "",
     "On each side (blueprint, game), every subset of the judges present is scored: it catches the union of what",
     "its judges catch. Delay is, per stored game or blueprint, the slowest judge's time (summed over turns,",
-    "averaged over samples), summed; usage is the judges' reported costs. Either is unknown if any part is. The",
-    "smallest subset meeting the bar wins; ties go to the shorter delay, then the lower usage, unknown last.",
+    "averaged over samples), summed; usage is the judges' reported costs, averaged over samples the same way and",
+    "summed. Either is unknown if any part is. The smallest subset meeting the bar wins; ties go to the shorter",
+    "delay, then the lower usage, unknown last.",
     "Above 16 judges on a side the command stops. Prints the tables and writes the same report as JSON.",
   ].join("\n"),
   options: [

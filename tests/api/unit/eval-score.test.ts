@@ -241,6 +241,11 @@ describe("scoring subsets", () => {
     expect(side(strict, "game").smallest).toBeNull();
   });
 
+  it("orders judges by code point, not by locale, so the report is the same on every machine", () => {
+    const report = scoreVerdicts(set, [verdict({ subject: MOCK, judge: "fairness", model: "a" }), verdict({ subject: MOCK, judge: "fairness", model: "B" })]);
+    expect(side(report, "blueprint").members.map((score) => score.id)).toEqual(["fairness@B", "fairness@a"]);
+  });
+
   it(`stops with the count above ${MAX_MEMBERS_PER_SIDE} judges on a side`, () => {
     const many = Array.from({ length: MAX_MEMBERS_PER_SIDE + 1 }, (_, index) => verdict({ subject: MOCK, judge: "fairness", model: `m${index}` }));
     expect(() => scoreVerdicts(set, many)).toThrow(`the blueprint side has ${MAX_MEMBERS_PER_SIDE + 1} judges`);

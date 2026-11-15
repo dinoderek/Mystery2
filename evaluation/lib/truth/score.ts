@@ -177,6 +177,12 @@ function unitsOf(set: TruthSet, subject: StoredSubject, kinds: readonly Kind[]):
   );
 }
 
+/** Orders strings by code point, never by locale, so the report is the same on every machine. */
+function byCodePoint(a: string, b: string): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 function judged(verdict: StoredVerdict): boolean {
   return verdict.status === "pass" || verdict.status === "fail";
 }
@@ -247,7 +253,7 @@ function scoreMember(set: TruthSet, member: Member): MemberRun {
   let notJudged = 0;
   let samples = 0;
   let findingsOffTurn = 0;
-  for (const [, all] of [...member.bySubject].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [, all] of [...member.bySubject].sort(([a], [b]) => byCodePoint(a, b))) {
     verdicts += all.length;
     samples = Math.max(samples, all.length);
     const voting = all.filter(judged);
@@ -365,7 +371,7 @@ function sideUnits(runs: readonly MemberRun[]): SideUnits {
       seen.set(unit.key, entry);
     }
   });
-  const ordered = [...seen.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const ordered = [...seen.values()].sort((a, b) => byCodePoint(a.key, b.key));
   return {
     faults: ordered.filter((unit) => unit.truth === "fault").map((unit) => ({ kind: unit.kind, mask: unit.mask })),
     clean: ordered.filter((unit) => unit.truth === "clean").map((unit) => ({ mask: unit.mask })),
@@ -446,7 +452,7 @@ function membersOf(side: Side, verdicts: readonly StoredVerdict[]): Member[] {
     member.bySubject.set(key, [...(member.bySubject.get(key) ?? []), verdict]);
     members.set(id, member);
   }
-  return [...members.values()].sort((a, b) => a.id.localeCompare(b.id));
+  return [...members.values()].sort((a, b) => byCodePoint(a.id, b.id));
 }
 
 function scoreSide(set: TruthSet, side: Side, verdicts: readonly StoredVerdict[], bar: Bar): SideScore | null {

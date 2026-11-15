@@ -37,7 +37,7 @@ const JUDGE_HELP = formatHelp({
     "Runs the mechanical checks, the analyzers and the eight dimension judges on a blueprint, and writes result.json with the blueprint stored beside it. Exits 0 when all pass, 2 when a check or judge fails or cannot judge, 1 when the run breaks.",
   options: [
     ...BRIEF_OPTION,
-    ["--judges <a,b>", "run only these dimensions; the rest are skipped"],
+    ["--judges <a,b>", "run only these dimensions, or candidate judges, which run only when named; the rest are skipped"],
     ["--no-judges", "run the checks and analyzers only; the judges are skipped"],
     ["--quiet", "no live progress digest"],
   ],
@@ -63,7 +63,7 @@ export function parseSelection(values: Record<string, OptionValue>): JudgeSelect
   }
   if (named === undefined) return "all";
   const ids = named.split(",").map((id) => id.trim()).filter(Boolean);
-  const known = judgesFor("blueprint").map((entry) => entry.id);
+  const known = judgesFor("blueprint", { candidates: true }).map((entry) => entry.id);
   const unknown = ids.filter((id) => !known.includes(id));
   if (ids.length === 0 || unknown.length > 0) {
     throw new UsageError(`--judges needs dimension ids from: ${known.join(", ")}${unknown.length > 0 ? ` (got ${unknown.join(", ")})` : ""}`);

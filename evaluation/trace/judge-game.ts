@@ -36,7 +36,7 @@ import type { SubjectFolder } from "../core/run-folder.ts";
 import { runModel } from "../core/runner.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { RunError, Verdict } from "../core/result.ts";
-import { resolveVerdict } from "../judges/index.ts";
+import { majorFindingsVerdict } from "../judges/index.ts";
 import { projectTraceSubject } from "../judges/subject.ts";
 import { createLocalTraceSource, extractSessionTrace } from "./lib/datasource.ts";
 import type { TraceCheckResult } from "./lib/mechanical.ts";
@@ -76,7 +76,7 @@ const HELP = formatHelp({
     "A trace file (a stored one, say) is judged again.",
   options: [
     ["--database <file>", "the database to read a session from (default: this checkout's play database)"],
-    ["--judges <id,id>", "run only these judges; the rest are skipped"],
+    ["--judges <id,id>", "run only these judges, or candidate judges, which run only when named; the rest are skipped"],
     ["--no-judges", "run the mechanical checks only; no model is called"],
     ["--quiet", "no live progress while the judges run"],
   ],
@@ -85,6 +85,8 @@ const HELP = formatHelp({
 /** The judges this run asks, from `--judges` and `--no-judges`, and the reason for those it leaves out. */
 function selectJudges(values: Record<string, OptionValue>): { run: JudgeEntry[]; leftOut: Map<string, string> } {
   const all = judgesFor("game");
+  // A candidate may be named, but one that is not is left out of the result, not skipped.
+  const nameable = judgesFor("game", { candidates: true });
   const leftOut = new Map<string, string>();
   if (values["no-judges"] === true) {
     if (values.judges !== undefined) throw new UsageError("--judges and --no-judges contradict each other");
@@ -93,15 +95,15 @@ function selectJudges(values: Record<string, OptionValue>): { run: JudgeEntry[];
   }
   if (typeof values.judges !== "string") return { run: all, leftOut };
   const wanted = values.judges.split(",").map((id) => id.trim()).filter(Boolean);
-  const unknown = wanted.filter((id) => !all.some((entry) => entry.id === id));
+  const unknown = wanted.filter((id) => !nameable.some((entry) => entry.id === id));
   if (wanted.length === 0 || unknown.length > 0) {
     throw new UsageError(
-      `--judges takes game judge ids from: ${all.map((entry) => entry.id).join(", ")}` +
+      `--judges takes game judge ids from: ${nameable.map((entry) => entry.id).join(", ")}` +
         (unknown.length > 0 ? ` (not: ${unknown.join(", ")})` : ""),
     );
   }
   for (const entry of all) if (!wanted.includes(entry.id)) leftOut.set(entry.id, "not named by --judges");
-  return { run: all.filter((entry) => wanted.includes(entry.id)), leftOut };
+  return { run: nameable.filter((entry) => wanted.includes(entry.id)), leftOut };
 }
 
 interface StageTiming {
@@ -238,22 +240,13 @@ async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Ve
       return { verdict: { id: entry.id, tier: "judge", status: "error", reason: outcome.error, call: outcome.call }, ms: elapsed() };
     }
     const data = outcome.value;
-    const resolved = resolveVerdict(data);
     return {
       verdict: {
         id: entry.id,
         tier: "judge",
-        status: resolved.status,
-        findings: Array.isArray(data.findings) ? data.findings : [],
         // A judge fails iff it reported a major finding; the model's own verdict
         // is kept, and a disagreement is shown rather than hidden.
-        details: {
-          reasoning: data.reasoning ?? "",
-          major_count: resolved.major_count,
-          minor_count: resolved.minor_count,
-          model_verdict: resolved.model_verdict,
-          verdict_disagreement: resolved.verdict_disagreement,
-        },
+        ...majorFindingsVerdict(data),
         call: outcome.call,
         answer: data,
       },

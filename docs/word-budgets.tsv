@@ -15,11 +15,14 @@ docs/testing.md	1400
 docs/ui.md	700
 evaluation/README.md	1250
 evaluation/dimensions/age-appropriate.md	850
+evaluation/dimensions/blueprint-broad.md	1450
 evaluation/dimensions/character-grounding.md	350
 evaluation/dimensions/clue-graph.md	500
 evaluation/dimensions/fairness.md	300
 evaluation/dimensions/knowledge-coherence.md	850
+evaluation/dimensions/knowledge-timeline-coherence.md	850
 evaluation/dimensions/path-payoff.md	550
+evaluation/dimensions/solve-depth-fairness.md	800
 evaluation/dimensions/solve-depth.md	800
 evaluation/dimensions/timeline-coherence.md	500
 evaluation/generator-harness/template/CLAUDE.md	800
@@ -30,6 +33,7 @@ evaluation/generator-harness/template/docs/runtime-consumption.md	2050
 evaluation/judge-harness/template/CLAUDE.md	650
 evaluation/judge-harness/template/README.md	250
 evaluation/judges/README.md	750
+evaluation/judges/gm-broad.md	1400
 evaluation/judges/gm-clue-discipline.md	750
 evaluation/judges/gm-fabrication.md	650
 evaluation/judges/gm-roleplay.md	1000

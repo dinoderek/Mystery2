@@ -27,8 +27,7 @@ narrator-claude=<model>`. Use `server` when the game should be in the loop too;
 it validates the model's clue reveals before they reach you, which the CLI path
 does not.
 
-The canned narrator proves the plumbing offline and says nothing about the
-narrator's content; keep stub runs to `flesch`. `narrator-claude` runs with no
+The canned narrator proves the plumbing offline; keep stub runs to `flesch`. `narrator-claude` runs with no
 tools, MCP servers or settings, so the model under test does not also read this
 repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs both
 `narrator-claude` and `turn-judge`; skipping settings also skips logins configured
@@ -121,8 +120,8 @@ To re-judge a stored turn without calling its narrator:
 ```
 
 It runs the judges of the `result.json` beside it, else `flesch`, or `--judges
-a,b`, and writes a new run. Model judges still call their model. A case's
-`judgeConfig` is not stored, so a stored turn uses the default options.
+a,b`, and writes a new run. A case's `judgeConfig` is not stored, so a stored turn
+uses the default options.
 
 ### Cases from a played game
 
@@ -131,6 +130,10 @@ into cases. Each event's payload records the state it was generated from, so an
 event becomes one case: the pre-event state and every earlier event as `given`,
 the event as `action`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
 and writes under `<output root>/cases/<trace>/`; `--help` explains overrides.
+
+To judge a played game on the narration it already holds, give `judge turn` the
+trace itself: each narrated turn is judged by `flesch` and `age_appropriate_turn`,
+named by its event sequence, with no narrator called.
 
 ## Adding things
 

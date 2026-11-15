@@ -10,7 +10,7 @@ fails the gate if one is tracked.
 
 ```json
 { "ais": {
-    "free":   { "backend": "openrouter", "model": "arcee-ai/trinity-large-preview:free" },
+    "free":   { "backend": "openrouter", "model": "google/gemma-4-31b-it:free" },
     "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 ```
 

@@ -43,6 +43,27 @@ describe("usageLimitMessage", () => {
     }
   });
 
+  it("reads every form the CLI itself classes as a usage limit", () => {
+    for (const said of [
+      "You've reached your Opus limit \u00b7 resets Mon 9am",
+      "You\u2019ve hit your 5-hour limit",
+      "You're out of extra usage \u00b7 resets Dec 1",
+      "Opus 5 requires usage credits. Run /usage-credits to continue.",
+      "Fable requires usage credits.",
+      "Your seat type doesn't include usage credits",
+      "Your usage allocation has been disabled by your admin",
+      "Your group's usage limit is set to $0",
+    ]) {
+      expect(usageLimitMessage({ stdout: event(said), stderr: "", stream: "" }), said).toBe(said);
+    }
+  });
+
+  it("does not take the CLI's warnings for the limit", () => {
+    for (const said of ["You've used 90% of your weekly limit", "You're close to your usage limit", "Opus requires a newer CLI."]) {
+      expect(usageLimitMessage({ stdout: event(said), stderr: said, stream: "" }), said).toBeNull();
+    }
+  });
+
   it("never reads stdout's plain text, which may be the model's answer", () => {
     expect(usageLimitMessage({ stdout: "The narrator says:\nYou've hit your limit, little detective!\n", stderr: "", stream: "" })).toBeNull();
   });

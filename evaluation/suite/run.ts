@@ -5,8 +5,10 @@
  *
  * Subjects run `concurrency` at a time. On one subject the judges run side
  * by side, and each judge's calls (its models and samples) one after another,
- * so models and samples never multiply how many model processes run at once. A call made in this run leaves its folder in the run folder: its
- * prompts, attempt logs, any agent workspace, and a `result.json` holding the
+ * so models and samples never multiply how many model processes run at once.
+ *
+ * A call made in this run leaves its folder in the run folder: its prompts,
+ * attempt logs, any agent workspace, and a `result.json` holding the
  * judge's full verdict. A call answered from the journal makes nothing new.
  *
  * At the usage limit a call throws `UsageLimitError`: no new subject starts,

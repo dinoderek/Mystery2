@@ -233,19 +233,16 @@ export function planSuite(suite: Suite, set: TruthSet, resolve: (name: string) =
     }
   }
 
-  const planned = subjects
-    .map((subject) => ({
-    subject,
-    calls: judges
+  const callsOf = (subject: PlannedSubject): PlannedCall[] =>
+    judges
       .filter((judge) => judge.role === subject.kind)
       .flatMap((judge) =>
         models[judge.binding].flatMap((model) => {
           const binding = { ...(bindings.get(judge.binding) as ResolvedBinding), model };
           return Array.from({ length: suite.samples }, (_, sample): PlannedCall => ({ judge, binding, model, sample }));
         }),
-      ),
-    }))
-    // A game only its turns' judges judge is no subject of its own.
-    .filter((entry) => entry.calls.length > 0);
+      );
+  // A game only its turns' judges judge is no subject of its own.
+  const planned = subjects.map((subject) => ({ subject, calls: callsOf(subject) })).filter((entry) => entry.calls.length > 0);
   return { judges, bindings: [...bindings.values()], models, subjects: planned, calls: planned.reduce((sum, entry) => sum + entry.calls.length, 0) };
 }

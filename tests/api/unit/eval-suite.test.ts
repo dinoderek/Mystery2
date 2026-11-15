@@ -10,9 +10,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { loadTruthSet, readResultsFile } from "../../../evaluation/lib/truth/loader.ts";
+import type { ResolvedBinding } from "../../../evaluation/core/config.ts";
 import { SUITES_DIR, readSuiteFile } from "../../../evaluation/suite/file.ts";
+import { planSuite } from "../../../evaluation/suite/plan.ts";
 import {
   ANSWERS,
+  FIXTURE,
   FIXTURE_SUITE,
   ROOT,
   filesUnder,
@@ -378,14 +381,15 @@ describe("judges and subjects", () => {
 });
 
 describe("the committed suites", () => {
-  it("each read as a suite file and name registry judges only", async () => {
+  it("each read as a suite file and plan against the fixture truth set", async () => {
     const dir = path.join(ROOT, SUITES_DIR);
     const files = fs.readdirSync(dir).filter((name) => name.endsWith(".json"));
     expect(files.length).toBeGreaterThan(0);
-    const { findEntry } = await import("../../../evaluation/core/registry.ts");
+    const set = await loadTruthSet(FIXTURE);
+    const stub = (name: string): ResolvedBinding => ({ name, cmd: "true", command: "/usr/bin/true", args: [], extract_path: null, model: null, timeout_ms: 1000, retries: 0 });
     for (const name of files) {
-      const { suite: read } = readSuiteFile(path.join(dir, name));
-      for (const judge of read.judges) expect(findEntry(judge)?.type, `${name}: ${judge}`).toBe("judge");
+      const plan = planSuite(readSuiteFile(path.join(dir, name)).suite, set, stub);
+      expect(plan.calls, name).toBeGreaterThan(0);
     }
   });
 });

@@ -13,6 +13,7 @@ import { playCommand } from "./playtest/play.ts";
 import { reportCommand } from "./playtest/report.ts";
 import { judgeTurnCommand } from "./runtime/judge-turn.ts";
 import { scoreCommand } from "./score/command.ts";
+import { suiteCommand } from "./suite/command.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
 export const COMMANDS: readonly EvalCommand[] = [
@@ -27,4 +28,5 @@ export const COMMANDS: readonly EvalCommand[] = [
   labelCommand,
   scoreCommand,
   compareCommand,
+  suiteCommand,
 ];

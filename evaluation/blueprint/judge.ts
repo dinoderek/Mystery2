@@ -15,16 +15,19 @@
 
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import type { ResolvedBinding } from "../core/config.ts";
+import { UsageLimitError } from "../core/errors.ts";
 import { validateJudgeOutput } from "../core/judge-output.ts";
 import { loadAnalyzer, loadCheck, loadJudge } from "../core/judge-loader.ts";
 import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
-import { checksFor, judgesFor } from "../core/registry.ts";
+import { checksFor, getJudgeEntry, judgesFor } from "../core/registry.ts";
 import type { JudgeEntry } from "../core/registry.ts";
 import type { Status, Verdict } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
 import { majorFindingsVerdict } from "../judges/index.ts";
+import type { CallMemo } from "../core/runner.ts";
+import { createRunTimer } from "../core/timing.ts";
 import type { DimensionTimer, RunTimer } from "../core/timing.ts";
 
 /** Which judges run: all, none (`--no-judges`), or the named ones (`--judges a,b`). */
@@ -76,6 +79,8 @@ export interface BlueprintJudgeInput {
   timer: RunTimer;
   quiet: boolean;
   write: (line: string) => void;
+  /** Finished judge calls to answer from (`CallMemo` in `core/runner.ts`). */
+  memo?: CallMemo;
 }
 
 interface Dimension {
@@ -142,6 +147,7 @@ async function judge(dimension: Dimension, input: BlueprintJudgeInput, timer: Di
           userMessage,
           logDir: input.logDir,
           env: { EVAL_DIMENSION_ID: entry.id, EVAL_RUN_DIR: input.runDir },
+          memo: input.memo,
           parse: (answer) => {
             let parsed: unknown = null;
             try {
@@ -166,6 +172,7 @@ async function judge(dimension: Dimension, input: BlueprintJudgeInput, timer: Di
     input.write(`[eval][${entry.id}] judge: ${reached.status}${retries > 0 ? ` (after ${retries} retry/retries)` : ""} (${seconds})`);
     return { id: entry.id, tier: "judge", ...reached, call: outcome.call, answer: outcome.value };
   } catch (error) {
+    if (error instanceof UsageLimitError) throw error;
     return errorVerdict(entry.id, "judge", (error as Error).message);
   }
 }
@@ -239,5 +246,25 @@ export async function judgeBlueprint(input: BlueprintJudgeInput): Promise<Verdic
     return [...mechanical, ...perDimension.flat()];
   } finally {
     digest.stop();
+  }
+}
+
+/** What judging one dimension on its own needs: the blueprint's input, less the selection, the timer and the progress digest. */
+export type OneJudgeInput = Pick<BlueprintJudgeInput, "brief" | "blueprint" | "logDir" | "runDir" | "write" | "memo"> & { binding: ResolvedBinding };
+
+/**
+ * One judge on a blueprint that passes Blueprint V2, by registry id, whether
+ * or not the battery runs it, with no checks and no analyzer: the verdict a
+ * harness that picks its own judges, such as `./dev eval suite`, needs.
+ */
+export async function judgeOneDimension(id: string, input: OneJudgeInput): Promise<Verdict> {
+  const entry = getJudgeEntry(id);
+  const parsed = BlueprintV2Schema.parse(input.blueprint);
+  const dimension: Dimension = { entry, context: entry.context ? (structuredClone(entry.context) as Record<string, unknown>) : null, parsed };
+  const timer = createRunTimer().dimension(entry.id);
+  try {
+    return await judge(dimension, { ...input, selection: [id], timer: createRunTimer(), quiet: true }, timer, input.binding);
+  } finally {
+    timer.finalize();
   }
 }

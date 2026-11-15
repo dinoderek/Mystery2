@@ -27,7 +27,9 @@ import { composeJudgeSystemPrompt, composeJudgeUserMessage, composeTurnAgeSystem
 import { getEntry } from "../../core/registry.ts";
 import type { JudgeEntry } from "../../core/registry.ts";
 import type { Verdict } from "../../core/result.ts";
+import { UsageLimitError } from "../../core/errors.ts";
 import { runModel } from "../../core/runner.ts";
+import type { CallMemo } from "../../core/runner.ts";
 import { resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
 import type { BlueprintLike, JudgeOptions } from "./case.ts";
@@ -43,6 +45,8 @@ export interface TurnJudging {
   logDir: string;
   /** The options each judge reads, by id. */
   options?: Record<string, JudgeOptions | undefined>;
+  /** Finished judge calls to answer from (`CallMemo` in `core/runner.ts`). */
+  memo?: CallMemo;
 }
 
 function failed(entry: Pick<JudgeEntry, "id">, reason: string, extra: Partial<Verdict> = {}): Verdict {
@@ -99,6 +103,7 @@ async function runAdherenceJudge(entry: JudgeEntry, turn: StoredTurn, judging: T
     systemPrompt: composeJudgeSystemPrompt(definition, null),
     userMessage: buildJudgeUserMessage(entry.id, turn, blueprint),
     logDir: judging.logDir,
+    memo: judging.memo,
     // Validated inside the retry loop: a judge that replies with prose instead
     // of its JSON object is a real, retriable model failure, not a dead run.
     parse: (answer) => {
@@ -160,6 +165,7 @@ async function runAgeJudge(entry: JudgeEntry, turn: StoredTurn, judging: TurnJud
     systemPrompt: composeTurnAgeSystemPrompt(targetAge),
     userMessage,
     logDir: judging.logDir,
+    memo: judging.memo,
     parse: (answer) => validateTurnAgeAnswer(parseFencedJson(answer)),
   });
   if (!result.ok) return failed(entry, result.error, { call: result.call, details: { target_age: targetAge } });
@@ -192,6 +198,7 @@ async function judgeOne(id: string, turn: StoredTurn, judging: TurnJudging): Pro
       ? await runAgeJudge(entry, turn, judging)
       : await runAdherenceJudge(entry, turn, judging);
   } catch (error) {
+    if (error instanceof UsageLimitError) throw error;
     // One judge that throws is an error verdict and leaves the others alone.
     const reason = error instanceof Error ? error.message : String(error);
     return entry.type === "check"

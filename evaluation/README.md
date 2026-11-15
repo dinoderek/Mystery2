@@ -18,6 +18,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
 | `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
 | `compare <results A> <results B>` | Compares two runs, no model, on units both judged: per judge and kind, a difference counts beyond each run's own sample variation (exact sign test). Delay, usage per run. `--truth`, `--out` |
+| `suite <name>` | Runs a suite file from `evaluation/suites/` unattended: judges its subjects (any registry judge, candidates too), stores the results in the truth set, scores them and checks its thresholds. A rerun resumes, repeating no finished call; the usage limit stops it. `--truth`, `--results` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one
@@ -87,6 +88,10 @@ blueprint run looks like this:
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
+A suite keeps its state in `<root>/suites/<name>/`: the journal of finished
+calls (`calls.jsonl`) and a `<date>/<time>-suite/` folder per run, with
+`suite.json` and a folder per call made. Only its results file goes in the repo.
+
 ## Result
 
 `result.json` is written even when the run aborts. Its schema is
@@ -109,7 +114,7 @@ blueprint run looks like this:
 
 The same for every command. **0**: everything passed. **1**: the run broke (an
 unreadable file, a missing binding, `run_error` in the result). **2**: a check
-or judge failed, or could not judge.
+or judge failed, or could not judge (`suite`: a threshold was not met).
 
 ## Live progress
 
@@ -123,6 +128,8 @@ shows `done/total`. `--quiet` keeps milestones. The raw stream
 A judge is retried (`retries`) on a non-zero exit, a timeout, stdout that is not
 JSON, an `extract_path` miss, or an answer failing the dimension's Zod schema. Generation is retried on the same,
 and on output failing Blueprint V2 validation. Each attempt has its own log, such as `judge-solve_depth.attempt-2.stderr.log`.
+At the login's usage limit nothing is retried and no judge records an error:
+the run breaks, exiting 1.
 
 ## Blueprint dimensions
 

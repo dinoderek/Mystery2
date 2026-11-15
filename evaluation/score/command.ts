@@ -15,7 +15,7 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import { reading, readResults, rounded } from "../lib/truth/inputs.ts";
 import { loadTruthSet, TRUTH_ROOT } from "../lib/truth/loader.ts";
 import { describeBar, LOSE_NOTHING, scoreVerdicts } from "../lib/truth/score.ts";
-import type { Bar } from "../lib/truth/score.ts";
+import type { Bar, ScoreReport } from "../lib/truth/score.ts";
 import { verdictKey } from "../lib/truth/schemas.ts";
 import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { formatScore } from "./table.ts";
@@ -75,6 +75,13 @@ function merge(files: readonly { file: string; verdicts: StoredVerdict[] }[], sh
   return verdicts;
 }
 
+/** Writes the JSON report to `out`, naming what was scored. `./dev eval suite` writes the same. */
+export function writeScoreFile(out: string, report: ScoreReport, inputs: { truth: string; results: string[] }): void {
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  const file = { schema_version: report.schema_version, inputs, rules: report.rules, sides: report.sides };
+  fs.writeFileSync(out, `${JSON.stringify(file, rounded, 2)}\n`, "utf8");
+}
+
 export const scoreCommand: EvalCommand = {
   name: "score",
   summary: "Score stored results against the truth set; every subset of judges, and the smallest",
@@ -100,9 +107,7 @@ export const scoreCommand: EvalCommand = {
             createRunFolder({ outputRoot: resolveOutputRoot(common.outputRoot, context.env), command: "score", argv, root: context.root, bindings: [] }).dir,
             SCORE_FILE,
           );
-    fs.mkdirSync(path.dirname(out), { recursive: true });
-    const file = { schema_version: report.schema_version, inputs, rules: report.rules, sides: report.sides };
-    fs.writeFileSync(out, `${JSON.stringify(file, rounded, 2)}\n`, "utf8");
+    writeScoreFile(out, report, inputs);
     context.out(formatScore(report, inputs));
     context.out(`\nWrote ${out}`);
     return 0;

@@ -6,7 +6,13 @@
  * the binding's wrapper with their paths, enforces the timeout, reads the
  * answer from stdout and retries on a non-zero exit, a timeout, output that is
  * not JSON, or an answer the caller's `parse` rejects. It never throws for a
- * failed call: it returns `ok: false` with every attempt recorded.
+ * failed call: it returns `ok: false` with every attempt recorded. The one
+ * exception is the login's usage limit (`usage-limit.ts`): no retry would
+ * succeed and the failure is not the call's, so it throws `UsageLimitError`.
+ *
+ * A caller that keeps finished calls passes a `memo`: a call it already holds,
+ * by prompt hash, is answered from it with no wrapper started, and each call
+ * made is handed to it when it finishes. `./dev eval suite` resumes this way.
  *
  * The wrapper's environment adds:
  *
@@ -37,7 +43,9 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 
 import type { ResolvedBinding } from "./config.ts";
+import { UsageLimitError } from "./errors.ts";
 import type { Attempt, ModelCall } from "./result.ts";
+import { usageLimitMessage } from "./usage-limit.ts";
 
 export interface ModelCallRequest<T> {
   binding: ResolvedBinding;
@@ -55,6 +63,19 @@ export interface ModelCallRequest<T> {
   output?: "json" | "text";
   /** Added to the wrapper's environment. Only the names are logged, never the values. */
   env?: Record<string, string>;
+  /** Finished calls the caller keeps; see the file's header. */
+  memo?: CallMemo;
+}
+
+/** A call that ran to its end: its answer, or why every attempt failed. */
+export type FinishedCall = { ok: true; answer: string; call: ModelCall } | { ok: false; error: string; call: ModelCall };
+
+/** Where a caller keeps finished calls, by the SHA-256 of their prompt (`promptSha256`). */
+export interface CallMemo {
+  /** The finished call with this prompt, or null when there is none. */
+  recall(promptSha256: string): FinishedCall | null;
+  /** Called once a call has finished; never for one stopped by the usage limit. */
+  keep(promptSha256: string, finished: FinishedCall): void;
 }
 
 export type ModelCallResult<T> =
@@ -191,6 +212,14 @@ function reportedCost(parsed: unknown): number | null {
   return typeof cost === "number" && Number.isFinite(cost) && cost >= 0 ? cost : null;
 }
 
+function readOrEmpty(file: string): string {
+  try {
+    return readFileSync(file, "utf8");
+  } catch {
+    return "";
+  }
+}
+
 /** The cost on the last `result` event of a stream file, or null. */
 function streamedCost(streamFile: string): number | null {
   let lines: string[];
@@ -247,7 +276,7 @@ interface AttemptContext<T> {
 async function runAttempt<T>(
   { request, args, promptFiles }: AttemptContext<T>,
   attempt: number,
-): Promise<{ record: Attempt; answer?: string; value?: T }> {
+): Promise<{ record: Attempt; answer?: string; value?: T; usageLimit?: string }> {
   const { binding, logDir, step } = request;
   const logStem = path.join(logDir, `${step}.attempt-${attempt}`);
   const streamFile = `${logStem}.stream.jsonl`;
@@ -285,7 +314,9 @@ async function runAttempt<T>(
     return { record: { attempt, outcome: "ok", duration_ms: durationMs, cost_usd: costUsd }, answer: read.answer, value };
   } catch (error) {
     if (!(error instanceof AttemptFailure)) throw error;
+    const usageLimit = usageLimitMessage({ stdout: run.stdout, stderr: run.stderr, stream: readOrEmpty(streamFile) });
     return {
+      ...(usageLimit ? { usageLimit } : {}),
       record: {
         attempt,
         outcome: error.outcome,
@@ -302,9 +333,24 @@ function totalCost(attempts: readonly Attempt[]): number | null {
   return costs.length === 0 ? null : costs.reduce((sum, cost) => sum + cost, 0);
 }
 
+/** A kept call as this request's result; null when its answer no longer parses, so it is made again. */
+function recalled<T>(request: ModelCallRequest<T>, finished: FinishedCall): ModelCallResult<T> | null {
+  if (!finished.ok) return finished;
+  try {
+    const value = request.parse ? request.parse(finished.answer) : (finished.answer as T);
+    return { ok: true, answer: finished.answer, value, call: finished.call };
+  } catch {
+    return null;
+  }
+}
+
 /** Makes one model call through its binding's wrapper, with the binding's retries. */
 export async function runModel<T = string>(request: ModelCallRequest<T>): Promise<ModelCallResult<T>> {
   const { binding, logDir, step, systemPrompt, userMessage } = request;
+  const promptHash = promptSha256(systemPrompt, userMessage);
+  const kept = request.memo?.recall(promptHash);
+  const answered = kept ? recalled(request, kept) : null;
+  if (answered) return answered;
   await fs.mkdir(logDir, { recursive: true });
   const promptFiles = {
     system: path.join(logDir, `${step}.system.txt`),
@@ -322,6 +368,7 @@ export async function runModel<T = string>(request: ModelCallRequest<T>): Promis
   let success: { answer: string; value: T } | null = null;
   for (let attempt = 1; attempt <= 1 + binding.retries && !success; attempt += 1) {
     const outcome = await runAttempt(context, attempt);
+    if (outcome.usageLimit) throw new UsageLimitError(binding.name, outcome.usageLimit);
     attempts.push(outcome.record);
     if (outcome.record.outcome === "ok") success = { answer: outcome.answer as string, value: outcome.value as T };
   }
@@ -329,12 +376,15 @@ export async function runModel<T = string>(request: ModelCallRequest<T>): Promis
   const call: ModelCall = {
     binding: binding.name,
     model: binding.model,
-    prompt_sha256: promptSha256(systemPrompt, userMessage),
+    prompt_sha256: promptHash,
     duration_ms: Math.round(performance.now() - startedAt),
     cost_usd: totalCost(attempts),
     attempts,
   };
-  if (success) return { ok: true, ...success, call };
   const last = attempts[attempts.length - 1];
-  return { ok: false, error: `binding "${binding.name}" failed after ${attempts.length} attempt(s): ${last.error}`, call };
+  const finished: FinishedCall = success
+    ? { ok: true, answer: success.answer, call }
+    : { ok: false, error: `binding "${binding.name}" failed after ${attempts.length} attempt(s): ${last.error}`, call };
+  request.memo?.keep(promptHash, finished);
+  return success ? { ok: true, ...success, call } : (finished as ModelCallResult<T>);
 }

@@ -17,6 +17,9 @@
 //   stream    writes two events to EVAL_STREAM_FILE, then behaves as ok
 //   streamed_cost  writes a result event with a cost to EVAL_STREAM_FILE and
 //             prints an envelope without one, as the stream-json wrappers do
+//   limit     writes the error result event the Claude CLI ends a call with at
+//             the login's usage limit to EVAL_STREAM_FILE, and exits 1, as the
+//             stream-json wrappers do when the CLI fails
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -98,6 +101,13 @@ switch (step) {
       `${JSON.stringify({ type: "result", num_turns: 2, total_cost_usd: 1.5 })}\n{"type":`,
     );
     process.stdout.write(JSON.stringify({ result: answer(42) }));
+    break;
+  case "limit":
+    fs.appendFileSync(
+      process.env.EVAL_STREAM_FILE,
+      `${JSON.stringify({ type: "result", subtype: "success", is_error: true, num_turns: 1, result: "You've hit your weekly limit \u00b7 resets Mon 9am (Europe/London)", total_cost_usd: 0 })}\n`,
+    );
+    process.exit(1);
     break;
   default:
     process.stderr.write(`unknown step ${step}\n`);

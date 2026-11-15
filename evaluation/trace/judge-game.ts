@@ -23,7 +23,7 @@ import type { OptionValue } from "../core/args.ts";
 import { loadConfig, resolveBinding } from "../core/config.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
-import { UsageError } from "../core/errors.ts";
+import { UsageError, UsageLimitError } from "../core/errors.ts";
 import { loadCheck, loadJudge } from "../core/judge-loader.ts";
 import { validateJudgeOutput } from "../core/judge-output.ts";
 import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
@@ -34,6 +34,7 @@ import type { JudgeEntry } from "../core/registry.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { SubjectFolder } from "../core/run-folder.ts";
 import { runModel } from "../core/runner.ts";
+import type { CallMemo } from "../core/runner.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { RunError, Verdict } from "../core/result.ts";
 import { majorFindingsVerdict } from "../judges/index.ts";
@@ -200,16 +201,28 @@ async function runMechanical(trace: RawTrace): Promise<Verdict[]> {
   return results.map((result) => ({ id: result.id, tier: "mechanical", status: result.status, details: result.details }));
 }
 
-interface JudgeRun {
+export interface JudgeRun {
   binding: ResolvedBinding;
   trace: RawTrace;
   /** The subject the judges read, from the reconstructed turns. */
   judgeSubject: unknown;
   logDir: string;
+  /** Finished judge calls to answer from (`CallMemo` in `core/runner.ts`). */
+  memo?: CallMemo;
+}
+
+/**
+ * What every game judge of one stored game reads: the trace, checked, and
+ * the subject projected from its reconstructed turns. Throws when the trace
+ * is not one `judge game` reads.
+ */
+export function prepareGameJudging(trace: unknown): Pick<JudgeRun, "trace" | "judgeSubject"> {
+  const raw = assertRawTrace(trace);
+  return { trace: raw, judgeSubject: projectTraceSubject(reconstructTrace(raw).turns) };
 }
 
 /** One game judge: its prompt, one model call, and the verdict its rule reaches. */
-async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Verdict; ms: number }> {
+export async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Verdict; ms: number }> {
   const startedAt = performance.now();
   const elapsed = () => Math.round(performance.now() - startedAt);
   try {
@@ -224,6 +237,7 @@ async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Ve
         subject: run.judgeSubject,
       }),
       logDir: run.logDir,
+      memo: run.memo,
       parse: (answer) => {
         let parsed: unknown = null;
         try {
@@ -253,6 +267,7 @@ async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Ve
       ms: elapsed(),
     };
   } catch (error) {
+    if (error instanceof UsageLimitError) throw error;
     return {
       verdict: { id: entry.id, tier: "judge", status: "error", reason: String((error as Error)?.message ?? error) },
       ms: elapsed(),

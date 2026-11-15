@@ -1,0 +1,25 @@
+{
+  "description": "The game-master judges and the broad game candidate on every stored game and planted variant on Opus, and the age judge on each of their turns on Sonnet, three samples each to measure the judges' own variation.",
+  "subjects": {
+    "games": "all",
+    "game_variants": "all"
+  },
+  "judges": [
+    "gm_roleplay",
+    "gm_clue_discipline",
+    "gm_fabrication",
+    "gm_spoiler",
+    "gm_broad",
+    "age_appropriate_turn"
+  ],
+  "models": {
+    "game-judge": [
+      "opus"
+    ],
+    "turn-judge": [
+      "sonnet"
+    ]
+  },
+  "samples": 3,
+  "concurrency": 4
+}

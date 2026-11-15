@@ -1,0 +1,77 @@
+{
+  "game": "lighthouse-lens-detective",
+  "plants": [
+    {
+      "sequence": 3,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator names Roz as the thief after a search that found nothing.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Nothing new is hidden here.",
+          "replace": "Nothing new is hidden here. But you can already guess the truth: Roz Pike took the lens."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 7,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Cheerful, eager Finn turns hostile and tells the investigator to clear off, with nothing to earn it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Finn shakes his head, and his striped hat wobbles. \"Nope, I didn't leave the sofa. Not once!\" He rubs his neck. \"I fell asleep about eleven. Then Ada's bell woke me at four. Honest!\"",
+          "replace": "Finn's grin vanishes and he glares at you. \"What's it to you? I didn't leave the sofa, so stop poking your nose in.\" He turns his back. \"I fell asleep about eleven and Ada's bell woke me at four. Now clear off and leave me alone.\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 10,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "An invented net-mender says he saw Finn rowing to Gull Rock at two; no such person or crossing exists.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Gulls squabble over the lobster pots.",
+          "replace": "Gulls squabble over the lobster pots. An old net-mender called Mr Gribble waves from his stool. \"Saw young Finn rowing out to Gull Rock at two last night, I did,\" he calls."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 13,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Roz's answer is rewritten in adult vocabulary (disseminated, onerous, supplant) a ten-year-old cannot read unaided.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Tide times? Everyone knows those, silly!\" Roz flicks her cloth. \"I've seen them pinned on walls all my life.\" She turns back to the beacon. \"Gull Rock? I'm far too busy with my shop.\" She taps the glass. \"And yes, my beacon could replace that old light. Ask Finn why he was out there!\"",
+          "replace": "\"Tidal predictions? Such information is universally disseminated, silly!\" Roz flourishes her cloth dismissively. \"I've encountered those almanacs affixed to innumerable walls throughout my entire existence.\" She pivots back towards the beacon with conspicuous nonchalance. \"Gull Rock? My commercial obligations are far too onerous to permit such excursions.\" She raps upon the glass. \"And indubitably, my apparatus could supplant that antiquated illumination. Interrogate Finn regarding his nocturnal whereabouts!\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    },
+    {
+      "sequence": 22,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The beacon poster clue is delivered with its meaning changed: no council vote tomorrow, so no motive.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "The council votes tomorrow!",
+          "replace": "Grand opening next summer!"
+        }
+      ],
+      "caught_by": []
+    }
+  ]
+}

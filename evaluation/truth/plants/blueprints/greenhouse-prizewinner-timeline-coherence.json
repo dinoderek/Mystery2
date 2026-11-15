@@ -1,0 +1,19 @@
+{
+  "base": "greenhouse-prizewinner",
+  "kind": "timeline_coherence",
+  "judge": "timeline_coherence",
+  "note": "Toby is now at home with his mum all evening, and also in the greenhouse at ten to nine: in two places at once.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/characters/1/actual_actions/4/summary",
+      "value": "Friday 6pm to 8:30pm: at home working on his steam-train jigsaw. At 8:30 he told his mum he was going to bed early."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/1/actual_actions/4/summary",
+      "value": "Friday 6pm to 10pm: at home at the kitchen table with his mum, working on his steam-train jigsaw. He did not leave the house all evening."
+    }
+  ],
+  "caught_by": []
+}

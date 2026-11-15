@@ -8,8 +8,8 @@ planted material only; no credential or home path, gate-tested. Code:
 Ids are file or folder names. Under it: `bases/<base>/blueprint.json` and
 `brief.json`, frozen copies; `games/<game>/trace.json`, as `judge game`
 reads it, and `labels.json`, from the labelling page;
-`plants/turns/<variant>.json` and `plants/blueprints/<plant>.json`, by hand;
-`guide.md`, deciding each kind; `results/<name>.json`, from a suite, or
+`plants/turns/<variant>.json` and `plants/blueprints/<plant>.json`, written
+against `guide.md`, which decides each kind; `results/<name>.json`, from a suite, or
 `store.ts` for the bases' judging, `bases.json`.
 
 **Kinds.** Game side: `spoiler`, `fabrication`, `clue_handling`,
@@ -23,7 +23,7 @@ relabelled as pass 2.
 
 ## Plants
 
-Variants are rebuilt on demand. A turn plant's edits are `narration`, replacing
+Variants are rebuilt on demand. Turn plants' edits are `narration`, replacing
 the one place `find` occurs, or `patch`, JSON Patch on the event; one plant a
 turn. A blueprint plant is JSON Patch on its base, starting with a `test`.
 
@@ -50,7 +50,7 @@ log or workspace. `./dev eval score` scores them, minor findings as reports.
 
 ## Made live
 
-Bases from `evaluation/specs/` briefs; games, Haiku-narrated self-play. All on
+Bases from `evaluation/specs/` briefs; games, Haiku-narrated self-play. On
 temporary roots:
 
 ```bash

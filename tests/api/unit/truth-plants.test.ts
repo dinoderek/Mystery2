@@ -461,14 +461,18 @@ describe("the plants in the truth set", () => {
   }
 
   it("all apply, stay valid subjects and match their record of checks, in the real set", async () => {
-    const reports = await verifyPlants(await loadTruthSet(path.join(repoRoot(), TRUTH_ROOT)));
+    const set = await loadTruthSet(path.join(repoRoot(), TRUTH_ROOT));
+    const reports = await verifyPlants(set);
     expect(problemsIn(reports)).toEqual([]);
+    // Every plant is reported once, so none is skipped.
+    const plants = set.turnVariants.reduce((sum, variant) => sum + variant.plants.length, 0) + set.blueprintPlants.length;
+    expect(plants).toBeGreaterThan(0);
+    expect(reports).toHaveLength(plants);
   });
 
   it("all apply, stay valid subjects and match their record of checks, in the fixture", async () => {
     const reports = await verifyPlants(await fixture());
     expect(problemsIn(reports)).toEqual([]);
-    // The fixture keeps this test from being vacuous while the real set has no plants.
     expect(reports.map((report) => report.plant)).toEqual(["medal-leak@3", "medal-spoiler@4", "medal-spoiler@7", "mock-bob-not-ruled-out"]);
   });
 });

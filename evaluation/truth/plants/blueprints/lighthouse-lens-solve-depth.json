@@ -1,0 +1,19 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "solve_depth",
+  "judge": "solve_depth",
+  "note": "The velvet scrap now comes wrapped round one of Roz's tiny apron screwdrivers, so one clue all but names her and the shortest path drops below the floor of 3.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/2/sub_locations/1/clues/0/text",
+      "value": "Caught on the iron railing at the top of the causeway steps is a small scrap of blue velvet. It matches the torn lining of the lens cradle!"
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/2/sub_locations/1/clues/0/text",
+      "value": "Caught on the iron railing at the top of the causeway steps is a small scrap of blue velvet. It is wrapped round a tiny screwdriver, like the ones in Roz's apron. It matches the torn lining of the lens cradle!"
+    }
+  ],
+  "caught_by": []
+}

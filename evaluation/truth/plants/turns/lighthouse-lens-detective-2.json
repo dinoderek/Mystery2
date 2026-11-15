@@ -1,0 +1,77 @@
+{
+  "game": "lighthouse-lens-detective",
+  "plants": [
+    {
+      "sequence": 2,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "Ada reports a missing spare tower key; the blueprint has no key, and the claim sends the player after it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"The lens is gone. Please help me find it!\"",
+          "replace": "\"The lens is gone, and the spare key to the tower door is missing from its hook too. Please help me find them!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 5,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The move narration delivers the changed tide schedule clue, which the turn does not record.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "By the door, a tide schedule is pinned to the wall.",
+          "replace": "By the door, a tide schedule is pinned to the wall. Up close, last night's low tide says 5:00 a.m., but the 5 is fresh, dark ink, and the number under it has been scratched away!"
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 11,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Proud, show-off Roz calls her beacon a silly toy and praises the old lighthouse, against her personality and her motive.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Morning! Have you come to see my beacon? Isn't she a beauty?\" She smiles and taps the shiny glass.",
+          "replace": "\"Oh, my beacon? It's only a silly toy, really,\" she mumbles, hiding the cloth behind her back. \"Ada's old lighthouse is far better than anything I could ever make.\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 19,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Roz's reply becomes long stacked sentences of hard words (evidentiary, lacerated, ostentatiously) for a ten-year-old.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Roz's mouth goes into a thin line. \"Accuse me? All you have is a torn bit of velvet and a schedule on a wall!\" She turns her back and dabs at the glass. \"I was asleep. Ask Finn. He's the one who stayed out there.\"",
+          "replace": "Roz's lips compress into an unyielding line, and, having regarded you with palpable disdain for an interminable moment, she retorts: \"You presume to incriminate me on the flimsy evidentiary basis of a lacerated fragment of velvet and a tidal almanac affixed to a wall?\" Pivoting ostentatiously, she resumes her meticulous burnishing of the glass. \"I was soundly slumbering throughout. Direct your inquiries to Finn, the solitary individual who remained overnight upon that rock.\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    },
+    {
+      "sequence": 21,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator says the lens is hidden in Roz's back room, Roz's hidden action told as fact before the accusation.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You step away from the lamp shop.",
+          "replace": "You step away from the lamp shop. Behind its door, under a dust sheet in the back room, the missing lens lies hidden where Roz put it."
+        }
+      ],
+      "caught_by": []
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 /**
  * What the real truth set holds: its bases, with their briefs and their
- * judging, and its self-played games. The material was made live; this proves,
- * with no model, that it is what it claims to be.
+ * judging, its self-played games, the faults planted in them and the guide
+ * that decides each kind. The bases and games were made live; this proves,
+ * with no model, that the set is what it claims to be.
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -11,6 +12,7 @@ import path from "node:path";
 import { runMechanical } from "../../../evaluation/blueprint/judge.ts";
 import { loadAnalyzer, repoRoot } from "../../../evaluation/core/judge-loader.ts";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
+import { GAME_KINDS, isKindOf } from "../../../evaluation/lib/truth/kinds.ts";
 import { loadTruthSet, TRUTH_ROOT } from "../../../evaluation/lib/truth/loader.ts";
 import type { TruthSet } from "../../../evaluation/lib/truth/loader.ts";
 import { BASES_RESULTS } from "../../../evaluation/lib/truth/store.ts";
@@ -98,5 +100,64 @@ describe("the real truth set's games", () => {
     const personas = new Set(set.games.map((game) => game.trace.source.persona));
     expect(personas).toEqual(new Set(["detective", "kid-7"]));
     for (const persona of personas) expect(listPersonas()).toContain(persona);
+  });
+});
+
+/** How many plants carry each kind. */
+function countKinds(kinds: readonly string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const kind of kinds) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  return counts;
+}
+
+describe("the real truth set's planted faults", () => {
+  it("plant between eight and twelve turn faults of each game kind", () => {
+    const counts = countKinds(set.turnVariants.flatMap((variant) => variant.plants.map((plant) => plant.kind)));
+    expect([...counts.keys()].sort()).toEqual([...GAME_KINDS].sort());
+    for (const kind of GAME_KINDS) {
+      expect(counts.get(kind), kind).toBeGreaterThanOrEqual(8);
+      expect(counts.get(kind), kind).toBeLessThanOrEqual(12);
+    }
+  });
+
+  it("spread the turn faults over about ten variants, covering every stored game", () => {
+    expect(set.turnVariants.length).toBeGreaterThanOrEqual(8);
+    expect(set.turnVariants.length).toBeLessThanOrEqual(12);
+    expect(new Set(set.turnVariants.map((variant) => variant.game))).toEqual(new Set(set.games.map((game) => game.id)));
+  });
+
+  it("put each turn fault before the accusation, on a turn the game has", () => {
+    for (const variant of set.turnVariants) {
+      const game = set.games.find((candidate) => candidate.id === variant.game)!;
+      for (const plant of variant.plants) {
+        const event = game.trace.events.find((candidate) => candidate.sequence === plant.sequence);
+        expect(event?.event_type, `${variant.id}@${plant.sequence}`).not.toMatch(/^accuse_/);
+      }
+    }
+  });
+
+  it("plant three faults for each blueprint judge of the default battery, each on a different base, over every base", () => {
+    const judges = judgesFor("blueprint").map((judge) => judge.id);
+    expect(countKinds(set.blueprintPlants.map((plant) => plant.judge))).toEqual(new Map(judges.map((judge) => [judge, 3])));
+    for (const judge of judges) {
+      const bases = set.blueprintPlants.filter((plant) => plant.judge === judge).map((plant) => plant.base);
+      expect(new Set(bases).size, judge).toBe(3);
+    }
+    expect(new Set(set.blueprintPlants.map((plant) => plant.base))).toEqual(new Set(set.bases.map((base) => base.id)));
+  });
+
+  it("name for each blueprint fault the kind of the judge it is meant for, in the blueprint vocabulary", () => {
+    for (const plant of set.blueprintPlants) {
+      expect(isKindOf("blueprint", plant.kind), plant.id).toBe(true);
+      expect(plant.kind, plant.id).toBe(plant.judge);
+    }
+  });
+});
+
+describe("the real truth set's labelling guide", () => {
+  it("is where the loader looks, and names every kind of the game side", async () => {
+    expect(set.guide).toBe(path.join(set.root, "guide.md"));
+    const guide = await fs.readFile(set.guide!, "utf8");
+    for (const kind of GAME_KINDS) expect(guide, kind).toContain(`\`${kind}\``);
   });
 });

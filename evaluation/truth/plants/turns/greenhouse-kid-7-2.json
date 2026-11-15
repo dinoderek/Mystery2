@@ -1,0 +1,77 @@
+{
+  "game": "greenhouse-kid-7",
+  "plants": [
+    {
+      "sequence": 2,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "The narrator invents an open back door at the far end of the greenhouse, a second way in the blueprint does not have.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "A smashed side window lets in a chilly breeze.",
+          "replace": "A smashed side window lets in a chilly breeze. At the far end, a little back door you had not noticed stands open, swinging in the wind."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 10,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The rota clue is distorted: plain black pencil instead of sparkly purple pen, losing the link to Mia's pen.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "'MIA' is written over it in sparkly purple pen.",
+          "replace": "'MIA' is written over it in plain black pencil."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 12,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Bubbly, loyal Mia sneers at Toby, against her personality and her agenda of sticking up for him.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Mia tugs at one of her black bunches. \"Ms. Hale wrote my name on the rota on Wednesday. Those shifts clash with my dance practice, so I wasn't thrilled.\" She looks at her green wellies. \"But I watered Bertha properly. Honest!\"",
+          "replace": "Mia rolls her eyes. \"Because Ms. Hale said so, obviously. Toby's such a baby about that pumpkin.\" She smirks. \"I watered Bertha properly. Not that anyone says thank you.\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 30,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator says Toby slipped the greenhouse key into his pocket on Wednesday, his hidden action told as fact.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Toby turns back to his seed trays.",
+          "replace": "Toby turns back to his seed trays, one hand on the hoodie pocket he slipped the greenhouse key into on Wednesday."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 45,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Mr. Dobbs speaks in idioms (joined up the dots, holds water, the missing piece of the puzzle, put two and two together) a ten-year-old reader would stumble on, in one long sentence.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Stanley turns his mug slowly. \"You've put a lot of pieces together, and they fit neatly.\" He frowns. \"But Toby being inside is the part I still can't see. What puts him in the greenhouse itself?\"",
+          "replace": "Stanley turns his mug slowly. \"You've joined up the dots, and on the face of it your story holds water, but the long and short of it is that putting two and two together isn't the same as catching someone red-handed, so Toby being inside is still the missing piece of the puzzle as far as I'm concerned.\" He frowns. \"What puts him in the greenhouse itself?\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    }
+  ]
+}

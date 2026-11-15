@@ -47,4 +47,5 @@ evaluation/prompts/judge-system.md	200
 evaluation/runtime/README.md	1050
 evaluation/trace/README.md	600
 evaluation/truth/README.md	450
+evaluation/truth/guide.md	450
 packages/blueprint-generator/src/generator-prompt.md	2900

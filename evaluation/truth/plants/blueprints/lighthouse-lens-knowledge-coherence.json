@@ -1,0 +1,19 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "knowledge_coherence",
+  "judge": "knowledge_coherence",
+  "note": "The cottage's description, seen on arrival, shows the inked-over 5 on the tide schedule, giving away the changed-schedule clue before it is found.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/1/description",
+      "value": "A snug stone cottage sits at the foot of the lighthouse. A kettle hums on the stove and a ship's clock ticks on the shelf. A tide schedule is pinned to the wall by the door."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/1/description",
+      "value": "A snug stone cottage sits at the foot of the lighthouse. A kettle hums on the stove and a ship's clock ticks on the shelf. A tide schedule is pinned to the wall by the door; last night's low tide reads 5:00 a.m. in fresh, dark ink over a scratched-out number."
+    }
+  ],
+  "caught_by": []
+}

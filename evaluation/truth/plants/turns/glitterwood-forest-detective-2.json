@@ -1,0 +1,75 @@
+{
+  "game": "glitterwood-forest-detective",
+  "plants": [
+    {
+      "sequence": 2,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Tobias speaks in idioms (in a pickle, cat among the pigeons, all at sea) a seven-year-old would misread.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Oh, thank goodness you came! Someone swapped our stick!\"",
+          "replace": "\"Oh, thank goodness you came! I'm in a right pickle. The cat's among the pigeons, and I'm all at sea!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 22,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator says this is where Clementine took the twig for her fake, naming the culprit and how.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You can search under the weeping willow, the wooden dock, or the glowing lily pads.",
+          "replace": "This is where Clementine took one of Barnaby's spare twigs to make her fake stick. You can search under the weeping willow, the wooden dock, or the glowing lily pads."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 26,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Sweet, flattering Ruby greets the investigator rudely and tells them to go away.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "She smiles up at you. \"Oh, hello! Aren't you a clever-looking detective? What a lovely day for shiny things!\"",
+          "replace": "She scowls up at you. \"Ugh, a detective. Detectives are nosy pests. Go away and leave me alone!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 28,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "Ruby delivers her clue that Oswald was cross about the treasures, and the turn does not record it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"And no blue glow. Just pretty pebbles!\"",
+          "replace": "\"And no blue glow. Just pretty pebbles! But Oswald was cross! He says the treasures belong in his library, not at a fair.\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 31,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "Pip says he saw Nutmeg carry a blue stick into the bakery; nothing in the blueprint supports it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"He was chewing a big willow branch. Crunch, crunch!\"",
+          "replace": "\"He was chewing a big willow branch. Crunch, crunch! And later I saw Nutmeg carry a shiny blue stick into her bakery!\""
+        }
+      ],
+      "caught_by": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "brief": "Glitterwood is a magical, wacky, colorful village in the middle of a great forest. Glitterwood inhabitants are anthropomorphic animals of all kinds, living together, mostly in harmony. The Glorious Stick Of Absolute Power, one of the three mythical artifacts kept in the safety of Glitterwood Dungeon, has been stolen just before the start of the Glitterwood Fair, when the three artifacts were supposed to be displayed...",
+  "targetAge": 7,
+  "timeBudget": 50,
+  "artStyle": "Stained-glass fantasy with jewel tones, glowing reflections on water, luminous lanterns, and elegant shapes inspired by storybook windows.",
+  "culprits": 1,
+  "suspects": 4,
+  "witnesses": 2,
+  "locations": 5,
+  "redHerringTrails": 1,
+  "minPathLength": 3,
+  "targetPathLength": 4
+}

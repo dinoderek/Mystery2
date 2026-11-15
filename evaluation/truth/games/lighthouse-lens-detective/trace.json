@@ -1,0 +1,1951 @@
+{
+  "schema_version": "trace/0.1",
+  "extracted_at": "2026-11-15T15:42:37.041Z",
+  "source": {
+    "kind": "local",
+    "persona": "detective",
+    "investigator_model": "sonnet"
+  },
+  "session": {
+    "id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+    "blueprint_id": "7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47",
+    "ai_profile_id": "default",
+    "mode": "ended",
+    "current_location_id": "village_quay",
+    "current_talk_character_id": null,
+    "time_remaining": 1,
+    "discovered_clues": [
+      "c_torn_velvet",
+      "c_roz_blames_finn",
+      "c_beacon_poster"
+    ],
+    "outcome": "win",
+    "created_at": "2026-11-15T15:34:16.653Z",
+    "updated_at": "2026-11-15T15:39:27.709Z"
+  },
+  "ai_profile": {
+    "id": "default",
+    "model": "claude-haiku-5-5"
+  },
+  "blueprint": {
+    "schema_version": "v2",
+    "id": "7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47",
+    "metadata": {
+      "title": "The Missing Lighthouse Lens",
+      "one_liner": "Someone took the giant lens from the Gull Rock lighthouse. Find out who before tonight's high tide!",
+      "target_age": 10,
+      "time_budget": 8,
+      "narration_style": "Salty sea breeze, crying gulls and the hush of waves, told in a brisk and friendly voice.",
+      "visual_direction": {
+        "art_style": "gouache storybook illustration with crisp ink outlines and chunky, friendly shapes",
+        "color_palette": "sea-glass teal, lighthouse red, foggy pearl grey and lamplight gold — brisk, salty and hopeful",
+        "mood": "a breezy seaside puzzle with a ticking-tide sense of hurry",
+        "lighting": "bright silvery afternoon sea light, with warm golden glows from lamps and windows",
+        "texture": "visible paper grain with dry-brush sea spray",
+        "portrait_background": "soft vertical wash of misty teal fading into pale gold, gently blurred"
+      }
+    },
+    "narrative": {
+      "premise": "Overnight, the giant glass lens vanished from the lighthouse on Gull Rock. Without it, the light is just a weak little flame. Tonight's high tide will bring ships past the sharp rocks. Keeper Ada needs you to find out who took the lighthouse lens, and why, before the tide turns.",
+      "starting_knowledge": {
+        "mystery_summary": "The lighthouse lens vanished between midnight and 4 a.m. Keeper Ada saw it turning at midnight and found it gone at four.",
+        "locations": [
+          {
+            "location_id": "lantern_room",
+            "summary": "The glass room at the top of the lighthouse, where the giant lens used to turn."
+          },
+          {
+            "location_id": "keepers_cottage",
+            "summary": "Keeper Ada's snug home at the foot of the lighthouse, with her tide schedule pinned by the door."
+          },
+          {
+            "location_id": "village_quay",
+            "summary": "The harbour across the causeway, with Roz's lamp shop and the harbour tide board."
+          }
+        ],
+        "characters": [
+          {
+            "character_id": "ada",
+            "summary": "Keeper Ada Penhallow has kept the Gull Rock light for forty years. She found the lens missing."
+          },
+          {
+            "character_id": "finn",
+            "summary": "Finn Tully is a young fisherman from the village. He slept on Keeper Ada's sofa last night."
+          },
+          {
+            "character_id": "roz",
+            "summary": "Roz Pike runs the lamp shop on the village quay. She has built a shiny new electric beacon."
+          }
+        ]
+      }
+    },
+    "world": {
+      "starting_location_id": "lantern_room",
+      "locations": [
+        {
+          "id": "lantern_room",
+          "name": "Lantern Room",
+          "description": "You stand at the very top of the Gull Rock lighthouse. Tall windows look out over the grey-green sea. In the middle sits an empty brass cradle, where the giant lens used to turn.",
+          "clues": [
+            {
+              "id": "c_torn_velvet",
+              "text": "The lens cradle is empty. One corner of its soft blue velvet lining has been ripped away, as if the lens was pulled out in a hurry."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "gallery_door",
+              "name": "the little gallery door",
+              "hint": "It opens onto the windy walkway around the top of the tower. The causeway lamp hangs on a hook here. Only wind and gulls; nothing is hidden.",
+              "clues": []
+            },
+            {
+              "id": "keepers_logbook",
+              "name": "the keeper's logbook",
+              "hint": "Ada's logbook lies open on the desk. The last lines say 'Midnight: lens turning, all well' and '4 a.m.: LENS GONE!' in shaky writing. Nothing new to find.",
+              "clues": []
+            },
+            {
+              "id": "spiral_stairs",
+              "name": "the top of the spiral stairs",
+              "hint": "Ninety-nine stone steps wind down the tower, worn smooth by years of boots. Nothing is hidden here.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "keepers_cottage",
+          "name": "Keeper's Cottage",
+          "description": "A snug stone cottage sits at the foot of the lighthouse. A kettle hums on the stove and a ship's clock ticks on the shelf. A tide schedule is pinned to the wall by the door.",
+          "clues": [
+            {
+              "id": "c_round_bundle",
+              "text": "Tucked behind the coal box is something big and round, wrapped in a blanket and tied with fishing twine. It is about as wide as the missing lens!"
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "tide_schedule_wall",
+              "name": "the tide schedule by the door",
+              "hint": "Ada's printed tide schedule for the month, held up with a brass tack. Last night's numbers are worth a close look.",
+              "clues": [
+                {
+                  "id": "c_changed_schedule",
+                  "text": "The tide schedule says last night's low tide was at 5:00 a.m. But the 5 is fresh, dark ink. The number under it has been scratched away!"
+                }
+              ]
+            },
+            {
+              "id": "squashy_sofa",
+              "name": "the squashy sofa",
+              "hint": "Where Finn slept last night. A crumpled blanket and a dented pillow. Nothing is hidden here.",
+              "clues": []
+            },
+            {
+              "id": "ships_clock",
+              "name": "the ship's clock on the shelf",
+              "hint": "A brass ship's clock that chimes loudly every hour. Nothing is hidden here.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "village_quay",
+          "name": "Village Quay",
+          "description": "Across the causeway, fishing boats bob beside the old stone quay. Gulls squabble over the lobster pots. Roz's lamp shop has a shiny window, and the harbour tide board stands by the causeway steps.",
+          "clues": [
+            {
+              "id": "c_beacon_poster",
+              "text": "A bright poster on the lamp shop door says: 'PIKE'S ELECTRIC BEACON! Better than any old lighthouse! The council votes tomorrow!'"
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "harbour_tide_board",
+              "name": "the harbour tide board",
+              "hint": "The village's big painted tide board. The times are chalked up fresh every day, and fishermen trust it.",
+              "clues": [
+                {
+                  "id": "c_harbour_tide_board",
+                  "text": "The harbour tide board says: 'Low tide last night: 2:00 a.m. Low tide today: 2:25 p.m. The causeway is dry one hour before and after.'"
+                }
+              ]
+            },
+            {
+              "id": "causeway_steps",
+              "name": "the causeway steps",
+              "hint": "Stone steps with an iron railing lead down to the causeway. Seaweed covers the lower steps. The railing at the top is worth a close look.",
+              "clues": [
+                {
+                  "id": "c_velvet_scrap",
+                  "text": "Caught on the iron railing at the top of the causeway steps is a small scrap of blue velvet. It matches the torn lining of the lens cradle!",
+                  "requires": {
+                    "clue_ids": [
+                      "c_torn_velvet"
+                    ],
+                    "rationale": "The scrap is tiny and grey with salt spray. You only spot it once you know the lens cradle's velvet was torn. This is a hard search gate; no clever guess finds it sooner."
+                  }
+                }
+              ]
+            },
+            {
+              "id": "lobster_pots",
+              "name": "the stack of lobster pots",
+              "hint": "A tall, smelly stack of rope lobster pots. Only crabs and old bait. Nothing is hidden here.",
+              "clues": []
+            }
+          ]
+        }
+      ],
+      "characters": [
+        {
+          "id": "ada",
+          "first_name": "Ada",
+          "last_name": "Penhallow",
+          "location_id": "lantern_room",
+          "sex": "female",
+          "appearance": "A small, sturdy woman in her sixties with a long white plait. She wears a navy keeper's jacket with shiny brass buttons and spectacles on a string.",
+          "background": "Ada has kept the Gull Rock lighthouse for forty years. She lives in the cottage at its foot and knows every rock in the bay. Her light has never once gone dark until now.",
+          "personality": "Brisk, warm and very proud of her light. Today she is frantic. She talks fast, keeps glancing at the empty cradle, and calls everyone 'pet'.",
+          "initial_attitude_towards_investigator": "Hugely relieved you have come. She grabs your hand, begs you to help, and will happily tell you anything.",
+          "stated_alibi": "I was in bed in my cottage from midnight until four. I hardly slept a wink.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "c_ada_snoring",
+              "text": "From one until three, Finn snored on my sofa, right outside my bedroom door. I heard the clock chime one, two and three. He never stopped once!",
+              "about_character_id": "finn"
+            },
+            {
+              "id": "c_ada_alarm",
+              "text": "On night low tides, I light the causeway lamp for walkers. My tide schedule said low tide was at five, so I set my alarm for four."
+            }
+          ],
+          "flavor_knowledge": [
+            "Ada has kept the Gull Rock light for forty years. Tomorrow is her birthday, but she hopes nobody makes a fuss.",
+            "The lens is as wide as a cartwheel and made of rings of thick glass. It bends the lamp's flame into a beam that reaches twenty miles out to sea.",
+            "Without the lens, the lamp is just a small flame. Ships far out at sea would never see it.",
+            "Tonight the fishing boats and the supply steamer come home on the high tide. They steer past the sharp rocks called the Gull's Teeth by following the lighthouse beam.",
+            "The causeway is a stone path across the sand. It is only dry for about an hour either side of low tide. Ada has rescued lots of walkers caught by the water.",
+            "Ada polishes the lens every morning with a soft cloth and a drop of vinegar.",
+            "She thinks Roz's electric beacon is a fizzy little gadget that couldn't light a pantry.",
+            "She says Finn is a good lad who brings her groceries every week, though he snores like a walrus.",
+            "At dawn she flashed her signal lamp to the village to ask for help.",
+            "She loves strong tea and buttered kippers for breakfast."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Yesterday afternoon at low tide, welcomed Roz for tea. Roz showed her drawings of an electric beacon. Finn arrived with her groceries."
+            },
+            {
+              "sequence": 2,
+              "summary": "Just after lunch, went out to the well for water, leaving Roz alone in the cottage for a few minutes."
+            },
+            {
+              "sequence": 3,
+              "summary": "At sunset, climbed the lighthouse to light the lamp, leaving Finn alone in the cottage."
+            },
+            {
+              "sequence": 4,
+              "summary": "In the evening, read her tide schedule, which said low tide at 5 a.m. Set her alarm for four so she could light the causeway lamp."
+            },
+            {
+              "sequence": 5,
+              "summary": "At midnight, climbed up and wound the clockwork. The lens was turning. Went back to bed."
+            },
+            {
+              "sequence": 6,
+              "summary": "From one until after three, lay awake while Finn snored on the sofa. Heard the clock chime one, two and three. Heard nothing else over the snoring and the waves."
+            },
+            {
+              "sequence": 7,
+              "summary": "At four, climbed the lighthouse to light the causeway lamp, found the lens gone, and rang the bell."
+            },
+            {
+              "sequence": 8,
+              "summary": "At dawn, flashed her signal lamp to the village for help. Waited in the lantern room for the investigator, who came at the afternoon low tide."
+            }
+          ],
+          "agendas": [],
+          "tells": [
+            {
+              "id": "t_ada_snore",
+              "text": "She rolls her eyes and does a loud pretend snore, then can't help smiling.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "the investigator asks how she slept last night or mentions Finn's snoring"
+              }
+            }
+          ]
+        },
+        {
+          "id": "finn",
+          "first_name": "Finn",
+          "last_name": "Tully",
+          "location_id": "keepers_cottage",
+          "sex": "male",
+          "appearance": "A tall, gangly young fisherman with freckles and a striped woolly hat. He wears a patched blue jumper and big yellow rubber boots.",
+          "background": "Finn is nineteen and fishes for crabs and mackerel from the village. Every week he carries Keeper Ada's groceries over the causeway. Yesterday he stayed the night on her sofa, planning to walk home at low tide. He secretly carved Ada a birthday sign and hid it in her cottage.",
+          "personality": "Cheerful, chatty and a bit clumsy. He blushes easily and is bad at keeping secrets, but he is trying very hard to keep this one.",
+          "initial_attitude_towards_investigator": "Friendly and eager to help, though a little nervous. He offers you a cup of tea straight away.",
+          "stated_alibi": "I slept on Ada's sofa all night, snug as a sardine, until her bell woke me at four.",
+          "motive": "He needs money to mend his leaky boat, and the old lens is worth a lot.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "c_finn_flooded",
+              "text": "At five this morning I ran to fetch help. The tide schedule said low tide at five. But the causeway was deep under water! I had to turn back."
+            },
+            {
+              "id": "c_finn_saw_roz",
+              "text": "Yesterday after lunch, Ada went out to the well. I was chopping wood outside and saw Roz through the window, alone in the cottage for a few minutes.",
+              "about_character_id": "roz",
+              "requires": {
+                "clue_ids": [
+                  "c_changed_schedule"
+                ],
+                "rationale": "Finn doesn't think Roz's visit matters until he hears the tide schedule was changed. A clever question about who was alone in the cottage yesterday can also jog his memory."
+              }
+            },
+            {
+              "id": "c_finn_birthday_sign",
+              "text": "Finn turns red. 'It's a wooden sign I carved for Ada's birthday tomorrow. It says Forty Years of Light. Please don't tell her!'",
+              "requires": {
+                "clue_ids": [
+                  "c_round_bundle"
+                ],
+                "rationale": "Finn won't mention the bundle at all until you have found it. He is guarding a birthday surprise, and only talks once you know it is there."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "Finn fishes for crabs and mackerel. His little boat, the Sprat, sprang a leak and is waiting to be patched.",
+            "He has carried Ada's groceries over the causeway every week since he was twelve.",
+            "As a boy, he counted the lighthouse flashes from his bedroom window to help him fall asleep.",
+            "He mended the door of Ada's stove yesterday evening.",
+            "He thinks Roz's beacon is shiny, but it buzzes like an angry wasp.",
+            "He swears he does not snore.",
+            "His favourite food is his gran's fish pie.",
+            "He is a bit scared of the giant crabs that live under the quay."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Yesterday afternoon at low tide, walked over the causeway with Ada's groceries and a big round bundle on his back: a wooden birthday sign he carved for her."
+            },
+            {
+              "sequence": 2,
+              "summary": "Hid the bundle behind the coal box when Ada wasn't looking."
+            },
+            {
+              "sequence": 3,
+              "summary": "Just after lunch, chopped wood outside the cottage. Through the window, saw Roz alone inside while Ada fetched water. He did not see what she was doing."
+            },
+            {
+              "sequence": 4,
+              "summary": "At sunset, stayed alone in the cottage while Ada lit the lamp. Mended her stove door."
+            },
+            {
+              "sequence": 5,
+              "summary": "In the evening, read the tide schedule and planned to walk home at the five o'clock low tide."
+            },
+            {
+              "sequence": 6,
+              "summary": "Fell asleep on the sofa at about eleven and snored loudly all night without waking."
+            },
+            {
+              "sequence": 7,
+              "summary": "At four, woke to Ada's bell and learned the lens was gone."
+            },
+            {
+              "sequence": 8,
+              "summary": "At five, ran to the causeway to fetch help, but it was deep under water. Went back to the cottage."
+            },
+            {
+              "sequence": 9,
+              "summary": "Today, stayed in the cottage making tea for Ada and keeping an eye on his secret bundle."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Cover story for the bundle: it is 'just old fishing floats'",
+              "priority": "medium",
+              "details": "Finn is hiding Ada's birthday surprise, not the lens. If asked about the bundle behind the coal box, he says it is just old fishing floats and quickly changes the subject. He never lies about where he slept or what he saw."
+            },
+            {
+              "type": "conditional_reveal",
+              "strategy": "Admit the bundle is a birthday present once he trusts you",
+              "priority": "medium",
+              "details": "Finn tells the truth about the bundle once the investigator promises not to spoil the surprise for Ada, or kindly guesses it might be a present. Patience and friendliness reassure him. Shouting or threats make him stick to the fishing floats story.",
+              "gated_clue_id": "c_finn_birthday_sign",
+              "condition": "trust_established"
+            }
+          ],
+          "tells": [
+            {
+              "id": "t_finn_bundle",
+              "text": "His ears turn bright red and he shuffles over to stand in front of the coal box.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "c_round_bundle"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "roz",
+          "first_name": "Roz",
+          "last_name": "Pike",
+          "location_id": "village_quay",
+          "sex": "female",
+          "appearance": "A neat woman with copper hair in a tidy bun and round spectacles. She wears a crisp green apron with pockets full of tiny screwdrivers.",
+          "background": "Roz runs Pike's Lamps on the village quay, like her father before her. For two years she has been building a shiny electric beacon. Tomorrow the council votes on whether to keep the old lighthouse or buy her beacon instead.",
+          "personality": "Clever, proud and a bit of a show-off. She talks fast about her inventions and hates being told the old ways are best.",
+          "initial_attitude_towards_investigator": "Bright and chatty, keen to show off her beacon, but quick to steer the talk toward Finn.",
+          "stated_alibi": "I was fast asleep above my lamp shop all night. Anyway, nobody could cross the causeway before four. The keeper's own tide schedule says so!",
+          "motive": "She wants the old light to fail tonight so her beacon can 'save the ships' and win tomorrow's council vote.",
+          "is_culprit": true,
+          "clues": [
+            {
+              "id": "c_roz_blames_finn",
+              "text": "Finn was the only visitor on Gull Rock last night. He keeps moaning that his leaky boat costs a fortune to mend. And that lens is worth a lot!",
+              "about_character_id": "finn"
+            }
+          ],
+          "flavor_knowledge": [
+            "Roz's shop sells oil lamps, bicycle lamps and pocket torches. Her father taught her to mend lamps when she was small.",
+            "She has spent two years building her electric beacon. It runs on big glass batteries and hums when it is switched on.",
+            "She says her beacon will shine from the quay tonight to help the ships come home.",
+            "She thinks old lighthouses are dusty relics and that electric light is the future.",
+            "She sucks peppermints while she works, so her shop smells of mint.",
+            "She dreams of selling beacons to every harbour along the coast."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Yesterday afternoon at low tide, walked over to Gull Rock to show Ada drawings of her beacon. Heard Finn say he would stay the night."
+            },
+            {
+              "sequence": 2,
+              "summary": "While Ada fetched water, scratched out the 2 on the tide schedule and inked a 5, so last night's low tide looked like 5 a.m."
+            },
+            {
+              "sequence": 3,
+              "summary": "Walked home over the causeway before the tide came in."
+            },
+            {
+              "sequence": 4,
+              "summary": "At about one in the morning, wrapped her handcart wheels in rags and pushed it over the dry causeway."
+            },
+            {
+              "sequence": 5,
+              "summary": "Climbed the lighthouse and lifted the lens from its cradle, ripping a corner of the velvet. Wrapped the lens in a quilt and lowered it down the stairs on a rope."
+            },
+            {
+              "sequence": 6,
+              "summary": "Before three, wheeled the lens back over the causeway. A scrap of the torn velvet, stuck to the quilt, caught on the iron railing at the top of the steps without her noticing."
+            },
+            {
+              "sequence": 7,
+              "summary": "Hid the lens under a dust sheet in the back room of her lamp shop, then went to bed."
+            },
+            {
+              "sequence": 8,
+              "summary": "Today, set up her beacon on the quay and kept polishing it with a cloth, ready to switch it on tonight and 'save the ships'."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Keep the false alibi: asleep above the lamp shop all night",
+              "priority": "high",
+              "details": "Roz insists she slept above her shop all night. She points to the keeper's tide schedule as proof nobody could cross before four. Shown that the schedule was changed and that the harbour tide board says low tide was 2 a.m., she gets flustered and says anyone could have changed it. If also told that Finn saw her alone in the cottage yesterday, she goes pale and her story starts to wobble.",
+              "yields_to_clue_ids": [
+                "c_changed_schedule",
+                "c_harbour_tide_board",
+                "c_finn_saw_roz"
+              ]
+            },
+            {
+              "type": "self_protect",
+              "strategy": "Deny the motive",
+              "priority": "medium",
+              "details": "She says her beacon is simply better and she would never want ships in danger. She claims she feels sorry for poor Ada."
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "Point suspicion at Finn",
+              "priority": "medium",
+              "details": "Roz keeps reminding the investigator that Finn was the only visitor on the island last night and that he needs money for his boat.",
+              "target_character_id": "finn"
+            }
+          ],
+          "tells": [
+            {
+              "id": "t_roz_board",
+              "text": "Her polishing cloth stops mid-wipe, and her eyes flick to the harbour tide board.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "c_harbour_tide_board"
+                ]
+              }
+            },
+            {
+              "id": "t_roz_schedule",
+              "text": "She laughs a little too loudly and starts talking very fast about her beacon.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "c_changed_schedule"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cover_image": {
+      "description": "A tall red-and-white lighthouse stands on a rocky island, with a wet stone causeway winding across the sand to a little harbour. High above, the lantern room sits dark and empty, its giant lens gone. Gulls wheel in the silver sky as a worried keeper peers down from the top.",
+      "location_ids": [
+        "lantern_room",
+        "village_quay"
+      ],
+      "character_ids": [
+        "ada"
+      ]
+    },
+    "ground_truth": {
+      "what_happened": "Roz Pike, the village lamp-maker, took the lighthouse lens. Yesterday just after lunch, while Keeper Ada fetched water, Roz changed Ada's tide schedule so last night's low tide read 5 a.m. instead of 2 a.m. That made Ada set her alarm for four, so she was not watching the causeway at the real low tide. Between about 1 and 3 a.m., while the causeway was dry, Roz pushed her handcart over, took the lens and wheeled it back to hide in her shop. A scrap of the cradle's blue velvet caught on the quay railing. Finn, asleep on Ada's sofa, snored all night and kept Ada awake, so he never crossed. His round bundle is only a birthday sign for Ada.",
+      "why_it_happened": "Tomorrow the council votes on keeping the old lighthouse or buying Roz's electric beacon. Roz wanted the old light to fail tonight so she could switch on her beacon, 'save the ships' and win the vote. She meant to give the lens back after the vote, but her beacon is not bright enough to reach the far rocks.",
+      "timeline": [
+        "Yesterday afternoon at low tide, Roz and Finn both crossed to Gull Rock. Roz showed Ada her beacon drawings; Finn brought groceries and hid his birthday sign behind the coal box.",
+        "Just after lunch, while Ada fetched water, Roz scratched out the 2 on the tide schedule and inked a 5. Finn saw her alone in the cottage through the window, but not what she did. Roz walked home before the causeway flooded.",
+        "That evening, Ada and Finn both read the changed tide schedule. Ada set her alarm for four, and Finn planned to walk home at five.",
+        "At midnight, Ada wound the clockwork and saw the lens turning. Finn was snoring on the sofa.",
+        "Between about 1 and 3 a.m., at the real low tide, Roz crossed the dry causeway with her handcart, took the lens and wheeled it home. A velvet scrap snagged on the quay railing. Ada lay awake listening to Finn snore.",
+        "At 4 a.m., Ada found the lens gone and rang the bell. At 5 a.m., Finn tried to fetch help but the causeway was under water.",
+        "Today, Roz set up her beacon on the quay, planning to switch it on tonight and win tomorrow's council vote."
+      ]
+    },
+    "solution_paths": [
+      {
+        "id": "sp_tide_trick",
+        "summary": "The tide schedule was changed to hide a 2 a.m. crossing. Finn was snoring then, so the thief was Roz.",
+        "description": "The keeper's tide schedule was changed so last night's low tide read 5 a.m. The harbour tide board shows the real low tide was 2 a.m., so the causeway was dry only from 1 to 3 a.m. The velvet scrap on the quay railing shows the lens crossed to the village. Ada heard Finn snoring on her sofa from one to three, so he could not have crossed. Finn saw Roz alone in the cottage with the schedule yesterday, and her poster shows she wanted the old light to fail before the council vote.",
+        "payoff": "Roz Pike took the lens so the old light would fail and her electric beacon could win tomorrow's council vote.",
+        "location_clue_ids": [
+          "c_changed_schedule",
+          "c_harbour_tide_board",
+          "c_velvet_scrap",
+          "c_beacon_poster"
+        ],
+        "character_clue_ids": [
+          "c_ada_snoring",
+          "c_finn_saw_roz",
+          "c_ada_alarm",
+          "c_finn_flooded"
+        ]
+      }
+    ],
+    "red_herrings": [
+      {
+        "id": "rh_round_bundle",
+        "summary": "Finn spent the night on the island and is hiding a big round bundle the size of the lens.",
+        "description": "Roz points out that Finn was the only visitor on Gull Rock and needs money for his boat. Behind Ada's coal box sits a round, blanket-wrapped bundle as wide as the lens. Once Finn trusts the investigator, he admits it is a wooden birthday sign he carved for Ada.",
+        "payoff": "The bundle is Finn's birthday sign for Ada, not the lens, so the false lead against Finn is disproved.",
+        "location_clue_ids": [
+          "c_round_bundle"
+        ],
+        "character_clue_ids": [
+          "c_roz_blames_finn",
+          "c_finn_birthday_sign"
+        ]
+      }
+    ],
+    "suspect_elimination_paths": [
+      {
+        "id": "se_finn_snoring",
+        "summary": "Finn was snoring on Ada's sofa during the only time the lens could cross the causeway.",
+        "description": "The torn cradle velvet and the matching scrap on the quay railing show the lens was carried over the causeway. The harbour tide board shows the causeway was dry only from 1 to 3 a.m. Ada heard Finn snoring nonstop from one to three, so he never left the sofa.",
+        "payoff": "Finn Tully is ruled out: he was asleep on the sofa the whole time the lens could be carried across.",
+        "location_clue_ids": [
+          "c_harbour_tide_board",
+          "c_torn_velvet",
+          "c_velvet_scrap"
+        ],
+        "character_clue_ids": [
+          "c_ada_snoring"
+        ]
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "73a57b0c-9302-4780-8719-22d3a097206d",
+      "sequence": 1,
+      "event_type": "start",
+      "actor": "system",
+      "payload": {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "blueprint_image_id": null,
+        "starting_knowledge": {
+          "mystery_summary": "The lighthouse lens vanished between midnight and 4 a.m. Keeper Ada saw it turning at midnight and found it gone at four.",
+          "locations": [
+            {
+              "location_id": "lantern_room",
+              "summary": "The glass room at the top of the lighthouse, where the giant lens used to turn."
+            },
+            {
+              "location_id": "keepers_cottage",
+              "summary": "Keeper Ada's snug home at the foot of the lighthouse, with her tide schedule pinned by the door."
+            },
+            {
+              "location_id": "village_quay",
+              "summary": "The harbour across the causeway, with Roz's lamp shop and the harbour tide board."
+            }
+          ],
+          "characters": [
+            {
+              "character_id": "ada",
+              "summary": "Keeper Ada Penhallow has kept the Gull Rock light for forty years. She found the lens missing."
+            },
+            {
+              "character_id": "finn",
+              "summary": "Finn Tully is a young fisherman from the village. He slept on Keeper Ada's sofa last night."
+            },
+            {
+              "character_id": "roz",
+              "summary": "Roz Pike runs the lamp shop on the village quay. She has built a shiny new electric beacon."
+            }
+          ]
+        },
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 1,
+          "event_type": "start",
+          "part_count": 2,
+          "action": "start",
+          "event_category": "start",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "The salty sea breeze tugs at your coat on Gull Rock. Gulls cry overhead. Keeper Ada hurries up to you, looking worried.\n\n\"The giant glass lens is gone,\" she says. \"Someone took it overnight.\"\n\nTonight, ships will sail past the sharp rocks. Without the lens, they could crash. Can you find out who took it, and why, before the tide turns?\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+      "narration_parts": [
+        {
+          "text": "The salty sea breeze tugs at your coat on Gull Rock. Gulls cry overhead. Keeper Ada hurries up to you, looking worried.\n\n\"The giant glass lens is gone,\" she says. \"Someone took it overnight.\"\n\nTonight, ships will sail past the sharp rocks. Without the lens, they could crash. Can you find out who took it, and why, before the tide turns?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        },
+        {
+          "text": "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:34:16.653Z"
+    },
+    {
+      "id": "d8f9f6b4-b0ed-4c69-a5ce-2d1b9d95e248",
+      "sequence": 2,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "role": "enter",
+        "destination": "lantern_room",
+        "location_id": "lantern_room",
+        "location_name": "Lantern Room",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 2,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "enter",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You climb the last step. Salt wind tugs at your coat. Gulls cry, and waves hush against the rocks far below.\n\nTall windows look out over the grey-green sea. In the middle sits an empty brass cradle, where the great lens used to turn.\n\nA small, sturdy woman rushes over. Her long white plait bounces above her navy jacket.\n\n\"Oh, thank goodness, pet!\" Ada grabs your hand. \"The lens is gone. Please help me find it!\"\n\nYou can search the little gallery door, the keeper's logbook, and the top of the spiral stairs.",
+      "narration_parts": [
+        {
+          "text": "You climb the last step. Salt wind tugs at your coat. Gulls cry, and waves hush against the rocks far below.\n\nTall windows look out over the grey-green sea. In the middle sits an empty brass cradle, where the great lens used to turn.\n\nA small, sturdy woman rushes over. Her long white plait bounces above her navy jacket.\n\n\"Oh, thank goodness, pet!\" Ada grabs your hand. \"The lens is gone. Please help me find it!\"\n\nYou can search the little gallery door, the keeper's logbook, and the top of the spiral stairs.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:34:26.576Z"
+    },
+    {
+      "id": "c2143aba-765a-44a6-bbba-024196bc5931",
+      "sequence": 3,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "lantern_room",
+        "location_name": "Lantern Room",
+        "search_query": "keeper's logbook",
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search keeper's logbook",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 3,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 7,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You flip through the keeper's logbook. Ada's shaky writing says \"LENS GONE!\" at 4 a.m. Nothing new is hidden here. Perhaps take a closer look at the empty brass cradle.",
+      "narration_parts": [
+        {
+          "text": "You flip through the keeper's logbook. Ada's shaky writing says \"LENS GONE!\" at 4 a.m. Nothing new is hidden here. Perhaps take a closer look at the empty brass cradle.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:34:33.181Z"
+    },
+    {
+      "id": "7c1d6dc0-257b-4931-ad50-f9c0ed53b103",
+      "sequence": 4,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "lantern_room",
+        "location_name": "Lantern Room",
+        "search_query": "empty brass cradle",
+        "revealed_clue_id": "c_torn_velvet",
+        "revealed_clue_text": "The lens cradle is empty. One corner of its soft blue velvet lining has been ripped away, as if the lens was pulled out in a hurry.",
+        "revealed_clue_ids": [
+          "c_torn_velvet"
+        ],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search empty brass cradle",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 4,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 7,
+          "time_after": 6,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You lean over the brass cradle and look closely. The lens cradle is empty. One corner of its soft blue velvet lining has been ripped away, as if the lens was pulled out in a hurry.",
+      "narration_parts": [
+        {
+          "text": "You lean over the brass cradle and look closely. The lens cradle is empty. One corner of its soft blue velvet lining has been ripped away, as if the lens was pulled out in a hurry.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:34:41.668Z"
+    },
+    {
+      "id": "a4c5bd22-2ee7-49b6-8702-7d6412995f9c",
+      "sequence": 5,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "keepers_cottage",
+        "location_id": "keepers_cottage",
+        "location_name": "Keeper's Cottage",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to Keeper's Cottage",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 5,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 6,
+          "time_after": 5,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Salty sea breeze drifts in as you step into Keeper's Cottage. Gulls cry outside. A kettle hums on the stove. A ship's clock ticks on the shelf. By the door, a tide schedule is pinned to the wall. A squashy sofa sits beneath the window.\n\nA tall young man jumps up from the sofa. He has freckles, a striped woolly hat and big yellow boots.\n\n\"Hello! I'm Finn,\" he says. \"Would you like a cup of tea?\"",
+      "narration_parts": [
+        {
+          "text": "Salty sea breeze drifts in as you step into Keeper's Cottage. Gulls cry outside. A kettle hums on the stove. A ship's clock ticks on the shelf. By the door, a tide schedule is pinned to the wall. A squashy sofa sits beneath the window.\n\nA tall young man jumps up from the sofa. He has freckles, a striped woolly hat and big yellow boots.\n\n\"Hello! I'm Finn,\" he says. \"Would you like a cup of tea?\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:34:53.802Z"
+    },
+    {
+      "id": "39d6287e-5560-4017-8fe3-98cd8a3658fb",
+      "sequence": 6,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "finn",
+        "character_name": "Finn",
+        "location_id": "keepers_cottage",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to Finn Tully",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 6,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 5,
+          "time_after": 4,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Finn looks up from the stove, his striped woolly hat slightly crooked. He grins and lifts a teapot. \"Oh, hello! Fancy a cup of tea? The kettle's just boiled.\" He shuffles his big yellow boots. \"Lovely morning for it, isn't it?\"",
+      "narration_parts": [
+        {
+          "text": "Finn looks up from the stove, his striped woolly hat slightly crooked. He grins and lifts a teapot. \"Oh, hello! Fancy a cup of tea? The kettle's just boiled.\" He shuffles his big yellow boots. \"Lovely morning for it, isn't it?\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:00.920Z"
+    },
+    {
+      "id": "8fe2e944-a5cb-4a84-bfa9-717a43939a62",
+      "sequence": 7,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "finn",
+        "character_name": "Finn",
+        "location_id": "keepers_cottage",
+        "player_input": "Did you hear or see anything last night between midnight and 4 a.m.? Did you leave the sofa at all?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:finn",
+          "label": "Finn"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Did you hear or see anything last night between midnight and 4 a.m.? Did you leave the sofa at all?",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 7,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Finn shakes his head, and his striped hat wobbles. \"Nope, I didn't leave the sofa. Not once!\" He rubs his neck. \"I fell asleep about eleven. Then Ada's bell woke me at four. Honest!\"",
+      "narration_parts": [
+        {
+          "text": "Finn shakes his head, and his striped hat wobbles. \"Nope, I didn't leave the sofa. Not once!\" He rubs his neck. \"I fell asleep about eleven. Then Ada's bell woke me at four. Honest!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:finn",
+            "label": "Finn"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:10.103Z"
+    },
+    {
+      "id": "00b577a9-ef6e-4ed5-9c71-a9ded12dfdfb",
+      "sequence": 8,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "finn",
+        "character_name": "Finn",
+        "location_id": "keepers_cottage",
+        "player_input": "Did you notice anything strange in the cottage, like a bit of blue velvet, or did Roz or anyone visit Ada lately?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:finn",
+          "label": "Finn"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Did you notice anything strange in the cottage, like a bit of blue velvet, or did Roz or anyone visit Ada lately?",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 8,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Finn scratches under his striped hat. \"Blue velvet? Nope, sorry. I was too sleepy to look.\" He glances at the window. \"Roz? Hmm. I was chopping wood yesterday. I wasn't really watching the door.\"",
+      "narration_parts": [
+        {
+          "text": "Finn scratches under his striped hat. \"Blue velvet? Nope, sorry. I was too sleepy to look.\" He glances at the window. \"Roz? Hmm. I was chopping wood yesterday. I wasn't really watching the door.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:finn",
+            "label": "Finn"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:26.384Z"
+    },
+    {
+      "id": "df4628f2-c3f3-4113-a7e3-50d7ed08f961",
+      "sequence": 9,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "finn",
+        "character_name": "Finn",
+        "location_id": "keepers_cottage",
+        "location_name": "Keeper's Cottage",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 9,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Finn gives you a grin and a nod. \"Right, best get back to it, then!\" He turns to the stove. You step out of the cozy cottage. The salty sea breeze greets you. Where will you look next?",
+      "narration_parts": [
+        {
+          "text": "Finn gives you a grin and a nod. \"Right, best get back to it, then!\" He turns to the stove. You step out of the cozy cottage. The salty sea breeze greets you. Where will you look next?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:31.972Z"
+    },
+    {
+      "id": "b4b7a027-d2c2-46a0-bb2b-d1c86e4d15d0",
+      "sequence": 10,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "village_quay",
+        "location_id": "village_quay",
+        "location_name": "Village Quay",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to Village Quay",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 10,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 4,
+          "time_after": 3,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step off the causeway onto the old stone quay. A salty sea breeze tugs at your coat. Gulls cry overhead.\n\nFishing boats bob beside the wall. Gulls squabble over the lobster pots. Near the causeway steps stands the harbour tide board.\n\nRoz Pike is polishing a shiny new beacon. She has copper hair in a neat bun and round spectacles. Her green apron is full of tiny screwdrivers.\n\n\"Hello! Have you come to see my beacon?\" she says, grinning. \"Isn't it marvellous? The best light on the coast!\"",
+      "narration_parts": [
+        {
+          "text": "You step off the causeway onto the old stone quay. A salty sea breeze tugs at your coat. Gulls cry overhead.\n\nFishing boats bob beside the wall. Gulls squabble over the lobster pots. Near the causeway steps stands the harbour tide board.\n\nRoz Pike is polishing a shiny new beacon. She has copper hair in a neat bun and round spectacles. Her green apron is full of tiny screwdrivers.\n\n\"Hello! Have you come to see my beacon?\" she says, grinning. \"Isn't it marvellous? The best light on the coast!\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:44.506Z"
+    },
+    {
+      "id": "8ca7fcf9-47d9-4131-a9f6-12109f9819c5",
+      "sequence": 11,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to Roz Pike",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 11,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 3,
+          "time_after": 2,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Salty sea breeze drifts across the quay. Gulls squabble over the lobster pots. Roz looks up from her shop window, a cloth in her hand. \"Morning! Have you come to see my beacon? Isn't she a beauty?\" She smiles and taps the shiny glass.",
+      "narration_parts": [
+        {
+          "text": "Salty sea breeze drifts across the quay. Gulls squabble over the lobster pots. Roz looks up from her shop window, a cloth in her hand. \"Morning! Have you come to see my beacon? Isn't she a beauty?\" She smiles and taps the shiny glass.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:35:54.016Z"
+    },
+    {
+      "id": "2041e64f-5735-4d4d-a23b-ef392cb6fb5b",
+      "sequence": 12,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "Where were you between midnight and 4 a.m. last night, and do you have any blue velvet or a big glass lens in your shop?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Where were you between midnight and 4 a.m. last night, and do you have any blue velvet or a big glass lens in your shop?",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 12,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's cloth stops for a second, then keeps rubbing. \"I was asleep above my lamp shop. All night long!\" She taps the tide schedule's twin in her head. \"Blue velvet? No. My beacon has glass batteries, not lenses. Maybe ask Finn where he was.\"",
+      "narration_parts": [
+        {
+          "text": "Roz's cloth stops for a second, then keeps rubbing. \"I was asleep above my lamp shop. All night long!\" She taps the tide schedule's twin in her head. \"Blue velvet? No. My beacon has glass batteries, not lenses. Maybe ask Finn where he was.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:36:06.955Z"
+    },
+    {
+      "id": "e078043c-a588-4307-a30a-fe618bc7931e",
+      "sequence": 13,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "You mentioned a tide schedule. How do you know about Ada's tide schedule, and have you been to the Keeper's Cottage or Gull Rock lately? Would your beacon replace the lighthouse light?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "You mentioned a tide schedule. How do you know about Ada's tide schedule, and have you been to the Keeper's Cottage or Gull Rock lately? Would your beacon replace the lighthouse light?",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 13,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Tide times? Everyone knows those, silly!\" Roz flicks her cloth. \"I've seen them pinned on walls all my life.\" She turns back to the beacon. \"Gull Rock? I'm far too busy with my shop.\" She taps the glass. \"And yes, my beacon could replace that old light. Ask Finn why he was out there!\"",
+      "narration_parts": [
+        {
+          "text": "\"Tide times? Everyone knows those, silly!\" Roz flicks her cloth. \"I've seen them pinned on walls all my life.\" She turns back to the beacon. \"Gull Rock? I'm far too busy with my shop.\" She taps the glass. \"And yes, my beacon could replace that old light. Ask Finn why he was out there!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:36:21.402Z"
+    },
+    {
+      "id": "6977b49a-58a3-476d-ba7e-6fe9467ad42d",
+      "sequence": 14,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "accuse Roz Pike because she wants her new electric beacon to replace the lighthouse light, she knew about Ada's tide schedule pinned in the cottage even though she says she never goes to Gull Rock, and she kept pointing at Finn, who was asleep on the sofa. The ripped blue velvet shows the lens was taken in a hurry.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Roz Pike because she wants her new electric beacon to replace the lighthouse light, she knew about Ada's tide schedule pinned in the cottage even though she says she never goes to Gull Rock, and she kept pointing at Finn, who was asleep on the sofa. The ripped blue velvet shows the lens was taken in a hurry.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 14,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Steal a lens? Me?\" Roz gives a sharp little laugh and pushes her spectacles up her nose. \"I only want ships safe! Anyone can read a tide schedule pinned on a wall.\" She waves her cloth at the cottage. \"And Finn was out there all night. Ask him about his money troubles!\"",
+      "narration_parts": [
+        {
+          "text": "\"Steal a lens? Me?\" Roz gives a sharp little laugh and pushes her spectacles up her nose. \"I only want ships safe! Anyone can read a tide schedule pinned on a wall.\" She waves her cloth at the cottage. \"And Finn was out there all night. Ask him about his money troubles!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:36:38.585Z"
+    },
+    {
+      "id": "afebcaa1-838f-4328-88e6-097cbf2e2634",
+      "sequence": 15,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "I still think it was you, Roz. You said you never go to Gull Rock, but you brought up Ada's tide schedule before I did, and it is pinned inside her cottage. You want your beacon to replace the lighthouse light, and without the lens people need your beacon. You also keep blaming Finn, but he was asleep on the sofa. The ripped blue velvet shows someone took the lens in a hurry.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "I still think it was you, Roz. You said you never go to Gull Rock, but you brought up Ada's tide schedule before I did, and it is pinned inside her cottage. You want your beacon to replace the lighthouse light, and without the lens people need your beacon. You also keep blaming Finn, but he was asleep on the sofa. The ripped blue velvet shows someone took the lens in a hurry.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 15,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz folds her arms, and her cloth drops onto the counter. \"A tide schedule and a bit of velvet? That's not proof!\" She shakes her head. \"I was asleep above my shop. Anyone can read a schedule on a wall.\" She jabs a finger toward the cottage. \"Finn was out there all night. Keep asking him!\"",
+      "narration_parts": [
+        {
+          "text": "Roz folds her arms, and her cloth drops onto the counter. \"A tide schedule and a bit of velvet? That's not proof!\" She shakes her head. \"I was asleep above my shop. Anyone can read a schedule on a wall.\" She jabs a finger toward the cottage. \"Finn was out there all night. Keep asking him!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:36:55.095Z"
+    },
+    {
+      "id": "ccb6165f-b1c9-4590-8c2c-be714d2b32d6",
+      "sequence": 16,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "How do you know Finn was out there all night, Roz, if you never go to Gull Rock and were asleep above your shop? And how did you know Ada's tide schedule is pinned up by her cottage door?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "How do you know Finn was out there all night, Roz, if you never go to Gull Rock and were asleep above your shop? And how did you know Ada's tide schedule is pinned up by her cottage door?",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 16,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz taps a tiny screwdriver in her apron pocket. \"Don't twist my words! Everyone knows Finn meant to stay out there. He talks about it all the time.\" She shrugs. \"And tide schedules are pinned up everywhere. Anyone can read one!\"",
+      "narration_parts": [
+        {
+          "text": "Roz taps a tiny screwdriver in her apron pocket. \"Don't twist my words! Everyone knows Finn meant to stay out there. He talks about it all the time.\" She shrugs. \"And tide schedules are pinned up everywhere. Anyone can read one!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:37:08.244Z"
+    },
+    {
+      "id": "4013dd6f-533f-4015-ae96-25df212db9ec",
+      "sequence": 17,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "accuse Roz Pike because she knew Finn was staying at the lighthouse and about Ada's tide schedule even though she says she never goes to Gull Rock, and she wants her beacon to replace the light.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [
+          "c_roz_blames_finn"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Roz Pike because she knew Finn was staying at the lighthouse and about Ada's tide schedule even though she says she never goes to Gull Rock, and she wants her beacon to replace the light.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 17,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's cloth stops with a squeak. She glares at you over her spectacles. \"Where's your proof? A schedule on a wall isn't a crime!\" She jabs the cloth at the cottage. \"Finn was the only one out on that rock. He needs money for his leaky boat, and that lens is worth a fortune!\"",
+      "narration_parts": [
+        {
+          "text": "Roz's cloth stops with a squeak. She glares at you over her spectacles. \"Where's your proof? A schedule on a wall isn't a crime!\" She jabs the cloth at the cottage. \"Finn was the only one out on that rock. He needs money for his leaky boat, and that lens is worth a fortune!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:37:24.956Z"
+    },
+    {
+      "id": "f3759bbb-c055-49e4-8f2f-30e57087a994",
+      "sequence": 18,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "It was Roz. She said she never goes to Gull Rock, but she knew Finn was the only visitor there last night and she mentioned Ada's tide schedule, which is pinned inside the cottage, before I did. Her beacon only becomes the best light if the lens is gone, so she had a reason. The blue velvet was ripped as if someone grabbed the lens in a hurry, and she keeps blaming Finn to hide it.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "It was Roz. She said she never goes to Gull Rock, but she knew Finn was the only visitor there last night and she mentioned Ada's tide schedule, which is pinned inside the cottage, before I did. Her beacon only becomes the best light if the lens is gone, so she had a reason. The blue velvet was ripped as if someone grabbed the lens in a hurry, and she keeps blaming Finn to hide it.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 18,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's cloth stops mid-squeak. Her cheeks turn pink. \"Accuse me? Over a bit of velvet?\" She pushes her spectacles up her nose. \"I only want ships to be safe! Go and bother Finn again.\"",
+      "narration_parts": [
+        {
+          "text": "Roz's cloth stops mid-squeak. Her cheeks turn pink. \"Accuse me? Over a bit of velvet?\" She pushes her spectacles up her nose. \"I only want ships to be safe! Go and bother Finn again.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:37:42.820Z"
+    },
+    {
+      "id": "5955fe94-159b-4ef5-96cd-7346f22e8e5b",
+      "sequence": 19,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "accuse Roz Pike because she knew Finn was the only visitor on Gull Rock and knew about Ada's tide schedule inside the cottage even though she says she never goes there, and her beacon only becomes the best light if the lens is gone.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Roz Pike because she knew Finn was the only visitor on Gull Rock and knew about Ada's tide schedule inside the cottage even though she says she never goes there, and her beacon only becomes the best light if the lens is gone.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 19,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's mouth goes into a thin line. \"Accuse me? All you have is a torn bit of velvet and a schedule on a wall!\" She turns her back and dabs at the glass. \"I was asleep. Ask Finn. He's the one who stayed out there.\"",
+      "narration_parts": [
+        {
+          "text": "Roz's mouth goes into a thin line. \"Accuse me? All you have is a torn bit of velvet and a schedule on a wall!\" She turns her back and dabs at the glass. \"I was asleep. Ask Finn. He's the one who stayed out there.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:37:52.829Z"
+    },
+    {
+      "id": "9a118cbc-436e-4a10-a94c-b996a16632fd",
+      "sequence": 20,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "player_input": "accuse Roz Pike because she knew Finn was the only visitor on Gull Rock and knew about Ada's tide schedule pinned inside the cottage even though she says she never goes there, and her beacon only becomes the best light if the lens is gone.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:roz",
+          "label": "Roz"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Roz Pike because she knew Finn was the only visitor on Gull Rock and knew about Ada's tide schedule pinned inside the cottage even though she says she never goes there, and her beacon only becomes the best light if the lens is gone.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 20,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's cloth stops, then rubs faster. Her cheeks go pink. \"Lots of big words, but no proof!\" She sniffs and lifts her chin. \"My beacon is for ships, not for stealing. Now, I have a shop to mind.\"",
+      "narration_parts": [
+        {
+          "text": "Roz's cloth stops, then rubs faster. Her cheeks go pink. \"Lots of big words, but no proof!\" She sniffs and lifts her chin. \"My beacon is for ships, not for stealing. Now, I have a shop to mind.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:roz",
+            "label": "Roz"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:38:03.487Z"
+    },
+    {
+      "id": "aad007df-47fa-473a-8e2b-4c8a16b10e4e",
+      "sequence": 21,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "roz",
+        "character_name": "Roz",
+        "location_id": "village_quay",
+        "location_name": "Village Quay",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 21,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz turns back to her shiny beacon and rubs the glass hard. You step away from the lamp shop. Gulls cry above the quay. Where will you look next?",
+      "narration_parts": [
+        {
+          "text": "Roz turns back to her shiny beacon and rubs the glass hard. You step away from the lamp shop. Gulls cry above the quay. Where will you look next?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:38:12.606Z"
+    },
+    {
+      "id": "6e3b985f-38ae-4783-89c9-d9ba51f173ef",
+      "sequence": 22,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "village_quay",
+        "location_name": "Village Quay",
+        "search_query": "lamp shop",
+        "revealed_clue_id": "c_beacon_poster",
+        "revealed_clue_text": "A bright poster on the lamp shop door says: 'PIKE'S ELECTRIC BEACON! Better than any old lighthouse! The council votes tomorrow!'",
+        "revealed_clue_ids": [
+          "c_beacon_poster"
+        ],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search lamp shop",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 22,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 2,
+          "time_after": 1,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You peer at the lamp shop door. A bright poster flaps in the salty breeze. It says: 'PIKE'S ELECTRIC BEACON! Better than any old lighthouse! The council votes tomorrow!'",
+      "narration_parts": [
+        {
+          "text": "You peer at the lamp shop door. A bright poster flaps in the salty breeze. It says: 'PIKE'S ELECTRIC BEACON! Better than any old lighthouse! The council votes tomorrow!'",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:38:21.486Z"
+    },
+    {
+      "id": "c4961e43-a83a-431f-848f-35664537ef0a",
+      "sequence": 23,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "Roz Pike because she mentioned Ada's tide schedule before I did, and it is pinned inside the Keeper's Cottage, even though she says she never goes to Gull Rock. She also knew Finn was the only visitor there. Her poster says the council votes tomorrow, and her beacon only wins if the lens is gone. The ripped blue velvet shows someone took the lens in a hurry, and she keeps blaming Finn to hide it.",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Roz Pike because she mentioned Ada's tide schedule before I did, and it is pinned inside the Keeper's Cottage, even though she says she never goes to Gull Rock. She also knew Finn was the only visitor there. Her poster says the council votes tomorrow, and her beacon only wins if the lens is gone. The ripped blue velvet shows someone took the lens in a hurry, and she keeps blaming Finn to hide it.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 23,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 1,
+          "time_after": 1,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Good thinking, detective! Roz's beacon poster and her torn velvet clue are sharp finds. But the case is not proven yet. You need more about the timing. Could Ada's tide schedule have been wrong, and what would that mean for when the lens crossed?",
+      "narration_parts": [
+        {
+          "text": "Good thinking, detective! Roz's beacon poster and her torn velvet clue are sharp finds. But the case is not proven yet. You need more about the timing. Could Ada's tide schedule have been wrong, and what would that mean for when the lens crossed?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:38:43.269Z"
+    },
+    {
+      "id": "bc07f545-76ef-4c28-a148-bb811272d028",
+      "sequence": 24,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "search harbour tide board",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search harbour tide board",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 24,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 1,
+          "time_after": 1,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not quite yet, detective. Your accusation did not name a suspect. The torn velvet is a good find. But the case is not proven. You need facts about the timing. Who could have changed Ada's tide schedule, and why?",
+      "narration_parts": [
+        {
+          "text": "Not quite yet, detective. Your accusation did not name a suspect. The torn velvet is a good find. But the case is not proven. You need facts about the timing. Who could have changed Ada's tide schedule, and why?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:38:55.601Z"
+    },
+    {
+      "id": "00cc7158-67da-41ae-b7e3-2da07b9c8f4a",
+      "sequence": 25,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "accuse Roz Pike because her beacon only wins the council vote tomorrow if the lighthouse lens is gone, she knew about Ada's tide schedule and that Finn was the only visitor even though she says she never goes to Gull Rock, and the ripped blue velvet shows the lens was taken in a hurry. Finn was asleep on the sofa, so Roz took the lens across the causeway when the tide let her, and she keeps blaming Finn to hide it.",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Roz Pike because her beacon only wins the council vote tomorrow if the lighthouse lens is gone, she knew about Ada's tide schedule and that Finn was the only visitor even though she says she never goes to Gull Rock, and the ripped blue velvet shows the lens was taken in a hurry. Finn was asleep on the sofa, so Roz took the lens across the causeway when the tide let her, and she keeps blaming Finn to hide it.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 25,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 1,
+          "time_after": 1,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Roz's cloth squeaks to a stop. You have a strong hunch, detective, and her beacon is a clear motive. But the case is not proven yet. You still need proof of when the lens crossed. Think about the tide schedule on the wall. Do you trust the time written on it?",
+      "narration_parts": [
+        {
+          "text": "Roz's cloth squeaks to a stop. You have a strong hunch, detective, and her beacon is a clear motive. But the case is not proven yet. You still need proof of when the lens crossed. Think about the tide schedule on the wall. Do you trust the time written on it?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:39:09.445Z"
+    },
+    {
+      "id": "7ad7d6f8-453c-4e2a-992f-8315f035eb7e",
+      "sequence": 26,
+      "event_type": "accuse_resolved",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "accuse Roz Pike because her beacon only wins the council vote tomorrow if the lens is gone. She knew about Ada's tide schedule pinned inside the cottage and that Finn was the only visitor, even though she says she never goes to Gull Rock. Finn was asleep on the sofa. I think the schedule on Ada's wall can't be trusted. Roz could read the real times on the harbour tide board, so she knew when the causeway was open and took the lens across in a hurry. That is why the blue velvet was ripped. She keeps blaming Finn to hide it.",
+        "judge_result": "win",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Roz Pike because her beacon only wins the council vote tomorrow if the lens is gone. She knew about Ada's tide schedule pinned inside the cottage and that Finn was the only visitor, even though she says she never goes to Gull Rock. Finn was asleep on the sofa. I think the schedule on Ada's wall can't be trusted. Roz could read the real times on the harbour tide board, so she knew when the causeway was open and took the lens across in a hurry. That is why the blue velvet was ripped. She keeps blaming Finn to hide it.",
+        "diagnostics": {
+          "session_id": "fd2702f0-214b-4c3c-892c-d9e309d9edda",
+          "sequence": 26,
+          "event_type": "accuse_resolved",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_resolved",
+          "mode": "accuse",
+          "resulting_mode": "ended",
+          "time_before": 1,
+          "time_after": 1,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You have cracked it, detective! Roz changed Ada's tide schedule, so Ada would not watch the real low tide. The true low tide was at two in the morning, when the causeway was dry. Roz crossed in the dark and took the lens. She wanted her beacon to win tomorrow. Roz's cloth drops onto the counter. Finn was snoring on the sofa, so he is cleared. Case closed!",
+      "narration_parts": [
+        {
+          "text": "You have cracked it, detective! Roz changed Ada's tide schedule, so Ada would not watch the real low tide. The true low tide was at two in the morning, when the causeway was dry. Roz crossed in the dark and took the lens. She wanted her beacon to win tomorrow. Roz's cloth drops onto the counter. Finn was snoring on the sofa, so he is cleared. Case closed!",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T15:39:27.709Z"
+    }
+  ]
+}

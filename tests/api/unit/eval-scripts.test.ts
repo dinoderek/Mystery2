@@ -80,14 +80,28 @@ function write(name: string, content: unknown): string {
 }
 
 describe('validate-blueprint', () => {
-	it('exits 0 for a blueprint that passes the schema', async () => {
+	// The fixture's prose reads at about grade 9, too hard for its target age of 8.
+	const olderReader = { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, target_age: 14 } };
+
+	it('exits 0 for a blueprint that passes the schema and reads at its target age', async () => {
+		const file = write('blueprint.json', olderReader);
+		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
+		expect(ran.code).toBe(0);
+		expect(ran.stdout).toMatch(new RegExp(`^OK: ${file} \\(BlueprintV2; all \\d+ player-facing strings within FK grade 11 \\(age 14\\)\\)\n$`));
+	});
+
+	it('exits 1, naming each string too hard for the target age, for one that passes the schema only', async () => {
 		const file = write('blueprint.json', validBlueprintV2);
 		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
-		expect(ran).toMatchObject({ code: 0, stdout: `OK: ${file} (BlueprintV2)\n` });
+		expect(ran.code).toBe(1);
+		expect(ran.stdout).toBe('');
+		expect(ran.stderr).toContain(`TOO HARD TO READ: ${file} — 2 player-facing string(s) above FK grade 5 (age 8)`);
+		expect(ran.stderr).toContain('  - narrative.starting_knowledge.mystery_summary: grade 9.09, "');
+		expect(ran.stderr).toContain('  - world.locations[0].clues[1].text: grade 5.86, "');
 	});
 
 	it('exits 1, naming each issue and where, for one that does not', async () => {
-		const file = write('blueprint.json', { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, time_budget: 'ten' } });
+		const file = write('blueprint.json', { ...olderReader, metadata: { ...olderReader.metadata, time_budget: 'ten' } });
 		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
 		expect(ran.code).toBe(1);
 		expect(ran.stderr).toContain(`INVALID: ${file}`);

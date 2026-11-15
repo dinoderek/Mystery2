@@ -1,0 +1,2788 @@
+{
+  "schema_version": "trace/0.1",
+  "extracted_at": "2026-11-15T13:37:11.033Z",
+  "source": {
+    "kind": "local",
+    "persona": "detective",
+    "investigator_model": "sonnet"
+  },
+  "session": {
+    "id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+    "blueprint_id": "7c4e2b91-3f6a-4d8e-9b2c-5a1f0e7d3c84",
+    "ai_profile_id": "default",
+    "mode": "ended",
+    "current_location_id": "workshop",
+    "current_talk_character_id": null,
+    "time_remaining": 2,
+    "discovered_clues": [
+      "clue_boot_prints",
+      "clue_thorne_mia_cake",
+      "clue_ladder_tape",
+      "clue_dobbs_crash_time"
+    ],
+    "outcome": "lose",
+    "created_at": "2026-11-15T13:24:21.405Z",
+    "updated_at": "2026-11-15T13:31:21.609Z"
+  },
+  "ai_profile": {
+    "id": "default",
+    "model": "claude-haiku-5-5"
+  },
+  "blueprint": {
+    "schema_version": "v2",
+    "id": "7c4e2b91-3f6a-4d8e-9b2c-5a1f0e7d3c84",
+    "metadata": {
+      "title": "The Smashed Prize Pumpkin",
+      "one_liner": "On fair day, the school's giant prize pumpkin is found smashed. Who did it, and why?",
+      "target_age": 10,
+      "time_budget": 12,
+      "narration_style": "Crisp autumn air, earthy garden smells, and the cheerful hum of fair day in the distance.",
+      "visual_direction": {
+        "art_style": "gouache picture-book illustration with soft dry-brush edges and rounded, friendly shapes",
+        "color_palette": "harvest cheer: pumpkin orange, leaf green, straw gold and soft sky blue, with brick-red accents; warm and hopeful",
+        "mood": "cozy and curious, a sunny fair-day puzzle with a little worry underneath",
+        "lighting": "low golden autumn morning sun with long, soft shadows and a light dewy haze",
+        "texture": "visible paper grain with chalky matte gouache",
+        "portrait_background": "soft vertical wash of warm apricot melting into pale sage, gently blurred"
+      }
+    },
+    "narrative": {
+      "premise": "It's the morning of the Hollyfield County Fair. But Big Bertha, the school gardening club's giant pumpkin, lies smashed in the greenhouse! A window is broken, and the greenhouse key has been missing for days. The fair says that unless the truth is found by noon, the pumpkin contest is off.",
+      "starting_knowledge": {
+        "mystery_summary": "Big Bertha was smashed overnight. Mr. Dobbs saw her whole on his 8pm rounds, and Ms. Hale found her smashed at 7:30 this morning.",
+        "locations": [
+          {
+            "location_id": "greenhouse",
+            "summary": "Where Big Bertha grew all summer. The door was still locked this morning, but a side window was smashed."
+          },
+          {
+            "location_id": "potting_shed",
+            "summary": "The club's tool shed. The watering rota hangs on its door, and the greenhouse key used to hang inside."
+          },
+          {
+            "location_id": "workshop",
+            "summary": "Mr. Dobbs's busy workshop, next to his cottage at the edge of the school garden."
+          },
+          {
+            "location_id": "thorne_garden",
+            "summary": "Mr. Thorne's garden, just over the fence from the greenhouse. His giant pumpkin, Goliath, is already at the fair."
+          }
+        ],
+        "characters": [
+          {
+            "character_id": "hale",
+            "summary": "Ms. Hale runs the school gardening club. She found Bertha smashed at half past seven and is guarding the greenhouse."
+          },
+          {
+            "character_id": "toby",
+            "summary": "One of the club's two pupils, aged eleven. He planted Bertha's seed in spring and knows all about her."
+          },
+          {
+            "character_id": "mia",
+            "summary": "One of the club's two pupils, aged ten. She took over Bertha's last watering shifts this week."
+          },
+          {
+            "character_id": "dobbs",
+            "summary": "The school caretaker. He locks up, keeps the spare greenhouse key, and checked on Bertha at 8pm."
+          },
+          {
+            "character_id": "thorne",
+            "summary": "The grumpy neighbour who has won the fair's pumpkin prize six years running. Bertha was bigger than his Goliath."
+          }
+        ]
+      }
+    },
+    "world": {
+      "starting_location_id": "greenhouse",
+      "locations": [
+        {
+          "id": "greenhouse",
+          "name": "The Greenhouse",
+          "description": "Warm, damp air smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze.",
+          "clues": [
+            {
+              "id": "clue_boot_prints",
+              "text": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "sub_broken_window",
+              "name": "the broken side window",
+              "hint": "The smashed side pane. Steer the player to notice where the glass fell: outside on the brick path, so it was knocked out from inside.",
+              "clues": [
+                {
+                  "id": "clue_glass_outside",
+                  "text": "The broken glass lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse. Nobody climbed in here!"
+                }
+              ]
+            },
+            {
+              "id": "sub_smashed_pumpkin",
+              "name": "the smashed pumpkin",
+              "hint": "Bertha's orange mush across her soil bed and the bricks. Small leaf-pattern welly prints are pressed into it.",
+              "clues": [
+                {
+                  "id": "clue_welly_prints",
+                  "text": "Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies."
+                }
+              ]
+            },
+            {
+              "id": "sub_toppled_bench",
+              "name": "the toppled bench",
+              "hint": "The old wooden bench that stood beside Bertha's bed, now tipped over with its clay pots. One rotten leg has snapped.",
+              "clues": [
+                {
+                  "id": "clue_snapped_bench",
+                  "text": "The old bench had a rotten leg, and it has snapped clean through. When the bench fell, its heavy clay pots crashed down onto Bertha."
+                }
+              ]
+            },
+            {
+              "id": "sub_water_butt",
+              "name": "the water butt by the door",
+              "hint": "A tall rain barrel by the door, full of murky rainwater. The missing key lies at the bottom, out of sight from the top.",
+              "clues": [
+                {
+                  "id": "clue_key_in_water_butt",
+                  "text": "At the bottom of the murky water butt, your fingers find a key with a green tag: GREENHOUSE. It's the missing key!",
+                  "requires": {
+                    "clue_ids": [
+                      "clue_glass_outside"
+                    ],
+                    "rationale": "The water butt is deep and murky, and nothing shows from the top. You only think to fish around in it once you know the break-in was faked and a key was used. This is a hard search gate with no shortcut."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "potting_shed",
+          "name": "The Potting Shed",
+          "description": "A cosy wooden shed full of trowels, flowerpots and seed packets. A paper rota is pinned inside the door, and a row of hooks hangs by the window.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "sub_rota_door",
+              "name": "the watering rota on the door",
+              "hint": "The watering rota pinned inside the door. Toby's name is crossed out for the last shifts, and Mia's is written in sparkly purple ink.",
+              "clues": [
+                {
+                  "id": "clue_rota_purple_ink",
+                  "text": "On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday. 'MIA' is written over it in sparkly purple pen."
+                }
+              ]
+            },
+            {
+              "id": "sub_key_hook",
+              "name": "the row of key hooks",
+              "hint": "A hook labelled GREENHOUSE KEY, empty since Wednesday. A note under it says to borrow Mr. Dobbs's spare. Nothing else to find here.",
+              "clues": []
+            },
+            {
+              "id": "sub_welly_pegs",
+              "name": "the welly pegs",
+              "hint": "Two empty pegs labelled TOBY and MIA. The club's pupils take their club wellies home. Nothing to find here.",
+              "clues": []
+            },
+            {
+              "id": "sub_seed_shelves",
+              "name": "the seed-packet shelves",
+              "hint": "Shelves of seed packets, string and old yoghurt pots. Just cosy clutter.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "workshop",
+          "name": "Mr. Dobbs's Workshop",
+          "description": "A cluttered workshop that smells of oil and sawdust. Tools hang on every wall, a kettle steams in the corner, and a window looks out over the school garden.",
+          "clues": [
+            {
+              "id": "clue_spare_key_book",
+              "text": "Mr. Dobbs's key book says: 'Greenhouse spare. Thursday: Mia, 5:05 to 5:20. Friday: Mia, 5:00 to 5:20. Saturday: Ms. Hale, 7:25.'"
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "sub_workshop_window",
+              "name": "the window over the garden",
+              "hint": "A view across the school garden to the greenhouse roof. Mr. Dobbs's dented bins stand outside, the fox's favourite. Atmosphere only.",
+              "clues": []
+            },
+            {
+              "id": "sub_tool_bench",
+              "name": "the cluttered tool bench",
+              "hint": "Half-mended things: a squeaky gate hinge, a football pump, a jar of screws. Atmosphere only.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "thorne_garden",
+          "name": "Mr. Thorne's Garden",
+          "description": "A neat garden with rows of leeks and a shed covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "sub_ladder_fence",
+              "name": "the ladder by the fence",
+              "hint": "Mr. Thorne's ladder leaning on his side of the fence, right opposite the greenhouse, with a tape measure on the top rung.",
+              "clues": [
+                {
+                  "id": "clue_ladder_tape",
+                  "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung."
+                }
+              ]
+            },
+            {
+              "id": "sub_ribbon_shed",
+              "name": "the prize-ribbon shed",
+              "hint": "His shed door is covered in six blue prize ribbons, one for each year he has won. Atmosphere only.",
+              "clues": []
+            },
+            {
+              "id": "sub_goliath_patch",
+              "name": "Goliath's empty patch",
+              "hint": "The empty muddy patch where Goliath grew. Trailer tyre tracks lead out to the lane. Atmosphere only.",
+              "clues": []
+            }
+          ]
+        }
+      ],
+      "characters": [
+        {
+          "id": "hale",
+          "first_name": "Juniper",
+          "last_name": "Hale",
+          "location_id": "greenhouse",
+          "sex": "female",
+          "appearance": "A tall woman with curly grey-streaked hair tied up in a green scarf, a muddy apron, big gardening boots, and gloves poking out of her apron pocket.",
+          "background": "Juniper Hale teaches Year 5 at Hollyfield Primary and has led the gardening club for ten years. This year it has only two pupils, Toby and Mia. After Toby left the greenhouse unlocked on Monday, she changed the watering rota on Wednesday, gave his last shifts to Mia, and told him not to go in without a grown-up. She feels bad about how hard Toby took it. She found Bertha smashed this morning and is keeping everyone out of the greenhouse.",
+          "personality": "Warm, sensible and fair, with a soft spot for her club. She gets flustered when she feels guilty.",
+          "initial_attitude_towards_investigator": "Relieved someone has come to help, and keen to get to the truth before noon.",
+          "stated_alibi": "At home on Friday evening marking spelling tests. I came in at 7:25 this morning to water Bertha before loading.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_hale_key_last_seen",
+              "text": "On Wednesday at half past three, the greenhouse key was on its hook. After that, only Toby and Mia were in the shed until I locked it. Next day, it was gone.",
+              "hint_location_id": "potting_shed"
+            },
+            {
+              "id": "clue_hale_borrowed_pen",
+              "text": "I changed the rota myself on Wednesday. My pen ran dry, so I borrowed Mia's sparkly purple one.",
+              "about_character_id": "mia",
+              "requires": {
+                "clue_ids": [
+                  "clue_rota_purple_ink"
+                ],
+                "rationale": "Ms. Hale only thinks to explain the purple ink once you ask her about the changed rota. A clever question about who wrote the new names could also draw it out."
+              }
+            },
+            {
+              "id": "clue_hale_toby_upset",
+              "text": "I took Toby off the last shifts after he forgot to lock up on Monday. I said no going in without a grown-up. He shouted, 'She's MY pumpkin!'",
+              "about_character_id": "toby",
+              "requires": {
+                "clue_ids": [
+                  "clue_rota_purple_ink"
+                ],
+                "rationale": "Ms. Hale only talks about Toby's feelings once the rota change has come up, and only if she trusts you to be fair to him. A kind, clever question about why the rota changed can open her up."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "She has run the gardening club for ten years. It is the smallest club in school, but this year it grew the biggest pumpkin.",
+            "Bertha weighed about as much as a grown-up. She was the heaviest pumpkin the club ever grew.",
+            "The club still has a little pumpkin called Pip that could go in the junior class, if the contest goes ahead.",
+            "She has a scruffy dog called Biscuit who digs up her tulips.",
+            "She grows sunflowers up the school fence every summer.",
+            "She teaches Year 5 and is famous for her Friday spelling tests.",
+            "The school gave each club pupil a pair of green club wellies as a thank-you for all their hard work."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Tuesday morning: found the greenhouse door unlocked after Toby's Monday shift, and seedlings nibbled by a squirrel."
+            },
+            {
+              "sequence": 2,
+              "summary": "Wednesday 3:30pm: in the potting shed, changed the watering rota, giving Toby's Thursday, Friday and Saturday shifts to Mia. Her pen ran dry, so she borrowed Mia's sparkly purple pen. The greenhouse key was on its hook. She told Toby not to go into the greenhouse without a grown-up."
+            },
+            {
+              "sequence": 3,
+              "summary": "Wednesday 3:35pm to 4:15pm: made tea in the staff room while Toby and Mia tidied the shed. At 4:15 she locked the shed without checking the key hook."
+            },
+            {
+              "sequence": 4,
+              "summary": "Thursday 5pm: unlocked the shed for Mia, who found the key hook empty. She asked both pupils; neither said they had seen it. She arranged for the waterer to borrow Mr. Dobbs's spare key."
+            },
+            {
+              "sequence": 5,
+              "summary": "Friday evening: at home marking spelling tests."
+            },
+            {
+              "sequence": 6,
+              "summary": "Saturday 7:25am: borrowed the spare from Mr. Dobbs. At 7:30 she unlocked the greenhouse door, which was still locked, and found Bertha smashed and a side window broken. She stepped straight back out and kept everyone out."
+            },
+            {
+              "sequence": 7,
+              "summary": "Saturday 8am to 9am: phoned the fair, who said the pumpkin contest would be canceled unless the truth was known by noon. Sent Toby and Mia to wait in the potting shed and stood guard at the greenhouse."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "protect_other",
+              "strategy": "Shield Toby from blame.",
+              "priority": "medium",
+              "details": "Ms. Hale is fond of Toby and feels guilty for being tough on him. She insists Toby loves Bertha and would never hurt her, and she plays down how upset he was about the rota change. She never lies about facts such as the key, the shed or the times.",
+              "target_character_id": "toby"
+            },
+            {
+              "type": "conditional_reveal",
+              "strategy": "Open up about Toby's hurt feelings once she trusts the investigator.",
+              "priority": "medium",
+              "details": "She shares how upset Toby was about losing his shifts only when the investigator shows they want the truth, not someone to blame: for example by promising to be fair to Toby, saying something kind about him, or suggesting it might have been an accident. Accusing Toby outright or being pushy makes her clam up.",
+              "gated_clue_id": "clue_hale_toby_upset",
+              "condition": "trust_established"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_hale_gloves",
+              "text": "She twists the gardening gloves in her apron pocket and sighs.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks why the watering rota was changed, or how Toby felt about it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "toby",
+          "first_name": "Toby",
+          "last_name": "Marsh",
+          "location_id": "potting_shed",
+          "sex": "male",
+          "appearance": "A small, freckly eleven-year-old with a mop of sandy hair, a green gardening club hoodie with a pumpkin badge, and scuffed white trainers.",
+          "background": "Toby Marsh is in Year 6 and lives on Hawthorn Lane, a two-minute walk from the school garden gate. He planted Bertha's seed in April and has fussed over her all summer. On Monday he forgot to lock the greenhouse, so on Wednesday Ms. Hale changed the watering rota, gave his last shifts to Mia, and told him not to go in without a grown-up. Hurt, he secretly took the greenhouse key. On Friday night he sneaked in to give Bertha extra water and smashed her by accident. Then he faked a break-in and blamed Mr. Thorne because he was scared.",
+          "personality": "Bright, serious and a little bossy about plants. He is normally honest, so lying makes him fidgety and fast-talking. He loves facts and corrects people's pumpkin mistakes.",
+          "initial_attitude_towards_investigator": "Jumpy and over-eager to help. He keeps steering the talk toward Mr. Thorne.",
+          "stated_alibi": "I was at home all Friday evening finishing my thousand-piece jigsaw. I went to bed at nine. I haven't seen the greenhouse key since Wednesday.",
+          "motive": "Bertha was his pumpkin, grown from his seed. When the rota change took away his last shifts and he was told not to go in alone, he kept the key so he could still look after her, and sneaked in to water her himself.",
+          "is_culprit": true,
+          "clues": [
+            {
+              "id": "clue_toby_thorne_ladder",
+              "text": "On Thursday, Mr. Thorne was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'",
+              "about_character_id": "thorne",
+              "hint_location_id": "thorne_garden"
+            },
+            {
+              "id": "clue_toby_mia_splat",
+              "text": "Mia said she wished Bertha would just go splat, so she could get back to her dance practice.",
+              "about_character_id": "mia",
+              "requires": {
+                "clue_ids": [
+                  "clue_rota_purple_ink"
+                ],
+                "rationale": "Toby doesn't want to tell on his friend. He only lets it slip once you bring up the rota change and who got his shifts. A clever question about Mia's mood this week could also draw it out."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "He named Bertha after his great-gran, who grew prize marrows.",
+            "His jigsaw has a thousand pieces and shows a green steam train crossing a bridge. He has nearly finished it.",
+            "He has a tortoise called Turbo who loves dandelions.",
+            "He is in Year 6 and wants to be a plant scientist one day.",
+            "He says a giant pumpkin can get heavier by a whole sack of potatoes in one day in late summer.",
+            "His favourite parts of the fair are the tractor rides and the candyfloss.",
+            "He thinks Mr. Thorne's Goliath is lumpy and the wrong shade of orange."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Monday evening: after watering Bertha, he forgot to lock the greenhouse door. A squirrel got in and nibbled the seedlings."
+            },
+            {
+              "sequence": 2,
+              "summary": "Wednesday 3:30pm: in the potting shed, he watched Ms. Hale cross his name off the last watering shifts and give them to Mia. She told him not to go into the greenhouse without a grown-up. He shouted, 'She's MY pumpkin!'"
+            },
+            {
+              "sequence": 3,
+              "summary": "Wednesday about 3:50pm: while Mia carried old seed trays out to the compost heap, he slipped the greenhouse key off its hook and into his pocket. He told no one."
+            },
+            {
+              "sequence": 4,
+              "summary": "Thursday: at lunch Mia grumbled to him that she wished Bertha would go splat so she could get to dance practice. At 4:30pm he saw Mr. Thorne up his ladder with a tape measure, saying 'Enjoy her while she lasts!' At 5pm, when the key was found missing, he said he hadn't seen it."
+            },
+            {
+              "sequence": 5,
+              "summary": "Friday 6pm to 8:30pm: at home working on his steam-train jigsaw. At 8:30 he told his mum he was going to bed early."
+            },
+            {
+              "sequence": 6,
+              "summary": "Friday 8:40pm: slipped out the back in his leaf-pattern club wellies with a torch and the hidden key, climbed the wobbly school garden gate, and unlocked the greenhouse."
+            },
+            {
+              "sequence": 7,
+              "summary": "Friday about 8:50pm: carrying a full watering can from the water butt, he tripped over the hose and fell against the rickety old bench. Its rotten leg snapped, and the bench and its heavy clay pots crashed onto Bertha, splitting her open. He stepped in the mush."
+            },
+            {
+              "sequence": 8,
+              "summary": "Friday about 8:52pm: panicking, he knocked out a side window pane from the inside with a trowel so it would look like a burglar. He locked the door behind him, dropped the key into the water butt, and ran home."
+            },
+            {
+              "sequence": 9,
+              "summary": "Friday 9:05pm: at home, he hosed his wellies clean in the back garden, left them to dry, and crept up to bed. His mum never knew he had gone out."
+            },
+            {
+              "sequence": 10,
+              "summary": "Saturday 8:10am: arrived at school in trainers. When Ms. Hale told him about Bertha, he said Mr. Thorne must have done it. She sent him to wait in the potting shed with Mia."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Maintain a false alibi: home all evening doing his jigsaw, and he has not seen the key since Wednesday.",
+              "priority": "high",
+              "details": "Toby sticks to his story and blames a burglar or Mr. Thorne. His cover cracks only as far as the player has earned. The parts are: (1) the glass lying outside, which proves the break-in was faked; (2) the leaf-pattern welly prints in the pumpkin mush, or the key found in the water butt; (3) proof Mia was at the fair at the time of the crash (Mr. Thorne bought cake from her at nine, and Mr. Dobbs heard the crash at ten to nine). One or two parts earn only a nervous slip: he goes quiet, changes the subject, or says 'Maybe it was a fox.' With all three, he bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "Point the finger at Mr. Thorne.",
+              "priority": "medium",
+              "details": "Toby keeps steering talk to Mr. Thorne: his ladder, his tape measure, and his 'Enjoy her while she lasts!' jibe. He says Mr. Thorne must have climbed over and smashed the window. He drops this once the player shows him the glass lay outside.",
+              "target_character_id": "thorne"
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "Reluctantly cast doubt on Mia.",
+              "priority": "low",
+              "details": "If the rota change comes up, Toby mumbles that Mia wished Bertha would go splat. He feels bad saying it and adds that she probably didn't mean it.",
+              "target_character_id": "mia"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_toby_sweeping",
+              "text": "His cheeks go pink and he starts sweeping the same patch of floor, over and over.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_glass_outside"
+                ]
+              }
+            },
+            {
+              "id": "tell_toby_feet",
+              "text": "He glances down at his scuffed trainers and tucks his feet out of sight.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_welly_prints"
+                ]
+              }
+            },
+            {
+              "id": "tell_toby_pocket",
+              "text": "His hand pats his hoodie pocket, as if checking for something that isn't there.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks Toby where the greenhouse key is, or mentions the key being found."
+              }
+            }
+          ]
+        },
+        {
+          "id": "mia",
+          "first_name": "Mia",
+          "last_name": "Okoro",
+          "location_id": "potting_shed",
+          "sex": "female",
+          "appearance": "A ten-year-old with two puffy black bunches, a bright yellow raincoat, green club wellies, and a sparkly purple gel pen clipped to her pocket.",
+          "background": "Mia Okoro is in Year 5 and joined the gardening club at Easter. She is one of its only two pupils. On Wednesday she was given Toby's last watering shifts, which clash with her dance practice. On Friday she watered Bertha at five, then helped her mum at the fair's cake tent from six till ten.",
+          "personality": "Bubbly, chatty and quick to giggle, but she goes quiet when she is embarrassed. Loyal to her friends.",
+          "initial_attitude_towards_investigator": "Friendly but a bit nervous. She worries people will blame her because she was the last to water Bertha.",
+          "stated_alibi": "I watered Bertha at five with Mr. Dobbs's spare key, locked up, and gave it back. Then I helped Mum at the fair's cake tent from six till ten.",
+          "motive": "She was fed up that the extra watering shifts made her miss dance practice, and grumbled that she wished Bertha would go splat.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_mia_thorne_barbecue",
+              "text": "Mr. Thorne was at the growers' barbecue, right by our cake tent, all evening. At nine o'clock he bought carrot cake from me.",
+              "about_character_id": "thorne"
+            }
+          ],
+          "flavor_knowledge": [
+            "She is learning a street-dance routine for the school show next month.",
+            "She collects gel pens. The sparkly purple one is her favourite.",
+            "Her mum runs the cake tent at the fair every year. Carrot cake always sells out first.",
+            "She joined the gardening club at Easter and thinks Toby knows everything about plants.",
+            "She has a little brother, Femi, who is scared of worms.",
+            "She likes sunflowers best because they grow taller than her dad."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Wednesday 3:30pm: in the potting shed, she lent Ms. Hale her sparkly purple pen and watched her write Mia's name over Toby's for Thursday, Friday and Saturday."
+            },
+            {
+              "sequence": 2,
+              "summary": "Wednesday 3:35pm to 4:15pm: tidied the shed with Toby. They both took turns carrying old seed trays out to the compost heap. She never noticed the key."
+            },
+            {
+              "sequence": 3,
+              "summary": "Thursday lunchtime: grumbled to Toby that she wished Bertha would go splat, because the shifts made her miss dance practice."
+            },
+            {
+              "sequence": 4,
+              "summary": "Thursday 5pm: found the greenhouse key hook empty and told Ms. Hale. She borrowed Mr. Dobbs's spare key at 5:05, watered Bertha, and gave it back at 5:20."
+            },
+            {
+              "sequence": 5,
+              "summary": "Friday 5pm: borrowed the spare key again and watered Bertha. She noticed huge boot prints in the flower bed but thought Mr. Dobbs had been weeding. Bertha was whole. She locked up and returned the key at 5:20."
+            },
+            {
+              "sequence": 6,
+              "summary": "Friday 6pm to 10pm: helped her mum serve at the fair's cake tent across town. Mr. Thorne was at the growers' barbecue next door all evening, and at 9pm she sold him carrot cake."
+            },
+            {
+              "sequence": 7,
+              "summary": "Friday 10:30pm: went home with her mum and straight to bed."
+            },
+            {
+              "sequence": 8,
+              "summary": "Saturday 8am: arrived in her club wellies for the loading. Ms. Hale sent her to wait in the potting shed with Toby."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Keep up a cover story: deny the 'go splat' grumble.",
+              "priority": "medium",
+              "details": "Mia is embarrassed that she said she wished Bertha would go splat, so at first she denies it. If the investigator repeats what Toby said, she goes pink and admits it, explaining she only meant she was fed up missing dance practice. She tells the truth about Friday freely: watering at five, returning the spare, and the cake tent from six to ten."
+            },
+            {
+              "type": "protect_other",
+              "strategy": "Stick up for Toby.",
+              "priority": "low",
+              "details": "Mia thinks Toby is the best gardener in school. She insists he would never hurt Bertha and won't guess about him. She has not seen anything that points to him.",
+              "target_character_id": "toby"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_mia_pen",
+              "text": "She goes pink and clicks her purple pen on and off.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_toby_mia_splat"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "dobbs",
+          "first_name": "Stanley",
+          "last_name": "Dobbs",
+          "location_id": "workshop",
+          "sex": "male",
+          "appearance": "A tall, thin man with a grey moustache, navy overalls, and a big ring of keys jangling on his belt.",
+          "background": "Stanley Dobbs has been Hollyfield Primary's caretaker for thirty years. He lives in the cottage beside his workshop, at the edge of the school garden. Since the greenhouse key went missing, he has lent out the spare from his belt and written it in his key book. He heard the crash last night but thought it was the fox.",
+          "personality": "Calm, slow-talking and kind, with a dry sense of humour. He likes everything tidy and written down.",
+          "initial_attitude_towards_investigator": "Friendly and helpful. He offers a cup of tea and answers questions plainly.",
+          "stated_alibi": "After my eight o'clock rounds I was in my cottage all evening, watching my quiz show.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_dobbs_crash_time",
+              "text": "At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again."
+            }
+          ],
+          "flavor_knowledge": [
+            "He has been the school caretaker for thirty years and knows every creaky floorboard.",
+            "A cheeky fox he calls Rusty knocks over his bins most nights.",
+            "He never misses his quiz show, Brain Busters, on Friday nights.",
+            "He drinks tea from a chipped mug that says WORLD'S BEST CARETAKER.",
+            "He grows huge dahlias by his cottage door but would never enter a contest.",
+            "He has been meaning to fix the wobbly school garden gate for weeks.",
+            "He keeps every school key on his belt ring and writes down whoever borrows one."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Thursday 5:05pm: lent Mia the spare greenhouse key and wrote it in his key book. She gave it back at 5:20."
+            },
+            {
+              "sequence": 2,
+              "summary": "Friday 5pm: lent Mia the spare key again. She returned it at 5:20, he wrote it down, and clipped the key back on his belt ring."
+            },
+            {
+              "sequence": 3,
+              "summary": "Friday 6:30pm: heard Mr. Thorne's rattly trailer drive off with Goliath."
+            },
+            {
+              "sequence": 4,
+              "summary": "Friday 8pm: did his evening rounds. He shone his torch into the greenhouse: Bertha was whole and the door was locked."
+            },
+            {
+              "sequence": 5,
+              "summary": "Friday 8:15pm: settled in his cottage in his slippers to watch his quiz show."
+            },
+            {
+              "sequence": 6,
+              "summary": "Friday about 8:50pm: heard a big thud from the garden, then smashing glass. He thought it was the fox knocking over his bins and did not go out."
+            },
+            {
+              "sequence": 7,
+              "summary": "Friday about 11:30pm: heard Mr. Thorne's trailer rattle home."
+            },
+            {
+              "sequence": 8,
+              "summary": "Saturday 7:25am: lent Ms. Hale the spare key and wrote it in his book. Since then he has been in his workshop, feeling bad that he didn't check the noise."
+            }
+          ],
+          "agendas": [],
+          "tells": [
+            {
+              "id": "tell_dobbs_neck",
+              "text": "He rubs the back of his neck and mumbles that he was already in his slippers.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks why he didn't go out to check the noise."
+              }
+            }
+          ]
+        },
+        {
+          "id": "thorne",
+          "first_name": "Barnaby",
+          "last_name": "Thorne",
+          "location_id": "thorne_garden",
+          "sex": "male",
+          "appearance": "A big, red-faced man in his sixties with bushy white eyebrows, a flat cap, a tweed waistcoat, and huge brown work boots.",
+          "background": "Barnaby Thorne lives next door to the school garden and has won the fair's giant pumpkin prize six years running. This year the children's Bertha grew bigger than his Goliath. On Friday afternoon he secretly climbed over the fence to measure her, then spent the evening at the fair's growers' barbecue across town.",
+          "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener.",
+          "initial_attitude_towards_investigator": "Prickly and defensive. He has heard he is being blamed and is cross about it.",
+          "stated_alibi": "I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. And I've never set foot in that school garden.",
+          "motive": "He has won the pumpkin prize six years running, and Bertha was bigger than his Goliath.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_thorne_mia_cake",
+              "text": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+              "about_character_id": "mia"
+            },
+            {
+              "id": "clue_thorne_measured",
+              "text": "All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+              "hint_location_id": "greenhouse",
+              "requires": {
+                "clue_ids": [
+                  "clue_boot_prints"
+                ],
+                "rationale": "Mr. Thorne won't admit climbing into the school garden until you can tell him about the huge boot prints in the flower bed. A convincing bluff that his boots match the prints could also crack him."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "He has won the fair's giant pumpkin prize six years running. The blue ribbons hang on his shed.",
+            "He feeds Goliath a secret 'seaweed tea' and says good morning to him every day.",
+            "Goliath is a bit smaller than Bertha was, which has made him grumpy all week.",
+            "His ginger cat, Marmalade, likes to sleep in his wheelbarrow.",
+            "He has lived next to the school for forty years and grumbles about footballs flying over his fence.",
+            "Secretly he thinks the children did a fine job with Bertha, though he would never say so.",
+            "He says the growers' barbecue has the best sausages in the county."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Thursday 4:30pm: climbed his ladder, eyed Bertha through the greenhouse glass with his tape measure, and grumbled to Toby, 'Enjoy her while she lasts!' He meant his Goliath would beat her."
+            },
+            {
+              "sequence": 2,
+              "summary": "Friday 4pm: used his ladder to climb over the fence into the school flower bed, and held his tape measure up to the side window to size up Bertha. She was whole and the window was fine. He climbed back over by 4:10, leaving huge boot prints in the flower bed."
+            },
+            {
+              "sequence": 3,
+              "summary": "Friday 6:30pm: drove Goliath to the fair's showground across town on his rattly trailer."
+            },
+            {
+              "sequence": 4,
+              "summary": "Friday 7pm to 11pm: at the growers' barbecue next to the cake tent. At 9pm he bought carrot cake from Mia."
+            },
+            {
+              "sequence": 5,
+              "summary": "Friday about 11:30pm: drove home and went to bed."
+            },
+            {
+              "sequence": 6,
+              "summary": "Saturday 8:15am: heard the fuss next door and that Toby was blaming him. Now he is stomping round his garden, grumbling, before heading back to the fair."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Keep up a cover story: he never set foot in the school garden.",
+              "priority": "medium",
+              "details": "Grumpy and offended, he insists he only ever looked over the fence. He is proud of his evening at the fair and shares it freely, including buying cake from Mia at nine. He hides that he climbed over on Friday afternoon, because he is embarrassed to have spied on a children's pumpkin."
+            },
+            {
+              "type": "conditional_reveal",
+              "strategy": "Admit the Friday measuring trip when shown the boot prints.",
+              "priority": "medium",
+              "details": "Told about the huge boot prints in the school flower bed, he huffs, turns red, and admits he climbed over at four on Friday to measure Bertha through the window, and that she was whole when he left. If the player also mentions his ladder and tape measure, he admits it fully and sheepishly.",
+              "gated_clue_id": "clue_thorne_measured",
+              "condition": "confronted_with_evidence",
+              "yields_to_clue_ids": [
+                "clue_boot_prints"
+              ]
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_thorne_boot",
+              "text": "His ears turn red and he scuffs one huge boot on the grass.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_boot_prints"
+                ]
+              }
+            },
+            {
+              "id": "tell_thorne_ribbons",
+              "text": "He puffs out his chest and jabs a thumb at the blue ribbons on his shed.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator suggests he smashed Bertha so Goliath would win."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cover_image": {
+      "description": "A giant orange pumpkin lies split open on a greenhouse floor among tumbled clay pots, with golden morning sun glinting on a broken window. A child detective peeks in through the doorway, magnifying glass raised. Far away, fair balloons float in a bright blue sky.",
+      "location_ids": [
+        "greenhouse"
+      ],
+      "character_ids": []
+    },
+    "ground_truth": {
+      "what_happened": "Toby Marsh smashed Big Bertha by accident and then faked a break-in. On Wednesday, Ms. Hale changed the watering rota, giving Toby's last shifts to Mia and telling him not to go into the greenhouse without a grown-up. That afternoon, while Mia was outside with seed trays, Toby secretly pocketed the greenhouse key from its hook in the potting shed. On Friday at about 8:40pm he sneaked out in his leaf-pattern club wellies and let himself into the locked greenhouse with the key to give Bertha extra water. At about 8:50pm he tripped over the hose and fell against the rickety old bench. Its rotten leg snapped, and the bench and its heavy clay pots crashed onto Bertha, splitting her open. He stepped in the mush. Panicking, he knocked a side window out from the inside with a trowel so it would look like a burglar, locked the door behind him, dropped the key into the water butt, and ran home. In the morning he blamed Mr. Thorne.",
+      "why_it_happened": "Bertha was Toby's pumpkin: he grew her from a seed. When the rota change took away his last shifts and Ms. Hale said he could not go in without a grown-up, he kept the key so he could still look after her. He sneaked in to give her one big last drink before the weigh-in. The smash was an accident. The fake break-in and the blaming of Mr. Thorne happened because he was scared of getting into trouble.",
+      "timeline": [
+        "Monday: Toby forgets to lock the greenhouse after his watering shift, and a squirrel nibbles the seedlings.",
+        "Wednesday 3:30pm: in the potting shed, Ms. Hale changes the watering rota, giving Toby's Thursday, Friday and Saturday shifts to Mia. Her pen has run dry, so she writes with Mia's sparkly purple pen. She tells Toby not to go into the greenhouse without a grown-up. The greenhouse key is on its hook.",
+        "Wednesday about 3:50pm: while Ms. Hale makes tea and Mia carries seed trays to the compost heap, Toby slips the greenhouse key into his pocket. Ms. Hale locks the shed at 4:15 without noticing.",
+        "Thursday: Mia grumbles to Toby that she wishes Bertha would go splat. At 4:30pm Mr. Thorne eyes Bertha from his ladder with a tape measure and says, 'Enjoy her while she lasts!' At 5pm the key hook is found empty, and from then on Mia borrows Mr. Dobbs's spare key, which he writes in his key book.",
+        "Friday: at 4pm Mr. Thorne climbs over the fence to measure Bertha through the side window, leaving huge boot prints. At 5pm Mia waters Bertha, sees the prints, locks up and returns the spare at 5:20. Mr. Thorne takes Goliath to the fair at 6:30pm and is at the growers' barbecue from 7 to 11; Mia serves at the cake tent from 6 to 10 and sells him carrot cake at 9. At 8pm Mr. Dobbs sees Bertha whole and the door locked.",
+        "Friday 8:40pm to 8:55pm: Toby sneaks in with the hidden key. At about 8:50 he trips on the hose and the rotten bench collapses onto Bertha, smashing her. He steps in the mush in his club wellies, knocks a side window out from inside, locks the door, drops the key in the water butt and runs home. Mr. Dobbs hears the thud and the glass but blames the fox.",
+        "Saturday: at 7:30am Ms. Hale unlocks the still-locked door with the spare and finds Bertha smashed. Toby arrives in trainers and blames Mr. Thorne. The fair says the pumpkin contest will be canceled unless the truth is known by noon."
+      ]
+    },
+    "solution_paths": [
+      {
+        "id": "sp_key_trail",
+        "summary": "The break-in was faked, so the smasher used the missing key, and only Toby or Mia could have taken it. Mia was at the fair at the time of the crash.",
+        "description": "The glass lies outside, so the window was knocked out from inside and the smasher came through the locked door with a key. The missing key turns up in the water butt, and Mr. Dobbs's key book shows the spare was back with him all night. Ms. Hale says only Toby and Mia were in the shed when the key vanished. Mr. Dobbs heard the crash at ten to nine, and Mr. Thorne bought cake from Mia across town at nine, where she served from six till ten. That leaves Toby. Ms. Hale's memory of how hurt Toby was, and the snapped rotten bench, explain why: he sneaked in to look after Bertha and the bench collapsed onto her.",
+        "payoff": "Toby smashed Bertha by accident while secretly looking after her with the key he took, then faked a break-in to hide it.",
+        "location_clue_ids": [
+          "clue_glass_outside",
+          "clue_key_in_water_butt",
+          "clue_spare_key_book",
+          "clue_snapped_bench"
+        ],
+        "character_clue_ids": [
+          "clue_hale_key_last_seen",
+          "clue_dobbs_crash_time",
+          "clue_thorne_mia_cake",
+          "clue_hale_toby_upset"
+        ]
+      },
+      {
+        "id": "sp_welly_trail",
+        "summary": "Leaf-pattern welly prints in the pumpkin mush show Toby or Mia was there after the smash, and Mia was at the fair when it happened.",
+        "description": "Only the club's two pupils have leaf-pattern wellies, so one of them stood in Bertha's mush after she was smashed. Mr. Dobbs heard the crash at ten to nine. Mr. Thorne bought cake from Mia at the fair across town at nine, and she served there from six till ten. So the prints are Toby's. The snapped rotten bench shows how Bertha was smashed.",
+        "payoff": "Toby was in the greenhouse when Bertha was smashed.",
+        "location_clue_ids": [
+          "clue_welly_prints",
+          "clue_snapped_bench"
+        ],
+        "character_clue_ids": [
+          "clue_dobbs_crash_time",
+          "clue_thorne_mia_cake"
+        ]
+      }
+    ],
+    "red_herrings": [
+      {
+        "id": "rh_jealous_rival",
+        "summary": "Mr. Thorne, the jealous six-time champion, seems to have climbed over the fence and broken in.",
+        "description": "Huge boot prints sit under the broken window by his fence, his ladder leans right opposite the greenhouse with a tape measure on it, and Toby reports his 'Enjoy her while she lasts!' jibe. But the glass lies outside, so nobody broke in through that window. Told about the boot prints, Mr. Thorne admits he climbed over at four on Friday only to measure Bertha, who was whole. And Mia saw him at the fair's barbecue all evening, selling him cake at nine, just after the crash.",
+        "payoff": "The boot prints and ladder come from Mr. Thorne's sneaky Friday-afternoon measuring, not a break-in, and he was across town at the time of the crash.",
+        "location_clue_ids": [
+          "clue_boot_prints",
+          "clue_ladder_tape",
+          "clue_glass_outside"
+        ],
+        "character_clue_ids": [
+          "clue_toby_thorne_ladder",
+          "clue_thorne_measured",
+          "clue_mia_thorne_barbecue"
+        ]
+      },
+      {
+        "id": "rh_rota_grab",
+        "summary": "Mia seems to have changed the rota herself to grab the last shifts, and she wished Bertha would go splat.",
+        "description": "Mia's name is written over Toby's on the watering rota in sparkly purple pen, just like the one she carries, and Toby says she wished Bertha would go splat. But Ms. Hale changed the rota herself with Mia's borrowed pen, and Mia's grumble was only about missing dance practice. She was serving cake across town when Bertha was smashed.",
+        "payoff": "The purple ink was Ms. Hale's doing, so Mia never schemed for the shifts; her 'splat' grumble was just frustration.",
+        "location_clue_ids": [
+          "clue_rota_purple_ink"
+        ],
+        "character_clue_ids": [
+          "clue_toby_mia_splat",
+          "clue_hale_borrowed_pen",
+          "clue_thorne_mia_cake"
+        ]
+      }
+    ],
+    "suspect_elimination_paths": [
+      {
+        "id": "elim_mia",
+        "summary": "Mia was serving cake across town when Bertha was smashed.",
+        "description": "Mr. Dobbs heard the crash at ten to nine. Mr. Thorne bought carrot cake from Mia at the fair's cake tent across town at nine, and she served there from six till ten. Ms. Hale explains that the purple ink on the rota was hers.",
+        "payoff": "Mia is cleared: she could not have been in the greenhouse at ten to nine.",
+        "location_clue_ids": [],
+        "character_clue_ids": [
+          "clue_thorne_mia_cake",
+          "clue_dobbs_crash_time",
+          "clue_hale_borrowed_pen"
+        ]
+      },
+      {
+        "id": "elim_thorne",
+        "summary": "Mr. Thorne was at the fair's barbecue when Bertha was smashed, and nobody broke in through the window.",
+        "description": "Mr. Dobbs heard the crash at ten to nine. Mia saw Mr. Thorne at the growers' barbecue all evening and sold him cake at nine. The glass lying outside proves the window was knocked out from inside, so nobody climbed in from his side of the fence. His boot prints are from measuring Bertha on Friday afternoon.",
+        "payoff": "Mr. Thorne is cleared: he was across town at the time of the crash, and his boot prints came from Friday afternoon.",
+        "location_clue_ids": [
+          "clue_glass_outside"
+        ],
+        "character_clue_ids": [
+          "clue_mia_thorne_barbecue",
+          "clue_dobbs_crash_time",
+          "clue_thorne_measured"
+        ]
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "25669a4b-5717-4276-935b-39a38e64435e",
+      "sequence": 1,
+      "event_type": "start",
+      "actor": "system",
+      "payload": {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "blueprint_image_id": null,
+        "starting_knowledge": {
+          "mystery_summary": "Big Bertha was smashed overnight. Mr. Dobbs saw her whole on his 8pm rounds, and Ms. Hale found her smashed at 7:30 this morning.",
+          "locations": [
+            {
+              "location_id": "greenhouse",
+              "summary": "Where Big Bertha grew all summer. The door was still locked this morning, but a side window was smashed."
+            },
+            {
+              "location_id": "potting_shed",
+              "summary": "The club's tool shed. The watering rota hangs on its door, and the greenhouse key used to hang inside."
+            },
+            {
+              "location_id": "workshop",
+              "summary": "Mr. Dobbs's busy workshop, next to his cottage at the edge of the school garden."
+            },
+            {
+              "location_id": "thorne_garden",
+              "summary": "Mr. Thorne's garden, just over the fence from the greenhouse. His giant pumpkin, Goliath, is already at the fair."
+            }
+          ],
+          "characters": [
+            {
+              "character_id": "hale",
+              "summary": "Ms. Hale runs the school gardening club. She found Bertha smashed at half past seven and is guarding the greenhouse."
+            },
+            {
+              "character_id": "toby",
+              "summary": "One of the club's two pupils, aged eleven. He planted Bertha's seed in spring and knows all about her."
+            },
+            {
+              "character_id": "mia",
+              "summary": "One of the club's two pupils, aged ten. She took over Bertha's last watering shifts this week."
+            },
+            {
+              "character_id": "dobbs",
+              "summary": "The school caretaker. He locks up, keeps the spare greenhouse key, and checked on Bertha at 8pm."
+            },
+            {
+              "character_id": "thorne",
+              "summary": "The grumpy neighbour who has won the fair's pumpkin prize six years running. Bertha was bigger than his Goliath."
+            }
+          ]
+        },
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 1,
+          "event_type": "start",
+          "part_count": 2,
+          "action": "start",
+          "event_category": "start",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 12,
+          "time_after": 12,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Fair morning in Hollyfield. Crisp autumn air smells of earth. Then you spot it! Big Bertha, the club's giant pumpkin, lies smashed in the greenhouse. A window is broken. The key has been missing for days. Find the truth by noon, or the contest is off. Where will you start?\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+      "narration_parts": [
+        {
+          "text": "Fair morning in Hollyfield. Crisp autumn air smells of earth. Then you spot it! Big Bertha, the club's giant pumpkin, lies smashed in the greenhouse. A window is broken. The key has been missing for days. Find the truth by noon, or the contest is off. Where will you start?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        },
+        {
+          "text": "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:24:21.406Z"
+    },
+    {
+      "id": "261e3f9f-f428-4ab5-89cd-a0dcd78e6a85",
+      "sequence": 2,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "role": "enter",
+        "destination": "greenhouse",
+        "location_id": "greenhouse",
+        "location_name": "The Greenhouse",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 2,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "enter",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 12,
+          "time_after": 12,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step into The Greenhouse. Warm, damp air wraps around you. It smells of soil and squashed pumpkin.\n\nBig Bertha lies split open in her soil bed. A toppled bench rests on broken pots. A chilly breeze blows through the smashed side window.\n\nBeside the door stands a big rain barrel, called a water butt. Ms. Hale waits there in a muddy apron and big boots. Her curly grey hair is tied up in a green scarf.\n\n\"Oh, thank goodness you've come,\" she says. \"We need the truth before noon!\"",
+      "narration_parts": [
+        {
+          "text": "You step into The Greenhouse. Warm, damp air wraps around you. It smells of soil and squashed pumpkin.\n\nBig Bertha lies split open in her soil bed. A toppled bench rests on broken pots. A chilly breeze blows through the smashed side window.\n\nBeside the door stands a big rain barrel, called a water butt. Ms. Hale waits there in a muddy apron and big boots. Her curly grey hair is tied up in a green scarf.\n\n\"Oh, thank goodness you've come,\" she says. \"We need the truth before noon!\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:24:30.626Z"
+    },
+    {
+      "id": "070341bb-feec-40f4-b511-f27bf36b5bd5",
+      "sequence": 3,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "greenhouse",
+        "location_name": "The Greenhouse",
+        "search_query": null,
+        "revealed_clue_id": "clue_boot_prints",
+        "revealed_clue_text": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.",
+        "revealed_clue_ids": [
+          "clue_boot_prints"
+        ],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 3,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 12,
+          "time_after": 11,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Cold air whistles through the smashed window. You spot huge boot prints sinking deep into the flower bed outside. They are far too big for a child. Ms. Hale says, \"Those are not from a little one!\"",
+      "narration_parts": [
+        {
+          "text": "Cold air whistles through the smashed window. You spot huge boot prints sinking deep into the flower bed outside. They are far too big for a child. Ms. Hale says, \"Those are not from a little one!\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:24:36.260Z"
+    },
+    {
+      "id": "cd3e3b67-5d5f-478d-8b87-7a43e3a4da81",
+      "sequence": 4,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "hale",
+        "character_name": "Juniper",
+        "location_id": "greenhouse",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to Juniper Hale",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 4,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 11,
+          "time_after": 10,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Juniper turned from the toppled bench, brushing soil off her muddy apron. Her green scarf was slipping. \"Oh, thank goodness. I'm so glad someone has come to help. We have until noon to find the truth.\"",
+      "narration_parts": [
+        {
+          "text": "Juniper turned from the toppled bench, brushing soil off her muddy apron. Her green scarf was slipping. \"Oh, thank goodness. I'm so glad someone has come to help. We have until noon to find the truth.\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:24:43.555Z"
+    },
+    {
+      "id": "8be68abc-db98-4a2e-9006-6b16e5023f21",
+      "sequence": 5,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "hale",
+        "character_name": "Juniper",
+        "location_id": "greenhouse",
+        "player_input": "Who had access to the greenhouse key, and did you see anyone near the greenhouse last night?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:juniper",
+          "label": "Juniper"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Who had access to the greenhouse key, and did you see anyone near the greenhouse last night?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 5,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 10,
+          "time_after": 10,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Juniper pulled a muddy glove from her pocket. \"The key hangs on a hook in the potting shed. Anyone in there could reach it.\" She frowned. \"Mr. Dobbs keeps the spare. Last night I was home, marking spelling tests. I saw nobody near here.\"",
+      "narration_parts": [
+        {
+          "text": "Juniper pulled a muddy glove from her pocket. \"The key hangs on a hook in the potting shed. Anyone in there could reach it.\" She frowned. \"Mr. Dobbs keeps the spare. Last night I was home, marking spelling tests. I saw nobody near here.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:juniper",
+            "label": "Juniper"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:24:56.362Z"
+    },
+    {
+      "id": "31fac63d-f593-426c-bf16-4c97e5e2468d",
+      "sequence": 6,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "hale",
+        "character_name": "Juniper",
+        "location_id": "greenhouse",
+        "location_name": "The Greenhouse",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 6,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 10,
+          "time_after": 10,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Ms. Hale nods and wipes her muddy hands on her apron. \"Thank you for asking. Please keep looking, and be quick.\" You step back out into the crisp autumn air. The greenhouse door clicks shut behind you.",
+      "narration_parts": [
+        {
+          "text": "Ms. Hale nods and wipes her muddy hands on her apron. \"Thank you for asking. Please keep looking, and be quick.\" You step back out into the crisp autumn air. The greenhouse door clicks shut behind you.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:02.248Z"
+    },
+    {
+      "id": "6fb32f7c-18e0-422d-a7ff-8338dc1a201f",
+      "sequence": 7,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "thorne_garden",
+        "location_id": "thorne_garden",
+        "location_name": "Mr. Thorne's Garden",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to Mr. Thorne's Garden",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 7,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 10,
+          "time_after": 9,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step through the gate into Mr. Thorne's garden. Crisp autumn air nips your nose. Neat rows of leeks stand in the soil. Far off, the fair hums cheerfully.\n\nA big, red-faced man stomps between the rows. His bushy white eyebrows dip into a scowl.\n\n\"Hmph! Come to blame me, have you?\" he grumbles, folding his arms.\n\nA wooden ladder leans against the tall fence. Nearby, a shed glitters with blue prize ribbons. Beyond it lies a muddy, empty patch where Goliath used to grow.",
+      "narration_parts": [
+        {
+          "text": "You step through the gate into Mr. Thorne's garden. Crisp autumn air nips your nose. Neat rows of leeks stand in the soil. Far off, the fair hums cheerfully.\n\nA big, red-faced man stomps between the rows. His bushy white eyebrows dip into a scowl.\n\n\"Hmph! Come to blame me, have you?\" he grumbles, folding his arms.\n\nA wooden ladder leans against the tall fence. Nearby, a shed glitters with blue prize ribbons. Beyond it lies a muddy, empty patch where Goliath used to grow.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:14.994Z"
+    },
+    {
+      "id": "77b7a897-dfc2-4319-b5fb-14eea403e1b1",
+      "sequence": 8,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "thorne",
+        "character_name": "Barnaby",
+        "location_id": "thorne_garden",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to Barnaby Thorne",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 8,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 9,
+          "time_after": 8,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby Thorne stomps along the rows of leeks. He is big and red-faced, with bushy white eyebrows under his flat cap. He glares at you over the fence. \"Oh, it's you. Come to accuse me, have you? Well, go on, then. Say it.\" He folds his arms across his tweed waistcoat.",
+      "narration_parts": [
+        {
+          "text": "Barnaby Thorne stomps along the rows of leeks. He is big and red-faced, with bushy white eyebrows under his flat cap. He glares at you over the fence. \"Oh, it's you. Come to accuse me, have you? Well, go on, then. Say it.\" He folds his arms across his tweed waistcoat.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:21.557Z"
+    },
+    {
+      "id": "8f9f1d1a-6ba5-490d-a34c-afc03d7c6d5b",
+      "sequence": 9,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "thorne",
+        "character_name": "Barnaby",
+        "location_id": "thorne_garden",
+        "player_input": "Where were you last night, Mr. Thorne? And do you own big boots, and what is the ladder by the fence used for?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [
+          "clue_thorne_mia_cake"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Where were you last night, Mr. Thorne? And do you own big boots, and what is the ladder by the fence used for?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 9,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Last night? I was at the fair, at the growers' barbecue. From seven till eleven.\" He puffs out his waistcoat. \"I bought carrot cake from young Mia at nine. Best cake in the county.\" You ask about his boots. \"Big boots? Yes, I own boots. Huge brown ones, for mucky work.\" His ears turn bright red. He scuffs one boot on the grass. \"And that ladder is mine. It's none of your business!\"",
+      "narration_parts": [
+        {
+          "text": "\"Last night? I was at the fair, at the growers' barbecue. From seven till eleven.\" He puffs out his waistcoat. \"I bought carrot cake from young Mia at nine. Best cake in the county.\" You ask about his boots. \"Big boots? Yes, I own boots. Huge brown ones, for mucky work.\" His ears turn bright red. He scuffs one boot on the grass. \"And that ladder is mine. It's none of your business!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:37.500Z"
+    },
+    {
+      "id": "e41fae09-3663-4859-8c93-a5ef944dcc60",
+      "sequence": 10,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "thorne",
+        "character_name": "Barnaby",
+        "location_id": "thorne_garden",
+        "player_input": "Why did your ears turn red when I asked about the ladder? Did you use it to look over the fence at Bertha, and are your huge boots muddy?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Why did your ears turn red when I asked about the ladder? Did you use it to look over the fence at Bertha, and are your huge boots muddy?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 10,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Red ears? It's cold out, and I'm cross, that's all!\" He tugs his flat cap down over his eyebrows. \"Yes, I use my ladder to peek over the fence. Nothing wrong with that. My boots are for mucky work, so of course they're muddy.\"",
+      "narration_parts": [
+        {
+          "text": "\"Red ears? It's cold out, and I'm cross, that's all!\" He tugs his flat cap down over his eyebrows. \"Yes, I use my ladder to peek over the fence. Nothing wrong with that. My boots are for mucky work, so of course they're muddy.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:51.011Z"
+    },
+    {
+      "id": "0eff9713-5d9c-449c-94d9-8b21a326f78e",
+      "sequence": 11,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "thorne",
+        "character_name": "Barnaby",
+        "location_id": "thorne_garden",
+        "location_name": "Mr. Thorne's Garden",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 11,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby huffs and turns on his heel. He stomps off between the leeks, his boots thudding. You step back from the fence. The cool autumn air smells of damp earth. You are free to look around again.",
+      "narration_parts": [
+        {
+          "text": "Barnaby huffs and turns on his heel. He stomps off between the leeks, his boots thudding. You step back from the fence. The cool autumn air smells of damp earth. You are free to look around again.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:25:59.939Z"
+    },
+    {
+      "id": "a3941e06-347f-44cb-9984-8ef04b4f6e9c",
+      "sequence": 12,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "thorne_garden",
+        "location_name": "Mr. Thorne's Garden",
+        "search_query": null,
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 12,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 7,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You sniff the cool air. It smells of damp earth and fresh leeks. Nothing new catches your eye here. Barnaby keeps glancing at the ladder by the fence. A closer look there might be worth your time.",
+      "narration_parts": [
+        {
+          "text": "You sniff the cool air. It smells of damp earth and fresh leeks. Nothing new catches your eye here. Barnaby keeps glancing at the ladder by the fence. A closer look there might be worth your time.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:07.170Z"
+    },
+    {
+      "id": "79565f04-39d6-41fb-95f7-c711c44ac119",
+      "sequence": 13,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "thorne_garden",
+        "location_name": "Mr. Thorne's Garden",
+        "search_query": "ladder",
+        "revealed_clue_id": "clue_ladder_tape",
+        "revealed_clue_text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung.",
+        "revealed_clue_ids": [
+          "clue_ladder_tape"
+        ],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search ladder",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 13,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 7,
+          "time_after": 6,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You walk over to the wooden ladder. A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung. Why would he need that?",
+      "narration_parts": [
+        {
+          "text": "You walk over to the wooden ladder. A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung. Why would he need that?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:13.187Z"
+    },
+    {
+      "id": "40fc7644-fa80-458a-a348-d40cc7fa57c5",
+      "sequence": 14,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "workshop",
+        "location_id": "workshop",
+        "location_name": "Mr. Dobbs's Workshop",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to Mr. Dobbs's Workshop",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 14,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 6,
+          "time_after": 5,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step into Mr. Dobbs's Workshop. It smells of oil and sawdust. Tools hang on every wall, and a kettle steams in the corner. Crisp autumn air drifts in, and you hear the fair humming far away.\n\nA tall, thin man with a grey moustache looks up. His big ring of keys jangles on his navy overalls.\n\n\"Hello there. Fancy a cup of tea?\" he asks.\n\nYou can search the window over the garden and the cluttered tool bench.",
+      "narration_parts": [
+        {
+          "text": "You step into Mr. Dobbs's Workshop. It smells of oil and sawdust. Tools hang on every wall, and a kettle steams in the corner. Crisp autumn air drifts in, and you hear the fair humming far away.\n\nA tall, thin man with a grey moustache looks up. His big ring of keys jangles on his navy overalls.\n\n\"Hello there. Fancy a cup of tea?\" he asks.\n\nYou can search the window over the garden and the cluttered tool bench.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:25.791Z"
+    },
+    {
+      "id": "017fe7e1-d3cf-406a-84e9-1399e366259f",
+      "sequence": 15,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "workshop",
+        "location_name": "Mr. Dobbs's Workshop",
+        "search_query": "tool bench",
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search tool bench",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 15,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 5,
+          "time_after": 4,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You dig through the cluttered bench. A squeaky gate hinge, a football pump, and a jar of screws. Mr. Dobbs is clearly a busy fixer. Nothing here hints at a secret. Maybe his notes are kept somewhere else.",
+      "narration_parts": [
+        {
+          "text": "You dig through the cluttered bench. A squeaky gate hinge, a football pump, and a jar of screws. Mr. Dobbs is clearly a busy fixer. Nothing here hints at a secret. Maybe his notes are kept somewhere else.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:33.320Z"
+    },
+    {
+      "id": "d5c412a0-03b7-4041-8020-ad80cc836ea1",
+      "sequence": 16,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "workshop",
+        "location_name": "Mr. Dobbs's Workshop",
+        "search_query": "window",
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search window",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 16,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 4,
+          "time_after": 3,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You press your nose to the window. Crisp air creeps through a gap. Beyond the garden, the greenhouse roof glints in the sun. Mr. Dobbs's dented bins sit by the fence, but nothing here looks secret.",
+      "narration_parts": [
+        {
+          "text": "You press your nose to the window. Crisp air creeps through a gap. Beyond the garden, the greenhouse roof glints in the sun. Mr. Dobbs's dented bins sit by the fence, but nothing here looks secret.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:40.350Z"
+    },
+    {
+      "id": "eb4db768-b399-45aa-bc6e-6ec8c25e367a",
+      "sequence": 17,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to Stanley Dobbs",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 17,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 3,
+          "time_after": 2,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "The workshop smells of oil and sawdust. Stanley Dobbs looks up from his bench, a big ring of keys jingling on his belt. He gives you a slow, kind smile. \"Ah, hello there. Pull up a stool, won't you? The kettle's just boiled. Can I help you with something?\"",
+      "narration_parts": [
+        {
+          "text": "The workshop smells of oil and sawdust. Stanley Dobbs looks up from his bench, a big ring of keys jingling on his belt. He gives you a slow, kind smile. \"Ah, hello there. Pull up a stool, won't you? The kettle's just boiled. Can I help you with something?\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:47.654Z"
+    },
+    {
+      "id": "6170c238-4397-49c0-abc2-c570741bb2dc",
+      "sequence": 18,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "Mr. Dobbs, you keep the spare greenhouse key. Do you still have it, and did you see anyone or hear any noise near the greenhouse after your 8pm rounds?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [
+          "clue_dobbs_crash_time"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Mr. Dobbs, you keep the spare greenhouse key. Do you still have it, and did you see anyone or hear any noise near the greenhouse after your 8pm rounds?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 18,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley sets down his chipped mug. \"No, I don't have it now. I lent it to Ms. Hale this morning. It's written in my key book.\" He taps his belt. \"I didn't see anyone. But at ten to nine, I heard a big thud. Then glass smashing. I thought it was that cheeky fox at my bins.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley sets down his chipped mug. \"No, I don't have it now. I lent it to Ms. Hale this morning. It's written in my key book.\" He taps his belt. \"I didn't see anyone. But at ten to nine, I heard a big thud. Then glass smashing. I thought it was that cheeky fox at my bins.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:26:57.860Z"
+    },
+    {
+      "id": "8fe2c615-d783-41b5-afc1-cce0e97efd4e",
+      "sequence": 19,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "Mr. Dobbs, do you own big boots, and why didn't you go and check the greenhouse when you heard the smash at ten to nine?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Mr. Dobbs, do you own big boots, and why didn't you go and check the greenhouse when you heard the smash at ten to nine?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 19,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley nods slowly. \"Boots? Yes, I have a pair for muddy days.\" He pauses. \"Why didn't I check? Well...\" He rubs the back of his neck and mumbles, \"I was already in my slippers.\" He sighs. \"I thought it was that cheeky fox, Rusty. So I stayed put.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley nods slowly. \"Boots? Yes, I have a pair for muddy days.\" He pauses. \"Why didn't I check? Well...\" He rubs the back of his neck and mumbles, \"I was already in my slippers.\" He sighs. \"I thought it was that cheeky fox, Rusty. So I stayed put.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:27:12.247Z"
+    },
+    {
+      "id": "00b987f3-8982-4097-8a3d-ad997540404f",
+      "sequence": 20,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "Mr. Dobbs, what size are your boots, and were they muddy this morning? Also, what time did you lend the key to Ms. Hale?",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Mr. Dobbs, what size are your boots, and were they muddy this morning? Also, what time did you lend the key to Ms. Hale?",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 20,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley wipes his hands on a rag. \"Boots? I've got big ones for muddy days. They're clean as a whistle this morning, though.\" He taps his key book. \"I lent the spare to Ms. Hale at twenty-five past seven. It's all written down, of course.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley wipes his hands on a rag. \"Boots? I've got big ones for muddy days. They're clean as a whistle this morning, though.\" He taps his key book. \"I lent the spare to Ms. Hale at twenty-five past seven. It's all written down, of course.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:27:28.078Z"
+    },
+    {
+      "id": "893d1903-b64f-45da-bf66-60b8b3d88d8f",
+      "sequence": 21,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because Mr. Thorne has an alibi: Mia served him cake at nine across town, only ten minutes after the smash at ten to nine. The boot prints are huge, and Mr. Dobbs has big boots that were suspiciously clean this morning. He kept the spare key, and he was the only one who heard the smash but did not check, saying he was in slippers. The ladder only shows Thorne peeked at Bertha.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because Mr. Thorne has an alibi: Mia served him cake at nine across town, only ten minutes after the smash at ten to nine. The boot prints are huge, and Mr. Dobbs has big boots that were suspiciously clean this morning. He kept the spare key, and he was the only one who heard the smash but did not check, saying he was in slippers. The ladder only shows Thorne peeked at Bertha.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 21,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's moustache droops. He sets his mug down with a clink. \"Me? Harm Bertha? Never!\" He holds up his big hands. \"I was in my cottage all evening, watching my quiz show. I never went near her after my rounds. Please, believe me.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's moustache droops. He sets his mug down with a clink. \"Me? Harm Bertha? Never!\" He holds up his big hands. \"I was in my cottage all evening, watching my quiz show. I never went near her after my rounds. Please, believe me.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:27:44.058Z"
+    },
+    {
+      "id": "4362ee97-69d3-4e1f-bd49-5487c0908fbd",
+      "sequence": 22,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "You say you stayed in, but you heard the thud and smash at ten to nine and did not look. Mr. Thorne was at the fair by nine, so he could not have done it. The huge boot prints belong to a grown-up, and you own big boots that were suspiciously clean this morning. You must have washed them. Please tell the truth.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "You say you stayed in, but you heard the thud and smash at ten to nine and did not look. Mr. Thorne was at the fair by nine, so he could not have done it. The huge boot prints belong to a grown-up, and you own big boots that were suspiciously clean this morning. You must have washed them. Please tell the truth.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 22,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's hands go still on the rag. His moustache twitches. \"Clean boots? I keep my boots clean, that's all. Is that a crime now?\" He shakes his head. \"I loved that pumpkin. I'd never hurt her. Please, you have to believe me.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's hands go still on the rag. His moustache twitches. \"Clean boots? I keep my boots clean, that's all. Is that a crime now?\" He shakes his head. \"I loved that pumpkin. I'd never hurt her. Please, you have to believe me.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:28:07.385Z"
+    },
+    {
+      "id": "366fccb1-5ded-42ec-b61d-e12a8c081ba7",
+      "sequence": 23,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "Mr. Dobbs, you saw Bertha whole at 8pm, and you heard the thud and smash at ten to nine. Mr. Thorne was at the fair by nine, and Mia was at the cake tent all evening, so neither could do it. The prints are too big for a child, and you own big boots that were clean this morning, so you must have washed them. A grown-up who heard the smash and did not check is hiding something. I think you smashed Bertha.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Mr. Dobbs, you saw Bertha whole at 8pm, and you heard the thud and smash at ten to nine. Mr. Thorne was at the fair by nine, and Mia was at the cake tent all evening, so neither could do it. The prints are too big for a child, and you own big boots that were clean this morning, so you must have washed them. A grown-up who heard the smash and did not check is hiding something. I think you smashed Bertha.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 23,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley stands up so fast his stool scrapes the floor. \"Me? I'd never hurt Bertha!\" He holds out his big hands. \"I didn't wash my boots to hide anything. I was in my cottage all evening. Please believe me.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley stands up so fast his stool scrapes the floor. \"Me? I'd never hurt Bertha!\" He holds out his big hands. \"I didn't wash my boots to hide anything. I was in my cottage all evening. Please believe me.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:28:20.968Z"
+    },
+    {
+      "id": "18243b71-965b-490e-b1ed-e142fba2f7fa",
+      "sequence": 24,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because the smash was at ten to nine, and Mr. Thorne was across town buying cake from Mia at nine, with Mia serving there from six till ten. The huge boot prints are too big for a child, and Mr. Dobbs owns big boots that were suspiciously clean. He keeps the spare key, and he heard the smash but did not check.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because the smash was at ten to nine, and Mr. Thorne was across town buying cake from Mia at nine, with Mia serving there from six till ten. The huge boot prints are too big for a child, and Mr. Dobbs owns big boots that were suspiciously clean. He keeps the spare key, and he heard the smash but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 24,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's face goes pale. He grips the edge of his bench. \"No! I heard that thud, and I didn't go out. I know that was wrong. But I'd never smash Bertha.\" He shakes his head slowly. \"Please, you have to believe me.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's face goes pale. He grips the edge of his bench. \"No! I heard that thud, and I didn't go out. I know that was wrong. But I'd never smash Bertha.\" He shakes his head slowly. \"Please, you have to believe me.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:28:33.342Z"
+    },
+    {
+      "id": "01056917-20ee-4927-89f5-e93d8e64fa79",
+      "sequence": 25,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "I accuse Stanley Dobbs. You saw Bertha whole at 8pm and heard the thud and smash at ten to nine, but you did not check, which is odd for a caretaker. Mr. Thorne was at the barbecue and bought cake from Mia at nine, so he has an alibi, and his ladder and tape measure only show he measured Bertha. Mia was serving at the cake tent from six to ten. The boot prints are too big for a child, and you have big boots that were clean this morning. You also keep the spare key.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "I accuse Stanley Dobbs. You saw Bertha whole at 8pm and heard the thud and smash at ten to nine, but you did not check, which is odd for a caretaker. Mr. Thorne was at the barbecue and bought cake from Mia at nine, so he has an alibi, and his ladder and tape measure only show he measured Bertha. Mia was serving at the cake tent from six to ten. The boot prints are too big for a child, and you have big boots that were clean this morning. You also keep the spare key.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 25,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley shakes his head hard, and his moustache wobbles. \"Me? No, no! I'm the one who locks up, remember?\" He grips his rag. \"I'm sorry I didn't check that noise. But I never touched Bertha. Please believe me.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley shakes his head hard, and his moustache wobbles. \"Me? No, no! I'm the one who locks up, remember?\" He grips his rag. \"I'm sorry I didn't check that noise. But I never touched Bertha. Please believe me.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:28:47.218Z"
+    },
+    {
+      "id": "80e6e385-a2a8-4454-aee7-d54b70d9dc67",
+      "sequence": 26,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because Mr. Thorne was across town buying cake from Mia at nine, only ten minutes after the smash, and Mia was serving there until ten. The huge boot prints are too big for a child, and Mr. Dobbs has big boots that were clean this morning. He keeps the spare key, and he heard the smash but did not check.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because Mr. Thorne was across town buying cake from Mia at nine, only ten minutes after the smash, and Mia was serving there until ten. The huge boot prints are too big for a child, and Mr. Dobbs has big boots that were clean this morning. He keeps the spare key, and he heard the smash but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 26,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley lowers the rag slowly. His eyes look sad. \"I'm a grumpy old caretaker, not a smasher. I was in my cottage all night.\" He shakes his head. \"I'd never hurt Bertha. Not in a million years.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley lowers the rag slowly. His eyes look sad. \"I'm a grumpy old caretaker, not a smasher. I was in my cottage all night.\" He shakes his head. \"I'd never hurt Bertha. Not in a million years.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:29:02.687Z"
+    },
+    {
+      "id": "0620fd4f-cad7-4956-9bc7-cd54091cc901",
+      "sequence": 27,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because Mr. Thorne has an alibi at the fair at nine, and Mia was at the cake tent. The huge boot prints are too big for a child, and Mr. Dobbs has big boots that were clean this morning. He keeps the spare key, and he heard the smash at ten to nine but did not check.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because Mr. Thorne has an alibi at the fair at nine, and Mia was at the cake tent. The huge boot prints are too big for a child, and Mr. Dobbs has big boots that were clean this morning. He keeps the spare key, and he heard the smash at ten to nine but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 27,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's hands shake on the rag. He sets it down slowly. \"I know it looks bad. I really do.\" He sighs. \"I should have checked that noise. I'm sorry for that. But I never touched Bertha.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's hands shake on the rag. He sets it down slowly. \"I know it looks bad. I really do.\" He sighs. \"I should have checked that noise. I'm sorry for that. But I never touched Bertha.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:29:19.175Z"
+    },
+    {
+      "id": "b0c5ce20-af50-4c1d-9577-ea6016e1de80",
+      "sequence": 28,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": false,
+        "input": "accuse",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 28,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley blinks at you over his chipped mug. \"Accuse? Accuse who, and of what?\" He frowns and rubs his grey moustache. \"Tell me plainly, and I'll answer you straight.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley blinks at you over his chipped mug. \"Accuse? Accuse who, and of what?\" He frowns and rubs his grey moustache. \"Tell me plainly, and I'll answer you straight.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:29:31.846Z"
+    },
+    {
+      "id": "24b367f2-b253-4596-b1d3-d827ab1c3404",
+      "sequence": 29,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "Stanley Dobbs, because Mr. Thorne was across town buying cake from Mia at nine, only ten minutes after the smash, so he has an alibi. The huge boot prints are too big for a child, and you own big boots that were suspiciously clean. You kept the spare key, and you heard the smash at ten to nine but did not check.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "Stanley Dobbs, because Mr. Thorne was across town buying cake from Mia at nine, only ten minutes after the smash, so he has an alibi. The huge boot prints are too big for a child, and you own big boots that were suspiciously clean. You kept the spare key, and you heard the smash at ten to nine but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 29,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley shakes his head slowly, and his grey moustache trembles. \"I know how it sounds. But I did not smash Bertha.\" He folds his big hands on the bench. \"Maybe ask Mr. Thorne about that ladder, too.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley shakes his head slowly, and his grey moustache trembles. \"I know how it sounds. But I did not smash Bertha.\" He folds his big hands on the bench. \"Maybe ask Mr. Thorne about that ladder, too.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:29:46.622Z"
+    },
+    {
+      "id": "2a99a94d-c27c-40e1-bbf1-e477a4e320fd",
+      "sequence": 30,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because Mr. Thorne was buying cake from Mia across town at nine, only ten minutes after the smash, and Mia served there from six till ten, so neither could have done it. The boot prints are too big for a child, and Mr. Dobbs has big boots that were suspiciously clean. He keeps the spare key, and he heard the smash at ten to nine but did not check.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because Mr. Thorne was buying cake from Mia across town at nine, only ten minutes after the smash, and Mia served there from six till ten, so neither could have done it. The boot prints are too big for a child, and Mr. Dobbs has big boots that were suspiciously clean. He keeps the spare key, and he heard the smash at ten to nine but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 30,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's moustache droops. He sets his mug down slowly. \"I know it looks bad. But I did not smash Bertha.\" He spreads his big hands. \"Keep looking, please. The truth will show up.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's moustache droops. He sets his mug down slowly. \"I know it looks bad. But I did not smash Bertha.\" He spreads his big hands. \"Keep looking, please. The truth will show up.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:30:00.417Z"
+    },
+    {
+      "id": "866cd90e-47a9-4caa-9c56-e754c19857f5",
+      "sequence": 31,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "player_input": "accuse Stanley Dobbs because he saw Bertha whole at 8pm, then the smash happened at ten to nine right next to his cottage, and he never checked even though he is the caretaker. Mr. Thorne was at the fair buying cake from Mia at nine and Mia was at the cake tent, so they could not do it. The boot prints are too big for a child, and Mr. Dobbs has big boots that were washed clean. He had the spare key.",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:stanley",
+          "label": "Stanley"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "input": "accuse Stanley Dobbs because he saw Bertha whole at 8pm, then the smash happened at ten to nine right next to his cottage, and he never checked even though he is the caretaker. Mr. Thorne was at the fair buying cake from Mia at nine and Mia was at the cake tent, so they could not do it. The boot prints are too big for a child, and Mr. Dobbs has big boots that were washed clean. He had the spare key.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 31,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley's shoulders sag. He turns his chipped mug round in his big hands. \"I know it looks bad, truly. But I did not hurt Bertha.\" He looks up at you, eyes wet. \"Keep looking, please. Somebody else did this.\"",
+      "narration_parts": [
+        {
+          "text": "Stanley's shoulders sag. He turns his chipped mug round in his big hands. \"I know it looks bad, truly. But I did not hurt Bertha.\" He looks up at you, eyes wet. \"Keep looking, please. Somebody else did this.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:stanley",
+            "label": "Stanley"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:30:18.360Z"
+    },
+    {
+      "id": "6ce04594-e4bd-4bcd-8562-aeab045dece7",
+      "sequence": 32,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "dobbs",
+        "character_name": "Stanley",
+        "location_id": "workshop",
+        "location_name": "Mr. Dobbs's Workshop",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 32,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Stanley nods slowly and picks up his mug. \"Right then. Take your time, and come back if you need me.\" You step out of the workshop. The autumn air is crisp, and the fair hums in the distance.",
+      "narration_parts": [
+        {
+          "text": "Stanley nods slowly and picks up his mug. \"Right then. Take your time, and come back if you need me.\" You step out of the workshop. The autumn air is crisp, and the fair hums in the distance.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:30:26.915Z"
+    },
+    {
+      "id": "d18cf193-1a1d-4edd-a688-56ad6d77eab1",
+      "sequence": 33,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "Stanley Dobbs because Mr. Thorne was buying cake from Mia across town at nine, so he has an alibi, and the boot prints are too big for a child. Mr. Dobbs has big boots that were clean this morning, keeps the spare key, and heard the smash at ten to nine but did not check.",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Stanley Dobbs because Mr. Thorne was buying cake from Mia across town at nine, so he has an alibi, and the boot prints are too big for a child. Mr. Dobbs has big boots that were clean this morning, keeps the spare key, and heard the smash at ten to nine but did not check.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 33,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not proven yet, detective. Stanley's spare key and clean boots are worth noting, but they don't prove he did it. Think about the broken window. Which clue shows how the smasher really got inside?",
+      "narration_parts": [
+        {
+          "text": "Not proven yet, detective. Stanley's spare key and clean boots are worth noting, but they don't prove he did it. Think about the broken window. Which clue shows how the smasher really got inside?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:30:39.843Z"
+    },
+    {
+      "id": "5bc5225a-deef-453a-9b20-a0e49dc4c262",
+      "sequence": 34,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "accuse Barnaby Thorne because the huge boot prints are in the flower bed outside the broken window right near his fence, and he owns huge muddy brown boots. His tall ladder leans on the fence opposite the greenhouse with a tape measure on it, so he could reach the window without the key. His ears turned red when I asked about the ladder, and he had a reason to do it because Bertha was bigger than Goliath. The greenhouse door was still locked, so the smasher came through the window, not with the key. The smash was at ten to nine, and he only says he was at the fair at nine, so his alibi does not cover the smash.",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Barnaby Thorne because the huge boot prints are in the flower bed outside the broken window right near his fence, and he owns huge muddy brown boots. His tall ladder leans on the fence opposite the greenhouse with a tape measure on it, so he could reach the window without the key. His ears turned red when I asked about the ladder, and he had a reason to do it because Bertha was bigger than Goliath. The greenhouse door was still locked, so the smasher came through the window, not with the key. The smash was at ten to nine, and he only says he was at the fair at nine, so his alibi does not cover the smash.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 34,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not proven yet, detective. Those huge boots and the tall ladder look odd. But Barnaby was across town buying cake at nine. Look closer at the broken glass. Where did it land, and what does that tell you about how the window broke?",
+      "narration_parts": [
+        {
+          "text": "Not proven yet, detective. Those huge boots and the tall ladder look odd. But Barnaby was across town buying cake at nine. Look closer at the broken glass. Where did it land, and what does that tell you about how the window broke?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:30:55.050Z"
+    },
+    {
+      "id": "d4ec06e5-7df3-4170-a7ef-c32947b3a6ba",
+      "sequence": 35,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "go to The Greenhouse",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to The Greenhouse",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 35,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not quite, detective. Going to the greenhouse won't solve the case. Name the person you accuse, and tell me why. Think about who could reach the missing key. Who do you think smashed Big Bertha?",
+      "narration_parts": [
+        {
+          "text": "Not quite, detective. Going to the greenhouse won't solve the case. Name the person you accuse, and tell me why. Think about who could reach the missing key. Who do you think smashed Big Bertha?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:31:04.860Z"
+    },
+    {
+      "id": "44b9f52c-4745-41c6-be13-ccc4c17c9b05",
+      "sequence": 36,
+      "event_type": "accuse_resolved",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "accuse Juniper Hale because the boot prints are too big for a child, Mr. Thorne and Mia have alibis at the fair at nine, and Ms. Hale wears big boots. She got the spare key from Mr. Dobbs at 7:25 and found Bertha at 7:30, and she was home alone with nobody to say where she was. The window looks staged to make it seem like a break-in.",
+        "judge_result": "lose",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Juniper Hale because the boot prints are too big for a child, Mr. Thorne and Mia have alibis at the fair at nine, and Ms. Hale wears big boots. She got the spare key from Mr. Dobbs at 7:25 and found Bertha at 7:30, and she was home alone with nobody to say where she was. The window looks staged to make it seem like a break-in.",
+        "diagnostics": {
+          "session_id": "ef0f04f7-9500-4681-a979-2d4c05478d5f",
+          "sequence": 36,
+          "event_type": "accuse_resolved",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_resolved",
+          "mode": "accuse",
+          "resulting_mode": "ended",
+          "time_before": 2,
+          "time_after": 2,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not Ms. Hale, I'm afraid. The clues point to Toby Marsh. He took the greenhouse key to give Bertha extra water. Then the rotten bench crashed onto her. Scared, he faked a break-in and ran home. You searched hard and came close. Well done, detective!",
+      "narration_parts": [
+        {
+          "text": "Not Ms. Hale, I'm afraid. The clues point to Toby Marsh. He took the greenhouse key to give Bertha extra water. Then the rotten bench crashed onto her. Scared, he faked a break-in and ran home. You searched hard and came close. Well done, detective!",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-15T13:31:21.609Z"
+    }
+  ]
+}

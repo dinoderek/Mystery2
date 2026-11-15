@@ -161,11 +161,6 @@ describe("loading a truth set", () => {
     expect(set.guide).toBeNull();
   });
 
-  it("loads the real truth set, which starts empty", async () => {
-    const set = await loadTruthSet(path.join(repoRoot(), TRUTH_ROOT));
-    expect([set.bases, set.games, set.turnVariants, set.blueprintPlants, set.results]).toEqual([[], [], [], [], []]);
-  });
-
   it("finds the guide where it belongs", async () => {
     const dir = await copyFixture();
     await fs.writeFile(path.join(dir, "guide.md"), "# Guide\n", "utf8");

@@ -241,10 +241,11 @@ async function loadBlueprintPlants(root: string, bases: readonly TruthBase[]): P
   return plants;
 }
 
-type Loaded = Omit<TruthSet, "results" | "guide" | "root">;
+/** What a results file is checked against: the subjects of a set. */
+export type TruthSubjects = Omit<TruthSet, "results" | "guide" | "root">;
 
 /** Why a stored subject names nothing in the set, or null when it names something. */
-function missingSubject(set: Loaded, subject: StoredSubject): string | null {
+function missingSubject(set: TruthSubjects, subject: StoredSubject): string | null {
   if (subject.side === "blueprint") {
     if (!set.bases.some((base) => base.id === subject.base)) return `no base "${subject.base}"`;
     if (subject.plant === null) return null;
@@ -263,7 +264,7 @@ function missingSubject(set: Loaded, subject: StoredSubject): string | null {
   return null;
 }
 
-function checkVerdict(set: Loaded, verdict: StoredVerdict, file: string, field: string): void {
+function checkVerdict(set: TruthSubjects, verdict: StoredVerdict, file: string, field: string): void {
   const missing = missingSubject(set, verdict.subject);
   if (missing) throw new TruthFileError(file, `${field}.subject: ${missing}`);
   let side;
@@ -285,12 +286,21 @@ function checkVerdict(set: Loaded, verdict: StoredVerdict, file: string, field: 
   });
 }
 
-async function loadResults(root: string, set: Loaded): Promise<TruthResults[]> {
+/**
+ * Reads one stored results file, inside the set or not, and checks each
+ * verdict against the set: its subject exists, its judge scores on that side,
+ * and its kinds are the ones the findings table gives the judge.
+ */
+export async function readResultsFile(set: TruthSubjects, file: string): Promise<StoredVerdict[]> {
+  const { verdicts } = parseTruthFile(StoredResultsSchema, await readJson(file), file);
+  verdicts.forEach((verdict, index) => checkVerdict(set, verdict, file, `verdicts.${index}`));
+  return verdicts;
+}
+
+async function loadResults(root: string, set: TruthSubjects): Promise<TruthResults[]> {
   const results = [];
   for (const { id, file } of await jsonFiles(path.join(root, "results"))) {
-    const { verdicts } = parseTruthFile(StoredResultsSchema, await readJson(file), file);
-    verdicts.forEach((verdict, index) => checkVerdict(set, verdict, file, `verdicts.${index}`));
-    results.push({ id, file, verdicts });
+    results.push({ id, file, verdicts: await readResultsFile(set, file) });
   }
   return results;
 }
@@ -322,7 +332,7 @@ export async function loadTruthSet(root: string): Promise<TruthSet> {
   const games = await loadGames(root);
   const turnVariants = await loadTurnVariants(root, games);
   const blueprintPlants = await loadBlueprintPlants(root, bases);
-  const loaded: Loaded = { bases, games, turnVariants, blueprintPlants };
+  const loaded: TruthSubjects = { bases, games, turnVariants, blueprintPlants };
   const results = await loadResults(root, loaded);
   return { root, ...loaded, guide, results };
 }

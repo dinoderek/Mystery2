@@ -62,8 +62,8 @@ ln -s "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.schema.ts" \
 ln -s "$REPO_ROOT/evaluation/judge-harness/scripts/validate-judge-output.ts" \
       "$TARGET/scripts/validate-judge-output.ts"
 
-# Per-dimension docs (only character_grounding needs extra context today)
-if [[ "$DIM_ID" == "character_grounding" ]]; then
+# Per-dimension docs: character_grounding, and the broad candidate that asks its questions
+if [[ "$DIM_ID" == "character_grounding" || "$DIM_ID" == "blueprint_broad" ]]; then
   mkdir -p "$TARGET/docs"
   ln -s "$REPO_ROOT/evaluation/generator-harness/template/docs/runtime-consumption.md" \
         "$TARGET/docs/runtime-consumption.md"

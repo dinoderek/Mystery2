@@ -24,7 +24,7 @@ gets its own `<run-stamp>` subtree, so prior runs are never overwritten.
 │   └── output-schema.ts               Symlink: dimension's Zod output schema
 ├── docs/                              (only for dims that need extra context)
 │   └── runtime-consumption.md         Symlink: curated runtime narrator doc
-│                                                (character_grounding only)
+│                                                (character_grounding, blueprint_broad)
 └── scripts/
     └── validate-judge-output.ts      Symlink: schema + reference validator
 ```

@@ -22,7 +22,7 @@ repeats. `./dev eval <command> --help` explains flag meanings and defaults. For 
 subcommand: `./dev eval judge turn --help`.
 
 A blueprint beside `brief.json` needs no `--brief`. For blueprint and game judging,
-`--judges` and `--no-judges` mark unselected judges as skipped.
+`--judges` and `--no-judges` mark unselected battery judges skipped; a candidate runs only when named.
 
 ## Quick start
 
@@ -128,7 +128,7 @@ such as `judge-solve_depth.attempt-2.stderr.log`.
 
 ## Blueprint dimensions
 
-`evaluation/core/registry.ts` is the battery, run on every blueprint. Each
+`evaluation/core/registry.ts` lists the battery, run on every blueprint. Each
 judge's full question is its brief, `evaluation/dimensions/<id>.md`.
 
 - `solve_depth`: solvable, deep enough (the brief's `minPathLength`, else the

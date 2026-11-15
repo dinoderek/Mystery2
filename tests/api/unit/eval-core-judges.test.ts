@@ -85,9 +85,9 @@ describe("registry entries", () => {
     expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
   });
 
-  it("keeps the two verdict rules: dimensions take the stated verdict, game-master judges fail on a major finding", () => {
+  it("keeps the two verdict rules: dimensions take the stated verdict, game-master and candidate judges fail on a major finding", () => {
     for (const judge of judges) {
-      expect(judge.verdict, judge.id).toBe(judge.id.startsWith("gm_") ? "major_findings" : "stated");
+      expect(judge.verdict, judge.id).toBe(judge.id.startsWith("gm_") || judge.candidate ? "major_findings" : "stated");
     }
   });
 

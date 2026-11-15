@@ -42,12 +42,12 @@ plant. Each is a fault, clean or unknown:
 - A planted turn is a fault of its kind, unknown for the others. A variant's
   other turns take the stored game's labels.
 - A base is clean for every kind. That is the only sense of clean here: it
-  passed every check and judge, no more.
+  passed every check and judge.
 - A plant is a fault of its kind, unknown for the others.
 
 A verdict catches a unit when a finding points at its turn, or blueprint, with
-a kind the findings table maps to the unit's. A blueprint judge's `fail` is one
-finding of its dimension's kind.
+a kind the findings table maps to the unit's. A dimension's `fail` is one
+finding of its kind; a candidate's findings name theirs.
 
 **Results** keep verdicts with their kinded findings, model, sample, duration
 and reported cost (null when none), and no prompt, log or workspace.

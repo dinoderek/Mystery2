@@ -32,3 +32,23 @@ export function resolveVerdict(data: { findings?: unknown; verdict?: string | nu
     verdict_disagreement: data.verdict ? data.verdict !== status : false,
   };
 }
+
+/**
+ * What a result stores for a judge whose answer `resolveVerdict` decides: the
+ * status, the findings it was reached from, and the counts and the model's
+ * own verdict beside its reasoning.
+ */
+export function majorFindingsVerdict(answer: Record<string, unknown>) {
+  const resolved = resolveVerdict(answer);
+  return {
+    status: resolved.status,
+    findings: Array.isArray(answer.findings) ? (answer.findings as unknown[]) : [],
+    details: {
+      reasoning: answer.reasoning ?? "",
+      major_count: resolved.major_count,
+      minor_count: resolved.minor_count,
+      model_verdict: resolved.model_verdict,
+      verdict_disagreement: resolved.verdict_disagreement,
+    },
+  };
+}

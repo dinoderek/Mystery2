@@ -15,7 +15,8 @@
 #   EVAL_DIMENSION_ID — which dimension to judge
 #                       (solve_depth | fairness | timeline_coherence |
 #                        knowledge_coherence | character_grounding |
-#                        path_payoff | clue_graph | age_appropriate)
+#                        path_payoff | clue_graph | age_appropriate,
+#                        or a candidate judge of a blueprint)
 #   EVAL_RUN_DIR      — this run's output directory (absolute). The judge
 #                       workspace is created at
 #                       <EVAL_RUN_DIR>/evaluators/<dimension>/, alongside the

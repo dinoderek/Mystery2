@@ -7,8 +7,9 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { ResolvedBinding } from "../../../evaluation/core/config.ts";
+import { UsageLimitError } from "../../../evaluation/core/errors.ts";
 import { promptSha256, runModel } from "../../../evaluation/core/runner.ts";
-import type { ModelCallRequest } from "../../../evaluation/core/runner.ts";
+import type { CallMemo, FinishedCall, ModelCallRequest } from "../../../evaluation/core/runner.ts";
 
 const FAKE = path.join(__dirname, "eval-core-fake-wrapper.mjs");
 
@@ -248,5 +249,65 @@ describe("runModel", () => {
     await call("stream");
     const stream = fs.readFileSync(path.join(logDir(), "judge-x.attempt-1.stream.jsonl"), "utf8");
     expect(stream).toContain("thinking aloud");
+  });
+});
+
+describe("the usage limit", () => {
+  it("throws at once, with what the CLI said, and makes no further attempt", async () => {
+    const kept: FinishedCall[] = [];
+    const memo: CallMemo = { recall: () => null, keep: (_hash, finished) => kept.push(finished) };
+    const error = await call("limit,ok", { memo }, { retries: 2 }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(UsageLimitError);
+    expect((error as UsageLimitError).said).toBe("You've hit your weekly limit \u00b7 resets Mon 9am (Europe/London)");
+    expect((error as Error).message).toContain('binding "fake"');
+    expect(recorded()).toHaveLength(1);
+    expect(kept).toEqual([]);
+  });
+
+  it("is not taken from an ordinary failure", async () => {
+    const result = await call("exit");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("a memo of finished calls", () => {
+  function memoOf(calls: Map<string, FinishedCall>): CallMemo {
+    return { recall: (hash) => calls.get(hash) ?? null, keep: (hash, finished) => calls.set(hash, finished) };
+  }
+
+  it("keeps each finished call by its prompt hash, and answers the same prompt from it with no wrapper", async () => {
+    const calls = new Map<string, FinishedCall>();
+    const first = await call("ok", { memo: memoOf(calls), parse: parseAnswer });
+    expect(first.ok).toBe(true);
+    expect([...calls.keys()]).toEqual([promptSha256("SYSTEM", "USER")]);
+    fs.rmSync(logDir(), { recursive: true });
+    const again = await call("ok", { memo: memoOf(calls), parse: parseAnswer });
+    expect(again).toEqual(first);
+    expect(recorded()).toHaveLength(1);
+    expect(fs.existsSync(logDir())).toBe(false);
+  });
+
+  it("answers a kept failure as the failure", async () => {
+    const calls = new Map<string, FinishedCall>();
+    const failed = await call("exit", { memo: memoOf(calls) });
+    expect(failed.ok).toBe(false);
+    expect(await call("ok", { memo: memoOf(calls) })).toEqual(failed);
+    expect(recorded()).toHaveLength(1);
+  });
+
+  it("makes the call again when a kept answer no longer parses", async () => {
+    const calls = new Map<string, FinishedCall>();
+    await call("invalid,invalid", { memo: memoOf(calls) });
+    const result = await call("ok", { memo: memoOf(calls), parse: parseAnswer }, { retries: 0 });
+    expect(result.ok).toBe(true);
+    expect(recorded()).toHaveLength(2);
+  });
+
+  it("makes a call whose prompt differs", async () => {
+    const calls = new Map<string, FinishedCall>();
+    await call("ok", { memo: memoOf(calls) });
+    await call("ok", { memo: memoOf(calls), userMessage: "OTHER" });
+    expect(recorded()).toHaveLength(2);
+    expect(calls.size).toBe(2);
   });
 });

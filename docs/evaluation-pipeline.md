@@ -103,8 +103,8 @@ analyzer, and `idChecks`, the blueprint ids the answer may cite. Without
 
 ## Deliberately not done yet
 
-- Evaluating several blueprints per brief, or sampling a judge several times and
-  voting.
+- Evaluating several blueprints per brief. Suites sample a judge several times
+  (`evaluation/README.md`).
 - Storing and browsing run history beyond the run directories.
 - Further dimensions (clue economy, red-herring quality, cover-ups, narrative
   economy, tone) are intended but not built.

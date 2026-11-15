@@ -55,7 +55,7 @@ const DEFAULT_CONCURRENCY = 4;
 const NARRATOR_BINDING = /^narrator-/;
 const DEFAULT_JUDGES = ["flesch"];
 /** What a stored game's turns are judged with: the turn-level checks that read the narration alone. */
-const GAME_TURN_JUDGES = ["flesch", "age_appropriate_turn"];
+export const GAME_TURN_JUDGES = ["flesch", "age_appropriate_turn"];
 
 const HELP = formatHelp({
   usage: "judge turn <cases or stored turn>...",
@@ -128,6 +128,20 @@ function isStoredGame(value: unknown): value is StoredGame {
   );
 }
 
+/**
+ * The turns a stored game is judged on: every played event with narration, in
+ * sequence order, each on the narration it holds. `id` names the game, and so
+ * each turn's `case_id`.
+ */
+export function storedGameTurns(game: { blueprint: object; events: StoredEvent[] }, id: string): StoredTurn[] {
+  const targetAge = (game.blueprint as StoredGame["blueprint"]).metadata?.target_age;
+  const owner = { id, targetAge: typeof targetAge === "number" ? targetAge : null, blueprintPath: "" };
+  return playedEvents(game.events)
+    .filter((event) => typeof event.narration === "string" && event.narration.trim().length > 0)
+    .sort((a, b) => a.sequence - b.sequence)
+    .map((event) => turnFromEvent(event, owner));
+}
+
 /** What names a stored game in a run: its file, or its folder when the file is the truth set's `trace.json`. */
 function gameId(file: string): string {
   const stem = path.basename(file, ".json");
@@ -141,11 +155,7 @@ async function loadInput(target: string): Promise<Input[]> {
     const value = await readJsonOrNull(absolute);
     if (isStoredTurn(value)) return [{ kind: "stored", turn: await readStoredTurn(absolute), file: absolute, fromGame: false }];
     if (isStoredGame(value)) {
-      const game = { id: gameId(absolute), targetAge: value.blueprint.metadata?.target_age ?? null, blueprintPath: "" };
-      return playedEvents(value.events)
-        .filter((event) => typeof event.narration === "string" && event.narration.trim().length > 0)
-        .sort((a, b) => a.sequence - b.sequence)
-        .map((event) => ({ kind: "stored", turn: turnFromEvent(event, game), file: absolute, fromGame: true }));
+      return storedGameTurns(value, gameId(absolute)).map((turn) => ({ kind: "stored", turn, file: absolute, fromGame: true }));
     }
   }
   return (await loadCasesFrom(absolute)).map((testCase) => ({ kind: "case", testCase }));

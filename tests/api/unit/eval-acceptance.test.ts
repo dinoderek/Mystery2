@@ -41,7 +41,7 @@ describe("the entry point", () => {
   it("lists the evaluation commands from ./dev eval --help and exits 0", () => {
     const ran = spawnSync(process.execPath, [path.join(ROOT, "dev"), "eval", "--help"], { cwd: ROOT, encoding: "utf8" });
     expect(ran.status).toBe(0);
-    for (const command of ["generate", "validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score"]) {
+    for (const command of ["generate", "validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score", "suite"]) {
       expect(ran.stdout).toContain(command);
     }
   });

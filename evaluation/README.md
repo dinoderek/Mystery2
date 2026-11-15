@@ -17,6 +17,7 @@ Commands, config, results and exit codes for `./dev eval`. Design:
 | `report <run>` | Writes `report.html` for a self-play run |
 | `label <game>` | A local page (loopback, no model) to label a truth-set game's turns by kind of fault (`evaluation/truth/README.md`). `--pass`, `--by` |
 | `score <results>...` | Scores stored results against the truth set, no model: Wilson-ranged shares per judge and kind, agreement, every judge subset, the smallest for a bar. `--truth`, `--out`, `--min-found` |
+| `suite <name>` | Runs a suite file from `evaluation/suites/` unattended: judges, stores results in the truth set, scores, checks thresholds; resumes without repeating a finished call. `--truth`, `--results` |
 
 Every command takes `--config`, `--output-root` and a repeatable
 `--model-override <binding>=<model>`, which changes one binding's model for one
@@ -31,9 +32,6 @@ judging, `--judges` and `--no-judges` mark unselected judges skipped.
 ```bash
 # Judge a stored blueprint with its brief:
 ./dev eval judge blueprint path/to/blueprint.json --brief evaluation/specs/001-lighthouse-lens
-
-# Mechanical checks only, no model:
-./dev eval validate path/to/blueprint.json
 
 # Generate from a brief, then judge:
 ./dev eval generate evaluation/specs/001-lighthouse-lens --judge
@@ -86,8 +84,6 @@ blueprint run looks like this (the other harnesses name their own layout):
     └── evaluators/<dimension>/  each judge's agent workspace
 ```
 
-The agents' workspaces survive for debugging.
-
 ## Result
 
 `result.json` is written even when the run aborts. Its schema is
@@ -110,22 +106,22 @@ The agents' workspaces survive for debugging.
 
 The same for every command. **0**: everything passed. **1**: the run broke (an
 unreadable file, a missing binding, `run_error` in the result). **2**: a check
-or judge failed, or could not judge.
+or judge failed, or could not judge (`suite`: a threshold missed).
 
 ## Live progress
 
 Every 20s (`EVAL_HEARTBEAT_MS`) a tick prints elapsed time, estimated thinking
 tokens and the messages since the last tick; during the judge phase it
 shows `done/total`. `--quiet` keeps only the milestones. The raw stream
-(`logs/<step>*.stream.jsonl`) is for watching only; the result comes from the
-artifact the agent writes.
+(`logs/<step>*.stream.jsonl`) is for watching only.
 
 ## Retries
 
 A judge is retried (`retries`) on a non-zero exit, a timeout, stdout that is not
 JSON, an `extract_path` miss, or an answer failing the dimension's Zod schema. Generation is retried on the same,
 and on output failing Blueprint V2 validation. Each attempt has its own log,
-such as `judge-solve_depth.attempt-2.stderr.log`.
+such as `judge-solve_depth.attempt-2.stderr.log`. At the login's usage limit
+nothing is retried: the run breaks.
 
 ## Blueprint dimensions
 
@@ -137,17 +133,16 @@ judge's full question is its brief, `evaluation/dimensions/<id>.md`.
 - `fairness`: the evidence points uniquely at the culprit.
 - `timeline_coherence`: positions around the crime are consistent
   (`actual_actions` is authoritative).
-- `knowledge_coherence`: what each character could observe, the integrity of
-  their deceptions, and whether every physical fact agrees across fields with
-  nothing given away before its clue is found.
+- `knowledge_coherence`: what characters could observe, their deceptions, and
+  physical facts agreeing across fields, nothing given away before its clue.
 - `character_grounding`: enough authored material that the narrator need not
   fabricate.
 - `path_payoff`: every authored path pays off.
-- `clue_graph`: the analyzer checks the discovery graph is sound; the judge asks
-  whether the gating is fun and fair.
-- `age_appropriate`: the analyzer screens each player-facing string with the
-  Flesch–Kincaid grade for `metadata.target_age`; the judge checks what the
-  formula cannot see against `packages/shared/src/age-profile.ts`.
+- `clue_graph`: the analyzer checks the discovery graph; the judge, whether its
+  gating is fun and fair.
+- `age_appropriate`: the analyzer grades each player-facing string
+  (Flesch–Kincaid) for `metadata.target_age`; the judge checks the rest against
+  `packages/shared/src/age-profile.ts`.
 
 Analyzers live in `evaluation/checks/analyzers/`. To iterate on the evaluator, run `judge
 blueprint` on a saved blueprint, then

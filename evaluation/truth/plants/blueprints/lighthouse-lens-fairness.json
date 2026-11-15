@@ -1,0 +1,29 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "fairness",
+  "judge": "fairness",
+  "note": "Ada now heard Finn snoring only from two, so nothing rules Finn out for the hour from one, while the causeway was dry.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/characters/0/clues/0/text",
+      "value": "From one until three, Finn snored on my sofa, right outside my bedroom door. I heard the clock chime one, two and three. He never stopped once!"
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/0/clues/0/text",
+      "value": "From two until three, Finn snored on my sofa, right outside my bedroom door. I heard the clock chime two and three. Before that I was fast asleep!"
+    },
+    {
+      "op": "test",
+      "path": "/world/characters/0/actual_actions/5/summary",
+      "value": "From one until after three, lay awake while Finn snored on the sofa. Heard the clock chime one, two and three. Heard nothing else over the snoring and the waves."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/0/actual_actions/5/summary",
+      "value": "From one until two, slept soundly. From two until after three, lay awake while Finn snored on the sofa. Heard the clock chime two and three. Heard nothing else over the snoring and the waves."
+    }
+  ],
+  "caught_by": []
+}

@@ -1,0 +1,77 @@
+{
+  "game": "greenhouse-detective",
+  "plants": [
+    {
+      "sequence": 6,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator says Toby took the greenhouse key on Wednesday, naming the culprit and his hidden action.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "The greenhouse door clicks shut behind you.",
+          "replace": "The greenhouse door clicks shut behind you. Somewhere nearby, Toby is hoping nobody finds out he took the greenhouse key on Wednesday."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 8,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Gruff, prickly Mr. Thorne greets the investigator warmly and offers help, with nothing to earn the change.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "He glares at you over the fence. \"Oh, it's you. Come to accuse me, have you? Well, go on, then. Say it.\" He folds his arms across his tweed waistcoat.",
+          "replace": "He beams at you over the fence. \"Hello, my dear! How lovely to see you. Do come in. I'd love to help you find out who hurt that splendid pumpkin!\" He waves you over with a cheerful smile."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 11,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "A greenhouse key drops from Mr. Thorne's pocket; it contradicts the blueprint, where the only key lies in the water butt.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "He stomps off between the leeks, his boots thudding.",
+          "replace": "As he turns, a brass key with a green tag drops out of his waistcoat pocket. He snatches it up and stomps off between the leeks, his boots thudding."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 13,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The ladder clue is distorted: garden shears instead of a tape measure, so it no longer shows he was measuring Bertha.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "A tape measure dangles from the top rung. Why would he need that?",
+          "replace": "A pair of garden shears dangles from the top rung. Why would he need those?"
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 22,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Mr. Dobbs's reply is rewritten in long sentences of hard words (scrupulously, transgression, unfathomable) for a ten-year-old.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Stanley's hands go still on the rag. His moustache twitches. \"Clean boots? I keep my boots clean, that's all. Is that a crime now?\" He shakes his head. \"I loved that pumpkin. I'd never hurt her. Please, you have to believe me.\"",
+          "replace": "Stanley's hands become motionless upon the rag, and his moustache quivers almost imperceptibly. \"Immaculate boots? I maintain my footwear scrupulously, nothing more. Has that become a punishable transgression?\" He shakes his head with evident consternation. \"I cherished that pumpkin. Harming her would be utterly unfathomable. I implore you to believe me.\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "game": "glitterwood-forest-detective",
+  "plants": [
+    {
+      "sequence": 9,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator says the real stick is hidden in Clementine's cape pocket, her hidden action told as fact.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You step back from the stone shelf.",
+          "replace": "You step back from the stone shelf. You do not know it yet, but the real stick is wrapped in a purple hanky, deep in Clementine's cape pocket."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 10,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "An invented stage sign says the stage was closed all afternoon, contradicting Clementine practising there.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "A sparkly blue table and paint pots wait nearby.",
+          "replace": "A sparkly blue table and paint pots wait nearby. A sign on the big stage says, \"Closed all afternoon. No practice today!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 12,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The paint sheet clue is distorted: it names Ruby instead of Clementine as the other Sparkle Blue user.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Just Barnaby and Clementine!",
+          "replace": "Just Barnaby and Ruby!"
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 19,
+      "kind": "out_of_character",
+      "severity": "minor",
+      "note": "Barnaby's answer is reported in the third person by the narrator instead of spoken in his own voice.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Barnaby waves his yellow hat. \"Hello! At three, I fixed a wobbly shelf in the dungeon. Tobias made me tea!\" He taps his tail. \"I used Sparkle Blue at one o'clock, on the treasure table. At the six bell? I was right here, building lantern poles!\"",
+          "replace": "Barnaby waves his yellow hat. He says that he fixed a shelf at three. He says that Tobias made him tea. He says that he used Sparkle Blue at one, on the table. He says that he was here at the six bell, making poles."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 27,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Ruby's answer is rewritten in long sentences of hard words (subsequently, magnificent, receptacle) a seven-year-old cannot read.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Ruby's striped tail swishes. \"I went to the dungeon at half past four. I looked at the treasures.\" She waves a paw. \"Sticks are boring! I only came to admire the Glimmer Cup.\" She smiles. \"At six o'clock, I was right here at the pond, hunting pebbles!\"",
+          "replace": "Ruby's striped tail oscillates languidly. \"I ventured into the dungeon at approximately half past four, whereupon I contemplated the treasures.\" She gesticulates dismissively. \"Sticks are unutterably tedious! I attended exclusively to admire the magnificent Glimmer Cup.\" She smiles beatifically. \"Subsequently, at six o'clock, I was positioned precisely here beside the pond, accumulating pebbles in my receptacle!\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    }
+  ]
+}

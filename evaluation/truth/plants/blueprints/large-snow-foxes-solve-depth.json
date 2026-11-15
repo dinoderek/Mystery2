@@ -1,0 +1,19 @@
+{
+  "base": "large-snow-foxes",
+  "kind": "solve_depth",
+  "judge": "solve_depth",
+  "note": "The snowy snowshoes now carry a green thread from Barnaby's scarf, so one clue all but names him and the shortest path drops below the floor of 3.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/2/sub_locations/0/clues/0/text",
+      "value": "One pair of snowshoes is caked in fresh snow. White fur is caught in a strap."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/2/sub_locations/0/clues/0/text",
+      "value": "One pair of snowshoes is caked in fresh snow. White fur is caught in a strap, tangled with a long green thread from Barnaby's knitted scarf."
+    }
+  ],
+  "caught_by": []
+}

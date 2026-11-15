@@ -1,0 +1,19 @@
+{
+  "base": "large-snow-foxes",
+  "kind": "clue_graph",
+  "judge": "clue_graph",
+  "note": "The snowshoe clue's gate rationale becomes vague, with no in-fiction reason and no sign whether cleverness could bypass it.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/2/sub_locations/0/clues/0/requires/rationale",
+      "value": "Hard search gate: from a glance all the snowshoes look alike. Only after finding the snowshoe prints by the luggage car do you know to check each pair closely."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/2/sub_locations/0/clues/0/requires/rationale",
+      "value": "This clue is locked until later."
+    }
+  ],
+  "caught_by": []
+}

@@ -1,0 +1,21 @@
+{
+  "base": "large-snow-foxes",
+  "kind": "age_appropriate",
+  "judge": "age_appropriate",
+  "note": "The far-door clue is rewritten in adult words (distal portal, mechanism, precipitation) a seven-year-old cannot read.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/1/clues/0/text",
+      "value": "The far door's latch is up. Snow has blown in across the floor."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/1/clues/0/text",
+      "value": "The distal portal's securing mechanism has been elevated, permitting considerable precipitation to accumulate across the flooring."
+    }
+  ],
+  "caught_by": [
+    "age_appropriate.analyzer"
+  ]
+}

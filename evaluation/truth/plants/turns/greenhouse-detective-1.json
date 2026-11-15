@@ -1,0 +1,99 @@
+{
+  "game": "greenhouse-detective",
+  "plants": [
+    {
+      "sequence": 12,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator clears Mr. Thorne and says the smasher used the missing key, doing the player's deduction for them.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Nothing new catches your eye here.",
+          "replace": "Nothing new catches your eye here. Mr. Thorne didn't smash Bertha anyway. Whoever did it let themselves in with the missing key."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 14,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "The narrator invents small leaf-pattern wellies drying by the workshop door, an object the blueprint does not have that points the player at Mr. Dobbs.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "A tall, thin man with a grey moustache looks up.",
+          "replace": "By the door, a muddy pair of small leaf-pattern wellies sits drying on a sheet of newspaper.\n\nA tall, thin man with a grey moustache looks up."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 15,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "The search records Mr. Dobbs's key book clue, but the narration finds nothing and never tells what the book says.",
+      "edits": [
+        {
+          "type": "patch",
+          "ops": [
+            {
+              "op": "test",
+              "path": "/payload/revealed_clue_ids",
+              "value": []
+            },
+            {
+              "op": "replace",
+              "path": "/payload/revealed_clue_ids",
+              "value": [
+                "clue_spare_key_book"
+              ]
+            },
+            {
+              "op": "replace",
+              "path": "/payload/revealed_clue_id",
+              "value": "clue_spare_key_book"
+            },
+            {
+              "op": "replace",
+              "path": "/payload/revealed_clue_text",
+              "value": "Mr. Dobbs's key book says: 'Greenhouse spare. Thursday: Mia, 5:05 to 5:20. Friday: Mia, 5:00 to 5:20. Saturday: Ms. Hale, 7:25.'"
+            }
+          ]
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 17,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Mr. Dobbs's slippers tell fires in his greeting, before anyone asks why he did not check the noise.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "He gives you a slow, kind smile.",
+          "replace": "He rubs the back of his neck and mumbles that he was already in his slippers. Then he gives you a slow, kind smile."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 20,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "Mr. Dobbs's answer is rewritten in adult words (immaculate, aforementioned, meticulously) a ten-year-old cannot read unaided.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "Stanley wipes his hands on a rag. \"Boots? I've got big ones for muddy days. They're clean as a whistle this morning, though.\" He taps his key book. \"I lent the spare to Ms. Hale at twenty-five past seven. It's all written down, of course.\"",
+          "replace": "Stanley methodically wipes his hands upon a rag. \"Footwear? I possess substantial boots for inclement conditions. They were immaculate this morning, notwithstanding the weather.\" He indicates his key ledger. \"I relinquished the aforementioned spare to Ms. Hale at twenty-five minutes past seven. Naturally, everything has been meticulously documented.\""
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "base": "glitterwood-forest",
+  "kind": "knowledge_coherence",
+  "judge": "knowledge_coherence",
+  "note": "The Fair Meadow's description, seen on arrival, says only Barnaby and Clementine signed for Sparkle Blue, giving away the paint-sheet clue before it is found.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/1/description",
+      "value": "A bright meadow full of striped tents and lantern strings. A big stage stands at one end. A sparkly blue table waits for the treasures."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/1/description",
+      "value": "A bright meadow full of striped tents and lantern strings. A big stage stands at one end. A sparkly blue table waits for the treasures. By the paint pots, a sheet shows that only Barnaby and Clementine signed for Sparkle Blue."
+    }
+  ],
+  "caught_by": []
+}

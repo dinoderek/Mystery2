@@ -1,0 +1,77 @@
+{
+  "game": "large-snow-foxes-kid-7",
+  "plants": [
+    {
+      "sequence": 10,
+      "kind": "not_age_fit",
+      "severity": "major",
+      "note": "A simple search is rewritten in long words (meticulously, accumulated, venerable) a seven-year-old cannot read.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You brush the wood chips off the old stump. Nothing is hidden here. Try behind the big woodpile.",
+          "replace": "You meticulously sweep the accumulated wood shavings from the venerable stump's weathered surface. Regrettably, absolutely nothing has been concealed here. Consider investigating behind the substantial woodpile instead."
+        }
+      ],
+      "caught_by": [
+        "flesch"
+      ]
+    },
+    {
+      "sequence": 13,
+      "kind": "clue_handling",
+      "severity": "major",
+      "note": "Bramble delivers her clue that Tilly never left the window seat, and the turn does not record it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Have a honey bun!\" she says.",
+          "replace": "\"Have a honey bun!\" she says. \"Little Tilly sat in my window seat, drawing, until the half-past bell. She never left.\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 25,
+      "kind": "fabrication",
+      "severity": "major",
+      "note": "The narrator invents a locked storeroom behind the clock to search; the platform has no such place.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You can look under the big clock, behind the water tower, or by the puffing engine.",
+          "replace": "You can look under the big clock, behind the water tower, or by the puffing engine. There is also a little locked storeroom behind the clock. You have not looked in there yet."
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 26,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Barnaby, wary of wolves and keen to blame Gus, says wolves are the best and he trusts them, against his personality and agenda.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"I can help. Keep an eye on that big grey wolf, I say!\"",
+          "replace": "\"I can help. Wolves are the best animals of all. I trust that big grey wolf more than anyone!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 36,
+      "kind": "spoiler",
+      "severity": "major",
+      "note": "The narrator states that Barnaby took the case and blamed the wolf, before the accusation.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "You step back and look around the platform.",
+          "replace": "Barnaby took Howard's case while everyone was busy. Then he blamed the wolf. You step back and look around the platform."
+        }
+      ],
+      "caught_by": []
+    }
+  ]
+}

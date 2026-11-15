@@ -1,0 +1,29 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "path_payoff",
+  "judge": "path_payoff",
+  "note": "The round-bundle red herring no longer ends anywhere: its payoff and description leave the bundle a mystery.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/red_herrings/0/description",
+      "value": "Roz points out that Finn was the only visitor on Gull Rock and needs money for his boat. Behind Ada's coal box sits a round, blanket-wrapped bundle as wide as the lens. Once Finn trusts the investigator, he admits it is a wooden birthday sign he carved for Ada."
+    },
+    {
+      "op": "replace",
+      "path": "/red_herrings/0/description",
+      "value": "Roz points out that Finn was the only visitor on Gull Rock and needs money for his boat. Behind Ada's coal box sits a round, blanket-wrapped bundle as wide as the lens. Finn will not say what it is."
+    },
+    {
+      "op": "test",
+      "path": "/red_herrings/0/payoff",
+      "value": "The bundle is Finn's birthday sign for Ada, not the lens, so the false lead against Finn is disproved."
+    },
+    {
+      "op": "replace",
+      "path": "/red_herrings/0/payoff",
+      "value": "The bundle stays a mystery: nobody ever finds out what is inside."
+    }
+  ],
+  "caught_by": []
+}

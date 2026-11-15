@@ -1,0 +1,19 @@
+{
+  "base": "glitterwood-forest",
+  "kind": "solve_depth",
+  "judge": "solve_depth",
+  "note": "A silver star from Clementine's cape is now stuck in the fake's paint, so one clue all but names her and the shortest path drops below the floor of 3.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/0/sub_locations/0/clues/0/text",
+      "value": "The fake is a willow twig painted with sticky Sparkle Blue paint. One end is nibbled."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/0/sub_locations/0/clues/0/text",
+      "value": "The fake is a willow twig painted with sticky Sparkle Blue paint. One end is nibbled. A tiny silver star from Clementine's cape is stuck in the paint."
+    }
+  ],
+  "caught_by": []
+}

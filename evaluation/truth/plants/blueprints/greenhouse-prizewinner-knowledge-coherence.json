@@ -1,0 +1,19 @@
+{
+  "base": "greenhouse-prizewinner",
+  "kind": "knowledge_coherence",
+  "judge": "knowledge_coherence",
+  "note": "The greenhouse description now has the broken glass inside on the floor, contradicting the clue that it lies outside.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/0/description",
+      "value": "Warm, damp air smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/0/description",
+      "value": "Warm, damp air smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze, and its broken glass lies scattered across the greenhouse floor."
+    }
+  ],
+  "caught_by": []
+}

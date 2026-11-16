@@ -158,6 +158,7 @@ describe("loading a truth set", () => {
     ]);
     expect(set.blueprintPlants.map((plant) => [plant.id, plant.base, plant.kind])).toEqual([["mock-bob-not-ruled-out", "mock", "fairness"]]);
     expect(set.results.map((results) => [results.id, results.verdicts.length])).toEqual([["fixture-run", 5]]);
+    expect(set.scores).toEqual([]);
     expect(set.guide).toBeNull();
   });
 
@@ -189,6 +190,7 @@ describe("loading a truth set", () => {
   it.each([
     ["games/medal/notes.txt", "games/medal/notes.txt: not part of the truth set"],
     ["results/Run One.json", "results/Run One.json: not part of the truth set"],
+    ["scores/Blueprint Side.json", "scores/Blueprint Side.json: not part of the truth set"],
     ["plants/other/x.json", "plants/other: not part of the truth set"],
     ["extra.json", "extra.json: not part of the truth set"],
   ])("fails on %s, which is not in the layout", async (relative, message) => {

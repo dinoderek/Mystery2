@@ -77,9 +77,19 @@ STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"
 # The model is EVAL_MODEL, which the evaluation core sets from the binding;
 # the wrapper stops when it is unset.
+#
+# The launch is lean: the agent gets only the tools the workspace protocol
+# uses (reading its inputs, writing ./verdict.json, running the validator),
+# no MCP server, no slash command, and no settings file, so none of the
+# login's plugins, skills or hooks. Effort is medium.
 claude --print --output-format stream-json --verbose \
        --model "${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}" \
-       --effort xhigh \
+       --effort medium \
+       --tools "Read,Write,Edit,Bash" \
+       --strict-mcp-config \
+       --setting-sources "" \
+       --disable-slash-commands \
+       --no-session-persistence \
        --permission-mode auto \
        "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./verdict.json that passes the validator." \
        >"$STREAM_FILE" \

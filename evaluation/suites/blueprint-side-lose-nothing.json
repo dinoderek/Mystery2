@@ -1,0 +1,18 @@
+{
+  "description": "The smallest set of blueprint judges that loses no fault the full battery caught on Opus (blueprint-side): blueprint_broad alone. It judges every base and planted blueprint on Sonnet and on Haiku, one sample, at medium effort with the lean launch of the judge wrapper.",
+  "subjects": {
+    "bases": "all",
+    "blueprint_plants": "all"
+  },
+  "judges": [
+    "blueprint_broad"
+  ],
+  "models": {
+    "blueprint-judge": [
+      "sonnet",
+      "haiku"
+    ]
+  },
+  "samples": 1,
+  "concurrency": 1
+}

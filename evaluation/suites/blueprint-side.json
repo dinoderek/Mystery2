@@ -1,5 +1,5 @@
 {
-  "description": "Every blueprint judge of the battery and every blueprint candidate on every base and planted blueprint, on Opus, one sample: each run is a long agent session.",
+  "description": "Every blueprint judge of the battery and every blueprint candidate on every base and planted blueprint, on Opus, one sample: each run is a long agent session. The stored results mix two launches of the judge wrapper. At xhigh effort with the login's full CLI context (settings, plugins, MCP servers, default tools): every judge on the four bases, on every glitterwood-forest plant and on greenhouse-prizewinner-age-appropriate and greenhouse-prizewinner-character-grounding, and every judge but blueprint_broad on greenhouse-prizewinner-clue-graph, 142 calls. At medium effort with the lean launch: the other 166.",
   "subjects": {
     "bases": "all",
     "blueprint_plants": "all"

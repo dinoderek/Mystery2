@@ -118,10 +118,24 @@ function unmeasuredNote(report: CompareReport): string[] {
     : [];
 }
 
+/** What was compared, as the report names it. */
+export interface CompareInputs {
+  truth: string;
+  a: string;
+  b: string;
+  /** The one model kept from a run, or null when all its verdicts were. */
+  model_a: string | null;
+  model_b: string | null;
+}
+
+function run(file: string, model: string | null): string {
+  return model === null ? file : `${file} (${model} only)`;
+}
+
 /** The whole report as text. */
-export function formatCompare(report: CompareReport, inputs: { truth: string; a: string; b: string }): string {
+export function formatCompare(report: CompareReport, inputs: CompareInputs): string {
   const lines = [
-    `Compared A ${inputs.a} with B ${inputs.b}, against the truth set at ${inputs.truth}.`,
+    `Compared A ${run(inputs.a, inputs.model_a)} with B ${run(inputs.b, inputs.model_b)}, against the truth set at ${inputs.truth}.`,
     "Paired on the units both runs judged. A run catches a unit when most of its judging samples do; a tie is not a catch.",
     `A difference is firm when each run's own samples are unanimous on it; otherwise it is within variation. The test: ${report.rules.test}; ${SIGNIFICANCE} or less is "differs".`,
   ];

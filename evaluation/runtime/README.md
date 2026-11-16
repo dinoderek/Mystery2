@@ -6,7 +6,8 @@ Grades one narration against fixed state and history. Options: `evaluation/READM
 
 A case evaluates **one action** against a **fully specified prior state**. The
 history is part of the case, not produced by playing turns, so the model input is
-identical on every run and across models.
+identical on every run and across models: narration each model played itself
+would diverge, and their runs would not be comparable.
 
 ## Choosing a narrator
 
@@ -119,8 +120,8 @@ To re-judge a stored turn without calling its narrator:
 ```
 
 It runs the judges of the `result.json` beside it, else `flesch`, or `--judges
-a,b`, and writes a new run. A case's `judgeConfig` is not stored, so a stored turn
-uses the default options.
+a,b`, and writes a new run; its model judges still call their model. A case's
+`judgeConfig` is not stored, so a stored turn uses the default options.
 
 ### Cases from a played game
 

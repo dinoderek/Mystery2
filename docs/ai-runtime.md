@@ -23,30 +23,14 @@ and voice. Output is validated before the turn is saved, so a provider or
 contract failure writes nothing.
 
 ## Roles
-<!-- extract:roles -->
 
-- `talk_start` — a character enters the conversation.
-- `talk_conversation` — the character answers, with continuity from earlier
-  questions.
-- `talk_end` — a short close.
-- `search` — one output contract with two prompts:
-  - `search_bare` reveals the next location-level clue and hints at
-    sub-locations. It uses the lean `search_empty` word budget, or `search_find`
-    when the backend already knows a clue will be revealed.
-  - `search_targeted` judges the player's free text against the sub-locations,
-    decides whether a clue is revealed, and whether the search costs a turn.
-    The model decides the outcome, so the prompt carries both budgets
-    (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`).
-- `accusation_start` — frames the scene and asks for the accusation.
-- `accusation_judge` — judges each round as `continue`, `win` or `lose`.
-  - `win` needs the true culprit **and** either an evidence chain following one
-    of the blueprint's `solution_paths`, or a correct account of what happened
-    (culprit, key events, motive). Confronting the accused can earn a
-    confession, but only when most of the facts are already right.
-  - A wrong or thin accusation is `continue`, with warm narration ending in one
-    question inviting another try. From round 3 a still-failing accusation is
-    `lose`, with a gentle reveal.
-<!-- /extract:roles -->
+The roles and their output contracts are `ai-contracts.ts`. `search` is one
+contract with two prompts: `search_bare` uses the `search_find` word budget
+when the backend already knows a clue will be revealed, else `search_empty`;
+`search_targeted` carries both, because the model decides the outcome
+(`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
+round `continue`, `win` or `lose` by the rule in "The accusation" in
+`docs/game.md`.
 
 ## Narration style
 <!-- extract:narration-style -->
@@ -70,65 +54,40 @@ Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
 ## What each role sees
 <!-- extract:context-boundaries -->
 
-The only context every role shares is `target_age`. Only `accusation_judge`
-sees the full blueprint; `assertRoleContextSafety` enforces that for every
-other role.
+Which blueprint fields reach which role is the "Narration at play" table in
+`docs/blueprint-generation-flows.md`. The rules and reasons behind it:
 
-- **A character's public face** is identity, `sex`, visible `appearance`, and
-  the `public_summary` from `narrative.starting_knowledge`. That is all any
-  scene sees of a character, except that character's own talk turn and an
-  arrival where they are present.
-- **Talk roles** get location summaries, every character's public face, and the
-  active character's private roleplay context: `background`, `personality`,
-  attitude, alibi, motive, clues, `flavor_knowledge`, `actual_actions`,
-  `agendas`, `tells`, and `player_known_clues`. Knowledge about *other*
-  characters travels only through explicit clues (`about_character_id`).
-  - Each clue carries its gate's `requires_rationale` (the in-fiction reason it
-    is withheld), a precomputed `prereqs_met`, and `known_to_player`; the
-    prerequisite ids are not sent.
-  - Each tell has visible `text` and a `trigger`: `always`, `condition` (free
-    text the narrator judges), or `clue` (fires only when the player raises the
-    referenced `clue_ids` and is believed — they hold the clue or bluff well).
-    Tells are reactions, not defaults: a cue surfaces only when its trigger
-    fires, or, with none authored, when the player touches something sensitive.
-    A `talk_start` greeting comes before the player says anything, so a `clue`
-    tell never fires there, and a `condition` tell fires only if an earlier
-    visit already met it.
-- **Arrival** (`ambience`, from the move action and `game-enter`) gets the
-  destination's name, description and sub-location names, its history, and,
-  for each character present, the same private pack a talk turn gives its
-  active character (`buildPresentCharacterContexts`). Absent characters are not
-  sent at all. Without the pack the narrator greets as a generic host, whatever
-  the character's authored attitude and agendas. The prompt plays each
-  character in that attitude, lets agendas shape their manner, and allows one
-  short line. It reveals no clue, never states the private fields, and limits
-  tells to `always`, or `condition` when the history already meets it; a
-  `clue` tell never fires, since nobody has raised a clue. Arrival derives all
-  of this from the session's history inside `role-request.ts`, so the
-  endpoints and the eval harness cannot disagree on it. Its word budget
-  (`ambience` in `packages/shared/src/age-profile.ts`) is as roomy as the
-  verdict's: it covers the place, its searchable areas and whoever is there.
-- **Search** gets the location, its clue progression, each sub-location with
-  its narrator-only hint and unrevealed clues, and the player's `search_query`
-  for a targeted search. Locked clues are filtered out, so their text can never
-  be woven in.
-- **Accusation start** gets spoiler-safe state and the public roster, so
-  suspects are named with the right pronouns.
-- **Accusation judge** gets the full blueprint plus what the investigator
-  actually earned: `player_known_clues` (discovered clues in order, each with an
-  `origin_label` such as "found at the Kitchen") and `path_coverage` (per
-  reasoning path: `kind`, `summary`, `found_clue_ids`, `missing_clue_ids`).
-  Without them the judge cannot tell an earned case from a lucky one. Both are
-  rebuilt from event history, and `path_coverage` is precomputed so the model
-  does not intersect sets across a long context.
-
-Every character summary carries `sex`, and every prompt tells the model to use
-it for pronouns rather than guess.
-
-History is selected per role (`selectConversationHistoryForRole`): talk sees
-only events with the active character, search only events at the current
-location, and the accusation roles all history or none
-(`accusation_history_mode`).
+- Only `accusation_judge` sees the full blueprint; `assertRoleContextSafety`
+  enforces that for every other role. Knowledge about *other* characters
+  travels only through explicit clues (`about_character_id`).
+- A talk clue carries its gate's `requires_rationale` (the in-fiction reason it
+  is withheld), a precomputed `prereqs_met` and `known_to_player`; the
+  prerequisite ids are not sent, so the model gates on the reason rather than
+  doing set arithmetic.
+- **Tells are reactions, not defaults.** Each has visible `text` and a
+  `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
+  (fires only when the player raises the referenced `clue_ids` and is believed:
+  they hold the clue or bluff well). A cue surfaces only when its trigger fires,
+  or, with none authored, when the player touches something sensitive. A
+  `talk_start` greeting and an arrival come before the player says anything, so
+  a `clue` tell never fires there, and a `condition` tell fires only if the
+  history already meets it.
+- **Arrival gets each present character's private pack**, because without it
+  the narrator greets as a generic host, whatever the character's authored
+  attitude and agendas. The prompt plays each in that attitude, lets agendas
+  shape their manner and allows one short line; it reveals no clue and never
+  states the private fields. `role-request.ts` derives all of it from the
+  session's history, so the endpoints and the eval harness cannot disagree. Its
+  word budget is roomy enough for the place, its searchable areas and whoever
+  is there.
+- **Search never sees a locked clue**, so its text can never be woven in.
+- **The judge gets what the investigator earned**: `player_known_clues` (in
+  order, each with an `origin_label`) and `path_coverage` (per reasoning path,
+  found and missing clue ids). Without them it cannot tell an earned case from
+  a lucky one. Both are rebuilt from event history, and `path_coverage` is
+  precomputed so the model does not intersect sets across a long context.
+- Every character summary carries `sex`, and every prompt tells the model to use
+  it for pronouns rather than guess.
 <!-- /extract:context-boundaries -->
 
 ## Trusting the output
@@ -230,19 +189,12 @@ structured fields; nothing is parsed out of narration.
 ## Entering the first location
 <!-- extract:game-enter -->
 
-`game-enter` narrates arrival at the starting location, once, after the player
-confirms the opening:
-
-1. It is refused unless the session's only event is `start`, which is what
-   stops a double confirmation narrating the arrival twice.
-2. It generates `ambience` narration for the starting location with an empty
-   history — a first visit, with no clues held — the same call a move
-   makes.
-3. It persists a `move` event with `role: "enter"` and the location image, but
-   changes no session state: entering costs no turn and moves no one.
-
-`role: "enter"` also stops a replayed transcript inventing a `move to …` line
-the player never typed.
+`game-enter` narrates arrival at the starting location once, after the player
+confirms the opening: the same `ambience` call a move makes, as a first visit
+with no clues held. It is refused unless the session's only event is `start`,
+so a double confirmation cannot narrate twice. It costs no turn, and its
+`move` event carries `role: "enter"` so a replayed transcript does not invent a
+`move to …` line the player never typed.
 <!-- /extract:game-enter -->
 
 ## The mock provider

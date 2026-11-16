@@ -1,0 +1,210 @@
+{
+  "_comment": "What judge-stub answers each blueprint dimension of the default battery: a clean pass citing the ids of validBlueprintV2 (tests/api/unit/fixtures/blueprint-v2.fixture.ts) with its target_age set to 18, which its age analyzer passes, so the whole battery passes offline on that blueprint. On another blueprint the cited ids, or the target age, do not match and the answers are refused. Any other judge gets the wrapper's own canned verdict.",
+  "solve_depth": {
+    "paths": [
+      {
+        "id": "solution-alice-cookie-bag",
+        "reaches_culprit": true,
+        "necessary_clues": [
+          "loc-crumbs",
+          "char-alice-bag",
+          "loc-bag"
+        ],
+        "length": 3,
+        "reasoning": "Stub verdict: nothing to report."
+      }
+    ],
+    "elimination_paths": [
+      {
+        "id": "eliminate-bob",
+        "suspect_id": "bob",
+        "necessary_clues": [
+          "char-bob-saw-bag"
+        ],
+        "length": 1,
+        "reasoning": "Stub verdict: nothing to report."
+      }
+    ],
+    "uncovered_suspects": [],
+    "solvable": true,
+    "shortest_path_id": "solution-alice-cookie-bag",
+    "min_length": 3,
+    "min_required": 3,
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "fairness": {
+    "non_culprits": [
+      {
+        "character_id": "bob",
+        "ruled_out": true,
+        "ruling_evidence": "char-bob-saw-bag",
+        "reasoning": "Stub verdict: nothing to report."
+      }
+    ],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "timeline_coherence": {
+    "issues": [],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "knowledge_coherence": {
+    "issues": [],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "character_grounding": {
+    "characters": [
+      {
+        "character_id": "alice",
+        "first_name": "Alice",
+        "topics": [
+          {
+            "topic": "their own background and a brief sketch of their life",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their likes and dislikes",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their personality, attitude, and appearance",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the other characters",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the locations",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the central mystery",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          }
+        ],
+        "passes": true
+      },
+      {
+        "character_id": "bob",
+        "first_name": "Bob",
+        "topics": [
+          {
+            "topic": "their own background and a brief sketch of their life",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their likes and dislikes",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their personality, attitude, and appearance",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the other characters",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the locations",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          },
+          {
+            "topic": "their knowledge of the central mystery",
+            "status": "grounded",
+            "note": "Stub: grounded."
+          }
+        ],
+        "passes": true
+      }
+    ],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "path_payoff": {
+    "paths": [
+      {
+        "id": "solution-alice-cookie-bag",
+        "group": "solution",
+        "payoff": "The bag holds the cookies.",
+        "payoff_source": "derived",
+        "verdict": "pass",
+        "reasoning": "Stub verdict: nothing to report."
+      },
+      {
+        "id": "red-herring-open-window",
+        "group": "red_herring",
+        "payoff": "The window leads nowhere.",
+        "payoff_source": "derived",
+        "verdict": "pass",
+        "reasoning": "Stub verdict: nothing to report."
+      },
+      {
+        "id": "eliminate-bob",
+        "group": "suspect_elimination",
+        "payoff": "Bob only watched.",
+        "payoff_source": "derived",
+        "verdict": "pass",
+        "reasoning": "Stub verdict: nothing to report."
+      }
+    ],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "clue_graph": {
+    "mini_mysteries": [
+      {
+        "path_id": "solution-alice-cookie-bag",
+        "group": "solution",
+        "graph_is_sensible": true,
+        "is_one_giant_chain": false,
+        "creates_dead_end": false,
+        "has_ungated_entry": true,
+        "reasoning": "Stub verdict: nothing to report."
+      },
+      {
+        "path_id": "red-herring-open-window",
+        "group": "red_herring",
+        "graph_is_sensible": true,
+        "is_one_giant_chain": false,
+        "creates_dead_end": false,
+        "has_ungated_entry": true,
+        "reasoning": "Stub verdict: nothing to report."
+      },
+      {
+        "path_id": "eliminate-bob",
+        "group": "suspect_elimination",
+        "graph_is_sensible": true,
+        "is_one_giant_chain": false,
+        "creates_dead_end": false,
+        "has_ungated_entry": true,
+        "reasoning": "Stub verdict: nothing to report."
+      }
+    ],
+    "rationales_are_concrete": true,
+    "gating_creates_momentum": true,
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  },
+  "age_appropriate": {
+    "target_age": 18,
+    "estimated_reading_age": 18,
+    "findings": [],
+    "verdict": "pass",
+    "reasoning": "Stub verdict: nothing to report."
+  }
+}

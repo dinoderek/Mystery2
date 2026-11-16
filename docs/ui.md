@@ -14,24 +14,13 @@ props, and the command grammar live in the code; do not mirror them here.
   (`docs/architecture.md`). `src/routes/+layout.ts` sets `ssr = false`: it is a
   SPA. No `+page.server.ts` or `+layout.server.ts`; the only server code in
   `web/` is `src/routes/api/`.
-- Pages talk to the engine through `callApi(name, body)` in
-  `src/lib/api/client.ts`, which returns `{ data, error }`. The store parses
-  every answer with the shared schemas; a mismatch is logged and shown, never
+- Pages talk to the engine through `callApi` in `src/lib/api/client.ts`. The
+  store parses every answer with the shared schemas; a mismatch is logged and shown, never
   retried.
-- State is in rune stores, `src/lib/domain/*.svelte.ts`. `gameSessionStore`
-  (`store.svelte.ts`) owns the session, its pages, the notebook and help.
-- Logic goes in plain `.ts` beside the stores (`session-pages.ts`,
-  `notebook.ts`, `turn-answer.ts`, `store.retry.ts`), not in components. That is what the web unit
-  suite covers; components are covered only by browser E2E.
+- Logic goes in plain `.ts` beside the rune stores in `src/lib/domain/`, not in
+  components: that is what the web unit suite covers, and components are covered
+  only by browser E2E.
 - Components are all in `src/lib/components/`. Look there before adding one.
-
-| Route | Screen |
-|---|---|
-| `/` | Menu: new game, in-progress, completed |
-| `/sessions/in-progress`, `/sessions/completed` | Numbered session lists; completed ones open read-only |
-| `/session` | The game |
-| `/login` | Profile picker; names the narrator |
-| `/settings` | Chooses the AI (`docs/ai-configuration.md`) |
 
 ## The profile gate
 
@@ -47,11 +36,6 @@ profile, but the server asks for one only where a session is involved
 
 ## The session screen
 
-Narration takes the left third, `ScenePane` (a fixed image) the right two
-thirds. The transcript is split into pages by `session-pages.ts` — a new page on
-`start`, `move`, `talk`, `end_talk` and `accuse_start` — and the scene image is
-whatever the active page carries.
-
 Two keyboard rules are easy to break:
 
 - While the notebook is open, `NotebookPanel` owns every key through one window
@@ -60,10 +44,8 @@ Two keyboard rules are easy to break:
 - `HelpModal` and `NotebookPanel` both sit at `z-50` with no stacking
   coordination; `openNotebook()` closing help is what keeps the notebook on top.
 
-The browser sends each line to `game-turn` as typed; the grammar is
-`command-grammar.ts`. `Tab` opens the notebook without a request.
-`HelpModal` is the player's reference. `docs/game.md` describes commands at the
-player level only.
+The browser sends each line to `game-turn` as typed; the engine owns the
+grammar. `HelpModal` is the player's reference.
 
 ## Styling
 
@@ -75,18 +57,7 @@ player level only.
 - There is one palette, green on black, and no theme switching. The tokens are
   CSS variables on `:root` in `src/routes/layout.css`, mapped to Tailwind
   through `@theme`; a colour change is an edit there and nowhere else.
-- The tokens are `bg`, `primary`, `bright`, `muted`, `dim`, `dialogue`,
-  `error`, `warning`, plus `glow` (the muted colour at 30%, for shadows). The
-  transcript's speakers have their own: each kind has a label colour and a
-  paler text colour, reusing `bright` and `dialogue` where they fit.
-  `text-shadow-glow` and `text-shadow-glow-soft` give transcript text its glow.
 - There is no shared form-control component. Copy the classes: selectable rows
   and text inputs from `ProfilePicker.svelte`, the selected state
   (`aria-pressed`) from `src/routes/settings/+page.svelte`. Buttons are
   labelled in brackets: `[ START ]`.
-
-## Keeping this doc current
-
-Change it when a rule above changes: the gate, the key ownership, the styling
-rules, or where things live. A new component, route behaviour or command does
-not belong here.

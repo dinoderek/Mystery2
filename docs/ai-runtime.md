@@ -16,15 +16,11 @@ blueprint's `target_age` and `narration_style`. It is the only place those two
 are applied, and it imports no database, so the runtime eval harness calls it
 directly instead of keeping a second copy.
 
-Keep it the only path. The harness once assembled prompts itself, silently
-built every evaluated prompt for a 6-year-old, and nothing failed.
-`tests/api/unit/role-request.test.ts` asserts, for every role, that the
-assembled prompt carries the blueprint's age and voice.
-
-A turn then runs in one order: validate the request and the mode transition,
-load the session and blueprint through `EngineContext`, assemble, call the
-provider, validate the output, and only then persist. A provider or contract
-failure writes nothing.
+Keep it the only path: a second copy drifts silently (one once built every
+evaluated prompt for a 6-year-old). `tests/api/unit/role-request.test.ts`
+asserts, for every role, that the assembled prompt carries the blueprint's age
+and voice. Output is validated before the turn is saved, so a provider or
+contract failure writes nothing.
 
 ## Roles
 <!-- extract:roles -->
@@ -228,10 +224,8 @@ by half the evidence draws a full confession, and the culprit's admission hands
 over the answer before the player has earned it. `gm_roleplay` judges against
 the same definition of earned.
 
-`game-start` and `game-get` return the notebook's case facts as structured
-`state` (`mystery_summary`, `premise`, a `summary` per location and character);
-`game-turn` returns the turn's `revealed_clues` for a search or an ask so the notebook
-updates live. Nothing is parsed out of narration.
+The notebook's case facts and each turn's revealed clues reach the browser as
+structured fields; nothing is parsed out of narration.
 
 ## Entering the first location
 <!-- extract:game-enter -->
@@ -251,58 +245,25 @@ confirms the opening:
 the player never typed.
 <!-- /extract:game-enter -->
 
-## The accusation lifecycle
-
-`accuse` opens it, with or without reasoning; every later line typed in
-`accuse` mode is a round's reasoning.
-
-1. From `explore` without reasoning: `accusation_start` narration; the mode
-   becomes `accuse` (event `accuse_start`).
-2. From `explore` with reasoning, or from `accuse`: a judge round. `continue`
-   stays in `accuse` (`accuse_round`); `win` or `lose` ends the session with
-   that outcome (`accuse_resolved`).
-3. When `move`, `search` or `talk` spends the last turn, that action's event is
-   stored first, then a `forced_endgame` event with urgent `accusation_start`
-   narration, and the session enters `accuse` with no talk target.
-
-Narration-bearing events carry `payload.diagnostics` (session, order, time), so
-ordering and resume defects can be traced from the log alone.
-
 ## The mock provider
 
-The default for `npm run dev` and every automated suite. It must exercise the
-same paths deterministically:
-
-- `talk_start` shows only an `always` tell, never one with a `condition` or
-  `clue` trigger.
-- `talk_conversation` reveals the first clue whose `prereqs_met` holds, and on
-  "aha" or "i bet" in the player's input grants the first locked clue
-  off-script. It never reports a clue marked `known_to_player`.
-- An arrival (`ambience`) names the place and the first name of each
-  character present, and nothing from their private packs.
-- `accusation_judge` wins on the true culprit from round 1, otherwise
-  `continue` until round 3 and then `lose`; it reads `path_coverage` to aim its
-  closing question at an unfinished solution path.
-- Its narration is written at the target reading age. No child sees it, but the
-  runtime eval harness grades whatever the provider returns.
+The default for `npm run dev` and every automated suite. It exercises the same
+paths as a live model, deterministically, and writes at the target reading age,
+since the runtime eval harness grades whatever the provider returns.
 
 Changing a contract, a prompt, a context or provider selection changes the mock
 and its tests in the same change.
 
 ## Failures, logs and attribution
 
-- Provider calls retry with backoff (`AI_OPENROUTER_TIMEOUT_MS`,
-  `AI_OPENROUTER_MAX_ATTEMPTS`, `AI_OPENROUTER_BASE_BACKOFF_MS`; defaults
-  120000, 3, 750). A retriable failure, including an output that breaks its
-  contract, answers `503` with `details.retriable: true`; the web client owns
-  the retry policy.
+- Provider calls retry with backoff. A retriable failure, including an output
+  that breaks its contract, answers `503` with `details.retriable: true`; the
+  web client owns the retry policy.
 - A blueprint that cannot be read or parsed is logged (`blueprint.read_failed`,
   `blueprint.parse_failed`) and treated as missing.
-- Every AI call logs one JSON line to stdout: request id, endpoint, role,
-  provider, requested `model`, the `responded_model` the provider reports,
-  attempt, latency and outcome. Requests log `request.invalid`,
-  `request.ai_retriable` and `request.unhandled_error`. `AI_CALL_LOG` records
-  full prompts and outputs (`docs/ai-configuration.md`).
+- Every AI call logs one JSON line to stdout, with the requested model and the
+  one the provider reports. `AI_CALL_LOG` records full prompts and outputs
+  (`docs/ai-configuration.md`).
 - Each AI-narrated event stores the model that produced it in
   `game_events.model`, captured right after its own call — a forced endgame is
   two calls and two models. The trace pipeline reads this column rather than

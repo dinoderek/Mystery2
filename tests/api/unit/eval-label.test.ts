@@ -78,6 +78,15 @@ async function copyFixture({ withResults = true } = {}): Promise<string> {
   return dir;
 }
 
+/** Labels every turn the copied fixture leaves unlabelled clean, so pass 2 opens. */
+async function finishPass1(dir: string): Promise<string> {
+  const file = path.join(dir, "games/medal/labels.json");
+  const held = await readJson(file);
+  for (const sequence of [1, 5, 6, 8, 9]) held.labels.push({ sequence, faults: [], by: "fixture", at: "2026-06-02T00:00:00Z", pass: 1 });
+  await writeJson(file, held);
+  return dir;
+}
+
 let clock = Date.parse("2026-07-01T10:00:00Z");
 const now = () => new Date((clock += 1000));
 
@@ -437,7 +446,7 @@ describe("pass one, reported turns only", () => {
 
 describe("pass two", () => {
   it("serves exactly the turns where a judge and the label disagree, with those findings", async () => {
-    const dir = await copyFixture();
+    const dir = await finishPass1(await copyFixture());
     const { server } = await serve(dir, { phase: "pass-2" });
     expect(await get(server, "/")).toMatchObject({ status: 303, location: "/turn/2" });
     const caught = (await get(server, "/turn/2")).body;
@@ -456,7 +465,7 @@ describe("pass two", () => {
   });
 
   it("records a relabel as pass 2 and resumes at the turn after the last one looked at", async () => {
-    const dir = await copyFixture();
+    const dir = await finishPass1(await copyFixture());
     const { server } = await serve(dir, { phase: "pass-2" });
     const saved = await post(server, "/turn/2", [["kind", "spoiler"], ["severity", "minor"], ["note", "the judge is right"]]);
     expect(saved).toMatchObject({ status: 303, location: "/turn/3" });
@@ -472,10 +481,18 @@ describe("pass two", () => {
   });
 
   it("says so when nothing disagrees", async () => {
-    const dir = await copyFixture();
+    const dir = await finishPass1(await copyFixture());
     await fs.rm(path.join(dir, "results/extra.json"));
     const { server } = await serve(dir, { phase: "pass-2" });
     expect((await get(server, "/done")).body).toContain("No turn needs a second look");
+  });
+
+  it("opens only once every turn has a label, so no judge's view steers pass 1", async () => {
+    const { server } = await serve(await copyFixture(), { phase: "pass-2" });
+    const refused = await get(server, "/turn/2");
+    expect(refused.status).toBe(404);
+    expect(refused.body).toContain("pass 2 opens once every turn of game &#34;medal&#34; has a label; 5 still have none");
+    expect(refused.body).not.toMatch(/gm_|culprit-leak/);
   });
 
   it("refuses without stored results that judge the game, saying so", async () => {
@@ -629,6 +646,7 @@ describe("who labels", () => {
     }
     expect((await post(server, "/name", [["name", "dino"], ["back", "//evil.example/"]])).location).toBe("/");
     expect((await post(server, "/name", [["name", "dino"], ["back", "https://evil.example/"]])).location).toBe("/");
+    expect((await post(server, "/name", [["name", "dino"], ["back", "/\\evil.example/"]])).location).toBe("/");
     expect((await post(server, "/name", [["name", "dino"]])).location).toBe("/");
   });
 
@@ -773,6 +791,7 @@ describe("./dev eval label", () => {
       out.splice(0);
     });
     expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--reported"], context(out, []), [command])).toBe(0);
+    await finishPass1(dir);
     expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--pass", "2"], context(out, []), [command])).toBe(0);
     // The fixture's labels already answer both reported turns.
     expect(seen[0]).toContain("medal &middot; pass 1, reported turns</h1><section><p>2 of 2 turns done in pass 1.");
@@ -789,6 +808,8 @@ describe("./dev eval label", () => {
     expect(err.join("\n")).toContain("pass 2 needs stored judge results");
     expect(await runEval(["label", "medal", "--reported", "--truth", dir], context([], err), [command])).toBe(1);
     expect(err.join("\n")).toContain("reported turns need stored judge results");
+    expect(await runEval(["label", "medal", "--pass", "2", "--truth", await copyFixture()], context([], err), [command])).toBe(1);
+    expect(err.join("\n")).toContain("pass 2 opens once every turn");
   });
 
   it("answers the machine's tailnet name with --tailscale, and says how to serve it there", async () => {

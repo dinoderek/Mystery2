@@ -6,7 +6,7 @@
  * - `reported`: pass 1 limited to the turns a failing verdict's finding points
  *   at (`reportedTurns`), still no finding. Its labels record pass 1.
  * - `pass-2`: only the turns where a judge and the label disagree, with those
- *   verdicts (`disagreements.ts`).
+ *   verdicts (`disagreements.ts`); it opens once every turn has a label.
  *
  * A pass-1 view keeps no verdict, so nothing it renders can carry one; the
  * stored results reach it only to pick the reported turns.
@@ -156,6 +156,11 @@ export class LabelHub {
     return new LabelHub(truthRoot, set.games, set.results.flatMap((results) => results.verdicts), set.turnVariants, now);
   }
 
+  /** A game's label file; null for a game the set does not hold. */
+  labelsOf(id: string): GameLabels | null {
+    return this.stores.get(id) ?? null;
+  }
+
   game(id: string): TruthGame | null {
     return this.games.find((game) => game.id === id) ?? null;
   }
@@ -184,6 +189,9 @@ export class LabelHub {
     if (!judgesGame(this.verdicts, id)) {
       throw new InputError(`pass 2 needs stored judge results, and none in ${this.results()} judge game "${id}"; run the judges on it first, or label in pass 1`);
     }
+    // A judge's view before every turn has a label would steer the labels still to come.
+    const unlabelled = playedTurns(game.trace).filter((event) => latestLabel(store.labels, event.sequence) === null).length;
+    if (unlabelled > 0) throw new InputError(`pass 2 opens once every turn of game "${id}" has a label; ${unlabelled} still have none, so finish pass 1 first`);
     return new PhaseView(game, phase, store, this.verdicts, null);
   }
 

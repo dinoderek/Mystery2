@@ -108,7 +108,8 @@ function routeOf(pathname: string): Route | null {
 
 /** A path on this server to go back to; anything else is the list of games. */
 function localPath(value: string | null): string {
-  return value !== null && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+  // A browser reads a backslash as a slash, so `/\\host` would leave the server too.
+  return value !== null && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : "/";
 }
 
 function cookieName(request: http.IncomingMessage): string | null {
@@ -186,23 +187,23 @@ export async function startLabelServer(options: LabelServerOptions): Promise<Lab
       send(response, 404, renderMessagePage("Not here", `"${route.phase}" is not a pass: pass-1, reported or pass-2.`, who));
       return null;
     }
-    let view: PhaseView;
+    const store = hub.labelsOf(route.game);
+    if (refresh && store !== null) {
+      try {
+        await store.refresh();
+      } catch (error) {
+        log(`the label file of ${route.game} could not be read: ${(error as Error).stack ?? String(error)}`);
+        send(response, 500, renderMessagePage("Not read", `The label file of ${route.game} could not be read: ${(error as Error).message}`, who));
+        return null;
+      }
+    }
     try {
-      view = hub.phase(route.game, route.phase);
+      return hub.phase(route.game, route.phase);
     } catch (error) {
       if (!(error instanceof InputError)) throw error;
       send(response, 404, renderMessagePage("Not here", error.message, who));
       return null;
     }
-    if (!refresh) return view;
-    try {
-      await view.store.refresh();
-    } catch (error) {
-      log(`the label file of ${view.game.id} could not be read: ${(error as Error).stack ?? String(error)}`);
-      send(response, 500, renderMessagePage("Not read", `The label file of ${view.game.id} could not be read: ${(error as Error).message}`, who));
-      return null;
-    }
-    return view;
   };
 
   const saveTurn = async (view: PhaseView, sequence: number, who: string, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {

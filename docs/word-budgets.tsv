@@ -2,12 +2,12 @@ path	budget
 .github/pull_request_template.md	100
 AGENTS.md	450
 QUICKSTART.md	1050
+docs/AGENTS.md	100
 docs/ai-configuration.md	450
 docs/ai-runtime.md	1850
-docs/architecture.md	800
+docs/architecture.md	500
 docs/backend-conventions.md	550
 docs/blueprint-generation-flows.md	1000
-docs/constitution.md	400
 docs/evaluation-pipeline.md	850
 docs/game.md	1000
 docs/local-infrastructure.md	400
@@ -49,3 +49,4 @@ evaluation/trace/README.md	600
 evaluation/truth/README.md	450
 evaluation/truth/guide.md	450
 packages/blueprint-generator/src/generator-prompt.md	2900
+packages/game-engine/AGENTS.md	150

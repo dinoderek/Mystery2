@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { checkPath, extractRefs } from "../../../scripts/lib/doc-refs.mjs";
+import { checkPath, extractRefs, isCheckedDoc } from "../../../scripts/lib/doc-refs.mjs";
 
 /**
  * The doc reference check is only worth having if it never cries wolf: a
@@ -72,5 +72,32 @@ describe("checkPath", () => {
     const other = path.join(root, "other");
     fs.mkdirSync(path.join(other, "docs"), { recursive: true });
     expect(checkPath("docs/ui.md", [other, root])?.exists).toBe(true);
+  });
+});
+
+describe("isCheckedDoc", () => {
+  it("reads every AGENTS.md, root or child, beside the docs and READMEs", () => {
+    for (const file of [
+      "AGENTS.md",
+      "packages/game-engine/AGENTS.md",
+      "docs/AGENTS.md",
+      "QUICKSTART.md",
+      "docs/game.md",
+      "evaluation/trace/README.md",
+    ]) {
+      expect(isCheckedDoc(file), file).toBe(true);
+    }
+  });
+
+  it("skips harness templates and Markdown outside the checked set", () => {
+    for (const file of [
+      "evaluation/generator-harness/template/CLAUDE.md",
+      "evaluation/judge-harness/template/README.md",
+      "evaluation/generator-harness/template/AGENTS.md",
+      "evaluation/judges/gm-broad.md",
+      "web/QUICKSTART.md",
+    ]) {
+      expect(isCheckedDoc(file), file).toBe(false);
+    }
   });
 });

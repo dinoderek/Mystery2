@@ -7,12 +7,15 @@ cloud backend, container or separate API service.
 
 - **Server**: SvelteKit on `adapter-node`. One process serves the SPA and `/api`.
 - **Engine**: `packages/game-engine/`. The state machine, clue graph, prompts,
-  AI provider, endpoint handlers and the adapter they run against.
-- **Database**: SQLite (`better-sqlite3`), one file.
+  AI provider, endpoint handlers and the adapter they run against. Handlers
+  reach the outside world only through `EngineContext`, which keeps storage
+  substitutable (`docs/backend-conventions.md`).
+- **Database**: SQLite (`better-sqlite3`), one file per worktree plus `prod`
+  (`docs/local-infrastructure.md`). Tests never touch any of them.
 - **Content**: blueprints and images, read off disk.
 - **Identity**: local profiles, a name and an id. No passwords.
 - **Model provider**: OpenRouter, or the local `claude` CLI, called from the
-  server. A key never reaches the browser.
+  server. A key never reaches the browser (`docs/ai-configuration.md`).
 
 Goals: **one command** (`npm run dev` starts everything; nothing else is
 installed, started, seeded or restarted); **testability** (the full gate runs
@@ -23,92 +26,35 @@ Non-goals: hosting, offline play, and multi-user access control. Profiles keep
 one person's cases apart from another's on a shared machine. They are not a
 security boundary.
 
-## Repository layout
-
-| Directory | Holds |
-|---|---|
-| `web/` | The SvelteKit server and SPA (`docs/ui.md`) |
-| `packages/game-engine/` | The game (`docs/backend-conventions.md`) |
-| `packages/shared/` | Zod schemas both sides import |
-| `packages/blueprint-generator/` | Blueprint generation, for operator scripts |
-| `blueprints/` | Committed blueprints, including the suites' fixtures |
-| `scripts/`, `lib/` | Starting the game, test runners, databases, generation |
-| `tests/` | API unit, integration and E2E suites, and `testkit/` |
-| `evaluation/` | Evaluation (`docs/evaluation-pipeline.md`) |
-| `database/` | Local databases, gitignored (`docs/local-infrastructure.md`) |
-
-## Components
-
-**The server (`web/`).** `src/routes/api/[endpoint]/+server.ts` dispatches to the
-engine's endpoint registry: it checks the method, builds the context the endpoint
-needs, and delegates. `src/hooks.server.ts` resolves the profile cookie into
-`locals.player`. The browser reaches all of it through `src/lib/api/client.ts`,
-on the same origin, with no base URL.
-
-A few routes sit outside the registry: `player` and `players` (how you get a
-profile) and `ai-settings` (installation configuration). They reach the engine
-through `getEngine()`. Keep it short: a route belongs here only when the
-registry cannot express it.
-
-**The engine (`packages/game-engine/`).** Handlers take an `EngineContext` and
-reach the outside world only through it, which keeps storage substitutable
-(`docs/backend-conventions.md`).
-
-**Data.** `packages/game-engine/src/db/schema.ts` is the whole schema, always the
-current end state. Existing databases move forward through numbered steps keyed
-on `PRAGMA user_version`. Play uses `players`, `game_sessions` (one per case,
-owned by a player) and `game_events` (the append-only transcript, unique on `(session_id, sequence)`). The AI
-chosen on the settings page is per installation, in `app_settings`
-(`docs/ai-configuration.md`).
-
-The database is `<config root>/database/<name>/game.db`, one per worktree plus
-`prod` (`docs/local-infrastructure.md`). Tests never touch any of them.
-
-**Content.** Blueprints are JSON, searched in the config root's `blueprints/`
-and then the committed ones. A malformed blueprint is skipped and logged, never
-failing the whole catalog. Blueprints and images are cached on mtime and size, so edits take effect without a restart.
-
-**AI.** `mock` is built in; `ai.json` names the rest.
-`default`, the only one the browser plays as, resolves per request from the run
-override, then the settings page, then mock. `docs/ai-configuration.md` owns the
-detail.
+A turn is in-process end to end except the model call, and one transaction
+saves the session change and its events.
 
 ## Identity and access
 
-Signing in names a profile. It is created if missing, and the answer is a
-cookie holding its id. The server has two behaviours, and every route picks one:
+Signing in names a profile, creating it if missing; the answer is a cookie
+holding its id. Every route picks one of two behaviours:
 
 - **Per profile.** The request manages or plays a session. Without a profile it
   is refused. With one, it gets a context scoped to that profile's sessions and
-  events.
+  events. Nothing underneath catches a query that forgets the scope.
 - **No profile.** The request reads only content every profile shares. It is
   served to anyone, and its context holds nothing owned.
 
 **The criterion is ownership, not secrecy.** Does this touch somebody's
 sessions? If so it is per profile. The question is never how sensitive the data
 looks: shared content stays shared, and a session stays scoped even when it is
-dull. Endpoints declare which they are in `packages/game-engine/src/endpoints/index.ts`.
+dull. Endpoints declare which they are in
+`packages/game-engine/src/endpoints/index.ts`.
 
-## Request lifecycle
+## Ripple map
 
-A turn, end to end:
+A change in the left column is not finished until the right column agrees.
 
-1. The browser calls `POST /api/game-turn` with the session cookie and the line
-   as typed.
-2. `hooks.server.ts` resolves the cookie into `locals.player`.
-3. The dispatcher finds `game-turn`, checks the method, and builds a per-profile
-   `EngineContext`.
-4. The engine decides what the line means. A refusal, view or quit is answered
-   at once. An action loads the scoped session, checks the mode, loads the
-   blueprint, and calls the AI provider.
-5. One transaction saves the session change and its events. The answer comes
-   from that save, and the browser parses it with the shared schema.
-
-Every step is in-process except the model call.
-
-## What this architecture does not have
-
-No CORS, tokens, expiring image links, privileged database client, object
-storage, migration chain, mirrored modules, containers, port allocator beyond
-one port per worktree, or deploy pipeline. A single-player game on one machine
-needs none of them.
+| Change | Also touches |
+|---|---|
+| Narrator prompt, contract or context | mock provider and its tests, golden transcripts, eval prompt snapshots, curated extracts, "Narration at play" in `docs/blueprint-generation-flows.md` |
+| `packages/shared/src/age-profile.ts` | narrator prompts, generator guidance, the `age_appropriate_turn` judge's built prompt, the per-age tables in `age_appropriate`, `blueprint_broad` and `gm_broad`, player-text fields, eval prompt snapshots |
+| The definition of "earned" | talk prompt, mock, `gm_roleplay`, `gm_broad`, `gm_spoiler`, `gm_clue_discipline`, generator harness docs, `docs/game.md`, `docs/ai-runtime.md` |
+| Blueprint schema | generator prompt, context builders and "Narration at play", dimensions and mechanical checks, fixtures, truth set, extracts |
+| Event shapes | transcripts, resume, `playedEvents` readers, trace and runtime readers, goldens |
+| API contract | `packages/shared/src/mystery-api-contracts.ts` first, web store parsing, testkit fixtures |

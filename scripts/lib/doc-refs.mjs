@@ -18,6 +18,22 @@ const CODE_SPAN_RE = /`([^`\n]+)`/g;
 const LINK_RE = /\]\(([^)\s]+)\)/g;
 const SCRIPT_RE = /\bnpm\s+(?:-w\s+([\w-]+)\s+)?run\s+(?:-s\s+)?([\w:.-]+)/g;
 const PLACEHOLDER_RE = /[<>{}*$|\s]|\.\.\./;
+// Their paths are relative to a workspace that only exists at run time.
+const HARNESS_TEMPLATE_RE = /^evaluation\/[\w-]+-harness\/template\//;
+
+/**
+ * Whether the check reads a repo-relative Markdown path: every `AGENTS.md`,
+ * root or child, `QUICKSTART.md`, `docs/` and every README, except the
+ * generator/judge harness templates. `CLAUDE.md` never matches: each is a
+ * symlink to the `AGENTS.md` beside it, which is read instead.
+ */
+export function isCheckedDoc(file) {
+  if (HARNESS_TEMPLATE_RE.test(file)) return false;
+  const name = path.posix.basename(file);
+  return (
+    name === "AGENTS.md" || name === "README.md" || file === "QUICKSTART.md" || file.startsWith("docs/")
+  );
+}
 
 /**
  * Every reference in a Markdown doc, with its 1-based line. Scripts are read

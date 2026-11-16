@@ -8,6 +8,6 @@
   (`docs/testing.md`).
 - **`SCHEMA_VERSION` bumps reach `prod`.** The first branch to open `prod`
   upgrades it, and older checkouts are then locked out. A bump still needs its
-  `MIGRATIONS` step (`docs/backend-conventions.md`). This is a local game and
-  the database can be wiped: state the bump in the PR and proceed, with no
-  effort on preserving data or backups.
+  `MIGRATIONS` step in `src/db/client.ts`. This is a local game and the
+  database can be wiped (`docs/backend-conventions.md`): state the bump in the
+  PR and proceed, with no effort on preserving data or backups.

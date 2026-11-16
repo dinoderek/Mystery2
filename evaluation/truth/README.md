@@ -24,8 +24,7 @@ judge findings, pass 2 shows only disagreements; its labels record pass 2.
 
 Variants are rebuilt on demand. Turn plants' edits are `narration`, replacing
 the one place `find` occurs, or `patch`, JSON Patch on the event; one plant a
-turn. A blueprint plant is JSON
-Patch on its base, starting with a `test`.
+turn. A blueprint plant is JSON Patch on its base, starting with a `test`.
 
 The gate checks each plant applies, changes only what it names, and leaves a
 valid subject (a game that reconstructs, a Blueprint V2). `caught_by` lists the

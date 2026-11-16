@@ -76,6 +76,14 @@ describe("the committed suites", () => {
     const kinds = new Set(everything.subjects.map(({ subject }) => subject.kind));
     expect(kinds).toEqual(new Set(["blueprint", "game", "turn"]));
     expect(expected.filter((key) => !judged.has(key))).toEqual([]);
+
+    // "all" is the whole truth set: every base and plant, every game and
+    // variant, and narrated turns of each game and variant.
+    const ids = (kind: string) => everything.subjects.filter(({ subject }) => subject.kind === kind).map(({ subject }) => subject.id).sort();
+    expect(ids("blueprint")).toEqual([...set.bases.map(({ id }) => id), ...set.blueprintPlants.map(({ id }) => id)].sort());
+    expect(ids("game")).toEqual([...set.games.map(({ id }) => id), ...set.turnVariants.map(({ id }) => id)].sort());
+    const withTurns = new Set(everything.subjects.filter(({ subject }) => subject.kind === "turn").map(({ subject }) => subject.id.replace(/--s\d+$/, "")));
+    expect([...withTurns].sort()).toEqual(ids("game"));
   });
 });
 

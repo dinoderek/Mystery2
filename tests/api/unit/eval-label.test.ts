@@ -8,7 +8,7 @@ import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { createLabelCommand } from "../../../evaluation/label/command.ts";
-import { disagreementsAt } from "../../../evaluation/label/disagreements.ts";
+import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Selection } from "../../../evaluation/label/keys.ts";
 import { escapeHtml } from "../../../evaluation/label/page.ts";
@@ -334,6 +334,84 @@ describe("pass one", () => {
   });
 });
 
+/** The copied fixture with a catch on a planted variant: turn 5 is not planted there and counts, turn 3 is and does not. */
+async function withVariantFinding(dir: string): Promise<string> {
+  const finding = (sequence: number) => ({ sequence, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice" });
+  await writeJson(path.join(dir, "results/variant.json"), {
+    schema_version: "mystery-truth-results/1",
+    verdicts: [
+      {
+        subject: { side: "game", game: "medal", variant: "medal-leak", sequence: null },
+        judge: "gm_roleplay",
+        model: "claude-opus-stub",
+        sample: 0,
+        status: "pass",
+        findings: [finding(5), finding(3)],
+        duration_ms: null,
+        cost_usd: null,
+      },
+    ],
+  });
+  return dir;
+}
+
+describe("pass one, reported turns only", () => {
+  it("are the turns a finding points at, on the game or a variant, leaving out a variant's planted turns", async () => {
+    const fixture = await loadTruthSet(FIXTURE);
+    // The fixture's catch on medal-spoiler is at its planted turn 4; its age verdict at turn 4 found nothing.
+    expect([...reportedTurns(fixture.results.flatMap((results) => results.verdicts), fixture.turnVariants, "medal")]).toEqual([7]);
+    const set = await loadTruthSet(await withVariantFinding(await copyFixture()));
+    const turns = reportedTurns(set.results.flatMap((results) => results.verdicts), set.turnVariants, "medal");
+    expect([...turns].sort((a, b) => a - b)).toEqual([2, 5, 7]);
+    expect(reportedTurns(set.results.flatMap((results) => results.verdicts), set.turnVariants, "another").size).toBe(0);
+  });
+
+  it("serves only those turns, still showing no judge finding", async () => {
+    const dir = await withVariantFinding(await copyFixture());
+    const { server } = await serve(dir, { reported: true });
+    expect(await get(server, "/")).toMatchObject({ status: 303, location: "/turn/5" });
+    const pages = await Promise.all([2, 5, 7].map(async (sequence) => (await get(server, `/turn/${sequence}`)).body));
+    expect(pages.map((page) => /turn (\d) of 3/.exec(page)?.[1])).toEqual(["1", "2", "3"]);
+    for (const sequence of [1, 3, 4, 6, 8, 9]) expect((await get(server, `/turn/${sequence}`)).status).toBe(404);
+    expect(await post(server, "/turn/5", [])).toMatchObject({ status: 303, location: "/turn/7" });
+    const done = (await get(server, "/done")).body;
+    expect(done).toContain("3 of 3 turns done in pass 1.");
+    const everything = [...pages, done].join("\n");
+    for (const text of ["culprit-leak", "voice", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree"]) {
+      expect(everything).not.toContain(text);
+    }
+  });
+
+  it("says so when results judge the game but no finding points at a turn", async () => {
+    const dir = await copyFixture({ withResults: false });
+    await writeJson(path.join(dir, "results/clean.json"), {
+      schema_version: "mystery-truth-results/1",
+      verdicts: [
+        {
+          subject: { side: "game", game: "medal", variant: "medal-leak", sequence: null },
+          judge: "gm_roleplay",
+          model: "claude-opus-stub",
+          sample: 0,
+          status: "pass",
+          findings: [],
+          duration_ms: null,
+          cost_usd: null,
+        },
+      ],
+    });
+    const { server } = await serve(dir, { reported: true });
+    expect(await get(server, "/")).toMatchObject({ location: "/done" });
+    expect((await get(server, "/done")).body).toContain("No turn to label: no stored finding points at a turn of this game.");
+  });
+
+  it("refuses without stored results that judge the game or its variants, and in pass 2", async () => {
+    await expect(serve(await copyFixture({ withResults: false }), { reported: true })).rejects.toThrow(
+      /--reported needs stored judge results, and none in .*results judge game "medal" or its variants/,
+    );
+    await expect(serve(await copyFixture(), { reported: true, pass: 2 })).rejects.toThrow("--reported limits pass 1");
+  });
+});
+
 describe("pass two", () => {
   it("serves exactly the turns where a judge and the label disagree, with those findings", async () => {
     const dir = await copyFixture();
@@ -480,7 +558,7 @@ describe("./dev eval label", () => {
     expect(COMMANDS.map((command) => command.name)).toContain("label");
     const out: string[] = [];
     expect(await runEval(["label", "--help"], context(out, []), COMMANDS)).toBe(0);
-    for (const flag of ["--pass", "--by", "--truth", "--port"]) expect(out.join("\n")).toContain(flag);
+    for (const flag of ["--pass", "--reported", "--by", "--truth", "--port"]) expect(out.join("\n")).toContain(flag);
   });
 
   it("serves the named game until told to stop, then closes the server", async () => {
@@ -495,22 +573,35 @@ describe("./dev eval label", () => {
     expect(out.join("\n")).toMatch(/Labelling medal, pass 1, as Dino\.\nOpen http:\/\/127\.0\.0\.1:\d+\//);
   });
 
-  it("defaults to the repository's truth set and to the login name", async () => {
+  it("defaults to the repository's truth set, and needs --by", async () => {
     const out: string[] = [];
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);
-    expect(await runEval(["label", "medal"], context(out, err), [command])).toBe(1);
+    expect(await runEval(["label", "medal", "--by", "tester"], context(out, err), [command])).toBe(1);
     expect(err.join("\n")).toMatch(/no stored game "medal" in .*evaluation\/truth \(it holds: [^)]+\)/);
     const dir = await copyFixture();
-    expect(await runEval(["label", "medal", "--truth", dir], context(out, err), [command])).toBe(0);
-    expect(out.join("\n")).toContain(`as ${os.userInfo().username}.`);
+    expect(await runEval(["label", "medal", "--truth", dir], context(out, err), [command])).toBe(1);
+    expect(err.join("\n")).toContain("--by is required");
+    expect(out).toEqual([]);
+  });
+
+  it("labels only the reported turns with --reported", async () => {
+    const dir = await copyFixture();
+    const out: string[] = [];
+    let seen = "";
+    const command = createLabelCommand(async (server) => {
+      seen = (await get(server, "/turn/7")).body;
+    });
+    expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--reported"], context(out, []), [command])).toBe(0);
+    expect(seen).toContain("turn 2 of 2");
+    expect(out.join("\n")).toContain("Labelling medal, pass 1, reported turns, as tester.");
   });
 
   it("refuses pass 2 without results, with its message and exit 1", async () => {
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);
     const dir = await copyFixture({ withResults: false });
-    expect(await runEval(["label", "medal", "--pass", "2", "--truth", dir], context([], err), [command])).toBe(1);
+    expect(await runEval(["label", "medal", "--pass", "2", "--truth", dir, "--by", "tester"], context([], err), [command])).toBe(1);
     expect(err.join("\n")).toContain("pass 2 needs stored judge results");
   });
 
@@ -520,6 +611,8 @@ describe("./dev eval label", () => {
     [["label", "medal", "--port", "99999"], "--port takes a number"],
     [["label", "medal", "--port", "abc"], "--port takes a number"],
     [["label", "medal", "--by", " "], "--by needs a value"],
+    [["label", "medal"], "--by is required"],
+    [["label", "medal", "--by", "tester", "--pass", "2", "--reported"], "--reported limits pass 1"],
   ])("rejects %j as a usage error", async (argv, message) => {
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);

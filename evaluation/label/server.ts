@@ -7,9 +7,10 @@
  * served. A save that fails is shown on the page and logged, and changes
  * nothing in memory, so what the page shows is what the file holds.
  *
- * The first pass shows no judge finding: it never reads the stored results,
- * so no response can carry one. The second reads them, and lists only the turns
- * where a judge and the label disagree (`disagreements.ts`).
+ * The first pass shows no judge finding: it reads the stored results only for
+ * `reported`, to pick its turns, and keeps no verdict, so no response can carry
+ * one. The second reads them, and lists only the turns where a judge and the
+ * label disagree (`disagreements.ts`).
  */
 
 import fs from "node:fs/promises";
@@ -26,7 +27,7 @@ import type { TruthGame } from "../lib/truth/loader.ts";
 import { LabelFileSchema, parseTruthFile } from "../lib/truth/schemas.ts";
 import type { Fault, Label, StoredVerdict } from "../lib/truth/schemas.ts";
 import { latestLabel } from "../lib/truth/truth.ts";
-import { disagreementsAt, judgesGame } from "./disagreements.ts";
+import { disagreementsAt, judgesGame, judgesGameOrVariant, reportedTurns } from "./disagreements.ts";
 import { renderDonePage, renderMessagePage, renderTurnPage } from "./page.ts";
 import { buildTurnView, formFromLabel, playedTurns } from "./turns.ts";
 import type { FormState } from "./turns.ts";
@@ -37,6 +38,8 @@ export interface LabelServerOptions {
   /** The stored game's id. */
   game: string;
   pass: 1 | 2;
+  /** Pass 1 only: just the turns a stored finding points at (`reportedTurns`). */
+  reported?: boolean;
   /** Who gives the labels, as each label records it. */
   by: string;
   /** 0 takes any free port. */
@@ -104,7 +107,10 @@ function turnOf(pathname: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-type SessionOptions = Required<Pick<LabelServerOptions, "pass" | "by" | "now">>;
+type SessionOptions = Required<Pick<LabelServerOptions, "pass" | "by" | "now">> & {
+  /** The turns pass 1 is limited to; null for every turn. */
+  only: ReadonlySet<number> | null;
+};
 
 class Session {
   readonly labels: Label[];
@@ -127,10 +133,11 @@ class Session {
     return this.options.pass;
   }
 
-  /** The turns of this pass, in order: every turn, or in the second pass those with a disagreement. */
+  /** The turns of this pass, in order: every turn (or those reported), or in the second pass those with a disagreement. */
   turns(): number[] {
     const sequences = playedTurns(this.game.trace).map((event) => event.sequence);
-    if (this.pass === 1) return sequences;
+    const only = this.options.only;
+    if (this.pass === 1) return only === null ? sequences : sequences.filter((sequence) => only.has(sequence));
     return sequences.filter((sequence) => disagreementsAt(this.game.id, this.labels, this.verdicts, sequence).length > 0);
   }
 
@@ -146,7 +153,9 @@ class Session {
 
   summary(): string {
     const turns = this.turns();
-    if (turns.length === 0) return "No turn needs a second look: no judge and label disagree.";
+    if (turns.length === 0) {
+      return this.pass === 1 ? "No turn to label: no stored finding points at a turn of this game." : "No turn needs a second look: no judge and label disagree.";
+    }
     return `${turns.filter((sequence) => this.done(sequence)).length} of ${turns.length} turns done in pass ${this.pass}.`;
   }
 
@@ -241,8 +250,19 @@ async function loadSession(options: LabelServerOptions): Promise<Session> {
     const known = set.games.map((candidate) => candidate.id).join(", ") || "none";
     throw new InputError(`no stored game "${options.game}" in ${options.truthRoot} (it holds: ${known})`);
   }
-  // The first pass never reads a result, so it cannot show one.
-  const verdicts = options.pass === 2 ? set.results.flatMap((results) => results.verdicts) : [];
+  if (options.reported && options.pass !== 1) throw new InputError("--reported limits pass 1; pass 2 already shows only the turns where a judge and a label disagree");
+  const stored = set.results.flatMap((results) => results.verdicts);
+  let only: Set<number> | null = null;
+  if (options.reported) {
+    if (!judgesGameOrVariant(stored, game.id)) {
+      throw new InputError(
+        `--reported needs stored judge results, and none in ${path.join(options.truthRoot, "results")} judge game "${game.id}" or its variants; run the judges on it first, or label every turn`,
+      );
+    }
+    only = reportedTurns(stored, set.turnVariants, game.id);
+  }
+  // The first pass keeps no verdict, so it cannot show one.
+  const verdicts = options.pass === 2 ? stored : [];
   if (options.pass === 2 && !judgesGame(verdicts, game.id)) {
     throw new InputError(
       `pass 2 needs stored judge results, and none in ${path.join(options.truthRoot, "results")} judge game "${game.id}"; run the judges on it first, or label in pass 1`,
@@ -253,6 +273,7 @@ async function loadSession(options: LabelServerOptions): Promise<Session> {
     pass: options.pass,
     by: options.by,
     now: options.now ?? (() => new Date()),
+    only,
   });
 }
 

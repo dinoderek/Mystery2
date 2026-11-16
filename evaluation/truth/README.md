@@ -2,8 +2,8 @@
 
 What judges are scored against: subjects and their known faults, by **kind**,
 not judge. Self-play and planted material only; no credential or home path,
-gate-tested. Code: `evaluation/lib/truth/`; a file off its schema or layout
-fails loading.
+gate-tested. Code: `evaluation/lib/truth/`; files off schema or layout fail
+loading.
 
 Ids are file or folder names: `bases/<base>/blueprint.json` and `brief.json`;
 `games/<game>/trace.json`, as `judge game` reads it, and `labels.json`, from the
@@ -18,11 +18,11 @@ kind; `results/<name>.json`, from a suite (`bases.json`, from `store.ts`);
 **Labels.** A turn's faults, each a kind, `minor` or `major`, and a note; plus
 who, when and the pass. No fault means clean, not unlabelled. Labels append; a
 turn's latest is scored. `./dev eval label <game>` makes them: pass 1 hides
-judge findings, pass 2 shows only disagreements.
+judge findings, pass 2 shows only disagreements; its labels record pass 2.
 
 ## Plants
 
-Turn plants' edits are `narration`, replacing where `find` occurs once, or
+Variants are rebuilt on demand. Turn plants' edits are `narration`, replacing where `find` occurs once, or
 `patch`, JSON Patch on the event; one plant a turn. A blueprint plant is JSON
 Patch on its base, starting with a `test`.
 
@@ -46,11 +46,11 @@ candidates' findings name theirs.
 
 ## Results and tables
 
-Results hold verdicts (findings, model, sample, duration, cost), no prompt, log
-or workspace. `./dev eval suite <suite>` writes `results/<suite>.json`. A table,
-`scores/<name>.json`, is `./dev eval score <results>... --out` on the results
-its `inputs` name; the gate checks it byte for byte. Limits: a base is clean
-only as above; the blueprint side, one sample, has no measure of variation.
+Results hold verdicts only: no prompt, log or workspace. `./dev eval suite
+<suite>` writes `results/<suite>.json`. A table, `scores/<name>.json`, is
+`./dev eval score <results>... --out` on the results its `inputs` name; the gate
+regenerates and compares it. Limits: a base is clean only as above; the
+blueprint side, one sample, measures no variation.
 
 ## Made live
 

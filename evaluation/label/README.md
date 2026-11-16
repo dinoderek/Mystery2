@@ -47,8 +47,7 @@ tailscale serve --bg 51900      # once; `tailscale serve reset` undoes it
 ```
 
 Then open `https://<machine>.<tailnet>.ts.net/` on any device in the tailnet.
-Labels land in this checkout: commit them, and regenerate the score table as
-the truth set's README says.
+Labels land in this checkout: commit them and regenerate the score table.
 
 Code: `server.ts` (routes, names, hosts), `hub.ts` (games, passes, stages),
 `home.ts`, `page.ts`, `store.ts` (the label file), `keys.ts`;

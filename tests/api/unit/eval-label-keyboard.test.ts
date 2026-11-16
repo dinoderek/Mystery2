@@ -48,15 +48,24 @@ async function labels(): Promise<Label[]> {
 
 const turnOf = (target: Page) => Number(new URL(target.url()).pathname.split("/").pop());
 
-/** Presses the keys; the last one submits, so it waits for the page that answers (a refused save stays on its turn). */
-async function save(keys: string[], note?: string): Promise<void> {
-  for (const key of keys.slice(0, -1)) await page.keyboard.press(key);
-  if (note !== undefined) {
-    await page.keyboard.press("t");
-    await page.keyboard.type(note);
-    await page.keyboard.press("Escape");
+/** A key, or a note typed as the page asks: `t`, the text, then Escape. */
+type Step = string | { note: string };
+
+/**
+ * Takes the steps in order; the last is a key that submits, so it waits for
+ * the page that answers (a refused save stays on its turn).
+ */
+async function save(...steps: Step[]): Promise<void> {
+  for (const step of steps.slice(0, -1)) {
+    if (typeof step === "string") {
+      await page.keyboard.press(step);
+    } else {
+      await page.keyboard.press("t");
+      await page.keyboard.type(step.note);
+      await page.keyboard.press("Escape");
+    }
   }
-  await Promise.all([page.waitForEvent("load", { timeout: 5000 }), page.keyboard.press(keys.at(-1) as string)]);
+  await Promise.all([page.waitForEvent("load", { timeout: 5000 }), page.keyboard.press(steps.at(-1) as string)]);
 }
 
 describe("the labelling page, by keyboard in a browser", () => {
@@ -65,7 +74,7 @@ describe("the labelling page, by keyboard in a browser", () => {
     const before = (await labels()).length;
 
     const first = turnOf(page);
-    await save(["1", "m", "Enter"], "Names the hiding place before it is earned.");
+    await save("1", "m", { note: "Names the hiding place before it is earned." }, "Enter");
     expect((await labels()).at(-1)).toMatchObject({
       sequence: first,
       faults: [{ kind: "spoiler", severity: "major", note: "Names the hiding place before it is earned." }],
@@ -74,21 +83,23 @@ describe("the labelling page, by keyboard in a browser", () => {
     });
 
     const second = turnOf(page);
-    await save(["2", "Enter"]);
+    await save("2", "Enter");
     expect(await page.getByRole("alert").textContent()).toContain("a fault needs a note");
     expect(await labels()).toHaveLength(before + 1);
 
-    await save(["c"]);
+    // Clean empties the note as well as the kinds, or the server refuses a note without a fault.
+    await save({ note: "A second thought." }, "c");
     expect((await labels()).at(-1)).toMatchObject({ sequence: second, faults: [] });
 
+    // A key after Escape reaches the page again, not the note.
     const third = turnOf(page);
-    await save(["2", "3", "n", "Enter"], "Invents a gate and hands over a clue.");
+    await save("2", "n", { note: "Invents a gate and hands over a clue." }, "3", "Enter");
     expect((await labels()).at(-1)?.faults.map((fault) => [fault.kind, fault.severity])).toEqual([
       ["fabrication", "minor"],
       ["clue_handling", "minor"],
     ]);
 
-    await save(["p"]);
+    await save("p");
     expect(turnOf(page)).toBe(third);
     expect(await page.$$eval("input[name=kind]:checked", (boxes) => boxes.map((box) => (box as HTMLInputElement).value))).toEqual([
       "fabrication",

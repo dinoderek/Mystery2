@@ -6,7 +6,7 @@ Unit tests cover logic; integration, against the built server under the mock
 provider, covers endpoints, ownership, profiles, schema and content; E2E covers
 journeys, over HTTP (`tests/api/e2e`) and in the browser (`web/e2e`). Prefer
 integration for backend behaviour; Playwright is for browser journeys. The
-labelling page's keyboard runs in Chromium from the unit suite. A change
+evaluation server's labelling page is driven in Chromium from the unit suite. A change
 updates every suite it affects. Helpers live in `tests/testkit`.
 
 ## The gate

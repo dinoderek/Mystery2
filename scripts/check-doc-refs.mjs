@@ -3,10 +3,8 @@
  * Fails when a doc names a repo path, an `npm run` script, or a relative link
  * that does not exist. Part of phase 1 of the gate (`npm run check:doc-refs`).
  *
- * Checked: `AGENTS.md`, `QUICKSTART.md`, `docs/`, and every package or
- * pipeline README. Not checked: the generator/judge harness templates, whose
- * paths are relative to a workspace that only exists at run time. Paths git ignores
- * are runtime output — a database, a coverage report — and are skipped.
+ * Which docs are checked is `isCheckedDoc` in `lib/doc-refs.mjs`. Paths git
+ * ignores are runtime output — a database, a coverage report — and are skipped.
  */
 
 import { execFileSync } from "node:child_process";
@@ -15,11 +13,9 @@ import path from "node:path";
 import process from "node:process";
 import url from "node:url";
 
-import { candidateBases, checkPath, extractRefs, readScripts } from "./lib/doc-refs.mjs";
+import { candidateBases, checkPath, extractRefs, isCheckedDoc, readScripts } from "./lib/doc-refs.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
-
-const EXCLUDED = [/^evaluation\/[\w-]+-harness\/template\//];
 
 function docsToCheck() {
   return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "*.md"], {
@@ -28,15 +24,17 @@ function docsToCheck() {
   })
     .split("\n")
     .filter(Boolean)
-    .filter(
-      (f) =>
-        f === "AGENTS.md" ||
-        f === "QUICKSTART.md" ||
-        f.startsWith("docs/") ||
-        path.basename(f) === "README.md",
-    )
-    .filter((f) => !EXCLUDED.some((re) => re.test(f)))
-    .filter((f) => fs.existsSync(path.join(REPO_ROOT, f)));
+    .filter(isCheckedDoc)
+    .filter((f) => isRegularFile(path.join(REPO_ROOT, f)));
+}
+
+/** False for a missing path, a deleted tracked file, or a symlink. */
+function isRegularFile(abs) {
+  try {
+    return fs.lstatSync(abs).isFile();
+  } catch {
+    return false;
+  }
 }
 
 /** The subset of repo-relative paths git ignores. */

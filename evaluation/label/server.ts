@@ -38,7 +38,7 @@ export interface LabelServerOptions {
   /** The stored game's id. */
   game: string;
   pass: 1 | 2;
-  /** Pass 1 only: just the turns a stored finding points at (`reportedTurns`). */
+  /** Pass 1 only: just the turns a failing verdict's finding points at (`reportedTurns`). */
   reported?: boolean;
   /** Who gives the labels, as each label records it. */
   by: string;
@@ -154,7 +154,7 @@ class Session {
   summary(): string {
     const turns = this.turns();
     if (turns.length === 0) {
-      return this.pass === 1 ? "No turn to label: no stored finding points at a turn of this game." : "No turn needs a second look: no judge and label disagree.";
+      return this.pass === 1 ? "No turn to label: no finding of a failing verdict points at a turn of this game." : "No turn needs a second look: no judge and label disagree.";
     }
     return `${turns.filter((sequence) => this.done(sequence)).length} of ${turns.length} turns done in pass ${this.pass}.`;
   }

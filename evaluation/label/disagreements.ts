@@ -1,6 +1,6 @@
 /**
  * What the stored results say of a game's turns, for the labelling page: the
- * turns a judge reported on (`--reported` in pass 1), and where a judge and a
+ * turns a failing verdict reported on (`--reported` in pass 1), and where a judge and a
  * label disagree (pass 2).
  *
  * Per turn and kind, over every stored sample: a catch on a turn the label
@@ -53,16 +53,18 @@ export function judgesGameOrVariant(verdicts: readonly StoredVerdict[], game: st
 }
 
 /**
- * The turns of a game some stored finding points at, on the game itself or on
- * one of its planted variants, a finding of either severity in a verdict of any
- * status. A variant's planted turns do not count: their faults are known.
+ * The turns of a game some failing verdict's finding points at, on the game
+ * itself or on one of its planted variants, a finding of either severity.
+ * Findings on a passing or erroring verdict do not count: a judge stores minor
+ * findings on most turns it passes. A variant's planted turns do not count
+ * either: their faults are known.
  */
 export function reportedTurns(verdicts: readonly StoredVerdict[], variants: readonly TruthTurnVariant[], game: string): Set<number> {
   const planted = new Map(variants.map((variant) => [variant.id, new Set(variant.plants.map((plant) => plant.sequence))]));
   const reported = new Set<number>();
   for (const verdict of verdicts) {
     const subject = verdict.subject;
-    if (subject.side !== "game" || subject.game !== game) continue;
+    if (subject.side !== "game" || subject.game !== game || verdict.status !== "fail") continue;
     const known = subject.variant === null ? undefined : planted.get(subject.variant);
     for (const { sequence } of verdict.findings) {
       if (sequence !== null && !known?.has(sequence)) reported.add(sequence);

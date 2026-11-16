@@ -334,34 +334,34 @@ describe("pass one", () => {
   });
 });
 
-/** The copied fixture with a catch on a planted variant: turn 5 is not planted there and counts, turn 3 is and does not. */
+/**
+ * The copied fixture with a failing verdict on a planted variant: turn 5 is not
+ * planted there and counts, turn 3 is and does not. A passing verdict's minor
+ * finding at turn 6, and an erroring verdict's at turn 8, count for nothing.
+ */
 async function withVariantFinding(dir: string): Promise<string> {
-  const finding = (sequence: number) => ({ sequence, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice" });
+  const finding = (sequence: number, severity = "minor") => ({ sequence, kinds: ["out_of_character"], severity, judge_kind: "voice" });
+  const ageFinding = (sequence: number) => ({ sequence, kinds: ["not_age_fit"], severity: "minor", judge_kind: null });
+  const base = { judge: "gm_roleplay", model: "claude-opus-stub", sample: 0, duration_ms: null, cost_usd: null };
   await writeJson(path.join(dir, "results/variant.json"), {
     schema_version: "mystery-truth-results/1",
     verdicts: [
-      {
-        subject: { side: "game", game: "medal", variant: "medal-leak", sequence: null },
-        judge: "gm_roleplay",
-        model: "claude-opus-stub",
-        sample: 0,
-        status: "pass",
-        findings: [finding(5), finding(3)],
-        duration_ms: null,
-        cost_usd: null,
-      },
+      { ...base, subject: { side: "game", game: "medal", variant: "medal-leak", sequence: null }, status: "fail", findings: [finding(5, "major"), finding(3)] },
+      { ...base, subject: { side: "game", game: "medal", variant: null, sequence: 6 }, judge: "age_appropriate_turn", status: "pass", findings: [ageFinding(6)] },
+      { ...base, subject: { side: "game", game: "medal", variant: null, sequence: 8 }, judge: "age_appropriate_turn", status: "error", findings: [ageFinding(8)] },
     ],
   });
   return dir;
 }
 
 describe("pass one, reported turns only", () => {
-  it("are the turns a finding points at, on the game or a variant, leaving out a variant's planted turns", async () => {
+  it("are the turns a failing verdict's finding points at, on the game or a variant, leaving out a variant's planted turns", async () => {
     const fixture = await loadTruthSet(FIXTURE);
-    // The fixture's catch on medal-spoiler is at its planted turn 4; its age verdict at turn 4 found nothing.
+    // The fixture's catch on medal-spoiler is at its planted turn 4; its age verdict at turn 4 passed and found nothing.
     expect([...reportedTurns(fixture.results.flatMap((results) => results.verdicts), fixture.turnVariants, "medal")]).toEqual([7]);
     const set = await loadTruthSet(await withVariantFinding(await copyFixture()));
     const turns = reportedTurns(set.results.flatMap((results) => results.verdicts), set.turnVariants, "medal");
+    // Turns 6 and 8 carry findings too, but on a passing and an erroring verdict.
     expect([...turns].sort((a, b) => a - b)).toEqual([2, 5, 7]);
     expect(reportedTurns(set.results.flatMap((results) => results.verdicts), set.turnVariants, "another").size).toBe(0);
   });
@@ -382,7 +382,7 @@ describe("pass one, reported turns only", () => {
     }
   });
 
-  it("says so when results judge the game but no finding points at a turn", async () => {
+  it("says so when results judge the game but no failing verdict's finding points at a turn", async () => {
     const dir = await copyFixture({ withResults: false });
     await writeJson(path.join(dir, "results/clean.json"), {
       schema_version: "mystery-truth-results/1",
@@ -393,7 +393,7 @@ describe("pass one, reported turns only", () => {
           model: "claude-opus-stub",
           sample: 0,
           status: "pass",
-          findings: [],
+          findings: [{ sequence: 5, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice" }],
           duration_ms: null,
           cost_usd: null,
         },
@@ -401,7 +401,7 @@ describe("pass one, reported turns only", () => {
     });
     const { server } = await serve(dir, { reported: true });
     expect(await get(server, "/")).toMatchObject({ location: "/done" });
-    expect((await get(server, "/done")).body).toContain("No turn to label: no stored finding points at a turn of this game.");
+    expect((await get(server, "/done")).body).toContain("No turn to label: no finding of a failing verdict points at a turn of this game.");
   });
 
   it("refuses without stored results that judge the game or its variants, and in pass 2", async () => {

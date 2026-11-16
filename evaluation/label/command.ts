@@ -1,33 +1,39 @@
 /**
- * `./dev eval label <game>`: serves the labelling page for one stored game of
- * the truth set until stopped (`evaluation/truth/README.md`, "Labels").
+ * `./dev eval label [<game>]`: serves the labelling page over the stored games
+ * of the truth set until stopped (`evaluation/label/README.md`).
  *
- * It calls no model. `<game>` is the id of a stored game, the name of its
- * folder under `games/`; `--truth` names another truth set.
+ * It calls no model. With `<game>` it prints the address of that game's pass;
+ * without, the list of games. `--tailscale` lets the machine's tailnet name
+ * reach it through `tailscale serve`.
  */
 
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import { formatHelp, parseCommandArgs } from "../core/args.ts";
 import type { EvalCommand } from "../core/dispatch.ts";
-import { UsageError } from "../core/errors.ts";
+import { InputError, UsageError } from "../core/errors.ts";
 import { TRUTH_ROOT } from "../lib/truth/loader.ts";
-import { startLabelServer } from "./server.ts";
+import { PHASE_NAMES, phasePath } from "./hub.ts";
+import type { Phase } from "./hub.ts";
+import { checkName, startLabelServer } from "./server.ts";
 import type { LabelServer } from "./server.ts";
 
 const HELP = formatHelp({
-  usage: "label <game>",
+  usage: "label [<game>]",
   summary:
-    "Serves a local page, on the loopback address only, that shows one turn of a stored game at a time and\n" +
-    "saves what you find wrong in it into the game's labels.json. Pass 1 shows no judge finding. Pass 2 needs\n" +
-    "stored results and shows only the turns where a judge and your label disagree. --reported limits pass 1\n" +
-    "to the turns a failing verdict's finding points at, on the game or on a planted variant (not at the\n" +
-    "variant's planted turns), still showing no finding; it needs stored results for the game. Stop it with\n" +
-    "Ctrl-C.",
+    "Serves a local page, on the loopback address only, over every stored game of the truth set: search the\n" +
+    "games by name, stage and date, pick a pass, and label one turn at a time into the game's labels.json.\n" +
+    "Pass 1 shows no judge finding. Pass 2 needs stored results and shows only the turns where a judge and\n" +
+    "the label disagree. Reported turns are pass 1 limited to the turns a failing verdict's finding points\n" +
+    "at. Each visitor picks the name their labels record. With <game>, it prints that game's pass. Stop it\n" +
+    "with Ctrl-C.",
   options: [
-    ["--pass <1|2>", "which pass to label (default 1)"],
-    ["--by <name>", "who gives the labels, as each label records it (required)"],
-    ["--reported", "pass 1 only: just the turns a failing verdict's finding points at"],
+    ["--pass <1|2>", "with <game>: which pass to open (default 1)"],
+    ["--reported", "with <game>: pass 1, just the turns a failing verdict's finding points at"],
+    ["--by <name>", "who labels until a visitor picks a name (default: each visitor is asked)"],
+    ["--tailscale", "also answer to this machine's tailnet name, behind `tailscale serve`"],
     ["--truth <folder>", "the truth set (default: evaluation/truth)"],
     ["--port <n>", "the port to listen on (default: any free one)"],
   ],
@@ -65,35 +71,92 @@ export function waitForInterrupt(): Promise<void> {
   });
 }
 
+/** Where the Tailscale command line may be: on the path, or inside the macOS app. */
+const TAILSCALE_COMMANDS = ["tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale"];
+
+/** This machine's name on its tailnet, from `tailscale status --json`; throws `InputError` saying why it has none. */
+export async function tailscaleName(run: (command: string, args: string[]) => Promise<string> = defaultRun): Promise<string> {
+  const failures: string[] = [];
+  for (const command of TAILSCALE_COMMANDS) {
+    let output: string;
+    try {
+      output = await run(command, ["status", "--json"]);
+    } catch (error) {
+      failures.push(`${command}: ${(error as Error).message.split("\n")[0]}`);
+      continue;
+    }
+    let name: unknown;
+    try {
+      name = (JSON.parse(output) as { Self?: { DNSName?: unknown } }).Self?.DNSName;
+    } catch {
+      throw new InputError(`${command} status --json did not answer JSON`);
+    }
+    if (typeof name !== "string" || name.replace(/\.$/, "") === "") throw new InputError(`${command} status --json names no tailnet name for this machine: is it signed in?`);
+    return name.replace(/\.$/, "");
+  }
+  throw new InputError(`--tailscale could not ask Tailscale for this machine's name (${failures.join("; ")}); is Tailscale installed and running?`);
+}
+
+async function defaultRun(command: string, args: string[]): Promise<string> {
+  const { stdout } = await promisify(execFile)(command, args, { timeout: 10_000 });
+  return stdout;
+}
+
+export interface LabelCommandDeps {
+  /** How the tailnet name is found; a test passes its own. */
+  tailscaleName?: () => Promise<string>;
+}
+
+function phaseFor(pass: 1 | 2, reported: boolean): Phase {
+  if (reported) return "reported";
+  return pass === 2 ? "pass-2" : "pass-1";
+}
+
 /** The command, with the way it is told to stop; a test passes its own. */
-export function createLabelCommand(waitToStop: (server: LabelServer) => Promise<void>): EvalCommand {
+export function createLabelCommand(waitToStop: (server: LabelServer) => Promise<void>, deps: LabelCommandDeps = {}): EvalCommand {
   return {
     name: "label",
-    summary: "Label the turns of a stored game on a local page",
+    summary: "Label the turns of the stored games on a local page",
     help: HELP,
     async run(argv, context) {
       const { values, positionals } = parseCommandArgs(argv, {
-        options: { pass: { type: "string" }, reported: { type: "boolean" }, by: { type: "string" }, truth: { type: "string" }, port: { type: "string" } },
-        positionals: { min: 1, max: 1 },
+        options: {
+          pass: { type: "string" },
+          reported: { type: "boolean" },
+          by: { type: "string" },
+          tailscale: { type: "boolean" },
+          truth: { type: "string" },
+          port: { type: "string" },
+        },
+        positionals: { min: 0, max: 1 },
       });
+      const game = positionals[0] as string | undefined;
       const pass = pickPass(values.pass);
       const reported = values.reported === true;
       const port = pickPort(values.port);
       const truth = pickText(values.truth, "--truth");
-      const by = pickText(values.by, "--by");
-      if (by === undefined) throw new UsageError("--by is required: who gives the labels, as each label records it");
+      const byText = pickText(values.by, "--by");
+      if (game === undefined && (values.pass !== undefined || reported)) throw new UsageError("--pass and --reported open a game's pass: name the game");
       if (reported && pass !== 1) throw new UsageError("--reported limits pass 1; pass 2 already shows only the turns where a judge and a label disagree");
-      const server = await startLabelServer({
-        truthRoot: truth ? path.resolve(truth) : path.join(context.root, TRUTH_ROOT),
-        game: positionals[0],
-        pass,
-        reported,
-        by,
-        port,
-        log: context.err,
-      });
-      context.out(`Labelling ${positionals[0]}, pass ${pass}${reported ? ", reported turns" : ""}, as ${by}.\nOpen ${server.url}\nCtrl-C stops it.`);
+      let by: string | undefined;
       try {
+        by = byText === undefined ? undefined : checkName(byText);
+      } catch (error) {
+        throw new UsageError(`--by: ${(error as Error).message}`);
+      }
+      const hosts = values.tailscale === true ? [await (deps.tailscaleName ?? (() => tailscaleName()))()] : [];
+      const server = await startLabelServer({ truthRoot: truth ? path.resolve(truth) : path.join(context.root, TRUTH_ROOT), by, hosts, port, log: context.err });
+      try {
+        const phase = phaseFor(pass, reported);
+        // Refuses a game or a pass that is not there before printing an address for it.
+        if (game !== undefined) server.hub.phase(game, phase);
+        const start = game === undefined ? { path: "/", what: "the stored games" } : { path: `${phasePath(game, phase)}/`, what: `${game}, ${PHASE_NAMES[phase]}` };
+        const lines = [`Labelling ${start.what}${by ? `, as ${by} until a visitor picks a name` : ""}.`, `Open ${new URL(start.path, server.url).href}`];
+        if (hosts.length > 0) {
+          lines.push(`On the tailnet, run \`tailscale serve --bg ${server.port}\` once, then open https://${hosts[0]}${start.path}`);
+        }
+        lines.push("Ctrl-C stops it.");
+        context.out(lines.join("\n"));
         await waitToStop(server);
       } finally {
         await server.close();

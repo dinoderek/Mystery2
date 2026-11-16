@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium, devices } from "playwright";
 import type { Browser, Page } from "playwright";
 
 import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
@@ -31,7 +31,7 @@ const now = () => new Date((clock += 1000));
 beforeAll(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), "eval-label-keyboard-"));
   await fs.cp(FIXTURE, dir, { recursive: true });
-  server = await startLabelServer({ truthRoot: dir, game: "medal", pass: 1, by: "tester", now, log: () => {} });
+  server = await startLabelServer({ truthRoot: dir, by: "tester", now, log: () => {} });
   browser = await chromium.launch();
   page = await browser.newPage();
 });
@@ -70,7 +70,7 @@ async function save(...steps: Step[]): Promise<void> {
 
 describe("the labelling page, by keyboard in a browser", () => {
   it("saves each turn's label as the keys make it, and the file loads through the truth schema", async () => {
-    await page.goto(new URL("/", server.url).href);
+    await page.goto(new URL("/g/medal/pass-1/", server.url).href);
     const before = (await labels()).length;
 
     const first = turnOf(page);
@@ -108,5 +108,41 @@ describe("the labelling page, by keyboard in a browser", () => {
 
     const set = await loadTruthSet(dir);
     expect(set.games[0].labels).toHaveLength(before + 3);
+  });
+});
+
+describe("the labelling page, by touch on a phone", () => {
+  it("asks the name, then saves a turn tapped out from the list of games, the save always in reach", async () => {
+    const context = await browser.newContext({ ...devices["Pixel 7"] });
+    const phone = await context.newPage();
+    try {
+      await phone.goto(new URL("/", server.url).href);
+      await phone.getByRole("link", { name: "change" }).tap();
+      await phone.locator("input[name=name]").fill("phone_labeller");
+      await Promise.all([phone.waitForURL(new URL("/", server.url).href), phone.getByRole("button", { name: "Use this name" }).tap()]);
+      expect(await phone.locator("header").textContent()).toContain("labelling as phone_labeller");
+
+      await Promise.all([phone.waitForURL(/\/g\/medal\/pass-1\/turn\/\d+$/), phone.getByRole("link", { name: "pass 1", exact: true }).tap()]);
+      const turn = turnOf(phone);
+      // The keys are not shown on a touch screen, and the save stays on screen while the page scrolls.
+      expect(await phone.locator("kbd").first().isVisible()).toBe(false);
+      await phone.evaluate(() => window.scrollTo(0, 0));
+      const bar = await phone.locator(".actions").boundingBox();
+      const height = phone.viewportSize()?.height ?? 0;
+      expect(bar && bar.y + bar.height).toBeLessThanOrEqual(height);
+      expect(bar && bar.y).toBeGreaterThan(0);
+
+      await phone.locator(".choices label", { hasText: "out of character" }).tap();
+      await phone.locator(".choices label", { hasText: "major" }).tap();
+      await phone.locator("input[name=note]").fill("Talks like a narrator.");
+      await Promise.all([phone.waitForEvent("load"), phone.getByRole("button", { name: /Save and go on/ }).tap()]);
+      expect((await labels()).at(-1)).toMatchObject({
+        sequence: turn,
+        by: "phone_labeller",
+        faults: [{ kind: "out_of_character", severity: "major", note: "Talks like a narrator." }],
+      });
+    } finally {
+      await context.close();
+    }
   });
 });

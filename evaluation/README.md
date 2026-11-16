@@ -63,9 +63,9 @@ threshold was not met).
 
 ## Retries
 
-A judge is retried, up to its binding's `retries` (attempts after the first), on a non-zero exit, a
-timeout, stdout that is not JSON, an `extract_path` miss, or an answer failing
-the dimension's Zod schema. Generation is retried on the same, and on output
+A judge is retried, up to its binding's `retries` (attempts after the first), on
+a non-zero exit, a timeout, stdout that is not JSON, an `extract_path` miss, or
+an answer failing the dimension's Zod schema. Generation is retried on the same, and on output
 failing Blueprint V2 validation. Each attempt has its own log.
 
 At the login's usage limit nothing is retried and no judge records an error:

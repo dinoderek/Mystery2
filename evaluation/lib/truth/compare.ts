@@ -5,8 +5,9 @@
  * each run holds it on; a judge that either run holds on more than one model
  * is one member per model, `<judge>@<model>`, so a member is compared with
  * itself. `onModel` keeps one model's verdicts of a run before pairing, so two
- * models in one file, or a model in each, compare by name. For each member and kind, the units both runs judged are **paired**.
- * A unit one run alone judged is listed and never compared. Each run's call on
+ * models in one file, or a model in each, compare by name. For each member and
+ * kind, the units both runs judged are **paired**. A unit one run alone judged
+ * is listed and never compared. Each run's call on
  * a unit is the score's: it catches when most of its judging samples do, and a
  * tie is not a catch (`score.ts`).
  *

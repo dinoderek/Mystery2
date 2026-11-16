@@ -1,0 +1,3140 @@
+{
+  "schema_version": "mystery-truth-results/1",
+  "verdicts": [
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 203350,
+      "cost_usd": 0.04157457
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 70293,
+      "cost_usd": 0.2399252
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 159625,
+      "cost_usd": 0.03380385
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 49964,
+      "cost_usd": 0.21897480000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 237937,
+      "cost_usd": 0.04669753
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 78479,
+      "cost_usd": 0.304599
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 175285,
+      "cost_usd": 0.035277050000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        }
+      ],
+      "duration_ms": 46560,
+      "cost_usd": 0.21160749999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 226817,
+      "cost_usd": 0.045325019999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 44050,
+      "cost_usd": 0.20437570000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 163260,
+      "cost_usd": 0.03228088
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 43909,
+      "cost_usd": 0.1963386
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 333484,
+      "cost_usd": 0.12850551999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 59864,
+      "cost_usd": 0.20964119999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 183899,
+      "cost_usd": 0.03582542
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 55410,
+      "cost_usd": 0.22632180000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 275659,
+      "cost_usd": 0.12692279
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 47321,
+      "cost_usd": 0.20445290000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 215645,
+      "cost_usd": 0.04247228
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 67920,
+      "cost_usd": 0.24967489999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 249247,
+      "cost_usd": 0.09784388999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 48987,
+      "cost_usd": 0.2119715
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 240507,
+      "cost_usd": 0.04560108
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 49115,
+      "cost_usd": 0.2099455
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 303094,
+      "cost_usd": 0.11470683999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 64685,
+      "cost_usd": 0.2269152
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 277864,
+      "cost_usd": 0.07345834
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        }
+      ],
+      "duration_ms": 55406,
+      "cost_usd": 0.2266948
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 211154,
+      "cost_usd": 0.04049237
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 46864,
+      "cost_usd": 0.2110472
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 211527,
+      "cost_usd": 0.04331258
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 61672,
+      "cost_usd": 0.2436649
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 152281,
+      "cost_usd": 0.032193570000000005
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 58002,
+      "cost_usd": 0.23756149999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 250736,
+      "cost_usd": 0.049657049999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 55040,
+      "cost_usd": 0.2111881
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 322741,
+      "cost_usd": 0.09339636000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 47194,
+      "cost_usd": 0.2151822
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 235574,
+      "cost_usd": 0.039871290000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 40836,
+      "cost_usd": 0.2049599
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 261786,
+      "cost_usd": 0.07795995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 51362,
+      "cost_usd": 0.2247421
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 180022,
+      "cost_usd": 0.033354770000000006
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 43759,
+      "cost_usd": 0.1713113
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 201915,
+      "cost_usd": 0.03791171
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 42903,
+      "cost_usd": 0.1644958
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 231642,
+      "cost_usd": 0.04544837
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 41931,
+      "cost_usd": 0.1638054
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 214000,
+      "cost_usd": 0.04031787
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 39685,
+      "cost_usd": 0.1670839
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 147520,
+      "cost_usd": 0.028084380000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 45681,
+      "cost_usd": 0.17561229999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 85131,
+      "cost_usd": 0.016661250000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        }
+      ],
+      "duration_ms": 36672,
+      "cost_usd": 0.15108370000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "haiku",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 217433,
+      "cost_usd": 0.04012537
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "sonnet",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 39315,
+      "cost_usd": 0.1535882
+    }
+  ]
+}

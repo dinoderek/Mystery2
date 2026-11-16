@@ -1,0 +1,6679 @@
+{
+  "schema_version": "mystery-truth-results/1",
+  "verdicts": [
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 81896,
+      "cost_usd": 0.6694236
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        }
+      ],
+      "duration_ms": 233951,
+      "cost_usd": 1.2621394000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 122667,
+      "cost_usd": 0.8357192
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 77932,
+      "cost_usd": 0.5473612000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 70465,
+      "cost_usd": 0.6180855999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 166636,
+      "cost_usd": 0.9215586
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 168501,
+      "cost_usd": 0.9639928
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 85212,
+      "cost_usd": 0.5391948
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 103260,
+      "cost_usd": 0.6921376
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 154530,
+      "cost_usd": 0.8979429999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-character-grounding"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 70062,
+      "cost_usd": 0.594093
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 114184,
+      "cost_usd": 0.5279720000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 187083,
+      "cost_usd": 1.090314
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 186698,
+      "cost_usd": 1.0388038
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 119665,
+      "cost_usd": 0.7811180000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 99892,
+      "cost_usd": 0.6349423999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 180389,
+      "cost_usd": 0.9616198000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 154396,
+      "cost_usd": 0.9020128000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 86106,
+      "cost_usd": 0.5559968
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 84351,
+      "cost_usd": 0.692227
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 133078,
+      "cost_usd": 0.8667518
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-clue-graph"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 66591,
+      "cost_usd": 0.6336446
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 83685,
+      "cost_usd": 0.5125076
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 225403,
+      "cost_usd": 1.1821846
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 148038,
+      "cost_usd": 0.9203738
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 83551,
+      "cost_usd": 0.6714712
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 61958,
+      "cost_usd": 0.5949907999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 122070,
+      "cost_usd": 0.8207052
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 150838,
+      "cost_usd": 0.9226668000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 82611,
+      "cost_usd": 0.6704988000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 99138,
+      "cost_usd": 0.7228264
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 116912,
+      "cost_usd": 0.7777798000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-knowledge-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 65686,
+      "cost_usd": 0.6053415999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 74966,
+      "cost_usd": 0.501695
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 186363,
+      "cost_usd": 1.1132117999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 157355,
+      "cost_usd": 0.9338364
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 89287,
+      "cost_usd": 0.6661592
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 73569,
+      "cost_usd": 0.6258926
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 148056,
+      "cost_usd": 0.9104730000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 152107,
+      "cost_usd": 0.9068002000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 57671,
+      "cost_usd": 0.589509
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 99703,
+      "cost_usd": 0.7127728
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 116600,
+      "cost_usd": 0.8035829999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-path-payoff"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 84691,
+      "cost_usd": 0.6251009999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 59428,
+      "cost_usd": 0.6106648000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 223296,
+      "cost_usd": 1.0670536
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 159882,
+      "cost_usd": 0.9409814
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 76323,
+      "cost_usd": 0.6536248
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 61752,
+      "cost_usd": 0.6159595999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 223902,
+      "cost_usd": 0.9174502
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 287465,
+      "cost_usd": 0.858321
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 90269,
+      "cost_usd": 0.6923112
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 72941,
+      "cost_usd": 0.6546972
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 107598,
+      "cost_usd": 0.7521568
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-solve-depth"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 49557,
+      "cost_usd": 0.5644376000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 91525,
+      "cost_usd": 0.5466066
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 195874,
+      "cost_usd": 1.1144821999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 131231,
+      "cost_usd": 0.8749082000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 77243,
+      "cost_usd": 0.5541592
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 75837,
+      "cost_usd": 0.6295578
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 119595,
+      "cost_usd": 0.8132644
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 167214,
+      "cost_usd": 0.9289438000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 88427,
+      "cost_usd": 0.6358652
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 110964,
+      "cost_usd": 0.7522323999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 124832,
+      "cost_usd": 0.8252322
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": "glitterwood-forest-timeline-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 76600,
+      "cost_usd": 0.6755088
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 104357,
+      "cost_usd": 0.5051276
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 262536,
+      "cost_usd": 1.255679
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 143227,
+      "cost_usd": 0.9135168
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 89511,
+      "cost_usd": 0.6558394
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 76255,
+      "cost_usd": 0.622661
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 169185,
+      "cost_usd": 0.9693954000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 183674,
+      "cost_usd": 0.9403006
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 83416,
+      "cost_usd": 0.6588052
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 148019,
+      "cost_usd": 0.7820878
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 110561,
+      "cost_usd": 0.7162041999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "glitterwood-forest",
+        "plant": null
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 92844,
+      "cost_usd": 0.62122
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 72271,
+      "cost_usd": 0.5109464
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 246955,
+      "cost_usd": 1.224267
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 128423,
+      "cost_usd": 0.8547224
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 77059,
+      "cost_usd": 0.5596694
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 96876,
+      "cost_usd": 0.6590618
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 263520,
+      "cost_usd": 1.2420233999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 199738,
+      "cost_usd": 1.0632978
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 83836,
+      "cost_usd": 0.6656408
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 91714,
+      "cost_usd": 0.6817134
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 126225,
+      "cost_usd": 0.8434121999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-age-appropriate"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 94482,
+      "cost_usd": 0.6655394000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 55258,
+      "cost_usd": 0.4426278
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 221007,
+      "cost_usd": 1.1686292
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 97628,
+      "cost_usd": 0.7804631999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 70736,
+      "cost_usd": 0.612512
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 75308,
+      "cost_usd": 0.6151806000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 209289,
+      "cost_usd": 1.0546004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 153867,
+      "cost_usd": 0.9116839999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 102400,
+      "cost_usd": 0.5907106
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 95603,
+      "cost_usd": 0.6636818
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 117171,
+      "cost_usd": 0.7836174
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-character-grounding"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 95086,
+      "cost_usd": 0.7069014
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 79003,
+      "cost_usd": 0.6655350000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 112700,
+      "cost_usd": 0.530401
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 136899,
+      "cost_usd": 0.8610244
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 100322,
+      "cost_usd": 0.7167142
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 100671,
+      "cost_usd": 0.6543938
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 166147,
+      "cost_usd": 0.9642845999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 148455,
+      "cost_usd": 0.8969552
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 112155,
+      "cost_usd": 0.6504665999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 99022,
+      "cost_usd": 0.6863258
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 147399,
+      "cost_usd": 0.897881
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-clue-graph"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 71304,
+      "cost_usd": 0.6248174
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 37800,
+      "cost_usd": 0.1613712
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 98819,
+      "cost_usd": 0.48082
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 51548,
+      "cost_usd": 0.3138404
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 54694,
+      "cost_usd": 0.3512246
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 61426,
+      "cost_usd": 0.3505452
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 73415,
+      "cost_usd": 0.39804239999999996
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 93773,
+      "cost_usd": 0.4445758
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 63622,
+      "cost_usd": 0.26280800000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 70796,
+      "cost_usd": 0.2986328
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 82653,
+      "cost_usd": 0.4272244
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-fairness"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 65082,
+      "cost_usd": 0.2580536
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 33137,
+      "cost_usd": 0.1589098
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 89108,
+      "cost_usd": 0.48641599999999996
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 71163,
+      "cost_usd": 0.4121674
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 63901,
+      "cost_usd": 0.2902792
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 66969,
+      "cost_usd": 0.3235646
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 60305,
+      "cost_usd": 0.37915519999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 60776,
+      "cost_usd": 0.3592576
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 57579,
+      "cost_usd": 0.2536674
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 45226,
+      "cost_usd": 0.2423658
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 61991,
+      "cost_usd": 0.32391140000000007
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-knowledge-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 62613,
+      "cost_usd": 0.29452000000000006
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 33494,
+      "cost_usd": 0.15190399999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 74982,
+      "cost_usd": 0.4438808
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 49585,
+      "cost_usd": 0.3251272
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 43729,
+      "cost_usd": 0.18908180000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 66870,
+      "cost_usd": 0.3365268
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 63868,
+      "cost_usd": 0.390238
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 75838,
+      "cost_usd": 0.420174
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 53555,
+      "cost_usd": 0.2571796
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 49240,
+      "cost_usd": 0.32724980000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 63775,
+      "cost_usd": 0.372991
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": "greenhouse-prizewinner-timeline-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 40176,
+      "cost_usd": 0.1961388
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 59270,
+      "cost_usd": 0.447194
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        }
+      ],
+      "duration_ms": 353065,
+      "cost_usd": 1.58139
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 111866,
+      "cost_usd": 0.7785276
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 95494,
+      "cost_usd": 0.5729072
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 106714,
+      "cost_usd": 0.7151460000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 213770,
+      "cost_usd": 1.0425099999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 209753,
+      "cost_usd": 1.065814
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 82777,
+      "cost_usd": 0.6465590000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 95056,
+      "cost_usd": 0.6733256000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 141298,
+      "cost_usd": 0.8251814
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "greenhouse-prizewinner",
+        "plant": null
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 77288,
+      "cost_usd": 0.6372094
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 36862,
+      "cost_usd": 0.1645086
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 79047,
+      "cost_usd": 0.46497
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 74005,
+      "cost_usd": 0.4183318
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 44295,
+      "cost_usd": 0.20184039999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 49377,
+      "cost_usd": 0.3110034
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 70492,
+      "cost_usd": 0.40544679999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 73113,
+      "cost_usd": 0.4197796
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 54273,
+      "cost_usd": 0.2492032
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 69332,
+      "cost_usd": 0.344587
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 46607,
+      "cost_usd": 0.3454532
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-age-appropriate"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 57913,
+      "cost_usd": 0.253465
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 34544,
+      "cost_usd": 0.1601534
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": "character_grounding"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 91204,
+      "cost_usd": 0.5230538
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 64342,
+      "cost_usd": 0.3595288
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42900,
+      "cost_usd": 0.18883319999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 47928,
+      "cost_usd": 0.3274856
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 66667,
+      "cost_usd": 0.39442599999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 79020,
+      "cost_usd": 0.4411446
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 45928,
+      "cost_usd": 0.3382658
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 54795,
+      "cost_usd": 0.28035960000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 68573,
+      "cost_usd": 0.37639920000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-character-grounding"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 47239,
+      "cost_usd": 0.2678504
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 38670,
+      "cost_usd": 0.1651842
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 77795,
+      "cost_usd": 0.44568019999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 86293,
+      "cost_usd": 0.39994660000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 50697,
+      "cost_usd": 0.2066338
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 67255,
+      "cost_usd": 0.3481412
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 68075,
+      "cost_usd": 0.3854916
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "timeline_coherence"
+        }
+      ],
+      "duration_ms": 80243,
+      "cost_usd": 0.438672
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 47892,
+      "cost_usd": 0.249622
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 58140,
+      "cost_usd": 0.310994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 68477,
+      "cost_usd": 0.3811394
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-clue-graph"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 52008,
+      "cost_usd": 0.22280699999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 32628,
+      "cost_usd": 0.15841739999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 90402,
+      "cost_usd": 0.4664682
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 68579,
+      "cost_usd": 0.37432019999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42519,
+      "cost_usd": 0.2014056
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 49641,
+      "cost_usd": 0.28545180000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 63341,
+      "cost_usd": 0.3829642
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        }
+      ],
+      "duration_ms": 62123,
+      "cost_usd": 0.389169
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 54073,
+      "cost_usd": 0.2493224
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 55384,
+      "cost_usd": 0.27890360000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 59899,
+      "cost_usd": 0.3461718
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-fairness"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 56331,
+      "cost_usd": 0.25942919999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42673,
+      "cost_usd": 0.1796584
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 87695,
+      "cost_usd": 0.48580379999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 69204,
+      "cost_usd": 0.38203180000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 49690,
+      "cost_usd": 0.2065578
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 58019,
+      "cost_usd": 0.30420020000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 60921,
+      "cost_usd": 0.3867359999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "timeline_coherence"
+        }
+      ],
+      "duration_ms": 85958,
+      "cost_usd": 0.4134208
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 47880,
+      "cost_usd": 0.1967884
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 55814,
+      "cost_usd": 0.3130142
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 61126,
+      "cost_usd": 0.2849608
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-path-payoff"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 60052,
+      "cost_usd": 0.3037936
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 39875,
+      "cost_usd": 0.1800366
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 76270,
+      "cost_usd": 0.4570898
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 71215,
+      "cost_usd": 0.3644904
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42566,
+      "cost_usd": 0.19706620000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 53268,
+      "cost_usd": 0.312628
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 75505,
+      "cost_usd": 0.43611920000000004
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 78044,
+      "cost_usd": 0.4410168
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 44450,
+      "cost_usd": 0.22363539999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 53486,
+      "cost_usd": 0.3141552
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 57478,
+      "cost_usd": 0.3534934
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": "large-snow-foxes-solve-depth"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 47223,
+      "cost_usd": 0.21851020000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 86490,
+      "cost_usd": 0.5479324
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 277920,
+      "cost_usd": 1.3584758000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 138180,
+      "cost_usd": 0.8524369999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 75907,
+      "cost_usd": 0.6370016
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 94366,
+      "cost_usd": 0.6677360000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 244448,
+      "cost_usd": 1.184733
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 153859,
+      "cost_usd": 0.8928358
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 75525,
+      "cost_usd": 0.5777502
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 129807,
+      "cost_usd": 0.8376873999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 117788,
+      "cost_usd": 0.758168
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "large-snow-foxes",
+        "plant": null
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 67995,
+      "cost_usd": 0.6122342000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 27261,
+      "cost_usd": 0.2088824
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "major",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 60893,
+      "cost_usd": 0.31217619999999996
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 40303,
+      "cost_usd": 0.2853336
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 32143,
+      "cost_usd": 0.2393712
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 37768,
+      "cost_usd": 0.22505600000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 52427,
+      "cost_usd": 0.27867359999999997
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 51023,
+      "cost_usd": 0.28367659999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 31342,
+      "cost_usd": 0.21938480000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42444,
+      "cost_usd": 0.2470676
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 46015,
+      "cost_usd": 0.2635694
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-age-appropriate"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 29715,
+      "cost_usd": 0.20597159999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 37149,
+      "cost_usd": 0.1664756
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "age_appropriate"
+          ],
+          "severity": "minor",
+          "judge_kind": "age_appropriate"
+        }
+      ],
+      "duration_ms": 91304,
+      "cost_usd": 0.4080608
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 42196,
+      "cost_usd": 0.2675958
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 34591,
+      "cost_usd": 0.1733274
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 52932,
+      "cost_usd": 0.263056
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 62767,
+      "cost_usd": 0.3280742
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 66049,
+      "cost_usd": 0.3407352
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 47494,
+      "cost_usd": 0.2194858
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 40237,
+      "cost_usd": 0.2588704
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 44495,
+      "cost_usd": 0.2530198
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-fairness"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 55865,
+      "cost_usd": 0.2586962
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 32048,
+      "cost_usd": 0.15960660000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 71843,
+      "cost_usd": 0.41300099999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 38150,
+      "cost_usd": 0.2483882
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 32831,
+      "cost_usd": 0.1600956
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 38147,
+      "cost_usd": 0.22160480000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 45233,
+      "cost_usd": 0.2727222
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 49721,
+      "cost_usd": 0.2849798
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 31500,
+      "cost_usd": 0.16181340000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 53807,
+      "cost_usd": 0.2764242
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 44840,
+      "cost_usd": 0.26144219999999996
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-knowledge-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 40388,
+      "cost_usd": 0.2330122
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 25967,
+      "cost_usd": 0.19924180000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": "path_payoff"
+        }
+      ],
+      "duration_ms": 60863,
+      "cost_usd": 0.35004919999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 40498,
+      "cost_usd": 0.24823959999999998
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 35541,
+      "cost_usd": 0.2241028
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 38174,
+      "cost_usd": 0.2181616
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 53907,
+      "cost_usd": 0.29939399999999994
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 58278,
+      "cost_usd": 0.30305839999999995
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 27713,
+      "cost_usd": 0.22104820000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 38663,
+      "cost_usd": 0.24224320000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 48598,
+      "cost_usd": 0.24854360000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-path-payoff"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 31839,
+      "cost_usd": 0.21102700000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 37356,
+      "cost_usd": 0.16908120000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 79035,
+      "cost_usd": 0.42598239999999993
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 48589,
+      "cost_usd": 0.309805
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 45148,
+      "cost_usd": 0.2012952
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 45029,
+      "cost_usd": 0.2214852
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 59599,
+      "cost_usd": 0.287503
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 57599,
+      "cost_usd": 0.31584219999999996
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 36258,
+      "cost_usd": 0.17614120000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 53085,
+      "cost_usd": 0.2215744
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "major",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 51874,
+      "cost_usd": 0.2894658
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-solve-depth"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 60464,
+      "cost_usd": 0.2410232
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 25238,
+      "cost_usd": 0.2035248
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "path_payoff"
+          ],
+          "severity": "minor",
+          "judge_kind": "path_payoff"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "character_grounding"
+          ],
+          "severity": "minor",
+          "judge_kind": "character_grounding"
+        }
+      ],
+      "duration_ms": 92976,
+      "cost_usd": 0.4640746
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 39664,
+      "cost_usd": 0.2546578
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 35219,
+      "cost_usd": 0.22879780000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 35229,
+      "cost_usd": 0.2154262
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 44868,
+      "cost_usd": 0.2561888
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": "timeline_coherence"
+        }
+      ],
+      "duration_ms": 48373,
+      "cost_usd": 0.266942
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 31143,
+      "cost_usd": 0.21353900000000003
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 52094,
+      "cost_usd": 0.2722452
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness"
+        }
+      ],
+      "duration_ms": 51424,
+      "cost_usd": 0.2734114
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": "lighthouse-lens-timeline-coherence"
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "timeline_coherence"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
+      ],
+      "duration_ms": 32041,
+      "cost_usd": 0.20611859999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "age_appropriate",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 84281,
+      "cost_usd": 0.5667563999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "blueprint_broad",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "clue_graph"
+          ],
+          "severity": "minor",
+          "judge_kind": "clue_graph"
+        }
+      ],
+      "duration_ms": 266801,
+      "cost_usd": 1.1976916000000002
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "character_grounding",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 94958,
+      "cost_usd": 0.6197628
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "clue_graph",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 71800,
+      "cost_usd": 0.5412117999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 71616,
+      "cost_usd": 0.5344506
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "knowledge_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 150549,
+      "cost_usd": 0.8372464
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "knowledge_timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        },
+        {
+          "sequence": null,
+          "kinds": [
+            "knowledge_coherence"
+          ],
+          "severity": "minor",
+          "judge_kind": "knowledge_coherence"
+        }
+      ],
+      "duration_ms": 209566,
+      "cost_usd": 1.0313238
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "path_payoff",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 65325,
+      "cost_usd": 0.5203744
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "solve_depth",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 111162,
+      "cost_usd": 0.6659364000000001
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "solve_depth_fairness",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "solve_depth"
+          ],
+          "severity": "minor",
+          "judge_kind": "solve_depth"
+        }
+      ],
+      "duration_ms": 146588,
+      "cost_usd": 0.7524057999999999
+    },
+    {
+      "subject": {
+        "side": "blueprint",
+        "base": "lighthouse-lens",
+        "plant": null
+      },
+      "judge": "timeline_coherence",
+      "model": "opus",
+      "sample": 0,
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 68206,
+      "cost_usd": 0.5541514000000001
+    }
+  ]
+}

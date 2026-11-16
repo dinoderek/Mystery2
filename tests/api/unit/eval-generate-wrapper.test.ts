@@ -24,10 +24,11 @@ const CANONICAL_PROMPT = path.join(
 
 const FIXTURE_BLUEPRINT = { title: "Stand-in blueprint" };
 
-// A stand-in `claude`: it records the prompt the workspace holds at the moment
-// the agent would start, then writes the blueprint the way the agent does.
-// No model is called.
+// A stand-in `claude`: it records its arguments and the prompt the workspace
+// holds at the moment the agent would start, then writes the blueprint the way
+// the agent does. No model is called.
 const STAND_IN_CLAUDE = `#!/usr/bin/env bash
+node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify(process.argv.slice(2)))' claude-args.json "$@"
 cp prompts/generator-prompt.md prompt-seen-by-agent.md
 printf '%s' '${JSON.stringify(FIXTURE_BLUEPRINT)}' > blueprint.json
 `;
@@ -84,7 +85,37 @@ async function runWrapper(options: { renderedPrompt?: string | null }) {
   return { result, workspace: path.join(runDir, "generator") };
 }
 
+function valueOf(args: readonly string[], flag: string): string | undefined {
+  const at = args.indexOf(flag);
+  return at === -1 ? undefined : args[at + 1];
+}
+
 describe("claude-generate.sh wrapper", () => {
+  it("launches the agent lean, on the binding's model at high effort, and returns its blueprint", async () => {
+    const { result, workspace } = await runWrapper({ renderedPrompt: "prompt" });
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      result: JSON.stringify(FIXTURE_BLUEPRINT, null, 2) + "\n",
+    });
+
+    const args = JSON.parse(
+      await fs.readFile(path.join(workspace, "claude-args.json"), "utf8"),
+    ) as string[];
+    expect(valueOf(args, "--model")).toBe("stand-in-model");
+    expect(valueOf(args, "--effort")).toBe("high");
+    expect(valueOf(args, "--tools")).toBe("Read,Write,Edit,Bash");
+    expect(valueOf(args, "--setting-sources")).toBe("");
+    expect(valueOf(args, "--permission-mode")).toBe("auto");
+    for (const flag of [
+      "--strict-mcp-config",
+      "--disable-slash-commands",
+      "--no-session-persistence",
+    ]) {
+      expect(args, flag).toContain(flag);
+    }
+  });
+
   it("gives the agent the prompt the pipeline rendered, with the brief's age guidance", async () => {
     const chatInput = await buildBlueprintGenerationChatInput({
       brief: "A missing cake at the school fair",

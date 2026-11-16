@@ -3,8 +3,8 @@
 ## Objectives
 
 1. Great text mystery games for the operator's daughters.
-2. Practice using AI to generate blueprints and run the game, for agents in
-   production and evaluation infrastructure; hence the size of `evaluation/`.
+2. Practice using AI to generate blueprints and run the game: agents in
+   production, and evaluation infrastructure, hence the size of `evaluation/`.
 
 Any rewrite keeps the blueprint/narrator split, model calls as pluggable CLI
 subprocess wrappers, the evaluators' direction, and replay and self-play.

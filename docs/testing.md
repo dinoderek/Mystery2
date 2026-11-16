@@ -63,8 +63,8 @@ shrink: a new offender or a stale entry fails. After a fix, run
   new hash. A refreshed hash over stale prose fixes nothing
   (`evaluation/generator-harness/template/README.md`).
 - `check:doc-refs` fails when any `AGENTS.md`, `QUICKSTART.md`, `docs/` or
-  README names a path, `npm run` script or relative link that does not exist. A code span
-  counts as a path only when its first segment is a real directory. Gitignored
+  README names a path, `npm run` script or relative link that does not exist.
+  A code span counts as a path only when its first segment is a real directory. Gitignored
   paths and harness templates are skipped.
 - `check:word-budgets` fails when a Markdown file is over its row in
   `docs/word-budgets.tsv`, has no row, or a row names a missing file. Every

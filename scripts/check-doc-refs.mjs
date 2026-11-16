@@ -28,7 +28,7 @@ function docsToCheck() {
     .filter((f) => isRegularFile(path.join(REPO_ROOT, f)));
 }
 
-/** False for a missing path, a deleted tracked file, or a symlink. */
+/** False for a missing path (a deleted tracked file) or a symlink. */
 function isRegularFile(abs) {
   try {
     return fs.lstatSync(abs).isFile();

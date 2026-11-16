@@ -24,8 +24,8 @@ const HARNESS_TEMPLATE_RE = /^evaluation\/[\w-]+-harness\/template\//;
 /**
  * Whether the check reads a repo-relative Markdown path: every `AGENTS.md`,
  * root or child, `QUICKSTART.md`, `docs/` and every README, except the
- * generator/judge harness templates. Symlinks, such as each `CLAUDE.md`
- * beside its `AGENTS.md`, are dropped by the caller so a file is read once.
+ * generator/judge harness templates. `CLAUDE.md` never matches: each is a
+ * symlink to the `AGENTS.md` beside it, which is read instead.
  */
 export function isCheckedDoc(file) {
   if (HARNESS_TEMPLATE_RE.test(file)) return false;

@@ -6,6 +6,7 @@
   does not exist fails `doc-refs`.
 - **Word budgets.** Every `.md` needs a row in `docs/word-budgets.tsv`.
   Raising a budget is the operator's decision; trim instead.
-- **One owner per topic.** Link to the owning doc; do not restate it.
+- **One owner per topic.** Link to the owning doc; do not restate it. Describe
+  rules and reasons, not what one file already shows.
 
 Detail: `docs/testing.md`.

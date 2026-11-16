@@ -22,8 +22,9 @@ judge findings, pass 2 shows only disagreements; its labels record pass 2.
 
 ## Plants
 
-Variants are rebuilt on demand. Turn plants' edits are `narration`, replacing where `find` occurs once, or
-`patch`, JSON Patch on the event; one plant a turn. A blueprint plant is JSON
+Variants are rebuilt on demand. Turn plants' edits are `narration`, replacing
+the one place `find` occurs, or `patch`, JSON Patch on the event; one plant a
+turn. A blueprint plant is JSON
 Patch on its base, starting with a `test`.
 
 The gate checks each plant applies, changes only what it names, and leaves a
@@ -47,9 +48,9 @@ candidates' findings name theirs.
 ## Results and tables
 
 Results hold verdicts only: no prompt, log or workspace. `./dev eval suite
-<suite>` writes `results/<suite>.json`. A table, `scores/<name>.json`, is
-`./dev eval score <results>... --out` on the results its `inputs` name; the gate
-regenerates and compares it. Limits: a base is clean only as above; the
+<suite>` writes `results/<suite>.json`; `scores/<name>.json` is `./dev eval
+score <results>... --out` on the results its `inputs` name, minor findings as
+reports, and the gate regenerates it. A base is clean only as above; the
 blueprint side, one sample, measures no variation.
 
 ## Made live

@@ -80,9 +80,8 @@ mkdir -p "$(dirname "$STREAM_FILE")"
 #
 # The launch is lean: the agent gets only the tools the workspace protocol
 # uses (reading its inputs, writing ./verdict.json, running the validator),
-# and none of the login's settings, plugins, hooks, skills, MCP servers or
-# CLAUDE.md files; it reads ./CLAUDE.md because the prompt tells it to.
-# Effort is medium.
+# no MCP server, no slash command, and no settings file, so none of the
+# login's plugins, skills or hooks. Effort is medium.
 claude --print --output-format stream-json --verbose \
        --model "${EVAL_MODEL:?EVAL_MODEL is not set: give the binding a model}" \
        --effort medium \

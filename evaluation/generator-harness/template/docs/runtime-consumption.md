@@ -6,7 +6,7 @@
 > - `docs/ai-runtime.md#context-boundaries` — `b950850430700c53a88a0ddfa967ed5318d1b844`
 > - `docs/ai-runtime.md#clue-gating` — `00d0d82983f875c6fa64e6d4af2dd505aae8d4f1`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `bd9e4ec29d7d0a01212175fde003f79a3d29f553`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `c905ddd4066cae2c6da5ee32ba3b33c09dac4946`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `5361c3c95c349855e79f49db05adce1317ce671c`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -25,7 +25,7 @@ except the accusation judge.
 | move action | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
 | search action (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues are filtered out. |
 | search action (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. The narrator can waive turn cost for nonsense attempts. |
-| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `clues` (each with `requires_rationale`, `prereqs_met` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
+| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `background`, `clues` (each with `requires_rationale`, `prereqs_met` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
 | `accusation_start` | scene-setting for accusation | spoiler-safe context only (no ground truth, no solution paths), plus the public character roster (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`) so suspects can be named with grounded pronouns. |
 | `accusation_judge` | adjudicates player reasoning | **the full blueprint**, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` — plus `player_known_clues` (what the investigator actually discovered) and `path_coverage` (per path: `found_clue_ids` / `missing_clue_ids`), so it credits an evidence chain only from clues the player really holds. |
 

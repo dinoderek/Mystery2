@@ -17,8 +17,8 @@ kind; `results/<name>.json`, from a suite (`bases.json`, from `store.ts`);
 
 **Labels.** A turn's faults, each a kind, `minor` or `major`, and a note; plus
 who, when and the pass. No fault means clean, not unlabelled. Labels append; a
-turn's latest is scored. `./dev eval label <game>` makes them: pass 1 hides
-judge findings, pass 2 shows only disagreements; its labels record pass 2.
+turn's latest is scored. The labelling page makes them
+([`evaluation/label/README.md`](../label/README.md)).
 
 ## Plants
 

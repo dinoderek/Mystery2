@@ -7,11 +7,14 @@ import path from "node:path";
 import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
-import { createLabelCommand } from "../../../evaluation/label/command.ts";
+import { tailscaleName } from "../../../evaluation/core/tailscale.ts";
+import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/command.ts";
 import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Selection } from "../../../evaluation/label/keys.ts";
 import { escapeHtml } from "../../../evaluation/label/page.ts";
+import { phasePath } from "../../../evaluation/label/hub.ts";
+import type { Phase } from "../../../evaluation/label/hub.ts";
 import { startLabelServer } from "../../../evaluation/label/server.ts";
 import type { LabelServer, LabelServerOptions } from "../../../evaluation/label/server.ts";
 import { buildTurnView, playedTurns } from "../../../evaluation/label/turns.ts";
@@ -75,29 +78,55 @@ async function copyFixture({ withResults = true } = {}): Promise<string> {
   return dir;
 }
 
+/** Labels every turn the copied fixture leaves unlabelled clean, so pass 2 opens. */
+async function finishPass1(dir: string): Promise<string> {
+  const file = path.join(dir, "games/medal/labels.json");
+  const held = await readJson(file);
+  for (const sequence of [1, 5, 6, 8, 9]) held.labels.push({ sequence, faults: [], by: "fixture", at: "2026-06-02T00:00:00Z", pass: 1 });
+  await writeJson(file, held);
+  return dir;
+}
+
 let clock = Date.parse("2026-07-01T10:00:00Z");
 const now = () => new Date((clock += 1000));
 
-async function serve(dir: string, overrides: Partial<LabelServerOptions> = {}): Promise<{ server: LabelServer; log: string[] }> {
+type ServeOptions = Partial<LabelServerOptions> & { phase?: Phase };
+
+/** The pass each server was opened on: the paths a test gives (`/`, `/done`, `/turn/<n>`) are that pass's own. */
+const phases = new Map<LabelServer, string>();
+
+async function serve(dir: string, { phase = "pass-1", ...overrides }: ServeOptions = {}): Promise<{ server: LabelServer; log: string[] }> {
   const log: string[] = [];
-  const server = await startLabelServer({ truthRoot: dir, game: "medal", pass: 1, by: "tester", now, log: (text) => log.push(text), ...overrides });
+  const server = await startLabelServer({ truthRoot: dir, by: "tester", now, log: (text) => log.push(text), ...overrides });
   servers.push(server);
+  phases.set(server, phasePath("medal", phase));
   return { server, log };
 }
 
-async function get(server: LabelServer, pathname: string): Promise<{ status: number; location: string | null; body: string }> {
-  const response = await fetch(new URL(pathname, server.url), { redirect: "manual" });
-  return { status: response.status, location: response.headers.get("location"), body: await response.text() };
+/** A path of the server's pass made whole, and a location made back into one; other paths pass as they are. */
+function inPass(server: LabelServer, pathname: string): string {
+  const base = phases.get(server) ?? "";
+  return pathname === "/" || pathname === "/done" || pathname.startsWith("/turn/") ? `${base}${pathname}` : pathname;
 }
 
-async function post(server: LabelServer, pathname: string, fields: [string, string][]) {
-  const response = await fetch(new URL(pathname, server.url), {
+function ofPass(server: LabelServer, location: string | null): string | null {
+  const base = phases.get(server) ?? "";
+  return location !== null && location.startsWith(`${base}/`) ? location.slice(base.length) : location;
+}
+
+async function get(server: LabelServer, pathname: string, headers: Record<string, string> = {}): Promise<{ status: number; location: string | null; body: string }> {
+  const response = await fetch(new URL(inPass(server, pathname), server.url), { redirect: "manual", headers });
+  return { status: response.status, location: ofPass(server, response.headers.get("location")), body: await response.text() };
+}
+
+async function post(server: LabelServer, pathname: string, fields: [string, string][], headers: Record<string, string> = {}) {
+  const response = await fetch(new URL(inPass(server, pathname), server.url), {
     method: "POST",
     redirect: "manual",
-    headers: { "content-type": "application/x-www-form-urlencoded", origin: new URL(server.url).origin },
+    headers: { "content-type": "application/x-www-form-urlencoded", origin: new URL(server.url).origin, ...headers },
     body: new URLSearchParams(fields).toString(),
   });
-  return { status: response.status, location: response.headers.get("location"), body: await response.text() };
+  return { status: response.status, location: ofPass(server, response.headers.get("location")), body: await response.text(), cookie: response.headers.get("set-cookie") };
 }
 
 const labelsOf = async (dir: string) => (await readJson(path.join(dir, "games/medal/labels.json"))).labels;
@@ -264,6 +293,17 @@ describe("saving a label", () => {
     expect((await get(server, "/turn/1")).body).not.toContain("Latest label");
   });
 
+  it("names a label file that is not JSON, in the log and on the page", async () => {
+    const dir = await copyFixture();
+    const { server, log } = await serve(dir);
+    const file = path.join(dir, "games/medal/labels.json");
+    await fs.writeFile(file, "{ not json", "utf8");
+    const unread = await get(server, "/turn/1");
+    expect(unread.status).toBe(500);
+    expect(unread.body).toContain(escapeHtml(`${file} is not JSON`));
+    expect(log.join("\n")).toContain(`${file} is not JSON`);
+  });
+
   it("keeps what was typed when a save is refused", async () => {
     const { server } = await serve(await copyFixture());
     const response = await post(server, "/turn/1", [["kind", "fabrication"], ["severity", "major"]]);
@@ -280,8 +320,11 @@ describe("saving a label", () => {
     const response = await post(server, "/turn/1", []);
     expect(response.status).toBe(500);
     expect(response.body).toContain("the file could not be written");
-    expect(log.join("\n")).toContain("label for turn 1 not saved");
-    expect((await get(server, "/turn/1")).body).not.toContain("Latest label");
+    expect(log.join("\n")).toContain("label for turn 1 of medal not saved");
+    const unread = await get(server, "/turn/1");
+    expect(unread.status).toBe(500);
+    expect(unread.body).toContain("The label file of medal could not be read");
+    expect(log.join("\n")).toContain("the label file of medal could not be read");
     expect(await fs.readdir(path.dirname(file))).toEqual(["labels.json", "trace.json"]);
   });
 
@@ -311,7 +354,7 @@ describe("saving a label", () => {
     expect(await get(server, "/")).toMatchObject({ status: 303, location: "/done" });
     const done = (await get(server, "/done")).body;
     expect(done).toContain("9 of 9 turns done in pass 1.");
-    expect(done).toContain('href="/turn/7"');
+    expect(done).toContain(`href="${phasePath("medal", "pass-1")}/turn/7"`);
   });
 });
 
@@ -368,7 +411,7 @@ describe("pass one, reported turns only", () => {
 
   it("serves only those turns, still showing no judge finding", async () => {
     const dir = await withVariantFinding(await copyFixture());
-    const { server } = await serve(dir, { reported: true });
+    const { server } = await serve(dir, { phase: "reported" });
     expect(await get(server, "/")).toMatchObject({ status: 303, location: "/turn/5" });
     const pages = await Promise.all([2, 5, 7].map(async (sequence) => (await get(server, `/turn/${sequence}`)).body));
     expect(pages.map((page) => /turn (\d) of 3/.exec(page)?.[1])).toEqual(["1", "2", "3"]);
@@ -399,23 +442,23 @@ describe("pass one, reported turns only", () => {
         },
       ],
     });
-    const { server } = await serve(dir, { reported: true });
+    const { server } = await serve(dir, { phase: "reported" });
     expect(await get(server, "/")).toMatchObject({ location: "/done" });
     expect((await get(server, "/done")).body).toContain("No turn to label: no finding of a failing verdict points at a turn of this game.");
   });
 
-  it("refuses without stored results that judge the game or its variants, and in pass 2", async () => {
-    await expect(serve(await copyFixture({ withResults: false }), { reported: true })).rejects.toThrow(
-      /--reported needs stored judge results, and none in .*results judge game "medal" or its variants/,
-    );
-    await expect(serve(await copyFixture(), { reported: true, pass: 2 })).rejects.toThrow("--reported limits pass 1");
+  it("are not there without stored results that judge the game or its variants, saying so", async () => {
+    const { server } = await serve(await copyFixture({ withResults: false }), { phase: "reported" });
+    const refused = await get(server, "/");
+    expect(refused.status).toBe(404);
+    expect(refused.body).toMatch(/reported turns need stored judge results, and none in .*results judge game &#34;medal&#34; or its variants/);
   });
 });
 
 describe("pass two", () => {
   it("serves exactly the turns where a judge and the label disagree, with those findings", async () => {
-    const dir = await copyFixture();
-    const { server } = await serve(dir, { pass: 2 });
+    const dir = await finishPass1(await copyFixture());
+    const { server } = await serve(dir, { phase: "pass-2" });
     expect(await get(server, "/")).toMatchObject({ status: 303, location: "/turn/2" });
     const caught = (await get(server, "/turn/2")).body;
     expect(caught).toContain("turn 1 of 2");
@@ -433,8 +476,8 @@ describe("pass two", () => {
   });
 
   it("records a relabel as pass 2 and resumes at the turn after the last one looked at", async () => {
-    const dir = await copyFixture();
-    const { server } = await serve(dir, { pass: 2 });
+    const dir = await finishPass1(await copyFixture());
+    const { server } = await serve(dir, { phase: "pass-2" });
     const saved = await post(server, "/turn/2", [["kind", "spoiler"], ["severity", "minor"], ["note", "the judge is right"]]);
     expect(saved).toMatchObject({ status: 303, location: "/turn/3" });
     const last = (await labelsOf(dir)).at(-1);
@@ -449,16 +492,28 @@ describe("pass two", () => {
   });
 
   it("says so when nothing disagrees", async () => {
-    const dir = await copyFixture();
+    const dir = await finishPass1(await copyFixture());
     await fs.rm(path.join(dir, "results/extra.json"));
-    const { server } = await serve(dir, { pass: 2 });
+    const { server } = await serve(dir, { phase: "pass-2" });
     expect((await get(server, "/done")).body).toContain("No turn needs a second look");
   });
 
+  it("opens only once every turn has a label, so no judge's view steers pass 1", async () => {
+    const { server } = await serve(await copyFixture(), { phase: "pass-2" });
+    const refused = await get(server, "/turn/2");
+    expect(refused.status).toBe(404);
+    expect(refused.body).toContain("pass 2 opens once every turn of game &#34;medal&#34; has a label; 5 still have none");
+    expect(refused.body).not.toMatch(/gm_|culprit-leak/);
+  });
+
   it("refuses without stored results that judge the game, saying so", async () => {
-    await expect(startLabelServer({ truthRoot: await copyFixture({ withResults: false }), game: "medal", pass: 2, by: "tester" })).rejects.toThrow(
-      /pass 2 needs stored judge results, and none in .*results judge game "medal"/,
-    );
+    const refusal = async (dir: string) => {
+      const { server } = await serve(dir, { phase: "pass-2" });
+      const page = await get(server, "/turn/2");
+      expect(page.status).toBe(404);
+      return page.body;
+    };
+    expect(await refusal(await copyFixture({ withResults: false }))).toMatch(/pass 2 needs stored judge results, and none in .*results judge game &#34;medal&#34;/);
     const dir = await copyFixture({ withResults: false });
     await writeJson(path.join(dir, "results/blueprints-only.json"), {
       schema_version: "mystery-truth-results/1",
@@ -475,7 +530,7 @@ describe("pass two", () => {
         },
       ],
     });
-    await expect(startLabelServer({ truthRoot: dir, game: "medal", pass: 2, by: "tester" })).rejects.toThrow(/pass 2 needs stored judge results/);
+    expect(await refusal(dir)).toContain("pass 2 needs stored judge results");
   });
 });
 
@@ -515,6 +570,15 @@ describe("where a judge and a label disagree", () => {
 });
 
 describe("the server's address", () => {
+  const PASS_1 = phasePath("medal", "pass-1");
+  const status = (server: LabelServer, host: string) =>
+    new Promise<number>((resolve, reject) => {
+      http.get({ host: "127.0.0.1", port: server.port, path: `${PASS_1}/turn/1`, headers: { host } }, (response) => {
+        response.resume();
+        resolve(response.statusCode ?? 0);
+      }).on("error", reject);
+    });
+
   it("listens on the loopback address only", async () => {
     const { server } = await serve(await copyFixture());
     expect(new URL(server.url).hostname).toBe("127.0.0.1");
@@ -529,94 +593,314 @@ describe("the server's address", () => {
   it("answers only requests for its own address, and saves only from its own page", async () => {
     const dir = await copyFixture();
     const { server } = await serve(dir);
-    const headers = (host: string) => new Promise<number>((resolve, reject) => {
-      http.get({ host: "127.0.0.1", port: server.port, path: "/turn/1", headers: { host } }, (response) => {
-        response.resume();
-        resolve(response.statusCode ?? 0);
-      }).on("error", reject);
-    });
-    expect(await headers("evil.example")).toBe(403);
-    expect(await headers(`localhost:${server.port}`)).toBe(200);
-    const foreign = await fetch(new URL("/turn/1", server.url), { method: "POST", headers: { origin: "http://evil.example" }, body: "" });
+    expect(await status(server, "evil.example")).toBe(403);
+    expect(await status(server, `localhost:${server.port}`)).toBe(200);
+    expect(await status(server, "mac.tail1.ts.net")).toBe(403);
+    const foreign = await fetch(new URL(`${PASS_1}/turn/1`, server.url), { method: "POST", headers: { origin: "http://evil.example" }, body: "" });
     expect(foreign.status).toBe(403);
-    const opaque = await fetch(new URL("/turn/1", server.url), { method: "POST", headers: { origin: "null" }, body: "" });
+    const opaque = await fetch(new URL(`${PASS_1}/turn/1`, server.url), { method: "POST", headers: { origin: "null" }, body: "" });
     expect(opaque.status).toBe(403);
+    const name = await fetch(new URL("/name", server.url), { method: "POST", headers: { origin: "http://evil.example" }, body: "name=evil" });
+    expect(name.status).toBe(403);
     expect(await labelsOf(dir)).toHaveLength(5);
   });
 
-  it("answers an unknown path and method with a not-found page", async () => {
+  it("answers the host names it is given, as tailscale serve forwards them, and saves from their pages", async () => {
+    const dir = await copyFixture();
+    const { server } = await serve(dir, { hosts: ["Mac.tail1.ts.net"] });
+    expect(await status(server, "mac.tail1.ts.net")).toBe(200);
+    expect(await status(server, "mac.tail1.ts.net:443")).toBe(200);
+    expect(await status(server, "other.tail1.ts.net")).toBe(403);
+    expect(await post(server, "/turn/1", [], { origin: "https://mac.tail1.ts.net" })).toMatchObject({ status: 303, location: "/turn/2" });
+    expect(await labelsOf(dir)).toHaveLength(6);
+  });
+
+  it("answers an unknown path, method, game or pass with a not-found page", async () => {
     const { server } = await serve(await copyFixture());
     expect((await get(server, "/nowhere")).status).toBe(404);
-    expect((await fetch(new URL("/turn/1", server.url), { method: "DELETE" })).status).toBe(404);
+    expect((await fetch(new URL(`${PASS_1}/turn/1`, server.url), { method: "DELETE" })).status).toBe(404);
+    expect((await fetch(new URL("/", server.url), { method: "DELETE" })).status).toBe(404);
+    const game = await get(server, "/g/nothing/pass-1/");
+    expect(game.status).toBe(404);
+    expect(game.body).toContain("no stored game &#34;nothing&#34;");
+    const pass = await get(server, "/g/medal/pass-3/");
+    expect(pass.status).toBe(404);
+    expect(pass.body).toContain("is not a pass");
+    expect((await get(server, "/g/%E0%A4%A/pass-1/")).status).toBe(404);
+  });
+});
+
+describe("who labels", () => {
+  it("is asked of a visitor before any pass, when the server has no default, and goes back after", async () => {
+    const dir = await copyFixture();
+    const { server } = await serve(dir, { by: undefined });
+    expect((await get(server, "/")).status).toBe(303);
+    expect(await get(server, "/turn/1")).toMatchObject({ status: 303, location: `/name?back=${encodeURIComponent(phasePath("medal", "pass-1") + "/turn/1")}` });
+    expect((await get(server, "/name?back=/g/medal/pass-1/turn/1")).body).toContain('value="/g/medal/pass-1/turn/1"');
+    const home = await fetch(new URL("/", server.url));
+    expect(await home.text()).toContain("choose your name");
+    const chosen = await post(server, "/name", [["name", " Dino_H "], ["back", "/g/medal/pass-1/turn/1"]]);
+    expect(chosen).toMatchObject({ status: 303, location: "/turn/1" });
+    expect(chosen.cookie).toMatch(/^mystery_label_by=Dino_H; Path=\/; Max-Age=\d+; SameSite=Lax; HttpOnly$/);
+    const cookie = { cookie: "other=1; mystery_label_by=Dino_H" };
+    expect((await get(server, "/turn/1", cookie)).body).toContain("labelling as <b>Dino_H</b>");
+    await post(server, "/turn/1", [], cookie);
+    expect((await labelsOf(dir)).at(-1)).toMatchObject({ sequence: 1, by: "Dino_H" });
+  });
+
+  it("refuses a name that is not a handle, and goes back only to a path of its own", async () => {
+    const { server } = await serve(await copyFixture());
+    for (const name of ["", "dino@example.com", "two words", "x".repeat(40)]) {
+      const refused = await post(server, "/name", [["name", name]]);
+      expect(refused.status).toBe(422);
+      expect(refused.body).toContain("is not a name to label as");
+    }
+    expect((await post(server, "/name", [["name", "dino"], ["back", "//evil.example/"]])).location).toBe("/");
+    expect((await post(server, "/name", [["name", "dino"], ["back", "https://evil.example/"]])).location).toBe("/");
+    expect((await post(server, "/name", [["name", "dino"], ["back", "/\\evil.example/"]])).location).toBe("/");
+    expect((await post(server, "/name", [["name", "dino"]])).location).toBe("/");
+    const large = await post(server, "/name", [["name", "x".repeat(70_000)]]);
+    expect(large.status).toBe(422);
+    expect(large.body).toContain("the form is too large");
+  });
+
+  it("takes the visitor's name over the server's default, and the default over a cookie that is not a name", async () => {
+    const dir = await copyFixture();
+    const { server } = await serve(dir);
+    await post(server, "/turn/1", [], { cookie: "mystery_label_by=visitor" });
+    await post(server, "/turn/5", [], { cookie: "mystery_label_by=%E0%A4%A" });
+    await post(server, "/turn/6", [], { cookie: "mystery_label_by=a%20b" });
+    expect((await labelsOf(dir)).slice(-3).map((label) => label.by)).toEqual(["visitor", "tester", "tester"]);
+  });
+
+  it("refuses a default that is not a name", async () => {
+    await expect(serve(await copyFixture(), { by: "a b" })).rejects.toThrow("is not a name to label as");
+  });
+});
+
+/** The copied fixture with a second game, `medal-two`, played later and never labelled. */
+async function withSecondGame(dir: string): Promise<string> {
+  const trace = JSON.parse(await fs.readFile(path.join(dir, "games/medal/trace.json"), "utf8"));
+  trace.session = { ...trace.session, created_at: "2026-08-15T09:00:00Z" };
+  trace.source = { ...trace.source, persona: "kid-7" };
+  trace.blueprint.metadata.title = "The Second Medal";
+  await writeJson(path.join(dir, "games/medal-two/trace.json"), trace);
+  return dir;
+}
+
+describe("the list of games", () => {
+  it("shows each game's blueprint, persona, dates and stage, and opens its passes", async () => {
+    const { server } = await serve(await withSecondGame(await copyFixture()));
+    const home = (await get(server, "/?")).body;
+    expect(home).toContain("2 of 2 games");
+    expect(home).toContain("The Missing Medal &middot; played 2026-06-01 &middot; last labelled 2026-06-04 by fixture");
+    expect(home).toContain("pass 1 in progress &middot; 4 of 9 turns labelled");
+    expect(home).toContain("The Second Medal &middot; persona kid-7 &middot; played 2026-08-15 &middot; never labelled");
+    expect(home).toContain("not started &middot; 0 of 9 turns labelled");
+    expect(home).toContain('href="/g/medal/pass-1/"');
+    expect(home).toContain('href="/g/medal/reported/"');
+    // Pass 1 is not complete, so nothing a judge said shows, not even a way to pass 2.
+    expect(home).not.toContain("/pass-2/");
+    expect(home).not.toMatch(/pass 2: \d+ to answer/);
+    expect(home).not.toMatch(/gm_|claude-opus-stub|culprit-leak/);
+    // The newer game first.
+    expect(home.indexOf("medal-two")).toBeLessThan(home.indexOf("The Missing Medal"));
+  });
+
+  it("offers pass 2 once pass 1 is complete, counts what is left to answer, and finishes done", async () => {
+    const dir = await copyFixture();
+    const { server } = await serve(dir);
+    for (const sequence of [1, 5, 6, 8, 9]) await post(server, `/turn/${sequence}`, []);
+    let home = (await get(server, "/?")).body;
+    expect(home).toContain('href="/g/medal/pass-2/"');
+    expect(home).toContain("pass 2: 2 to answer &middot; 9 of 9 turns labelled");
+    const second = `${phasePath("medal", "pass-2")}/turn`;
+    await post(server, `${second}/2`, [["kind", "spoiler"], ["note", "the judge is right"]]);
+    await post(server, `${second}/3`, [["kind", "out_of_character"], ["note", "still wrong"]]);
+    home = (await get(server, "/?")).body;
+    expect(home).toMatch(/done &middot; 9 of 9 turns labelled/);
+  });
+
+  it("says pass 1 is done when no stored result judges the game", async () => {
+    const dir = await copyFixture({ withResults: false });
+    const { server } = await serve(dir);
+    for (const sequence of [1, 5, 6, 8, 9]) await post(server, `/turn/${sequence}`, []);
+    const home = (await get(server, "/?")).body;
+    expect(home).toContain("pass 1 done, no judge results for pass 2");
+    expect(home).not.toContain("reported/");
+  });
+
+  it("filters by search, stage and date, and sorts", async () => {
+    const { server } = await serve(await withSecondGame(await copyFixture()));
+    const names = async (query: string) => [...(await get(server, `/?${query}`)).body.matchAll(/<h2 class="name">([^<]+)<\/h2>/g)].map((match) => match[1]);
+    expect(await names("q=second")).toEqual(["medal-two"]);
+    expect(await names("q=KID-7 medal")).toEqual(["medal-two"]);
+    expect(await names("q=fixture")).toEqual(["medal"]);
+    expect(await names("stage=not-started")).toEqual(["medal-two"]);
+    expect(await names("stage=pass-1")).toEqual(["medal"]);
+    expect(await names("stage=done")).toEqual([]);
+    expect(await names("stage=todo&sort=name")).toEqual(["medal", "medal-two"]);
+    expect(await names("date=played&from=2026-08-01")).toEqual(["medal-two"]);
+    expect(await names("date=played&to=2026-06-30")).toEqual(["medal"]);
+    expect(await names("date=labelled&from=2026-01-01")).toEqual(["medal"]);
+    expect(await names("sort=played-asc")).toEqual(["medal", "medal-two"]);
+    expect(await names("sort=labelled-desc")).toEqual(["medal", "medal-two"]);
+    expect(await names("sort=labelled-asc")).toEqual(["medal", "medal-two"]);
+    expect(await names("stage=bogus&sort=bogus&from=yesterday")).toEqual(["medal-two", "medal"]);
+    const empty = (await get(server, "/?q=nothing")).body;
+    expect(empty).toContain("No stored game matches.");
+    expect(empty).toContain('value="nothing"');
+    expect(empty).toContain("<details><summary>");
+    expect((await get(server, "/?sort=name")).body).toContain("<details open><summary>");
   });
 });
 
 describe("./dev eval label", () => {
   const context = (out: string[], err: string[]) => ({ root: repoRoot(), out: (text: string) => out.push(text), err: (text: string) => err.push(text), env: {} });
+  const fetchText = async (url: string) => (await fetch(url, { redirect: "follow" })).text();
+  const opened = (out: string[]) => /Open (http:\/\/127\.0\.0\.1:\d+\/\S*)/.exec(out.join("\n"))?.[1] ?? "";
 
   it("is the ninth command, and explains its flags", async () => {
     expect(COMMANDS.map((command) => command.name)).toContain("label");
     const out: string[] = [];
     expect(await runEval(["label", "--help"], context(out, []), COMMANDS)).toBe(0);
-    for (const flag of ["--pass", "--reported", "--by", "--truth", "--port"]) expect(out.join("\n")).toContain(flag);
+    for (const flag of ["--pass", "--reported", "--by", "--tailscale", "--truth", "--port"]) expect(out.join("\n")).toContain(flag);
   });
 
-  it("serves the named game until told to stop, then closes the server", async () => {
+  it("serves the list of games until told to stop, asking each visitor's name", async () => {
     const dir = await copyFixture();
     const out: string[] = [];
     let seen = "";
+    const command = createLabelCommand(async () => {
+      seen = await fetchText(opened(out));
+    });
+    expect(await runEval(["label", "--truth", dir], context(out, []), [command])).toBe(0);
+    expect(out.join("\n")).toMatch(/^Labelling the stored games\.\nOpen http:\/\/127\.0\.0\.1:\d+\/\nCtrl-C stops it\.$/);
+    expect(seen).toContain("choose your name");
+    expect(seen).toContain("1 of 1 games");
+  });
+
+  it("opens the named game's pass, labelling as --by until a visitor picks a name, then closes the server", async () => {
+    const dir = await copyFixture();
+    const out: string[] = [];
+    let seen = "";
+    let url = "";
     const command = createLabelCommand(async (server) => {
-      seen = (await get(server, "/turn/1")).body;
+      url = server.url;
+      seen = await fetchText(opened(out));
     });
     expect(await runEval(["label", "medal", "--truth", dir, "--by", " Dino "], context(out, []), [command])).toBe(0);
     expect(seen).toContain("turn 1 of 9");
-    expect(out.join("\n")).toMatch(/Labelling medal, pass 1, as Dino\.\nOpen http:\/\/127\.0\.0\.1:\d+\//);
+    expect(seen).toContain("labelling as <b>Dino</b>");
+    expect(out.join("\n")).toMatch(/Labelling medal, pass 1, as Dino until a visitor picks a name\.\nOpen http:\/\/127\.0\.0\.1:\d+\/g\/medal\/pass-1\//);
+    await expect(fetch(url)).rejects.toThrow();
   });
 
-  it("defaults to the repository's truth set, and needs --by", async () => {
-    const out: string[] = [];
-    const err: string[] = [];
-    const command = createLabelCommand(async () => undefined);
-    expect(await runEval(["label", "medal", "--by", "tester"], context(out, err), [command])).toBe(1);
-    expect(err.join("\n")).toMatch(/no stored game "medal" in .*evaluation\/truth \(it holds: [^)]+\)/);
-    const dir = await copyFixture();
-    expect(await runEval(["label", "medal", "--truth", dir], context(out, err), [command])).toBe(1);
-    expect(err.join("\n")).toContain("--by is required");
-    expect(out).toEqual([]);
-  });
-
-  it("labels only the reported turns with --reported", async () => {
+  it("opens the reported turns with --reported, and pass 2 with --pass 2", async () => {
     const dir = await copyFixture();
     const out: string[] = [];
-    let seen = "";
-    const command = createLabelCommand(async (server) => {
-      seen = (await get(server, "/turn/7")).body;
+    const seen: string[] = [];
+    const command = createLabelCommand(async () => {
+      seen.push(await fetchText(opened(out)));
+      out.splice(0);
     });
     expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--reported"], context(out, []), [command])).toBe(0);
-    expect(seen).toContain("turn 2 of 2");
-    expect(out.join("\n")).toContain("Labelling medal, pass 1, reported turns, as tester.");
+    await finishPass1(dir);
+    expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--pass", "2"], context(out, []), [command])).toBe(0);
+    // The fixture's labels already answer both reported turns.
+    expect(seen[0]).toContain("medal &middot; pass 1, reported turns</h1><section><p>2 of 2 turns done in pass 1.");
+    expect(seen[1]).toContain("medal &middot; pass 2 &middot; turn 1 of 2");
   });
 
-  it("refuses pass 2 without results, with its message and exit 1", async () => {
+  it("defaults to the repository's truth set, and refuses a game or a pass that is not there, with exit 1", async () => {
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);
+    expect(await runEval(["label", "medal"], context([], err), [command])).toBe(1);
+    expect(err.join("\n")).toMatch(/no stored game "medal" in .*evaluation\/truth \(it holds: [^)]+\)/);
     const dir = await copyFixture({ withResults: false });
-    expect(await runEval(["label", "medal", "--pass", "2", "--truth", dir, "--by", "tester"], context([], err), [command])).toBe(1);
+    expect(await runEval(["label", "medal", "--pass", "2", "--truth", dir], context([], err), [command])).toBe(1);
     expect(err.join("\n")).toContain("pass 2 needs stored judge results");
+    expect(await runEval(["label", "medal", "--reported", "--truth", dir], context([], err), [command])).toBe(1);
+    expect(err.join("\n")).toContain("reported turns need stored judge results");
+    expect(await runEval(["label", "medal", "--pass", "2", "--truth", await copyFixture()], context([], err), [command])).toBe(1);
+    expect(err.join("\n")).toContain("pass 2 opens once every turn");
+  });
+
+  it("answers the machine's tailnet name with --tailscale, and says how to serve it there", async () => {
+    const dir = await copyFixture();
+    const out: string[] = [];
+    let status = 0;
+    const command = createLabelCommand(
+      async (server) => {
+        status = await new Promise<number>((resolve, reject) => {
+          http.get({ host: "127.0.0.1", port: server.port, path: "/", headers: { host: "mac.tail1.ts.net" } }, (response) => {
+            response.resume();
+            resolve(response.statusCode ?? 0);
+          }).on("error", reject);
+        });
+      },
+      { tailscaleName: async () => "mac.tail1.ts.net" },
+    );
+    // A fixed port, so `tailscale serve` still reaches the server after a restart; any free one here, as the test shares its machine.
+    expect(await runEval(["label", "medal", "--truth", dir, "--tailscale", "--port", "0"], context(out, []), [command])).toBe(0);
+    expect(status).toBe(200);
+    expect(out.join("\n")).toMatch(/On the tailnet, run `tailscale serve --bg (\d+)` once, then open https:\/\/mac\.tail1\.ts\.net\/g\/medal\/pass-1\//);
+    let port = 0;
+    const fixed = createLabelCommand(
+      async (server) => {
+        port = server.port;
+      },
+      { tailscaleName: async () => "mac.tail1.ts.net" },
+    );
+    const busy = http.createServer();
+    const free = await new Promise<boolean>((resolve) => busy.once("error", () => resolve(false)).listen(TAILSCALE_PORT, "127.0.0.1", () => resolve(true)));
+    if (free) await new Promise<void>((resolve) => busy.close(() => resolve()));
+    if (free) {
+      expect(await runEval(["label", "medal", "--truth", dir, "--tailscale"], context([], []), [fixed])).toBe(0);
+      expect(port).toBe(TAILSCALE_PORT);
+    }
   });
 
   it.each([
-    [["label"], "expected at least 1"],
+    [["label", "--pass", "2"], "name the game"],
+    [["label", "--reported"], "name the game"],
+    [["label", "a", "b"], "expected at most 1"],
     [["label", "medal", "--pass", "3"], "--pass takes 1 or 2"],
     [["label", "medal", "--port", "99999"], "--port takes a number"],
     [["label", "medal", "--port", "abc"], "--port takes a number"],
     [["label", "medal", "--by", " "], "--by needs a value"],
-    [["label", "medal"], "--by is required"],
-    [["label", "medal", "--by", "tester", "--pass", "2", "--reported"], "--reported limits pass 1"],
+    [["label", "medal", "--by", "a@b.c"], "--by: \"a@b.c\" is not a name to label as"],
+    [["label", "medal", "--pass", "2", "--reported"], "--reported limits pass 1"],
   ])("rejects %j as a usage error", async (argv, message) => {
     const err: string[] = [];
     const command = createLabelCommand(async () => undefined);
     expect(await runEval(argv, context([], err), [command])).toBe(1);
     expect(err.join("\n")).toContain(message);
+  });
+});
+
+describe("this machine's tailnet name", () => {
+  const answers = (...results: (string | Error)[]) => {
+    const asked: string[] = [];
+    const run = async (command: string, args: string[]) => {
+      asked.push(`${command} ${args.join(" ")}`);
+      const result = results.shift();
+      if (result instanceof Error || result === undefined) throw result ?? new Error("no answer");
+      return result;
+    };
+    return { asked, run };
+  };
+
+  it("is the DNS name `tailscale status --json` gives, without its last dot, trying the macOS app after the path", async () => {
+    const { asked, run } = answers(new Error("spawn tailscale ENOENT"), JSON.stringify({ Self: { DNSName: "mac.tail1.ts.net." } }));
+    expect(await tailscaleName(run)).toBe("mac.tail1.ts.net");
+    expect(asked).toEqual(["tailscale status --json", "/Applications/Tailscale.app/Contents/MacOS/Tailscale status --json"]);
+  });
+
+  it("says why there is none", async () => {
+    await expect(tailscaleName(answers(new Error("ENOENT"), new Error("ENOENT")).run)).rejects.toThrow(/could not ask Tailscale.*tailscale: ENOENT/);
+    await expect(tailscaleName(answers("not json").run)).rejects.toThrow("did not answer JSON");
+    await expect(tailscaleName(answers(JSON.stringify({ Self: { DNSName: "" } })).run)).rejects.toThrow("names no tailnet name");
+    await expect(tailscaleName(answers(JSON.stringify({})).run)).rejects.toThrow("is it signed in?");
   });
 });

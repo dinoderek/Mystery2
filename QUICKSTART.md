@@ -165,6 +165,9 @@ shared design, then the per-pipeline runbooks:
 ./dev eval cases <trace.json>                # build runtime cases from a trace
 ```
 
+Labelling the truth set, also from a phone over Tailscale:
+`./dev eval label` ([`evaluation/label/README.md`](evaluation/label/README.md)).
+
 `./dev eval` reads its model bindings from one file; to change one, copy
 `evaluation/config.example.json` to `evaluation/config.json`.
 

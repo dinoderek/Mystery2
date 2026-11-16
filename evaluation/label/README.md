@@ -27,23 +27,23 @@ words, stage, and a range of either date, and sort by either.
   verdicts; offered once every turn has a label and stored results judge the
   game. Its labels record pass 2.
 
-The list shows nothing a judge said until pass 1 is complete. Every save is
-appended to `labels.json` at once, so a pass resumes at its first turn without
-an answer.
+The list shows nothing a judge said until pass 1 is complete. Saves append to
+`labels.json` at once; a pass resumes at its first unanswered turn. Games and
+judge results are read at start: restart after adding either.
 
-**Keys.** 1 to 5 tick a kind, `n` or `m` the severity, `t` the note (Escape
-leaves it), Enter saves, `c` saves the turn clean, `p` goes back. On a touch
+**Keys.** 1 to 5 tick a kind, `n`/`m` the severity, `t` the note (Escape
+leaves it), Enter saves, `c` saves clean, `p` goes back. On a touch
 screen the kinds are buttons and the save stays at the bottom.
 
 ## From a phone, over Tailscale
 
 The server listens on the loopback address only. `--tailscale` asks
-`tailscale status` for this machine's tailnet name and answers to it; it prints
-the command that forwards HTTPS on that name to the server:
+`tailscale status` for this machine's tailnet name, answers to it, and listens
+on port 52400 unless `--port` says otherwise:
 
 ```bash
-./dev eval label --tailscale --port 51900
-tailscale serve --bg 51900      # once; `tailscale serve reset` undoes it
+./dev eval label --tailscale
+tailscale serve --bg 52400      # once; `tailscale serve reset` undoes it
 ```
 
 Then open `https://<machine>.<tailnet>.ts.net/` on any device in the tailnet.

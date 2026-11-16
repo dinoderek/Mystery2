@@ -8,7 +8,7 @@ import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { tailscaleName } from "../../../evaluation/core/tailscale.ts";
-import { createLabelCommand } from "../../../evaluation/label/command.ts";
+import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/command.ts";
 import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Selection } from "../../../evaluation/label/keys.ts";
@@ -291,6 +291,17 @@ describe("saving a label", () => {
     expect(log.join("\n")).toContain(message);
     expect(await fs.readFile(path.join(dir, "games/medal/labels.json"), "utf8")).toBe(before);
     expect((await get(server, "/turn/1")).body).not.toContain("Latest label");
+  });
+
+  it("names a label file that is not JSON, in the log and on the page", async () => {
+    const dir = await copyFixture();
+    const { server, log } = await serve(dir);
+    const file = path.join(dir, "games/medal/labels.json");
+    await fs.writeFile(file, "{ not json", "utf8");
+    const unread = await get(server, "/turn/1");
+    expect(unread.status).toBe(500);
+    expect(unread.body).toContain(escapeHtml(`${file} is not JSON`));
+    expect(log.join("\n")).toContain(`${file} is not JSON`);
   });
 
   it("keeps what was typed when a save is refused", async () => {
@@ -648,6 +659,9 @@ describe("who labels", () => {
     expect((await post(server, "/name", [["name", "dino"], ["back", "https://evil.example/"]])).location).toBe("/");
     expect((await post(server, "/name", [["name", "dino"], ["back", "/\\evil.example/"]])).location).toBe("/");
     expect((await post(server, "/name", [["name", "dino"]])).location).toBe("/");
+    const large = await post(server, "/name", [["name", "x".repeat(70_000)]]);
+    expect(large.status).toBe(422);
+    expect(large.body).toContain("the form is too large");
   });
 
   it("takes the visitor's name over the server's default, and the default over a cookie that is not a name", async () => {
@@ -827,9 +841,24 @@ describe("./dev eval label", () => {
       },
       { tailscaleName: async () => "mac.tail1.ts.net" },
     );
-    expect(await runEval(["label", "medal", "--truth", dir, "--tailscale"], context(out, []), [command])).toBe(0);
+    // A fixed port, so `tailscale serve` still reaches the server after a restart; any free one here, as the test shares its machine.
+    expect(await runEval(["label", "medal", "--truth", dir, "--tailscale", "--port", "0"], context(out, []), [command])).toBe(0);
     expect(status).toBe(200);
     expect(out.join("\n")).toMatch(/On the tailnet, run `tailscale serve --bg (\d+)` once, then open https:\/\/mac\.tail1\.ts\.net\/g\/medal\/pass-1\//);
+    let port = 0;
+    const fixed = createLabelCommand(
+      async (server) => {
+        port = server.port;
+      },
+      { tailscaleName: async () => "mac.tail1.ts.net" },
+    );
+    const busy = http.createServer();
+    const free = await new Promise<boolean>((resolve) => busy.once("error", () => resolve(false)).listen(TAILSCALE_PORT, "127.0.0.1", () => resolve(true)));
+    if (free) await new Promise<void>((resolve) => busy.close(() => resolve()));
+    if (free) {
+      expect(await runEval(["label", "medal", "--truth", dir, "--tailscale"], context([], []), [fixed])).toBe(0);
+      expect(port).toBe(TAILSCALE_PORT);
+    }
   });
 
   it.each([

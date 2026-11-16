@@ -243,7 +243,13 @@ export async function startLabelServer(options: LabelServerOptions): Promise<Lab
 
   const saveName = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {
     if (!fromThisPage(request.headers.origin)) return send(response, 403, renderMessagePage("Refused", "A name must be set from this page."));
-    const params = new URLSearchParams(await readBody(request));
+    let params: URLSearchParams;
+    try {
+      params = new URLSearchParams(await readBody(request));
+    } catch (error) {
+      if (!(error instanceof RejectedLabel)) throw error;
+      return send(response, 422, renderNamePage(whoIs(request), "/", error.message));
+    }
     const back = localPath(params.get("back"));
     let name: string;
     try {

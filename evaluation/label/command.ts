@@ -32,11 +32,14 @@ const HELP = formatHelp({
     ["--pass <1|2>", "with <game>: which pass to open (default 1)"],
     ["--reported", "with <game>: pass 1, just the turns a failing verdict's finding points at"],
     ["--by <name>", "who labels until a visitor picks a name (default: each visitor is asked)"],
-    ["--tailscale", "also answer to this machine's tailnet name, behind `tailscale serve`"],
+    ["--tailscale", "also answer to this machine's tailnet name, behind `tailscale serve` (port 52400 unless --port)"],
     ["--truth <folder>", "the truth set (default: evaluation/truth)"],
     ["--port <n>", "the port to listen on (default: any free one)"],
   ],
 });
+
+/** The port `--tailscale` listens on unless `--port` names another. */
+export const TAILSCALE_PORT = 52400;
 
 function pickPass(value: unknown): 1 | 2 {
   if (value === undefined || value === "1") return 1;
@@ -101,7 +104,8 @@ export function createLabelCommand(waitToStop: (server: LabelServer) => Promise<
       const game = positionals[0] as string | undefined;
       const pass = pickPass(values.pass);
       const reported = values.reported === true;
-      const port = pickPort(values.port);
+      // `tailscale serve` keeps forwarding to one port, so the tailnet address outlives a restart only on a fixed one.
+      const port = values.port === undefined && values.tailscale === true ? TAILSCALE_PORT : pickPort(values.port);
       const truth = pickText(values.truth, "--truth");
       const byText = pickText(values.by, "--by");
       if (game === undefined && (values.pass !== undefined || reported)) throw new UsageError("--pass and --reported open a game's pass: name the game");

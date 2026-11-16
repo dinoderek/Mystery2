@@ -60,7 +60,13 @@ export class GameLabels {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
       throw error;
     }
-    this.labels.splice(0, this.labels.length, ...parseTruthFile(LabelFileSchema, JSON.parse(text), this.file).labels);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new Error(`${this.file} is not JSON: ${(error as Error).message}`, { cause: error });
+    }
+    this.labels.splice(0, this.labels.length, ...parseTruthFile(LabelFileSchema, parsed, this.file).labels);
   }
 
   /** Appends the turn's label, given by `by` in `pass`. */

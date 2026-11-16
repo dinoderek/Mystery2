@@ -151,6 +151,13 @@ describe("the default battery", () => {
     }
   });
 
+  it("passes on judge-stub, each dimension answered with its own clean verdict, on the fixture blueprint", async () => {
+    const { code, result } = await judge("blueprint", []);
+    expect(code, out.join("\n")).toBe(0);
+    expect(judgeVerdicts(result)).toEqual(Object.fromEntries(judgesFor("blueprint").map((j) => [j.id, "pass"])));
+    expect(result.summary.passed).toBe(true);
+  });
+
   it("runs without a candidate, which is absent from the result rather than skipped", async () => {
     const blueprint = await judge("blueprint", ["--judges", "fairness"]);
     expect(Object.keys(judgeVerdicts(blueprint.result))).toEqual(judgesFor("blueprint").map((j) => j.id));

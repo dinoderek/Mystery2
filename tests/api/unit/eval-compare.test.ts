@@ -7,7 +7,7 @@ import { COMMANDS } from "../../../evaluation/commands.ts";
 import { LISTED } from "../../../evaluation/compare/table.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
-import { compareRuns, signTest } from "../../../evaluation/lib/truth/compare.ts";
+import { compareRuns, onModel, signTest } from "../../../evaluation/lib/truth/compare.ts";
 import type { CompareReport, KindComparison, MemberComparison, SideComparison } from "../../../evaluation/lib/truth/compare.ts";
 import { loadTruthSet, readResultsFile } from "../../../evaluation/lib/truth/loader.ts";
 import type { TruthSet } from "../../../evaluation/lib/truth/loader.ts";
@@ -462,12 +462,71 @@ describe("./dev eval compare", () => {
     expect(three.err).toContain("expected at most 2 argument");
   });
 
+  it("compares two models from one file by judge name, with a model selected from each side", async () => {
+    const dir = await tempDir();
+    const both = await writeResults(path.join(dir, "both.json"), [
+      ...run([FIRST_EIGHT, FIRST_EIGHT, FIRST_EIGHT], { model: "sonnet" }),
+      ...run([[], [], []], { model: "haiku" }),
+    ]);
+    // Unselected, each model is a member of its own, compared with itself.
+    const unselected = await compare([both, both, "--truth", FIXTURE, "--out", path.join(dir, "all.json")]);
+    expect(unselected.code).toBe(0);
+    const all = JSON.parse(await fs.readFile(path.join(dir, "all.json"), "utf8")) as CompareReport;
+    expect(game(all).members.map((own) => own.id)).toEqual(["gm_fabrication@haiku", "gm_fabrication@sonnet"]);
+
+    const out = path.join(dir, "r.json");
+    const ran = await compare([both, both, "--model-a", "sonnet", "--model-b", "haiku", "--truth", FIXTURE, "--out", out]);
+    expect(ran.err).toBe("");
+    expect(ran.code).toBe(0);
+    expect(ran.out).toContain("(sonnet only) with B");
+    expect(ran.out).toContain("(haiku only), against");
+    expect(ran.out).toContain("differs: A catches more");
+    const report = JSON.parse(await fs.readFile(out, "utf8")) as CompareReport & { inputs: { model_a: string | null; model_b: string | null } };
+    expect(report.inputs).toMatchObject({ model_a: "sonnet", model_b: "haiku" });
+    expect(game(report).members.map((own) => own.id)).toEqual(["gm_fabrication"]);
+    expect(member(report).a.model).toBe("sonnet");
+    expect(member(report).b.model).toBe("haiku");
+    expect(kind(report).firm).toEqual({ a_only: 8, b_only: 0 });
+  });
+
+  it("compares a model in one file with a model in another that holds several", async () => {
+    const dir = await tempDir();
+    const opus = await writeResults(path.join(dir, "opus.json"), run([[7], [7], [7]]));
+    const both = await writeResults(path.join(dir, "both.json"), [...run([[7], [7], [7]], { model: "sonnet" }), ...run([[], [], []], { model: "haiku" })]);
+    // Unselected, B's judge sits on two models, so neither run's judge pairs.
+    const unselected = await compare([opus, both, "--truth", FIXTURE, "--out", path.join(dir, "all.json")]);
+    expect(unselected.code).toBe(0);
+    const all = JSON.parse(await fs.readFile(path.join(dir, "all.json"), "utf8")) as CompareReport;
+    expect(game(all).members).toEqual([]);
+    expect(game(all).only_in).toEqual({ a: ["gm_fabrication@opus"], b: ["gm_fabrication@haiku", "gm_fabrication@sonnet"] });
+
+    const out = path.join(dir, "r.json");
+    const ran = await compare([opus, both, "--model-b", "sonnet", "--truth", FIXTURE, "--out", out]);
+    expect(ran.code).toBe(0);
+    const report = JSON.parse(await fs.readFile(out, "utf8")) as CompareReport & { inputs: { model_a: string | null; model_b: string | null } };
+    expect(report.inputs).toMatchObject({ model_a: null, model_b: "sonnet" });
+    expect(member(report).a.model).toBe("opus");
+    expect(member(report).b.model).toBe("sonnet");
+    expect(kind(report).outcome).toBe("same");
+  });
+
+  it("stops with a usage error when a selector names a model the file does not hold", async () => {
+    const dir = await tempDir();
+    const opus = await writeResults(path.join(dir, "opus.json"), run([[7]]));
+    const ran = await compare([opus, opus, "--model-b", "haiku", "--truth", FIXTURE, "--out", path.join(dir, "r.json")]);
+    expect(ran.code).toBe(1);
+    expect(ran.err).toContain('holds no verdict on model "haiku"; its models: opus');
+    expect(() => onModel([], "opus", "A")).toThrow('A holds no verdict on model "opus"; its models: none');
+  });
+
   it("names the test in its help, and says what it does when variation is unmeasured", async () => {
     const ran = await compare(["--help"]);
     expect(ran.code).toBe(0);
     expect(ran.out).toContain("exact two-sided sign test (McNemar's exact test)");
     expect(ran.out).toContain("the variation is unmeasured");
     expect(ran.out).toContain("--truth <dir>");
+    expect(ran.out).toContain("Judges pair by name, across models when each run");
+    expect(ran.out).toContain("--model-a <model>");
   });
 
   it("reads the same stored verdicts the loader does", async () => {

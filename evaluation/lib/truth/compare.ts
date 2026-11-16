@@ -1,9 +1,11 @@
 /**
  * Compares two stored runs over the same subjects, with no model call.
  *
- * A **member** is one judge (on one model); a judge that either run holds on
- * more than one model is one member per model, so a member is compared with
- * itself. For each member and kind, the units both runs judged are **paired**.
+ * A **member** is one judge, paired by name across the runs, whatever model
+ * each run holds it on; a judge that either run holds on more than one model
+ * is one member per model, `<judge>@<model>`, so a member is compared with
+ * itself. `onModel` keeps one model's verdicts of a run before pairing, so two
+ * models in one file, or a model in each, compare by name. For each member and kind, the units both runs judged are **paired**.
  * A unit one run alone judged is listed and never compared. Each run's call on
  * a unit is the score's: it catches when most of its judging samples do, and a
  * tie is not a catch (`score.ts`).
@@ -28,6 +30,7 @@
  *   member on, as `score.ts` charges them.
  */
 
+import { UsageError } from "../../core/errors.ts";
 import { catches, findingsRow } from "./findings.ts";
 import type { Unit } from "./findings.ts";
 import type { Kind, Side } from "./kinds.ts";
@@ -143,6 +146,17 @@ export interface CompareReport {
   schema_version: typeof COMPARE_SCHEMA_VERSION;
   rules: { catch: string; variation: string; test: string; significance: number };
   sides: SideComparison[];
+}
+
+// ---------------------------------------------------------------------------
+// One model of a run
+
+/** The verdicts of a run on `model`; a model the run holds no verdict on is a usage error naming the ones it holds. */
+export function onModel(verdicts: readonly StoredVerdict[], model: string, run: string): StoredVerdict[] {
+  const kept = verdicts.filter((verdict) => verdict.model === model);
+  if (kept.length > 0) return kept;
+  const held = [...new Set(verdicts.map((verdict) => verdict.model))].sort(byCodePoint);
+  throw new UsageError(`${run} holds no verdict on model "${model}"; its models: ${held.length > 0 ? held.join(", ") : "none"}`);
 }
 
 // ---------------------------------------------------------------------------

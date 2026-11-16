@@ -21,12 +21,13 @@ const HELP = formatHelp({
     "Serves a local page, on the loopback address only, that shows one turn of a stored game at a time and\n" +
     "saves what you find wrong in it into the game's labels.json. Pass 1 shows no judge finding. Pass 2 needs\n" +
     "stored results and shows only the turns where a judge and your label disagree. --reported limits pass 1\n" +
-    "to the turns a stored finding points at, on the game or on a planted variant (not at the variant's planted\n" +
-    "turns), still showing no finding; it needs stored results for the game. Stop it with Ctrl-C.",
+    "to the turns a failing verdict's finding points at, on the game or on a planted variant (not at the\n" +
+    "variant's planted turns), still showing no finding; it needs stored results for the game. Stop it with\n" +
+    "Ctrl-C.",
   options: [
     ["--pass <1|2>", "which pass to label (default 1)"],
     ["--by <name>", "who gives the labels, as each label records it (required)"],
-    ["--reported", "pass 1 only: just the turns a stored judge finding points at"],
+    ["--reported", "pass 1 only: just the turns a failing verdict's finding points at"],
     ["--truth <folder>", "the truth set (default: evaluation/truth)"],
     ["--port <n>", "the port to listen on (default: any free one)"],
   ],

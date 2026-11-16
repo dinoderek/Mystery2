@@ -51,4 +51,5 @@ Labels land in this checkout: commit them, and regenerate the score table as
 the truth set's README says.
 
 Code: `server.ts` (routes, names, hosts), `hub.ts` (games, passes, stages),
-`home.ts`, `page.ts`, `store.ts` (the label file), `keys.ts`.
+`home.ts`, `page.ts`, `store.ts` (the label file), `keys.ts`;
+`evaluation/core/tailscale.ts` finds the tailnet name.

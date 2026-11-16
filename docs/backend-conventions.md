@@ -39,7 +39,8 @@ bug: a second adapter must fit beside the first.
 
 - **Ownership is the repository's job.** Every statement in `db/sessions.ts`
   and `db/events.ts` is scoped to one player, with nothing underneath to catch a
-  query that forgets.
+  query that forgets. That is why the two contexts are separate types: a handler
+  without a profile has no session store to get wrong.
 - **Scope is a decision, not a default.** `db/players.ts` and
   `db/ai-settings.ts` are app-global. An app-global store that should have been
   scoped is the bug above.
@@ -55,9 +56,10 @@ bug: a second adapter must fit beside the first.
   writer waits instead of failing).
 - **Stored text is narrowed in one place:** `readGameMode()` alone turns a
   stored mode into a `GameMode`.
-- **Schema versions.** A `SCHEMA_VERSION` bump upgrades each existing database
-  the first time any checkout opens it, after which older code refuses that
-  file; play databases are disposable, so `npm run db:reset` is the remedy.
+- **Schema versions.** A `SCHEMA_VERSION` bump upgrades each existing database,
+  `prod` included, the first time any checkout opens it, with no undo; older
+  code then refuses that file, and `npm run db:reset` (`--force` for `prod`)
+  starts it again.
 
 ## Content
 

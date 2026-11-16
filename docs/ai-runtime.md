@@ -16,8 +16,8 @@ blueprint's `target_age` and `narration_style`. It is the only place those two
 are applied, and it imports no database, so the runtime eval harness calls it
 directly instead of keeping a second copy.
 
-Keep it the only path: a second copy drifts silently (one once built every
-evaluated prompt for a 6-year-old). `tests/api/unit/role-request.test.ts`
+Keep it the only path: a second copy drifts silently and can build every
+evaluated prompt for the wrong age. `tests/api/unit/role-request.test.ts`
 asserts, for every role, that the assembled prompt carries the blueprint's age
 and voice. Output is validated before the turn is saved, so a provider or
 contract failure writes nothing.

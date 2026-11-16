@@ -1,5 +1,7 @@
 /**
- * Where a judge and a label disagree, for the labelling page's second pass.
+ * What the stored results say of a game's turns, for the labelling page: the
+ * turns a judge reported on (`--reported` in pass 1), and where a judge and a
+ * label disagree (pass 2).
  *
  * Per turn and kind, over every stored sample: a catch on a turn the label
  * calls clean for that kind, or a labelled fault no sample caught. A turn with
@@ -11,6 +13,7 @@ import { catches, findingsRow } from "../lib/truth/findings.ts";
 import type { TurnUnit } from "../lib/truth/findings.ts";
 import { GAME_KINDS } from "../lib/truth/kinds.ts";
 import type { GameKind } from "../lib/truth/kinds.ts";
+import type { TruthTurnVariant } from "../lib/truth/loader.ts";
 import type { Label, StoredFinding, StoredVerdict } from "../lib/truth/schemas.ts";
 import { latestLabel } from "../lib/truth/truth.ts";
 
@@ -42,6 +45,30 @@ function judgedTurn(verdict: StoredVerdict, game: string, sequence: number): boo
 /** Whether any stored verdict judged the game itself: the precondition of a second pass. */
 export function judgesGame(verdicts: readonly StoredVerdict[], game: string): boolean {
   return verdicts.some((verdict) => verdict.subject.side === "game" && verdict.subject.game === game && verdict.subject.variant === null);
+}
+
+/** Whether any stored verdict judged the game or one of its planted variants: the precondition of `--reported`. */
+export function judgesGameOrVariant(verdicts: readonly StoredVerdict[], game: string): boolean {
+  return verdicts.some((verdict) => verdict.subject.side === "game" && verdict.subject.game === game);
+}
+
+/**
+ * The turns of a game some stored finding points at, on the game itself or on
+ * one of its planted variants, a finding of either severity in a verdict of any
+ * status. A variant's planted turns do not count: their faults are known.
+ */
+export function reportedTurns(verdicts: readonly StoredVerdict[], variants: readonly TruthTurnVariant[], game: string): Set<number> {
+  const planted = new Map(variants.map((variant) => [variant.id, new Set(variant.plants.map((plant) => plant.sequence))]));
+  const reported = new Set<number>();
+  for (const verdict of verdicts) {
+    const subject = verdict.subject;
+    if (subject.side !== "game" || subject.game !== game) continue;
+    const known = subject.variant === null ? undefined : planted.get(subject.variant);
+    for (const { sequence } of verdict.findings) {
+      if (sequence !== null && !known?.has(sequence)) reported.add(sequence);
+    }
+  }
+  return reported;
 }
 
 /** The disagreements on one turn, in the order of the kinds. */

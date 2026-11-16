@@ -6,7 +6,6 @@
  * folder under `games/`; `--truth` names another truth set.
  */
 
-import os from "node:os";
 import path from "node:path";
 
 import { formatHelp, parseCommandArgs } from "../core/args.ts";
@@ -21,10 +20,13 @@ const HELP = formatHelp({
   summary:
     "Serves a local page, on the loopback address only, that shows one turn of a stored game at a time and\n" +
     "saves what you find wrong in it into the game's labels.json. Pass 1 shows no judge finding. Pass 2 needs\n" +
-    "stored results and shows only the turns where a judge and your label disagree. Stop it with Ctrl-C.",
+    "stored results and shows only the turns where a judge and your label disagree. --reported limits pass 1\n" +
+    "to the turns a stored finding points at, on the game or on a planted variant (not at the variant's planted\n" +
+    "turns), still showing no finding; it needs stored results for the game. Stop it with Ctrl-C.",
   options: [
     ["--pass <1|2>", "which pass to label (default 1)"],
-    ["--by <name>", "who gives the labels, as each label records it (default: your login name)"],
+    ["--by <name>", "who gives the labels, as each label records it (required)"],
+    ["--reported", "pass 1 only: just the turns a stored judge finding points at"],
     ["--truth <folder>", "the truth set (default: evaluation/truth)"],
     ["--port <n>", "the port to listen on (default: any free one)"],
   ],
@@ -70,21 +72,26 @@ export function createLabelCommand(waitToStop: (server: LabelServer) => Promise<
     help: HELP,
     async run(argv, context) {
       const { values, positionals } = parseCommandArgs(argv, {
-        options: { pass: { type: "string" }, by: { type: "string" }, truth: { type: "string" }, port: { type: "string" } },
+        options: { pass: { type: "string" }, reported: { type: "boolean" }, by: { type: "string" }, truth: { type: "string" }, port: { type: "string" } },
         positionals: { min: 1, max: 1 },
       });
       const pass = pickPass(values.pass);
-      const by = pickText(values.by, "--by") ?? os.userInfo().username;
+      const reported = values.reported === true;
+      const port = pickPort(values.port);
       const truth = pickText(values.truth, "--truth");
+      const by = pickText(values.by, "--by");
+      if (by === undefined) throw new UsageError("--by is required: who gives the labels, as each label records it");
+      if (reported && pass !== 1) throw new UsageError("--reported limits pass 1; pass 2 already shows only the turns where a judge and a label disagree");
       const server = await startLabelServer({
         truthRoot: truth ? path.resolve(truth) : path.join(context.root, TRUTH_ROOT),
         game: positionals[0],
         pass,
+        reported,
         by,
-        port: pickPort(values.port),
+        port,
         log: context.err,
       });
-      context.out(`Labelling ${positionals[0]}, pass ${pass}, as ${by}.\nOpen ${server.url}\nCtrl-C stops it.`);
+      context.out(`Labelling ${positionals[0]}, pass ${pass}${reported ? ", reported turns" : ""}, as ${by}.\nOpen ${server.url}\nCtrl-C stops it.`);
       try {
         await waitToStop(server);
       } finally {

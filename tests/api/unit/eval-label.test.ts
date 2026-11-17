@@ -562,6 +562,14 @@ describe("where a judge and a label disagree", () => {
     expect(disagreementsAt("medal", [], [verdict({})], 4)).toEqual([]);
   });
 
+  it("leaves a clean label of age fit as it is, but still names an age fault no judge caught", () => {
+    const age = verdict({ judge: "age_appropriate_turn", status: "pass", findings: [{ sequence: 4, kinds: ["not_age_fit"], severity: "minor", judge_kind: null }] });
+    expect(disagreementsAt("medal", clean, [age], 4)).toEqual([]);
+    expect(disagreementsAt("medal", clean, [{ ...age, status: "fail", findings: [{ ...age.findings[0], severity: "major" }] }], 4)).toEqual([]);
+    const ageFault = [{ ...clean[0], faults: [{ kind: "not_age_fit" as const, severity: "minor" as const, note: "too long" }] }];
+    expect(disagreementsAt("medal", ageFault, [{ ...age, findings: [] }], 4)).toMatchObject([{ kind: "not_age_fit", label: "fault" }]);
+  });
+
   it("names a labelled fault that no sample caught, only when a judge of the kind judged the turn", () => {
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [] })], 4)).toMatchObject([{ kind: "spoiler", label: "fault" }]);
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [], judge: "gm_roleplay" })], 4)).toEqual([]);

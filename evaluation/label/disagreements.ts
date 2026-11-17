@@ -6,7 +6,9 @@
  * Per turn and kind, over every stored sample: a catch on a turn the label
  * calls clean for that kind, or a labelled fault no sample caught. A turn with
  * no label is unknown, and a kind no stored judge covered has nothing to
- * disagree with, so neither counts.
+ * disagree with, so neither counts. A judge's catch of a kind in
+ * `LABEL_STANDS_WHEN_CLEAN` on a turn labelled clean is not asked about again:
+ * the labeller's reading stands.
  */
 
 import { catches, findingsRow } from "../lib/truth/findings.ts";
@@ -73,6 +75,13 @@ export function reportedTurns(verdicts: readonly StoredVerdict[], variants: read
   return reported;
 }
 
+/**
+ * The kinds whose judges report on nearly every turn they pass (the age judge
+ * notes words and lengths a labeller has already read as fit), so a clean label
+ * of them is not put to a second look.
+ */
+export const LABEL_STANDS_WHEN_CLEAN: readonly GameKind[] = ["not_age_fit"];
+
 /** The disagreements on one turn, in the order of the kinds. */
 export function disagreementsAt(game: string, labels: readonly Label[], verdicts: readonly StoredVerdict[], sequence: number): Disagreement[] {
   const label = latestLabel(labels, sequence);
@@ -83,6 +92,7 @@ export function disagreementsAt(game: string, labels: readonly Label[], verdicts
     if (covering.length === 0) continue;
     const unit: TurnUnit = { side: "game", game, variant: null, sequence, kind };
     const labelled = label.faults.some((fault) => fault.kind === kind);
+    if (!labelled && LABEL_STANDS_WHEN_CLEAN.includes(kind)) continue;
     if (covering.some((verdict) => catches(verdict, unit)) === labelled) continue;
     found.push({
       kind,

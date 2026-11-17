@@ -12,6 +12,12 @@ import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/co
 import { disagreementsAt, reportedTurns, tallyByJudge } from "../../../evaluation/label/disagreements.ts";
 import type { Disagreement, VerdictAtTurn } from "../../../evaluation/label/disagreements.ts";
 import { describeJudgeKind } from "../../../evaluation/label/judge-kinds.ts";
+import { TURN_AGE_FINDING_KINDS } from "../../../evaluation/core/judge-prompt.ts";
+import { schema as broadSchema } from "../../../evaluation/judges/gm-broad.schema.ts";
+import { schema as clueSchema } from "../../../evaluation/judges/gm-clue-discipline.schema.ts";
+import { schema as fabricationSchema } from "../../../evaluation/judges/gm-fabrication.schema.ts";
+import { schema as roleplaySchema } from "../../../evaluation/judges/gm-roleplay.schema.ts";
+import { schema as spoilerSchema } from "../../../evaluation/judges/gm-spoiler.schema.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Draft } from "../../../evaluation/label/keys.ts";
 import { escapeHtml, renderDisagreements } from "../../../evaluation/label/page.ts";
@@ -745,7 +751,7 @@ describe("what pass 2 shows of each judge", () => {
     expect(html).toContain("<blockquote>a major quote</blockquote><p>a major reason</p>");
     expect(html.indexOf("run 0<")).toBeLessThan(html.indexOf("run 1<"));
     expect(html).toContain('run 0: <span class="muted">nothing at this turn</span>');
-    // Four findings fold under their line; none stays open.
+    // Four findings fold under their line; a judge with fewer stays open.
     expect(html).toContain('<details class="judge"><summary>gm_broad');
     expect(html).toContain('<details class="judge" open><summary>gm_roleplay');
     expect(html).not.toMatch(/\b(pass|fail)\b/);
@@ -763,6 +769,20 @@ describe("what pass 2 shows of each judge", () => {
     expect(describeJudgeKind("gm_spoiler", "culprit-leak")).toBe("culprit-leak");
     expect(describeJudgeKind("nobody", "voice")).toBe("voice");
     expect(describeJudgeKind("gm_spoiler", null)).toBeNull();
+  });
+
+  it("has plain words for every category each game-side judge's answer may name", () => {
+    const judges: Record<string, readonly string[]> = {
+      gm_roleplay: roleplaySchema.shape.findings.element.shape.kind.options,
+      gm_clue_discipline: clueSchema.shape.findings.element.shape.kind.options,
+      gm_fabrication: fabricationSchema.shape.findings.element.shape.kind.options,
+      gm_spoiler: spoilerSchema.shape.findings.element.shape.kind.options,
+      gm_broad: broadSchema.shape.findings.element.shape.kind.options,
+      age_appropriate_turn: TURN_AGE_FINDING_KINDS,
+    };
+    for (const [judge, kinds] of Object.entries(judges)) {
+      for (const kind of kinds) expect(describeJudgeKind(judge, kind), `${judge} ${kind}`).toMatch(new RegExp(`^${kind}: \\S`));
+    }
   });
 
   it("escapes what a judge wrote", () => {

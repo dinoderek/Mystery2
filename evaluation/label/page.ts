@@ -150,7 +150,7 @@ function groundTruthHtml(view: TurnView): string {
 }
 
 /** A judge's findings at a turn with more than this many are folded under their one line. */
-const FOLD_AFTER = 2;
+const FOLD_AFTER = 3;
 
 function findingHtml(judge: string, finding: StoredFinding): string {
   const kind = describeJudgeKind(judge, finding.judge_kind);

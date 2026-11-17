@@ -20,6 +20,10 @@
  *   its CLI instead of naming a model itself.
  * - `EVAL_STREAM_FILE`: where the wrapper may stream its CLI's events, one JSON
  *   object per line, for the live progress digest (`progress.ts`).
+ * - `EVAL_JSON_SCHEMA_FILE`: for a call with an `answerSchema`, the JSON Schema
+ *   its answer must match, written as `<step>.schema.json`. A wrapper whose CLI
+ *   can hold its answer to a schema passes it on, so the answer is always
+ *   well-formed JSON; the caller's `parse` still checks it.
  *
  * Each attempt leaves `<step>.attempt-<n>.stdout.log`, `.stderr.log` and
  * `.invocation.json` in the log folder, written as the wrapper runs.
@@ -65,6 +69,8 @@ export interface ModelCallRequest<T> {
   env?: Record<string, string>;
   /** Finished calls the caller keeps; see the file's header. */
   memo?: CallMemo;
+  /** The JSON Schema the answer must match, handed to the wrapper (see the file's header). Not part of the prompt hash. */
+  answerSchema?: Record<string, unknown>;
 }
 
 /** A call that ran to its end: its answer, or why every attempt failed. */
@@ -270,7 +276,7 @@ async function writeInvocation(file: string, record: Record<string, unknown>): P
 interface AttemptContext<T> {
   request: ModelCallRequest<T>;
   args: string[];
-  promptFiles: { system: string; user: string };
+  promptFiles: { system: string; user: string; schema: string | null };
 }
 
 async function runAttempt<T>(
@@ -283,6 +289,8 @@ async function runAttempt<T>(
   const env: NodeJS.ProcessEnv = { ...process.env, ...request.env, EVAL_STREAM_FILE: streamFile };
   if (binding.model) env.EVAL_MODEL = binding.model;
   else delete env.EVAL_MODEL;
+  if (promptFiles.schema) env.EVAL_JSON_SCHEMA_FILE = promptFiles.schema;
+  else delete env.EVAL_JSON_SCHEMA_FILE;
 
   const startedAt = performance.now();
   const run = await startWrapper(binding, args, env, logStem);
@@ -298,6 +306,7 @@ async function runAttempt<T>(
     duration_ms: durationMs,
     system_prompt_file: promptFiles.system,
     user_message_file: promptFiles.user,
+    json_schema_file: promptFiles.schema,
     stream_file: streamFile,
   });
 
@@ -355,9 +364,11 @@ export async function runModel<T = string>(request: ModelCallRequest<T>): Promis
   const promptFiles = {
     system: path.join(logDir, `${step}.system.txt`),
     user: path.join(logDir, `${step}.user.txt`),
+    schema: request.answerSchema ? path.join(logDir, `${step}.schema.json`) : null,
   };
   await fs.writeFile(promptFiles.system, systemPrompt, "utf8");
   await fs.writeFile(promptFiles.user, userMessage, "utf8");
+  if (promptFiles.schema) await fs.writeFile(promptFiles.schema, `${JSON.stringify(request.answerSchema, null, 2)}\n`, "utf8");
   const args = binding.args.map((arg) =>
     arg.replaceAll("{{system_prompt_file}}", promptFiles.system).replaceAll("{{user_message_file}}", promptFiles.user),
   );

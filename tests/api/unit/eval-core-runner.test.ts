@@ -100,6 +100,27 @@ describe("runModel", () => {
     expect(fs.readFileSync(path.join(logDir(), "judge-x.user.txt"), "utf8")).toBe("USER");
   });
 
+  it("hands the wrapper the answer's schema in a file, and no schema to a call without one, even one the caller's environment names", async () => {
+    const answerSchema = { type: "object", required: ["answer"], properties: { answer: { type: "integer" } } };
+    const first = await call("ok", { answerSchema });
+    expect(first.call.prompt_sha256).toBe(promptSha256("SYSTEM", "USER"));
+    const file = path.join(logDir(), "judge-x.schema.json");
+    expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(answerSchema);
+    expect(JSON.parse(recorded()[0].schema as string)).toEqual(answerSchema);
+    expect(JSON.parse(fs.readFileSync(path.join(logDir(), "judge-x.attempt-1.invocation.json"), "utf8")).json_schema_file).toBe(file);
+
+    const before = process.env.EVAL_JSON_SCHEMA_FILE;
+    process.env.EVAL_JSON_SCHEMA_FILE = file;
+    try {
+      await call("ok", { step: "judge-y" });
+    } finally {
+      if (before === undefined) delete process.env.EVAL_JSON_SCHEMA_FILE;
+      else process.env.EVAL_JSON_SCHEMA_FILE = before;
+    }
+    expect(recorded()[1].schema).toBeNull();
+    expect(JSON.parse(fs.readFileSync(path.join(logDir(), "judge-y.attempt-1.invocation.json"), "utf8")).json_schema_file).toBeNull();
+  });
+
   it("gives a binding without a model no EVAL_MODEL, even one the caller's environment has", async () => {
     const before = process.env.EVAL_MODEL;
     process.env.EVAL_MODEL = "leaked";

@@ -24,7 +24,7 @@ words, stage, and a range of either date, and sort by either.
 - *Reported turns*: pass 1 limited to the turns a failing verdict's finding
   points at; offered once stored results judge the game or a variant.
 - *Pass 2*: only the turns where a judge and the label disagree, with those
-  verdicts; offered once every turn has a label and stored results judge the
+  verdicts (a clean `not_age_fit` label is never questioned); offered once every turn has a label and stored results judge the
   game. Its labels record pass 2.
 
 The list shows nothing a judge said until pass 1 is complete. Saves append to

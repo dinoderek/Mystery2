@@ -16,15 +16,25 @@ import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
 
 const WRAPPER = path.join(repoRoot(), "evaluation/runtime/config/wrappers/claude-runtime.sh");
 
-/** Replies with an envelope whose `result` is free text left unclosed, and, when asked for a schema, a structured answer. */
+/**
+ * Replies with an envelope whose `result` is free text left unclosed, and, when
+ * asked for a schema, a structured answer: STAND_IN_REASONING's text, written
+ * in two parts, apart in time, that split its first multibyte character.
+ * STAND_IN_MODE `exit` fails as the CLI does; `prose` prints no JSON.
+ */
 const STAND_IN_CLAUDE = `#!/usr/bin/env bash
 node -e '
   const fs = require("fs");
   const args = process.argv.slice(1);
   fs.writeFileSync(process.env.STAND_IN_ARGS, JSON.stringify(args));
+  if (process.env.STAND_IN_MODE === "exit") { process.stderr.write("cli failed"); process.exit(3); }
+  if (process.env.STAND_IN_MODE === "prose") { process.stdout.write("not json"); process.exit(0); }
   const envelope = { result: "{\\"verdict\\":\\"pass\\",\\"reasoning\\":\\"unclosed}", total_cost_usd: 0.01 };
-  if (args.includes("--json-schema")) envelope.structured_output = { verdict: "pass", reasoning: "closed" };
-  process.stdout.write(JSON.stringify(envelope));
+  if (args.includes("--json-schema")) envelope.structured_output = { verdict: "pass", reasoning: process.env.STAND_IN_REASONING ?? "closed" };
+  const bytes = Buffer.from(JSON.stringify(envelope), "utf8");
+  const cut = bytes.findIndex((byte) => byte >= 0x80) + 1 || bytes.length;
+  fs.writeSync(1, bytes.subarray(0, cut));
+  setTimeout(() => fs.writeSync(1, bytes.subarray(cut)), 200);
 ' -- "$@"
 `;
 
@@ -33,7 +43,7 @@ afterEach(async () => {
   await Promise.all(tmpDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
 });
 
-async function runWrapper(schema: Record<string, unknown> | null) {
+async function runWrapper(schema: Record<string, unknown> | null, standIn: Record<string, string> = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-wrapper-"));
   tmpDirs.push(dir);
   const binDir = path.join(dir, "bin");
@@ -49,8 +59,9 @@ async function runWrapper(schema: Record<string, unknown> | null) {
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`, EVAL_MODEL: "stand-in", STAND_IN_ARGS: argsFile };
   if (schema) env.EVAL_JSON_SCHEMA_FILE = schemaFile;
   else delete env.EVAL_JSON_SCHEMA_FILE;
+  Object.assign(env, standIn);
   const run = spawnSync("bash", [WRAPPER, system, user], { encoding: "utf8", env });
-  return { ...run, args: JSON.parse(await fs.readFile(argsFile, "utf8")) as string[] };
+  return { ...run, args: JSON.parse(await fs.readFile(argsFile, "utf8").catch(() => "[]")) as string[] };
 }
 
 describe("the runtime Claude wrapper", () => {
@@ -63,6 +74,24 @@ describe("the runtime Claude wrapper", () => {
     const envelope = JSON.parse(run.stdout);
     expect(JSON.parse(envelope.result)).toEqual({ verdict: "pass", reasoning: "closed" });
     expect(envelope.total_cost_usd).toBe(0.01);
+  });
+
+  it("keeps a multibyte character whole however the CLI's output is read", async () => {
+    const reasoning = "Mara’s “alibi” — café, naïve, 🦊";
+    const run = await runWrapper({ type: "object" }, { STAND_IN_REASONING: reasoning });
+    expect(run.status, run.stderr).toBe(0);
+    expect(JSON.parse(JSON.parse(run.stdout).result).reasoning).toBe(reasoning);
+  });
+
+  it("fails as the CLI fails, passes on output that is not JSON as it is, and refuses a schema file it cannot read", async () => {
+    const schema = { type: "object" };
+    const failed = await runWrapper(schema, { STAND_IN_MODE: "exit" });
+    expect(failed.status).toBe(3);
+    expect(failed.stderr).toContain("cli failed");
+    expect((await runWrapper(schema, { STAND_IN_MODE: "prose" })).stdout).toBe("not json");
+    const missing = await runWrapper(null, { EVAL_JSON_SCHEMA_FILE: "/nonexistent/schema.json" });
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("no schema at /nonexistent/schema.json");
   });
 
   it("passes no schema and leaves the reply as written without one, as for the narrator", async () => {

@@ -43,8 +43,12 @@ if [[ -z "${EVAL_JSON_SCHEMA_FILE:-}" ]]; then
   exec claude "${ARGS[@]}" < "$USER_FILE"
 fi
 
-claude "${ARGS[@]}" --json-schema "$(cat "$EVAL_JSON_SCHEMA_FILE")" < "$USER_FILE" | node -e '
+[[ -r "$EVAL_JSON_SCHEMA_FILE" ]] || { echo "claude-runtime.sh: no schema at $EVAL_JSON_SCHEMA_FILE" >&2; exit 2; }
+SCHEMA="$(cat "$EVAL_JSON_SCHEMA_FILE")"
+
+claude "${ARGS[@]}" --json-schema "$SCHEMA" < "$USER_FILE" | node -e '
 let text = "";
+process.stdin.setEncoding("utf8"); // a character split across two reads stays whole
 process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
   let envelope;
   try {

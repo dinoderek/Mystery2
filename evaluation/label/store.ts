@@ -19,23 +19,36 @@ import type { FormState } from "./turns.ts";
 /** A save the form cannot make: shown to the person, who can fix it. */
 export class RejectedLabel extends Error {}
 
+/**
+ * The form's rows: each fault posts a `kind`, a `severity` and a `note`, in
+ * that order, so the three lists line up. A value the page never offers is
+ * refused here; what the person can fix is refused by `faultsOf`, with the
+ * form kept as typed.
+ */
 export function parseForm(body: string): FormState {
   const params = new URLSearchParams(body);
   const kinds = params.getAll("kind");
-  const unknown = kinds.find((kind) => !(GAME_KINDS as readonly string[]).includes(kind));
+  const severities = params.getAll("severity");
+  const notes = params.getAll("note");
+  if (severities.length !== kinds.length || notes.length !== kinds.length) throw new RejectedLabel("every fault needs a kind, a severity and a note field");
+  const unknown = kinds.find((kind) => kind !== "" && !(GAME_KINDS as readonly string[]).includes(kind));
   if (unknown !== undefined) throw new RejectedLabel(`"${unknown}" is not a kind of fault`);
-  const severity = params.get("severity") ?? "minor";
-  if (severity !== "minor" && severity !== "major") throw new RejectedLabel(`"${severity}" is not a severity`);
-  return { kinds: [...new Set(kinds)], severity, note: (params.get("note") ?? "").trim() };
+  const badSeverity = severities.find((severity) => severity !== "minor" && severity !== "major");
+  if (badSeverity !== undefined) throw new RejectedLabel(`"${badSeverity}" is not a severity`);
+  return {
+    faults: kinds.map((kind, index) => ({ kind, severity: severities[index] as "minor" | "major", note: notes[index].trim() })),
+  };
 }
 
 function faultsOf(form: FormState): Fault[] {
-  if (form.kinds.length === 0) {
-    if (form.note !== "") throw new RejectedLabel("a note belongs to a fault: tick a kind, or clear the note to save the turn as clean");
-    return [];
+  const seen = new Set<string>();
+  for (const fault of form.faults) {
+    if (fault.kind === "") throw new RejectedLabel("choose a kind for every fault, or remove the fault");
+    if (fault.note === "") throw new RejectedLabel(`a fault needs a note saying what is wrong: the ${fault.kind.replace(/_/g, " ")} fault has none`);
+    if (seen.has(fault.kind)) throw new RejectedLabel(`two faults are ${fault.kind.replace(/_/g, " ")}: give each kind one fault, its note saying everything wrong`);
+    seen.add(fault.kind);
   }
-  if (form.note === "") throw new RejectedLabel("a fault needs a note saying what is wrong");
-  return form.kinds.map((kind) => ({ kind: kind as GameKind, severity: form.severity, note: form.note }));
+  return form.faults.map((fault) => ({ kind: fault.kind as GameKind, severity: fault.severity, note: fault.note }));
 }
 
 export class GameLabels {

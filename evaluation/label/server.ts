@@ -26,7 +26,7 @@ import { isPhase, LabelHub, PHASE_NAMES } from "./hub.ts";
 import type { PhaseView } from "./hub.ts";
 import { renderDonePage, renderMessagePage, renderNamePage, renderTurnPage } from "./page.ts";
 import { parseForm, RejectedLabel } from "./store.ts";
-import { buildTurnView, formFromLabel } from "./turns.ts";
+import { buildTurnView, formFromLabel, targetAgeOf } from "./turns.ts";
 import type { FormState } from "./turns.ts";
 
 export interface LabelServerOptions {
@@ -157,7 +157,8 @@ function turnPage(view: PhaseView, sequence: number, who: string, form?: FormSta
 
 function donePage(view: PhaseView, who: string): string {
   const turns = view.turns().map((sequence) => ({ sequence, done: view.done(sequence) }));
-  return renderDonePage({ game: view.game.id, phaseName: PHASE_NAMES[view.phase], base: view.base, who, turns, message: view.summary() });
+  const targetAge = targetAgeOf(view.game.trace.blueprint);
+  return renderDonePage({ game: view.game.id, targetAge, phaseName: PHASE_NAMES[view.phase], base: view.base, who, turns, message: view.summary() });
 }
 
 /** Starts the server on the loopback address over the truth set at `truthRoot`. */

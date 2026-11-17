@@ -122,6 +122,7 @@ function progressOf(game: GameSummary): string {
 function gameHtml(game: GameSummary): string {
   const meta = [
     game.title ? escapeHtml(game.title) : null,
+    game.targetAge === null ? null : `age ${game.targetAge}`,
     game.persona ? `persona ${escapeHtml(game.persona)}` : null,
     game.played ? `played ${escapeHtml(game.played.slice(0, 10))}` : null,
     game.last ? `last labelled ${escapeHtml(game.last.at.slice(0, 10))} by ${escapeHtml(game.last.by)}` : "never labelled",

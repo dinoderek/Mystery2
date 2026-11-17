@@ -12,6 +12,7 @@ import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/co
 import { disagreementsAt, reportedTurns, tallyByJudge } from "../../../evaluation/label/disagreements.ts";
 import type { Disagreement, VerdictAtTurn } from "../../../evaluation/label/disagreements.ts";
 import { describeJudgeKind } from "../../../evaluation/label/judge-kinds.ts";
+import { compareTurn } from "../../../evaluation/label/judges-view.ts";
 import { TURN_AGE_FINDING_KINDS } from "../../../evaluation/core/judge-prompt.ts";
 import { schema as broadSchema } from "../../../evaluation/judges/gm-broad.schema.ts";
 import { schema as clueSchema } from "../../../evaluation/judges/gm-clue-discipline.schema.ts";
@@ -20,13 +21,14 @@ import { schema as roleplaySchema } from "../../../evaluation/judges/gm-roleplay
 import { schema as spoilerSchema } from "../../../evaluation/judges/gm-spoiler.schema.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Draft } from "../../../evaluation/label/keys.ts";
-import { escapeHtml, renderDisagreements, renderTurnPage } from "../../../evaluation/label/page.ts";
+import { escapeHtml, renderComparison, renderDisagreements, renderTurnPage } from "../../../evaluation/label/page.ts";
 import { phasePath } from "../../../evaluation/label/hub.ts";
 import type { Phase } from "../../../evaluation/label/hub.ts";
 import { startLabelServer } from "../../../evaluation/label/server.ts";
 import type { LabelServer, LabelServerOptions } from "../../../evaluation/label/server.ts";
 import { buildTurnView, formFromLabel, playedTurns } from "../../../evaluation/label/turns.ts";
 import { GAME_KINDS } from "../../../evaluation/lib/truth/kinds.ts";
+import type { GameKind } from "../../../evaluation/lib/truth/kinds.ts";
 import { loadTruthSet } from "../../../evaluation/lib/truth/loader.ts";
 import type { StoredFinding, StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
 
@@ -59,7 +61,7 @@ const SPOILER_FINDING = {
 };
 
 /** What the spoiler judge said, which no response may show before pass 2. */
-const JUDGE_WORDS = [SPOILER_FINDING.quote, SPOILER_FINDING.why, SPOILER_FINDING.refers_to, "flagged this turn"];
+const JUDGE_WORDS = [SPOILER_FINDING.quote, SPOILER_FINDING.why, SPOILER_FINDING.refers_to, "flagged this turn", "Which faults are true here?", "class=\"keep\""];
 
 /**
  * A copy of the fixture in a temporary folder, with two disagreements made in
@@ -207,6 +209,25 @@ describe("the labelling keyboard", () => {
     expect(served.body).not.toMatch(/import type|: GameKind|satisfies/);
     const module = await import(`data:text/javascript;base64,${Buffer.from(served.body).toString("base64")}`);
     expect(module.actionForKey("2", false)).toEqual({ type: "set-kind", kind: "fabrication" });
+  });
+});
+
+describe("keeping and dropping a fault in pass 2", () => {
+  const mine = { kind: "fabrication", severity: "minor", note: "mine" } as const;
+  const theirs = { kind: "out_of_character", severity: "major", note: "theirs" } as const;
+
+  it("keeps a fault as the current row once per kind, and drops every row of a kind", () => {
+    const start: Draft = { faults: [mine], current: 0 };
+    const kept = applyAction(start, { type: "keep", fault: theirs });
+    expect(kept).toEqual({ faults: [mine, theirs], current: 1 });
+    expect(applyAction(kept, { type: "keep", fault: { ...theirs, note: "again" } })).toBe(kept);
+    expect(applyAction(kept, { type: "drop", kind: "out_of_character" })).toEqual({ faults: [mine], current: 0 });
+    expect(applyAction({ faults: [mine, { ...mine, note: "twice" }], current: 1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [], current: -1 });
+    // The current row stays current when a row before it goes, and the row after it takes over when it goes.
+    const spoiler = { kind: "spoiler", severity: "minor", note: "s" } as const;
+    expect(applyAction({ faults: [mine, theirs, spoiler], current: 1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [theirs, spoiler], current: 0 });
+    expect(applyAction({ faults: [mine, theirs, spoiler], current: 1 }, { type: "drop", kind: "out_of_character" })).toEqual({ faults: [mine, spoiler], current: 1 });
+    expect(applyAction({ faults: [mine], current: -1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [], current: -1 });
   });
 });
 
@@ -370,7 +391,7 @@ describe("a turn's Clues panel", () => {
     Object.assign(world.characters[0].clues[0], { requires: { clue_ids: ["clue_garden_1"], rationale: "Only once you saw the roses." } });
     (game.events[3].payload as Record<string, unknown>).revealed_off_script = ["clue_mara_1"];
     expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requiresMet: false, offScript: true }]);
-    const page = renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, 4, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [] });
+    const page = renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, 4, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [], comparison: null });
     expect(page).toContain('<span class="tag locked">requires not met</span> <span class="tag">recorded off script</span>');
   });
 
@@ -416,7 +437,7 @@ describe("a turn's Clues panel", () => {
     world.locations[0].clues.push(...[2, 3, 4].map((n) => ({ id: `clue_hall_${n}`, text: `Hall clue ${n}.`, requires: { clue_ids: ["clue_dorn_1"], rationale: "Later." } })));
     world.characters[0].clues = [];
     const page = (sequence: number) =>
-      renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, sequence, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [] });
+      renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, sequence, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [], comparison: null });
     const long = page(2);
     expect(long).toContain('<details class="fold" id="clues-here"><summary><h3>Could be revealed here: Grand Hall (5, 0 held, next clue_hall_1)</h3>');
     expect(long).toContain('<span class="tag locked">requires not met</span>');
@@ -723,6 +744,10 @@ describe("pass two", () => {
     expect(caught).toContain("<p>Points the player at the culprit before any clue does.</p>");
     expect(caught).toContain("refers to <code>char-dorn</code>");
     expect(caught).not.toMatch(/<td>(pass|fail)<\/td>/);
+    // The question: the judge's spoiler, unticked as the label calls it clean, with its reason.
+    expect(caught).toContain("<h2>Which faults are true here?</h2>");
+    expect(caught).toMatch(/<input type="checkbox" class="keep" data-fault="[^"]*spoiler[^"]*"> <b>spoiler<\/b>/);
+    expect(caught).toContain("gm_spoiler (claude-opus-stub): 1 of 1 run, minor: Points the player at the culprit before any clue does.");
     const missed = (await get(server, "/turn/3")).body;
     expect(missed).toContain("labelled <b>out_of_character</b>, no judge caught it");
     expect(missed).toContain("gm_roleplay");
@@ -837,6 +862,72 @@ describe("where a judge and a label disagree", () => {
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [] })], 4)).toMatchObject([{ kind: "spoiler", label: "fault" }]);
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [], judge: "gm_roleplay" })], 4)).toEqual([]);
     expect(disagreementsAt("medal", spoiler, [verdict({})], 4)).toEqual([]);
+  });
+});
+
+describe("which faults are true: pass 2's question", () => {
+  const game = { side: "game", game: "medal", variant: null, sequence: null } as const;
+  const finding = (kind: string, severity: "minor" | "major", why: string | null = `${kind} ${severity}`): StoredFinding => ({
+    sequence: 4, kinds: [kind], severity, judge_kind: null, quote: null, why, refers_to: null,
+  });
+  const verdict = (judge: string, sample: number, findings: StoredFinding[], model = "opus"): StoredVerdict => ({
+    subject: game, judge, model, sample, status: "pass", findings, duration_ms: null, cost_usd: null,
+  });
+  const label = (faults: { kind: GameKind; severity: "minor" | "major"; note: string }[], pass: 1 | 2 = 1) => [
+    { sequence: 4, faults, by: "a", at: "2026-06-01T00:00:00Z", pass },
+  ];
+  // gm_roleplay flags out of character on two of three runs (minor, major); gm_broad on none; the age judge on all.
+  const verdicts = [
+    verdict("gm_roleplay", 0, [finding("out_of_character", "minor")]),
+    verdict("gm_roleplay", 1, [finding("out_of_character", "major", null)]),
+    verdict("gm_roleplay", 2, []),
+    ...[0, 1, 2].map((sample) => verdict("gm_broad", sample, [])),
+    ...[0, 1, 2].map((sample) => verdict("age_appropriate_turn", sample, [finding("not_age_fit", "minor")], "sonnet")),
+  ];
+
+  it("offers the label's faults ticked and every kind a judge run flagged, with each judge's runs and a reason", () => {
+    const comparison = compareTurn("medal", label([{ kind: "fabrication", severity: "minor", note: "invented a gate" }]), verdicts, 4);
+    expect(comparison?.pass).toBe(1);
+    expect(comparison?.candidates.map((candidate) => [candidate.kind, candidate.yours !== null])).toEqual([
+      ["fabrication", true],
+      ["out_of_character", false],
+    ]);
+    const outOfCharacter = comparison!.candidates[1];
+    expect(outOfCharacter.judges).toEqual([
+      { judge: "gm_roleplay", model: "opus", judged: 3, flagged: 2, severity: "major", why: "out_of_character minor" },
+      { judge: "gm_broad", model: "opus", judged: 3, flagged: 0, severity: null, why: null },
+    ]);
+    // A tie of severities is major; the note is a flagging run's reason.
+    expect(outOfCharacter.fault).toEqual({ kind: "out_of_character", severity: "major", note: "out_of_character minor" });
+    expect(comparison!.candidates[0].fault).toEqual({ kind: "fabrication", severity: "minor", note: "invented a gate" });
+  });
+
+  it("leaves a clean age-fit label as it is, but offers an age fault the label names", () => {
+    expect(compareTurn("medal", label([]), verdicts, 4)?.candidates.map((candidate) => candidate.kind)).toEqual(["out_of_character"]);
+    const aged = compareTurn("medal", label([{ kind: "not_age_fit", severity: "minor", note: "long words" }], 2), verdicts, 4);
+    expect(aged?.pass).toBe(2);
+    expect(aged?.candidates.find((candidate) => candidate.kind === "not_age_fit")?.judges).toMatchObject([
+      { judge: "gm_broad", flagged: 0 },
+      { judge: "age_appropriate_turn", model: "sonnet", flagged: 3 },
+    ]);
+  });
+
+  it("names a judge's fault without a reason by who flagged it, and has nothing to ask of an unlabelled turn", () => {
+    const silent = [verdict("gm_spoiler", 0, [finding("spoiler", "minor", null)])];
+    expect(compareTurn("medal", label([]), silent, 4)?.candidates[0].fault).toEqual({ kind: "spoiler", severity: "minor", note: "gm_spoiler flagged spoiler here" });
+    expect(compareTurn("medal", [], verdicts, 4)).toBeNull();
+  });
+
+  it("renders each kind as a box, ticked for the label's, with its sources, escaped", () => {
+    const comparison = compareTurn("medal", label([{ kind: "fabrication", severity: "minor", note: "a <gate>" }]), verdicts, 4)!;
+    const html = renderComparison(comparison);
+    expect(html).toContain("<h2>Which faults are true here?</h2>");
+    expect(html).toMatch(/class="keep" data-fault="[^"]*fabrication[^"]*" checked> <b>fabrication<\/b>/);
+    expect(html).toMatch(/class="keep" data-fault="[^"]*out_of_character[^"]*"> <b>out of character<\/b>/);
+    expect(html).toContain("<li>you, pass 1 (minor): a &#60;gate&#62;</li>");
+    expect(html).toContain("<li>gm_roleplay (opus): 2 of 3 runs, major: out_of_character minor</li>");
+    expect(html).toContain('<li class="muted">gm_broad (opus): 0 of 3 runs</li>');
+    expect(renderComparison({ pass: 1, candidates: [] })).toContain("neither the label nor any judge names a fault here");
   });
 });
 

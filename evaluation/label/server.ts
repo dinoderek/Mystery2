@@ -152,6 +152,7 @@ function turnPage(view: PhaseView, sequence: number, who: string, form?: FormSta
     previous: turns[index - 1] ?? null,
     next: turns[index + 1] ?? null,
     disagreements: view.disagreements(sequence),
+    comparison: view.comparison(sequence),
   });
 }
 

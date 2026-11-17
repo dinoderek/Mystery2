@@ -52,7 +52,10 @@ export type KeyAction =
   | { type: "clean" }
   | { type: "previous" }
   | { type: "toggle-truth" }
-  | { type: "close" };
+  | { type: "close" }
+  // Not on a key: pass 2's list of faults to keep.
+  | { type: "keep"; fault: DraftFault }
+  | { type: "drop"; kind: GameKind };
 
 export const ADD_KEY = "a";
 export const REMOVE_KEY = "x";
@@ -108,7 +111,8 @@ function changeCurrent(draft: Draft, change: Partial<DraftFault>): Draft {
  * The draft after an action. A kind or a severity goes to the current row, and
  * the note key types into it, made first when there is none; adding makes the
  * new row current; removing takes the current row away; clean empties the
- * draft. The others (moving, saving, menus) leave it as it was.
+ * draft. Keeping a fault adds it as the current row unless a row of its kind is
+ * there; dropping a kind removes its rows. The others (moving, saving, menus) leave it as it was.
  */
 export function applyAction(draft: Draft, action: KeyAction): Draft {
   switch (action.type) {
@@ -127,6 +131,15 @@ export function applyAction(draft: Draft, action: KeyAction): Draft {
     }
     case "clean":
       return { faults: [], current: -1 };
+    case "keep":
+      if (draft.faults.some((fault) => fault.kind === action.fault.kind)) return draft;
+      return { faults: [...draft.faults, { ...action.fault }], current: draft.faults.length };
+    case "drop": {
+      // The current row stays current when another is dropped; when it goes, the row after it takes its place.
+      const before = draft.faults.slice(0, Math.max(draft.current, 0)).filter((fault) => fault.kind === action.kind).length;
+      const faults = draft.faults.filter((fault) => fault.kind !== action.kind);
+      return { faults, current: Math.min(draft.current - before, faults.length - 1) };
+    }
     default:
       return draft;
   }

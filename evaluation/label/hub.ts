@@ -21,6 +21,8 @@ import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { latestLabel } from "../lib/truth/truth.ts";
 import { disagreementsAt, judgesGame, judgesGameOrVariant, reportedTurns } from "./disagreements.ts";
 import type { Disagreement } from "./disagreements.ts";
+import { compareTurn } from "./judges-view.ts";
+import type { TurnComparison } from "./judges-view.ts";
 import { GameLabels } from "./store.ts";
 import { playedTurns, targetAgeOf } from "./turns.ts";
 
@@ -72,6 +74,10 @@ export class PhaseView {
     const only = this.only;
     if (this.pass === 1) return only === null ? sequences : sequences.filter((sequence) => only.has(sequence));
     return sequences.filter((sequence) => this.disagreements(sequence).length > 0);
+  }
+
+  comparison(sequence: number): TurnComparison | null {
+    return this.pass === 2 ? compareTurn(this.game.id, this.store.labels, this.verdicts, sequence) : null;
   }
 
   disagreements(sequence: number): Disagreement[] {

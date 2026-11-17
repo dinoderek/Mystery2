@@ -15,6 +15,7 @@ import type { CluePanelView, PanelClue } from "./clues.ts";
 import { tallyByJudge } from "./disagreements.ts";
 import type { Disagreement, JudgeTally, VerdictAtTurn } from "./disagreements.ts";
 import { describeJudgeKind } from "./judge-kinds.ts";
+import type { JudgeSource, KeepCandidate, TurnComparison } from "./judges-view.ts";
 import type { StoredFinding } from "../lib/truth/schemas.ts";
 import type { CharacterView, ClueView, FormFault, FormState, TurnView } from "./turns.ts";
 
@@ -73,6 +74,9 @@ main:has(.beside) { max-width: 72rem; }
 .clues .meta { display: block; font-size: .85rem; color: var(--muted); }
 .tag { font-size: .75rem; border: 1px solid var(--muted); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
 .tag.next { border-color: var(--accent); color: var(--accent); font-weight: 600; } .tag.locked { border-color: var(--bad); color: var(--bad); }
+.keeps { list-style: none; padding-left: 0; } .keeps > li + li { margin-top: 6px; }
+.keeps label { display: block; min-height: 44px; padding-top: 8px; } .keeps input { width: 1.2rem; height: 1.2rem; vertical-align: -3px; }
+.sources { padding-left: 1.9rem; font-size: .9rem; } .sources li + li { margin-top: 2px; }
 .judge { margin: 6px 0 0; } .judge > summary { font-weight: 600; }
 .runs, .findings { padding-left: 1.2rem; } .runs > li + li, .findings > li + li { margin-top: 6px; }
 blockquote { margin: 4px 0; padding: 0 0 0 8px; border-left: 3px solid var(--line); font-style: italic; overflow-wrap: anywhere; }
@@ -108,6 +112,8 @@ export interface TurnPage {
   next: number | null;
   /** The second pass's disagreements on this turn; empty in the first. */
   disagreements: readonly Disagreement[];
+  /** The second pass's comparison of the label and the judges on this turn; null in the first. */
+  comparison: TurnComparison | null;
 }
 
 function clueItems(clues: readonly ClueView[]): string {
@@ -254,6 +260,32 @@ export function renderDisagreements(disagreements: readonly Disagreement[]): str
   return `<section><h2>Where a judge and the label disagree</h2>${blocks.join("")}</section>`;
 }
 
+const kindName = (kind: string): string => kind.replace(/_/g, " ");
+
+/** A JSON value in a double-quoted attribute. */
+const dataJson = (value: unknown): string => escapeHtml(JSON.stringify(value));
+
+function judgeSourceHtml(source: JudgeSource): string {
+  const who = `${escapeHtml(source.judge)} (${escapeHtml(source.model)})`;
+  const runs = `${source.flagged} of ${source.judged} ${source.judged === 1 ? "run" : "runs"}`;
+  if (source.flagged === 0) return `<li class="muted">${who}: ${runs}</li>`;
+  return `<li>${who}: ${runs}, ${source.severity}${source.why ? `: ${escapeHtml(source.why)}` : ""}</li>`;
+}
+
+function candidateHtml(candidate: KeepCandidate, pass: 1 | 2): string {
+  const yours = candidate.yours ? `<li>you, pass ${pass} (${candidate.yours.severity}): ${escapeHtml(candidate.yours.note)}</li>` : "";
+  const box = `<input type="checkbox" class="keep" data-fault="${dataJson(candidate.fault)}"${candidate.yours ? " checked" : ""}>`;
+  return `<li><label>${box} <b>${kindName(candidate.kind)}</b></label><ul class="sources">${yours}${candidate.judges.map(judgeSourceHtml).join("")}</ul></li>`;
+}
+
+/** Pass 2's question: which faults are true here, from the label and every judge run, each ticked or not. */
+export function renderComparison(comparison: TurnComparison): string {
+  const list = comparison.candidates.length === 0
+    ? `<p class="muted">neither the label nor any judge names a fault here</p>`
+    : `<ul class="keeps">${comparison.candidates.map((candidate) => candidateHtml(candidate, comparison.pass)).join("")}</ul>`;
+  return `<section id="compare"><h2>Which faults are true here?</h2>${list}<p class="muted">Tick each fault that is really there and untick one that is not; the faults below follow. Nothing is saved until you save.</p></section>`;
+}
+
 const EMPTY_FAULT: FormFault = { kind: "", severity: "minor", note: "" };
 
 function optionsHtml(values: readonly { value: string; name: string }[], chosen: string): string {
@@ -310,6 +342,7 @@ export function renderTurnPage(page: TurnPage): string {
 ${page.error ? `<section><p class="error" role="alert">Not saved: ${escapeHtml(page.error)}</p></section>` : ""}
 ${playerHtml(view)}
 <div class="beside"><section><h2>Narration</h2><p class="narration">${escapeHtml(view.narration)}</p></section>${cluesHtml(view.clues)}</div>
+${page.comparison ? renderComparison(page.comparison) : ""}
 ${page.disagreements.length > 0 ? renderDisagreements(page.disagreements) : ""}
 ${formHtml(page)}
 ${page.labelled ? `<p class="muted">Latest label: ${escapeHtml(page.labelled)}</p>` : ""}
@@ -381,8 +414,22 @@ const write = (draft) => {
   });
   current = draft.current;
   mark();
+  sync();
 };
+const keeps = [...document.querySelectorAll("input.keep")];
+function sync() {
+  const kinds = new Set(rows().map((row) => row.elements.kind.value));
+  for (const box of keeps) box.checked = kinds.has(JSON.parse(box.dataset.fault).kind);
+}
 const act = (action) => write(applyAction(read(), action));
+sync(); // a refused save comes back with the rows as typed, which the ticks follow
+for (const box of keeps) {
+  box.addEventListener("change", () => {
+    const fault = JSON.parse(box.dataset.fault);
+    act(box.checked ? { type: "keep", fault } : { type: "drop", kind: fault.kind });
+  });
+}
+list.addEventListener("change", (event) => { if (event.target.name === "kind") sync(); });
 list.addEventListener("focusin", (event) => {
   const row = event.target.closest(".fault");
   if (row) { current = rows().indexOf(row); mark(); }

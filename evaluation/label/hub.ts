@@ -22,7 +22,7 @@ import { latestLabel } from "../lib/truth/truth.ts";
 import { disagreementsAt, judgesGame, judgesGameOrVariant, reportedTurns } from "./disagreements.ts";
 import type { Disagreement } from "./disagreements.ts";
 import { GameLabels } from "./store.ts";
-import { playedTurns } from "./turns.ts";
+import { playedTurns, targetAgeOf } from "./turns.ts";
 
 export const PHASES = ["pass-1", "reported", "pass-2"] as const;
 export type Phase = (typeof PHASES)[number];
@@ -109,6 +109,8 @@ export type Stage = "not-started" | "pass-1" | "no-results" | "pass-2" | "done";
 export interface GameSummary {
   id: string;
   title: string | null;
+  /** The age the story is written for. */
+  targetAge: number | null;
   persona: string | null;
   /** When the game was played, as the trace records it. */
   played: string | null;
@@ -224,6 +226,7 @@ export class LabelHub {
     return {
       id: game.id,
       title: text(record(record(trace.blueprint).metadata).title),
+      targetAge: targetAgeOf(trace.blueprint),
       persona: text(record(trace.source).persona),
       played: text(record(trace.session).created_at),
       turns: sequences.length,

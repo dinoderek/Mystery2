@@ -11,13 +11,13 @@ import { tailscaleName } from "../../../evaluation/core/tailscale.ts";
 import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/command.ts";
 import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
-import type { Selection } from "../../../evaluation/label/keys.ts";
+import type { Draft } from "../../../evaluation/label/keys.ts";
 import { escapeHtml } from "../../../evaluation/label/page.ts";
 import { phasePath } from "../../../evaluation/label/hub.ts";
 import type { Phase } from "../../../evaluation/label/hub.ts";
 import { startLabelServer } from "../../../evaluation/label/server.ts";
 import type { LabelServer, LabelServerOptions } from "../../../evaluation/label/server.ts";
-import { buildTurnView, playedTurns } from "../../../evaluation/label/turns.ts";
+import { buildTurnView, formFromLabel, playedTurns } from "../../../evaluation/label/turns.ts";
 import { GAME_KINDS } from "../../../evaluation/lib/truth/kinds.ts";
 import { loadTruthSet } from "../../../evaluation/lib/truth/loader.ts";
 import type { StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
@@ -132,33 +132,53 @@ async function post(server: LabelServer, pathname: string, fields: [string, stri
 const labelsOf = async (dir: string) => (await readJson(path.join(dir, "games/medal/labels.json"))).labels;
 
 describe("the labelling keyboard", () => {
-  it("maps each key to its kind, severity or movement", () => {
+  it("maps each key to its kind, severity, row or movement", () => {
     expect(KEYED_KINDS).toEqual(GAME_KINDS);
-    for (const [key, kind] of Object.entries(KIND_KEYS)) expect(actionForKey(key, false)).toEqual({ type: "toggle-kind", kind });
+    for (const [key, kind] of Object.entries(KIND_KEYS)) expect(actionForKey(key, false)).toEqual({ type: "set-kind", kind });
     expect(actionForKey("m", false)).toEqual({ type: "set-severity", severity: "major" });
     expect(actionForKey("n", false)).toEqual({ type: "set-severity", severity: "minor" });
+    expect(actionForKey("a", false)).toEqual({ type: "add-fault" });
+    expect(actionForKey("x", false)).toEqual({ type: "remove-fault" });
     expect(actionForKey("t", false)).toEqual({ type: "focus-note" });
     expect(actionForKey("c", false)).toEqual({ type: "clean" });
     expect(actionForKey("p", false)).toEqual({ type: "previous" });
+    expect(actionForKey("g", false)).toEqual({ type: "toggle-truth" });
     expect(actionForKey("Enter", false)).toEqual({ type: "save" });
-    expect(actionForKey("x", false)).toBeNull();
+    expect(actionForKey("Escape", false)).toEqual({ type: "close" });
+    expect(actionForKey("z", false)).toBeNull();
     expect(actionForKey("toString", false)).toBeNull();
   });
 
   it("leaves the keys to the note while it is being typed in, except Escape", () => {
-    for (const key of ["1", "m", "c", "Enter", "t"]) expect(actionForKey(key, true)).toBeNull();
+    for (const key of ["1", "m", "a", "c", "Enter", "t"]) expect(actionForKey(key, true)).toBeNull();
     expect(actionForKey("Escape", true)).toEqual({ type: "leave-note" });
-    expect(actionForKey("Escape", false)).toBeNull();
   });
 
-  it("ticks and unticks kinds in the page's order, sets the severity and cleans", () => {
-    let selection: Selection = { kinds: [], severity: "minor" };
-    for (const key of ["4", "1", "m"]) selection = applyAction(selection, actionForKey(key, false)!);
-    expect(selection).toEqual({ kinds: ["spoiler", "out_of_character"], severity: "major" });
-    selection = applyAction(selection, actionForKey("4", false)!);
-    expect(selection.kinds).toEqual(["spoiler"]);
-    expect(applyAction(selection, { type: "save" })).toBe(selection);
-    expect(applyAction(selection, { type: "clean" })).toEqual({ kinds: [], severity: "major" });
+  it("builds faults one row at a time, each with its own kind and severity", () => {
+    const press = (draft: Draft, ...keys: string[]) => keys.reduce((next, key) => applyAction(next, actionForKey(key, false)!), draft);
+    const empty: Draft = { faults: [], current: -1 };
+    // A kind with no row makes one; a second row takes its own kind and severity.
+    let draft = press(empty, "1", "m", "a", "4");
+    expect(draft).toEqual({
+      faults: [
+        { kind: "spoiler", severity: "major", note: "" },
+        { kind: "out_of_character", severity: "minor", note: "" },
+      ],
+      current: 1,
+    });
+    // The keys act on the current row only.
+    draft = press({ ...draft, current: 0 }, "2", "n");
+    expect(draft.faults.map((fault) => [fault.kind, fault.severity])).toEqual([
+      ["fabrication", "minor"],
+      ["out_of_character", "minor"],
+    ]);
+    expect(press(empty, "t")).toEqual({ faults: [{ kind: "", severity: "minor", note: "" }], current: 0 });
+    expect(press(empty, "n").faults).toHaveLength(1);
+    // Removing takes the current row; the one before becomes current.
+    expect(press({ ...draft, current: 1 }, "x")).toEqual({ faults: [draft.faults[0]], current: 0 });
+    expect(press(press(draft, "x", "x"), "x")).toEqual({ faults: [], current: -1 });
+    expect(press(draft, "c")).toEqual(empty);
+    for (const key of ["Enter", "p", "g", "Escape"]) expect(press(draft, key)).toBe(draft);
   });
 
   it("is served to the browser as a module that runs", async () => {
@@ -167,7 +187,7 @@ describe("the labelling keyboard", () => {
     expect(served.status).toBe(200);
     expect(served.body).not.toMatch(/import type|: GameKind|satisfies/);
     const module = await import(`data:text/javascript;base64,${Buffer.from(served.body).toString("base64")}`);
-    expect(module.actionForKey("2", false)).toEqual({ type: "toggle-kind", kind: "fabrication" });
+    expect(module.actionForKey("2", false)).toEqual({ type: "set-kind", kind: "fabrication" });
   });
 });
 
@@ -185,11 +205,50 @@ describe("a turn's view", () => {
     expect(search).toContain("clue_garden_1: Trampled roses by the wall.");
   });
 
+  it("titles the turn with the game, the target age, the pass and its place, and puts the command with the player", async () => {
+    const { server } = await serve(await copyFixture());
+    const page = (await get(server, "/turn/7")).body;
+    expect(page).toContain("<h1>medal &middot; age 9 &middot; pass 1 &middot; turn 7 of 9</h1>");
+    expect(page).not.toMatch(/\(event \d+/);
+    expect(page).toContain('<h2>The player</h2><p class="command"><code>search</code></p><p>look by the wall</p>');
+    expect(page).toContain("<title>medal, turn 7</title>");
+  });
+
+  it("keeps the ground truth, its target age and the whole cast in a menu in the title", async () => {
+    const { server } = await serve(await copyFixture());
+    const page = (await get(server, "/turn/1")).body;
+    const title = page.slice(page.indexOf('<div class="title">'), page.indexOf("<section>"));
+    expect(title).toContain('<details class="menu" id="truth"><summary>Ground truth');
+    expect(title).toContain("<b>Target age:</b> 9");
+    expect(title).toContain("Dorn slipped into the hall and took the medal while everyone was at dinner.");
+    expect(title).toContain("<h2>The cast</h2>");
+    for (const name of ["Mara Vale", "Dorn Pike"]) expect(title).toContain(`<details class="fold"><summary>${name}</summary>`);
+    expect(title).toContain("<b>Motive:</b> He owed money and the medal was valuable.");
+    // Nothing of it is in the page's body, and a turn that talks to no one has no profile.
+    expect(page.slice(page.indexOf("<section>"))).not.toContain("took the medal");
+    expect(page).not.toContain('id="profile"');
+  });
+
+  it("opens the profile of the character a conversation turn talks to, what they hide under a fold", async () => {
+    const { server } = await serve(await copyFixture());
+    for (const sequence of [3, 4, 5]) {
+      const page = (await get(server, `/turn/${sequence}`)).body;
+      const player = page.slice(page.indexOf("<h2>The player</h2>"), page.indexOf("<h2>Narration</h2>"));
+      expect(player).toContain('<details class="menu" id="profile"><summary>Mara Vale: profile</summary>');
+      const shown = player.slice(0, player.indexOf('<details class="fold">'));
+      const folded = player.slice(player.indexOf('<details class="fold">'));
+      for (const text of ["Warm but nervous.", "Helpful.", "The household cook.", "female; Tall, in a green apron."]) expect(shown).toContain(text);
+      for (const text of ["I was in the kitchen all evening.", "<b>Culprit:</b> no", "Knows the dinner menu.", "Mara cooked and served dinner", "clue_mara_1: Mara saw a shadow"]) {
+        expect(folded).toContain(text);
+      }
+    }
+  });
+
   it("starts at the first turn with no label, and shows turn 1 as the game's first", async () => {
     const { server } = await serve(await copyFixture());
     expect(await get(server, "/")).toMatchObject({ status: 303, location: "/turn/1" });
     const first = (await get(server, "/turn/1")).body;
-    expect(first).toContain("turn 1 of 9");
+    expect(first).toContain("turn 1 of 9</h1>");
     expect(first).toContain("(the game begins)");
     expect(first).toContain("You arrive at the grand hall as the dinner party winds down.");
     expect(first).toContain("none");
@@ -212,6 +271,23 @@ describe("a turn's view", () => {
     expect(buildTurnView(game, 2, 1, 1).clues).toEqual([{ id: "clue_missing", text: null }]);
     expect(() => buildTurnView(game, 99, 1, 1)).toThrow("has no turn 99");
   });
+
+  it("reads a profile's tells and agendas, and has no age or speaker the blueprint does not give", async () => {
+    const set = await loadTruthSet(FIXTURE);
+    const game = structuredClone(set.games[0].trace);
+    const blueprint = game.blueprint as { metadata: Record<string, unknown>; world: { characters: Record<string, unknown>[] } };
+    Object.assign(blueprint.world.characters[0], {
+      tells: [{ id: "tell_mara", text: "Wrings her apron.", trigger: { kind: "condition", condition: "asked about dinner" } }],
+      agendas: [{ type: "protect_other", strategy: "Shield Dorn.", priority: "high", details: "Plays down the noise." }],
+    });
+    const mara = buildTurnView(game, 4, 1, 1).character;
+    expect(mara).toMatchObject({ name: "Mara Vale", tells: ["Wrings her apron."], agendas: ["Shield Dorn. Plays down the noise."], motive: null, isCulprit: false });
+    expect(buildTurnView(game, 4, 1, 1).groundTruth.culprit).toBe("Dorn Pike");
+    delete blueprint.metadata.target_age;
+    game.events[3].payload = { ...game.events[3].payload, character_id: "char_nobody" };
+    expect(buildTurnView(game, 4, 1, 1)).toMatchObject({ targetAge: null, character: null });
+    expect(buildTurnView(game, 7, 1, 1).character).toBeNull();
+  });
 });
 
 describe("saving a label", () => {
@@ -220,7 +296,14 @@ describe("saving a label", () => {
     const { server } = await serve(dir);
     const clean = await post(server, "/turn/1", []);
     expect(clean).toMatchObject({ status: 303, location: "/turn/2" });
-    const fault = await post(server, "/turn/5", [["kind", "spoiler"], ["kind", "clue_handling"], ["severity", "major"], ["note", " too much "]]);
+    const fault = await post(server, "/turn/5", [
+      ["kind", "spoiler"],
+      ["severity", "major"],
+      ["note", " too much "],
+      ["kind", "clue_handling"],
+      ["severity", "minor"],
+      ["note", "hands the clue over"],
+    ]);
     expect(fault.location).toBe("/turn/6");
     const labels = await labelsOf(dir);
     expect(labels.slice(-2)).toEqual([
@@ -229,7 +312,7 @@ describe("saving a label", () => {
         sequence: 5,
         faults: [
           { kind: "spoiler", severity: "major", note: "too much" },
-          { kind: "clue_handling", severity: "major", note: "too much" },
+          { kind: "clue_handling", severity: "minor", note: "hands the clue over" },
         ],
         by: "tester",
         at: "2026-07-01T10:00:02.000Z",
@@ -238,6 +321,24 @@ describe("saving a label", () => {
     ]);
     const set = await loadTruthSet(dir);
     expect(set.games[0].labels).toHaveLength(labels.length);
+    // Saved, the label reloads as its rows, each with its own severity and note.
+    const page = (await get(server, "/turn/5")).body;
+    const list = page.slice(page.indexOf('<div id="faults"'), page.indexOf("<template"));
+    const rows = [...list.matchAll(/<fieldset class="fault[^"]*">(.*?)<\/fieldset>/g)].map((match) => match[1]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatch(/value="spoiler" selected[\s\S]*value="major" selected[\s\S]*value="too much"/);
+    expect(rows[1]).toMatch(/value="clue_handling" selected[\s\S]*value="minor" selected[\s\S]*value="hands the clue over"/);
+  });
+
+  it("fills the form with one row per fault of the latest label, none when it is clean", () => {
+    const at = "2026-06-01T00:00:00Z";
+    expect(formFromLabel(null)).toEqual({ faults: [] });
+    expect(formFromLabel({ sequence: 1, faults: [], by: "a", at, pass: 1 })).toEqual({ faults: [] });
+    const faults = [
+      { kind: "spoiler" as const, severity: "major" as const, note: "names the culprit" },
+      { kind: "out_of_character" as const, severity: "minor" as const, note: "too formal" },
+    ];
+    expect(formFromLabel({ sequence: 1, faults, by: "a", at, pass: 1 })).toEqual({ faults });
   });
 
   it("keeps earlier labels and shows the latest one on the form", async () => {
@@ -246,8 +347,8 @@ describe("saving a label", () => {
     await post(server, "/turn/7", [["kind", "fabrication"], ["severity", "minor"], ["note", "second look"]]);
     expect((await labelsOf(dir)).filter((label) => label.sequence === 7)).toHaveLength(2);
     const page = (await get(server, "/turn/7")).body;
-    expect(page).toContain('value="fabrication" checked');
-    expect(page).toContain('value="minor" checked');
+    expect(page).toContain('value="fabrication" selected');
+    expect(page).toContain('value="minor" selected');
     expect(page).toContain('value="second look"');
     expect(page).toContain("Latest label: tester");
   });
@@ -276,9 +377,15 @@ describe("saving a label", () => {
   });
 
   it.each([
-    ["a fault with no note", [["kind", "spoiler"]], "a fault needs a note"],
-    ["a note with no fault", [["note", "stray"]], "a note belongs to a fault"],
-    ["a kind that does not exist", [["kind", "rude"], ["note", "x"]], '"rude" is not a kind of fault'],
+    ["a fault with no note", [["kind", "spoiler"], ["severity", "minor"], ["note", " "]], "a fault needs a note saying what is wrong: the spoiler fault has none"],
+    ["a fault with no kind", [["kind", ""], ["severity", "minor"], ["note", "stray"]], "choose a kind for every fault"],
+    [
+      "two faults of one kind",
+      [["kind", "spoiler"], ["severity", "minor"], ["note", "x"], ["kind", "spoiler"], ["severity", "major"], ["note", "y"]],
+      "two faults are spoiler",
+    ],
+    ["a fault missing a field", [["kind", "spoiler"], ["note", "x"]], "every fault needs a kind, a severity and a note field"],
+    ["a kind that does not exist", [["kind", "rude"], ["severity", "minor"], ["note", "x"]], '"rude" is not a kind of fault'],
     ["a severity that does not exist", [["kind", "spoiler"], ["severity", "huge"], ["note", "x"]], '"huge" is not a severity'],
   ] as [string, [string, string][], string][])("shows and logs %s, and writes nothing", async (_name, fields, message) => {
     const dir = await copyFixture();
@@ -306,9 +413,19 @@ describe("saving a label", () => {
 
   it("keeps what was typed when a save is refused", async () => {
     const { server } = await serve(await copyFixture());
-    const response = await post(server, "/turn/1", [["kind", "fabrication"], ["severity", "major"]]);
-    expect(response.body).toContain('value="fabrication" checked');
-    expect(response.body).toContain('value="major" checked');
+    const response = await post(server, "/turn/1", [
+      ["kind", "fabrication"],
+      ["severity", "major"],
+      ["note", "invents a gate"],
+      ["kind", "spoiler"],
+      ["severity", "minor"],
+      ["note", ""],
+    ]);
+    expect(response.status).toBe(422);
+    expect(response.body).toContain('value="fabrication" selected');
+    expect(response.body).toContain('value="major" selected');
+    expect(response.body).toContain('value="invents a gate"');
+    expect(response.body).toContain('value="spoiler" selected');
   });
 
   it("shows and logs a file that cannot be written, and keeps nothing in memory", async () => {
@@ -340,7 +457,7 @@ describe("saving a label", () => {
   it("refuses a save for a turn the game does not have, and a form that is too large", async () => {
     const { server } = await serve(await copyFixture());
     expect((await post(server, "/turn/99", [])).status).toBe(404);
-    const large = await post(server, "/turn/1", [["note", "x".repeat(70_000)]]);
+    const large = await post(server, "/turn/1", [["kind", "spoiler"], ["severity", "minor"], ["note", "x".repeat(70_000)]]);
     expect(large.status).toBe(422);
     expect(large.body).toContain("the form is too large");
   });
@@ -364,7 +481,7 @@ describe("pass one", () => {
     const { server } = await serve(dir);
     const bodies = [(await get(server, "/")).body, (await get(server, "/done")).body, (await get(server, "/keys.js")).body];
     for (let sequence = 1; sequence <= 9; sequence += 1) bodies.push((await get(server, `/turn/${sequence}`)).body);
-    bodies.push((await post(server, "/turn/2", [["kind", "spoiler"]])).body);
+    bodies.push((await post(server, "/turn/2", [["kind", "spoiler"], ["severity", "minor"], ["note", ""]])).body);
     const everything = bodies.join("\n");
     for (const text of ["culprit-leak", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree"]) {
       expect(everything).not.toContain(text);
@@ -701,9 +818,9 @@ describe("the list of games", () => {
     const { server } = await serve(await withSecondGame(await copyFixture()));
     const home = (await get(server, "/?")).body;
     expect(home).toContain("2 of 2 games");
-    expect(home).toContain("The Missing Medal &middot; played 2026-06-01 &middot; last labelled 2026-06-04 by fixture");
+    expect(home).toContain("The Missing Medal &middot; age 9 &middot; played 2026-06-01 &middot; last labelled 2026-06-04 by fixture");
     expect(home).toContain("pass 1 in progress &middot; 4 of 9 turns labelled");
-    expect(home).toContain("The Second Medal &middot; persona kid-7 &middot; played 2026-08-15 &middot; never labelled");
+    expect(home).toContain("The Second Medal &middot; age 9 &middot; persona kid-7 &middot; played 2026-08-15 &middot; never labelled");
     expect(home).toContain("not started &middot; 0 of 9 turns labelled");
     expect(home).toContain('href="/g/medal/pass-1/"');
     expect(home).toContain('href="/g/medal/reported/"');
@@ -723,8 +840,8 @@ describe("the list of games", () => {
     expect(home).toContain('href="/g/medal/pass-2/"');
     expect(home).toContain("pass 2: 2 to answer &middot; 9 of 9 turns labelled");
     const second = `${phasePath("medal", "pass-2")}/turn`;
-    await post(server, `${second}/2`, [["kind", "spoiler"], ["note", "the judge is right"]]);
-    await post(server, `${second}/3`, [["kind", "out_of_character"], ["note", "still wrong"]]);
+    await post(server, `${second}/2`, [["kind", "spoiler"], ["severity", "minor"], ["note", "the judge is right"]]);
+    await post(server, `${second}/3`, [["kind", "out_of_character"], ["severity", "minor"], ["note", "still wrong"]]);
     home = (await get(server, "/?")).body;
     expect(home).toMatch(/done &middot; 9 of 9 turns labelled/);
   });
@@ -816,8 +933,8 @@ describe("./dev eval label", () => {
     await finishPass1(dir);
     expect(await runEval(["label", "medal", "--truth", dir, "--by", "tester", "--pass", "2"], context(out, []), [command])).toBe(0);
     // The fixture's labels already answer both reported turns.
-    expect(seen[0]).toContain("medal &middot; pass 1, reported turns</h1><section><p>2 of 2 turns done in pass 1.");
-    expect(seen[1]).toContain("medal &middot; pass 2 &middot; turn 1 of 2");
+    expect(seen[0]).toContain("medal &middot; age 9 &middot; pass 1, reported turns</h1><section><p>2 of 2 turns done in pass 1.");
+    expect(seen[1]).toContain("medal &middot; age 9 &middot; pass 2 &middot; turn 1 of 2");
   });
 
   it("defaults to the repository's truth set, and refuses a game or a pass that is not there, with exit 1", async () => {

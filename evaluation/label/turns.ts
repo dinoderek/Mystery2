@@ -1,7 +1,9 @@
 /**
  * What the labelling page shows of one turn of a stored game: the player's
- * line, the narration, the clues the turn revealed and the blueprint's ground
- * truth. Built from the stored trace alone, so it holds no judge finding.
+ * command and line, the narration, the clues the turn revealed, the story's
+ * target age, the profile of the character spoken to, and the blueprint's
+ * ground truth with its whole cast. Built from the stored trace alone, so it
+ * holds no judge finding.
  */
 
 import { playedEvents, readField, revealedClueIdsForEvent } from "../lib/game-events.ts";
@@ -20,17 +22,44 @@ export interface GroundTruthView {
   whyItHappened: string | null;
   timeline: string[];
   culprit: string | null;
+  /** Every character's profile, in the blueprint's order. */
+  cast: CharacterView[];
+}
+
+/** One character as the blueprint describes them: first what shapes their voice, then what they hide. */
+export interface CharacterView {
+  id: string;
+  name: string;
+  sex: string | null;
+  appearance: string | null;
+  background: string | null;
+  personality: string | null;
+  attitude: string | null;
+  tells: string[];
+  /** Each agenda's strategy and details. */
+  agendas: string[];
+  alibi: string | null;
+  motive: string | null;
+  isCulprit: boolean;
+  knowledge: string[];
+  actions: string[];
+  clues: ClueView[];
 }
 
 export interface TurnView {
   sequence: number;
+  /** The player's command: `start`, `talk`, `search` and so on. */
   eventType: string;
+  /** The age the story is written for; null when the blueprint records none. */
+  targetAge: number | null;
   /** Where this turn stands in the list being labelled, from 1. */
   position: number;
   total: number;
   playerLine: string;
   narration: string;
   clues: ClueView[];
+  /** The character this turn talks to, on a conversation turn; else null. */
+  character: CharacterView | null;
   groundTruth: GroundTruthView;
 }
 
@@ -94,16 +123,55 @@ function clueTexts(blueprint: Record<string, unknown>): Map<string, string> {
   return found;
 }
 
-function groundTruthOf(blueprint: Record<string, unknown>): GroundTruthView {
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((line): line is string => typeof line === "string" && line.trim() !== "") : [];
+}
+
+function fullName(character: Record<string, unknown>): string {
+  return [text(character.first_name), text(character.last_name)].filter(Boolean).join(" ") || (text(character.name) ?? text(character.id) ?? "someone");
+}
+
+function characterOf(character: Record<string, unknown>): CharacterView {
+  return {
+    id: text(character.id) ?? "",
+    name: fullName(character),
+    sex: text(character.sex),
+    appearance: text(character.appearance),
+    background: text(character.background),
+    personality: text(character.personality),
+    attitude: text(character.initial_attitude_towards_investigator),
+    tells: records(character.tells).flatMap((tell) => text(tell.text) ?? []),
+    agendas: records(character.agendas).flatMap((agenda) => [text(agenda.strategy), text(agenda.details)].filter(Boolean).join(" ") || []),
+    alibi: text(character.stated_alibi),
+    motive: text(character.motive),
+    isCulprit: character.is_culprit === true,
+    knowledge: strings(character.flavor_knowledge),
+    actions: records(character.actual_actions).flatMap((action) => text(action.summary) ?? []),
+    clues: records(character.clues).flatMap((clue) => {
+      const id = text(clue.id);
+      return id ? [{ id, text: text(clue.text) }] : [];
+    }),
+  };
+}
+
+function groundTruthOf(blueprint: Record<string, unknown>, cast: CharacterView[]): GroundTruthView {
   const truth = record(blueprint.ground_truth);
-  const culprit = records(record(blueprint.world).characters).find((character) => character.is_culprit === true);
-  const name = culprit ? [text(culprit.first_name), text(culprit.last_name)].filter(Boolean).join(" ") : "";
   return {
     whatHappened: text(truth.what_happened),
     whyItHappened: text(truth.why_it_happened),
-    timeline: Array.isArray(truth.timeline) ? truth.timeline.filter((line): line is string => typeof line === "string") : [],
-    culprit: name || null,
+    timeline: strings(truth.timeline),
+    culprit: cast.find((character) => character.isCulprit)?.name ?? null,
+    cast,
   };
+}
+
+/** The commands of a conversation, whose turn names the character spoken to. */
+const CONVERSATION = new Set(["talk", "ask", "end_talk"]);
+
+/** The age a blueprint's story is written for; null when it records none. */
+export function targetAgeOf(blueprint: unknown): number | null {
+  const age = record(record(blueprint).metadata).target_age;
+  return typeof age === "number" && Number.isFinite(age) ? age : null;
 }
 
 /** The view of the turn at `sequence`; `position` and `total` place it in the list being labelled. */
@@ -112,33 +180,35 @@ export function buildTurnView(game: StoredGame, sequence: number, position: numb
   if (!event) throw new Error(`game "${game.session.id}" has no turn ${sequence}`);
   const blueprint = game.blueprint as Record<string, unknown>;
   const texts = clueTexts(blueprint);
+  const cast = records(record(blueprint.world).characters).map(characterOf);
+  const speaking = CONVERSATION.has(event.event_type) ? readField(event.payload, "character_id") : null;
   return {
     sequence,
     eventType: event.event_type,
+    targetAge: targetAgeOf(blueprint),
     position,
     total,
     playerLine: playerLine(event, blueprint),
     narration: event.narration,
     clues: revealedClueIdsForEvent(event).map((id) => ({ id, text: texts.get(id) ?? null })),
-    groundTruth: groundTruthOf(blueprint),
+    character: speaking === null ? null : (cast.find((character) => character.id === speaking) ?? null),
+    groundTruth: groundTruthOf(blueprint, cast),
   };
 }
 
-/** What a turn's latest label says, as the form shows it: the kinds, one severity and one note. */
-export interface FormState {
-  kinds: string[];
+/** One fault as the form holds it: its kind is a string, empty until chosen, so a refused form shows as typed. */
+export interface FormFault {
+  kind: string;
   severity: "minor" | "major";
   note: string;
 }
 
-export const EMPTY_FORM: FormState = { kinds: [], severity: "minor", note: "" };
+/** What a turn's label says, as the form shows it: one row per fault, none when the turn is clean. */
+export interface FormState {
+  faults: FormFault[];
+}
 
-/** The form a turn's latest label fills in; the worst severity and the first note when the faults differ. */
+/** The form a turn's latest label fills in: each fault as its own row. */
 export function formFromLabel(label: Label | null): FormState {
-  if (!label || label.faults.length === 0) return { ...EMPTY_FORM };
-  return {
-    kinds: [...new Set(label.faults.map((fault) => fault.kind))],
-    severity: label.faults.some((fault) => fault.severity === "major") ? "major" : "minor",
-    note: label.faults[0].note,
-  };
+  return { faults: (label?.faults ?? []).map((fault) => ({ kind: fault.kind, severity: fault.severity, note: fault.note })) };
 }

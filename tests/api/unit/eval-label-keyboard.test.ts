@@ -68,8 +68,17 @@ async function save(...steps: Step[]): Promise<void> {
   await Promise.all([page.waitForEvent("load", { timeout: 5000 }), page.keyboard.press(steps.at(-1) as string)]);
 }
 
+/** Each fault row on the page, as its kind, severity and note. */
+const rowsOf = (target: Page) =>
+  target.$$eval("#faults .fault", (rows) =>
+    rows.map((row) => {
+      const fields = (row as HTMLFieldSetElement).elements as unknown as Record<string, HTMLInputElement>;
+      return [fields.kind.value, fields.severity.value, fields.note.value];
+    }),
+  );
+
 describe("the labelling page, by keyboard in a browser", () => {
-  it("saves each turn's label as the keys make it, and the file loads through the truth schema", async () => {
+  it("saves each turn's faults as the keys build them, one row at a time, and the file loads through the truth schema", async () => {
     await page.goto(new URL("/g/medal/pass-1/", server.url).href);
     const before = (await labels()).length;
 
@@ -87,32 +96,50 @@ describe("the labelling page, by keyboard in a browser", () => {
     expect(await page.getByRole("alert").textContent()).toContain("a fault needs a note");
     expect(await labels()).toHaveLength(before + 1);
 
-    // Clean empties the note as well as the kinds, or the server refuses a note without a fault.
+    // Clean empties every row, note and all.
     await save({ note: "A second thought." }, "c");
     expect((await labels()).at(-1)).toMatchObject({ sequence: second, faults: [] });
 
-    // A key after Escape reaches the page again, not the note.
+    // `a` starts a second row, which takes its own kind, severity and note; a key after Escape reaches the page again.
     const third = turnOf(page);
-    await save("2", "n", { note: "Invents a gate and hands over a clue." }, "3", "Enter");
-    expect((await labels()).at(-1)?.faults.map((fault) => [fault.kind, fault.severity])).toEqual([
-      ["fabrication", "minor"],
-      ["clue_handling", "minor"],
+    await save("2", "n", { note: "Invents a gate." }, "a", "3", "m", { note: "Hands over a clue unearned." }, "Enter");
+    expect((await labels()).at(-1)?.faults).toEqual([
+      { kind: "fabrication", severity: "minor", note: "Invents a gate." },
+      { kind: "clue_handling", severity: "major", note: "Hands over a clue unearned." },
     ]);
 
     await save("p");
     expect(turnOf(page)).toBe(third);
-    expect(await page.$$eval("input[name=kind]:checked", (boxes) => boxes.map((box) => (box as HTMLInputElement).value))).toEqual([
-      "fabrication",
-      "clue_handling",
+    expect(await rowsOf(page)).toEqual([
+      ["fabrication", "minor", "Invents a gate."],
+      ["clue_handling", "major", "Hands over a clue unearned."],
     ]);
 
+    // Two rows of one kind are refused; `x` takes the current row away again.
+    await save("a", "2", { note: "Said twice." }, "Enter");
+    expect(await page.getByRole("alert").textContent()).toContain("two faults are fabrication");
+    expect(await rowsOf(page)).toHaveLength(3);
+    await page.keyboard.press("x");
+    expect(await rowsOf(page)).toHaveLength(2);
+
+    // `g` opens the ground truth over the page and Escape closes it.
+    const truth = page.locator("#truth .panel");
+    expect(await truth.isVisible()).toBe(false);
+    await page.keyboard.press("g");
+    expect(await truth.isVisible()).toBe(true);
+    expect(await truth.textContent()).toContain("Target age: 9");
+    await page.keyboard.press("Escape");
+    expect(await truth.isVisible()).toBe(false);
+    await save("Enter");
+    expect((await labels()).at(-1)).toMatchObject({ sequence: third, faults: [{ kind: "fabrication" }, { kind: "clue_handling" }] });
+
     const set = await loadTruthSet(dir);
-    expect(set.games[0].labels).toHaveLength(before + 3);
+    expect(set.games[0].labels).toHaveLength(before + 4);
   });
 });
 
 describe("the labelling page, by touch on a phone", () => {
-  it("asks the name, then saves a turn tapped out from the list of games, the save always in reach", async () => {
+  it("asks the name, then saves two faults of different severities tapped out from the list of games, the save always in reach", async () => {
     const context = await browser.newContext({ ...devices["Pixel 7"] });
     const phone = await context.newPage();
     try {
@@ -132,15 +159,68 @@ describe("the labelling page, by touch on a phone", () => {
       expect(bar && bar.y + bar.height).toBeLessThanOrEqual(height);
       expect(bar && bar.y).toBeGreaterThan(0);
 
-      await phone.locator(".choices label", { hasText: "out of character" }).tap();
-      await phone.locator(".choices label", { hasText: "major" }).tap();
-      await phone.locator("input[name=note]").fill("Talks like a narrator.");
+      const fill = async (index: number, kind: string, severity: string, note: string) => {
+        await phone.getByRole("button", { name: "Add a fault" }).tap();
+        const row = phone.locator("#faults .fault").nth(index);
+        await row.locator("select[name=kind]").selectOption(kind);
+        await row.locator("select[name=severity]").selectOption(severity);
+        await row.locator("input[name=note]").fill(note);
+      };
+      await fill(0, "out_of_character", "major", "Talks like a narrator.");
+      await fill(1, "spoiler", "minor", "Hints at the garden.");
+      await fill(2, "not_age_fit", "minor", "A slip, removed.");
+      await phone.locator("#faults .fault").nth(2).getByRole("button", { name: "Remove" }).tap();
       await Promise.all([phone.waitForEvent("load"), phone.getByRole("button", { name: /Save and go on/ }).tap()]);
       expect((await labels()).at(-1)).toMatchObject({
         sequence: turn,
         by: "phone_labeller",
-        faults: [{ kind: "out_of_character", severity: "major", note: "Talks like a narrator." }],
+        faults: [
+          { kind: "out_of_character", severity: "major", note: "Talks like a narrator." },
+          { kind: "spoiler", severity: "minor", note: "Hints at the garden." },
+        ],
       });
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("opens the ground truth and a speaker's profile over the page in one tap, pushing nothing down, and closes them", async () => {
+    const context = await browser.newContext({ ...devices["Pixel 7"] });
+    const phone = await context.newPage();
+    try {
+      await phone.goto(new URL("/g/medal/pass-1/turn/4", server.url).href);
+      const form = phone.locator("#label");
+      const at = async () => (await form.boundingBox())?.y;
+      const resting = await at();
+
+      await phone.getByText("Ground truth").tap();
+      const truth = phone.locator("#truth .panel");
+      expect(await truth.isVisible()).toBe(true);
+      expect(await truth.textContent()).toContain("Dorn slipped into the hall");
+      expect(await at()).toBe(resting);
+      // The cast is there, each character folded.
+      expect(await truth.getByText("He owed money").isVisible()).toBe(false);
+      const dorn = truth.locator("details.fold", { hasText: "Dorn Pike" });
+      await dorn.locator("summary", { hasText: "Dorn Pike" }).tap();
+      await dorn.locator("summary", { hasText: "Alibi, motive" }).tap();
+      expect(await truth.getByText("He owed money").isVisible()).toBe(true);
+
+      await truth.getByRole("button", { name: "Close" }).tap();
+      expect(await truth.isVisible()).toBe(false);
+
+      await phone.getByText("Mara Vale: profile").tap();
+      const profile = phone.locator("#profile .panel");
+      expect(await profile.isVisible()).toBe(true);
+      // Opening the ground truth again closes the profile, so only one panel is ever open.
+      await phone.getByText("Ground truth").tap();
+      await profile.waitFor({ state: "hidden", timeout: 2000 });
+      await truth.getByRole("button", { name: "Close" }).tap();
+      await phone.getByText("Mara Vale: profile").tap();
+      expect(await profile.getByText("Warm but nervous.").isVisible()).toBe(true);
+      expect(await profile.getByText("I was in the kitchen all evening.").isVisible()).toBe(false);
+      expect(await at()).toBe(resting);
+      await profile.getByRole("button", { name: "Close" }).tap();
+      expect(await profile.isVisible()).toBe(false);
     } finally {
       await context.close();
     }

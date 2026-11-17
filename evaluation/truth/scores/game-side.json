@@ -24,7 +24,7 @@
           "judge": "age_appropriate_turn",
           "model": "sonnet",
           "verdicts": 1800,
-          "not_judged": 1,
+          "not_judged": 0,
           "samples": 3,
           "findings_off_turn": 0,
           "kinds": [
@@ -38,10 +38,10 @@
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 93,
-                  "share": 0.107527,
-                  "low": 0.059463,
-                  "high": 0.186728
+                  "of": 94,
+                  "share": 0.106383,
+                  "low": 0.058819,
+                  "high": 0.184856
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -50,7 +50,7 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 447
+                "unknown_reported": 432
               },
               "major_only": {
                 "real_of_reported": {
@@ -67,16 +67,16 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 4
+                "unknown_reported": 3
               },
               "agreement": {
-                "share": 0.901667,
+                "share": 0.926667,
                 "units": 600
               }
             }
           ],
-          "delay_ms": 4057950.333333,
-          "usage_usd": 4.471528
+          "delay_ms": 3245655.666667,
+          "usage_usd": 2.932781
         },
         {
           "id": "gm_broad",
@@ -109,7 +109,7 @@
                   "low": 0.337164,
                   "high": 0.754405
                 },
-                "unknown_reported": 4
+                "unknown_reported": 3
               },
               "major_only": {
                 "real_of_reported": {
@@ -129,7 +129,7 @@
                 "unknown_reported": 0
               },
               "agreement": {
-                "share": 0.995,
+                "share": 0.993333,
                 "units": 600
               }
             },
@@ -142,20 +142,20 @@
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 11,
-                  "of": 11,
+                  "hits": 10,
+                  "of": 10,
                   "share": 1,
-                  "low": 0.741167,
+                  "low": 0.722467,
                   "high": 1
                 },
                 "found_of_real": {
-                  "hits": 11,
+                  "hits": 10,
                   "of": 15,
-                  "share": 0.733333,
-                  "low": 0.480496,
-                  "high": 0.891025
+                  "share": 0.666667,
+                  "low": 0.417135,
+                  "high": 0.848237
                 },
-                "unknown_reported": 11
+                "unknown_reported": 16
               },
               "major_only": {
                 "real_of_reported": {
@@ -172,10 +172,10 @@
                   "low": 0.417135,
                   "high": 0.848237
                 },
-                "unknown_reported": 0
+                "unknown_reported": 2
               },
               "agreement": {
-                "share": 0.973333,
+                "share": 0.968333,
                 "units": 600
               }
             },
@@ -189,10 +189,10 @@
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 14,
-                  "share": 0.714286,
-                  "low": 0.453509,
-                  "high": 0.882786
+                  "of": 13,
+                  "share": 0.769231,
+                  "low": 0.497436,
+                  "high": 0.918205
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -201,7 +201,7 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 13
+                "unknown_reported": 14
               },
               "major_only": {
                 "real_of_reported": {
@@ -218,10 +218,10 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 8
+                "unknown_reported": 11
               },
               "agreement": {
-                "share": 0.975,
+                "share": 0.97,
                 "units": 600
               }
             },
@@ -247,15 +247,15 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 19
+                "unknown_reported": 21
               },
               "major_only": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 12,
-                  "share": 0.833333,
-                  "low": 0.551969,
-                  "high": 0.953035
+                  "of": 13,
+                  "share": 0.769231,
+                  "low": 0.497436,
+                  "high": 0.918205
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -267,7 +267,7 @@
                 "unknown_reported": 0
               },
               "agreement": {
-                "share": 0.958333,
+                "share": 0.955,
                 "units": 600
               }
             },
@@ -313,13 +313,13 @@
                 "unknown_reported": 0
               },
               "agreement": {
-                "share": 0.995,
+                "share": 0.991667,
                 "units": 600
               }
             }
           ],
-          "delay_ms": 507110.333333,
-          "usage_usd": 2.143168
+          "delay_ms": 470277.333333,
+          "usage_usd": 2.111532
         },
         {
           "id": "gm_clue_discipline",
@@ -340,10 +340,10 @@
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 16,
-                  "share": 0.625,
-                  "low": 0.38641,
-                  "high": 0.815188
+                  "of": 15,
+                  "share": 0.666667,
+                  "low": 0.417135,
+                  "high": 0.848237
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -369,16 +369,16 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 25
+                "unknown_reported": 27
               },
               "agreement": {
-                "share": 0.965,
+                "share": 0.97,
                 "units": 600
               }
             }
           ],
-          "delay_ms": 352937,
-          "usage_usd": 1.786473
+          "delay_ms": 326997.333333,
+          "usage_usd": 1.738935
         },
         {
           "id": "gm_fabrication",
@@ -399,10 +399,10 @@
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 13,
-                  "share": 0.769231,
-                  "low": 0.497436,
-                  "high": 0.918205
+                  "of": 12,
+                  "share": 0.833333,
+                  "low": 0.551969,
+                  "high": 0.953035
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -428,7 +428,7 @@
                   "low": 0.417135,
                   "high": 0.848237
                 },
-                "unknown_reported": 14
+                "unknown_reported": 10
               },
               "agreement": {
                 "share": 0.926667,
@@ -436,8 +436,8 @@
               }
             }
           ],
-          "delay_ms": 318892,
-          "usage_usd": 1.717864
+          "delay_ms": 297677,
+          "usage_usd": 1.677367
         },
         {
           "id": "gm_roleplay",
@@ -458,10 +458,10 @@
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 13,
-                  "share": 0.769231,
-                  "low": 0.497436,
-                  "high": 0.918205
+                  "of": 14,
+                  "share": 0.714286,
+                  "low": 0.453509,
+                  "high": 0.882786
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -470,7 +470,7 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 40
+                "unknown_reported": 45
               },
               "major_only": {
                 "real_of_reported": {
@@ -487,16 +487,16 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 3
+                "unknown_reported": 5
               },
               "agreement": {
-                "share": 0.936667,
+                "share": 0.95,
                 "units": 600
               }
             }
           ],
-          "delay_ms": 382668.666667,
-          "usage_usd": 1.836124
+          "delay_ms": 338650.666667,
+          "usage_usd": 1.782315
         },
         {
           "id": "gm_spoiler",
@@ -529,7 +529,7 @@
                   "low": 0.337164,
                   "high": 0.754405
                 },
-                "unknown_reported": 9
+                "unknown_reported": 11
               },
               "major_only": {
                 "real_of_reported": {
@@ -549,17 +549,17 @@
                 "unknown_reported": 2
               },
               "agreement": {
-                "share": 0.983333,
+                "share": 0.993333,
                 "units": 600
               }
             }
           ],
-          "delay_ms": 204861.666667,
-          "usage_usd": 1.47501
+          "delay_ms": 207754,
+          "usage_usd": 1.424319
         }
       ],
       "faults": 63,
-      "full_found": 51,
+      "full_found": 50,
       "subsets": [
         {
           "members": [],
@@ -578,26 +578,26 @@
           "found_by_kind": {
             "not_age_fit": 10
           },
-          "false_reports": 83,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 4.471528,
+          "false_reports": 84,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 2.932781,
           "meets_bar": false
         },
         {
           "members": [
             "gm_broad"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 7,
-          "delay_ms": 507110.333333,
-          "usage_usd": 2.143168,
+          "false_reports": 6,
+          "delay_ms": 470277.333333,
+          "usage_usd": 2.111532,
           "meets_bar": true
         },
         {
@@ -608,9 +608,9 @@
           "found_by_kind": {
             "clue_handling": 10
           },
-          "false_reports": 6,
-          "delay_ms": 352937,
-          "usage_usd": 1.786473,
+          "false_reports": 5,
+          "delay_ms": 326997.333333,
+          "usage_usd": 1.738935,
           "meets_bar": false
         },
         {
@@ -621,9 +621,9 @@
           "found_by_kind": {
             "fabrication": 10
           },
-          "false_reports": 3,
-          "delay_ms": 318892,
-          "usage_usd": 1.717864,
+          "false_reports": 2,
+          "delay_ms": 297677,
+          "usage_usd": 1.677367,
           "meets_bar": false
         },
         {
@@ -634,9 +634,9 @@
           "found_by_kind": {
             "out_of_character": 10
           },
-          "false_reports": 3,
-          "delay_ms": 382668.666667,
-          "usage_usd": 1.836124,
+          "false_reports": 4,
+          "delay_ms": 338650.666667,
+          "usage_usd": 1.782315,
           "meets_bar": false
         },
         {
@@ -648,8 +648,8 @@
             "spoiler": 10
           },
           "false_reports": 0,
-          "delay_ms": 204861.666667,
-          "usage_usd": 1.47501,
+          "delay_ms": 207754,
+          "usage_usd": 1.424319,
           "meets_bar": false
         },
         {
@@ -657,17 +657,17 @@
             "age_appropriate_turn",
             "gm_broad"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 90,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 6.614696,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 5.044313,
           "meets_bar": true
         },
         {
@@ -681,8 +681,8 @@
             "not_age_fit": 10
           },
           "false_reports": 89,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 6.258001,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 4.671716,
           "meets_bar": false
         },
         {
@@ -696,8 +696,8 @@
             "not_age_fit": 10
           },
           "false_reports": 86,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 6.189392,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 4.610148,
           "meets_bar": false
         },
         {
@@ -710,9 +710,9 @@
             "out_of_character": 10,
             "not_age_fit": 10
           },
-          "false_reports": 86,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 6.307652,
+          "false_reports": 88,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 4.715096,
           "meets_bar": false
         },
         {
@@ -725,9 +725,9 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 83,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 5.946538,
+          "false_reports": 84,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 4.3571,
           "meets_bar": false
         },
         {
@@ -735,17 +735,17 @@
             "gm_broad",
             "gm_clue_discipline"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 507110.333333,
-          "usage_usd": 3.929641,
+          "false_reports": 8,
+          "delay_ms": 470277.333333,
+          "usage_usd": 3.850467,
           "meets_bar": true
         },
         {
@@ -753,17 +753,17 @@
             "gm_broad",
             "gm_fabrication"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 507110.333333,
-          "usage_usd": 3.861032,
+          "false_reports": 8,
+          "delay_ms": 470277.333333,
+          "usage_usd": 3.788899,
           "meets_bar": true
         },
         {
@@ -771,17 +771,17 @@
             "gm_broad",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 7,
-          "delay_ms": 515079.666667,
-          "usage_usd": 3.979292,
+          "delay_ms": 470277.333333,
+          "usage_usd": 3.893846,
           "meets_bar": true
         },
         {
@@ -789,17 +789,17 @@
             "gm_broad",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 7,
-          "delay_ms": 507110.333333,
-          "usage_usd": 3.618178,
+          "false_reports": 6,
+          "delay_ms": 470277.333333,
+          "usage_usd": 3.535851,
           "meets_bar": true
         },
         {
@@ -812,9 +812,9 @@
             "fabrication": 10,
             "clue_handling": 10
           },
-          "false_reports": 9,
-          "delay_ms": 362037,
-          "usage_usd": 3.504338,
+          "false_reports": 7,
+          "delay_ms": 336096.666667,
+          "usage_usd": 3.416302,
           "meets_bar": false
         },
         {
@@ -828,8 +828,8 @@
             "out_of_character": 10
           },
           "false_reports": 9,
-          "delay_ms": 397554.666667,
-          "usage_usd": 3.622597,
+          "delay_ms": 352990.666667,
+          "usage_usd": 3.521249,
           "meets_bar": false
         },
         {
@@ -842,9 +842,9 @@
             "clue_handling": 10,
             "spoiler": 10
           },
-          "false_reports": 6,
-          "delay_ms": 352937,
-          "usage_usd": 3.261483,
+          "false_reports": 5,
+          "delay_ms": 327551.333333,
+          "usage_usd": 3.163254,
           "meets_bar": false
         },
         {
@@ -858,8 +858,8 @@
             "out_of_character": 10
           },
           "false_reports": 6,
-          "delay_ms": 393644.333333,
-          "usage_usd": 3.553988,
+          "delay_ms": 345640.333333,
+          "usage_usd": 3.459682,
           "meets_bar": false
         },
         {
@@ -872,9 +872,9 @@
             "fabrication": 10,
             "spoiler": 10
           },
-          "false_reports": 3,
-          "delay_ms": 318892,
-          "usage_usd": 3.192874,
+          "false_reports": 2,
+          "delay_ms": 303247,
+          "usage_usd": 3.101686,
           "meets_bar": false
         },
         {
@@ -887,9 +887,9 @@
             "out_of_character": 10,
             "spoiler": 10
           },
-          "false_reports": 3,
-          "delay_ms": 382668.666667,
-          "usage_usd": 3.311134,
+          "false_reports": 4,
+          "delay_ms": 338650.666667,
+          "usage_usd": 3.206634,
           "meets_bar": false
         },
         {
@@ -898,17 +898,17 @@
             "gm_broad",
             "gm_clue_discipline"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.401169,
+          "false_reports": 92,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.783248,
           "meets_bar": true
         },
         {
@@ -917,17 +917,17 @@
             "gm_broad",
             "gm_fabrication"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.33256,
+          "false_reports": 92,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.72168,
           "meets_bar": true
         },
         {
@@ -936,17 +936,17 @@
             "gm_broad",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 90,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.45082,
+          "false_reports": 91,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.826628,
           "meets_bar": true
         },
         {
@@ -955,17 +955,17 @@
             "gm_broad",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 90,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.089706,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.468632,
           "meets_bar": true
         },
         {
@@ -980,9 +980,9 @@
             "clue_handling": 10,
             "not_age_fit": 10
           },
-          "false_reports": 92,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 7.975866,
+          "false_reports": 91,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.349083,
           "meets_bar": false
         },
         {
@@ -997,9 +997,9 @@
             "out_of_character": 10,
             "not_age_fit": 10
           },
-          "false_reports": 92,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.094125,
+          "false_reports": 93,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.454031,
           "meets_bar": false
         },
         {
@@ -1015,8 +1015,8 @@
             "spoiler": 10
           },
           "false_reports": 89,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 7.733011,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.096035,
           "meets_bar": false
         },
         {
@@ -1031,9 +1031,9 @@
             "out_of_character": 10,
             "not_age_fit": 10
           },
-          "false_reports": 89,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 8.025516,
+          "false_reports": 90,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.392463,
           "meets_bar": false
         },
         {
@@ -1049,8 +1049,8 @@
             "spoiler": 10
           },
           "false_reports": 86,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 7.664402,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.034467,
           "meets_bar": false
         },
         {
@@ -1065,9 +1065,9 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 86,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 7.782662,
+          "false_reports": 88,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 6.139415,
           "meets_bar": false
         },
         {
@@ -1076,17 +1076,17 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 13,
-          "delay_ms": 507110.333333,
-          "usage_usd": 5.647506,
+          "false_reports": 10,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.527834,
           "meets_bar": true
         },
         {
@@ -1095,17 +1095,17 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 515079.666667,
-          "usage_usd": 5.765765,
+          "false_reports": 9,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.632781,
           "meets_bar": true
         },
         {
@@ -1114,17 +1114,17 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 507110.333333,
-          "usage_usd": 5.404651,
+          "false_reports": 8,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.274786,
           "meets_bar": true
         },
         {
@@ -1133,17 +1133,17 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 515079.666667,
-          "usage_usd": 5.697156,
+          "false_reports": 9,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.571213,
           "meets_bar": true
         },
         {
@@ -1152,17 +1152,17 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 507110.333333,
-          "usage_usd": 5.336042,
+          "false_reports": 8,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.213218,
           "meets_bar": true
         },
         {
@@ -1171,17 +1171,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 7,
-          "delay_ms": 515079.666667,
-          "usage_usd": 5.454302,
+          "delay_ms": 470277.333333,
+          "usage_usd": 5.318166,
           "meets_bar": true
         },
         {
@@ -1196,9 +1196,9 @@
             "clue_handling": 10,
             "out_of_character": 10
           },
-          "false_reports": 12,
-          "delay_ms": 401513.666667,
-          "usage_usd": 5.340462,
+          "false_reports": 11,
+          "delay_ms": 354797.333333,
+          "usage_usd": 5.198617,
           "meets_bar": false
         },
         {
@@ -1213,9 +1213,9 @@
             "clue_handling": 10,
             "spoiler": 10
           },
-          "false_reports": 9,
-          "delay_ms": 362037,
-          "usage_usd": 4.979348,
+          "false_reports": 7,
+          "delay_ms": 336650.666667,
+          "usage_usd": 4.840621,
           "meets_bar": false
         },
         {
@@ -1231,8 +1231,8 @@
             "spoiler": 10
           },
           "false_reports": 9,
-          "delay_ms": 397554.666667,
-          "usage_usd": 5.097607,
+          "delay_ms": 352990.666667,
+          "usage_usd": 4.945569,
           "meets_bar": false
         },
         {
@@ -1248,8 +1248,8 @@
             "spoiler": 10
           },
           "false_reports": 6,
-          "delay_ms": 393644.333333,
-          "usage_usd": 5.028998,
+          "delay_ms": 345640.333333,
+          "usage_usd": 4.884001,
           "meets_bar": false
         },
         {
@@ -1259,17 +1259,17 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 96,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 10.119034,
+          "false_reports": 94,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.460615,
           "meets_bar": true
         },
         {
@@ -1279,17 +1279,17 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 10.237293,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.565562,
           "meets_bar": true
         },
         {
@@ -1299,17 +1299,17 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.876179,
+          "false_reports": 92,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.207567,
           "meets_bar": true
         },
         {
@@ -1319,17 +1319,17 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 10.168684,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.503995,
           "meets_bar": true
         },
         {
@@ -1339,17 +1339,17 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.80757,
+          "false_reports": 92,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.145999,
           "meets_bar": true
         },
         {
@@ -1359,17 +1359,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 90,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.92583,
+          "false_reports": 91,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.250947,
           "meets_bar": true
         },
         {
@@ -1387,8 +1387,8 @@
             "not_age_fit": 10
           },
           "false_reports": 95,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.81199,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 8.131398,
           "meets_bar": false
         },
         {
@@ -1405,9 +1405,9 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 92,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.450876,
+          "false_reports": 91,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 7.773402,
           "meets_bar": false
         },
         {
@@ -1424,9 +1424,9 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 92,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.569135,
+          "false_reports": 93,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 7.87835,
           "meets_bar": false
         },
         {
@@ -1443,9 +1443,9 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 89,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 9.500526,
+          "false_reports": 90,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 7.816782,
           "meets_bar": false
         },
         {
@@ -1455,17 +1455,17 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 13,
-          "delay_ms": 515079.666667,
-          "usage_usd": 7.48363,
+          "false_reports": 11,
+          "delay_ms": 470277.333333,
+          "usage_usd": 7.310148,
           "meets_bar": true
         },
         {
@@ -1475,17 +1475,17 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 13,
-          "delay_ms": 507110.333333,
-          "usage_usd": 7.122515,
+          "false_reports": 10,
+          "delay_ms": 470277.333333,
+          "usage_usd": 6.952153,
           "meets_bar": true
         },
         {
@@ -1495,17 +1495,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 515079.666667,
-          "usage_usd": 7.240775,
+          "false_reports": 9,
+          "delay_ms": 470277.333333,
+          "usage_usd": 7.0571,
           "meets_bar": true
         },
         {
@@ -1515,17 +1515,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 10,
-          "delay_ms": 515079.666667,
-          "usage_usd": 7.172166,
+          "false_reports": 9,
+          "delay_ms": 470277.333333,
+          "usage_usd": 6.995533,
           "meets_bar": true
         },
         {
@@ -1542,9 +1542,9 @@
             "out_of_character": 10,
             "spoiler": 10
           },
-          "false_reports": 12,
-          "delay_ms": 401513.666667,
-          "usage_usd": 6.815472,
+          "false_reports": 11,
+          "delay_ms": 354797.333333,
+          "usage_usd": 6.622936,
           "meets_bar": false
         },
         {
@@ -1555,17 +1555,17 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 96,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 11.955158,
+          "false_reports": 95,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 10.242929,
           "meets_bar": true
         },
         {
@@ -1576,17 +1576,17 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 96,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 11.594043,
+          "false_reports": 94,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 9.884934,
           "meets_bar": true
         },
         {
@@ -1597,17 +1597,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 11.712303,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 9.989882,
           "meets_bar": true
         },
         {
@@ -1618,17 +1618,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
           "false_reports": 93,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 11.643694,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 9.928314,
           "meets_bar": true
         },
         {
@@ -1648,9 +1648,9 @@
             "spoiler": 10
           },
           "false_reports": 95,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 11.287,
-          "meets_bar": false
+          "delay_ms": 3245655.666667,
+          "usage_usd": 9.555717,
+          "meets_bar": true
         },
         {
           "members": [
@@ -1660,17 +1660,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 13,
-          "delay_ms": 515079.666667,
-          "usage_usd": 8.958639,
+          "false_reports": 11,
+          "delay_ms": 470277.333333,
+          "usage_usd": 8.734467,
           "meets_bar": true
         },
         {
@@ -1682,17 +1682,17 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 50,
           "found_by_kind": {
-            "fabrication": 11,
+            "fabrication": 10,
             "clue_handling": 10,
             "out_of_character": 10,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 96,
-          "delay_ms": 4057950.333333,
-          "usage_usd": 13.430167,
+          "false_reports": 95,
+          "delay_ms": 3245655.666667,
+          "usage_usd": 11.667249,
           "meets_bar": true
         }
       ],
@@ -1700,17 +1700,17 @@
         "members": [
           "gm_broad"
         ],
-        "found": 51,
+        "found": 50,
         "found_by_kind": {
-          "fabrication": 11,
+          "fabrication": 10,
           "clue_handling": 10,
           "out_of_character": 10,
           "not_age_fit": 10,
           "spoiler": 10
         },
-        "false_reports": 7,
-        "delay_ms": 507110.333333,
-        "usage_usd": 2.143168,
+        "false_reports": 6,
+        "delay_ms": 470277.333333,
+        "usage_usd": 2.111532,
         "meets_bar": true
       }
     }

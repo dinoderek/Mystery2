@@ -40,7 +40,7 @@ async function tempDir(): Promise<string> {
 }
 
 function finding(sequence: number | null, kind: string, severity: "minor" | "major" = "major"): StoredFinding {
-  return { sequence, kinds: [kind], severity, judge_kind: null };
+  return { sequence, kinds: [kind], severity, judge_kind: null, quote: null, why: null, refers_to: null };
 }
 
 function verdict(overrides: Partial<StoredVerdict> & Pick<StoredVerdict, "subject" | "judge">): StoredVerdict {

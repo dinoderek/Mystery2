@@ -43,6 +43,7 @@ if (process.env.FAKE_WRAPPER_RECORD) {
       user: userFile ? fs.readFileSync(userFile, "utf8") : null,
       model: process.env.EVAL_MODEL ?? null,
       stream: process.env.EVAL_STREAM_FILE ?? null,
+      schema: process.env.EVAL_JSON_SCHEMA_FILE ? fs.readFileSync(process.env.EVAL_JSON_SCHEMA_FILE, "utf8") : null,
       extra: process.env.FAKE_EXTRA ?? null,
     })}\n`,
   );

@@ -9,10 +9,18 @@ import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { tailscaleName } from "../../../evaluation/core/tailscale.ts";
 import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/command.ts";
-import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
+import { disagreementsAt, reportedTurns, tallyByJudge } from "../../../evaluation/label/disagreements.ts";
+import type { Disagreement, VerdictAtTurn } from "../../../evaluation/label/disagreements.ts";
+import { describeJudgeKind } from "../../../evaluation/label/judge-kinds.ts";
+import { TURN_AGE_FINDING_KINDS } from "../../../evaluation/core/judge-prompt.ts";
+import { schema as broadSchema } from "../../../evaluation/judges/gm-broad.schema.ts";
+import { schema as clueSchema } from "../../../evaluation/judges/gm-clue-discipline.schema.ts";
+import { schema as fabricationSchema } from "../../../evaluation/judges/gm-fabrication.schema.ts";
+import { schema as roleplaySchema } from "../../../evaluation/judges/gm-roleplay.schema.ts";
+import { schema as spoilerSchema } from "../../../evaluation/judges/gm-spoiler.schema.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Draft } from "../../../evaluation/label/keys.ts";
-import { escapeHtml } from "../../../evaluation/label/page.ts";
+import { escapeHtml, renderDisagreements } from "../../../evaluation/label/page.ts";
 import { phasePath } from "../../../evaluation/label/hub.ts";
 import type { Phase } from "../../../evaluation/label/hub.ts";
 import { startLabelServer } from "../../../evaluation/label/server.ts";
@@ -20,7 +28,7 @@ import type { LabelServer, LabelServerOptions } from "../../../evaluation/label/
 import { buildTurnView, formFromLabel, playedTurns } from "../../../evaluation/label/turns.ts";
 import { GAME_KINDS } from "../../../evaluation/lib/truth/kinds.ts";
 import { loadTruthSet } from "../../../evaluation/lib/truth/loader.ts";
-import type { StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
+import type { StoredFinding, StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
 
 const FIXTURE = path.join(repoRoot(), "tests/api/unit/fixtures/truth");
 
@@ -40,7 +48,18 @@ async function writeJson(file: string, value: unknown): Promise<void> {
   await fs.writeFile(file, JSON.stringify(value, null, 2), "utf8");
 }
 
-const SPOILER_FINDING = { sequence: 2, kinds: ["spoiler"], severity: "minor", judge_kind: "culprit-leak" };
+const SPOILER_FINDING = {
+  sequence: 2,
+  kinds: ["spoiler"],
+  severity: "minor",
+  judge_kind: "culprit-leak",
+  quote: "the gardener looked guilty",
+  why: "Points the player at the culprit before any clue does.",
+  refers_to: "char-dorn",
+};
+
+/** What the spoiler judge said, which no response may show before pass 2. */
+const JUDGE_WORDS = [SPOILER_FINDING.quote, SPOILER_FINDING.why, SPOILER_FINDING.refers_to, "flagged this turn"];
 
 /**
  * A copy of the fixture in a temporary folder, with two disagreements made in
@@ -483,7 +502,7 @@ describe("pass one", () => {
     for (let sequence = 1; sequence <= 9; sequence += 1) bodies.push((await get(server, `/turn/${sequence}`)).body);
     bodies.push((await post(server, "/turn/2", [["kind", "spoiler"], ["severity", "minor"], ["note", ""]])).body);
     const everything = bodies.join("\n");
-    for (const text of ["culprit-leak", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree"]) {
+    for (const text of ["culprit-leak", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree", ...JUDGE_WORDS]) {
       expect(everything).not.toContain(text);
     }
   });
@@ -500,8 +519,8 @@ describe("pass one", () => {
  * finding at turn 6, and an erroring verdict's at turn 8, count for nothing.
  */
 async function withVariantFinding(dir: string): Promise<string> {
-  const finding = (sequence: number, severity = "minor") => ({ sequence, kinds: ["out_of_character"], severity, judge_kind: "voice" });
-  const ageFinding = (sequence: number) => ({ sequence, kinds: ["not_age_fit"], severity: "minor", judge_kind: null });
+  const finding = (sequence: number, severity = "minor") => ({ sequence, kinds: ["out_of_character"], severity, judge_kind: "voice", quote: null, why: null, refers_to: null });
+  const ageFinding = (sequence: number) => ({ sequence, kinds: ["not_age_fit"], severity: "minor", judge_kind: null, quote: null, why: null, refers_to: null });
   const base = { judge: "gm_roleplay", model: "claude-opus-stub", sample: 0, duration_ms: null, cost_usd: null };
   await writeJson(path.join(dir, "results/variant.json"), {
     schema_version: "mystery-truth-results/1",
@@ -537,7 +556,7 @@ describe("pass one, reported turns only", () => {
     const done = (await get(server, "/done")).body;
     expect(done).toContain("3 of 3 turns done in pass 1.");
     const everything = [...pages, done].join("\n");
-    for (const text of ["culprit-leak", "voice", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree"]) {
+    for (const text of ["culprit-leak", "voice", "gm_spoiler", "gm_roleplay", "gm_fabrication", "claude-opus-stub", "Where a judge and the label disagree", ...JUDGE_WORDS]) {
       expect(everything).not.toContain(text);
     }
   });
@@ -553,7 +572,7 @@ describe("pass one, reported turns only", () => {
           model: "claude-opus-stub",
           sample: 0,
           status: "pass",
-          findings: [{ sequence: 5, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice" }],
+          findings: [{ sequence: 5, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice", quote: null, why: null, refers_to: null }],
           duration_ms: null,
           cost_usd: null,
         },
@@ -582,10 +601,17 @@ describe("pass two", () => {
     expect(caught).toContain("a judge caught <b>spoiler</b>, the label says clean");
     expect(caught).toContain("gm_spoiler");
     expect(caught).toContain("culprit-leak");
+    // Each run that flagged the turn, with what it quoted, why, and what it refers to; never the run's pass or fail.
+    expect(caught).toContain("gm_spoiler (claude-opus-stub): 1 of 1 run flagged this turn: 1 minor");
+    expect(caught).toContain("<blockquote>the gardener looked guilty</blockquote>");
+    expect(caught).toContain("<p>Points the player at the culprit before any clue does.</p>");
+    expect(caught).toContain("refers to <code>char-dorn</code>");
+    expect(caught).not.toMatch(/<td>(pass|fail)<\/td>/);
     const missed = (await get(server, "/turn/3")).body;
     expect(missed).toContain("labelled <b>out_of_character</b>, no judge caught it");
     expect(missed).toContain("gm_roleplay");
-    expect(missed).toContain("nothing at this turn");
+    expect(missed).toContain("gm_roleplay (claude-opus-stub): 0 of 1 run flagged this turn");
+    expect(missed).toContain("run 0: <span class=\"muted\">nothing at this turn</span>");
     expect(missed).not.toContain("culprit-leak");
     // Agreements, unlabelled turns, a judge that errored and a planted variant's catch are not disagreements.
     for (const sequence of [1, 4, 7, 9]) expect((await get(server, `/turn/${sequence}`)).status).toBe(404);
@@ -621,6 +647,7 @@ describe("pass two", () => {
     expect(refused.status).toBe(404);
     expect(refused.body).toContain("pass 2 opens once every turn of game &#34;medal&#34; has a label; 5 still have none");
     expect(refused.body).not.toMatch(/gm_|culprit-leak/);
+    for (const text of JUDGE_WORDS) expect(refused.body).not.toContain(text);
   });
 
   it("refuses without stored results that judge the game, saying so", async () => {
@@ -659,7 +686,7 @@ describe("where a judge and a label disagree", () => {
     model: "m",
     sample: 0,
     status: "fail",
-    findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: null }],
+    findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }],
     duration_ms: null,
     cost_usd: null,
     ...overrides,
@@ -680,7 +707,7 @@ describe("where a judge and a label disagree", () => {
   });
 
   it("leaves a clean label of age fit as it is, but still names an age fault no judge caught", () => {
-    const age = verdict({ judge: "age_appropriate_turn", status: "pass", findings: [{ sequence: 4, kinds: ["not_age_fit"], severity: "minor", judge_kind: null }] });
+    const age = verdict({ judge: "age_appropriate_turn", status: "pass", findings: [{ sequence: 4, kinds: ["not_age_fit"], severity: "minor", judge_kind: null, quote: null, why: null, refers_to: null }] });
     expect(disagreementsAt("medal", clean, [age], 4)).toEqual([]);
     expect(disagreementsAt("medal", clean, [{ ...age, status: "fail", findings: [{ ...age.findings[0], severity: "major" }] }], 4)).toEqual([]);
     const ageFault = [{ ...clean[0], faults: [{ kind: "not_age_fit" as const, severity: "minor" as const, note: "too long" }] }];
@@ -691,6 +718,90 @@ describe("where a judge and a label disagree", () => {
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [] })], 4)).toMatchObject([{ kind: "spoiler", label: "fault" }]);
     expect(disagreementsAt("medal", spoiler, [verdict({ status: "pass", findings: [], judge: "gm_roleplay" })], 4)).toEqual([]);
     expect(disagreementsAt("medal", spoiler, [verdict({})], 4)).toEqual([]);
+  });
+});
+
+describe("what pass 2 shows of each judge", () => {
+  const worded = (severity: "minor" | "major", judgeKind: string | null = "out_of_character") => ({
+    sequence: 15,
+    kinds: ["out_of_character"],
+    severity,
+    judge_kind: judgeKind,
+    quote: `a ${severity} quote`,
+    why: `a ${severity} reason`,
+    refers_to: null,
+  });
+  const run = (sample: number, findings: VerdictAtTurn["findings"], judge = "gm_broad", model = "opus"): VerdictAtTurn => ({ judge, model, sample, findings });
+  // Three samples of one judge on one turn: a major, then two minors (one run carrying two findings), and another judge that found nothing.
+  const runs = [run(2, [worded("minor")]), run(0, [worded("major"), worded("minor")]), run(1, [worded("minor")]), run(0, [], "gm_roleplay")];
+  const disagreement: Disagreement = { kind: "out_of_character", label: "clean", verdicts: runs };
+
+  it("tallies each judge and model's runs once each, by their most severe finding, and counts a run that found nothing as judged only", () => {
+    expect(tallyByJudge(runs).map(({ judge, flagged, major, minor, runs: own }) => [judge, own.length, flagged, major, minor, own.map((r) => r.sample)])).toEqual([
+      ["gm_broad", 3, 3, 1, 2, [0, 1, 2]],
+      ["gm_roleplay", 1, 0, 0, 0, [0]],
+    ]);
+  });
+
+  it("gives one line per judge and model, then each run's severity, category in plain words, quote, why and refers_to", () => {
+    const html = renderDisagreements([disagreement]);
+    expect(html).toContain("<summary>gm_broad (opus): 3 of 3 runs flagged this turn: 1 major, 2 minor</summary>");
+    expect(html).toContain("<summary>gm_roleplay (opus): 0 of 1 run flagged this turn</summary>");
+    expect(html).toContain("out_of_character: a character or the narrator out of character");
+    expect(html).toContain("<blockquote>a major quote</blockquote><p>a major reason</p>");
+    expect(html.indexOf("run 0<")).toBeLessThan(html.indexOf("run 1<"));
+    expect(html).toContain('run 0: <span class="muted">nothing at this turn</span>');
+    // Four findings fold under their line, and so does a judge that flagged nothing; a few stay open.
+    expect(html).toContain('<details class="judge"><summary>gm_broad');
+    expect(html).toContain('<details class="judge"><summary>gm_roleplay');
+    const few = renderDisagreements([{ ...disagreement, verdicts: [run(0, [worded("minor")]), run(1, [])] }]);
+    expect(few).toContain('<details class="judge" open><summary>gm_broad (opus): 1 of 2 runs flagged this turn: 1 minor');
+    expect(html).not.toMatch(/\b(pass|fail)\b/);
+  });
+
+  it("says so for a finding stored without the judge's words, and names a category it has no words for as it is", () => {
+    const bare = { ...worded("major", null), quote: null, why: null, refers_to: "clue-1" };
+    const html = renderDisagreements([{ ...disagreement, verdicts: [run(0, [bare])] }]);
+    expect(html).toContain('<details class="judge" open>');
+    expect(html).toContain("the stored result keeps no reason");
+    expect(html).toContain("refers to <code>clue-1</code>");
+    expect(html).not.toContain("blockquote");
+    expect(describeJudgeKind("gm_clue_discipline", "withheld")).toBe("withheld: an earned clue the character would not give");
+    expect(describeJudgeKind("gm_fabrication", "event")).toBe("event: a happening the blueprint does not support");
+    expect(describeJudgeKind("gm_spoiler", "culprit-leak")).toBe("culprit-leak");
+    expect(describeJudgeKind("nobody", "voice")).toBe("voice");
+    expect(describeJudgeKind("gm_spoiler", null)).toBeNull();
+  });
+
+  it("has plain words for every category each game-side judge's answer may name", () => {
+    const judges: Record<string, readonly string[]> = {
+      gm_roleplay: roleplaySchema.shape.findings.element.shape.kind.options,
+      gm_clue_discipline: clueSchema.shape.findings.element.shape.kind.options,
+      gm_fabrication: fabricationSchema.shape.findings.element.shape.kind.options,
+      gm_spoiler: spoilerSchema.shape.findings.element.shape.kind.options,
+      gm_broad: broadSchema.shape.findings.element.shape.kind.options,
+      age_appropriate_turn: TURN_AGE_FINDING_KINDS,
+    };
+    for (const [judge, kinds] of Object.entries(judges)) {
+      for (const kind of kinds) expect(describeJudgeKind(judge, kind), `${judge} ${kind}`).toMatch(new RegExp(`^${kind}: \\S`));
+    }
+  });
+
+  it("escapes what a judge wrote", () => {
+    const html = renderDisagreements([{ ...disagreement, verdicts: [run(0, [{ ...worded("minor"), quote: "<b>x</b>", why: "a & b" }])] }]);
+    expect(html).toContain("<blockquote>&#60;b&#62;x&#60;/b&#62;</blockquote><p>a &#38; b</p>");
+  });
+
+  it("shows only the findings of the disagreement's kind", () => {
+    const verdict = { subject: { side: "game", game: "medal", variant: null, sequence: null }, judge: "gm_broad", model: "m", sample: 0, status: "fail", duration_ms: null, cost_usd: null } as const;
+    const spoiler: StoredFinding = { sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "spoiler", quote: "q", why: "w", refers_to: null };
+    const fabrication = { ...spoiler, kinds: ["fabrication"], judge_kind: "fabrication" };
+    const clean = [{ sequence: 4, faults: [], by: "a", at: "2026-06-01T00:00:00Z", pass: 1 as const }];
+    const found = disagreementsAt("medal", clean, [{ ...verdict, findings: [spoiler, fabrication] }], 4);
+    expect(found.map((item) => [item.kind, item.verdicts[0].findings.map((finding) => finding.judge_kind)])).toEqual([
+      ["spoiler", ["spoiler"]],
+      ["fabrication", ["fabrication"]],
+    ]);
   });
 });
 
@@ -828,6 +939,7 @@ describe("the list of games", () => {
     expect(home).not.toContain("/pass-2/");
     expect(home).not.toMatch(/pass 2: \d+ to answer/);
     expect(home).not.toMatch(/gm_|claude-opus-stub|culprit-leak/);
+    for (const text of JUDGE_WORDS) expect(home).not.toContain(text);
     // The newer game first.
     expect(home.indexOf("medal-two")).toBeLessThan(home.indexOf("The Missing Medal"));
   });

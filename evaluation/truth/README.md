@@ -46,11 +46,12 @@ candidates' findings name theirs.
 
 ## Results and tables
 
-Results hold verdicts only: no prompt, log or workspace. `./dev eval suite
-<suite>` writes `results/<suite>.json`; `scores/<name>.json` is `./dev eval
-score <results>... --out` on the results its `inputs` name, minor findings as
-reports, and the gate regenerates it. A base is clean only as above; the
-blueprint side, one sample, measures no variation.
+Results hold verdicts only: each finding's turn, kinds, severity and the
+judge's own `kind`, `quote`, `why` and `refers_to` (null when unworded); no
+prompt, log or workspace. `./dev eval suite <suite>` writes
+`results/<suite>.json`; `scores/<name>.json` is `./dev eval score <results>...
+--out` on the results its `inputs` name, minor findings as reports, and the gate
+regenerates it. The blueprint side, one sample, measures no variation.
 
 ## Made live
 

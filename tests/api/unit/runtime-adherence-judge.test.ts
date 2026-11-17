@@ -4,6 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { answerJsonSchema } from "../../../evaluation/core/judge-prompt.ts";
+import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
 import { buildJudgeUserMessage, judgeTurn } from "../../../evaluation/runtime/lib/judges.ts";
 import type { BlueprintLike } from "../../../evaluation/runtime/lib/case.ts";
@@ -60,6 +62,15 @@ describe("adherence judges (stub binding)", () => {
     expect(result).toMatchObject({ id, tier: "judge", status: "pass" });
     expect(result.details).toMatchObject({ score: 0, major_count: 0 }); // the headline score is the major-finding count
     expect(result.call?.binding).toBe("judge-stub");
+  });
+
+  it("hands its wrapper the schema its prompt shows", async () => {
+    for (const id of JUDGE_IDS) {
+      await judge(id);
+      const schema = JSON.parse(fs.readFileSync(path.join(logDir, `judge-${id}.schema.json`), "utf8"));
+      expect(schema, id).toEqual(answerJsonSchema(await loadJudge(id)));
+      expect(fs.readFileSync(path.join(logDir, `judge-${id}.system.txt`), "utf8"), id).toContain(JSON.stringify(schema, null, 2));
+    }
   });
 
   it("fails on a major finding and keeps the finding detail", async () => {

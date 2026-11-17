@@ -9,13 +9,12 @@
 ```
 
 **Who labels.** Each visitor picks a name (a cookie) their labels record.
-`--by <name>` labels as that name until a visitor picks one. Names are handles
-(letters, digits, `.`, `-`, `_`): the label files are public.
+`--by <name>` labels as that name until a visitor picks one. Names are handles:
+the label files are public.
 
 **The list.** Each game shows its blueprint, target age, persona, when it was
-played and last labelled, and its stage: not started, pass 1 in progress, pass
-1 done without judge results, pass 2 with turns left, or done. Search by words,
-stage and dates; sort by date.
+played and last labelled, and its stage. Search by words, stage and dates; sort
+by date.
 
 **Passes.**
 
@@ -27,13 +26,15 @@ stage and dates; sort by date.
   every turn has a label and results judge the game. Its labels record pass 2.
 
 Nothing a judge said shows until pass 1 is complete. Saves append to
-`labels.json` at once; a pass resumes at its first unanswered turn. Games and
+`labels.json`; a pass resumes at its first unanswered turn. Games and
 results are read at start: restart after adding either.
 
 **A turn.** The title gives the game, target age, pass and place, and opens
-the ground truth with every character's profile over the page; a conversation
-turn opens its character's. Each fault is a row with its own kind, severity
-and note; no row means clean.
+the ground truth and cast over the page; a conversation turn opens its
+character's profile. The Clues panel beside the narration shows the turn's
+reveals, what its character or place could give (held, `requires` met, the next
+a search gives) and what was held before. Each fault is a row with its own
+kind, severity and note; no row means clean.
 
 **Keys.** `a` adds a row; 1 to 5 set its kind, `n`/`m` its severity, `t` its
 note (Escape leaves), `x` removes it. Enter saves, `c` saves clean, `p` goes
@@ -41,8 +42,8 @@ back, `g` opens the ground truth.
 
 ## From a phone, over Tailscale
 
-The server listens on the loopback address only. `--tailscale` answers to this
-machine's tailnet name and listens on port 52400 unless `--port` says otherwise:
+The server listens on loopback only; `--tailscale` also answers to this
+machine's tailnet name, on port 52400 unless `--port` says otherwise:
 
 ```bash
 ./dev eval label --tailscale
@@ -53,5 +54,5 @@ Then open `https://<machine>.<tailnet>.ts.net/` in the tailnet. Labels land in
 this checkout: commit them and regenerate the score table.
 
 Code: `server.ts` (routes, names, hosts), `hub.ts` (passes, stages), `home.ts`,
-`page.ts`, `turns.ts`, `store.ts` (the label file), `keys.ts`;
+`page.ts`, `turns.ts`, `clues.ts`, `store.ts` (the label file), `keys.ts`;
 `evaluation/core/tailscale.ts`.

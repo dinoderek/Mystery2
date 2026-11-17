@@ -12,7 +12,7 @@ import { createLabelCommand, TAILSCALE_PORT } from "../../../evaluation/label/co
 import { disagreementsAt, reportedTurns } from "../../../evaluation/label/disagreements.ts";
 import { actionForKey, applyAction, KEYED_KINDS, KIND_KEYS } from "../../../evaluation/label/keys.ts";
 import type { Draft } from "../../../evaluation/label/keys.ts";
-import { escapeHtml } from "../../../evaluation/label/page.ts";
+import { escapeHtml, renderTurnPage } from "../../../evaluation/label/page.ts";
 import { phasePath } from "../../../evaluation/label/hub.ts";
 import type { Phase } from "../../../evaluation/label/hub.ts";
 import { startLabelServer } from "../../../evaluation/label/server.ts";
@@ -268,7 +268,7 @@ describe("a turn's view", () => {
       "(starts the accusation)",
     ]);
     expect(line(9)).toBe("Dorn did it.");
-    expect(buildTurnView(game, 2, 1, 1).clues).toEqual([{ id: "clue_missing", text: null }]);
+    expect(buildTurnView(game, 2, 1, 1).clues.revealed).toMatchObject([{ id: "clue_missing", text: null, holder: null }]);
     expect(() => buildTurnView(game, 99, 1, 1)).toThrow("has no turn 99");
   });
 
@@ -287,6 +287,106 @@ describe("a turn's view", () => {
     game.events[3].payload = { ...game.events[3].payload, character_id: "char_nobody" };
     expect(buildTurnView(game, 4, 1, 1)).toMatchObject({ targetAge: null, character: null });
     expect(buildTurnView(game, 7, 1, 1).character).toBeNull();
+  });
+});
+
+describe("a turn's Clues panel", () => {
+  const medal = async () => structuredClone((await loadTruthSet(FIXTURE)).games[0].trace);
+  const panel = (game: Awaited<ReturnType<typeof medal>>, sequence: number) => buildTurnView(game, sequence, 1, 1).clues;
+  const ids = (clues: { id: string }[]) => clues.map((clue) => clue.id);
+
+  it("lists what a search reveals, every clue of the place and its sub-places, and marks the next a search gives", async () => {
+    const search = panel(await medal(), 2);
+    expect(search.revealed).toEqual([
+      { id: "clue_hall_1", text: "A muddy footprint near the trophy case.", holder: "Grand Hall", holderKind: "place", requires: [], requiresMet: true, pointsTo: [], held: false, next: false },
+    ]);
+    expect(search.source).toEqual({ kind: "place", name: "Grand Hall" });
+    expect(search.candidates.map(({ id, holder, held, next }) => ({ id, holder, held, next }))).toEqual([
+      { id: "clue_hall_1", holder: "Grand Hall", held: false, next: true },
+      { id: "clue_rug_1", holder: "Grand Hall, under the rug", held: false, next: false },
+    ]);
+    expect(search.held).toEqual([]);
+  });
+
+  it("follows what the player held before each turn, from the reveals of the turns before it", async () => {
+    const game = await medal();
+    const ask = panel(game, 4);
+    expect(ask.source).toEqual({ kind: "character", name: "Mara Vale" });
+    expect(ask.revealed).toMatchObject([{ id: "clue_mara_1", holder: "Mara Vale", holderKind: "character", held: false }]);
+    expect(ask.candidates).toMatchObject([{ id: "clue_mara_1", held: false, next: false }]);
+    expect(ids(ask.held)).toEqual(["clue_hall_1"]);
+    // The talk that opens it and the end_talk that closes it name the same character.
+    expect(panel(game, 3).candidates).toMatchObject([{ id: "clue_mara_1", held: false }]);
+    expect(panel(game, 5).candidates).toMatchObject([{ id: "clue_mara_1", held: true }]);
+    // A move lists the place it enters, and only a search marks a next clue.
+    const move = panel(game, 6);
+    expect(move).toMatchObject({ source: { kind: "place", name: "Walled Garden" }, revealed: [] });
+    expect(move.candidates).toMatchObject([{ id: "clue_garden_1", held: false, next: false }]);
+    expect(panel(game, 7).candidates).toMatchObject([{ id: "clue_garden_1", next: true }]);
+    expect(ids(panel(game, 7).held)).toEqual(["clue_hall_1", "clue_mara_1"]);
+    expect(panel(game, 8)).toMatchObject({ source: null, candidates: [], noSource: "this accuse_start turn has no speaker or place whose clues it could reveal" });
+    expect(ids(panel(game, 9).held)).toEqual(["clue_hall_1", "clue_mara_1", "clue_garden_1"]);
+  });
+
+  it("weighs requires against the clues held before the turn, skips a locked clue for the next, and names what a clue points to", async () => {
+    const game = await medal();
+    const world = (game.blueprint as { world: { locations: { clues: Record<string, unknown>[]; sub_locations: { clues: Record<string, unknown>[] }[] }[]; characters: { clues: Record<string, unknown>[] }[] } }).world;
+    Object.assign(world.locations[0].clues[0], { requires: { clue_ids: ["clue_mara_1"], rationale: "Only once Mara points at the case." } });
+    Object.assign(world.characters[0].clues[0], { about_character_id: "char_dorn", hint_location_id: "loc_garden", requires: { clue_ids: ["clue_hall_1"], rationale: "She opens up once you saw the print." } });
+    Object.assign(world.locations[0].sub_locations[0].clues[0], { about_character_id: "char_ghost" });
+    const search = panel(game, 2);
+    expect(search.revealed).toMatchObject([{ id: "clue_hall_1", requires: ["clue_mara_1"], requiresMet: false }]);
+    expect(search.candidates).toMatchObject([
+      { id: "clue_hall_1", requiresMet: false, next: false },
+      { id: "clue_rug_1", next: true, pointsTo: ["about char_ghost (not in the blueprint)"] },
+    ]);
+    expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requires: ["clue_hall_1"], requiresMet: true, pointsTo: ["about Dorn Pike", "points to Walled Garden"] }]);
+  });
+
+  it("says what the trace lacks instead of guessing a speaker or a place", async () => {
+    const game = await medal();
+    const payload = (sequence: number) => game.events[sequence - 1].payload as Record<string, unknown>;
+    delete payload(6).location_id;
+    payload(7).location_id = "loc_attic";
+    delete payload(3).character_id;
+    payload(4).character_id = "char_nobody";
+    expect(panel(game, 6)).toMatchObject({ source: null, candidates: [], noSource: "the trace records no location_id for this move turn" });
+    expect(panel(game, 7)).toMatchObject({ source: null, noSource: 'the blueprint has no location "loc_attic"' });
+    expect(panel(game, 3)).toMatchObject({ source: null, noSource: "the trace records no character_id for this talk turn" });
+    expect(panel(game, 4)).toMatchObject({ source: null, noSource: 'the blueprint has no character "char_nobody"' });
+    // The reveal itself is still listed, with its blueprint text.
+    expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", text: "Mara saw a shadow slip toward the garden." }]);
+  });
+
+  it("renders beside the narration: reveals open, a short list open, a long one and what was held folded, and says when there is nothing", async () => {
+    const { server } = await serve(await copyFixture());
+    const search = (await get(server, "/turn/2")).body;
+    const clues = search.slice(search.indexOf('<section class="clues" id="clues">'), search.indexOf("</section>", search.indexOf('id="clues"')));
+    expect(search).toMatch(/<div class="beside"><section><h2>Narration<\/h2>[\s\S]*<\/section><section class="clues" id="clues">/);
+    expect(clues).toContain("<h3>This turn reveals</h3><ul><li>clue_hall_1: A muddy footprint near the trophy case.");
+    expect(clues).toContain('<details class="fold" id="clues-here" open><summary><h3>Could be revealed here: Grand Hall (2, 0 held, next clue_hall_1)</h3>');
+    expect(clues).toContain('<span class="tag next">next a search gives</span>');
+    expect(clues).toContain("at Grand Hall, under the rug");
+    expect(clues).toContain("<h3>Already held</h3><p class=\"muted\">none</p>");
+    const garden = (await get(server, "/turn/7")).body;
+    expect(garden).toContain('<details class="fold" id="clues-held"><summary><h3>Already held (2)</h3>');
+    const accuse = (await get(server, "/turn/8")).body;
+    expect(accuse).toContain("<h3>This turn reveals</h3><p class=\"muted\">none</p>");
+    expect(accuse).toContain("this accuse_start turn has no speaker or place whose clues it could reveal");
+    // A judge's finding never reaches it.
+    expect(search).not.toContain("culprit-leak");
+
+    const game = await medal();
+    const world = (game.blueprint as { world: { locations: { clues: Record<string, unknown>[] }[]; characters: { clues: unknown[] }[] } }).world;
+    world.locations[0].clues.push(...[2, 3, 4].map((n) => ({ id: `clue_hall_${n}`, text: `Hall clue ${n}.`, requires: { clue_ids: ["clue_dorn_1"], rationale: "Later." } })));
+    world.characters[0].clues = [];
+    const page = (sequence: number) =>
+      renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, sequence, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [] });
+    const long = page(2);
+    expect(long).toContain('<details class="fold" id="clues-here"><summary><h3>Could be revealed here: Grand Hall (5, 0 held, next clue_hall_1)</h3>');
+    expect(long).toContain('<span class="tag locked">requires not met</span>');
+    expect(long).toContain("requires clue_dorn_1");
+    expect(page(4)).toContain("<h3>Could be revealed here: Mara Vale (0, 0 held)</h3><p class=\"muted\">the blueprint gives them no clue</p>");
   });
 });
 
@@ -590,6 +690,9 @@ describe("pass two", () => {
     // Agreements, unlabelled turns, a judge that errored and a planted variant's catch are not disagreements.
     for (const sequence of [1, 4, 7, 9]) expect((await get(server, `/turn/${sequence}`)).status).toBe(404);
     expect(missed).not.toContain("gm_clue_discipline");
+    // The Clues panel is built from the trace alone, so pass 2 shows it as pass 1 does.
+    expect(caught).toContain('<section class="clues" id="clues">');
+    expect(caught).toContain("clue_hall_1: A muddy footprint near the trophy case.");
   });
 
   it("records a relabel as pass 2 and resumes at the turn after the last one looked at", async () => {

@@ -4,17 +4,22 @@
  * at the bottom, which adds and removes the form's fault rows and opens its
  * menus (`keys.ts` decides what a key means). Each fault is a row with its own
  * kind, severity and note. The ground truth and a speaking character's profile
- * open over the page, so they push nothing down. On a touch screen the save
+ * open over the page, so they push nothing down. The Clues panel sits beside
+ * the narration on a wide screen and under it on a phone, its long lists folded. On a touch screen the save
  * stays at the bottom of the screen and the keys are not shown.
  */
 
 import { ADD_KEY, CLEAN_KEY, KEYED_KINDS, KIND_KEYS, NOTE_KEY, PREVIOUS_KEY, REMOVE_KEY, SEVERITY_KEYS, TRUTH_KEY } from "./keys.ts";
+import type { CluePanelView, PanelClue } from "./clues.ts";
 import type { Disagreement } from "./disagreements.ts";
 import type { CharacterView, ClueView, FormFault, FormState, TurnView } from "./turns.ts";
 
 export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
+
+/** A screen too narrow to put the Clues panel beside the narration. */
+const NARROW = "(max-width: 60rem)";
 
 const STYLE = `
 :root { color-scheme: light dark; --bg: #fbfaf7; --fg: #1d1c1a; --muted: #6b675f; --line: #d9d4c9; --card: #fff; --accent: #2f5d50; --bad: #a3261c; }
@@ -57,6 +62,13 @@ kbd { font: .85em ui-monospace, monospace; border: 1px solid var(--line); border
 @media (hover: none) { kbd, .keys { display: none; } }
 a { color: var(--accent); } table { border-collapse: collapse; width: 100%; } td, th { text-align: left; padding: 2px 8px 2px 0; vertical-align: top; }
 .scroll { overflow-x: auto; }
+main:has(.beside) { max-width: 72rem; }
+@media not all and ${NARROW} { .beside { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; } }
+.clues h3 { font-size: .9rem; font-weight: 600; margin: 8px 0 2px; } summary h3 { display: inline; }
+.clues li + li { margin-top: 6px; }
+.clues .meta { display: block; font-size: .85rem; color: var(--muted); }
+.tag { font-size: .75rem; border: 1px solid var(--muted); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.tag.next { border-color: var(--accent); color: var(--accent); font-weight: 600; } .tag.locked { border-color: var(--bad); color: var(--bad); }
 `;
 
 /** The header every page carries: back to the games, and who is labelling. */
@@ -96,8 +108,57 @@ function clueItems(clues: readonly ClueView[]): string {
   return `<ul>${items.join("")}</ul>`;
 }
 
-function cluesHtml(view: TurnView): string {
-  return view.clues.length === 0 ? `<p class="muted">none</p>` : clueItems(view.clues);
+/** A list of the Clues panel longer than this folds; on a narrow screen every list starts folded (the glue folds them). */
+const FOLD_OVER = 3;
+
+/**
+ * How a list shows whether the player held a clue before this turn: `both`
+ * says held or not, `held` only flags one already held (a reveal that repeats
+ * it), `none` says nothing (the list of held clues).
+ */
+type Standing = "both" | "held" | "none";
+
+function standingTag(clue: PanelClue, standing: Standing): string {
+  if (standing === "both") return `<span class="tag">${clue.held ? "held" : "not held"}</span>`;
+  return standing === "held" && clue.held ? `<span class="tag">already held</span>` : "";
+}
+
+/** One clue of the Clues panel: its text, then whose it is, what it needs and points to, and where the player stands with it. */
+function panelClueHtml(clue: PanelClue, standing: Standing): string {
+  if (clue.text === null && clue.holder === null) return `<li>${escapeHtml(clue.id)}: <span class="muted">(no such clue in the blueprint)</span></li>`;
+  const requires = clue.requires.length === 0 ? null : `requires ${clue.requires.map(escapeHtml).join(", ")}`;
+  const meta = [clue.holder === null ? null : `${clue.holderKind === "character" ? "from" : "at"} ${escapeHtml(clue.holder)}`, requires, ...clue.pointsTo.map(escapeHtml)];
+  const tags = [
+    clue.next ? `<span class="tag next">next a search gives</span>` : "",
+    standingTag(clue, standing),
+    requires === null ? "" : clue.requiresMet ? `<span class="tag">requires met</span>` : `<span class="tag locked">requires not met</span>`,
+  ];
+  return `<li>${escapeHtml(clue.id)}: ${clue.text === null ? `<span class="muted">(the blueprint gives no text)</span>` : escapeHtml(clue.text)} ${tags.filter(Boolean).join(" ")}<span class="meta">${meta.filter(Boolean).join(" &middot; ")}</span></li>`;
+}
+
+function panelListHtml(clues: readonly PanelClue[], standing: Standing): string {
+  return `<ul>${clues.map((clue) => panelClueHtml(clue, standing)).join("")}</ul>`;
+}
+
+/** A part of the Clues panel under a fold, open when `open`. */
+function foldHtml(id: string, heading: string, body: string, open: boolean): string {
+  return `<details class="fold" id="${id}"${open ? " open" : ""}><summary><h3>${heading}</h3></summary>${body}</details>`;
+}
+
+function candidatesHtml(panel: CluePanelView): string {
+  if (panel.source === null) return `<h3>Could be revealed here</h3><p class="muted">${escapeHtml(panel.noSource ?? "nothing")}</p>`;
+  const next = panel.candidates.find((clue) => clue.next);
+  const counts = [`${panel.candidates.length}`, `${panel.candidates.filter((clue) => clue.held).length} held`, next ? `next ${escapeHtml(next.id)}` : null];
+  const heading = `Could be revealed here: ${escapeHtml(panel.source.name)} (${counts.filter(Boolean).join(", ")})`;
+  if (panel.candidates.length === 0) return `<h3>${heading}</h3><p class="muted">the blueprint gives ${panel.source.kind === "character" ? "them" : "it"} no clue</p>`;
+  return foldHtml("clues-here", heading, panelListHtml(panel.candidates, "both"), panel.candidates.length <= FOLD_OVER);
+}
+
+/** The Clues panel: what this turn reveals, what its speaker or place could reveal, and what the player already held. */
+function cluesHtml(panel: CluePanelView): string {
+  const revealed = panel.revealed.length === 0 ? `<p class="muted">none</p>` : panelListHtml(panel.revealed, "held");
+  const held = panel.held.length === 0 ? `<h3>Already held</h3><p class="muted">none</p>` : foldHtml("clues-held", `Already held (${panel.held.length})`, panelListHtml(panel.held, "none"), false);
+  return `<section class="clues" id="clues"><h2>Clues</h2><h3>This turn reveals</h3>${revealed}${candidatesHtml(panel)}${held}</section>`;
 }
 
 /** A labelled line, left out when the blueprint has nothing for it. */
@@ -211,8 +272,7 @@ export function renderTurnPage(page: TurnPage): string {
   const body = `<div class="title"><h1>${heading}</h1>${menuHtml("truth", `Ground truth <kbd>${TRUTH_KEY}</kbd>`, groundTruthHtml(view))}</div>
 ${page.error ? `<section><p class="error" role="alert">Not saved: ${escapeHtml(page.error)}</p></section>` : ""}
 ${playerHtml(view)}
-<section><h2>Narration</h2><p class="narration">${escapeHtml(view.narration)}</p></section>
-<section><h2>Clues this turn revealed</h2>${cluesHtml(view)}</section>
+<div class="beside"><section><h2>Narration</h2><p class="narration">${escapeHtml(view.narration)}</p></section>${cluesHtml(view.clues)}</div>
 ${page.disagreements.length > 0 ? disagreementsHtml(page.disagreements) : ""}
 ${formHtml(page)}
 ${page.labelled ? `<p class="muted">Latest label: ${escapeHtml(page.labelled)}</p>` : ""}
@@ -258,7 +318,8 @@ ${error ? `<section><p class="error" role="alert">${escapeHtml(error)}</p></sect
 /**
  * The glue: a key press or a tap becomes an action (`keys.ts`), and the action
  * moves the form. The rows are the form's own state, so a failed save
- * re-renders them as they were typed. Opening one menu closes the other.
+ * re-renders them as they were typed. Opening one menu closes the other. On a
+ * narrow screen the Clues panel's lists start folded, so the form stays near.
  */
 const KEYBOARD_GLUE = `<script type="module">
 import { actionForKey, applyAction } from "/keys.js";
@@ -298,6 +359,7 @@ list.addEventListener("click", (event) => {
 document.getElementById("add").addEventListener("click", () => act({ type: "add-fault" }));
 const clean = () => { act({ type: "clean" }); form.requestSubmit(); };
 document.getElementById("clean").addEventListener("click", clean);
+if (matchMedia("${NARROW}").matches) for (const fold of document.querySelectorAll("#clues details")) fold.open = false;
 const menus = [...document.querySelectorAll("details.menu")];
 for (const menu of menus) {
   menu.addEventListener("toggle", () => { if (menu.open) for (const other of menus) if (other !== menu) other.open = false; });

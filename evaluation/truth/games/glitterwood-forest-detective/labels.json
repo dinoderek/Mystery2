@@ -396,6 +396,24 @@
       "by": "Dino",
       "at": "2026-11-17T22:44:25.280Z",
       "pass": 2
+    },
+    {
+      "sequence": 6,
+      "faults": [
+        {
+          "kind": "fabrication",
+          "severity": "minor",
+          "note": "The player is already in the dungeon and Tobias greeted them in seq 2, yet this greeting treats it as a first arrival and first meeting. Talk start and end need no movement."
+        },
+        {
+          "kind": "out_of_character",
+          "severity": "minor",
+          "note": "Oddly calm for his relieved, upset attitude."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T23:30:51.220Z",
+      "pass": 2
     }
   ]
 }

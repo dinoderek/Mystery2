@@ -136,8 +136,8 @@
             {
               "kind": "fabrication",
               "units": {
-                "fault": 18,
-                "clean": 84,
+                "fault": 21,
+                "clean": 81,
                 "unknown": 498
               },
               "shares": {
@@ -150,10 +150,10 @@
                 },
                 "found_of_real": {
                   "hits": 10,
-                  "of": 18,
-                  "share": 0.555556,
-                  "low": 0.337164,
-                  "high": 0.754405
+                  "of": 21,
+                  "share": 0.47619,
+                  "low": 0.28344,
+                  "high": 0.676305
                 },
                 "unknown_reported": 16
               },
@@ -167,10 +167,10 @@
                 },
                 "found_of_real": {
                   "hits": 10,
-                  "of": 18,
-                  "share": 0.555556,
-                  "low": 0.337164,
-                  "high": 0.754405
+                  "of": 21,
+                  "share": 0.47619,
+                  "low": 0.28344,
+                  "high": 0.676305
                 },
                 "unknown_reported": 2
               },
@@ -392,8 +392,8 @@
             {
               "kind": "fabrication",
               "units": {
-                "fault": 18,
-                "clean": 84,
+                "fault": 21,
+                "clean": 81,
                 "unknown": 498
               },
               "shares": {
@@ -406,10 +406,10 @@
                 },
                 "found_of_real": {
                   "hits": 12,
-                  "of": 18,
-                  "share": 0.666667,
-                  "low": 0.437495,
-                  "high": 0.837212
+                  "of": 21,
+                  "share": 0.571429,
+                  "low": 0.365466,
+                  "high": 0.7553
                 },
                 "unknown_reported": 41
               },
@@ -423,10 +423,10 @@
                 },
                 "found_of_real": {
                   "hits": 10,
-                  "of": 18,
-                  "share": 0.555556,
-                  "low": 0.337164,
-                  "high": 0.754405
+                  "of": 21,
+                  "share": 0.47619,
+                  "low": 0.28344,
+                  "high": 0.676305
                 },
                 "unknown_reported": 10
               },
@@ -558,7 +558,7 @@
           "usage_usd": 1.424319
         }
       ],
-      "faults": 78,
+      "faults": 81,
       "full_found": 61,
       "subsets": [
         {

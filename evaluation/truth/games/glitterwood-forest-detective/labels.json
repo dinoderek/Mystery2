@@ -274,6 +274,128 @@
       "by": "Dino",
       "at": "2026-11-17T08:53:01.435Z",
       "pass": 1
+    },
+    {
+      "sequence": 6,
+      "faults": [
+        {
+          "kind": "out_of_character",
+          "severity": "minor",
+          "note": "The player is already in the dungeon and Tobias greeted them in seq 2, yet this greeting treats it as a first arrival and first meeting. It is also oddly calm for his relieved, upset attitude."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:38:16.251Z",
+      "pass": 2
+    },
+    {
+      "sequence": 7,
+      "faults": [
+        {
+          "kind": "clue_handling",
+          "severity": "minor",
+          "note": "Tobias partly conveys the substance of the unsearched clue_cake_plate (why Nutmeg came) without it being recorded. He knows this firsthand and the visitor book already places her there, so it is low impact."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:39:36.576Z",
+      "pass": 2
+    },
+    {
+      "sequence": 8,
+      "faults": [
+        {
+          "kind": "fabrication",
+          "severity": "minor",
+          "note": "Barnaby chewed the new leg and fixed the shelf while Tobias hosted him, so Tobias's ignorance is a slight stretch. It does not mislead, because he still credits Barnaby with the fix at 3:00."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:40:11.587Z",
+      "pass": 2
+    },
+    {
+      "sequence": 9,
+      "faults": [
+        {
+          "kind": "fabrication",
+          "severity": "minor",
+          "note": "Why stepping back from a stone shelf? Similar to previous notes in general the start and end talk interactions do not NEED movement"
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:43:00.689Z",
+      "pass": 2
+    },
+    {
+      "sequence": 11,
+      "faults": [
+        {
+          "kind": "spoiler",
+          "severity": "minor",
+          "note": "Clue says nutmeg’s stall but player does not know that yet"
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:43:15.460Z",
+      "pass": 2
+    },
+    {
+      "sequence": 12,
+      "faults": [
+        {
+          "kind": "spoiler",
+          "severity": "minor",
+          "note": "Why would the culprit sign the sheet?"
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:43:25.610Z",
+      "pass": 2
+    },
+    {
+      "sequence": 15,
+      "faults": [
+        {
+          "kind": "out_of_character",
+          "severity": "major",
+          "note": "tell_clementine_ear is a condition tell. It should fire only when the investigator points out she visited after the 4 o'clock polish, while the stick was still real. The player only asked whether the stick glowed at 5:00 and never raised the polish, so the authored tell fired early."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:43:43.827Z",
+      "pass": 2
+    },
+    {
+      "sequence": 23,
+      "faults": [
+        {
+          "kind": "fabrication",
+          "severity": "minor",
+          "note": "The blueprint puts the nibbled twig pile (clue_twig_pile) behind the willow, and Barnaby had just named that spot in seq 20. The narration implies nothing is there. The hedge 'yet' keeps it from asserting the pile is absent, and the main problem is a withheld clue, which belongs to gm_clue_discipline."
+        },
+        {
+          "kind": "clue_handling",
+          "severity": "minor",
+          "note": "The player directly searched under the willow, and clue_twig_pile's gate (clue_barnaby_twigs) was already met. The clue was withheld without a fictional reason. The pointer to 'a friend' is also redundant, since Barnaby had already told the player."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:44:08.201Z",
+      "pass": 2
+    },
+    {
+      "sequence": 25,
+      "faults": [
+        {
+          "kind": "clue_handling",
+          "severity": "minor",
+          "note": "Points the player back to Barnaby, who has already given clue_barnaby_twigs. This compounds the withheld willow find."
+        }
+      ],
+      "by": "Dino",
+      "at": "2026-11-17T22:44:25.280Z",
+      "pass": 2
     }
   ]
 }

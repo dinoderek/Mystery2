@@ -13,6 +13,7 @@ import type { CluePanelView } from "./clues.ts";
 
 type StoredEvent = StoredGame["events"][number];
 
+/** A clue as a character's profile lists it; a turn's own clues are the Clues panel's (`clues.ts`). */
 export interface ClueView {
   id: string;
   /** Null when the blueprint has no clue by that id. */

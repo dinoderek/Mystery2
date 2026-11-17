@@ -40,6 +40,8 @@ export interface CluePanelView {
   candidates: PanelClue[];
   /** Why no candidates are listed, when the turn has no source or the trace does not name one the blueprint has. */
   noSource: string | null;
+  /** On a search, what it should give: the next clue, nothing, or why it names no next clue. */
+  searchNote: string | null;
   /** What the player held before this turn, in the order they found it. */
   held: PanelClue[];
 }
@@ -155,27 +157,48 @@ const AT_A_PLACE = new Set(["search", "move"]);
 interface Source {
   source: CluePanelView["source"];
   clues: BlueprintClue[];
+  /** A place's own clues, without its sub-places': the only ones a plain search gives in turn. */
+  ownIds: Set<string>;
   noSource: string | null;
 }
 
 function sourceOf(event: StoredEvent, book: ClueBook): Source {
-  const none = (noSource: string): Source => ({ source: null, clues: [], noSource });
+  const none = (noSource: string): Source => ({ source: null, clues: [], ownIds: new Set(), noSource });
   if (CONVERSATION.has(event.event_type)) {
     const id = readField(event.payload, "character_id");
     if (id === null) return none(`the trace records no character_id for this ${event.event_type} turn`);
     const character = book.characters.find((item) => item.id === id);
     if (!character) return none(`the blueprint has no character "${id}"`);
     const name = characterName(character);
-    return { source: { kind: "character", name }, clues: cluesOf(character, name, "character"), noSource: null };
+    return { source: { kind: "character", name }, clues: cluesOf(character, name, "character"), ownIds: new Set(), noSource: null };
   }
   if (AT_A_PLACE.has(event.event_type)) {
     const id = readField(event.payload, "location_id");
     if (id === null) return none(`the trace records no location_id for this ${event.event_type} turn`);
     const location = book.locations.find((item) => item.id === id);
     if (!location) return none(`the blueprint has no location "${id}"`);
-    return { source: { kind: "place", name: text(location.name) ?? id }, clues: placeClues(location), noSource: null };
+    const name = text(location.name) ?? id;
+    const ownIds = new Set(cluesOf(location, name, "place").map((clue) => clue.id));
+    return { source: { kind: "place", name }, clues: placeClues(location), ownIds, noSource: null };
   }
   return none(`this ${event.event_type} turn has no speaker or place whose clues it could reveal`);
+}
+
+/**
+ * Marks the clue a search should give, as the engine picks it: only a plain
+ * search has one, the first of the place's own clues neither held nor locked.
+ * A targeted search may give any open clue of the place, so it has none.
+ * Returns what to say about it.
+ */
+function markNext(event: StoredEvent, candidates: PanelClue[], ownIds: ReadonlySet<string>): string {
+  const payload = event.payload ?? {};
+  if (!("search_query" in payload)) return "the trace records no search_query, so whether this search was plain or targeted is unknown";
+  const query = readField(payload, "search_query");
+  if (query !== null) return `a targeted search ("${query}") has no next clue: it may give any open clue of the place`;
+  const next = candidates.find((clue) => ownIds.has(clue.id) && !clue.held && clue.requiresMet);
+  if (!next) return "a plain search should give nothing: the place's own clues are held or locked";
+  next.next = true;
+  return `a plain search should give ${next.id}`;
 }
 
 /** The Clues panel of `event`, a played turn of `game`. */
@@ -183,18 +206,16 @@ export function buildCluePanel(game: StoredGame, event: StoredEvent): CluePanelV
   const book = clueBook(game.blueprint);
   const priorIds = heldBefore(game, event.sequence);
   const prior = new Set(priorIds);
-  const { source, clues, noSource } = sourceOf(event, book);
+  const { source, clues, ownIds, noSource } = sourceOf(event, book);
   const offScript = new Set(offScriptClueIdsForEvent(event));
   const candidates = clues.map((clue) => panelClue(clue.id, book, prior));
-  if (event.event_type === "search") {
-    const next = candidates.find((clue) => !clue.held && clue.requiresMet);
-    if (next) next.next = true;
-  }
+  const searchNote = event.event_type === "search" && source !== null ? markNext(event, candidates, ownIds) : null;
   return {
     revealed: revealedClueIdsForEvent(event).map((id) => ({ ...panelClue(id, book, prior), offScript: offScript.has(id) })),
     source,
     candidates,
     noSource,
+    searchNote,
     held: priorIds.map((id) => panelClue(id, book, prior)),
   };
 }

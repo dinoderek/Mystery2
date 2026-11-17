@@ -295,7 +295,7 @@ describe("a turn's Clues panel", () => {
   const panel = (game: Awaited<ReturnType<typeof medal>>, sequence: number) => buildTurnView(game, sequence, 1, 1).clues;
   const ids = (clues: { id: string }[]) => clues.map((clue) => clue.id);
 
-  it("lists what a search reveals, every clue of the place and its sub-places, and marks the next a search gives", async () => {
+  it("lists what a plain search reveals, every clue of the place and its sub-places, and marks the next it gives", async () => {
     const search = panel(await medal(), 2);
     expect(search.revealed).toEqual([
       { id: "clue_hall_1", text: "A muddy footprint near the trophy case.", holder: "Grand Hall", holderKind: "place", requires: [], requiresMet: true, pointsTo: [], held: false, next: false, offScript: false },
@@ -305,6 +305,7 @@ describe("a turn's Clues panel", () => {
       { id: "clue_hall_1", holder: "Grand Hall", held: false, next: true },
       { id: "clue_rug_1", holder: "Grand Hall, under the rug", held: false, next: false },
     ]);
+    expect(search.searchNote).toBe("a plain search should give clue_hall_1");
     expect(search.held).toEqual([]);
   });
 
@@ -318,17 +319,18 @@ describe("a turn's Clues panel", () => {
     // The talk that opens it and the end_talk that closes it name the same character.
     expect(panel(game, 3).candidates).toMatchObject([{ id: "clue_mara_1", held: false }]);
     expect(panel(game, 5).candidates).toMatchObject([{ id: "clue_mara_1", held: true }]);
-    // A move lists the place it enters, and only a search marks a next clue.
+    // A move lists the place it enters, and only a plain search marks a next clue: a targeted one may give any open clue.
     const move = panel(game, 6);
-    expect(move).toMatchObject({ source: { kind: "place", name: "Walled Garden" }, revealed: [] });
+    expect(move).toMatchObject({ source: { kind: "place", name: "Walled Garden" }, revealed: [], searchNote: null });
     expect(move.candidates).toMatchObject([{ id: "clue_garden_1", held: false, next: false }]);
-    expect(panel(game, 7).candidates).toMatchObject([{ id: "clue_garden_1", next: true }]);
+    expect(panel(game, 7).candidates).toMatchObject([{ id: "clue_garden_1", next: false }]);
+    expect(panel(game, 7).searchNote).toBe('a targeted search ("look by the wall") has no next clue: it may give any open clue of the place');
     expect(ids(panel(game, 7).held)).toEqual(["clue_hall_1", "clue_mara_1"]);
     expect(panel(game, 8)).toMatchObject({ source: null, candidates: [], noSource: "this accuse_start turn has no speaker or place whose clues it could reveal" });
     expect(ids(panel(game, 9).held)).toEqual(["clue_hall_1", "clue_mara_1", "clue_garden_1"]);
   });
 
-  it("weighs requires against the clues held before the turn, skips a locked clue for the next, and names what a clue points to", async () => {
+  it("weighs requires against the clues held before the turn, gives a plain search no locked or sub-place clue as next, and names what a clue points to", async () => {
     const game = await medal();
     const world = (game.blueprint as { world: { locations: { clues: Record<string, unknown>[]; sub_locations: { clues: Record<string, unknown>[] }[] }[]; characters: { clues: Record<string, unknown>[] }[] } }).world;
     Object.assign(world.locations[0].clues[0], { requires: { clue_ids: ["clue_mara_1"], rationale: "Only once Mara points at the case." } });
@@ -336,10 +338,12 @@ describe("a turn's Clues panel", () => {
     Object.assign(world.locations[0].sub_locations[0].clues[0], { about_character_id: "char_ghost" });
     const search = panel(game, 2);
     expect(search.revealed).toMatchObject([{ id: "clue_hall_1", requires: ["clue_mara_1"], requiresMet: false }]);
+    // The place's own clue is locked; the open sub-place clue is not a plain search's to give.
     expect(search.candidates).toMatchObject([
       { id: "clue_hall_1", requiresMet: false, next: false },
-      { id: "clue_rug_1", next: true, pointsTo: ["about char_ghost (not in the blueprint)"] },
+      { id: "clue_rug_1", requiresMet: true, next: false, pointsTo: ["about char_ghost (not in the blueprint)"] },
     ]);
+    expect(search.searchNote).toBe("a plain search should give nothing: the place's own clues are held or locked");
     expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requires: ["clue_hall_1"], requiresMet: true, pointsTo: ["about Dorn Pike", "points to Walled Garden"], offScript: false }]);
     // A reveal the trace records off script says so beside its unmet requires.
     Object.assign(world.characters[0].clues[0], { requires: { clue_ids: ["clue_garden_1"], rationale: "Only once you saw the roses." } });
@@ -354,6 +358,9 @@ describe("a turn's Clues panel", () => {
     const payload = (sequence: number) => game.events[sequence - 1].payload as Record<string, unknown>;
     delete payload(6).location_id;
     payload(7).location_id = "loc_attic";
+    delete payload(2).search_query;
+    expect(panel(game, 2)).toMatchObject({ searchNote: "the trace records no search_query, so whether this search was plain or targeted is unknown" });
+    expect(panel(game, 2).candidates.some((clue) => clue.next)).toBe(false);
     delete payload(3).character_id;
     payload(4).character_id = "char_nobody";
     expect(panel(game, 6)).toMatchObject({ source: null, candidates: [], noSource: "the trace records no location_id for this move turn" });
@@ -371,6 +378,7 @@ describe("a turn's Clues panel", () => {
     expect(search).toMatch(/<div class="beside"><section><h2>Narration<\/h2>[\s\S]*<\/section><section class="clues" id="clues">/);
     expect(clues).toContain("<h3>This turn reveals</h3><ul><li>clue_hall_1: A muddy footprint near the trophy case.");
     expect(clues).toContain('<details class="fold" id="clues-here" open><summary><h3>Could be revealed here: Grand Hall (2, 0 held, next clue_hall_1)</h3>');
+    expect(clues).toContain('<p class="muted">a plain search should give clue_hall_1</p>');
     expect(clues).toContain('<span class="tag next">next a search gives</span>');
     expect(clues).toContain("at Grand Hall, under the rug");
     expect(clues).toContain("<h3>Already held</h3><p class=\"muted\">none</p>");

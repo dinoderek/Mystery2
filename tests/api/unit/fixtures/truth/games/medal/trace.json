@@ -191,6 +191,7 @@
       "actor": "system",
       "payload": {
         "location_id": "loc_hall",
+        "search_query": null,
         "revealed_clue_id": "clue_hall_1",
         "revealed_clue_ids": [
           "clue_hall_1"

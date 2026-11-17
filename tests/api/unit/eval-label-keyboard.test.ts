@@ -152,7 +152,7 @@ describe("the Clues panel in a browser", () => {
       expect(await held.getByText("Mara saw a shadow").isVisible()).toBe(false);
       await held.locator("summary").click();
       expect(await held.getByText("Mara saw a shadow").isVisible()).toBe(true);
-      expect(await wide.locator("#clues-here").getByText("next a search gives").isVisible()).toBe(true);
+      expect(await wide.locator("#clues-here").getByText("a targeted search (\"look by the wall\") has no next clue").isVisible()).toBe(true);
 
       // The ground truth opens over the panel, and Escape closes it without folding the panel.
       await wide.keyboard.press("g");

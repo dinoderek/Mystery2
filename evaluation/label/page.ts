@@ -152,8 +152,9 @@ function candidatesHtml(panel: CluePanelView): string {
   const next = panel.candidates.find((clue) => clue.next);
   const counts = [`${panel.candidates.length}`, `${panel.candidates.filter((clue) => clue.held).length} held`, next ? `next ${escapeHtml(next.id)}` : null];
   const heading = `Could be revealed here: ${escapeHtml(panel.source.name)} (${counts.filter(Boolean).join(", ")})`;
+  const note = panel.searchNote === null ? "" : `<p class="muted">${escapeHtml(panel.searchNote)}</p>`;
   if (panel.candidates.length === 0) return `<h3>${heading}</h3><p class="muted">the blueprint gives ${panel.source.kind === "character" ? "them" : "it"} no clue</p>`;
-  return foldHtml("clues-here", heading, panelListHtml(panel.candidates, "both"), panel.candidates.length <= FOLD_OVER);
+  return foldHtml("clues-here", heading, `${note}${panelListHtml(panel.candidates, "both")}`, panel.candidates.length <= FOLD_OVER);
 }
 
 /** The Clues panel: what this turn reveals, what its speaker or place could reveal, and what the player already held. */

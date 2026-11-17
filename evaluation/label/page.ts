@@ -149,7 +149,7 @@ function groundTruthHtml(view: TurnView): string {
   return lines.join("") || `<p class="muted">the blueprint records none</p>`;
 }
 
-/** A judge's findings at a turn with more than this many are folded under their one line. */
+/** A judge's findings at a turn with more than this many, or none, are folded under their one line. */
 const FOLD_AFTER = 3;
 
 function findingHtml(judge: string, finding: StoredFinding): string {
@@ -176,7 +176,8 @@ function tallyLine(tally: JudgeTally): string {
 
 function tallyHtml(tally: JudgeTally): string {
   const found = tally.runs.reduce((count, run) => count + run.findings.length, 0);
-  return `<details class="judge"${found > FOLD_AFTER ? "" : " open"}><summary>${tallyLine(tally)}</summary><ul class="runs">${tally.runs.map(runHtml).join("")}</ul></details>`;
+  // Open when it has something to read and that is short; a judge that flagged nothing says so on its line.
+  return `<details class="judge"${found > 0 && found <= FOLD_AFTER ? " open" : ""}><summary>${tallyLine(tally)}</summary><ul class="runs">${tally.runs.map(runHtml).join("")}</ul></details>`;
 }
 
 /** The second pass's disagreements on a turn: per judge and model, how many runs flagged it, and what each said. */

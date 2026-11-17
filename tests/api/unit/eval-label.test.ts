@@ -59,7 +59,7 @@ const SPOILER_FINDING = {
 };
 
 /** What the spoiler judge said, which no response may show before pass 2. */
-const JUDGE_WORDS = [SPOILER_FINDING.quote, SPOILER_FINDING.why, SPOILER_FINDING.refers_to, "runs flagged this turn"];
+const JUDGE_WORDS = [SPOILER_FINDING.quote, SPOILER_FINDING.why, SPOILER_FINDING.refers_to, "flagged this turn"];
 
 /**
  * A copy of the fixture in a temporary folder, with two disagreements made in
@@ -751,9 +751,11 @@ describe("what pass 2 shows of each judge", () => {
     expect(html).toContain("<blockquote>a major quote</blockquote><p>a major reason</p>");
     expect(html.indexOf("run 0<")).toBeLessThan(html.indexOf("run 1<"));
     expect(html).toContain('run 0: <span class="muted">nothing at this turn</span>');
-    // Four findings fold under their line; a judge with fewer stays open.
+    // Four findings fold under their line, and so does a judge that flagged nothing; a few stay open.
     expect(html).toContain('<details class="judge"><summary>gm_broad');
-    expect(html).toContain('<details class="judge" open><summary>gm_roleplay');
+    expect(html).toContain('<details class="judge"><summary>gm_roleplay');
+    const few = renderDisagreements([{ ...disagreement, verdicts: [run(0, [worded("minor")]), run(1, [])] }]);
+    expect(few).toContain('<details class="judge" open><summary>gm_broad (opus): 1 of 2 runs flagged this turn: 1 minor');
     expect(html).not.toMatch(/\b(pass|fail)\b/);
   });
 

@@ -36,7 +36,7 @@ export interface Disagreement {
 }
 
 /** Whether a verdict judged the turn of the stored game itself, not a planted variant, and gave an answer. */
-function judgedTurn(verdict: StoredVerdict, game: string, sequence: number): boolean {
+export function judgedTurn(verdict: StoredVerdict, game: string, sequence: number): boolean {
   const subject = verdict.subject;
   if (subject.side !== "game" || subject.game !== game || subject.variant !== null) return false;
   if (subject.sequence !== null && subject.sequence !== sequence) return false;

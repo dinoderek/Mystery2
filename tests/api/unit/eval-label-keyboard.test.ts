@@ -138,6 +138,37 @@ describe("the labelling page, by keyboard in a browser", () => {
   });
 });
 
+describe("the Clues panel in a browser", () => {
+  it("sits beside the narration on a wide screen, under the ground truth's menu, its folds left alone by the keys", async () => {
+    const wide = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    try {
+      await wide.goto(new URL("/g/medal/pass-1/turn/7", server.url).href);
+      const narration = await wide.locator("section", { hasText: "Narration" }).boundingBox();
+      const clues = await wide.locator("#clues").boundingBox();
+      expect(clues && narration && clues.x).toBeGreaterThan((narration?.x ?? 0) + (narration?.width ?? 0) - 1);
+      expect(clues?.y).toBe(narration?.y);
+
+      const held = wide.locator("#clues-held");
+      expect(await held.getByText("Mara saw a shadow").isVisible()).toBe(false);
+      await held.locator("summary").click();
+      expect(await held.getByText("Mara saw a shadow").isVisible()).toBe(true);
+      expect(await wide.locator("#clues-here").getByText("a targeted search (\"look by the wall\") has no next clue").isVisible()).toBe(true);
+
+      // The ground truth opens over the panel, and Escape closes it without folding the panel.
+      await wide.keyboard.press("g");
+      const truth = wide.locator("#truth .panel");
+      const box = await truth.boundingBox();
+      const on = clues && box ? { x: clues.x + clues.width / 2, y: Math.max(clues.y, box.y) + 20 } : { x: 0, y: 0 };
+      expect(await wide.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("#truth") !== null, on)).toBe(true);
+      await wide.keyboard.press("Escape");
+      expect(await truth.isVisible()).toBe(false);
+      expect(await held.getByText("Mara saw a shadow").isVisible()).toBe(true);
+    } finally {
+      await wide.close();
+    }
+  });
+});
+
 describe("the labelling page, by touch on a phone", () => {
   it("asks the name, then saves two faults of different severities tapped out from the list of games, the save always in reach", async () => {
     const context = await browser.newContext({ ...devices["Pixel 7"] });
@@ -221,6 +252,30 @@ describe("the labelling page, by touch on a phone", () => {
       expect(await at()).toBe(resting);
       await profile.getByRole("button", { name: "Close" }).tap();
       expect(await profile.isVisible()).toBe(false);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("folds the Clues panel's lists under the narration, so the form stays near, and opens them in one tap", async () => {
+    const context = await browser.newContext({ ...devices["Pixel 7"] });
+    const phone = await context.newPage();
+    try {
+      await phone.goto(new URL("/g/medal/pass-1/turn/2", server.url).href);
+      const narration = await phone.locator("section", { hasText: "Narration" }).boundingBox();
+      const clues = phone.locator("#clues");
+      const box = await clues.boundingBox();
+      expect(box && narration && box.y).toBeGreaterThanOrEqual((narration?.y ?? 0) + (narration?.height ?? 0));
+      // The server opens a short list; a narrow screen folds it, leaving the reveal and the headings.
+      const here = phone.locator("#clues-here");
+      expect(await here.evaluate((fold) => (fold as HTMLDetailsElement).open)).toBe(false);
+      expect(await clues.getByText("clue_hall_1: A muddy footprint").first().isVisible()).toBe(true);
+      expect(await here.locator("summary").textContent()).toContain("next clue_hall_1");
+      expect(box?.height).toBeLessThan((phone.viewportSize()?.height ?? 0) / 3);
+
+      await here.locator("summary").tap();
+      expect(await here.getByText("A torn cloakroom ticket.").isVisible()).toBe(true);
+      expect(await here.getByText("next a search gives").isVisible()).toBe(true);
     } finally {
       await context.close();
     }

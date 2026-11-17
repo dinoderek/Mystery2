@@ -1,16 +1,19 @@
 /**
  * What the labelling page shows of one turn of a stored game: the player's
- * command and line, the narration, the clues the turn revealed, the story's
+ * command and line, the narration, its Clues panel (`clues.ts`), the story's
  * target age, the profile of the character spoken to, and the blueprint's
  * ground truth with its whole cast. Built from the stored trace alone, so it
  * holds no judge finding.
  */
 
-import { playedEvents, readField, revealedClueIdsForEvent } from "../lib/game-events.ts";
+import { playedEvents, readField } from "../lib/game-events.ts";
 import type { Label, StoredGame } from "../lib/truth/schemas.ts";
+import { buildCluePanel } from "./clues.ts";
+import type { CluePanelView } from "./clues.ts";
 
 type StoredEvent = StoredGame["events"][number];
 
+/** A clue as a character's profile lists it; a turn's own clues are the Clues panel's (`clues.ts`). */
 export interface ClueView {
   id: string;
   /** Null when the blueprint has no clue by that id. */
@@ -57,7 +60,7 @@ export interface TurnView {
   total: number;
   playerLine: string;
   narration: string;
-  clues: ClueView[];
+  clues: CluePanelView;
   /** The character this turn talks to, on a conversation turn; else null. */
   character: CharacterView | null;
   groundTruth: GroundTruthView;
@@ -106,21 +109,6 @@ function playerLine(event: StoredEvent, blueprint: Record<string, unknown>): str
     default:
       return `(${event.event_type})`;
   }
-}
-
-/** Every clue text in a blueprint, by id: places, their sub-places and characters. */
-function clueTexts(blueprint: Record<string, unknown>): Map<string, string> {
-  const world = record(blueprint.world);
-  const holders = records(world.locations).flatMap((location) => [location, ...records(location.sub_locations)]);
-  const found = new Map<string, string>();
-  for (const holder of [...holders, ...records(world.characters)]) {
-    for (const clue of records(holder.clues)) {
-      const id = text(clue.id);
-      const clueText = text(clue.text);
-      if (id && clueText) found.set(id, clueText);
-    }
-  }
-  return found;
 }
 
 function strings(value: unknown): string[] {
@@ -179,7 +167,6 @@ export function buildTurnView(game: StoredGame, sequence: number, position: numb
   const event = game.events.find((candidate) => candidate.sequence === sequence);
   if (!event) throw new Error(`game "${game.session.id}" has no turn ${sequence}`);
   const blueprint = game.blueprint as Record<string, unknown>;
-  const texts = clueTexts(blueprint);
   const cast = records(record(blueprint.world).characters).map(characterOf);
   const speaking = CONVERSATION.has(event.event_type) ? readField(event.payload, "character_id") : null;
   return {
@@ -190,7 +177,7 @@ export function buildTurnView(game: StoredGame, sequence: number, position: numb
     total,
     playerLine: playerLine(event, blueprint),
     narration: event.narration,
-    clues: revealedClueIdsForEvent(event).map((id) => ({ id, text: texts.get(id) ?? null })),
+    clues: buildCluePanel(game, event),
     character: speaking === null ? null : (cast.find((character) => character.id === speaking) ?? null),
     groundTruth: groundTruthOf(blueprint, cast),
   };

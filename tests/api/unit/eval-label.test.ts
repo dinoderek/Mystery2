@@ -344,6 +344,8 @@ describe("a turn's Clues panel", () => {
       { id: "clue_rug_1", requiresMet: true, next: false, pointsTo: ["about char_ghost (not in the blueprint)"] },
     ]);
     expect(search.searchNote).toBe("a plain search should give nothing: the place's own clues are held or locked");
+    world.locations[0].clues = [];
+    expect(panel(game, 2).searchNote).toBe("a plain search should give nothing: the place has no clue of its own");
     expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requires: ["clue_hall_1"], requiresMet: true, pointsTo: ["about Dorn Pike", "points to Walled Garden"], offScript: false }]);
     // A reveal the trace records off script says so beside its unmet requires.
     Object.assign(world.characters[0].clues[0], { requires: { clue_ids: ["clue_garden_1"], rationale: "Only once you saw the roses." } });

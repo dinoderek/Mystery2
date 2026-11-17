@@ -195,6 +195,7 @@ function markNext(event: StoredEvent, candidates: PanelClue[], ownIds: ReadonlyS
   if (!("search_query" in payload)) return "the trace records no search_query, so whether this search was plain or targeted is unknown";
   const query = readField(payload, "search_query");
   if (query !== null) return `a targeted search ("${query}") has no next clue: it may give any open clue of the place`;
+  if (ownIds.size === 0) return "a plain search should give nothing: the place has no clue of its own";
   const next = candidates.find((clue) => ownIds.has(clue.id) && !clue.held && clue.requiresMet);
   if (!next) return "a plain search should give nothing: the place's own clues are held or locked";
   next.next = true;

@@ -281,3 +281,64 @@ describe("the labelling page, by touch on a phone", () => {
     }
   });
 });
+
+describe("pass 2's question in a browser", () => {
+  it("ticks a judge's fault into the form and unticks the label's out, the ticks following the rows, and saves the choice as pass 2", async () => {
+    // Its own copy: turn 2 is labelled clean and a spoiler judge caught it; turn 3 is labelled out of character and nothing caught it.
+    const own = await fs.mkdtemp(path.join(os.tmpdir(), "eval-label-pass2-"));
+    await fs.cp(FIXTURE, own, { recursive: true });
+    const labelsFile = path.join(own, "games/medal/labels.json");
+    const held = JSON.parse(await fs.readFile(labelsFile, "utf8"));
+    held.labels.push({ sequence: 3, faults: [{ kind: "out_of_character", severity: "major", note: "Mara talks like a narrator." }], by: "fixture", at: "2026-06-03T09:03:00Z", pass: 1 });
+    for (const sequence of [1, 5, 6, 8, 9]) held.labels.push({ sequence, faults: [], by: "fixture", at: "2026-06-02T00:00:00Z", pass: 1 });
+    await fs.writeFile(labelsFile, JSON.stringify(held, null, 2));
+    const game = { side: "game", game: "medal", variant: null, sequence: null };
+    const base = { model: "opus", sample: 0, duration_ms: null, cost_usd: null };
+    const why = "Points the player at the culprit.";
+    await fs.writeFile(
+      path.join(own, "results/extra.json"),
+      JSON.stringify({
+        schema_version: "mystery-truth-results/1",
+        verdicts: [
+          { ...base, subject: game, judge: "gm_spoiler", status: "fail", findings: [{ sequence: 2, kinds: ["spoiler"], severity: "major", judge_kind: "culprit", quote: "q", why, refers_to: null }] },
+          { ...base, subject: game, judge: "gm_roleplay", status: "pass", findings: [] },
+        ],
+      }),
+    );
+    const pass2 = await startLabelServer({ truthRoot: own, by: "tester", now, log: () => {} });
+    const tab = await browser.newPage();
+    const ticks = () => tab.$$eval("input.keep", (boxes) => boxes.map((box) => [JSON.parse((box as HTMLInputElement).dataset.fault ?? "{}").kind, (box as HTMLInputElement).checked]));
+    const ownLabels = async (): Promise<Label[]> => JSON.parse(await fs.readFile(labelsFile, "utf8")).labels;
+    try {
+      await tab.goto(new URL("/g/medal/pass-2/turn/2", pass2.url).href);
+      expect(await ticks()).toEqual([["spoiler", false]]);
+      expect(await rowsOf(tab)).toEqual([]);
+      await tab.locator("input.keep").check();
+      expect(await rowsOf(tab)).toEqual([["spoiler", "major", why]]);
+      // A row whose kind changes takes its tick with it.
+      await tab.locator("#faults .fault select[name=kind]").selectOption("fabrication");
+      expect(await ticks()).toEqual([["spoiler", false]]);
+      await tab.locator("#faults .fault select[name=kind]").selectOption("spoiler");
+      expect(await ticks()).toEqual([["spoiler", true]]);
+      // A refused save comes back with the rows as typed, and the ticks follow them, not the stored label.
+      await tab.getByRole("button", { name: /Add a fault/ }).click();
+      await Promise.all([tab.waitForEvent("load"), tab.getByRole("button", { name: /Save and go on/ }).click()]);
+      expect(await tab.locator(".error").textContent()).toContain("Not saved");
+      expect(await ticks()).toEqual([["spoiler", true]]);
+      await tab.locator("#faults .fault").nth(1).getByRole("button", { name: "Remove" }).click();
+      await Promise.all([tab.waitForURL(/\/turn\/3$/), tab.getByRole("button", { name: /Save and go on/ }).click()]);
+      expect((await ownLabels()).at(-1)).toMatchObject({ sequence: 2, pass: 2, faults: [{ kind: "spoiler", severity: "major", note: why }] });
+
+      // Turn 3: the label's own fault, ticked; unticking it leaves the turn clean.
+      expect(await ticks()).toEqual([["out_of_character", true]]);
+      await tab.locator("input.keep").uncheck();
+      expect(await rowsOf(tab)).toEqual([]);
+      await Promise.all([tab.waitForEvent("load"), tab.getByRole("button", { name: /Save and go on/ }).click()]);
+      expect((await ownLabels()).at(-1)).toMatchObject({ sequence: 3, pass: 2, faults: [] });
+    } finally {
+      await tab.close();
+      await pass2.close();
+      await fs.rm(own, { recursive: true, force: true });
+    }
+  });
+});

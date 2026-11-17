@@ -422,6 +422,7 @@ function sync() {
   for (const box of keeps) box.checked = kinds.has(JSON.parse(box.dataset.fault).kind);
 }
 const act = (action) => write(applyAction(read(), action));
+sync(); // a refused save comes back with the rows as typed, which the ticks follow
 for (const box of keeps) {
   box.addEventListener("change", () => {
     const fault = JSON.parse(box.dataset.fault);

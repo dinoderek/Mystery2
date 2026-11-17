@@ -57,10 +57,10 @@ function weightiest(verdict: StoredVerdict, kind: GameKind, sequence: number): S
   return own.find((finding) => finding.severity === "major") ?? own[0] ?? null;
 }
 
-/** The severity most findings give, a tie major; null for none. */
-function mostSevere(findings: readonly StoredFinding[]): Severity | null {
-  if (findings.length === 0) return null;
-  return findings.filter((finding) => finding.severity === "major").length * 2 >= findings.length ? "major" : "minor";
+/** The severity most of `severities` are, a tie major; null for none. */
+function mostSevere(severities: readonly (Severity | null)[]): Severity | null {
+  if (severities.length === 0) return null;
+  return severities.filter((severity) => severity === "major").length * 2 >= severities.length ? "major" : "minor";
 }
 
 function judgeSources(game: string, verdicts: readonly StoredVerdict[], sequence: number, kind: GameKind): JudgeSource[] {
@@ -77,7 +77,7 @@ function judgeSources(game: string, verdicts: readonly StoredVerdict[], sequence
       .sort((a, b) => a.sample - b.sample)
       .map((verdict) => weightiest(verdict, kind, sequence))
       .filter((finding): finding is StoredFinding => finding !== null);
-    const severity = mostSevere(found);
+    const severity = mostSevere(found.map((finding) => finding.severity));
     const why = (found.find((finding) => finding.severity === severity && finding.why) ?? found.find((finding) => finding.why))?.why ?? null;
     return { judge: runs[0].judge, model: runs[0].model, judged: runs.length, flagged: found.length, severity, why };
   });
@@ -86,8 +86,7 @@ function judgeSources(game: string, verdicts: readonly StoredVerdict[], sequence
 /** What keeping a kind no label names adds: the severity most flagging judges give it, and the first reason. */
 function judgesFault(kind: GameKind, judges: readonly JudgeSource[]): KeepFault {
   const flagging = judges.filter((source) => source.flagged > 0);
-  const major = flagging.filter((source) => source.severity === "major").length;
-  const severity: Severity = major * 2 >= flagging.length ? "major" : "minor";
+  const severity = mostSevere(flagging.map((source) => source.severity)) ?? "minor";
   const reason = flagging.find((source) => source.why !== null);
   return { kind, severity, note: reason?.why ?? `${flagging[0]?.judge ?? "a judge"} flagged ${kind.replace(/_/g, " ")} here` };
 }

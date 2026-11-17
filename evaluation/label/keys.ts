@@ -135,8 +135,10 @@ export function applyAction(draft: Draft, action: KeyAction): Draft {
       if (draft.faults.some((fault) => fault.kind === action.fault.kind)) return draft;
       return { faults: [...draft.faults, { ...action.fault }], current: draft.faults.length };
     case "drop": {
+      // The current row stays current when another is dropped; when it goes, the row after it takes its place.
+      const before = draft.faults.slice(0, Math.max(draft.current, 0)).filter((fault) => fault.kind === action.kind).length;
       const faults = draft.faults.filter((fault) => fault.kind !== action.kind);
-      return { faults, current: Math.min(draft.current, faults.length - 1) };
+      return { faults, current: Math.min(draft.current - before, faults.length - 1) };
     }
     default:
       return draft;

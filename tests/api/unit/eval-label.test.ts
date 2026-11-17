@@ -223,6 +223,11 @@ describe("keeping and dropping a fault in pass 2", () => {
     expect(applyAction(kept, { type: "keep", fault: { ...theirs, note: "again" } })).toBe(kept);
     expect(applyAction(kept, { type: "drop", kind: "out_of_character" })).toEqual({ faults: [mine], current: 0 });
     expect(applyAction({ faults: [mine, { ...mine, note: "twice" }], current: 1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [], current: -1 });
+    // The current row stays current when a row before it goes, and the row after it takes over when it goes.
+    const spoiler = { kind: "spoiler", severity: "minor", note: "s" } as const;
+    expect(applyAction({ faults: [mine, theirs, spoiler], current: 1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [theirs, spoiler], current: 0 });
+    expect(applyAction({ faults: [mine, theirs, spoiler], current: 1 }, { type: "drop", kind: "out_of_character" })).toEqual({ faults: [mine, spoiler], current: 1 });
+    expect(applyAction({ faults: [mine], current: -1 }, { type: "drop", kind: "fabrication" })).toEqual({ faults: [], current: -1 });
   });
 });
 

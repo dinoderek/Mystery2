@@ -29,9 +29,10 @@ does not.
 The canned narrator proves the plumbing offline and says nothing about the
 narrator's content; keep stub runs to `flesch`. `narrator-claude` runs with no
 tools, MCP servers or settings, so the model under test does not also read this
-repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs both
-`narrator-claude` and `turn-judge`; skipping settings also skips logins configured
-only in `settings.json` (`apiKeyHelper`, Bedrock or Vertex env).
+repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
+`narrator-claude` and `turn-judge` (judges held to their schema); skipping
+settings skips logins configured only in `settings.json` (`apiKeyHelper`,
+Bedrock or Vertex env).
 
 ### The throwaway server
 

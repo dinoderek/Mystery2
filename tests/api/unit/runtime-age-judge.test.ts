@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { judgeTurn } from "../../../evaluation/runtime/lib/judges.ts";
-import { TURN_AGE_FINDING_KINDS } from "../../../evaluation/core/judge-prompt.ts";
+import { TURN_AGE_ANSWER_SCHEMA, TURN_AGE_FINDING_KINDS } from "../../../evaluation/core/judge-prompt.ts";
 import { validateTurnAgeAnswer } from "../../../evaluation/core/judge-output.ts";
 import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
 import fs from "node:fs";
@@ -45,6 +45,16 @@ describe("age_appropriate_turn judge (stub binding)", () => {
     expect(result.details).toMatchObject({ score: 8, target_age: 10, estimated_reading_age: 8 });
     expect(result.call).toMatchObject({ binding: "judge-stub", model: null });
     expect(result.answer).toMatchObject({ verdict: "pass" });
+  });
+
+  it("hands its wrapper the answer's schema, which the answer check accepts", async () => {
+    await judge();
+    const schema = JSON.parse(fs.readFileSync(path.join(logDir, `judge-${ID}.schema.json`), "utf8"));
+    expect(schema).toEqual(TURN_AGE_ANSWER_SCHEMA);
+    const finding = (schema.properties.findings.items as { properties: { kind: { enum: string[] } } }).properties.kind;
+    expect(finding.enum).toEqual([...TURN_AGE_FINDING_KINDS]);
+    expect(schema.required).toEqual(["estimated_reading_age", "findings", "verdict", "reasoning"]);
+    expect(() => validateTurnAgeAnswer(JSON.parse(stubVerdict({ findings: [{ quote: "q", kind: "clarity", why: "w" }] })))).not.toThrow();
   });
 
   it("maps a fail verdict with findings", async () => {

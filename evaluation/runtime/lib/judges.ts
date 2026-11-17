@@ -23,7 +23,13 @@ import path from "node:path";
 import type { ResolvedBinding } from "../../core/config.ts";
 import { loadCheck, loadJudge } from "../../core/judge-loader.ts";
 import { validateJudgeOutput, validateTurnAgeAnswer } from "../../core/judge-output.ts";
-import { composeJudgeSystemPrompt, composeJudgeUserMessage, composeTurnAgeSystemPrompt } from "../../core/judge-prompt.ts";
+import {
+  answerJsonSchema,
+  composeJudgeSystemPrompt,
+  composeJudgeUserMessage,
+  composeTurnAgeSystemPrompt,
+  TURN_AGE_ANSWER_SCHEMA,
+} from "../../core/judge-prompt.ts";
 import { getEntry } from "../../core/registry.ts";
 import type { JudgeEntry } from "../../core/registry.ts";
 import type { Verdict } from "../../core/result.ts";
@@ -104,6 +110,7 @@ async function runAdherenceJudge(entry: JudgeEntry, turn: StoredTurn, judging: T
     userMessage: buildJudgeUserMessage(entry.id, turn, blueprint),
     logDir: judging.logDir,
     memo: judging.memo,
+    answerSchema: answerJsonSchema(definition) ?? undefined,
     // Validated inside the retry loop: a judge that replies with prose instead
     // of its JSON object is a real, retriable model failure, not a dead run.
     parse: (answer) => {
@@ -166,6 +173,7 @@ async function runAgeJudge(entry: JudgeEntry, turn: StoredTurn, judging: TurnJud
     userMessage,
     logDir: judging.logDir,
     memo: judging.memo,
+    answerSchema: TURN_AGE_ANSWER_SCHEMA,
     parse: (answer) => validateTurnAgeAnswer(parseFencedJson(answer)),
   });
   if (!result.ok) return failed(entry, result.error, { call: result.call, details: { target_age: targetAge } });

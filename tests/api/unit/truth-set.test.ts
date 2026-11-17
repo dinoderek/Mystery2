@@ -133,9 +133,21 @@ describe("truth set schemas", () => {
     for (const field of ["model", "sample"]) {
       expect(rejection(StoredResultsSchema, { ...results, verdicts: [without(first, field), ...rest] })).toContain(`verdicts.0.${field}`);
     }
-    const wrongKind = { ...first, findings: [{ sequence: 7, kinds: ["fairness"], severity: "major", judge_kind: null }] };
+    const wrongKind = { ...first, findings: [{ sequence: 7, kinds: ["fairness"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }] };
     expect(rejection(StoredResultsSchema, { ...results, verdicts: [wrongKind] })).toContain("verdicts.0.findings.0.kinds.0");
     expect(rejection(StoredResultsSchema, { ...results, verdicts: [first, first] })).toContain("verdicts.1");
+  });
+
+  it("keep a finding's quote, why and refers_to, read as null where a stored result has none, and refuse anything but text", async () => {
+    const results = await readFixture("results/fixture-run.json");
+    const [first] = results.verdicts as Record<string, unknown>[];
+    const finding = { sequence: 7, kinds: ["spoiler"], severity: "major", judge_kind: "culprit" };
+    const worded = { ...finding, quote: "It was Dorn.", why: "Names the thief.", refers_to: "char-dorn" };
+    const parse = (findings: unknown[]) =>
+      parseTruthFile(StoredResultsSchema, { ...results, verdicts: [{ ...first, findings }] }, "r.json").verdicts[0].findings[0];
+    expect(parse([worded])).toEqual(worded);
+    expect(parse([finding])).toEqual({ ...finding, quote: null, why: null, refers_to: null });
+    expect(rejection(StoredResultsSchema, { ...results, verdicts: [{ ...first, findings: [{ ...worded, why: 3 }] }] })).toContain("verdicts.0.findings.0.why");
   });
 
   it("keep cost the CLI did not report as unknown, never zero", async () => {
@@ -340,7 +352,7 @@ describe("findings with kinds", () => {
     for (const judge of judgesFor("blueprint")) {
       const answer = answers[`blueprint.${judge.id}`];
       const findings = kindedFindings(verdictOf(judge.id, answer, answer.verdict as "pass" | "fail"), null);
-      const expected = answer.verdict === "fail" ? [{ sequence: null, kinds: [judge.id], severity: "major", judge_kind: null }] : [];
+      const expected = answer.verdict === "fail" ? [{ sequence: null, kinds: [judge.id], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }] : [];
       expect(findings, judge.id).toEqual(expected);
     }
     // The stub fails these two, so both branches ran.
@@ -359,8 +371,8 @@ describe("findings with kinds", () => {
     expect(mapped).toEqual({
       gm_roleplay: [],
       gm_clue_discipline: [],
-      gm_fabrication: [{ sequence: 6, kinds: ["fabrication"], severity: "major", judge_kind: "place" }],
-      gm_spoiler: [{ sequence: 4, kinds: ["spoiler"], severity: "minor", judge_kind: "hidden_action" }],
+      gm_fabrication: [{ sequence: 6, kinds: ["fabrication"], severity: "major", judge_kind: "place", quote: "the locked gate", why: "No such gate in the blueprint.", refers_to: "loc_garden" }],
+      gm_spoiler: [{ sequence: 4, kinds: ["spoiler"], severity: "minor", judge_kind: "hidden_action", quote: "he seemed to know the garden well", why: "Hints at where Dorn was.", refers_to: null }],
     });
   });
 
@@ -368,21 +380,28 @@ describe("findings with kinds", () => {
     const answers = await stubAnswers();
     const roleplay = answers["runtime.gm_roleplay"];
     expect(kindedFindings(verdictOf("gm_roleplay", roleplay, resolveVerdict(roleplay).status), 12)).toEqual([
-      { sequence: 12, kinds: ["out_of_character"], severity: "major", judge_kind: "voice" },
+      { sequence: 12, kinds: ["out_of_character"], severity: "major", judge_kind: "voice", quote: "The narrator says it was Alice.", why: "A character should speak for themselves.", refers_to: "alice" },
     ]);
     const age = answers["runtime.age_appropriate"];
     expect(kindedFindings(verdictOf("age_appropriate_turn", age, "pass"), 12)).toEqual([
-      { sequence: 12, kinds: ["not_age_fit"], severity: "minor", judge_kind: "figurative_language" },
+      { sequence: 12, kinds: ["not_age_fit"], severity: "minor", judge_kind: "figurative_language", quote: "folding her arms", why: "A child may not read this as defensive.", refers_to: null },
     ]);
     expect(kindedFindings(verdictOf("age_appropriate_turn", age, "fail"), 12)).toEqual([
-      { sequence: 12, kinds: ["not_age_fit"], severity: "major", judge_kind: "figurative_language" },
+      { sequence: 12, kinds: ["not_age_fit"], severity: "major", judge_kind: "figurative_language", quote: "folding her arms", why: "A child may not read this as defensive.", refers_to: null },
+    ]);
+  });
+
+  it("keep a judge's words only when they are text", () => {
+    const findings = [{ sequence: 3, severity: "minor", kind: "voice", quote: "  ", why: 7, refers_to: "char-mara" }];
+    expect(kindedFindings({ id: "gm_roleplay", status: "pass", findings }, null)).toEqual([
+      { sequence: 3, kinds: ["out_of_character"], severity: "minor", judge_kind: "voice", quote: null, why: null, refers_to: "char-mara" },
     ]);
   });
 
   it("count a fail with no finding as one major finding, and nothing for a verdict that did not judge", () => {
     const empty = { findings: [], verdict: "fail", reasoning: "too hard" };
     expect(kindedFindings(verdictOf("age_appropriate_turn", empty, "fail"), 5)).toEqual([
-      { sequence: 5, kinds: ["not_age_fit"], severity: "major", judge_kind: null },
+      { sequence: 5, kinds: ["not_age_fit"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null },
     ]);
     for (const status of ["error", "skipped"] as const) {
       expect(kindedFindings({ id: "gm_spoiler", status, findings: [{ sequence: 1, severity: "major" }] }, null)).toEqual([]);
@@ -399,7 +418,7 @@ describe("the catch rule", () => {
     model: "m",
     sample: 0,
     status: "fail",
-    findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "culprit" }],
+    findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "culprit", quote: null, why: null, refers_to: null }],
     duration_ms: 1,
     cost_usd: null,
     ...overrides,
@@ -408,7 +427,7 @@ describe("the catch rule", () => {
 
   it("catches with a finding on the right turn with a mapped kind", () => {
     expect(catches(verdict(), unit)).toBe(true);
-    const minor = verdict({ status: "pass", findings: [{ sequence: 4, kinds: ["spoiler"], severity: "minor", judge_kind: null }] });
+    const minor = verdict({ status: "pass", findings: [{ sequence: 4, kinds: ["spoiler"], severity: "minor", judge_kind: null, quote: null, why: null, refers_to: null }] });
     expect(catches(minor, unit)).toBe(true);
   });
 
@@ -430,7 +449,7 @@ describe("the catch rule", () => {
     const blueprint = verdict({
       subject: { side: "blueprint", base: "mock", plant: "p" },
       judge: "fairness",
-      findings: [{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null }],
+      findings: [{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }],
     });
     expect(catches(blueprint, { side: "blueprint", base: "mock", plant: "p", kind: "fairness" })).toBe(true);
     expect(catches(blueprint, { side: "blueprint", base: "mock", plant: "p", kind: "solve_depth" })).toBe(false);

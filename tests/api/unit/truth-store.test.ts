@@ -199,7 +199,7 @@ describe("a stored verdict", () => {
 
   it("keeps a fail as one finding of the judge's kind", () => {
     const stored = toStoredVerdict(judgeVerdict("fairness", "fail"), { side: "blueprint", base: "b", plant: null });
-    expect(stored.findings).toEqual([{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null }]);
+    expect(stored.findings).toEqual([{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }]);
   });
 });
 

@@ -23,8 +23,7 @@ export interface VerdictAtTurn {
   judge: string;
   model: string;
   sample: number;
-  status: StoredVerdict["status"];
-  /** What it found at this turn; empty when it judged the turn and found nothing. */
+  /** What it found of the kind at this turn; empty when it judged the turn and found nothing of it. */
   findings: StoredFinding[];
 }
 
@@ -101,10 +100,44 @@ export function disagreementsAt(game: string, labels: readonly Label[], verdicts
         judge: verdict.judge,
         model: verdict.model,
         sample: verdict.sample,
-        status: verdict.status,
-        findings: verdict.findings.filter((finding) => finding.sequence === sequence),
+        findings: verdict.findings.filter((finding) => finding.sequence === sequence && finding.kinds.includes(kind)),
       })),
     });
   }
   return found;
+}
+
+/** What the runs of one judge on one model said of a turn, for one kind. */
+export interface JudgeTally {
+  judge: string;
+  model: string;
+  /** The runs that judged the turn, by sample. */
+  runs: VerdictAtTurn[];
+  /** How many of them flagged it, and how many of those at most major or at most minor. */
+  flagged: number;
+  major: number;
+  minor: number;
+}
+
+/**
+ * A disagreement's runs, per judge and model in the order they first appear:
+ * how many judged the turn, how many flagged it, and with what severity. A run
+ * counts once, by its most severe finding at the turn; a run that judged the
+ * turn and found nothing counts as judged, not flagged. A run's pass or fail
+ * describes the whole game, so it is not part of the tally.
+ */
+export function tallyByJudge(verdicts: readonly VerdictAtTurn[]): JudgeTally[] {
+  const tallies = new Map<string, JudgeTally>();
+  for (const verdict of verdicts) {
+    const key = JSON.stringify([verdict.judge, verdict.model]);
+    const tally = tallies.get(key) ?? { judge: verdict.judge, model: verdict.model, runs: [], flagged: 0, major: 0, minor: 0 };
+    tallies.set(key, tally);
+    tally.runs.push(verdict);
+    if (verdict.findings.length === 0) continue;
+    tally.flagged += 1;
+    if (verdict.findings.some((finding) => finding.severity === "major")) tally.major += 1;
+    else tally.minor += 1;
+  }
+  for (const tally of tallies.values()) tally.runs.sort((a, b) => a.sample - b.sample);
+  return [...tallies.values()];
 }

@@ -45,7 +45,7 @@ function fabrication(sample: number, turns: number[], overrides: Partial<StoredV
     model: "opus",
     sample,
     status: turns.length > 0 ? "fail" : "pass",
-    findings: turns.map((sequence) => ({ sequence, kinds: ["fabrication"], severity: "major", judge_kind: null })),
+    findings: turns.map((sequence) => ({ sequence, kinds: ["fabrication"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null })),
     duration_ms: 1000,
     cost_usd: 0.1,
     ...overrides,
@@ -306,7 +306,7 @@ describe("comparing two runs", () => {
       model: "opus",
       sample,
       status,
-      findings: status === "fail" ? [{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null }] : [],
+      findings: status === "fail" ? [{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }] : [],
       duration_ms: 60000,
       cost_usd: 1,
     });

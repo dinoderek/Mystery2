@@ -36,6 +36,37 @@ const TURN_AGE_OUTPUT_CONTRACT = `{
   "reasoning": "<one short paragraph>"
 }`;
 
+/** The age judge's answer as a JSON Schema, the shape `TURN_AGE_OUTPUT_CONTRACT` describes, for a CLI that holds an answer to one. */
+export const TURN_AGE_ANSWER_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["estimated_reading_age", "findings", "verdict", "reasoning"],
+  properties: {
+    estimated_reading_age: { type: "integer" },
+    findings: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["quote", "kind", "why"],
+        properties: {
+          quote: { type: "string" },
+          kind: { type: "string", enum: [...TURN_AGE_FINDING_KINDS] },
+          why: { type: "string" },
+          suggestion: { type: "string" },
+        },
+      },
+    },
+    verdict: { type: "string", enum: ["pass", "fail"] },
+    reasoning: { type: "string" },
+  },
+};
+
+/** A judge's zod answer schema as the JSON Schema its prompt shows, or null for a judge without one. */
+export function answerJsonSchema(definition: JudgeDefinition): Record<string, unknown> | null {
+  return definition.schema ? (zodToJsonSchema(definition.schema, { target: "jsonSchema7" }) as Record<string, unknown>) : null;
+}
+
 /** What the context section of a prompt is called: a blueprint's is per spec, any other subject's per dimension. */
 function contextHeading(definition: JudgeDefinition): string {
   return definition.entry.subjects.includes("blueprint") ? "Per-spec context" : "Dimension context";
@@ -51,7 +82,7 @@ export function composeJudgeSystemPrompt(
   }
   let composed = `${definition.preamble}\n\n---\n\n${definition.text}`;
   if (definition.schema) {
-    const jsonSchema = zodToJsonSchema(definition.schema, { target: "jsonSchema7" });
+    const jsonSchema = answerJsonSchema(definition);
     composed +=
       `\n\n---\n\n## Output JSON Schema (authoritative)\n\n` +
       `Your response MUST be a single JSON object matching this schema. ` +

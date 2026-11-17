@@ -190,7 +190,7 @@ describe("a candidate named on its command", () => {
     expect(verdict.status).toBe("fail");
     expect(verdict.details).toMatchObject({ major_count: 1, minor_count: 0, model_verdict: "pass", verdict_disagreement: true });
     expect(kindedFindings(verdict, null)).toEqual([
-      { sequence: id === "gm_broad" ? 2 : null, kinds: [kind], severity: "major", judge_kind: kind },
+      { sequence: id === "gm_broad" ? 2 : null, kinds: [kind], severity: "major", judge_kind: kind, quote: "q", why: "w", refers_to: null },
     ]);
   });
 
@@ -267,7 +267,8 @@ describe("the candidates' schemas and table rows", () => {
     const mapped = (key: string, id: string, turn: number | null) => {
       const answer = ANSWERS[key];
       const status = resolveVerdict(answer).status;
-      return kindedFindings({ id, status, findings: answer.findings as unknown[] }, turn);
+      // The judges' words are read the same for every row; the truth set's tests check them.
+      return kindedFindings({ id, status, findings: answer.findings as unknown[] }, turn).map(({ sequence, kinds, severity, judge_kind }) => ({ sequence, kinds, severity, judge_kind }));
     };
     expect(mapped("blueprint.solve_depth_fairness", "solve_depth_fairness", null)).toEqual([
       { sequence: null, kinds: ["fairness"], severity: "major", judge_kind: "fairness" },

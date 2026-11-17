@@ -7,7 +7,7 @@
  * alone; where they lack something, the panel says so rather than guess.
  */
 
-import { playedEvents, readField, revealedClueIdsForEvent } from "../lib/game-events.ts";
+import { offScriptClueIdsForEvent, playedEvents, readField, revealedClueIdsForEvent } from "../lib/game-events.ts";
 import type { StoredGame } from "../lib/truth/schemas.ts";
 
 type StoredEvent = StoredGame["events"][number];
@@ -29,6 +29,8 @@ export interface PanelClue {
   held: boolean;
   /** On a search, the next unrevealed, unlocked clue of the place: the one a search should give. */
   next: boolean;
+  /** A reveal the trace records in `revealed_off_script`: the game master let it past its `requires`. */
+  offScript: boolean;
 }
 
 export interface CluePanelView {
@@ -126,7 +128,7 @@ function pointsTo(clue: BlueprintClue, book: ClueBook): string[] {
 function panelClue(id: string, book: ClueBook, heldBefore: ReadonlySet<string>): PanelClue {
   const clue = book.byId.get(id);
   const held = heldBefore.has(id);
-  if (!clue) return { id, text: null, holder: null, holderKind: null, requires: [], requiresMet: true, pointsTo: [], held, next: false };
+  if (!clue) return { id, text: null, holder: null, holderKind: null, requires: [], requiresMet: true, pointsTo: [], held, next: false, offScript: false };
   return {
     id,
     text: clue.text,
@@ -137,6 +139,7 @@ function panelClue(id: string, book: ClueBook, heldBefore: ReadonlySet<string>):
     pointsTo: pointsTo(clue, book),
     held,
     next: false,
+    offScript: false,
   };
 }
 
@@ -181,13 +184,14 @@ export function buildCluePanel(game: StoredGame, event: StoredEvent): CluePanelV
   const priorIds = heldBefore(game, event.sequence);
   const prior = new Set(priorIds);
   const { source, clues, noSource } = sourceOf(event, book);
+  const offScript = new Set(offScriptClueIdsForEvent(event));
   const candidates = clues.map((clue) => panelClue(clue.id, book, prior));
   if (event.event_type === "search") {
     const next = candidates.find((clue) => !clue.held && clue.requiresMet);
     if (next) next.next = true;
   }
   return {
-    revealed: revealedClueIdsForEvent(event).map((id) => panelClue(id, book, prior)),
+    revealed: revealedClueIdsForEvent(event).map((id) => ({ ...panelClue(id, book, prior), offScript: offScript.has(id) })),
     source,
     candidates,
     noSource,

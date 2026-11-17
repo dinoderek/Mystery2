@@ -5,7 +5,8 @@
  * menus (`keys.ts` decides what a key means). Each fault is a row with its own
  * kind, severity and note. The ground truth and a speaking character's profile
  * open over the page, so they push nothing down. The Clues panel sits beside
- * the narration on a wide screen and under it on a phone, its long lists folded. On a touch screen the save
+ * the narration on a wide screen and under it on a phone, its long lists
+ * folded. On a touch screen the save
  * stays at the bottom of the screen and the keys are not shown.
  */
 
@@ -132,6 +133,7 @@ function panelClueHtml(clue: PanelClue, standing: Standing): string {
     clue.next ? `<span class="tag next">next a search gives</span>` : "",
     standingTag(clue, standing),
     requires === null ? "" : clue.requiresMet ? `<span class="tag">requires met</span>` : `<span class="tag locked">requires not met</span>`,
+    clue.offScript ? `<span class="tag">recorded off script</span>` : "",
   ];
   return `<li>${escapeHtml(clue.id)}: ${clue.text === null ? `<span class="muted">(the blueprint gives no text)</span>` : escapeHtml(clue.text)} ${tags.filter(Boolean).join(" ")}<span class="meta">${meta.filter(Boolean).join(" &middot; ")}</span></li>`;
 }

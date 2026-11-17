@@ -298,7 +298,7 @@ describe("a turn's Clues panel", () => {
   it("lists what a search reveals, every clue of the place and its sub-places, and marks the next a search gives", async () => {
     const search = panel(await medal(), 2);
     expect(search.revealed).toEqual([
-      { id: "clue_hall_1", text: "A muddy footprint near the trophy case.", holder: "Grand Hall", holderKind: "place", requires: [], requiresMet: true, pointsTo: [], held: false, next: false },
+      { id: "clue_hall_1", text: "A muddy footprint near the trophy case.", holder: "Grand Hall", holderKind: "place", requires: [], requiresMet: true, pointsTo: [], held: false, next: false, offScript: false },
     ]);
     expect(search.source).toEqual({ kind: "place", name: "Grand Hall" });
     expect(search.candidates.map(({ id, holder, held, next }) => ({ id, holder, held, next }))).toEqual([
@@ -340,7 +340,13 @@ describe("a turn's Clues panel", () => {
       { id: "clue_hall_1", requiresMet: false, next: false },
       { id: "clue_rug_1", next: true, pointsTo: ["about char_ghost (not in the blueprint)"] },
     ]);
-    expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requires: ["clue_hall_1"], requiresMet: true, pointsTo: ["about Dorn Pike", "points to Walled Garden"] }]);
+    expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requires: ["clue_hall_1"], requiresMet: true, pointsTo: ["about Dorn Pike", "points to Walled Garden"], offScript: false }]);
+    // A reveal the trace records off script says so beside its unmet requires.
+    Object.assign(world.characters[0].clues[0], { requires: { clue_ids: ["clue_garden_1"], rationale: "Only once you saw the roses." } });
+    (game.events[3].payload as Record<string, unknown>).revealed_off_script = ["clue_mara_1"];
+    expect(panel(game, 4).revealed).toMatchObject([{ id: "clue_mara_1", requiresMet: false, offScript: true }]);
+    const page = renderTurnPage({ game: "medal", phaseName: "pass 1", base: "", who: "tester", view: buildTurnView(game, 4, 1, 9), form: { faults: [] }, labelled: null, error: null, previous: null, next: null, disagreements: [] });
+    expect(page).toContain('<span class="tag locked">requires not met</span> <span class="tag">recorded off script</span>');
   });
 
   it("says what the trace lacks instead of guessing a speaker or a place", async () => {

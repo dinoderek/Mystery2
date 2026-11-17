@@ -245,6 +245,16 @@ export const StoredFindingSchema = z
     severity: SeveritySchema,
     /** The judge's own kind for it, when its answer gives one. */
     judge_kind: z.string().nullable(),
+    /**
+     * What the judge saw and why it counts, as its answer words them: the
+     * quoted span, the reason, and the id or field it names. Null when the
+     * answer has none, as for a stand-in finding of a bare `fail`, or a judge
+     * whose answer lacks the field; results stored before the judges' text was
+     * kept read as null.
+     */
+    quote: z.string().nullable().default(null),
+    why: z.string().nullable().default(null),
+    refers_to: z.string().nullable().default(null),
   })
   .strict();
 export type StoredFinding = z.infer<typeof StoredFindingSchema>;

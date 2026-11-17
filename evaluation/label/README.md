@@ -1,7 +1,7 @@
 # The labelling page
 
 `./dev eval label` serves one page over every stored game of the truth set
-(`evaluation/truth/README.md`, "Labels"). It calls no model.
+(`evaluation/truth/README.md`, "Labels"), calling no model.
 
 ```bash
 ./dev eval label                       # the games
@@ -13,22 +13,23 @@
 (letters, digits, `.`, `-`, `_`): the label files are public.
 
 **The list.** Each game shows its blueprint, target age, persona, when it was
-played and last labelled, and its stage: not started, pass 1 in progress, pass
-1 done without judge results, pass 2 with turns left, or done. Search by words,
-stage and dates; sort by date.
+played and last labelled, and its stage (not started, pass 1 in progress or
+done, pass 2 with turns left, done). Search by words, stage and dates; sort by
+date.
 
 **Passes.**
 
-- *Pass 1*: every turn, no judge finding.
+- *Pass 1*: every turn.
 - *Reported turns*: pass 1 limited to the turns a failing verdict's finding
   points at; offered once results judge the game or a variant.
-- *Pass 2*: only the turns where a judge and the label disagree, with those
-  verdicts (a clean `not_age_fit` label is never questioned); offered once
-  every turn has a label and results judge the game. Its labels record pass 2.
+- *Pass 2*: the turns where a judge and the label disagree (never a clean
+  `not_age_fit` label), once every turn has a label and results judge the
+  game. Per judge and model: runs judged and flagged, by severity, then each
+  flagging run's category, quote, why and `refers_to`. Labels record pass 2.
 
 Nothing a judge said shows until pass 1 is complete. Saves append to
 `labels.json` at once; a pass resumes at its first unanswered turn. Games and
-results are read at start: restart after adding either.
+results load at start.
 
 **A turn.** The title gives the game, target age, pass and place, and opens
 the ground truth with every character's profile over the page; a conversation
@@ -52,6 +53,6 @@ tailscale serve --bg 52400      # once; `tailscale serve reset` undoes it
 Then open `https://<machine>.<tailnet>.ts.net/` in the tailnet. Labels land in
 this checkout: commit them and regenerate the score table.
 
-Code: `server.ts` (routes, names, hosts), `hub.ts` (passes, stages), `home.ts`,
-`page.ts`, `turns.ts`, `store.ts` (the label file), `keys.ts`;
-`evaluation/core/tailscale.ts`.
+Code: `server.ts` (routes, names, hosts), `hub.ts` (passes, stages),
+`disagreements.ts`, `judge-kinds.ts`, `home.ts`, `page.ts`, `turns.ts`,
+`store.ts` (the label file), `keys.ts`; `evaluation/core/tailscale.ts`.

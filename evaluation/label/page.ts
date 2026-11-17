@@ -9,7 +9,10 @@
  */
 
 import { ADD_KEY, CLEAN_KEY, KEYED_KINDS, KIND_KEYS, NOTE_KEY, PREVIOUS_KEY, REMOVE_KEY, SEVERITY_KEYS, TRUTH_KEY } from "./keys.ts";
-import type { Disagreement } from "./disagreements.ts";
+import { tallyByJudge } from "./disagreements.ts";
+import type { Disagreement, JudgeTally, VerdictAtTurn } from "./disagreements.ts";
+import { describeJudgeKind } from "./judge-kinds.ts";
+import type { StoredFinding } from "../lib/truth/schemas.ts";
 import type { CharacterView, ClueView, FormFault, FormState, TurnView } from "./turns.ts";
 
 export function escapeHtml(value: string): string {
@@ -56,7 +59,9 @@ button.quiet, a.button { background: transparent; color: var(--accent); }
 kbd { font: .85em ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
 @media (hover: none) { kbd, .keys { display: none; } }
 a { color: var(--accent); } table { border-collapse: collapse; width: 100%; } td, th { text-align: left; padding: 2px 8px 2px 0; vertical-align: top; }
-.scroll { overflow-x: auto; }
+.judge { margin: 6px 0 0; } .judge > summary { font-weight: 600; }
+.runs, .findings { padding-left: 1.2rem; } .runs > li + li, .findings > li + li { margin-top: 6px; }
+blockquote { margin: 4px 0; padding: 0 0 0 8px; border-left: 3px solid var(--line); font-style: italic; overflow-wrap: anywhere; }
 `;
 
 /** The header every page carries: back to the games, and who is labelling. */
@@ -144,14 +149,41 @@ function groundTruthHtml(view: TurnView): string {
   return lines.join("") || `<p class="muted">the blueprint records none</p>`;
 }
 
-function disagreementsHtml(disagreements: readonly Disagreement[]): string {
+/** A judge's findings at a turn with more than this many are folded under their one line. */
+const FOLD_AFTER = 2;
+
+function findingHtml(judge: string, finding: StoredFinding): string {
+  const kind = describeJudgeKind(judge, finding.judge_kind);
+  const head = `<b>${finding.severity}</b>${kind ? ` &middot; ${escapeHtml(kind)}` : ""}`;
+  const quote = finding.quote ? `<blockquote>${escapeHtml(finding.quote)}</blockquote>` : "";
+  const why = finding.why ? `<p>${escapeHtml(finding.why)}</p>` : "";
+  const refers = finding.refers_to ? `<p class="muted">refers to <code>${escapeHtml(finding.refers_to)}</code></p>` : "";
+  const unworded = quote || why ? "" : `<p class="muted">the stored result keeps no reason</p>`;
+  return `<li>${head}${quote}${why}${refers}${unworded}</li>`;
+}
+
+function runHtml(run: VerdictAtTurn): string {
+  if (run.findings.length === 0) return `<li>run ${run.sample}: <span class="muted">nothing at this turn</span></li>`;
+  return `<li>run ${run.sample}<ul class="findings">${run.findings.map((finding) => findingHtml(run.judge, finding)).join("")}</ul></li>`;
+}
+
+function tallyLine(tally: JudgeTally): string {
+  const who = `${escapeHtml(tally.judge)} (${escapeHtml(tally.model)})`;
+  const severities = [tally.major > 0 ? `${tally.major} major` : "", tally.minor > 0 ? `${tally.minor} minor` : ""].filter(Boolean).join(", ");
+  const judged = tally.runs.length;
+  return `${who}: ${tally.flagged} of ${judged} ${judged === 1 ? "run" : "runs"} flagged this turn${severities ? `: ${severities}` : ""}`;
+}
+
+function tallyHtml(tally: JudgeTally): string {
+  const found = tally.runs.reduce((count, run) => count + run.findings.length, 0);
+  return `<details class="judge"${found > FOLD_AFTER ? "" : " open"}><summary>${tallyLine(tally)}</summary><ul class="runs">${tally.runs.map(runHtml).join("")}</ul></details>`;
+}
+
+/** The second pass's disagreements on a turn: per judge and model, how many runs flagged it, and what each said. */
+export function renderDisagreements(disagreements: readonly Disagreement[]): string {
   const blocks = disagreements.map((item) => {
     const heading = item.label === "clean" ? `a judge caught <b>${item.kind}</b>, the label says clean` : `labelled <b>${item.kind}</b>, no judge caught it`;
-    const rows = item.verdicts.map((verdict) => {
-      const found = verdict.findings.map((finding) => `${finding.severity}${finding.judge_kind ? `, ${escapeHtml(finding.judge_kind)}` : ""}`);
-      return `<tr><td>${escapeHtml(verdict.judge)}</td><td>${escapeHtml(verdict.model)} #${verdict.sample}</td><td>${verdict.status}</td><td>${found.length > 0 ? found.join("; ") : `<span class="muted">nothing at this turn</span>`}</td></tr>`;
-    });
-    return `<p>${heading}</p><div class="scroll"><table>${rows.join("")}</table></div>`;
+    return `<p>${heading}</p>${tallyByJudge(item.verdicts).map(tallyHtml).join("")}`;
   });
   return `<section><h2>Where a judge and the label disagree</h2>${blocks.join("")}</section>`;
 }
@@ -213,7 +245,7 @@ ${page.error ? `<section><p class="error" role="alert">Not saved: ${escapeHtml(p
 ${playerHtml(view)}
 <section><h2>Narration</h2><p class="narration">${escapeHtml(view.narration)}</p></section>
 <section><h2>Clues this turn revealed</h2>${cluesHtml(view)}</section>
-${page.disagreements.length > 0 ? disagreementsHtml(page.disagreements) : ""}
+${page.disagreements.length > 0 ? renderDisagreements(page.disagreements) : ""}
 ${formHtml(page)}
 ${page.labelled ? `<p class="muted">Latest label: ${escapeHtml(page.labelled)}</p>` : ""}
 ${navHtml(page)}`;

@@ -77,6 +77,16 @@ interface AnswerFinding {
   sequence?: unknown;
   severity?: unknown;
   kind?: unknown;
+  quote?: unknown;
+  why?: unknown;
+  refers_to?: unknown;
+}
+
+/** A finding the answer does not word: a stand-in for a bare `fail`. */
+const UNWORDED = { judge_kind: null, quote: null, why: null, refers_to: null } as const;
+
+function text(value: unknown): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -104,11 +114,14 @@ function eachFinding(raw: unknown[], row: FindingsRow, judge: string, turn: numb
       kinds: kindsOf(item, row, judge),
       severity: item.severity === "major" || item.severity === "minor" ? item.severity : fallback,
       judge_kind: typeof item.kind === "string" ? item.kind : null,
+      quote: text(item.quote),
+      why: text(item.why),
+      refers_to: text(item.refers_to),
     };
   });
   // A candidate fails only on a major finding of its own, so it needs no stand-in finding of no kind.
   if (failed && row.read !== "own_kind" && !findings.some((finding) => finding.severity === "major")) {
-    findings.push({ sequence: turn, kinds: [...row.kinds], severity: "major", judge_kind: null });
+    findings.push({ sequence: turn, kinds: [...row.kinds], severity: "major", ...UNWORDED });
   }
   return findings;
 }
@@ -124,7 +137,7 @@ export function kindedFindings(verdict: Pick<Verdict, "id" | "status" | "finding
   if (verdict.status !== "pass" && verdict.status !== "fail") return [];
   const failed = verdict.status === "fail";
   if (row.read === "fail_only") {
-    return failed ? [{ sequence: null, kinds: [...row.kinds], severity: "major", judge_kind: null }] : [];
+    return failed ? [{ sequence: null, kinds: [...row.kinds], severity: "major", ...UNWORDED }] : [];
   }
   return eachFinding(verdict.findings ?? [], row, verdict.id, turn, failed);
 }

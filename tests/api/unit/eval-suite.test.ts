@@ -62,7 +62,7 @@ describe("a fixture suite", () => {
     expect(subjects).toContain(JSON.stringify({ side: "game", game: "medal", variant: "medal-spoiler", sequence: null }));
     expect(subjects).toContain(JSON.stringify({ side: "game", game: "medal", variant: null, sequence: 4 }));
     const spoiler = stored?.verdicts.find((verdict) => verdict.judge === "gm_spoiler" && verdict.subject.side === "game" && verdict.subject.variant !== null);
-    expect(spoiler).toMatchObject({ status: "fail", model: "game-judge", sample: 0, findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "culprit" }] });
+    expect(spoiler).toMatchObject({ status: "fail", model: "game-judge", sample: 0, findings: [{ sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "culprit", quote: "Dorn", why: "Names the thief.", refers_to: null }] });
 
     const scored: string[] = [];
     const code = await runEval(

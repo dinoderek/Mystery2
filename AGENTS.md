@@ -45,8 +45,11 @@ schemas both sides import, `evaluation/` the judges and pipelines. Detail:
 
 ## Workflow
 
-- Tasks go through the engine plugin's `build` skill (`engine:build`).
-  Default: hands-off, merge on a green gate and green CI.
+- Any workflow works if it ends in a green gate and a PR. The operator builds
+  through the engine plugin's `build` skill (`engine:build`), which
+  `.claude/settings.json` enables, and sessions working for the operator use
+  it unless told otherwise. Its default here is hands-off: merge on a green
+  gate and green CI.
 - Worktrees: `./dev worktree create <branch>`, `./dev worktree release <branch>`.
 - PRs use `.github/pull_request_template.md` and merge by squash.
 

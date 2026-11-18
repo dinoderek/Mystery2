@@ -1,12 +1,9 @@
 # UI
 
-The UI is a terminal: typed commands in, text and one image out. Menus are
+The UI is a terminal: typed commands in, text and scene art out. Menus are
 numbered lists picked by typing a number; `b` goes back. The only forms are the
 profile picker and the settings page. Keep it that way — a new interaction
 should be a command before it is a widget.
-
-This doc holds the rules the code does not state. Per-route behaviour, component
-props, and the command grammar live in the code; do not mirror them here.
 
 ## Shape
 
@@ -35,6 +32,11 @@ profile, but the server asks for one only where a session is involved
 `PUBLIC_PATHS` may therefore call only endpoints that need no profile.
 
 ## The session screen
+
+The lighthouse prototype adds procedural 3D to its lantern-room pages, selected
+from the viewed page's location, including history. Conversations keep portraits.
+Scenes depict public scenery, respect reduced motion, and fall back to existing
+art after a logged rendering failure. Preview at `/prototype/lighthouse`.
 
 Two keyboard rules are easy to break:
 

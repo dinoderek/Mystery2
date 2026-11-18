@@ -41,6 +41,23 @@ function opening(): NarrationEvent[] {
 }
 
 describe('buildSessionPages', () => {
+
+  it('keeps each historical page at its recorded location, including after a conversation', () => {
+    reset();
+    const pages = buildSessionPages([
+      event('start', [{ text: 'The lens is missing.' }]),
+      event('move', [{ text: 'The lantern room.' }], { location_id: 'lantern_room' }),
+      event('search', [{ text: 'A search.' }]),
+      event('talk', [{ text: 'Ada says hello.' }], { location_id: 'lantern_room' }),
+      event('end_talk', [{ text: 'Back in the room.' }], { location_id: 'lantern_room' }),
+      event('move', [{ text: 'The cottage.' }], { location_id: 'keepers_cottage' }),
+      event('move', [{ text: 'An older event without a location id.' }]),
+    ]);
+
+    expect(pages.map((page) => page.locationId)).toEqual([
+      null, 'lantern_room', 'lantern_room', 'lantern_room', 'keepers_cottage', null,
+    ]);
+  });
   it('returns no pages for an empty history', () => {
     expect(buildSessionPages([])).toEqual([]);
   });

@@ -21,6 +21,7 @@
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.13.3",
+    "@types/three": "0.187.0",
     "prettier-plugin-tailwindcss": "0.8.1",
     "svelte": "5.57.0",
     "svelte-check": "4.7.6",
@@ -31,6 +32,7 @@
   },
   "dependencies": {
     "@my2/game-engine": "*",
-    "@my2/shared": "*"
+    "@my2/shared": "*",
+    "three": "0.187.0"
   }
 }

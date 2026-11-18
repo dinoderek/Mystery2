@@ -29,6 +29,8 @@ export interface SessionPage {
    * the interaction has none of its own, so the scene pane never goes blank.
    */
   imageId: string | null;
+  /** The location recorded on this page, never the live session's position. */
+  locationId: string | null;
   events: NarrationEvent[];
 }
 
@@ -135,6 +137,7 @@ export function buildSessionPages(
       title: null,
       fallbackLabel: labelFor(event, kind, ctx),
       imageId: imageIdOf(event) ?? open?.imageId ?? null,
+      locationId: readString(event.payload?.location_id),
       events: [...carried, event],
     });
   }

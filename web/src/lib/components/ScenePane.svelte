@@ -1,12 +1,22 @@
 <script lang="ts">
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import BlueprintImage from './BlueprintImage.svelte';
+  import LighthouseScene from './LighthouseScene.svelte';
+  import { hasLighthouseScene } from '$lib/domain/scene-selection';
 
   const page = $derived(gameSessionStore.activePage);
   const blueprintId = $derived(gameSessionStore.blueprint_id);
 </script>
 
 <div class="story-image-panel h-full w-full overflow-hidden" data-testid="scene-pane">
+  {#if hasLighthouseScene(blueprintId, page)}
+    <LighthouseScene>{@render illustration()}</LighthouseScene>
+  {:else}
+    {@render illustration()}
+  {/if}
+</div>
+
+{#snippet illustration()}
   {#if page?.imageId && blueprintId}
     {#key page.imageId}
       <BlueprintImage
@@ -25,4 +35,4 @@
       {page?.title ?? page?.fallbackLabel ?? 'No scene image'}
     </div>
   {/if}
-</div>
+{/snippet}

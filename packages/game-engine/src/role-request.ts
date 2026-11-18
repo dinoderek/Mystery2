@@ -272,6 +272,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }),
     vars: (input: InputFor<"talk_end">) => ({
       character_name: characterNameFor(input.blueprint, input.character_id),
+      location_name: locationNameFor(input.blueprint, input.location_id),
       target_age: input.blueprint.metadata.target_age,
     }),
   } satisfies TemplateRoleSpec<"talk_end">,

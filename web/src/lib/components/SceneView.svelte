@@ -4,7 +4,7 @@
   import type { buildScene } from '$lib/domain/scene-world';
   import type { SceneRecipe } from '@my2/shared';
 
-  let { children, recipe }: { children: Snippet; recipe: SceneRecipe } = $props();
+  let { children, recipe, animated = true }: { children: Snippet; recipe: SceneRecipe; animated?: boolean } = $props();
   let canvas: HTMLCanvasElement;
   let ready = $state(false);
   let failed = $state(false);
@@ -32,7 +32,7 @@
       if (milliseconds - lastFrame < frameInterval - 1) return;
       try {
         const started = performance.now();
-        world.animate(motion.matches ? 0 : milliseconds / 1000);
+        world.animate(motion.matches || !animated ? 0 : milliseconds / 1000);
         renderer.render(world.scene, world.camera);
         // Leave time for dialogue and input when a software renderer is slow.
         frameInterval = Math.max(1000 / 30, (performance.now() - started) * 3);
@@ -45,12 +45,12 @@
 
     function updateAnimation() {
       if (!renderer?.initialized || cancelled || failed) return;
-      paused = document.hidden || motion.matches;
+      paused = document.hidden || motion.matches || !animated;
       renderer.setAnimationLoop(null);
       lastFrame = -Infinity;
       if (document.hidden) return;
       draw(0);
-      if (!motion.matches && !failed) renderer.setAnimationLoop(draw);
+      if (!paused && !failed) renderer.setAnimationLoop(draw);
     }
 
     async function start() {

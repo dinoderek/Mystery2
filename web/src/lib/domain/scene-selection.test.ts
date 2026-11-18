@@ -40,7 +40,8 @@ describe('scene artwork', () => {
         imageId: 'portrait.png',
       }),
     ).toBeNull();
-    expect(sceneForPage(manifest, { ...page, kind: 'opening' })).toBeNull();
+    expect(sceneForPage(manifest, { ...page, kind: 'opening', locationId: null, imageId: 'missing-cover.png' })).toBe(manifest.scenes[0]);
+    expect(sceneForPage(createSceneManifest(), { ...page, kind: 'opening' })).toBeNull();
     expect(sceneForPage(manifest, null)).toBeNull();
     expect(sceneForPage(null, page)).toBeNull();
   });

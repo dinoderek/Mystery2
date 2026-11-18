@@ -4,7 +4,7 @@
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import { playerStore } from '$lib/domain/player-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
-  import BlueprintImage from '$lib/components/BlueprintImage.svelte';
+  import CaseArtwork from '$lib/components/CaseArtwork.svelte';
 
   type LandingView = 'menu' | 'new-game';
 
@@ -12,7 +12,7 @@
 
   const hasInProgress = $derived(gameSessionStore.sessionCatalog.counts.in_progress > 0);
   const hasCompleted = $derived(gameSessionStore.sessionCatalog.counts.completed > 0);
-  const isStartingGame = $derived(view === 'new-game' && gameSessionStore.status === 'loading' && gameSessionStore.blueprints.length > 0);
+  let isStartingGame = $state(false);
 
   onMount(() => {
     void gameSessionStore.loadSessionCatalog(true);
@@ -70,9 +70,14 @@
     }
 
     const blueprint = gameSessionStore.blueprints[index - 1];
-    await gameSessionStore.startGame(blueprint.id);
-    if (gameSessionStore.status === 'active') {
-      await goto('/session');
+    isStartingGame = true;
+    try {
+      await gameSessionStore.startGame(blueprint.id);
+      if (gameSessionStore.status === 'active') {
+        await goto('/session');
+      }
+    } finally {
+      isStartingGame = false;
     }
   }
 
@@ -156,18 +161,10 @@
                 <div class="absolute -left-3 -top-3 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
                   {i + 1}
                 </div>
-                {#if blueprint.blueprint_image_id}
-                  <div class="md:w-1/2 md:order-2">
-                    <BlueprintImage
-                      blueprintId={blueprint.id}
-                      imageId={blueprint.blueprint_image_id}
-                      alt="Case art"
-                      class="aspect-[4/3] w-full object-cover"
-                      placeholderText="Case image unavailable"
-                    />
-                  </div>
-                {/if}
-                <div class={blueprint.blueprint_image_id ? 'md:w-1/2 md:order-1' : ''}>
+                <div class="md:w-1/2 md:order-2">
+                  <CaseArtwork blueprintId={blueprint.id} imageId={blueprint.blueprint_image_id} alt="Case art" />
+                </div>
+                <div class="md:w-1/2 md:order-1">
                   <h2 class="text-xl font-bold text-t-bright">{blueprint.title}</h2>
                   <p class="text-t-muted/80 mb-2">{blueprint.one_liner}</p>
                   <p class="text-xs text-t-dim">Target age: {blueprint.target_age}</p>

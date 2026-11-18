@@ -32,6 +32,9 @@
  * - **Stale.** Only a verdict at its judge's current version
  *   (`core/judge-version.ts`), on its subject as the truth set holds it now
  *   (`subject-hash.ts`), is scored; the rest are counted apart as stale.
+ * - **Unmeasured.** A judge's games and variants, or bases and plants, with
+ *   no current verdict are listed by name: a new plant is unmeasured until
+ *   its suite runs again.
  */
 
 import { InputError } from "../../core/errors.ts";
@@ -48,7 +51,7 @@ import type { TruthValue } from "./truth.ts";
 import { wilson } from "./wilson.ts";
 import type { Share } from "./wilson.ts";
 
-export const SCORE_SCHEMA_VERSION = "mystery-truth-score/2";
+export const SCORE_SCHEMA_VERSION = "mystery-truth-score/3";
 
 /** Every subset of a side is scored; past this many members that is too many. */
 export const MAX_MEMBERS_PER_SIDE = 16;
@@ -104,6 +107,8 @@ export interface MemberScore {
   samples: number;
   /** Findings of a game judge that point at no turn of what it judged, so catch nothing. */
   findings_off_turn: number;
+  /** The truth set's games and variants, or bases and plants, it holds no current verdict on: unmeasured. */
+  unjudged: string[];
   delay_ms: number | null;
   usage_usd: number | null;
   kinds: KindScore[];
@@ -246,7 +251,7 @@ function shares(reported: Counts, units: Counts): Shares {
 }
 
 interface MemberRun {
-  score: Omit<MemberScore, "delay_ms" | "usage_usd">;
+  score: Omit<MemberScore, "delay_ms" | "usage_usd" | "unjudged">;
   /** The keys of the units it catches. */
   caught: Set<string>;
   units: UnitInfo[];
@@ -501,6 +506,20 @@ export function membersOf(side: Side, verdicts: readonly StoredVerdict[], split:
   return [...members.values()].sort((a, b) => byCodePoint(a.id, b.id));
 }
 
+/** Every game and variant, or base and plant, of the truth set, keyed as `chargeKey` keys a verdict's subject. */
+function sideSubjects(set: TruthSet, side: Side): Array<{ id: string; key: string }> {
+  if (side === "game") {
+    return [
+      ...set.games.map((game) => ({ id: game.id, key: chargeKey({ side, game: game.id, variant: null, sequence: null }) })),
+      ...set.turnVariants.map((variant) => ({ id: variant.id, key: chargeKey({ side, game: variant.game, variant: variant.id, sequence: null }) })),
+    ];
+  }
+  return [
+    ...set.bases.map((base) => ({ id: base.id, key: chargeKey({ side, base: base.id, plant: null }) })),
+    ...set.blueprintPlants.map((plant) => ({ id: plant.id, key: chargeKey({ side, base: plant.base, plant: plant.id }) })),
+  ];
+}
+
 function scoreSide(set: TruthSet, side: Side, verdicts: readonly StoredVerdict[], bar: Bar): SideScore | null {
   const members = membersOf(side, verdicts);
   if (members.length === 0) return null;
@@ -510,9 +529,11 @@ function scoreSide(set: TruthSet, side: Side, verdicts: readonly StoredVerdict[]
     );
   }
   const runs = members.map((member) => scoreMember(set, member));
+  const subjects = sideSubjects(set, side);
   const memberScores = runs.map((run, index): MemberScore => {
     const charges = [chargesOf(members[index])];
-    return { ...run.score, delay_ms: delayOf(charges), usage_usd: usageOf(charges) };
+    const unjudged = subjects.filter(({ key }) => !charges[0].has(key)).map(({ id }) => id);
+    return { ...run.score, unjudged, delay_ms: delayOf(charges), usage_usd: usageOf(charges) };
   });
   return { side, members: memberScores, ...scoreSubsets(members, runs, bar) };
 }

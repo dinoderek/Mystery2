@@ -9,7 +9,7 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
-      "judge_version": 1,
+      "judge_version": 2,
       "subject_hash": "4bc98221b727e07e",
       "model": "claude-opus-stub",
       "sample": 0,

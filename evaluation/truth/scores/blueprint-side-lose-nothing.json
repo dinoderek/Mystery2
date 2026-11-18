@@ -1,5 +1,5 @@
 {
-  "schema_version": "mystery-truth-score/2",
+  "schema_version": "mystery-truth-score/3",
   "inputs": {
     "truth": "evaluation/truth",
     "results": [
@@ -398,6 +398,7 @@
               }
             }
           ],
+          "unjudged": [],
           "delay_ms": 6169135,
           "usage_usd": 1.519082
         },
@@ -780,6 +781,7 @@
               }
             }
           ],
+          "unjudged": [],
           "delay_ms": 1432879,
           "usage_usd": 5.836765
         }

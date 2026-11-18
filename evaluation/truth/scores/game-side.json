@@ -32,16 +32,16 @@
               "kind": "not_age_fit",
               "units": {
                 "fault": 10,
-                "clean": 92,
-                "unknown": 498
+                "clean": 217,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 94,
-                  "share": 0.106383,
-                  "low": 0.058819,
-                  "high": 0.184856
+                  "of": 209,
+                  "share": 0.047847,
+                  "low": 0.026194,
+                  "high": 0.085821
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -50,7 +50,7 @@
                   "low": 0.722467,
                   "high": 1
                 },
-                "unknown_reported": 432
+                "unknown_reported": 317
               },
               "major_only": {
                 "real_of_reported": {
@@ -91,8 +91,8 @@
               "kind": "spoiler",
               "units": {
                 "fault": 15,
-                "clean": 87,
-                "unknown": 498
+                "clean": 212,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
@@ -136,26 +136,26 @@
             {
               "kind": "fabrication",
               "units": {
-                "fault": 21,
-                "clean": 81,
-                "unknown": 498
+                "fault": 36,
+                "clean": 191,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 10,
-                  "of": 10,
-                  "share": 1,
-                  "low": 0.722467,
-                  "high": 1
+                  "hits": 11,
+                  "of": 13,
+                  "share": 0.846154,
+                  "low": 0.577654,
+                  "high": 0.956742
                 },
                 "found_of_real": {
-                  "hits": 10,
-                  "of": 21,
-                  "share": 0.47619,
-                  "low": 0.28344,
-                  "high": 0.676305
+                  "hits": 11,
+                  "of": 36,
+                  "share": 0.305556,
+                  "low": 0.180045,
+                  "high": 0.468563
                 },
-                "unknown_reported": 16
+                "unknown_reported": 13
               },
               "major_only": {
                 "real_of_reported": {
@@ -167,10 +167,10 @@
                 },
                 "found_of_real": {
                   "hits": 10,
-                  "of": 21,
-                  "share": 0.47619,
-                  "low": 0.28344,
-                  "high": 0.676305
+                  "of": 36,
+                  "share": 0.277778,
+                  "low": 0.158483,
+                  "high": 0.439925
                 },
                 "unknown_reported": 2
               },
@@ -182,43 +182,43 @@
             {
               "kind": "clue_handling",
               "units": {
-                "fault": 19,
-                "clean": 83,
-                "unknown": 498
+                "fault": 34,
+                "clean": 193,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 13,
-                  "of": 13,
+                  "hits": 21,
+                  "of": 21,
                   "share": 1,
-                  "low": 0.771905,
+                  "low": 0.845361,
                   "high": 1
                 },
                 "found_of_real": {
-                  "hits": 13,
-                  "of": 19,
-                  "share": 0.684211,
-                  "low": 0.460104,
-                  "high": 0.846356
+                  "hits": 21,
+                  "of": 34,
+                  "share": 0.617647,
+                  "low": 0.45041,
+                  "high": 0.760998
                 },
-                "unknown_reported": 14
+                "unknown_reported": 6
               },
               "major_only": {
                 "real_of_reported": {
-                  "hits": 10,
-                  "of": 10,
+                  "hits": 17,
+                  "of": 17,
                   "share": 1,
-                  "low": 0.722467,
+                  "low": 0.815682,
                   "high": 1
                 },
                 "found_of_real": {
-                  "hits": 10,
-                  "of": 19,
-                  "share": 0.526316,
-                  "low": 0.317078,
-                  "high": 0.726702
+                  "hits": 17,
+                  "of": 34,
+                  "share": 0.5,
+                  "low": 0.340693,
+                  "high": 0.659307
                 },
-                "unknown_reported": 11
+                "unknown_reported": 4
               },
               "agreement": {
                 "share": 0.97,
@@ -228,26 +228,26 @@
             {
               "kind": "out_of_character",
               "units": {
-                "fault": 16,
-                "clean": 86,
-                "unknown": 498
+                "fault": 28,
+                "clean": 199,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 13,
-                  "of": 13,
+                  "hits": 16,
+                  "of": 16,
                   "share": 1,
-                  "low": 0.771905,
+                  "low": 0.806392,
                   "high": 1
                 },
                 "found_of_real": {
-                  "hits": 13,
-                  "of": 16,
-                  "share": 0.8125,
-                  "low": 0.569911,
-                  "high": 0.934084
+                  "hits": 16,
+                  "of": 28,
+                  "share": 0.571429,
+                  "low": 0.390708,
+                  "high": 0.734915
                 },
-                "unknown_reported": 21
+                "unknown_reported": 18
               },
               "major_only": {
                 "real_of_reported": {
@@ -259,10 +259,10 @@
                 },
                 "found_of_real": {
                   "hits": 13,
-                  "of": 16,
-                  "share": 0.8125,
-                  "low": 0.569911,
-                  "high": 0.934084
+                  "of": 28,
+                  "share": 0.464286,
+                  "low": 0.295316,
+                  "high": 0.641873
                 },
                 "unknown_reported": 0
               },
@@ -275,8 +275,8 @@
               "kind": "not_age_fit",
               "units": {
                 "fault": 10,
-                "clean": 92,
-                "unknown": 498
+                "clean": 217,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
@@ -333,43 +333,43 @@
             {
               "kind": "clue_handling",
               "units": {
-                "fault": 19,
-                "clean": 83,
-                "unknown": 498
+                "fault": 34,
+                "clean": 193,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 15,
-                  "of": 15,
-                  "share": 1,
-                  "low": 0.796117,
-                  "high": 1
+                  "hits": 24,
+                  "of": 25,
+                  "share": 0.96,
+                  "low": 0.804559,
+                  "high": 0.992904
                 },
                 "found_of_real": {
-                  "hits": 15,
-                  "of": 19,
-                  "share": 0.789474,
-                  "low": 0.566657,
-                  "high": 0.914923
+                  "hits": 24,
+                  "of": 34,
+                  "share": 0.705882,
+                  "low": 0.538311,
+                  "high": 0.831654
                 },
-                "unknown_reported": 37
+                "unknown_reported": 27
               },
               "major_only": {
                 "real_of_reported": {
-                  "hits": 10,
-                  "of": 10,
+                  "hits": 18,
+                  "of": 18,
                   "share": 1,
-                  "low": 0.722467,
+                  "low": 0.824121,
                   "high": 1
                 },
                 "found_of_real": {
-                  "hits": 10,
-                  "of": 19,
-                  "share": 0.526316,
-                  "low": 0.317078,
-                  "high": 0.726702
+                  "hits": 18,
+                  "of": 34,
+                  "share": 0.529412,
+                  "low": 0.367367,
+                  "high": 0.685485
                 },
-                "unknown_reported": 27
+                "unknown_reported": 19
               },
               "agreement": {
                 "share": 0.97,
@@ -392,11 +392,28 @@
             {
               "kind": "fabrication",
               "units": {
-                "fault": 21,
-                "clean": 81,
-                "unknown": 498
+                "fault": 36,
+                "clean": 191,
+                "unknown": 373
               },
               "shares": {
+                "real_of_reported": {
+                  "hits": 18,
+                  "of": 20,
+                  "share": 0.9,
+                  "low": 0.698966,
+                  "high": 0.972134
+                },
+                "found_of_real": {
+                  "hits": 18,
+                  "of": 36,
+                  "share": 0.5,
+                  "low": 0.344743,
+                  "high": 0.655257
+                },
+                "unknown_reported": 33
+              },
+              "major_only": {
                 "real_of_reported": {
                   "hits": 12,
                   "of": 12,
@@ -406,29 +423,12 @@
                 },
                 "found_of_real": {
                   "hits": 12,
-                  "of": 21,
-                  "share": 0.571429,
-                  "low": 0.365466,
-                  "high": 0.7553
+                  "of": 36,
+                  "share": 0.333333,
+                  "low": 0.202146,
+                  "high": 0.49666
                 },
-                "unknown_reported": 41
-              },
-              "major_only": {
-                "real_of_reported": {
-                  "hits": 10,
-                  "of": 10,
-                  "share": 1,
-                  "low": 0.722467,
-                  "high": 1
-                },
-                "found_of_real": {
-                  "hits": 10,
-                  "of": 21,
-                  "share": 0.47619,
-                  "low": 0.28344,
-                  "high": 0.676305
-                },
-                "unknown_reported": 10
+                "unknown_reported": 8
               },
               "agreement": {
                 "share": 0.926667,
@@ -451,26 +451,26 @@
             {
               "kind": "out_of_character",
               "units": {
-                "fault": 16,
-                "clean": 86,
-                "unknown": 498
+                "fault": 28,
+                "clean": 199,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
-                  "hits": 14,
-                  "of": 14,
-                  "share": 1,
-                  "low": 0.784689,
-                  "high": 1
+                  "hits": 17,
+                  "of": 19,
+                  "share": 0.894737,
+                  "low": 0.686059,
+                  "high": 0.970641
                 },
                 "found_of_real": {
-                  "hits": 14,
-                  "of": 16,
-                  "share": 0.875,
-                  "low": 0.639772,
-                  "high": 0.965023
+                  "hits": 17,
+                  "of": 28,
+                  "share": 0.607143,
+                  "low": 0.42409,
+                  "high": 0.764343
                 },
-                "unknown_reported": 45
+                "unknown_reported": 40
               },
               "major_only": {
                 "real_of_reported": {
@@ -482,10 +482,10 @@
                 },
                 "found_of_real": {
                   "hits": 13,
-                  "of": 16,
-                  "share": 0.8125,
-                  "low": 0.569911,
-                  "high": 0.934084
+                  "of": 28,
+                  "share": 0.464286,
+                  "low": 0.295316,
+                  "high": 0.641873
                 },
                 "unknown_reported": 5
               },
@@ -511,16 +511,16 @@
               "kind": "spoiler",
               "units": {
                 "fault": 15,
-                "clean": 87,
-                "unknown": 498
+                "clean": 212,
+                "unknown": 373
               },
               "shares": {
                 "real_of_reported": {
                   "hits": 10,
-                  "of": 10,
-                  "share": 1,
-                  "low": 0.722467,
-                  "high": 1
+                  "of": 13,
+                  "share": 0.769231,
+                  "low": 0.497436,
+                  "high": 0.918205
                 },
                 "found_of_real": {
                   "hits": 10,
@@ -529,7 +529,7 @@
                   "low": 0.417135,
                   "high": 0.848237
                 },
-                "unknown_reported": 11
+                "unknown_reported": 8
               },
               "major_only": {
                 "real_of_reported": {
@@ -558,8 +558,8 @@
           "usage_usd": 1.424319
         }
       ],
-      "faults": 81,
-      "full_found": 61,
+      "faults": 123,
+      "full_found": 79,
       "subsets": [
         {
           "members": [],
@@ -578,7 +578,7 @@
           "found_by_kind": {
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 199,
           "delay_ms": 3245655.666667,
           "usage_usd": 2.932781,
           "meets_bar": false
@@ -587,15 +587,15 @@
           "members": [
             "gm_broad"
           ],
-          "found": 56,
+          "found": 68,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 2,
           "delay_ms": 470277.333333,
           "usage_usd": 2.111532,
           "meets_bar": false
@@ -604,11 +604,11 @@
           "members": [
             "gm_clue_discipline"
           ],
-          "found": 15,
+          "found": 24,
           "found_by_kind": {
-            "clue_handling": 15
+            "clue_handling": 24
           },
-          "false_reports": 0,
+          "false_reports": 1,
           "delay_ms": 326997.333333,
           "usage_usd": 1.738935,
           "meets_bar": false
@@ -617,11 +617,11 @@
           "members": [
             "gm_fabrication"
           ],
-          "found": 12,
+          "found": 18,
           "found_by_kind": {
-            "fabrication": 12
+            "fabrication": 18
           },
-          "false_reports": 0,
+          "false_reports": 2,
           "delay_ms": 297677,
           "usage_usd": 1.677367,
           "meets_bar": false
@@ -630,11 +630,11 @@
           "members": [
             "gm_roleplay"
           ],
-          "found": 14,
+          "found": 17,
           "found_by_kind": {
-            "out_of_character": 14
+            "out_of_character": 17
           },
-          "false_reports": 0,
+          "false_reports": 2,
           "delay_ms": 338650.666667,
           "usage_usd": 1.782315,
           "meets_bar": false
@@ -647,7 +647,7 @@
           "found_by_kind": {
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 3,
           "delay_ms": 207754,
           "usage_usd": 1.424319,
           "meets_bar": false
@@ -657,15 +657,15 @@
             "age_appropriate_turn",
             "gm_broad"
           ],
-          "found": 56,
+          "found": 68,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 201,
           "delay_ms": 3245655.666667,
           "usage_usd": 5.044313,
           "meets_bar": false
@@ -675,12 +675,12 @@
             "age_appropriate_turn",
             "gm_clue_discipline"
           ],
-          "found": 25,
+          "found": 34,
           "found_by_kind": {
-            "clue_handling": 15,
+            "clue_handling": 24,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 200,
           "delay_ms": 3245655.666667,
           "usage_usd": 4.671716,
           "meets_bar": false
@@ -690,12 +690,12 @@
             "age_appropriate_turn",
             "gm_fabrication"
           ],
-          "found": 22,
+          "found": 28,
           "found_by_kind": {
-            "fabrication": 12,
+            "fabrication": 18,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 201,
           "delay_ms": 3245655.666667,
           "usage_usd": 4.610148,
           "meets_bar": false
@@ -705,12 +705,12 @@
             "age_appropriate_turn",
             "gm_roleplay"
           ],
-          "found": 24,
+          "found": 27,
           "found_by_kind": {
-            "out_of_character": 14,
+            "out_of_character": 17,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 201,
           "delay_ms": 3245655.666667,
           "usage_usd": 4.715096,
           "meets_bar": false
@@ -725,7 +725,7 @@
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 202,
           "delay_ms": 3245655.666667,
           "usage_usd": 4.3571,
           "meets_bar": false
@@ -735,15 +735,15 @@
             "gm_broad",
             "gm_clue_discipline"
           ],
-          "found": 58,
+          "found": 71,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 3,
           "delay_ms": 470277.333333,
           "usage_usd": 3.850467,
           "meets_bar": false
@@ -753,15 +753,15 @@
             "gm_broad",
             "gm_fabrication"
           ],
-          "found": 58,
+          "found": 75,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 4,
           "delay_ms": 470277.333333,
           "usage_usd": 3.788899,
           "meets_bar": false
@@ -771,15 +771,15 @@
             "gm_broad",
             "gm_roleplay"
           ],
-          "found": 57,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 4,
           "delay_ms": 470277.333333,
           "usage_usd": 3.893846,
           "meets_bar": false
@@ -789,15 +789,15 @@
             "gm_broad",
             "gm_spoiler"
           ],
-          "found": 56,
+          "found": 68,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 470277.333333,
           "usage_usd": 3.535851,
           "meets_bar": false
@@ -807,12 +807,12 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 27,
+          "found": 42,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15
+            "fabrication": 18,
+            "clue_handling": 24
           },
-          "false_reports": 0,
+          "false_reports": 3,
           "delay_ms": 336096.666667,
           "usage_usd": 3.416302,
           "meets_bar": false
@@ -822,12 +822,12 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 29,
+          "found": 41,
           "found_by_kind": {
-            "clue_handling": 15,
-            "out_of_character": 14
+            "clue_handling": 24,
+            "out_of_character": 17
           },
-          "false_reports": 0,
+          "false_reports": 3,
           "delay_ms": 352990.666667,
           "usage_usd": 3.521249,
           "meets_bar": false
@@ -837,12 +837,12 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 25,
+          "found": 34,
           "found_by_kind": {
-            "clue_handling": 15,
+            "clue_handling": 24,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 4,
           "delay_ms": 327551.333333,
           "usage_usd": 3.163254,
           "meets_bar": false
@@ -852,12 +852,12 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 26,
+          "found": 35,
           "found_by_kind": {
-            "fabrication": 12,
-            "out_of_character": 14
+            "fabrication": 18,
+            "out_of_character": 17
           },
-          "false_reports": 0,
+          "false_reports": 4,
           "delay_ms": 345640.333333,
           "usage_usd": 3.459682,
           "meets_bar": false
@@ -867,12 +867,12 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 22,
+          "found": 28,
           "found_by_kind": {
-            "fabrication": 12,
+            "fabrication": 18,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 303247,
           "usage_usd": 3.101686,
           "meets_bar": false
@@ -882,12 +882,12 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 24,
+          "found": 27,
           "found_by_kind": {
-            "out_of_character": 14,
+            "out_of_character": 17,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 338650.666667,
           "usage_usd": 3.206634,
           "meets_bar": false
@@ -898,15 +898,15 @@
             "gm_broad",
             "gm_clue_discipline"
           ],
-          "found": 58,
+          "found": 71,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 202,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.783248,
           "meets_bar": false
@@ -917,15 +917,15 @@
             "gm_broad",
             "gm_fabrication"
           ],
-          "found": 58,
+          "found": 75,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 203,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.72168,
           "meets_bar": false
@@ -936,15 +936,15 @@
             "gm_broad",
             "gm_roleplay"
           ],
-          "found": 57,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 203,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.826628,
           "meets_bar": false
@@ -955,15 +955,15 @@
             "gm_broad",
             "gm_spoiler"
           ],
-          "found": 56,
+          "found": 68,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.468632,
           "meets_bar": false
@@ -974,13 +974,13 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 37,
+          "found": 52,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
+            "fabrication": 18,
+            "clue_handling": 24,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 202,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.349083,
           "meets_bar": false
@@ -991,13 +991,13 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 39,
+          "found": 51,
           "found_by_kind": {
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 202,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.454031,
           "meets_bar": false
@@ -1008,13 +1008,13 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 35,
+          "found": 44,
           "found_by_kind": {
-            "clue_handling": 15,
+            "clue_handling": 24,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 203,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.096035,
           "meets_bar": false
@@ -1025,13 +1025,13 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 36,
+          "found": 45,
           "found_by_kind": {
-            "fabrication": 12,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "out_of_character": 17,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 203,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.392463,
           "meets_bar": false
@@ -1042,13 +1042,13 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 32,
+          "found": 38,
           "found_by_kind": {
-            "fabrication": 12,
+            "fabrication": 18,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.034467,
           "meets_bar": false
@@ -1059,13 +1059,13 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 34,
+          "found": 37,
           "found_by_kind": {
-            "out_of_character": 14,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 6.139415,
           "meets_bar": false
@@ -1076,15 +1076,15 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 60,
+          "found": 78,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 470277.333333,
           "usage_usd": 5.527834,
           "meets_bar": false
@@ -1095,15 +1095,15 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 59,
+          "found": 72,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 470277.333333,
           "usage_usd": 5.632781,
           "meets_bar": false
@@ -1114,15 +1114,15 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 58,
+          "found": 71,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 6,
           "delay_ms": 470277.333333,
           "usage_usd": 5.274786,
           "meets_bar": false
@@ -1133,15 +1133,15 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 59,
+          "found": 76,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 6,
           "delay_ms": 470277.333333,
           "usage_usd": 5.571213,
           "meets_bar": false
@@ -1152,15 +1152,15 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 58,
+          "found": 75,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 7,
           "delay_ms": 470277.333333,
           "usage_usd": 5.213218,
           "meets_bar": false
@@ -1171,15 +1171,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 57,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 7,
           "delay_ms": 470277.333333,
           "usage_usd": 5.318166,
           "meets_bar": false
@@ -1190,13 +1190,13 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 41,
+          "found": 59,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17
           },
-          "false_reports": 0,
+          "false_reports": 5,
           "delay_ms": 354797.333333,
           "usage_usd": 5.198617,
           "meets_bar": false
@@ -1207,13 +1207,13 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 37,
+          "found": 52,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
+            "fabrication": 18,
+            "clue_handling": 24,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 6,
           "delay_ms": 336650.666667,
           "usage_usd": 4.840621,
           "meets_bar": false
@@ -1224,13 +1224,13 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 39,
+          "found": 51,
           "found_by_kind": {
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 6,
           "delay_ms": 352990.666667,
           "usage_usd": 4.945569,
           "meets_bar": false
@@ -1241,13 +1241,13 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 36,
+          "found": 45,
           "found_by_kind": {
-            "fabrication": 12,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "out_of_character": 17,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 7,
           "delay_ms": 345640.333333,
           "usage_usd": 4.884001,
           "meets_bar": false
@@ -1259,15 +1259,15 @@
             "gm_clue_discipline",
             "gm_fabrication"
           ],
-          "found": 60,
+          "found": 78,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.460615,
           "meets_bar": false
@@ -1279,15 +1279,15 @@
             "gm_clue_discipline",
             "gm_roleplay"
           ],
-          "found": 59,
+          "found": 72,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.565562,
           "meets_bar": false
@@ -1299,15 +1299,15 @@
             "gm_clue_discipline",
             "gm_spoiler"
           ],
-          "found": 58,
+          "found": 71,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 205,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.207567,
           "meets_bar": false
@@ -1319,15 +1319,15 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 59,
+          "found": 76,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 205,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.503995,
           "meets_bar": false
@@ -1339,15 +1339,15 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 58,
+          "found": 75,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 206,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.145999,
           "meets_bar": false
@@ -1359,15 +1359,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 57,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 206,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.250947,
           "meets_bar": false
@@ -1379,14 +1379,14 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 51,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10
           },
-          "false_reports": 84,
+          "false_reports": 204,
           "delay_ms": 3245655.666667,
           "usage_usd": 8.131398,
           "meets_bar": false
@@ -1398,14 +1398,14 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 47,
+          "found": 62,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
+            "fabrication": 18,
+            "clue_handling": 24,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 205,
           "delay_ms": 3245655.666667,
           "usage_usd": 7.773402,
           "meets_bar": false
@@ -1417,14 +1417,14 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 49,
+          "found": 61,
           "found_by_kind": {
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 205,
           "delay_ms": 3245655.666667,
           "usage_usd": 7.87835,
           "meets_bar": false
@@ -1436,14 +1436,14 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 46,
+          "found": 55,
           "found_by_kind": {
-            "fabrication": 12,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 206,
           "delay_ms": 3245655.666667,
           "usage_usd": 7.816782,
           "meets_bar": false
@@ -1455,15 +1455,15 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 61,
+          "found": 79,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 7,
           "delay_ms": 470277.333333,
           "usage_usd": 7.310148,
           "meets_bar": true
@@ -1475,15 +1475,15 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 60,
+          "found": 78,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 8,
           "delay_ms": 470277.333333,
           "usage_usd": 6.952153,
           "meets_bar": false
@@ -1495,15 +1495,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 59,
+          "found": 72,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 8,
           "delay_ms": 470277.333333,
           "usage_usd": 7.0571,
           "meets_bar": false
@@ -1515,15 +1515,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 59,
+          "found": 76,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 9,
           "delay_ms": 470277.333333,
           "usage_usd": 6.995533,
           "meets_bar": false
@@ -1535,14 +1535,14 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 51,
+          "found": 69,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 8,
           "delay_ms": 354797.333333,
           "usage_usd": 6.622936,
           "meets_bar": false
@@ -1555,15 +1555,15 @@
             "gm_fabrication",
             "gm_roleplay"
           ],
-          "found": 61,
+          "found": 79,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 206,
           "delay_ms": 3245655.666667,
           "usage_usd": 10.242929,
           "meets_bar": true
@@ -1576,15 +1576,15 @@
             "gm_fabrication",
             "gm_spoiler"
           ],
-          "found": 60,
+          "found": 78,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 13,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 16,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 207,
           "delay_ms": 3245655.666667,
           "usage_usd": 9.884934,
           "meets_bar": false
@@ -1597,15 +1597,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 59,
+          "found": 72,
           "found_by_kind": {
-            "fabrication": 10,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 11,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 207,
           "delay_ms": 3245655.666667,
           "usage_usd": 9.989882,
           "meets_bar": false
@@ -1618,15 +1618,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 59,
+          "found": 76,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 13,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 21,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 208,
           "delay_ms": 3245655.666667,
           "usage_usd": 9.928314,
           "meets_bar": false
@@ -1639,15 +1639,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 61,
+          "found": 79,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 207,
           "delay_ms": 3245655.666667,
           "usage_usd": 9.555717,
           "meets_bar": true
@@ -1660,15 +1660,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 61,
+          "found": 79,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 0,
+          "false_reports": 10,
           "delay_ms": 470277.333333,
           "usage_usd": 8.734467,
           "meets_bar": true
@@ -1682,15 +1682,15 @@
             "gm_roleplay",
             "gm_spoiler"
           ],
-          "found": 61,
+          "found": 79,
           "found_by_kind": {
-            "fabrication": 12,
-            "clue_handling": 15,
-            "out_of_character": 14,
+            "fabrication": 18,
+            "clue_handling": 24,
+            "out_of_character": 17,
             "not_age_fit": 10,
             "spoiler": 10
           },
-          "false_reports": 84,
+          "false_reports": 209,
           "delay_ms": 3245655.666667,
           "usage_usd": 11.667249,
           "meets_bar": true
@@ -1703,15 +1703,15 @@
           "gm_fabrication",
           "gm_roleplay"
         ],
-        "found": 61,
+        "found": 79,
         "found_by_kind": {
-          "fabrication": 12,
-          "clue_handling": 15,
-          "out_of_character": 14,
+          "fabrication": 18,
+          "clue_handling": 24,
+          "out_of_character": 17,
           "not_age_fit": 10,
           "spoiler": 10
         },
-        "false_reports": 0,
+        "false_reports": 7,
         "delay_ms": 470277.333333,
         "usage_usd": 7.310148,
         "meets_bar": true

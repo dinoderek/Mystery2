@@ -2,32 +2,67 @@
   "schema_version": "mystery-truth-results/1",
   "verdicts": [
     {
-      "subject": { "side": "game", "game": "medal", "variant": null, "sequence": null },
+      "subject": {
+        "side": "game",
+        "game": "medal",
+        "variant": null,
+        "sequence": null
+      },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "4bc98221b727e07e",
       "model": "claude-opus-stub",
       "sample": 0,
       "status": "fail",
       "findings": [
-        { "sequence": 7, "kinds": ["fabrication"], "severity": "major", "judge_kind": "place" }
+        {
+          "sequence": 7,
+          "kinds": [
+            "fabrication"
+          ],
+          "severity": "major",
+          "judge_kind": "place"
+        }
       ],
       "duration_ms": 41000,
       "cost_usd": 0.21
     },
     {
-      "subject": { "side": "game", "game": "medal", "variant": "medal-spoiler", "sequence": null },
+      "subject": {
+        "side": "game",
+        "game": "medal",
+        "variant": "medal-spoiler",
+        "sequence": null
+      },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "47c0ca0592a8a7f9",
       "model": "claude-opus-stub",
       "sample": 0,
       "status": "fail",
       "findings": [
-        { "sequence": 4, "kinds": ["spoiler"], "severity": "major", "judge_kind": "culprit" }
+        {
+          "sequence": 4,
+          "kinds": [
+            "spoiler"
+          ],
+          "severity": "major",
+          "judge_kind": "culprit"
+        }
       ],
       "duration_ms": 38000,
       "cost_usd": null
     },
     {
-      "subject": { "side": "game", "game": "medal", "variant": null, "sequence": 4 },
+      "subject": {
+        "side": "game",
+        "game": "medal",
+        "variant": null,
+        "sequence": 4
+      },
       "judge": "age_appropriate_turn",
+      "judge_version": 1,
+      "subject_hash": "4bc98221b727e07e",
       "model": "claude-sonnet-stub",
       "sample": 0,
       "status": "pass",
@@ -36,20 +71,39 @@
       "cost_usd": 0.01
     },
     {
-      "subject": { "side": "blueprint", "base": "mock", "plant": "mock-bob-not-ruled-out" },
+      "subject": {
+        "side": "blueprint",
+        "base": "mock",
+        "plant": "mock-bob-not-ruled-out"
+      },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "8053bdbaafb7ffa4",
       "model": "claude-opus-stub",
       "sample": 0,
       "status": "fail",
       "findings": [
-        { "sequence": null, "kinds": ["fairness"], "severity": "major", "judge_kind": null }
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "major",
+          "judge_kind": null
+        }
       ],
       "duration_ms": 412000,
       "cost_usd": 1.4
     },
     {
-      "subject": { "side": "blueprint", "base": "mock", "plant": null },
+      "subject": {
+        "side": "blueprint",
+        "base": "mock",
+        "plant": null
+      },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "ec8d663206ac21d4",
       "model": "claude-opus-stub",
       "sample": 0,
       "status": "error",

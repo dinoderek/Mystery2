@@ -29,21 +29,26 @@
  *   costs, summed the same way. Either is unknown when any verdict it sums is.
  * - **The smallest set**: fewest members, then the shorter delay, then the
  *   lower usage; an unknown delay or usage loses to a known one.
+ * - **Stale.** Only a verdict at its judge's current version
+ *   (`core/judge-version.ts`), on its subject as the truth set holds it now
+ *   (`subject-hash.ts`), is scored; the rest are counted apart as stale.
  */
 
 import { InputError } from "../../core/errors.ts";
+import { judgeVersions } from "../../core/judge-version.ts";
 import { playedEvents } from "../game-events.ts";
 import { catches, findingsRow } from "./findings.ts";
 import type { Unit } from "./findings.ts";
 import type { BlueprintKind, GameKind, Kind, Side } from "./kinds.ts";
 import type { TruthSet } from "./loader.ts";
 import type { StoredSubject, StoredVerdict } from "./schemas.ts";
+import { subjectHasher } from "./subject-hash.ts";
 import { truthOf } from "./truth.ts";
 import type { TruthValue } from "./truth.ts";
 import { wilson } from "./wilson.ts";
 import type { Share } from "./wilson.ts";
 
-export const SCORE_SCHEMA_VERSION = "mystery-truth-score/1";
+export const SCORE_SCHEMA_VERSION = "mystery-truth-score/2";
 
 /** Every subset of a side is scored; past this many members that is too many. */
 export const MAX_MEMBERS_PER_SIDE = 16;
@@ -89,6 +94,8 @@ export interface MemberScore {
   /** The judge's id, or `<judge>@<model>` when the judge is present on more than one model. */
   id: string;
   judge: string;
+  /** The judge's version its verdicts were reached at. */
+  version: number;
   model: string;
   verdicts: number;
   /** Verdicts that are not `pass` or `fail`, which do not vote. */
@@ -127,10 +134,28 @@ export interface SideScore {
   smallest: SubsetScore | null;
 }
 
+/**
+ * Verdicts left unscored: `judge` when their judge has moved on from the
+ * version that reached them, `subject` when only the subject they judged has
+ * changed since.
+ */
+export interface StaleVerdicts {
+  judge: string;
+  model: string;
+  /** The version that reached them. */
+  version: number;
+  /** The judge's version now; null when its files match no recorded version. */
+  current: number | null;
+  reason: "judge" | "subject";
+  verdicts: number;
+}
+
 export interface ScoreReport {
   schema_version: typeof SCORE_SCHEMA_VERSION;
-  rules: { reports: string; catch: string; bar: Bar & { text: string } };
+  rules: { reports: string; catch: string; stale: string; bar: Bar & { text: string } };
   sides: SideScore[];
+  /** By judge, model and version, the verdicts not scored; empty when every verdict is current. */
+  stale: StaleVerdicts[];
 }
 
 // ---------------------------------------------------------------------------
@@ -140,6 +165,7 @@ export interface ScoreReport {
 export interface Member {
   id: string;
   judge: string;
+  version: number;
   model: string;
   kinds: readonly Kind[];
   /** Its verdicts, by stored subject. */
@@ -283,7 +309,7 @@ function scoreMember(set: TruthSet, member: Member): MemberRun {
     };
   });
   return {
-    score: { id: member.id, judge: member.judge, model: member.model, verdicts, not_judged: notJudged, samples, findings_off_turn: findingsOffTurn, kinds },
+    score: { id: member.id, judge: member.judge, version: member.version, model: member.model, verdicts, not_judged: notJudged, samples, findings_off_turn: findingsOffTurn, kinds },
     caught,
     units,
   };
@@ -448,12 +474,26 @@ export function judgesOnManyModels(verdicts: readonly StoredVerdict[]): Set<stri
   return new Set([...models].filter(([, own]) => own.size > 1).map(([judge]) => judge));
 }
 
-/** The members of one side, by id. A judge in `split` is one member per model, `<judge>@<model>`. */
+/**
+ * The members of one side, by id. A judge in `split` is one member per model,
+ * `<judge>@<model>`. A member is one version of its judge: verdicts of one
+ * member at two versions are refused, since they judged by different rules.
+ */
 export function membersOf(side: Side, verdicts: readonly StoredVerdict[], split: ReadonlySet<string> = judgesOnManyModels(verdicts)): Member[] {
   const members = new Map<string, Member>();
   for (const verdict of verdicts.filter((candidate) => candidate.subject.side === side)) {
     const id = split.has(verdict.judge) ? `${verdict.judge}@${verdict.model}` : verdict.judge;
-    const member = members.get(id) ?? { id, judge: verdict.judge, model: verdict.model, kinds: findingsRow(verdict.judge).kinds, bySubject: new Map() };
+    const member = members.get(id) ?? {
+      id,
+      judge: verdict.judge,
+      version: verdict.judge_version,
+      model: verdict.model,
+      kinds: findingsRow(verdict.judge).kinds,
+      bySubject: new Map(),
+    };
+    if (member.version !== verdict.judge_version) {
+      throw new InputError(`${id} has verdicts at versions ${member.version} and ${verdict.judge_version}; keep one version of a judge in what is read together`);
+    }
     const key = subjectKey(verdict.subject);
     member.bySubject.set(key, [...(member.bySubject.get(key) ?? []), verdict]);
     members.set(id, member);
@@ -480,13 +520,35 @@ function scoreSide(set: TruthSet, side: Side, verdicts: readonly StoredVerdict[]
 /** Scores `verdicts`, already checked against `set`, on each side they judged: blueprint first, then game. */
 export function scoreVerdicts(set: TruthSet, verdicts: readonly StoredVerdict[], bar: Bar = LOSE_NOTHING): ScoreReport {
   const order: readonly Side[] = ["blueprint", "game"];
+  const versions = judgeVersions();
+  const current = (judge: string): number | null => versions[judge] ?? null;
+  const hashOf = subjectHasher(set);
+  const staleness = (verdict: StoredVerdict): StaleVerdicts["reason"] | null => {
+    if (verdict.judge_version !== current(verdict.judge)) return "judge";
+    return verdict.subject_hash === hashOf(verdict.subject) ? null : "subject";
+  };
+  const scored: StoredVerdict[] = [];
+  const stale = new Map<string, StaleVerdicts>();
+  for (const verdict of verdicts) {
+    const reason = staleness(verdict);
+    if (reason === null) {
+      scored.push(verdict);
+      continue;
+    }
+    const key = JSON.stringify([verdict.judge, verdict.model, verdict.judge_version, reason]);
+    const entry = stale.get(key) ?? { judge: verdict.judge, model: verdict.model, version: verdict.judge_version, current: current(verdict.judge), reason, verdicts: 0 };
+    entry.verdicts += 1;
+    stale.set(key, entry);
+  }
   return {
     schema_version: SCORE_SCHEMA_VERSION,
     rules: {
       reports: "a finding of either severity is a report; major_only counts only major findings",
       catch: "a judge catches a unit when most of its judging samples do; a tie is not a catch",
+      stale: "only a verdict at its judge's current version, on its subject as it stands, is scored; the rest are listed as stale",
       bar: { ...bar, text: describeBar(bar) },
     },
-    sides: order.map((side) => scoreSide(set, side, verdicts, bar)).filter((side): side is SideScore => side !== null),
+    sides: order.map((side) => scoreSide(set, side, scored, bar)).filter((side): side is SideScore => side !== null),
+    stale: [...stale.entries()].sort(([a], [b]) => byCodePoint(a, b)).map(([, entry]) => entry),
   };
 }

@@ -1,5 +1,5 @@
 {
-  "schema_version": "mystery-truth-score/1",
+  "schema_version": "mystery-truth-score/2",
   "inputs": {
     "truth": "evaluation/truth",
     "results": [
@@ -9,6 +9,7 @@
   "rules": {
     "reports": "a finding of either severity is a report; major_only counts only major findings",
     "catch": "a judge catches a unit when most of its judging samples do; a tie is not a catch",
+    "stale": "only a verdict at its judge's current version, on its subject as it stands, is scored; the rest are listed as stale",
     "bar": {
       "kind": "lose_nothing",
       "text": "loses no fault the full battery catches"
@@ -21,6 +22,7 @@
         {
           "id": "age_appropriate",
           "judge": "age_appropriate",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -80,6 +82,7 @@
         {
           "id": "blueprint_broad",
           "judge": "blueprint_broad",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -461,6 +464,7 @@
         {
           "id": "character_grounding",
           "judge": "character_grounding",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -520,6 +524,7 @@
         {
           "id": "clue_graph",
           "judge": "clue_graph",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -579,6 +584,7 @@
         {
           "id": "fairness",
           "judge": "fairness",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -638,6 +644,7 @@
         {
           "id": "knowledge_coherence",
           "judge": "knowledge_coherence",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -697,6 +704,7 @@
         {
           "id": "knowledge_timeline_coherence",
           "judge": "knowledge_timeline_coherence",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -802,6 +810,7 @@
         {
           "id": "path_payoff",
           "judge": "path_payoff",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -861,6 +870,7 @@
         {
           "id": "solve_depth",
           "judge": "solve_depth",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -920,6 +930,7 @@
         {
           "id": "solve_depth_fairness",
           "judge": "solve_depth_fairness",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -1025,6 +1036,7 @@
         {
           "id": "timeline_coherence",
           "judge": "timeline_coherence",
+          "version": 1,
           "model": "opus",
           "verdicts": 28,
           "not_judged": 0,
@@ -48209,5 +48221,6 @@
         "meets_bar": true
       }
     }
-  ]
+  ],
+  "stale": []
 }

@@ -9,6 +9,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -113,6 +115,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -206,6 +210,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -321,6 +327,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -392,6 +400,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -463,6 +473,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -523,6 +535,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -572,6 +586,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -610,6 +626,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -659,6 +677,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -719,6 +739,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -768,6 +790,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -828,6 +852,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -855,6 +881,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -882,6 +910,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "a78a590d7357c146",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -920,6 +950,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1013,6 +1045,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1106,6 +1140,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1210,6 +1246,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1270,6 +1308,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1330,6 +1370,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1401,6 +1443,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1428,6 +1472,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1477,6 +1523,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1504,6 +1552,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1575,6 +1625,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1635,6 +1687,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1684,6 +1738,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1711,6 +1767,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1738,6 +1796,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "fd84fc3fdbfa9286",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1765,6 +1825,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1803,6 +1865,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -1841,6 +1905,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -1901,6 +1967,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1950,6 +2018,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -1988,6 +2058,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -2026,6 +2098,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2064,6 +2138,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -2102,6 +2178,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -2129,6 +2207,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2167,6 +2247,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -2205,6 +2287,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -2243,6 +2327,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2258,6 +2344,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -2273,6 +2361,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "662cffd7c76b5be6",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -2288,6 +2378,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2392,6 +2484,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -2507,6 +2601,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -2600,6 +2696,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2660,6 +2758,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -2720,6 +2820,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -2780,6 +2882,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2851,6 +2955,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -2922,6 +3028,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -2982,6 +3090,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3053,6 +3163,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -3113,6 +3225,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -3184,6 +3298,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3211,6 +3327,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -3238,6 +3356,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "57be3b9c4163d9ac",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -3265,6 +3385,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3380,6 +3502,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -3484,6 +3608,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -3610,6 +3736,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3670,6 +3798,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -3741,6 +3871,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -3801,6 +3933,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3861,6 +3995,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -3910,6 +4046,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -3981,6 +4119,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4041,6 +4181,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -4112,6 +4254,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -4194,6 +4338,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4221,6 +4367,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -4248,6 +4396,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2e9664ba6a6eeaf1",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -4275,6 +4425,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4368,6 +4520,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -4450,6 +4604,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -4532,6 +4688,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4559,6 +4717,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -4586,6 +4746,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -4613,6 +4775,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4684,6 +4848,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -4744,6 +4910,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -4826,6 +4994,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4886,6 +5056,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -4935,6 +5107,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -4973,6 +5147,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4988,6 +5164,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -5003,6 +5181,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bd157f3a376d6968",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -5018,6 +5198,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5144,6 +5326,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -5259,6 +5443,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -5374,6 +5560,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5434,6 +5622,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -5494,6 +5684,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -5554,6 +5746,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5614,6 +5808,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -5663,6 +5859,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -5712,6 +5910,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5783,6 +5983,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -5854,6 +6056,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -5914,6 +6118,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5963,6 +6169,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -6001,6 +6209,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "d0f27cd72dc328a9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -6039,6 +6249,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6165,6 +6377,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -6291,6 +6505,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -6417,6 +6633,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6466,6 +6684,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -6515,6 +6735,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -6575,6 +6797,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6635,6 +6859,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -6706,6 +6932,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -6777,6 +7005,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6859,6 +7089,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -6941,6 +7173,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -7023,6 +7257,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -7072,6 +7308,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -7121,6 +7359,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "ed48e8784a3b103b",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -7170,6 +7410,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -7263,6 +7505,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -7345,6 +7589,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -7427,6 +7673,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -7465,6 +7713,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -7492,6 +7742,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -7530,6 +7782,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -7579,6 +7833,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -7628,6 +7884,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -7688,6 +7946,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -7737,6 +7997,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -7797,6 +8059,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -7857,6 +8121,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -7917,6 +8183,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -7966,6 +8234,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "77adc5851d48a052",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -8015,6 +8285,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -8141,6 +8413,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -8256,6 +8530,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -8382,6 +8658,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -8464,6 +8742,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -8546,6 +8826,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -8617,6 +8899,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -8710,6 +8994,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -8792,6 +9078,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -8874,6 +9162,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -8934,6 +9224,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -8983,6 +9275,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -9054,6 +9348,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -9092,6 +9388,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -9130,6 +9428,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "170207bfed8770ee",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -9168,6 +9468,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -9283,6 +9585,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -9398,6 +9702,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -9535,6 +9841,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -9606,6 +9914,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -9677,6 +9987,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -9748,6 +10060,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -9808,6 +10122,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -9868,6 +10184,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -9939,6 +10257,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -9988,6 +10308,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -10059,6 +10381,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -10130,6 +10454,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -10168,6 +10494,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -10206,6 +10534,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "edf7c71fc34012fb",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -10244,6 +10574,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -10337,6 +10669,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -10419,6 +10753,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -10512,6 +10848,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -10572,6 +10910,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -10643,6 +10983,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -10725,6 +11067,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -10774,6 +11118,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -10834,6 +11180,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -10905,6 +11253,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -10932,6 +11282,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -10970,6 +11322,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -11019,6 +11373,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -11046,6 +11402,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -11073,6 +11431,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "2f7fadfdd03cc691",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -11100,6 +11460,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -11226,6 +11588,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -11341,6 +11705,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -11445,6 +11811,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -11516,6 +11884,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -11554,6 +11924,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -11614,6 +11986,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -11674,6 +12048,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -11734,6 +12110,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -11794,6 +12172,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -11854,6 +12234,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -11925,6 +12307,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -11996,6 +12380,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -12034,6 +12420,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -12072,6 +12460,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "0a58816738f83977",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -12099,6 +12489,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -12225,6 +12617,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -12329,6 +12723,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -12433,6 +12829,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -12482,6 +12880,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -12531,6 +12931,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -12580,6 +12982,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -12640,6 +13044,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -12700,6 +13106,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -12760,6 +13168,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -12820,6 +13230,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -12880,6 +13292,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -12951,6 +13365,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -13000,6 +13416,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -13027,6 +13445,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "bdd7938350443a7a",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -13054,6 +13474,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -13136,6 +13558,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -13229,6 +13653,8 @@
         "sequence": null
       },
       "judge": "gm_broad",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -13333,6 +13759,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -13371,6 +13799,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -13409,6 +13839,8 @@
         "sequence": null
       },
       "judge": "gm_clue_discipline",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 2,
       "status": "fail",
@@ -13447,6 +13879,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -13507,6 +13941,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -13567,6 +14003,8 @@
         "sequence": null
       },
       "judge": "gm_fabrication",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -13649,6 +14087,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -13709,6 +14149,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 1,
       "status": "fail",
@@ -13769,6 +14211,8 @@
         "sequence": null
       },
       "judge": "gm_roleplay",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 2,
       "status": "pass",
@@ -13818,6 +14262,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -13845,6 +14291,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 1,
       "status": "pass",
@@ -13872,6 +14320,8 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
+      "judge_version": 1,
+      "subject_hash": "1c1dcdb9356c3ac9",
       "model": "opus",
       "sample": 2,
       "status": "pass",

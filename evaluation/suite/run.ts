@@ -1,7 +1,11 @@
 /**
  * Running a planned suite: each call through its harness's own judge code
  * and the core runner, answered from the journal when it has finished
- * before, and stored as the truth set's verdict.
+ * before, and stored as the truth set's verdict. A call whose verdict the
+ * suite's results file already holds at the judge's current version, on the
+ * subject as it stands, is not made at all: that verdict is kept, so a
+ * judge's new version re-runs that judge alone, and a changed plant its
+ * subject alone.
  *
  * Subjects run `concurrency` at a time. On one subject the judges run side
  * by side, and each judge's calls (its models and samples) one after another,
@@ -33,6 +37,7 @@ import type { StoredVerdict } from "../lib/truth/schemas.ts";
 import { judgeTurn } from "../runtime/lib/judges.ts";
 import { judgeOne } from "../trace/judge-game.ts";
 import type { JudgeRun } from "../trace/judge-game.ts";
+import { subjectKey } from "./journal.ts";
 import type { CallJournal } from "./journal.ts";
 import type { PlannedCall, PlannedSubject, SuitePlan } from "./plan.ts";
 
@@ -41,12 +46,21 @@ export interface SuiteRunning {
   run: RunFolder;
   journal: CallJournal;
   concurrency: number;
+  /** The verdicts the suite's results file held, kept where their judge's version and subject are unchanged. */
+  stored: readonly StoredVerdict[];
 }
 
 export interface SuiteOutcome {
   verdicts: StoredVerdict[];
   made: number;
   recalled: number;
+  /** Calls not made because the results file held their verdict, at the judge's version and on the subject as they stand. */
+  kept: number;
+}
+
+/** A call's place in a results file, with the subject's fields in a fixed order. */
+function storedKey(verdict: Pick<StoredVerdict, "subject" | "judge" | "model" | "sample">): string {
+  return JSON.stringify([...subjectKey(verdict.subject), verdict.judge, verdict.model, verdict.sample]);
 }
 
 interface CallPlace {
@@ -88,6 +102,8 @@ function stored(subject: PlannedSubject, call: PlannedCall, verdict: Verdict): S
   return {
     subject: subject.stored,
     judge: call.judge.id,
+    judge_version: call.judge.version,
+    subject_hash: subject.hash,
     model: call.model,
     sample: call.sample,
     status: verdict.status,
@@ -127,13 +143,21 @@ function callFolder(subject: PlannedSubject, call: PlannedCall): string {
 
 /** Runs every call of the plan and returns their stored verdicts, in the plan's order. */
 export async function runSuitePlan(plan: SuitePlan, running: SuiteRunning): Promise<SuiteOutcome> {
-  const counts = { made: 0, recalled: 0 };
+  const counts = { made: 0, recalled: 0, kept: 0 };
+  const keep = new Map(running.stored.map((verdict) => [storedKey(verdict), verdict]));
   const total = plan.calls;
   let done = 0;
   const perSubject = await mapPool(plan.subjects, running.concurrency, async ({ subject, calls }) => {
     const game = subject.kind === "game" ? subject.prepared : null;
     const byJudge = [...new Set(calls.map((call) => call.judge.id))].map((id) => calls.filter((call) => call.judge.id === id));
     const judged = await mapPool(byJudge, byJudge.length, (own) => mapPool(own, 1, async (call) => {
+      const held = keep.get(storedKey({ subject: subject.stored, judge: call.judge.id, model: call.model, sample: call.sample }));
+      if (held?.judge_version === call.judge.version && held.subject_hash === subject.hash) {
+        counts.kept += 1;
+        done += 1;
+        running.context.out(`[suite] ${done}/${total} ${subject.id} ${call.judge.id} ${call.model} s${call.sample}: ${describe(held)} (stored at v${held.judge_version})`);
+        return held;
+      }
       const dir = path.join(running.run.dir, callFolder(subject, call));
       const place = { dir, logDir: path.join(dir, "logs") };
       const memo = running.journal.memo({ subject: subject.stored, judge: call.judge.id, model: call.model, sample: call.sample });

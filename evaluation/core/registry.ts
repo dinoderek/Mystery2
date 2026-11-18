@@ -101,6 +101,8 @@ export interface FilePrompt {
 export interface BuiltPrompt {
   kind: "built";
   builder: "turn_age";
+  /** The file the prompt is built in, which the judge's version hashes. */
+  source: string;
 }
 
 export interface JudgeEntry {
@@ -373,7 +375,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
     type: "judge",
     id: "age_appropriate_turn",
     subjects: ["turn"],
-    prompt: { kind: "built", builder: "turn_age" },
+    prompt: { kind: "built", builder: "turn_age", source: "evaluation/core/judge-prompt.ts" },
     verdict: "stated",
   },
 

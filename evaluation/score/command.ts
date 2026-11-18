@@ -40,6 +40,10 @@ const HELP = formatHelp({
     "summed. Either is unknown if any part is. The smallest subset meeting the bar wins; ties go to the shorter",
     "delay, then the lower usage, unknown last.",
     "Above 16 judges on a side the command stops. Prints the tables and writes the same report as JSON.",
+    "",
+    "Only a verdict at its judge's current version (evaluation/core/judge-versions.json), on its subject as the",
+    "truth set holds it now, is scored; the rest are listed as stale, by judge, model, version and why, to be run",
+    "again.",
   ].join("\n"),
   options: [
     ["--truth <dir>", `the truth set (default: ${TRUTH_ROOT})`],
@@ -78,7 +82,7 @@ function merge(files: readonly { file: string; verdicts: StoredVerdict[] }[], sh
 /** Writes the JSON report to `out`, naming what was scored. `./dev eval suite` writes the same. */
 export function writeScoreFile(out: string, report: ScoreReport, inputs: { truth: string; results: string[] }): void {
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  const file = { schema_version: report.schema_version, inputs, rules: report.rules, sides: report.sides };
+  const file = { schema_version: report.schema_version, inputs, rules: report.rules, sides: report.sides, stale: report.stale };
   fs.writeFileSync(out, `${JSON.stringify(file, rounded, 2)}\n`, "utf8");
 }
 

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { COMMANDS } from "../../../evaluation/commands.ts";
-import { LISTED } from "../../../evaluation/compare/table.ts";
+import { formatCompare, LISTED } from "../../../evaluation/compare/table.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
 import { compareRuns, onModel, signTest } from "../../../evaluation/lib/truth/compare.ts";
@@ -13,6 +13,7 @@ import { loadTruthSet, readResultsFile } from "../../../evaluation/lib/truth/loa
 import type { TruthSet } from "../../../evaluation/lib/truth/loader.ts";
 import { STORED_RESULTS_VERSION } from "../../../evaluation/lib/truth/schemas.ts";
 import type { StoredSubject, StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
+import { subjectHash } from "../../../evaluation/lib/truth/subject-hash.ts";
 
 const ROOT = repoRoot();
 const FIXTURE = path.join(ROOT, "tests/api/unit/fixtures/truth");
@@ -42,6 +43,8 @@ function fabrication(sample: number, turns: number[], overrides: Partial<StoredV
   return {
     subject: MEDAL,
     judge: "gm_fabrication",
+    judge_version: 1,
+    subject_hash: subjectHash(set, overrides.subject ?? MEDAL),
     model: "opus",
     sample,
     status: turns.length > 0 ? "fail" : "pass",
@@ -100,6 +103,22 @@ describe("comparing two runs", () => {
     expect(result.differing).toEqual({ a_only: 0, b_only: 0 });
     expect(result.agreement.a).toEqual({ share: 8 / 9, units: 9 });
     expect(result.agreement.b).toEqual(result.agreement.a);
+  });
+
+  it("pairs a judge's two versions by name, showing each, and leaves out verdicts on a subject changed since", () => {
+    const old = run([[7], [7], [7]], { judge_version: 1 });
+    const now = [...run([[], [], []], { judge_version: 2 }), fabrication(3, [7], { judge_version: 2, subject_hash: "ffffffffffffffff" })];
+    const report = compareRuns(set, old, now);
+    expect(member(report)).toMatchObject({ a: { version: 1 }, b: { version: 2 } });
+    expect(kind(report)).toMatchObject({ paired: 9, firm: { a_only: 1, b_only: 0 } });
+    expect(report.changed_subjects).toEqual({ a: 0, b: 1 });
+    const text = formatCompare(report, { truth: "t", a: "a.json", b: "b.json", model_a: null, model_b: null });
+    expect(text).toContain("Left out, on subjects changed since they were judged: 0 verdicts of A, 1 verdict of B.");
+    expect(text).toMatch(/gm_fabrication\s+v1\s+v2/);
+  });
+
+  it("refuses a run holding one judge at two versions", () => {
+    expect(() => compareRuns(set, [fabrication(0, [7]), fabrication(1, [7], { judge_version: 2 })], run([[7]]))).toThrow("at versions 1 and 2");
   });
 
   it("flags a large paired difference the samples agree on, and names who catches more", () => {
@@ -275,14 +294,16 @@ describe("comparing two runs", () => {
       ...run([[7]], { subject: MEDAL_SPOILER, duration_ms: 90000, cost_usd: 9, model: "sonnet" }),
     ];
     const own = member(compareRuns(set, a, b));
-    expect(own.a).toEqual({ model: "opus", delay_ms: 1000, usage_usd: expect.closeTo(0.1, 10) });
-    expect(own.b).toEqual({ model: "sonnet", delay_ms: 4000, usage_usd: expect.closeTo(0.4, 10) });
+    expect(own.a).toEqual({ model: "opus", version: 1, delay_ms: 1000, usage_usd: expect.closeTo(0.1, 10) });
+    expect(own.b).toEqual({ model: "sonnet", version: 1, delay_ms: 4000, usage_usd: expect.closeTo(0.4, 10) });
   });
 
   it("charges a judge of one turn the sum over its turns, and says unknown when a part is", () => {
     const turn = (sequence: number, extra: Partial<StoredVerdict> = {}): StoredVerdict => ({
       subject: { ...MEDAL, sequence },
       judge: "age_appropriate_turn",
+      judge_version: 1,
+      subject_hash: subjectHash(set, MEDAL),
       model: "sonnet",
       sample: 0,
       status: "pass",
@@ -294,8 +315,8 @@ describe("comparing two runs", () => {
     const a = [turn(1), turn(2)];
     const b = [turn(1), turn(2, { duration_ms: null, cost_usd: null })];
     const own = member(compareRuns(set, a, b), "age_appropriate_turn");
-    expect(own.a).toMatchObject({ delay_ms: 1000 });
-    expect(own.b).toEqual({ model: "sonnet", delay_ms: null, usage_usd: null });
+    expect(own.a).toMatchObject({ version: 1, delay_ms: 1000 });
+    expect(own.b).toEqual({ model: "sonnet", version: 1, delay_ms: null, usage_usd: null });
     expect(own.kinds[0]).toMatchObject({ kind: "not_age_fit", paired: 2, outcome: "same" });
   });
 
@@ -303,6 +324,8 @@ describe("comparing two runs", () => {
     const fairness = (status: "pass" | "fail", plant: string | null, sample = 0): StoredVerdict => ({
       subject: { side: "blueprint", base: "mock", plant },
       judge: "fairness",
+      judge_version: 1,
+      subject_hash: subjectHash(set, { side: "blueprint", base: "mock", plant }),
       model: "opus",
       sample,
       status,
@@ -371,7 +394,7 @@ describe("./dev eval compare", () => {
     expect(ran.code).toBe(0);
     expect(ran.out).toContain("Compared A tests/api/unit/fixtures/truth/results/fixture-run.json with B");
     expect(ran.out).toContain("Game side: 3 judges in both runs");
-    expect(ran.out).toContain("Delay and usage");
+    expect(ran.out).toContain("Versions, models, delay and usage");
     expect(ran.out).toContain("gm_spoiler");
     expect(ran.out).toContain("claude-opus-stub");
     const report = JSON.parse(await fs.readFile(out, "utf8")) as CompareReport & { inputs: { truth: string; a: string; b: string } };
@@ -387,7 +410,7 @@ describe("./dev eval compare", () => {
     expect(ran.code).toBe(0);
     expect(ran.out).toContain("differs: A catches more");
     expect(ran.out).toContain("gm_fabrication fabrication, game medal, turn 7: A catches (A 3/3, B 0/3), firm, truth fault");
-    expect(ran.out).toMatch(/gm_fabrication\s+opus\s+sonnet\s+2\.0s\s+0\.5s\s+\$0\.2500\s+\$0\.0500/);
+    expect(ran.out).toMatch(/gm_fabrication\s+v1\s+v1\s+opus\s+sonnet\s+2\.0s\s+0\.5s\s+\$0\.2500\s+\$0\.0500/);
   });
 
   it("says in its output that unmeasured variation is listed and never called", async () => {

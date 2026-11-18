@@ -8,6 +8,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -22,6 +24,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -36,6 +40,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -50,6 +56,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -64,6 +72,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -78,6 +88,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -92,6 +104,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -106,6 +120,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -120,6 +136,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -134,6 +152,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -148,6 +168,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -162,6 +184,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -176,6 +200,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -190,6 +216,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -204,6 +232,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -218,6 +248,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -232,6 +264,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -246,6 +280,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -260,6 +296,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -274,6 +312,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -288,6 +328,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -302,6 +344,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -316,6 +360,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -330,6 +376,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -344,6 +392,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -358,6 +408,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -372,6 +424,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -386,6 +440,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -400,6 +456,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -414,6 +472,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -428,6 +488,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -442,6 +504,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",

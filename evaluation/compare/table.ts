@@ -57,7 +57,14 @@ function kindRows(member: MemberComparison): string[][] {
 }
 
 function chargeRows(members: readonly MemberComparison[]): string[][] {
-  return members.map((member) => [member.id, member.a.model, member.b.model, delay(member.a.delay_ms), delay(member.b.delay_ms), usage(member.a.usage_usd), usage(member.b.usage_usd)]);
+  return members.map((member) => [
+    member.id,
+    `v${member.a.version}`,
+    `v${member.b.version}`,
+    member.a.model,
+    member.b.model,
+    delay(member.a.delay_ms), delay(member.b.delay_ms), usage(member.a.usage_usd), usage(member.b.usage_usd),
+  ]);
 }
 
 function differenceLines(members: readonly MemberComparison[]): string[] {
@@ -100,8 +107,8 @@ function sideSection(side: SideComparison): string[] {
         side.members.flatMap(kindRows),
       ),
       "",
-      "Delay and usage, over the stored subjects both runs judged the judge on",
-      ...table(["Judge", "Model A", "Model B", "Delay A", "Delay B", "Usage A", "Usage B"], chargeRows(side.members)),
+      "Versions, models, delay and usage, over the stored subjects both runs judged the judge on",
+      ...table(["Judge", "Version A", "Version B", "Model A", "Model B", "Delay A", "Delay B", "Usage A", "Usage B"], chargeRows(side.members)),
     );
   }
   const differences = differenceLines(side.members);
@@ -139,6 +146,10 @@ export function formatCompare(report: CompareReport, inputs: CompareInputs): str
     "Paired on the units both runs judged. A run catches a unit when most of its judging samples do; a tie is not a catch.",
     `A difference is firm when each run's own samples are unanimous on it; otherwise it is within variation. The test: ${report.rules.test}; ${SIGNIFICANCE} or less is "differs".`,
   ];
+  const changed = report.changed_subjects;
+  if (changed.a + changed.b > 0) {
+    lines.push(`Left out, on subjects changed since they were judged: ${counted(changed.a, "verdict")} of A, ${counted(changed.b, "verdict")} of B.`);
+  }
   if (report.sides.length === 0) lines.push("", "No verdicts to compare.");
   for (const side of report.sides) lines.push("", ...sideSection(side));
   lines.push(...unmeasuredNote(report));

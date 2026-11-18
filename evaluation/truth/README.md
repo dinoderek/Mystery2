@@ -1,8 +1,8 @@
 # The truth set
 
 What judges are scored against: subjects and their known faults, by **kind**,
-not judge. Self-play and planted material only; no credential or home path,
-gate-tested. Code: `evaluation/lib/truth/`; files off schema or layout fail
+not judge. Self-play and planted material only, with no credential or home
+path. Code: `evaluation/lib/truth/`; files off schema or layout fail
 loading.
 
 Ids are file or folder names: `bases/<base>/blueprint.json` and `brief.json`;
@@ -46,17 +46,17 @@ candidates' findings name theirs.
 
 ## Results and tables
 
-Results hold verdicts only: each finding's turn, kinds, severity and the
-judge's own `kind`, `quote`, `why` and `refers_to` (null when unworded); no
-prompt, log or workspace. `./dev eval suite <suite>` writes
-`results/<suite>.json`; `scores/<name>.json` is `./dev eval score <results>...
---out` on the results its `inputs` name, minor findings as reports, and the gate
-regenerates it. The blueprint side, one sample, measures no variation.
+Results hold verdicts only, no prompt or log: the judge's version, the
+subject's hash, and each finding's turn, kinds, severity, `kind`, `quote`,
+`why` and `refers_to`. Once either moves on, a verdict is **stale**: `score`
+lists it unscored, and `./dev eval suite <suite>` (into `results/<suite>.json`)
+makes only stale or missing calls. The gate regenerates each
+`scores/<name>.json` from its `inputs`. The blueprint side, one sample,
+measures no variation.
 
 ## Made live
 
-On temporary roots, from `evaluation/specs/` briefs and Haiku-narrated
-self-play:
+On temporary roots, from `evaluation/specs/` briefs and Haiku self-play:
 
 ```bash
 ./dev eval generate evaluation/specs/<brief> --judge

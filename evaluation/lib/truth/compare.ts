@@ -29,6 +29,10 @@
  * - **Delay and usage** are each run's own, per member, over the stored
  *   subjects (a game or variant, a base or plant) both runs judged that
  *   member on, as `score.ts` charges them.
+ * - **Versions.** A member pairs by name whatever version of the judge each
+ *   run holds, so a judge's new version compares with its old one; within a
+ *   run, a member is one version (`membersOf`). A verdict on a subject that
+ *   has changed since it was judged (`subject-hash.ts`) is left out, counted.
  */
 
 import { UsageError } from "../../core/errors.ts";
@@ -49,10 +53,11 @@ import {
 } from "./score.ts";
 import type { Charge, Member } from "./score.ts";
 import type { StoredVerdict } from "./schemas.ts";
+import { subjectHasher } from "./subject-hash.ts";
 import { truthOf } from "./truth.ts";
 import type { TruthValue } from "./truth.ts";
 
-export const COMPARE_SCHEMA_VERSION = "mystery-truth-compare/1";
+export const COMPARE_SCHEMA_VERSION = "mystery-truth-compare/2";
 
 /** The paired test calls a difference at or below this chance. */
 export const SIGNIFICANCE = 0.05;
@@ -122,6 +127,8 @@ export interface KindComparison {
 
 export interface RunCharge {
   model: string;
+  /** The judge's version the run's verdicts were reached at; the runs may hold different versions. */
+  version: number;
   /** Over the stored subjects both runs judged this member on; null when none, or a part is unknown. */
   delay_ms: number | null;
   usage_usd: number | null;
@@ -145,8 +152,10 @@ export interface SideComparison {
 
 export interface CompareReport {
   schema_version: typeof COMPARE_SCHEMA_VERSION;
-  rules: { catch: string; variation: string; test: string; significance: number };
+  rules: { catch: string; variation: string; test: string; significance: number; subjects: string };
   sides: SideComparison[];
+  /** Each run's verdicts left out because the subject they judged has changed since. */
+  changed_subjects: { a: number; b: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +350,7 @@ function chargeOf(member: Member, shared: ReadonlySet<string>): RunCharge {
   const own = new Map([...chargesOf(member)].filter(([key]) => shared.has(key)));
   return {
     model: member.model,
+    version: member.version,
     delay_ms: shared.size === 0 ? null : delayOf([own]),
     usage_usd: shared.size === 0 ? null : usageOf([own]),
   };
@@ -381,8 +391,12 @@ function compareSide(set: TruthSet, side: Side, a: readonly StoredVerdict[], b: 
 }
 
 /** Compares run `a` with run `b`, each already checked against `set`, on each side either judged: blueprint first, then game. */
-export function compareRuns(set: TruthSet, a: readonly StoredVerdict[], b: readonly StoredVerdict[]): CompareReport {
+export function compareRuns(set: TruthSet, allA: readonly StoredVerdict[], allB: readonly StoredVerdict[]): CompareReport {
   const order: readonly Side[] = ["blueprint", "game"];
+  const hashOf = subjectHasher(set);
+  const current = (verdict: StoredVerdict) => verdict.subject_hash === hashOf(verdict.subject);
+  const a = allA.filter(current);
+  const b = allB.filter(current);
   return {
     schema_version: COMPARE_SCHEMA_VERSION,
     rules: {
@@ -391,7 +405,9 @@ export function compareRuns(set: TruthSet, a: readonly StoredVerdict[], b: reado
         "a difference is firm only when each run's own samples are unanimous on the unit; one run's samples disagreeing makes it within variation; a single judging sample in either run leaves it unmeasured",
       test: TEST_NAME,
       significance: SIGNIFICANCE,
+      subjects: "a verdict on a subject that has changed since it was judged is left out",
     },
     sides: order.map((side) => compareSide(set, side, a, b)).filter((side): side is SideComparison => side !== null),
+    changed_subjects: { a: allA.length - a.length, b: allB.length - b.length },
   };
 }

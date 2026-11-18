@@ -8,6 +8,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -79,6 +81,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -102,6 +106,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -141,6 +147,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -188,6 +196,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -259,6 +269,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -298,6 +310,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -385,6 +399,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -408,6 +424,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -503,6 +521,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -534,6 +554,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -581,6 +603,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -620,6 +644,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -691,6 +717,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "sonnet",
       "sample": 0,
       "status": "pass",
@@ -722,6 +750,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -785,6 +815,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -832,6 +864,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -927,6 +961,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -950,6 +986,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1045,6 +1083,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1092,6 +1132,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1211,6 +1253,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1258,6 +1302,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1337,6 +1383,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1360,6 +1408,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1439,6 +1489,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1470,6 +1522,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "haiku",
       "sample": 0,
       "status": "pass",
@@ -1517,6 +1571,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1556,6 +1612,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1699,6 +1757,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1730,6 +1790,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1793,6 +1855,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -1832,6 +1896,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -1999,6 +2065,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2038,6 +2106,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2125,6 +2195,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2164,6 +2236,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2275,6 +2349,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2314,6 +2390,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2417,6 +2495,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2456,6 +2536,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2559,6 +2641,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "sonnet",
       "sample": 0,
       "status": "pass",
@@ -2582,6 +2666,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2621,6 +2707,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2652,6 +2740,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2723,6 +2813,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2754,6 +2846,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2809,6 +2903,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2832,6 +2928,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2895,6 +2993,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -2926,6 +3026,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -2973,6 +3075,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "sonnet",
       "sample": 0,
       "status": "pass",
@@ -2996,6 +3100,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -3043,6 +3149,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "sonnet",
       "sample": 0,
       "status": "fail",
@@ -3066,6 +3174,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "haiku",
       "sample": 0,
       "status": "fail",
@@ -3129,6 +3239,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "sonnet",
       "sample": 0,
       "status": "pass",

@@ -16,9 +16,8 @@ Each harness has its README beside its code:
 
 ## Bindings
 
-Every model call goes through a binding. `evaluation/config.json` (gitignored)
-names them; without it, `evaluation/config.example.json` is the fallback, and
-`--config <file>` replaces both. `--model-override <binding>=<model>` changes
+Every model call goes through a binding, named in `evaluation/config.json`
+(gitignored), else `evaluation/config.example.json`; `--config <file>` replaces both. `--model-override <binding>=<model>` changes
 one binding's model for one run. A missing binding, or one whose command cannot
 run, stops the command, naming it: no judge is skipped silently. A wrapper may
 stream events to `$EVAL_STREAM_FILE`; they never affect the result. A turn judge hands its answer
@@ -30,10 +29,13 @@ schema in `$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds the answer to it.
 blueprint; each judge's question is its brief, `evaluation/dimensions/<id>.md`.
 A dimension passes when its analyzer and its judge both do. `--judges` and
 `--no-judges` mark unselected judges skipped; candidates run only when named.
-Where a judge's brief and its `<id>.schema.ts` disagree, the schema wins. To
-iterate on a judge, run `judge blueprint` on a saved blueprint and edit the
+To iterate on a judge, run `judge blueprint` on a saved blueprint and edit the
 brief, the schema, the analyzer or `evaluation/prompts/judge-system.md`. On the
 `judge-stub` binding the whole battery passes the test fixture blueprint offline.
+
+**Versions.** `evaluation/core/judge-versions.json` holds each judge's hashes,
+version N the Nth; runs record them. Changing a judge's registry files fails
+the gate until its new hash is appended; append one by hand otherwise.
 
 ## Generation
 
@@ -51,13 +53,12 @@ subject with its `result.json`, stored inputs, every call's prompts and logs,
 and each agent's workspace. A suite keeps its journal and runs in
 `<root>/suites/<name>/`; only its results file goes in the repo.
 
-`result.json` is written even when the run aborts; its schema is
-`evaluation/core/result.ts`. The `logs/<step>*.stream.jsonl` stream is for
-watching only.
+`result.json` (`evaluation/core/result.ts`) is written even when the run
+aborts. The `logs/<step>*.stream.jsonl` stream is for watching only.
 
 ## Exit codes
 
-The same for every command. **0**: everything passed. **1**: the run broke (an
+For every command, **0**: everything passed. **1**: the run broke (an
 unreadable file, a missing binding, `run_error` in the result, the usage
 limit). **2**: a check or judge failed, or could not judge (`suite`: a
 threshold was not met).
@@ -67,7 +68,7 @@ threshold was not met).
 A judge is retried, up to its binding's `retries` (attempts after the first), on
 a non-zero exit, a timeout, stdout that is not JSON, an `extract_path` miss, or
 an answer failing the dimension's Zod schema. Generation is retried on the same, and on output
-failing Blueprint V2 validation. Each attempt has its own log.
+failing Blueprint V2 validation.
 
 At the login's usage limit nothing is retried and no judge records an error:
 the run breaks, exiting 1. A `suite` rerun resumes, repeating no finished call.

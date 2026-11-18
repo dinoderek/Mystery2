@@ -262,6 +262,10 @@ export const StoredVerdictSchema = z
   .object({
     subject: StoredSubjectSchema,
     judge: z.string().min(1),
+    /** The judge's version that reached it (`evaluation/core/judge-version.ts`). */
+    judge_version: z.number().int().positive(),
+    /** The hash of the subject it judged, as the truth set held it then (`subject-hash.ts`). */
+    subject_hash: z.string().regex(/^[0-9a-f]{16}$/),
     model: z.string().min(1),
     /** Which run of the same judge on the same subject and model, from 0. */
     sample: z.number().int().nonnegative(),
@@ -290,7 +294,7 @@ export type StoredVerdict = z.infer<typeof StoredVerdictSchema>;
 
 export const STORED_RESULTS_VERSION = "mystery-truth-results/1";
 
-/** One verdict per subject, judge, model and sample. */
+/** One verdict per subject, judge, model and sample: a judge's new version replaces its old one. */
 export function verdictKey(verdict: Pick<StoredVerdict, "subject" | "judge" | "model" | "sample">): string {
   return JSON.stringify([verdict.subject, verdict.judge, verdict.model, verdict.sample]);
 }

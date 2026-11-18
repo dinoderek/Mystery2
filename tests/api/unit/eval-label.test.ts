@@ -87,7 +87,7 @@ async function copyFixture({ withResults = true } = {}): Promise<string> {
     return dir;
   }
   const game = { side: "game", game: "medal", variant: null, sequence: null };
-  const base = { model: "claude-opus-stub", sample: 0, duration_ms: 1000, cost_usd: null };
+  const base = { judge_version: 1, subject_hash: "0000000000000000", model: "claude-opus-stub", sample: 0, duration_ms: 1000, cost_usd: null };
   await writeJson(path.join(dir, "results/extra.json"), {
     schema_version: "mystery-truth-results/1",
     verdicts: [
@@ -658,7 +658,7 @@ describe("pass one", () => {
 async function withVariantFinding(dir: string): Promise<string> {
   const finding = (sequence: number, severity = "minor") => ({ sequence, kinds: ["out_of_character"], severity, judge_kind: "voice", quote: null, why: null, refers_to: null });
   const ageFinding = (sequence: number) => ({ sequence, kinds: ["not_age_fit"], severity: "minor", judge_kind: null, quote: null, why: null, refers_to: null });
-  const base = { judge: "gm_roleplay", model: "claude-opus-stub", sample: 0, duration_ms: null, cost_usd: null };
+  const base = { judge: "gm_roleplay", judge_version: 1, subject_hash: "0000000000000000", model: "claude-opus-stub", sample: 0, duration_ms: null, cost_usd: null };
   await writeJson(path.join(dir, "results/variant.json"), {
     schema_version: "mystery-truth-results/1",
     verdicts: [
@@ -706,6 +706,8 @@ describe("pass one, reported turns only", () => {
         {
           subject: { side: "game", game: "medal", variant: "medal-leak", sequence: null },
           judge: "gm_roleplay",
+          judge_version: 1,
+          subject_hash: "0000000000000000",
           model: "claude-opus-stub",
           sample: 0,
           status: "pass",
@@ -809,6 +811,8 @@ describe("pass two", () => {
         {
           subject: { side: "blueprint", base: "mock", plant: null },
           judge: "fairness",
+          judge_version: 1,
+          subject_hash: "0000000000000000",
           model: "claude-opus-stub",
           sample: 0,
           status: "pass",
@@ -827,6 +831,8 @@ describe("where a judge and a label disagree", () => {
   const verdict = (overrides: Partial<StoredVerdict>): StoredVerdict => ({
     subject: game,
     judge: "gm_spoiler",
+    judge_version: 1,
+    subject_hash: "0000000000000000",
     model: "m",
     sample: 0,
     status: "fail",
@@ -871,7 +877,7 @@ describe("which faults are true: pass 2's question", () => {
     sequence: 4, kinds: [kind], severity, judge_kind: null, quote: null, why, refers_to: null,
   });
   const verdict = (judge: string, sample: number, findings: StoredFinding[], model = "opus"): StoredVerdict => ({
-    subject: game, judge, model, sample, status: "pass", findings, duration_ms: null, cost_usd: null,
+    subject: game, judge, judge_version: 1, subject_hash: "0000000000000000", model, sample, status: "pass", findings, duration_ms: null, cost_usd: null,
   });
   const label = (faults: { kind: GameKind; severity: "minor" | "major"; note: string }[], pass: 1 | 2 = 1) => [
     { sequence: 4, faults, by: "a", at: "2026-06-01T00:00:00Z", pass },
@@ -1003,7 +1009,7 @@ describe("what pass 2 shows of each judge", () => {
   });
 
   it("shows only the findings of the disagreement's kind", () => {
-    const verdict = { subject: { side: "game", game: "medal", variant: null, sequence: null }, judge: "gm_broad", model: "m", sample: 0, status: "fail", duration_ms: null, cost_usd: null } as const;
+    const verdict = { subject: { side: "game", game: "medal", variant: null, sequence: null }, judge: "gm_broad", judge_version: 1, subject_hash: "0000000000000000", model: "m", sample: 0, status: "fail", duration_ms: null, cost_usd: null } as const;
     const spoiler: StoredFinding = { sequence: 4, kinds: ["spoiler"], severity: "major", judge_kind: "spoiler", quote: "q", why: "w", refers_to: null };
     const fabrication = { ...spoiler, kinds: ["fabrication"], judge_kind: "fabrication" };
     const clean = [{ sequence: 4, faults: [], by: "a", at: "2026-06-01T00:00:00Z", pass: 1 as const }];

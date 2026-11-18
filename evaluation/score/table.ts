@@ -4,7 +4,7 @@
  * report holds the same numbers unrounded.
  */
 
-import type { MemberScore, ScoreReport, SideScore, SubsetScore } from "../lib/truth/score.ts";
+import type { MemberScore, ScoreReport, SideScore, StaleVerdicts, SubsetScore } from "../lib/truth/score.ts";
 import type { Share } from "../lib/truth/wilson.ts";
 
 export function table(header: readonly string[], rows: readonly (readonly string[])[]): string[] {
@@ -33,6 +33,7 @@ export function usage(usd: number | null): string {
 function memberRows(member: MemberScore): string[][] {
   return member.kinds.map((kind, index) => [
     index === 0 ? member.id : "",
+    index === 0 ? `v${member.version}` : "",
     index === 0 ? member.model : "",
     kind.kind,
     `${kind.units.fault}/${kind.units.clean}/${kind.units.unknown}`,
@@ -58,7 +59,7 @@ function memberNotes(members: readonly MemberScore[]): string[] {
 function members(side: SideScore): string[] {
   return [
     ...table(
-      ["Judge", "Model", "Kind", "Units f/c/u", "Real of reported", "Found of real", "Unknown reported", "Agreement", "Major only", "Delay", "Usage"],
+      ["Judge", "Version", "Model", "Kind", "Units f/c/u", "Real of reported", "Found of real", "Unknown reported", "Agreement", "Major only", "Delay", "Usage"],
       side.members.flatMap(memberRows),
     ),
     ...memberNotes(side.members),
@@ -109,14 +110,22 @@ function sideSection(side: SideScore, bar: string): string[] {
   ];
 }
 
+function staleLine(entry: StaleVerdicts): string {
+  const now = entry.current === null ? "it is no judge, or its files match no recorded version" : `it is at v${entry.current}`;
+  const why = entry.reason === "judge" ? now : "the subjects they judged have changed since";
+  return `${entry.judge} on ${entry.model}: ${counted(entry.verdicts, "verdict")} at v${entry.version}, not scored; ${why}.`;
+}
+
 /** The whole report as text. */
 export function formatScore(report: ScoreReport, inputs: { truth: string; results: readonly string[] }): string {
   const lines = [
     `Scored ${inputs.results.join(", ")} against the truth set at ${inputs.truth}.`,
     "A finding of either severity is a report; Major only gives real/reported and found/real counting only major findings.",
     "A judge catches a unit when most of its judging samples do; a tie is not a catch. Units of unknown truth are in neither share.",
+    "Only verdicts at their judge's current version, on their subject as it stands, are scored.",
   ];
   if (report.sides.length === 0) lines.push("", "No verdicts to score.");
   for (const side of report.sides) lines.push("", ...sideSection(side, report.rules.bar.text));
+  if (report.stale.length > 0) lines.push("", "Stale: re-run these judges to score them", ...report.stale.map(staleLine));
   return lines.join("\n");
 }

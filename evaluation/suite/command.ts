@@ -1,6 +1,7 @@
 /**
  * `./dev eval suite <name>`: runs a suite file unattended. It plans every
- * call (`plan.ts`), makes the ones its journal does not hold (`run.ts`,
+ * call (`plan.ts`), keeps the verdicts its results file holds at each judge's
+ * current version on unchanged subjects, makes the other calls its journal does not hold (`run.ts`,
  * `journal.ts`), writes the stored results in the truth set's form, scores
  * them with `score`'s own code, checks the thresholds and exits by the core's
  * codes: 1 when the run broke (a missing binding, an unreadable file, the
@@ -72,9 +73,14 @@ const HELP = formatHelp({
     "after its retries; a failure is stored as the judge's error and counted. Each finished call is kept in",
     `<output root>/${SUITES_STATE}/<name>/${JOURNAL_FILE} by subject, judge, model, sample and prompt hash, and`,
     "never made again: a stopped run resumes where it stopped, and a changed brief or model is a new call.",
+    "A verdict the results file already holds at its judge's current version (evaluation/core/judge-versions.json),",
+    "on its subject as the truth set holds it now, is kept and its call not made: a judge's new version re-runs that",
+    "judge alone, a changed plant its subject alone. A judge whose files match no recorded version stops the suite",
+    "before any call.",
     "At the login's usage limit the suite stops at once, storing nothing as a judge's error; run it again",
     "after the reset. Prompts, logs and workspaces stay in that folder; the stored results hold none. One run",
-    "of a suite holds that folder at a time. To make a finished call again, delete its line from the journal.",
+    "of a suite holds that folder at a time. To make a finished call again, delete its verdict from the results",
+    "file and its line from the journal.",
   ].join("\n"),
   options: [
     ["--truth <dir>", `the truth set (default: ${TRUTH_ROOT})`],
@@ -110,7 +116,13 @@ function writeRunFile(run: RunFolder, record: RunRecord, outcome: Partial<SuiteO
     truth: record.truth,
     results: outcome.stopped === null ? record.results : null,
     journal: record.journal.file,
-    calls: { planned: record.plan.calls, made: outcome.made ?? null, recalled: outcome.recalled ?? null, finished: record.journal.finished() },
+    calls: {
+      planned: record.plan.calls,
+      kept: outcome.kept ?? null,
+      made: outcome.made ?? null,
+      recalled: outcome.recalled ?? null,
+      finished: record.journal.finished(),
+    },
     stopped: outcome.stopped,
     thresholds: outcome.thresholds,
     exit_code: outcome.exit_code,
@@ -153,11 +165,14 @@ async function runSuite(argv: string[], context: EvalContext): Promise<number> {
 /** The run itself, once the suite's state is held: the calls, then the results, the score and the thresholds. */
 async function runHeld(record: RunRecord, { set, run, context }: { set: TruthSet; run: RunFolder; context: EvalContext }): Promise<number> {
   const { suite, plan, journal, results } = record;
-  context.out(`[suite] ${suite.name}: ${plan.calls} call(s) on ${plan.subjects.length} subject(s), journal holds ${journal.held} -> ${run.dir}`);
+  const stored = fs.existsSync(results) ? await reading(() => readResultsFile(set, results)) : [];
+  context.out(
+    `[suite] ${suite.name}: ${plan.calls} call(s) on ${plan.subjects.length} subject(s), results hold ${stored.length}, journal holds ${journal.held} -> ${run.dir}`,
+  );
 
   let outcome: SuiteOutcome;
   try {
-    outcome = await runSuitePlan(plan, { context, run, journal, concurrency: suite.suite.concurrency });
+    outcome = await runSuitePlan(plan, { context, run, journal, concurrency: suite.suite.concurrency, stored });
   } catch (error) {
     if (error instanceof UsageLimitError) return stop(error, run, record, context);
     throw error;
@@ -177,7 +192,7 @@ async function runHeld(record: RunRecord, { set, run, context }: { set: TruthSet
   if (thresholds.length > 0) context.out(["", "Thresholds:", ...thresholds.flatMap((check) => check.lines.map((line) => `  ${line}`))].join("\n"));
   const exitCode = thresholds.every((check) => check.met) ? EXIT_PASSED : EXIT_VERDICT_FAILED;
   writeRunFile(run, record, { ...outcome, stopped: null, thresholds, exit_code: exitCode });
-  context.out(`\n[suite] ${outcome.made} call(s) made, ${outcome.recalled} finished before; results ${results}; run ${run.dir} (exit ${exitCode})`);
+  context.out(`\n[suite] ${outcome.kept} verdict(s) kept, ${outcome.made} call(s) made, ${outcome.recalled} finished before; results ${results}; run ${run.dir} (exit ${exitCode})`);
   return exitCode;
 }
 

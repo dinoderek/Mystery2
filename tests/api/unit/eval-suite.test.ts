@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
+import { judgeVersion, judgeVersions } from "../../../evaluation/core/judge-version.ts";
 import { loadTruthSet, readResultsFile } from "../../../evaluation/lib/truth/loader.ts";
 import type { ResolvedBinding } from "../../../evaluation/core/config.ts";
 import { SUITES_DIR, readSuiteFile } from "../../../evaluation/suite/file.ts";
@@ -111,7 +112,7 @@ describe("a fixture suite", () => {
     const text = fs.readFileSync(path.join(at.truth, "results", "fixture.json"), "utf8");
     for (const word of ["prompt", "system", "logs", "workspace", "evaluators", "reasoning", "answer", at.out]) expect(text).not.toContain(word);
     for (const verdict of resultsOf(at, "fixture").verdicts) {
-      expect(Object.keys(verdict).sort()).toEqual(["cost_usd", "duration_ms", "findings", "judge", "model", "sample", "status", "subject"]);
+      expect(Object.keys(verdict).sort()).toEqual(["cost_usd", "duration_ms", "findings", "judge", "judge_version", "model", "sample", "status", "subject", "subject_hash"]);
     }
   });
 
@@ -259,6 +260,44 @@ describe("resuming", () => {
     expect(stubCalls(at)).toHaveLength(3);
   });
 
+  it("keeps a verdict its results hold at the judge's version on the subject as it stands, with no journal at all", async () => {
+    const at = scratch();
+    const file = writeSuite(at, "fixture", { subjects: { games: ["medal"], game_variants: ["medal-spoiler"] }, judges: ["gm_spoiler"] });
+    expect((await suite(at, file)).code).toBe(0);
+    const first = resultsOf(at, "fixture");
+    expect(first.verdicts.map((verdict) => verdict.judge_version)).toEqual([judgeVersion("gm_spoiler"), judgeVersion("gm_spoiler")]);
+    // Another machine: the results are in the repo, the journal is not.
+    fs.rmSync(path.join(at.out, "suites"), { recursive: true });
+    const again = await suite(at, file);
+    expect(again.code).toBe(0);
+    expect(again.out).toContain("2 verdict(s) kept, 0 call(s) made, 0 finished before");
+    expect(stubCalls(at)).toHaveLength(2);
+    expect(resultsOf(at, "fixture")).toEqual(first);
+
+    // A changed plant changes its variant's subject: only that verdict is made again.
+    const variant = path.join(at.truth, "plants", "turns", "medal-spoiler.json");
+    const planted = JSON.parse(fs.readFileSync(variant, "utf8"));
+    planted.plants[0].edits[0].replace += " He grins.";
+    fs.writeFileSync(variant, JSON.stringify(planted));
+    fs.rmSync(path.join(at.out, "suites"), { recursive: true });
+    expect((await suite(at, file)).out).toContain("1 verdict(s) kept, 1 call(s) made");
+    expect(stubCalls(at)).toHaveLength(3);
+  });
+
+  it("makes again a verdict its results hold at another version of the judge, storing it at this one", async () => {
+    const at = scratch();
+    const file = writeSuite(at, "fixture", { subjects: { games: ["medal"], game_variants: ["medal-spoiler"] }, judges: ["gm_spoiler"] });
+    expect((await suite(at, file)).code).toBe(0);
+    const stored = resultsOf(at, "fixture");
+    stored.verdicts[0].judge_version += 1;
+    fs.writeFileSync(path.join(at.truth, "results", "fixture.json"), JSON.stringify(stored));
+    fs.rmSync(path.join(at.out, "suites"), { recursive: true });
+    const again = await suite(at, file);
+    expect(again.out).toContain("1 verdict(s) kept, 1 call(s) made");
+    expect(stubCalls(at)).toHaveLength(3);
+    expect(resultsOf(at, "fixture").verdicts.map((verdict) => verdict.judge_version)).toEqual([judgeVersion("gm_spoiler"), judgeVersion("gm_spoiler")]);
+  });
+
   it("fails naming the journal when a line other than the last does not read", async () => {
     const at = scratch();
     const file = writeSuite(at, "fixture", { subjects: { games: ["medal"] }, judges: ["gm_spoiler"] });
@@ -366,6 +405,15 @@ describe("judges and subjects", () => {
       expect(ran.err, message).toContain(message);
     }
     expect(stubCalls(at)).toEqual([]);
+  });
+
+  it("refuses a judge whose files match no recorded version, naming the line to append", async () => {
+    const set = await loadTruthSet(FIXTURE);
+    const stub = (name: string): ResolvedBinding => ({ name, cmd: "true", command: "/usr/bin/true", args: [], extract_path: null, model: null, timeout_ms: 1000, retries: 0 });
+    const body = readSuiteFile(writeSuite(scratch(), "fixture", FIXTURE_SUITE)).suite;
+    expect(() => planSuite(body, set, stub, { ...judgeVersions(), gm_spoiler: null })).toThrow(
+      /the suite names judge "gm_spoiler", whose files match no recorded version, so its verdicts could not be stored/,
+    );
   });
 
   it("fails naming a plant that no longer applies to its base", async () => {

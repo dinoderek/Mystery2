@@ -51,8 +51,8 @@ apply the rule, so a `fail` means the same in a game result and a runtime
 
 ## Adding a judge
 
-Two files and one registry entry. Underscores in the id become hyphens in the
-file names (`gm_spoiler` → `gm-spoiler.md`).
+Two files, a registry entry and a version. Underscores in the id become
+hyphens in the file names (`gm_spoiler` → `gm-spoiler.md`).
 
 1. `evaluation/judges/<id>.md`: the prose contract. It says what the judge asks,
    the judging procedure, what is *not* a finding, and the output shape. It
@@ -64,6 +64,7 @@ file names (`gm_spoiler` → `gm-spoiler.md`).
    judge. It gives the id (unique across the list), the subject kinds it applies
    to (`game` and `turn` here), the brief, schema and preamble paths, and the
    verdict rule (`major_findings` here).
+4. Its first hash in `evaluation/core/judge-versions.json`, as the gate names.
 
 Keep the common finding fields (`sequence`, `severity`, `quote`, `why`,
 `refers_to`) and vary only the `kind` enum, so consumers read findings from any

@@ -8,7 +8,7 @@ const HEARTWOOD = 'a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34';
 // Keep the full game usable on the software WebGL2 fallback used by CI.
 test.use({ launchOptions: { args: ['--disable-webgpu', '--use-angle=swiftshader'] } });
 
-async function startCase(page: Page, blueprintId: string) {
+async function startCase(page: Page, blueprintId: string, graphicsAvailable = true) {
   await signInAsTestProfile(page, 'graphical-case');
   const response = await page.request.get('/api/blueprints-list');
   const { blueprints } = BlueprintsListResponseSchema.parse(
@@ -22,9 +22,23 @@ async function startCase(page: Page, blueprintId: string) {
   await expect(page.getByText('1. Start a new game')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page.getByText(blueprints[index].title)).toBeVisible();
+  const cover = page.locator(`[data-testid="case-artwork"][data-blueprint-id="${blueprintId}"]`);
+  await cover.scrollIntoViewIfNeeded();
+  await expect(cover.getByTestId('scene-renderer')).toHaveAttribute('data-state', graphicsAvailable ? 'ready' : 'fallback', { timeout: 30000 });
+  if (graphicsAvailable) {
+    await expect(cover.getByTestId('scene-renderer')).toHaveAttribute('data-paused', 'true');
+    await expect(cover.getByRole('img')).toBeInViewport();
+    await test.info().attach('case-picker', { body: await page.screenshot(), contentType: 'image/png' });
+  }
   await page.keyboard.press(String(index + 1));
   await expect(page).toHaveURL(/\/session$/);
   await expect(page.getByTestId('begin-investigation-prompt')).toBeVisible();
+  await expect(page.getByTestId('scene-renderer')).toHaveAttribute('data-state', graphicsAvailable ? 'ready' : 'fallback', { timeout: 30000 });
+  if (graphicsAvailable) {
+    await expect(page.getByTestId('scene-renderer').getByRole('img')).toBeInViewport();
+    await test.info().attach('opening-page', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await expect(page.getByTestId('page-narration')).toBeInViewport();
   await page.keyboard.press('Enter');
   await expect(page.locator('input[type="text"]')).toBeEnabled();
 }
@@ -138,7 +152,9 @@ test('keeps actual narration, dialogue, and typing usable when graphics cannot i
     if (message.text().startsWith('[scene]')) errors.push(message.text());
   });
   page.on('pageerror', (error) => uncaught.push(error.message));
-  await startCase(page, LIGHTHOUSE);
+  await startCase(page, LIGHTHOUSE, false);
+  const failuresOnStart = errors.length;
+  expect(failuresOnStart).toBeGreaterThan(0);
   await expect(page.getByTestId('scene-renderer')).toHaveAttribute(
     'data-state',
     'fallback',
@@ -152,6 +168,6 @@ test('keeps actual narration, dialogue, and typing usable when graphics cannot i
     page.locator('[data-speaker-kind="character"]').last(),
   ).toBeInViewport();
   await expect(page.locator('input[type="text"]')).toBeFocused();
-  expect(errors).toHaveLength(1);
+  expect(errors).toHaveLength(failuresOnStart);
   expect(uncaught).toEqual([]);
 });

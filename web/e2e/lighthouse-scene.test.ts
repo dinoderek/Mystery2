@@ -18,7 +18,9 @@ test('renders the accepted preview with reduced motion and releases it when leav
   await page.setViewportSize({ width: 800, height: 900 });
   await expect(scene.getByRole('img')).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(scene).toHaveAttribute('data-paused', 'false');
+  const backend = await scene.getAttribute('data-backend');
+  expect(['webgpu', 'webgl2']).toContain(backend);
+  await expect(scene).toHaveAttribute('data-paused', backend === 'webgl2' ? 'true' : 'false');
   await page.getByRole('link', { name: '[ BACK TO MYSTERIES ]' }).click();
   await expect(scene).toHaveCount(0);
   await expect(page.getByText('1. Start a new game')).toBeVisible();

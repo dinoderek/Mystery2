@@ -1,9 +1,8 @@
 # UI
 
-The UI is a terminal: typed commands in, text and scene art out. Menus are
-numbered lists picked by typing a number; `b` goes back. The only forms are the
-profile picker and the settings page. Keep it that way — a new interaction
-should be a command before it is a widget.
+The terminal UI takes typed commands and shows text and scene art. Menus use
+numbers; `b` goes back. Only the profile picker and settings use forms.
+New interactions should be commands before widgets.
 
 ## Shape
 
@@ -33,10 +32,11 @@ profile, but the server asks for one only where a session is involved
 
 ## The session screen
 
-Scenes follow the viewed page's location, including history.
+Case selection and opening pages preview the first saved scene; visible cards use
+still renders. During play, scenes follow the viewed location, including history.
 Conversations prefer portraits, otherwise scenery. Scenes respect reduced motion;
 frame pacing preserves input responsiveness. Failures log once and fall back to
-illustrations. Narrow screens stack art above narration and input.
+illustrations. WebGL scenes stay still. Narrow screens stack art above narration and input.
 `/prototype/lighthouse` previews the accepted lantern room.
 
 Two keyboard rules are easy to break:

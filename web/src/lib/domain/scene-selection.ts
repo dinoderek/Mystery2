@@ -7,6 +7,7 @@ export function sceneForPage(
   manifest: SceneManifest | null,
   page: SessionPage | null,
 ) {
+  if (page?.kind === 'opening') return manifest?.scenes[0] ?? null;
   if (
     page?.kind !== 'location' &&
     !(page?.kind === 'conversation' && !page.imageId)

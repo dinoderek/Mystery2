@@ -4,11 +4,12 @@
   import type { buildScene } from '$lib/domain/scene-world';
   import type { SceneRecipe } from '@my2/shared';
 
-  let { children, recipe }: { children: Snippet; recipe: SceneRecipe } = $props();
+  let { children, recipe, animated = true }: { children: Snippet; recipe: SceneRecipe; animated?: boolean } = $props();
   let canvas: HTMLCanvasElement;
   let ready = $state(false);
   let failed = $state(false);
   let paused = $state(false);
+  let backend = $state<'webgpu' | 'webgl2' | null>(null);
 
   onMount(() => {
     let cancelled = false;
@@ -32,7 +33,7 @@
       if (milliseconds - lastFrame < frameInterval - 1) return;
       try {
         const started = performance.now();
-        world.animate(motion.matches ? 0 : milliseconds / 1000);
+        world.animate(motion.matches || !animated || backend === 'webgl2' ? 0 : milliseconds / 1000);
         renderer.render(world.scene, world.camera);
         // Leave time for dialogue and input when a software renderer is slow.
         frameInterval = Math.max(1000 / 30, (performance.now() - started) * 3);
@@ -45,12 +46,13 @@
 
     function updateAnimation() {
       if (!renderer?.initialized || cancelled || failed) return;
-      paused = document.hidden || motion.matches;
+      // shortcut: WebGL stays still until animation is calibrated on software drivers.
+      paused = document.hidden || motion.matches || !animated || backend === 'webgl2';
       renderer.setAnimationLoop(null);
       lastFrame = -Infinity;
       if (document.hidden) return;
       draw(0);
-      if (!motion.matches && !failed) renderer.setAnimationLoop(draw);
+      if (!paused && !failed) renderer.setAnimationLoop(draw);
     }
 
     async function start() {
@@ -67,6 +69,7 @@
           await renderer.dispose();
           return;
         }
+        backend = 'isWebGLBackend' in renderer.backend ? 'webgl2' : 'webgpu';
         renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
         renderer.toneMapping = three.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.1;
@@ -113,7 +116,7 @@
 </script>
 
 <div class="relative h-full w-full" data-testid="scene-renderer" data-kind={recipe.kind} data-location-id={recipe.location_id}
-  data-state={failed ? 'fallback' : ready ? 'ready' : 'loading'} data-paused={paused}>
+  data-state={failed ? 'fallback' : ready ? 'ready' : 'loading'} data-paused={paused} data-backend={backend}>
   {#if !ready || failed}
     {@render children()}
   {/if}

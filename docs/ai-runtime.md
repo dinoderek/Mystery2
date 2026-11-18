@@ -30,7 +30,8 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 `search_targeted` carries both, because the model decides the outcome
 (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
 round `continue`, `win` or `lose` by the rule in "The accusation" in
-`docs/game.md`.
+`docs/game.md`. `talk_start` and `talk_end` keep the investigator where they
+stand: only `move` moves them, and `gm_fabrication` reports invented movement.
 
 ## Narration style
 <!-- extract:narration-style -->
@@ -70,10 +71,8 @@ Which blueprint fields reach which role is the "Narration at play" table in
   they hold the clue or bluff well). A cue surfaces only when its trigger fires,
   or, with none authored, when the player touches something sensitive. A
   `talk_start` greeting and an arrival come before the player says anything, so
-  a `clue` tell never fires there, and a `condition` tell only if the history
-  already meets it.
-- **Talking moves no one.** A talk starts and ends where the investigator
-  stands; only `move` moves them. `gm_fabrication` reports invented movement.
+  a `clue` tell never fires there, and a `condition` tell fires only if the
+  history already meets it.
 - **Arrival gets each present character's private pack**, because without it
   the narrator greets as a generic host, whatever the character's authored
   attitude and agendas. The prompt plays each in that attitude, lets agendas

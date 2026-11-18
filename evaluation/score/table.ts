@@ -111,7 +111,7 @@ function sideSection(side: SideScore, bar: string): string[] {
 }
 
 function staleLine(entry: StaleVerdicts): string {
-  const now = entry.current === null ? "its files match no recorded version" : `it is at v${entry.current}`;
+  const now = entry.current === null ? "it is no judge, or its files match no recorded version" : `it is at v${entry.current}`;
   const why = entry.reason === "judge" ? now : "the subjects they judged have changed since";
   return `${entry.judge} on ${entry.model}: ${counted(entry.verdicts, "verdict")} at v${entry.version}, not scored; ${why}.`;
 }

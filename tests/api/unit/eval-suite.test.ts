@@ -273,6 +273,15 @@ describe("resuming", () => {
     expect(again.out).toContain("2 verdict(s) kept, 0 call(s) made, 0 finished before");
     expect(stubCalls(at)).toHaveLength(2);
     expect(resultsOf(at, "fixture")).toEqual(first);
+
+    // A changed plant changes its variant's subject: only that verdict is made again.
+    const variant = path.join(at.truth, "plants", "turns", "medal-spoiler.json");
+    const planted = JSON.parse(fs.readFileSync(variant, "utf8"));
+    planted.plants[0].edits[0].replace += " He grins.";
+    fs.writeFileSync(variant, JSON.stringify(planted));
+    fs.rmSync(path.join(at.out, "suites"), { recursive: true });
+    expect((await suite(at, file)).out).toContain("1 verdict(s) kept, 1 call(s) made");
+    expect(stubCalls(at)).toHaveLength(3);
   });
 
   it("makes again a verdict its results hold at another version of the judge, storing it at this one", async () => {

@@ -80,8 +80,8 @@ export const RunInfoSchema = z
     bindings: z.record(BindingUsedSchema),
     /**
      * Every judge's version when the run started (`core/judge-version.ts`);
-     * null for a judge whose files matched no recorded version. Empty in a
-     * result written before runs recorded them.
+     * null for a judge whose files matched no recorded version; empty when
+     * the result records none.
      */
     judge_versions: z.record(z.number().int().positive().nullable()).default({}),
   })

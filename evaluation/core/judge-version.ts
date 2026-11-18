@@ -49,7 +49,7 @@ export function judgeHash(entry: JudgeEntry): string {
       : { built: read(entry.prompt.source) };
   const identity = {
     prompt,
-    analyzer: entry.analyzer ? read(entry.analyzer.module) : null,
+    analyzer: entry.analyzer ? { ...entry.analyzer, source: read(entry.analyzer.module) } : null,
     context: entry.context ?? null,
     id_checks: entry.idChecks ?? null,
     verdict: entry.verdict,

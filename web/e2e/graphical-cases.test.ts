@@ -5,6 +5,9 @@ import { signInAsTestProfile } from './test-profile';
 const LIGHTHOUSE = '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47';
 const HEARTWOOD = 'a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34';
 
+// Keep the full game usable on the software WebGL2 fallback used by CI.
+test.use({ launchOptions: { args: ['--disable-webgpu', '--use-angle=swiftshader'] } });
+
 async function startCase(page: Page, blueprintId: string) {
   await signInAsTestProfile(page, 'graphical-case');
   const response = await page.request.get('/api/blueprints-list');
@@ -53,6 +56,7 @@ test('plays all lighthouse locations with real narration, dialogue, history, and
   page.on('pageerror', (error) => uncaught.push(error.message));
   await startCase(page, LIGHTHOUSE);
   await expectScene(page, 'lantern_room', 'lighthouse');
+  expect(await page.locator('canvas').evaluate((canvas) => canvas.getContext('webgl2') !== null)).toBe(true);
   await expect(page.getByTestId('page-narration')).toContainText(
     'You arrive at Lantern Room',
   );

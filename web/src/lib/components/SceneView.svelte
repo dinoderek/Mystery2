@@ -16,6 +16,7 @@
     let world: ReturnType<typeof buildScene> | undefined;
     let resize: ResizeObserver | undefined;
     let lastFrame = -Infinity;
+    let frameInterval = 1000 / 30;
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
     function fail(error: unknown) {
@@ -28,11 +29,14 @@
     function draw(milliseconds: number) {
       if (!renderer || !world || failed || cancelled) return;
       // Allow clock jitter so the cap does not miss an extra display frame.
-      if (milliseconds - lastFrame < 1000 / 30 - 1) return;
-      lastFrame = milliseconds;
+      if (milliseconds - lastFrame < frameInterval - 1) return;
       try {
+        const started = performance.now();
         world.animate(motion.matches ? 0 : milliseconds / 1000);
         renderer.render(world.scene, world.camera);
+        // Leave time for dialogue and input when a software renderer is slow.
+        frameInterval = Math.max(1000 / 30, (performance.now() - started) * 3);
+        lastFrame = performance.now();
         ready = true;
       } catch (error) {
         fail(error);

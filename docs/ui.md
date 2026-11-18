@@ -34,10 +34,10 @@ profile, but the server asks for one only where a session is involved
 ## The session screen
 
 Scenes follow the viewed page's location, including history.
-Conversations prefer portraits, otherwise scenery. Scenes use public scenery, respect reduced motion,
-and fall back to illustrations after a logged failure. On narrow screens, art
-stacks above narration and input. `/prototype/lighthouse` previews the accepted
-lantern room.
+Conversations prefer portraits, otherwise scenery. Scenes respect reduced motion;
+frame pacing preserves input responsiveness. Failures log once and fall back to
+illustrations. Narrow screens stack art above narration and input.
+`/prototype/lighthouse` previews the accepted lantern room.
 
 Two keyboard rules are easy to break:
 

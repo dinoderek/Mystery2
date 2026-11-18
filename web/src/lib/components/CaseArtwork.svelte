@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { SceneRecipe } from '@my2/shared';
   import { loadSceneManifest } from '$lib/domain/scene-selection';
   import BlueprintImage from './BlueprintImage.svelte';
@@ -6,6 +7,14 @@
 
   let { blueprintId, imageId, alt }: { blueprintId: string; imageId?: string | null; alt: string } = $props();
   let recipe = $state<SceneRecipe | null>(null);
+  let host: HTMLDivElement;
+  let visible = $state(false);
+
+  onMount(() => {
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
+    observer.observe(host);
+    return () => observer.disconnect();
+  });
 
   $effect(() => {
     const id = blueprintId;
@@ -18,8 +27,8 @@
   });
 </script>
 
-<div class="aspect-[4/3] w-full overflow-hidden" data-testid="case-artwork" data-blueprint-id={blueprintId}>
-  {#if recipe}
+<div bind:this={host} class="aspect-[4/3] w-full overflow-hidden" data-testid="case-artwork" data-blueprint-id={blueprintId}>
+  {#if recipe && visible}
     {#key `${blueprintId}/${recipe.location_id}`}
       <SceneView {recipe} animated={false}>{@render illustration()}</SceneView>
     {/key}

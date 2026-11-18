@@ -32,11 +32,11 @@ profile, but the server asks for one only where a session is involved
 
 ## The session screen
 
-Case selection and opening pages preview the first saved scene; case cards use
+Case selection and opening pages preview the first saved scene; visible cards use
 still renders. During play, scenes follow the viewed location, including history.
 Conversations prefer portraits, otherwise scenery. Scenes respect reduced motion;
 frame pacing preserves input responsiveness. Failures log once and fall back to
-illustrations. Narrow screens stack art above narration and input.
+illustrations. WebGL scenes stay still. Narrow screens stack art above narration and input.
 `/prototype/lighthouse` previews the accepted lantern room.
 
 Two keyboard rules are easy to break:

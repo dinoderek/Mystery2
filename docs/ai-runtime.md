@@ -30,7 +30,8 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 `search_targeted` carries both, because the model decides the outcome
 (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
 round `continue`, `win` or `lose` by the rule in "The accusation" in
-`docs/game.md`.
+`docs/game.md`. `talk_start` and `talk_end` keep the investigator where they
+stand: only `move` moves them, and `gm_fabrication` reports invented movement.
 
 ## Narration style
 <!-- extract:narration-style -->

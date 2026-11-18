@@ -1,9 +1,8 @@
 # The truth set
 
 What judges are scored against: subjects and their known faults, by **kind**,
-not judge. Self-play and planted material only, with no credential or home
-path. Code: `evaluation/lib/truth/`; files off schema or layout fail
-loading.
+not judge. Self-play and planted material only, no credential or home path.
+Code: `evaluation/lib/truth/`; files off schema or layout fail loading.
 
 Ids are file or folder names: `bases/<base>/blueprint.json` and `brief.json`;
 `games/<game>/trace.json`, as `judge game` reads it, and `labels.json`, from the
@@ -46,12 +45,12 @@ candidates' findings name theirs.
 
 ## Results and tables
 
-Results hold verdicts only, no prompt or log: the judge's version, the
+Results hold verdicts only, no prompt: the judge's version, the
 subject's hash, and each finding's turn, kinds, severity, `kind`, `quote`,
 `why` and `refers_to`. Once either moves on, a verdict is **stale**: `score`
-lists it unscored, and `./dev eval suite <suite>` (into `results/<suite>.json`)
-makes only stale or missing calls. The gate regenerates each
-`scores/<name>.json` from its `inputs`. The blueprint side, one sample,
+lists it unscored; a subject without a current one is **unmeasured**. `./dev
+eval suite <suite>` (into `results/<suite>.json`) makes only those calls. The
+gate regenerates `scores/<name>.json` from its `inputs`. The blueprint side, one sample,
 measures no variation.
 
 ## Made live

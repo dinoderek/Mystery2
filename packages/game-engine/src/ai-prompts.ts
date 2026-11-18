@@ -105,9 +105,12 @@ const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
 
 Task:
 - Start a new conversation with {{character_name}} in {{location_name}}.
-- Briefly describe the character as the investigator approaches them,
-  then have the character greet or acknowledge the investigator in their
-  own voice using direct dialogue.
+- The investigator and {{character_name}} are both already in
+  {{location_name}}. Talking moves nobody: do not narrate the investigator
+  walking up, arriving, stepping in or out, or their footsteps.
+- Briefly describe the character where they are, then have the character
+  greet or acknowledge the investigator in their own voice using direct
+  dialogue.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
 - Do not reveal hidden solution facts.
@@ -121,8 +124,8 @@ Task:
   "Oh, hello there. Can I help you with something?"
 
 ## Nothing is given away in a greeting
-The investigator has walked up but has not said anything yet, so nothing has
-been earned this turn.
+The investigator has turned to them but has not said anything yet, so nothing
+has been earned this turn.
 - Do not reveal or hint at any of the character's clues, and do not confess,
   crack, or drop the stated alibi.
 - Tells: the character context's "tells" array decides what may show.
@@ -363,8 +366,12 @@ Return JSON:
 {{style_guidance}}
 
 Task:
-- Close the active conversation with {{character_name}}.
-- Confirm that the player returns to exploration.
+- Close the active conversation with {{character_name}} in {{location_name}}.
+- End with {{character_name}}'s farewell and one short beat of the investigator
+  still in {{location_name}}, ready to look around.
+- The investigator stays exactly where they are. Ending a talk moves nobody:
+  no stepping in, out, back, away or outside, and no weather or ground
+  underfoot that the location's description does not give.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
 - Keep the tone natural.

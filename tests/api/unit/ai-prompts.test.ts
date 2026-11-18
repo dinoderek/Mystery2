@@ -130,6 +130,19 @@ describe("ai-prompts", () => {
     expect(talkStart).toContain("off\n  limits even in a milder form");
   });
 
+  it("keeps the investigator where they stand when a talk starts and ends", async () => {
+    const vars = { character_name: "Ruby", location_name: "the Tea House" };
+    const talkStart = renderPrompt(await loadPromptTemplate("talk_start", 7), vars);
+    const talkEnd = renderPrompt(await loadPromptTemplate("talk_end", 7), vars);
+
+    expect(talkStart).toContain("Ruby are both already in\n  the Tea House. Talking moves nobody");
+    expect(talkStart).not.toContain("approaches them");
+    expect(talkEnd).toContain("Close the active conversation with Ruby in the Tea House.");
+    expect(talkEnd).toContain("still in the Tea House");
+    expect(talkEnd).toContain("Ending a talk moves nobody:\n  no stepping in, out, back, away or outside");
+    expect(talkEnd).not.toContain("returns to exploration");
+  });
+
   it("rewards good roleplay in conversation but gives nothing away for free", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 

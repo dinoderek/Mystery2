@@ -88,14 +88,16 @@ describe("the committed suites", () => {
 });
 
 describe("the stored results of the committed suites", () => {
-  it("are, for each suite, results/<suite>.json holding exactly the verdicts it plans", () => {
+  it("are, for each suite, results/<suite>.json holding only verdicts it plans: a subject added since is unmeasured, not an error", () => {
     for (const { name, plan } of suites) {
       const stored = set.results.find((results) => results.id === name);
       expect(stored, `results/${name}.json`).toBeDefined();
-      const planned = plan.subjects.flatMap(({ subject, calls }) =>
-        calls.map((call) => verdictKey({ subject: subject.stored as StoredSubject, judge: call.judge.id, model: call.model, sample: call.sample })),
+      const planned = new Set(
+        plan.subjects.flatMap(({ subject, calls }) =>
+          calls.map((call) => verdictKey({ subject: subject.stored as StoredSubject, judge: call.judge.id, model: call.model, sample: call.sample })),
+        ),
       );
-      expect(stored!.verdicts.map(verdictKey).sort(), name).toEqual(planned.sort());
+      expect(stored!.verdicts.map(verdictKey).filter((key) => !planned.has(key)), name).toEqual([]);
     }
   });
 

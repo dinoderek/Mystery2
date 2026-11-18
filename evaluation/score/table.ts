@@ -51,6 +51,7 @@ function memberNotes(members: readonly MemberScore[]): string[] {
   const notes: string[] = [];
   for (const member of members) {
     if (member.not_judged > 0) notes.push(`${member.id}: ${member.not_judged} of ${counted(member.verdicts, "verdict")} did not judge (error or skipped) and do not vote.`);
+    if (member.unjudged.length > 0) notes.push(`${member.id}: unmeasured on ${member.unjudged.join(", ")}, with no current verdict there.`);
     if (member.findings_off_turn > 0) notes.push(`${member.id}: ${counted(member.findings_off_turn, "finding")} pointed at no turn it judged and caught nothing.`);
   }
   return notes;

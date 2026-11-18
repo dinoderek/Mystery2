@@ -181,6 +181,14 @@ describe("role-output requests carry a context", () => {
     expect(context.role_name).toBe("talk_conversation");
   });
 
+  it("names the talk's location in the talk_end prompt, where the investigator stays", async () => {
+    const input = inputFor("talk_end");
+    const location = blueprint.world.locations.find((candidate: { id: string }) => candidate.id === input.location_id);
+    const { prompt } = await buildRoleRequest(input);
+    expect(prompt).toContain(`still in ${location?.name}`);
+    expect(prompt).not.toContain("{{location_name}}");
+  });
+
   it("refuses to assemble a narration role as a role-output request", async () => {
     await expect(buildRoleRequest(inputFor("intro"))).rejects.toThrow(
       /narration role/,

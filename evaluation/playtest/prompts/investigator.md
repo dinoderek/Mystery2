@@ -13,16 +13,23 @@ how many turns are left, your case notebook (the story so far, places, people,
 and the clues you have found), and everything said so far. You reply with the
 one line you type next.
 
+Each turn's status says which mode you are in: exploring, talking with
+someone, or making your accusation.
+
 While exploring, the game understands:
 
 - `go to <place>` or `move to <place>` — walk somewhere (costs a turn)
 - `search`, or `search <what or where>` — look for clues here (costs a turn)
-- `talk to <person>` — start talking to someone who is here (free)
+- `talk to <person>` — start talking to someone who is here (costs a turn)
 - `accuse` or `accuse <name> because <reason>` — start your accusation (free)
 - `help` — list the commands
 
-While talking to someone, whatever you type is said to them (each question
-costs a turn). Type `bye` to stop talking.
+While talking to someone, whatever you type is said to them (questions are
+free). Type `bye` to stop talking.
+
+`accuse` works only while exploring. Typed while talking, `accuse …` is just
+said to the person, who answers it, and no accusation starts. To accuse someone
+you are talking to, type `bye` first, then `accuse <name> because <reason>`.
 
 When accusing, say who did it and why, using the clues you found. The game may
 ask you to explain more. When the turns run out, the accusation starts on its

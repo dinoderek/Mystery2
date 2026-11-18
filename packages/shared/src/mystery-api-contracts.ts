@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { SceneManifestSchema } from "./scene-schema.ts";
+export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
+
+export const BlueprintScenesRequestSchema = z.object({ blueprint_id: z.string().uuid() });
+export const BlueprintScenesResponseSchema = SceneManifestSchema;
 
 export const ModeSchema = z.enum(["explore", "talk", "accuse", "ended"]);
 export const SpeakerKindSchema = z.enum([

@@ -1,6 +1,16 @@
 {
   "_comment": "Model bindings for ./dev eval. Copy to evaluation/config.json (gitignored) to change one; --config <file> replaces both. Each binding starts cmd (repo-relative when it holds a /, else found on PATH) with args, where {{system_prompt_file}} and {{user_message_file}} become the paths of the prompt files. The wrapper gets model as EVAL_MODEL. extract_path is the dotted path to the answer in the JSON the wrapper prints, or null when stdout is the answer. retries is how many more attempts follow a failed first one. The fields are documented in evaluation/core/config.ts.",
 
+  "scene-generator": {
+    "description": "One model call composes a public, validated 3D scene recipe for a story location.",
+    "cmd": "evaluation/runtime/config/wrappers/claude-runtime.sh",
+    "args": ["{{system_prompt_file}}", "{{user_message_file}}"],
+    "extract_path": "result",
+    "model": "sonnet",
+    "timeout_ms": 300000,
+    "retries": 1
+  },
+
   "generator-agent": {
     "description": "A Claude agent in a generator workspace writes a Blueprint V2 from a brief.",
     "cmd": "evaluation/config/wrappers/claude-generate.sh",

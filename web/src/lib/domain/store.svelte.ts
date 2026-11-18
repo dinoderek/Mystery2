@@ -480,6 +480,7 @@ export class GameSessionStore {
     // The answer names the place by id; the page is labelled with its name.
     const place = this.state.locations.find((location) => location.id === answer.current_location);
     this.appendEvent('move', answer.narration_parts, {
+      location_id: answer.current_location,
       location_name: place?.name ?? answer.current_location,
     });
   }

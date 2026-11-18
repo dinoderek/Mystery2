@@ -16,6 +16,8 @@ import {
 } from "../../../packages/game-engine/src/content.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
+import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
 
 const BLUEPRINT_ID = validBlueprintV2.id;
 
@@ -39,7 +41,7 @@ function recordingLogger(): LogWriter & { entries: RecordedLog[] } {
 }
 
 function store(dirs: string[] = [primaryDir, fallbackDir]) {
-  return createLocalContentStore({ blueprintDirs: dirs, imagesDir });
+  return createLocalContentStore({ blueprintDirs: dirs, imagesDir, sceneDirs: [path.join(tempDir, "blueprint-scenes")] });
 }
 
 function writeBlueprint(dir: string, filename: string, overrides = {}) {
@@ -176,5 +178,47 @@ describe("resolveImageFile", () => {
     expect(resolveImageFile(imagesDir, IMAGE)).toBe(path.join(imagesDir, IMAGE));
     expect(resolveImageFile(imagesDir, "missing.png")).toBeNull();
     expect(resolveImageFile(imagesDir, "../escape.png")).toBeNull();
+  });
+});
+
+describe("loadScenes", () => {
+  const blueprint = BlueprintV2Schema.parse(validBlueprintV2);
+  it("prefers configured artwork and uses committed examples only when it is absent", async () => {
+    const configured = path.join(tempDir, "configured-scenes");
+    const committed = path.join(tempDir, "committed-scenes");
+    fs.mkdirSync(configured); fs.mkdirSync(committed);
+    const content = createLocalContentStore({ blueprintDirs: [primaryDir], imagesDir, sceneDirs: [configured, committed] });
+    const fallback = createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [createProceduralScene({ location_id: blueprint.world.locations[0].id })] });
+    fs.writeFileSync(path.join(committed, `${BLUEPRINT_ID}.json`), JSON.stringify(fallback));
+    expect(await content.loadScenes(blueprint)).toEqual(fallback);
+    fs.writeFileSync(path.join(configured, `${BLUEPRINT_ID}.json`), JSON.stringify(createSceneManifest({ blueprint_id: BLUEPRINT_ID })));
+    expect((await content.loadScenes(blueprint))?.scenes).toEqual([]);
+  });
+  it("returns missing artwork as null, and reloads saved public recipes after an edit", async () => {
+    const content = store();
+    expect(await content.loadScenes(blueprint)).toBeNull();
+    const dir = path.join(tempDir, "blueprint-scenes");
+    fs.mkdirSync(dir);
+    const file = path.join(dir, `${BLUEPRINT_ID}.json`);
+    const scene = createProceduralScene({ location_id: blueprint.world.locations[0].id });
+    const manifest = createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [scene] });
+    fs.writeFileSync(file, JSON.stringify(manifest));
+    expect(await content.loadScenes(blueprint)).toEqual(manifest);
+    fs.writeFileSync(file, JSON.stringify({ ...manifest, scenes: [] }));
+    expect((await content.loadScenes(blueprint))?.scenes).toEqual([]);
+  });
+
+  it("rejects invalid files and references, rather than quietly hiding a broken primary asset", async () => {
+    const dir = path.join(tempDir, "blueprint-scenes");
+    fs.mkdirSync(dir);
+    const file = path.join(dir, `${BLUEPRINT_ID}.json`);
+    fs.writeFileSync(file, "not json");
+    await expect(store().loadScenes(blueprint)).rejects.toThrow();
+    fs.writeFileSync(file, JSON.stringify(createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [createProceduralScene({ location_id: "not-a-place" })] })));
+    await expect(store().loadScenes(blueprint)).rejects.toThrow("Unknown scene location");
+    fs.rmSync(file);
+    fs.mkdirSync(file);
+    await expect(store().loadScenes(blueprint)).rejects.toThrow();
+    expect(await store().loadScenes({ ...blueprint, id: "../escape" })).toBeNull();
   });
 });

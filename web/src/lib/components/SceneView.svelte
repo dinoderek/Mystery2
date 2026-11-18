@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
   import type { WebGPURenderer } from 'three/webgpu';
-  import type { buildLighthouseScene } from '$lib/domain/lighthouse-scene';
+  import type { buildScene } from '$lib/domain/scene-world';
+  import type { SceneRecipe } from '@my2/shared';
 
-  let { children }: { children: Snippet } = $props();
+  let { children, recipe }: { children: Snippet; recipe: SceneRecipe } = $props();
   let canvas: HTMLCanvasElement;
   let ready = $state(false);
   let failed = $state(false);
@@ -12,14 +13,14 @@
   onMount(() => {
     let cancelled = false;
     let renderer: WebGPURenderer | undefined;
-    let world: ReturnType<typeof buildLighthouseScene> | undefined;
+    let world: ReturnType<typeof buildScene> | undefined;
     let resize: ResizeObserver | undefined;
     let lastFrame = -Infinity;
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
     function fail(error: unknown) {
       if (cancelled || failed) return;
-      console.error('[scene] Lighthouse rendering failed; showing the existing illustration', error);
+      console.error('[scene] Rendering failed; showing the existing illustration', { location_id: recipe.location_id, error });
       failed = true;
       if (renderer?.initialized) void renderer.setAnimationLoop(null);
     }
@@ -50,8 +51,8 @@
 
     async function start() {
       try {
-        const [three, { buildLighthouseScene }] = await Promise.all([
-          import('three/webgpu'), import('$lib/domain/lighthouse-scene'),
+        const [three, { buildScene }] = await Promise.all([
+          import('three/webgpu'), import('$lib/domain/scene-world'),
         ]);
         if (cancelled) return;
         renderer = new three.WebGPURenderer({ canvas, antialias: true, alpha: false });
@@ -66,7 +67,7 @@
         renderer.toneMapping = three.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.1;
         renderer.shadowMap.enabled = true;
-        world = buildLighthouseScene();
+        world = buildScene(recipe);
         resize = new ResizeObserver(([entry]) => {
           if (!renderer || !world || cancelled || failed) return;
           const { width, height } = entry.contentRect;
@@ -100,21 +101,21 @@
         renderer.setAnimationLoop(null);
         world?.dispose();
         void renderer.dispose().catch((error) => {
-          console.error('[scene] Lighthouse cleanup failed', error);
+          console.error('[scene] Cleanup failed', { location_id: recipe.location_id, error });
         });
       }
     };
   });
 </script>
 
-<div class="relative h-full w-full" data-testid="lighthouse-scene"
+<div class="relative h-full w-full" data-testid="scene-renderer" data-kind={recipe.kind} data-location-id={recipe.location_id}
   data-state={failed ? 'fallback' : ready ? 'ready' : 'loading'} data-paused={paused}>
   {#if !ready || failed}
     {@render children()}
   {/if}
   <div class="pointer-events-none absolute inset-0 h-full w-full"
     class:invisible={!ready || failed} role="img"
-    aria-label="The lighthouse lantern room: an empty brass cradle, tall windows, and a grey-green sea.">
+    aria-label={recipe.label}>
     <canvas bind:this={canvas} class="h-full w-full" aria-hidden="true"></canvas>
   </div>
 </div>

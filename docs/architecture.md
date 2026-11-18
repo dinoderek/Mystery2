@@ -12,7 +12,7 @@ cloud backend, container or separate API service.
   substitutable (`docs/backend-conventions.md`).
 - **Database**: SQLite (`better-sqlite3`), one file per worktree plus `prod`
   (`docs/local-infrastructure.md`). Tests never touch any of them.
-- **Content**: blueprints and images, read off disk.
+- **Content**: blueprints, scene recipes and images, read off disk.
 - **Identity**: local profiles, a name and an id. No passwords.
 - **Model provider**: OpenRouter, or the local `claude` CLI, called from the
   server. A key never reaches the browser (`docs/ai-configuration.md`).

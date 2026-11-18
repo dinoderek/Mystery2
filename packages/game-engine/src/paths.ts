@@ -64,6 +64,11 @@ export function resolveBlueprintDirs(
   return configured === committed ? [committed] : [configured, committed];
 }
 
+/** Scene recipes follow the same config-root then committed-content precedence. */
+export function resolveBlueprintSceneDirs(repoRoot = process.cwd(), env: Env = process.env): string[] {
+  return resolveBlueprintDirs(repoRoot, env).map((dir) => path.join(dir, "..", "blueprint-scenes"));
+}
+
 /**
  * Directory holding blueprint image files, flat, named by image id — the same
  * layout `seed:storage` uploads from.

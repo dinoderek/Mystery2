@@ -2,7 +2,7 @@
 //
 // Handlers see only the interface in `context.ts`, never this file. It is the
 // one place that knows the game's state is a SQLite file and its content is a
-// pair of directories — which is what makes it the only file that would have
+// set of directories — which is what makes it the only file that would have
 // to change to keep the state somewhere else.
 
 import { createLocalAIProfileStore, loadAIConfig, type LoadedAIConfig } from "./ai-config.ts";
@@ -23,6 +23,7 @@ import { createSessionStore } from "./db/sessions.ts";
 import type { EnvRecord } from "./env-file.ts";
 import {
   resolveBlueprintDirs,
+  resolveBlueprintSceneDirs,
   resolveBlueprintImagesDir,
   resolveDatabasePath,
 } from "./paths.ts";
@@ -110,6 +111,7 @@ export function createLocalEngine(
   const content = createLocalContentStore({
     blueprintDirs: resolveBlueprintDirs(repoRoot, env),
     imagesDir,
+    sceneDirs: resolveBlueprintSceneDirs(repoRoot, env),
   });
   const aiSettings = createAISettingsStore(db);
   const aiProfiles = createLocalAIProfileStore(aiConfig, aiSettings);

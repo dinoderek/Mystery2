@@ -27,6 +27,7 @@ import {
   Vector2,
   type Material,
 } from 'three/webgpu';
+import { disposeScene } from './scene-resources';
 
 function makeSky() {
   const pixels = new Uint8Array(128 * 64 * 4);
@@ -336,23 +337,7 @@ export function buildLighthouseScene() {
   }
 
   function dispose() {
-    const geometries = new Set<BufferGeometry>();
-    const materials = new Set<Material>();
-    scene.traverse((object) => {
-      if (object instanceof Mesh || object instanceof Points) {
-        geometries.add(object.geometry);
-        for (const material of Array.isArray(object.material)
-          ? object.material
-          : [object.material]) {
-          materials.add(material);
-        }
-      }
-    });
-    geometries.forEach((geometry) => geometry.dispose());
-    materials.forEach((material) => material.dispose());
-    sky.dispose();
-    sea.material.normalMap!.dispose();
-    sun.shadow.dispose();
+    disposeScene(scene);
   }
 
   return { scene, camera, animate, dispose };

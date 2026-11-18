@@ -1,36 +1,26 @@
 # Blueprint Generation Flows
 
-Which blueprint data reaches each generated output: the blueprint itself, its
-images, and the narration at play. The schema, and the intent behind every
-field, is `packages/shared/src/blueprint-schema-v2.ts`; why each narrator role
-sees what it does is `docs/ai-runtime.md`.
-
-"Input" below means data sent to the model. "Attached" means an image id paired
-with the output afterwards, which never shaped it. Everything is looked up by
-id, and sessions store ids, never names.
+Blueprint, artwork and narration inputs. Field intent:
+`packages/shared/src/blueprint-schema-v2.ts`; narrator context:
+`docs/ai-runtime.md`. “Input” means sent to the model; “attached” means paired
+with its output afterwards. Sessions store ids.
 
 ## Generating a blueprint
 
-`./dev eval generate` builds the request with `packages/blueprint-generator`
-(`buildBlueprintGenerationChatInput`) for both of its backends. The `api`
-backend sends OpenRouter three things; the `agent` backend hands the same
-system prompt and brief to the Claude agent in its workspace:
+`./dev eval generate` uses `buildBlueprintGenerationChatInput` in
+`packages/blueprint-generator` for both backends:
 
-1. **System:** `packages/blueprint-generator/src/generator-prompt.md`, followed
-   by the age guidance for the brief's `targetAge`
-   (`renderGenerationGuidance` in `packages/shared/src/age-profile.ts`, the
-   same source as the narrator's).
-2. **User:** the brief, validated against
-   `packages/blueprint-generator/src/story-brief.ts`, and an instruction to
-   answer in the schema.
-3. **Response format** (`api` only): a strict JSON Schema from
-   `BlueprintV2Schema`, with the image-id fields removed — image tooling fills
-   those in later; strict mode sends every field, so a `null` where none is
-   allowed is dropped.
+- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus age
+  guidance from `renderGenerationGuidance` in `packages/shared/src/age-profile.ts`.
+- **User:** the brief, validated against
+  `packages/blueprint-generator/src/story-brief.ts`, with schema instructions.
+- **API response format:** strict JSON Schema from `BlueprintV2Schema`, excluding
+  image ids. Strict-mode nulls for absent optional fields are removed.
 
-Either way the blueprint is checked against the schema and the mechanical
-checks, and stored with its `result.json`; one that fails is kept and not
-installed (`evaluation/README.md`).
+The agent backend receives the same prompt and brief in its workspace. Both
+backends validate the schema and mechanical checks and save `result.json`.
+Rejected blueprints are kept for inspection and never installed
+(`evaluation/README.md`).
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -92,6 +82,21 @@ the full list OpenRouter documents; `openai/gpt-image-1`, for one, accepts only
 `1:1`, `3:2`, `2:3` and `auto`. A failed or cancelled generation comes back as
 a 502 and is not billed. The run continues past a failed target, so re-run just
 those targets.
+
+## Generating 3D scenes
+
+`./dev eval scenes <blueprint.json> --install` generates missing location recipes
+through the `scene-generator` CLI binding and the shared model runner. Existing
+recipes are preserved. Prompts receive only
+visual direction, location names and descriptions, and searchable-area names;
+clues, hints and solutions are excluded. The run keeps prompts, attempts,
+`scenes.json` and `result.json`; failed generation never replaces installed art.
+
+`packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations
+and rejects executable fields and unknown references. Manifests live in
+`blueprint-scenes/<blueprint-id>.json`, with config-root precedence over committed
+examples. The catalog's `blueprint-scenes` endpoint serves only these validated
+public recipes. New settings use the same renderer.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->

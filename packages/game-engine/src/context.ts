@@ -14,6 +14,7 @@
 // therefore map a thrown error to 500 and a null to 404/400.
 
 import type { BlueprintV2 } from "../../shared/src/blueprint-schema-v2.ts";
+import type { SceneManifest } from "../../shared/src/scene-schema.ts";
 import type { LogWriter } from "./logging.ts";
 import type { NarrationPart } from "./narration.ts";
 import type { GameMode } from "./state-machine.ts";
@@ -151,6 +152,8 @@ export interface ContentStore {
   listBlueprints(logger?: LogWriter): Promise<BlueprintSummaryEntry[]>;
   /** Returns null when the blueprint is missing or unparseable. */
   loadBlueprint(blueprintId: string, logger: LogWriter): Promise<BlueprintV2 | null>;
+  /** Optional public artwork; missing returns null, invalid content throws. */
+  loadScenes(blueprint: BlueprintV2): Promise<SceneManifest | null>;
 }
 
 /** Resolved AI runtime profile, including the provider secret. */

@@ -10,6 +10,7 @@ installs what is missing). `npm run dev` starts it; which AI narrates is
 |---|---|
 | Databases | `$MYSTERY_CONFIG_ROOT/database/<name>/game.db` (gitignored) |
 | Blueprints | `$MYSTERY_CONFIG_ROOT/blueprints/`, then the repo's `blueprints/` |
+| Scenes | `$MYSTERY_CONFIG_ROOT/blueprint-scenes/` |
 | Images | `$MYSTERY_CONFIG_ROOT/blueprint-images/` |
 | AIs and keys | `ai.json`, `.env.local`, `.env.images.local` in the config root |
 

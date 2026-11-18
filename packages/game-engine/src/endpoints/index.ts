@@ -27,6 +27,7 @@
 import type { CatalogContext, EngineContext } from "../context.ts";
 
 import * as blueprintsList from "./blueprints-list.ts";
+import * as blueprintScenes from "./blueprint-scenes.ts";
 import * as gameEnter from "./game-enter.ts";
 import * as gameGet from "./game-get.ts";
 import * as gameSessionsList from "./game-sessions-list.ts";
@@ -63,6 +64,7 @@ const GET_ONLY: readonly EndpointMethod[] = ["GET"];
 const GET_OR_POST: readonly EndpointMethod[] = ["GET", "POST"];
 
 export const ENDPOINTS: readonly EndpointDefinition[] = [
+  { name: "blueprint-scenes", access: "catalog", methods: GET_ONLY, handle: blueprintScenes.handle },
   { name: "blueprints-list", access: "catalog", methods: GET_OR_POST, handle: blueprintsList.handle },
   { name: "game-enter", access: "profile", methods: POST_ONLY, handle: gameEnter.handle },
   { name: "game-get", access: "profile", methods: GET_ONLY, handle: gameGet.handle },

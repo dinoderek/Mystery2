@@ -11,12 +11,14 @@ import {
 } from "../../shared/src/blueprint-schema-v2.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
+import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
 
 export interface LocalContentOptions {
   /** Directories searched for blueprint JSON, in precedence order. */
   blueprintDirs: string[];
   /** Directory holding image files, flat, named by image id. */
   imagesDir: string;
+  sceneDirs: string[];
 }
 
 interface CachedBlueprint {
@@ -113,6 +115,20 @@ export function createLocalContentStore(
   }
 
   return {
+    async loadScenes(blueprint: BlueprintV2): Promise<SceneManifest | null> {
+      if (!isSafeSegment(blueprint.id)) return null;
+      for (const dir of options.sceneDirs) {
+        let text: string;
+        try {
+          text = fs.readFileSync(path.join(dir, `${blueprint.id}.json`), "utf8");
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+          throw error;
+        }
+        return validateSceneManifest(JSON.parse(text), blueprint);
+      }
+      return null;
+    },
     async listBlueprints(logger?: LogWriter): Promise<BlueprintSummaryEntry[]> {
       const entries: BlueprintSummaryEntry[] = [];
       // The same blueprint can sit in both the config root and the repo's seed

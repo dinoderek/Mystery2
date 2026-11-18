@@ -207,6 +207,26 @@ describe("stale verdicts", () => {
     expect(formatScore(report, { truth: "t", results: ["r"] })).toContain("its files match no recorded version");
   });
 
+  it("lists, per judge, the games and variants it holds no current verdict on, a turn's verdict judging its game", () => {
+    const report = scoreVerdicts(set, [
+      fabrication(0, true),
+      verdict({ subject: { ...MEDAL_SPOILER, sequence: 4 }, judge: "age_appropriate_turn" }),
+      fabrication(0, true, { subject: MEDAL_SPOILER, judge_version: 99 }),
+    ]);
+    expect(member(report, "game", "gm_fabrication").unjudged).toEqual(["medal-leak", "medal-spoiler"]);
+    expect(member(report, "game", "age_appropriate_turn").unjudged).toEqual(["medal", "medal-leak"]);
+    const text = formatScore(report, { truth: "t", results: ["r"] });
+    expect(text).toContain("gm_fabrication: unmeasured on medal-leak, medal-spoiler, with no current verdict there.");
+  });
+
+  it("lists the bases and plants a blueprint judge holds no current verdict on, and none when it judged them all", () => {
+    const one = scoreVerdicts(set, [verdict({ subject: MOCK_PLANT, judge: "fairness" })]);
+    expect(member(one, "blueprint", "fairness").unjudged).toEqual(["mock"]);
+    const both = scoreVerdicts(set, [verdict({ subject: MOCK, judge: "fairness" }), verdict({ subject: MOCK_PLANT, judge: "fairness" })]);
+    expect(member(both, "blueprint", "fairness").unjudged).toEqual([]);
+    expect(formatScore(both, { truth: "t", results: ["r"] })).not.toContain("unmeasured on");
+  });
+
   it("refuses one judge at two versions read together", () => {
     expect(() => membersOf("game", [fabrication(0, true, { judge_version: 1 }), fabrication(1, true, { judge_version: 7 })])).toThrow(
       "gm_fabrication has verdicts at versions 1 and 7; keep one version of a judge in what is read together",

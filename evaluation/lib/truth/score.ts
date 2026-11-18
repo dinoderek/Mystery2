@@ -34,7 +34,8 @@
  *   (`subject-hash.ts`), is scored; the rest are counted apart as stale.
  * - **Unmeasured.** A judge's games and variants, or bases and plants, with
  *   no current verdict are listed by name: a new plant is unmeasured until
- *   its suite runs again.
+ *   its suite runs again. A judge with no current verdict at all is no
+ *   member, so it is listed only as stale.
  */
 
 import { InputError } from "../../core/errors.ts";

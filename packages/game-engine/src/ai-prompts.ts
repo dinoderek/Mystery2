@@ -370,8 +370,8 @@ Task:
 - End with {{character_name}}'s farewell and one short beat of the investigator
   still in {{location_name}}, ready to look around.
 - The investigator stays exactly where they are. Ending a talk moves nobody:
-  no stepping in, out, back, away or outside, and no weather, snow or ground
-  underfoot unless the location's description puts the investigator there.
+  no stepping in, out, back, away or outside, and no weather or ground
+  underfoot that the location's description does not give.
 - Use only the provided characters and locations.
 - Do not invent extra people, places, or world facts.
 - Keep the tone natural.

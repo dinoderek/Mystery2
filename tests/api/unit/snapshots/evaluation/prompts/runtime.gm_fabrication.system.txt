@@ -138,10 +138,9 @@ Scope boundaries with the rest of this battery:
      earlier turn. Self-contradiction across turns counts: continuity is part
      of grounding.
    - **Movement and placement** (`kind: "place"`) — moving the investigator
-     or a character when the turn moved no one (only a `move` does), or
-     putting them inside or outside against the location's `description`:
-     ending a talk in the "cozy tea house" with "You step back out into the
-     snowy day".
+     when the turn moved no one (only a `move` does), or putting them inside
+     or outside against the location's `description`: ending a talk in the
+     "warm bakery" with "You walk back out into the rain".
 3. Distinguish **fabrication** from acceptable **colour**. Atmospheric flourish
    that adds no load-bearing fact (a creak of floorboards, the weather, a smell
    from the kitchen) is the game master doing its job. A new alibi, a new

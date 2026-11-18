@@ -198,19 +198,19 @@ describe("storing a base", () => {
 describe("a stored verdict", () => {
   it("is only a judge's, and only one that called a model", () => {
     const subject = { side: "blueprint" as const, base: "b", plant: null };
-    expect(() => toStoredVerdict({ id: "schema", tier: "mechanical", status: "pass" }, subject, "0123456789abcdef", { fairness: 1 })).toThrow("not a judge");
-    expect(() => toStoredVerdict({ id: "fairness", tier: "judge", status: "error" }, subject, "0123456789abcdef", { fairness: 1 })).toThrow('judge "fairness" has no model call');
+    expect(() => toStoredVerdict({ id: "schema", tier: "mechanical", status: "pass" }, subject, { subject_hash: "0123456789abcdef", versions: { fairness: 1 } })).toThrow("not a judge");
+    expect(() => toStoredVerdict({ id: "fairness", tier: "judge", status: "error" }, subject, { subject_hash: "0123456789abcdef", versions: { fairness: 1 } })).toThrow('judge "fairness" has no model call');
   });
 
   it("carries the version its run recorded for the judge, and refuses a judge the run recorded at none", () => {
     const subject = { side: "blueprint" as const, base: "b", plant: null };
-    expect(toStoredVerdict(judgeVerdict("fairness", "pass"), subject, "0123456789abcdef", { fairness: 3 })).toMatchObject({ judge_version: 3, subject_hash: "0123456789abcdef" });
-    expect(() => toStoredVerdict(judgeVerdict("fairness", "pass"), subject, "0123456789abcdef", { fairness: null })).toThrow("ran at no recorded version");
-    expect(() => toStoredVerdict(judgeVerdict("fairness", "pass"), subject, "0123456789abcdef", {})).toThrow("ran at no recorded version");
+    expect(toStoredVerdict(judgeVerdict("fairness", "pass"), subject, { subject_hash: "0123456789abcdef", versions: { fairness: 3 } })).toMatchObject({ judge_version: 3, subject_hash: "0123456789abcdef" });
+    expect(() => toStoredVerdict(judgeVerdict("fairness", "pass"), subject, { subject_hash: "0123456789abcdef", versions: { fairness: null } })).toThrow("ran at no recorded version");
+    expect(() => toStoredVerdict(judgeVerdict("fairness", "pass"), subject, { subject_hash: "0123456789abcdef", versions: {} })).toThrow("ran at no recorded version");
   });
 
   it("keeps a fail as one finding of the judge's kind", () => {
-    const stored = toStoredVerdict(judgeVerdict("fairness", "fail"), { side: "blueprint", base: "b", plant: null }, "0123456789abcdef", { fairness: 1 });
+    const stored = toStoredVerdict(judgeVerdict("fairness", "fail"), { side: "blueprint", base: "b", plant: null }, { subject_hash: "0123456789abcdef", versions: { fairness: 1 } });
     expect(stored.findings).toEqual([{ sequence: null, kinds: ["fairness"], severity: "major", judge_kind: null, quote: null, why: null, refers_to: null }]);
   });
 });

@@ -49,23 +49,22 @@ import type { StoredGame, StoredSubject, StoredVerdict } from "./schemas.ts";
 export const BASES_RESULTS = "bases";
 
 /**
- * One judge's verdict as the truth set stores it, on the subject whose hash
- * is `hash`, reached in a run that recorded `versions`. `turn` is the turn a judge of one turn judged, else
+ * One judge's verdict as the truth set stores it, `judged` on the subject whose
+ * hash is `subject_hash` in a run that recorded `versions`. `turn` is the turn a judge of one turn judged, else
  * null. A verdict with no model call has no model to store, and one whose
  * judge had no recorded version has no version to store, so both are refused.
  */
 export function toStoredVerdict(
   verdict: Verdict,
   subject: StoredSubject,
-  hash: string,
-  versions: RunInfo["judge_versions"],
+  judged: { subject_hash: string; versions: RunInfo["judge_versions"] },
   turn: number | null = null,
   sample = 0,
 ): StoredVerdict {
   if (verdict.tier !== "judge") throw new Error(`"${verdict.id}" is a ${verdict.tier} check, not a judge; only judges are stored`);
   const call = verdict.call;
   if (!call?.model) throw new Error(`judge "${verdict.id}" has no model call to store (status ${verdict.status})`);
-  const version = versions[verdict.id];
+  const version = judged.versions[verdict.id];
   if (typeof version !== "number") {
     throw new Error(`judge "${verdict.id}" ran at no recorded version (its files matched none in ${JUDGE_VERSIONS_FILE}), so its verdict cannot be stored`);
   }
@@ -73,7 +72,7 @@ export function toStoredVerdict(
     subject,
     judge: verdict.id,
     judge_version: version,
-    subject_hash: hash,
+    subject_hash: judged.subject_hash,
     model: call.model,
     sample,
     status: verdict.status,
@@ -185,7 +184,7 @@ export async function storeBase(root: string, id: string, resultFile: string): P
 
   const subject: StoredSubject = { side: "blueprint", base: id, plant: null };
   const verdicts = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) =>
-    toStoredVerdict(verdict, subject, blueprintHash(blueprint, brief, null), result.run.judge_versions),
+    toStoredVerdict(verdict, subject, { subject_hash: blueprintHash(blueprint, brief, null), versions: result.run.judge_versions }),
   );
   const resultsFile = path.join(root, "results", `${BASES_RESULTS}.json`);
   const stored = (await fs.stat(resultsFile).then(() => true, () => false))

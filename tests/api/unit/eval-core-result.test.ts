@@ -106,8 +106,9 @@ describe("the result schema", () => {
 
   it("reads a result written before runs recorded judge versions as recording none", async () => {
     const file = path.join(dir, "old.json");
-    const { judge_versions: _dropped, ...run } = result().run;
-    fs.writeFileSync(file, JSON.stringify({ ...result(), run }));
+    const old: Record<string, unknown> = { ...result().run };
+    delete old.judge_versions;
+    fs.writeFileSync(file, JSON.stringify({ ...result(), run: old }));
     expect((await readResult(file)).run.judge_versions).toEqual({});
   });
 

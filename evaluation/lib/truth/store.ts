@@ -27,10 +27,12 @@ import { pathToFileURL } from "node:url";
 import { StoryBriefSchema } from "../../../packages/blueprint-generator/src/story-brief.ts";
 import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import { repoRoot } from "../../core/judge-loader.ts";
+import { JUDGE_VERSIONS_FILE } from "../../core/judge-version.ts";
 import { judgesFor } from "../../core/registry.ts";
 import { parseResult } from "../../core/result.ts";
-import type { Result, Verdict } from "../../core/result.ts";
+import type { Result, RunInfo, Verdict } from "../../core/result.ts";
 import { kindedFindings } from "./findings.ts";
+import { blueprintHash } from "./subject-hash.ts";
 import { leaksIn } from "./guard.ts";
 import { BASE_BLUEPRINT, BASE_BRIEF, GAME_TRACE, loadTruthSet, TRUTH_ROOT } from "./loader.ts";
 import type { TruthSet } from "./loader.ts";
@@ -47,17 +49,31 @@ import type { StoredGame, StoredSubject, StoredVerdict } from "./schemas.ts";
 export const BASES_RESULTS = "bases";
 
 /**
- * One judge's verdict as the truth set stores it. `turn` is the turn a judge
- * of one turn judged, else null. A verdict with no model call has no model to
- * store, so it is refused.
+ * One judge's verdict as the truth set stores it, on the subject whose hash
+ * is `hash`, reached in a run that recorded `versions`. `turn` is the turn a judge of one turn judged, else
+ * null. A verdict with no model call has no model to store, and one whose
+ * judge had no recorded version has no version to store, so both are refused.
  */
-export function toStoredVerdict(verdict: Verdict, subject: StoredSubject, turn: number | null = null, sample = 0): StoredVerdict {
+export function toStoredVerdict(
+  verdict: Verdict,
+  subject: StoredSubject,
+  hash: string,
+  versions: RunInfo["judge_versions"],
+  turn: number | null = null,
+  sample = 0,
+): StoredVerdict {
   if (verdict.tier !== "judge") throw new Error(`"${verdict.id}" is a ${verdict.tier} check, not a judge; only judges are stored`);
   const call = verdict.call;
   if (!call?.model) throw new Error(`judge "${verdict.id}" has no model call to store (status ${verdict.status})`);
+  const version = versions[verdict.id];
+  if (typeof version !== "number") {
+    throw new Error(`judge "${verdict.id}" ran at no recorded version (its files matched none in ${JUDGE_VERSIONS_FILE}), so its verdict cannot be stored`);
+  }
   return {
     subject,
     judge: verdict.id,
+    judge_version: version,
+    subject_hash: hash,
     model: call.model,
     sample,
     status: verdict.status,
@@ -168,7 +184,9 @@ export async function storeBase(root: string, id: string, resultFile: string): P
   parseTruthFile(StoryBriefSchema, brief, briefFile);
 
   const subject: StoredSubject = { side: "blueprint", base: id, plant: null };
-  const verdicts = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) => toStoredVerdict(verdict, subject));
+  const verdicts = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) =>
+    toStoredVerdict(verdict, subject, blueprintHash(blueprint, brief, null), result.run.judge_versions),
+  );
   const resultsFile = path.join(root, "results", `${BASES_RESULTS}.json`);
   const stored = (await fs.stat(resultsFile).then(() => true, () => false))
     ? parseTruthFile(StoredResultsSchema, await readJson(resultsFile), resultsFile).verdicts

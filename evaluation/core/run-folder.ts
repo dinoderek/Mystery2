@@ -24,6 +24,7 @@ import path from "node:path";
 import { z } from "zod";
 
 import type { ResolvedBinding } from "./config.ts";
+import { judgeVersions } from "./judge-version.ts";
 import {
   RESULT_SCHEMA_VERSION,
   RunInfoSchema,
@@ -157,6 +158,7 @@ export function createRunFolder(options: RunFolderOptions): RunFolder {
     started_at: startedAt.toISOString(),
     ...commit,
     bindings: bindingsUsed(options.bindings),
+    judge_versions: { ...judgeVersions() },
   };
   const subjects: Array<Pick<Subject, "kind" | "id"> & { dir: string }> = [];
 

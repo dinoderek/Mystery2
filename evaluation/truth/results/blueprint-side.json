@@ -8,6 +8,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -22,6 +24,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -69,6 +73,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -92,6 +98,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -106,6 +114,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -120,6 +130,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -134,6 +146,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -157,6 +171,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -171,6 +187,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -185,6 +203,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -224,6 +244,8 @@
         "plant": "glitterwood-forest-character-grounding"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "d40772bb56c72130",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -238,6 +260,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -252,6 +276,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -323,6 +349,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -346,6 +374,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -369,6 +399,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -383,6 +415,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -397,6 +431,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -428,6 +464,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -442,6 +480,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -456,6 +496,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -511,6 +553,8 @@
         "plant": "glitterwood-forest-clue-graph"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "aded42254ec7dd6e",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -525,6 +569,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -539,6 +585,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -602,6 +650,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -625,6 +675,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -639,6 +691,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -653,6 +707,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -676,6 +732,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -699,6 +757,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -713,6 +773,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -727,6 +789,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -766,6 +830,8 @@
         "plant": "glitterwood-forest-knowledge-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "738662e1eab5557f",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -780,6 +846,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -794,6 +862,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -841,6 +911,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -864,6 +936,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -878,6 +952,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -892,6 +968,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -906,6 +984,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -929,6 +1009,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -952,6 +1034,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -966,6 +1050,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1005,6 +1091,8 @@
         "plant": "glitterwood-forest-path-payoff"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "db7a1a6e4aaad42c",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1019,6 +1107,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1033,6 +1123,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1072,6 +1164,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1095,6 +1189,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1109,6 +1205,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1123,6 +1221,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1137,6 +1237,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1168,6 +1270,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1182,6 +1286,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1205,6 +1311,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1244,6 +1352,8 @@
         "plant": "glitterwood-forest-solve-depth"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "65f85f965d3841f3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1258,6 +1368,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1272,6 +1384,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1327,6 +1441,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1350,6 +1466,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1364,6 +1482,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1378,6 +1498,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1401,6 +1523,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1440,6 +1564,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1454,6 +1580,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1468,6 +1596,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1507,6 +1637,8 @@
         "plant": "glitterwood-forest-timeline-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "d93e5eddc0b832f5",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1530,6 +1662,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1544,6 +1678,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1575,6 +1711,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1589,6 +1727,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1603,6 +1743,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1617,6 +1759,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1631,6 +1775,8 @@
         "plant": null
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1662,6 +1808,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1676,6 +1824,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1690,6 +1840,8 @@
         "plant": null
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1721,6 +1873,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "cf6eb6cbe300eb86",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1735,6 +1889,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1758,6 +1914,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -1805,6 +1963,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1819,6 +1979,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1833,6 +1995,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1847,6 +2011,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1861,6 +2027,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1900,6 +2068,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1914,6 +2084,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1928,6 +2100,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1967,6 +2141,8 @@
         "plant": "greenhouse-prizewinner-age-appropriate"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "8b06c19265195e66",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1981,6 +2157,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -1995,6 +2173,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2050,6 +2230,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2073,6 +2255,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2087,6 +2271,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2101,6 +2287,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2115,6 +2303,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2138,6 +2328,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2152,6 +2344,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2166,6 +2360,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2189,6 +2385,8 @@
         "plant": "greenhouse-prizewinner-character-grounding"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "9a8cb607f99d8462",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2203,6 +2401,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2217,6 +2417,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2248,6 +2450,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2262,6 +2466,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2285,6 +2491,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2299,6 +2507,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2313,6 +2523,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2344,6 +2556,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2358,6 +2572,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2372,6 +2588,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2411,6 +2629,8 @@
         "plant": "greenhouse-prizewinner-clue-graph"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "27b1a57b7288d9d4",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2425,6 +2645,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2439,6 +2661,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2486,6 +2710,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2500,6 +2726,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2514,6 +2742,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2537,6 +2767,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2560,6 +2792,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2599,6 +2833,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2622,6 +2858,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2645,6 +2883,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2692,6 +2932,8 @@
         "plant": "greenhouse-prizewinner-fairness"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "3933a8c3035738ef",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2715,6 +2957,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2729,6 +2973,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2760,6 +3006,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2774,6 +3022,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2788,6 +3038,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2802,6 +3054,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2825,6 +3079,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2856,6 +3112,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2870,6 +3128,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2884,6 +3144,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2915,6 +3177,8 @@
         "plant": "greenhouse-prizewinner-knowledge-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "c92ce25e41cd8cfd",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2929,6 +3193,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -2943,6 +3209,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -2998,6 +3266,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3012,6 +3282,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3026,6 +3298,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3040,6 +3314,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3063,6 +3339,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3102,6 +3380,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3116,6 +3396,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3130,6 +3412,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3169,6 +3453,8 @@
         "plant": "greenhouse-prizewinner-timeline-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "9d372331cb4eeed2",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3192,6 +3478,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3206,6 +3494,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3245,6 +3535,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3259,6 +3551,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3273,6 +3567,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3287,6 +3583,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3310,6 +3608,8 @@
         "plant": null
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3341,6 +3641,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3355,6 +3657,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3369,6 +3673,8 @@
         "plant": null
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3400,6 +3706,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "abeb1057953dbdf6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3414,6 +3722,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3437,6 +3747,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3484,6 +3796,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3507,6 +3821,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3521,6 +3837,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3535,6 +3853,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3549,6 +3869,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3563,6 +3885,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3577,6 +3901,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3591,6 +3917,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3638,6 +3966,8 @@
         "plant": "large-snow-foxes-age-appropriate"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "aeb20acf47121a82",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3652,6 +3982,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3666,6 +3998,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3721,6 +4055,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3744,6 +4080,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3758,6 +4096,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3772,6 +4112,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3786,6 +4128,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3809,6 +4153,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3823,6 +4169,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3837,6 +4185,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3884,6 +4234,8 @@
         "plant": "large-snow-foxes-character-grounding"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "49813e84432af97b",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3898,6 +4250,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3912,6 +4266,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3959,6 +4315,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -3973,6 +4331,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -3996,6 +4356,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4010,6 +4372,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4024,6 +4388,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4047,6 +4413,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4061,6 +4429,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4075,6 +4445,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4130,6 +4502,8 @@
         "plant": "large-snow-foxes-clue-graph"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "8d553ffdc4d50365",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4144,6 +4518,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4158,6 +4534,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4205,6 +4583,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4219,6 +4599,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4233,6 +4615,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4256,6 +4640,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4279,6 +4665,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4310,6 +4698,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4333,6 +4723,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4356,6 +4748,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4411,6 +4805,8 @@
         "plant": "large-snow-foxes-fairness"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "b2149f5aa060cf14",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4434,6 +4830,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4448,6 +4846,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4503,6 +4903,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4517,6 +4919,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4531,6 +4935,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4545,6 +4951,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4559,6 +4967,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4598,6 +5008,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4621,6 +5033,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4635,6 +5049,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4690,6 +5106,8 @@
         "plant": "large-snow-foxes-path-payoff"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "88522bb7d05ce5e3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4704,6 +5122,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4718,6 +5138,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4781,6 +5203,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4804,6 +5228,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4818,6 +5244,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4832,6 +5260,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4846,6 +5276,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4877,6 +5309,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4891,6 +5325,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4914,6 +5350,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -4969,6 +5407,8 @@
         "plant": "large-snow-foxes-solve-depth"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "55449481d019453d",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4983,6 +5423,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4997,6 +5439,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5044,6 +5488,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5058,6 +5504,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5072,6 +5520,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5086,6 +5536,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5109,6 +5561,8 @@
         "plant": null
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5132,6 +5586,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5146,6 +5602,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5160,6 +5618,8 @@
         "plant": null
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5191,6 +5651,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "41e3206c53919a62",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5205,6 +5667,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5228,6 +5692,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5251,6 +5717,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5265,6 +5733,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5279,6 +5749,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5293,6 +5765,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5307,6 +5781,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5330,6 +5806,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5344,6 +5822,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5358,6 +5838,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5389,6 +5871,8 @@
         "plant": "lighthouse-lens-age-appropriate"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "669f251f8ec12079",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5403,6 +5887,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5417,6 +5903,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5456,6 +5944,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5470,6 +5960,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5484,6 +5976,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5507,6 +6001,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5521,6 +6017,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5552,6 +6050,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5575,6 +6075,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5589,6 +6091,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5612,6 +6116,8 @@
         "plant": "lighthouse-lens-fairness"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "e3676e6514741dc6",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5635,6 +6141,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5649,6 +6157,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5680,6 +6190,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5694,6 +6206,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5708,6 +6222,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5722,6 +6238,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5745,6 +6263,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5768,6 +6288,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5782,6 +6304,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5796,6 +6320,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5827,6 +6353,8 @@
         "plant": "lighthouse-lens-knowledge-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "cdc025dd52de5f4a",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5841,6 +6369,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5855,6 +6385,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5878,6 +6410,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5892,6 +6426,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5906,6 +6442,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -5920,6 +6458,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5943,6 +6483,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5974,6 +6516,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -5997,6 +6541,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6011,6 +6557,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6042,6 +6590,8 @@
         "plant": "lighthouse-lens-path-payoff"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "f4fba5a1be3ac944",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6056,6 +6606,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6070,6 +6622,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6101,6 +6655,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6115,6 +6671,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6129,6 +6687,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6143,6 +6703,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6157,6 +6719,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6180,6 +6744,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6194,6 +6760,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6217,6 +6785,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6248,6 +6818,8 @@
         "plant": "lighthouse-lens-solve-depth"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "0d5146263c6a1667",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6262,6 +6834,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6276,6 +6850,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6323,6 +6899,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6337,6 +6915,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6351,6 +6931,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6365,6 +6947,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6388,6 +6972,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6411,6 +6997,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6425,6 +7013,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6439,6 +7029,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6470,6 +7062,8 @@
         "plant": "lighthouse-lens-timeline-coherence"
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "e9f3198369b0efd3",
       "model": "opus",
       "sample": 0,
       "status": "fail",
@@ -6493,6 +7087,8 @@
         "plant": null
       },
       "judge": "age_appropriate",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6507,6 +7103,8 @@
         "plant": null
       },
       "judge": "blueprint_broad",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6530,6 +7128,8 @@
         "plant": null
       },
       "judge": "character_grounding",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6544,6 +7144,8 @@
         "plant": null
       },
       "judge": "clue_graph",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6558,6 +7160,8 @@
         "plant": null
       },
       "judge": "fairness",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6572,6 +7176,8 @@
         "plant": null
       },
       "judge": "knowledge_coherence",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6586,6 +7192,8 @@
         "plant": null
       },
       "judge": "knowledge_timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6617,6 +7225,8 @@
         "plant": null
       },
       "judge": "path_payoff",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6631,6 +7241,8 @@
         "plant": null
       },
       "judge": "solve_depth",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6645,6 +7257,8 @@
         "plant": null
       },
       "judge": "solve_depth_fairness",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -6668,6 +7282,8 @@
         "plant": null
       },
       "judge": "timeline_coherence",
+      "judge_version": 1,
+      "subject_hash": "ca1f63fe8f2a7a58",
       "model": "opus",
       "sample": 0,
       "status": "pass",

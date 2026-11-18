@@ -4,7 +4,7 @@
  *
  * | Part         | Holds |
  * | ------------ | ----- |
- * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used |
+ * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used, each judge's version |
  * | `subject`    | `blueprint`, `game` or `turn`, its id, and where the stored subject sits beside the result |
  * | `production` | When this run made the subject: each model call, with its attempts |
  * | `verdicts`   | One per check or judge; a judge's carries its model call and raw answer |
@@ -78,6 +78,12 @@ export const RunInfoSchema = z
     /** Whether the working tree had no uncommitted change; null outside a git checkout. */
     tree_clean: z.boolean().nullable(),
     bindings: z.record(BindingUsedSchema),
+    /**
+     * Every judge's version when the run started (`core/judge-version.ts`);
+     * null for a judge whose files matched no recorded version. Empty in a
+     * result written before runs recorded them.
+     */
+    judge_versions: z.record(z.number().int().positive().nullable()).default({}),
   })
   .strict();
 export type RunInfo = z.infer<typeof RunInfoSchema>;

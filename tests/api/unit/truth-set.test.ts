@@ -415,6 +415,8 @@ describe("the catch rule", () => {
   const verdict = (overrides: Partial<StoredVerdict> = {}): StoredVerdict => ({
     subject: { side: "game", game: "medal", variant: "medal-spoiler", sequence: null },
     judge: "gm_spoiler",
+    judge_version: 1,
+    subject_hash: "0000000000000000",
     model: "m",
     sample: 0,
     status: "fail",

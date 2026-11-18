@@ -13,7 +13,9 @@
  * blueprint judges `blueprint-judge`, the game judges `game-judge`, the turn
  * judges `turn-judge`.
  *
- * A call is one judge, on one subject, on one model, for one sample.
+ * A call is one judge, on one subject, on one model, for one sample. A judge
+ * whose files match no recorded version cannot be planned: its verdicts would
+ * have no version to be stored at.
  */
 
 import fs from "node:fs";
@@ -21,11 +23,13 @@ import fs from "node:fs";
 import { BLUEPRINT_JUDGE_BINDING } from "../blueprint/commands.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import { InputError } from "../core/errors.ts";
+import { checkJudgeVersions, JUDGE_VERSIONS_FILE, judgeVersions } from "../core/judge-version.ts";
 import { findEntry, REGISTRY } from "../core/registry.ts";
 import type { JudgeEntry } from "../core/registry.ts";
 import { findingsRow } from "../lib/truth/findings.ts";
 import type { TruthSet } from "../lib/truth/loader.ts";
 import { buildBlueprintVariant, buildGameVariant, PlantError } from "../lib/truth/plants.ts";
+import { blueprintHash, gameHash } from "../lib/truth/subject-hash.ts";
 import type { BlueprintSubject, GameSubject, StoredGame } from "../lib/truth/schemas.ts";
 import { DEFAULT_JUDGE_BINDING, GAME_TURN_JUDGES, storedGameTurns } from "../runtime/judge-turn.ts";
 import type { StoredTurn } from "../runtime/lib/turn.ts";
@@ -52,12 +56,15 @@ export interface PlannedJudge {
   id: string;
   role: JudgeRole;
   binding: string;
+  /** The judge's version as its files stand, which every verdict it reaches is stored at. */
+  version: number;
 }
 
+/** `hash` is the subject's as the truth set holds it (`subject-hash.ts`), stored with each verdict on it. */
 export type PlannedSubject =
-  | { kind: "blueprint"; id: string; stored: BlueprintSubject; blueprint: unknown; brief: unknown }
-  | { kind: "game"; id: string; stored: GameSubject; trace: StoredGame; prepared: GamePrepared }
-  | { kind: "turn"; id: string; stored: GameSubject; turn: StoredTurn };
+  | { kind: "blueprint"; id: string; stored: BlueprintSubject; hash: string; blueprint: unknown; brief: unknown }
+  | { kind: "game"; id: string; stored: GameSubject; hash: string; trace: StoredGame; prepared: GamePrepared }
+  | { kind: "turn"; id: string; stored: GameSubject; hash: string; turn: StoredTurn };
 
 /** What every game judge of one game reads, made once when the suite is planned. */
 export type GamePrepared = Pick<JudgeRun, "trace" | "judgeSubject">;
@@ -95,7 +102,7 @@ function roleOf(entry: JudgeEntry): JudgeRole {
   return "turn";
 }
 
-function planJudge(id: string): PlannedJudge {
+function planJudge(id: string, versions: Readonly<Record<string, number | null>>): PlannedJudge {
   const entry = findEntry(id);
   if (!entry) {
     const judges = REGISTRY.filter((candidate) => candidate.type === "judge").map((candidate) => candidate.id);
@@ -111,7 +118,12 @@ function planJudge(id: string): PlannedJudge {
   if (role === "turn" && !GAME_TURN_JUDGES.includes(id)) {
     throw new InputError(`the suite names "${id}", which judges replayed turns only; a stored game's turns take ${GAME_TURN_JUDGES.join(" and ")}`);
   }
-  return { id, role, binding: BINDING_OF[role] };
+  const version = versions[id] ?? null;
+  if (version === null) {
+    const problem = checkJudgeVersions().find((line) => line.startsWith(`${id} `)) ?? `${id} matches no version in ${JUDGE_VERSIONS_FILE}`;
+    throw new InputError(`the suite names judge "${id}", whose files match no recorded version, so its verdicts could not be stored: ${problem}`);
+  }
+  return { id, role, binding: BINDING_OF[role], version };
 }
 
 /** The ids a selection names, in the set's order for `all`, each checked to exist. */
@@ -139,17 +151,22 @@ function planted<T>(build: () => T): T {
 
 function blueprintSubjects(set: TruthSet, subjects: Suite["subjects"]): PlannedSubject[] {
   const bases = new Map(set.bases.map((base) => [base.id, { blueprint: readBlueprint(base.blueprintFile), brief: readBlueprint(base.briefFile) }]));
-  const planned: PlannedSubject[] = select(subjects.bases, [...bases.keys()], "bases").map((id) => ({
-    kind: "blueprint",
-    id,
-    stored: { side: "blueprint", base: id, plant: null },
-    ...(bases.get(id) as { blueprint: unknown; brief: unknown }),
-  }));
+  const planned: PlannedSubject[] = select(subjects.bases, [...bases.keys()], "bases").map((id) => {
+    const base = bases.get(id) as { blueprint: unknown; brief: unknown };
+    return { kind: "blueprint", id, stored: { side: "blueprint", base: id, plant: null }, hash: blueprintHash(base.blueprint, base.brief, null), ...base };
+  });
   for (const id of select(subjects.blueprint_plants, set.blueprintPlants.map((plant) => plant.id), "blueprint_plants")) {
     const plant = set.blueprintPlants.find((candidate) => candidate.id === id) as TruthSet["blueprintPlants"][number];
     const base = bases.get(plant.base) as { blueprint: unknown; brief: unknown };
     const built = planted(() => buildBlueprintVariant(base.blueprint, plant));
-    planned.push({ kind: "blueprint", id, stored: { side: "blueprint", base: plant.base, plant: id }, blueprint: built.blueprint, brief: base.brief });
+    planned.push({
+      kind: "blueprint",
+      id,
+      stored: { side: "blueprint", base: plant.base, plant: id },
+      hash: blueprintHash(base.blueprint, base.brief, plant.patch),
+      blueprint: built.blueprint,
+      brief: base.brief,
+    });
   }
   return planned;
 }
@@ -159,14 +176,14 @@ function gameSubjects(set: TruthSet, subjects: Suite["subjects"]): Array<Extract
   const games = select(subjects.games, set.games.map((game) => game.id), "games").map((id) => {
     const game = set.games.find((candidate) => candidate.id === id) as TruthSet["games"][number];
     const stored = { side: "game" as const, game: id, variant: null, sequence: null };
-    return { kind: "game" as const, id, stored, trace: game.trace, prepared: prepared(game.trace, id) };
+    return { kind: "game" as const, id, stored, hash: gameHash(game.trace, null), trace: game.trace, prepared: prepared(game.trace, id) };
   });
   const variants = select(subjects.game_variants, set.turnVariants.map((variant) => variant.id), "game_variants").map((id) => {
     const variant = set.turnVariants.find((candidate) => candidate.id === id) as TruthSet["turnVariants"][number];
     const game = set.games.find((candidate) => candidate.id === variant.game) as TruthSet["games"][number];
     const built = planted(() => buildGameVariant(game.trace, variant));
     const stored = { side: "game" as const, game: variant.game, variant: id, sequence: null };
-    return { kind: "game" as const, id, stored, trace: built.trace, prepared: prepared(built.trace, id) };
+    return { kind: "game" as const, id, stored, hash: gameHash(game.trace, variant.plants), trace: built.trace, prepared: prepared(built.trace, id) };
   });
   return [...games, ...variants];
 }
@@ -177,6 +194,7 @@ function turnSubjects(games: ReadonlyArray<Extract<PlannedSubject, { kind: "game
       kind: "turn",
       id: `${game.id}--s${turn.sequence}`,
       stored: { ...game.stored, sequence: turn.sequence as number },
+      hash: game.hash,
       turn,
     })),
   );
@@ -215,10 +233,16 @@ function checkThreshold(threshold: Threshold, index: number, judges: readonly Pl
 
 /**
  * Every call the suite makes, grouped by subject. `resolve` gives a binding
- * by name and throws, naming it, when it is missing or cannot run.
+ * by name and throws, naming it, when it is missing or cannot run. `versions`
+ * are the judges' versions, by default as their files stand.
  */
-export function planSuite(suite: Suite, set: TruthSet, resolve: (name: string) => ResolvedBinding): SuitePlan {
-  const judges = suite.judges.map(planJudge);
+export function planSuite(
+  suite: Suite,
+  set: TruthSet,
+  resolve: (name: string) => ResolvedBinding,
+  versions: Readonly<Record<string, number | null>> = judgeVersions(),
+): SuitePlan {
+  const judges = suite.judges.map((id) => planJudge(id, versions));
   const bindings = new Map<string, ResolvedBinding>();
   for (const judge of judges) if (!bindings.has(judge.binding)) bindings.set(judge.binding, resolve(judge.binding));
   const models = modelsOf(suite, judges, bindings);

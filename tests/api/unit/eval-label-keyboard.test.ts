@@ -293,7 +293,7 @@ describe("pass 2's question in a browser", () => {
     for (const sequence of [1, 5, 6, 8, 9]) held.labels.push({ sequence, faults: [], by: "fixture", at: "2026-06-02T00:00:00Z", pass: 1 });
     await fs.writeFile(labelsFile, JSON.stringify(held, null, 2));
     const game = { side: "game", game: "medal", variant: null, sequence: null };
-    const base = { model: "opus", sample: 0, duration_ms: null, cost_usd: null };
+    const base = { judge_version: 1, subject_hash: "0000000000000000", model: "opus", sample: 0, duration_ms: null, cost_usd: null };
     const why = "Points the player at the culprit.";
     await fs.writeFile(
       path.join(own, "results/extra.json"),

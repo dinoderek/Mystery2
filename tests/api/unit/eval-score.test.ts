@@ -6,13 +6,16 @@ import path from "node:path";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { repoRoot } from "../../../evaluation/core/judge-loader.ts";
+import { judgeVersion } from "../../../evaluation/core/judge-version.ts";
 import { loadTruthSet, readResultsFile } from "../../../evaluation/lib/truth/loader.ts";
 import type { TruthSet } from "../../../evaluation/lib/truth/loader.ts";
-import { MAX_MEMBERS_PER_SIDE, scoreVerdicts } from "../../../evaluation/lib/truth/score.ts";
+import { MAX_MEMBERS_PER_SIDE, membersOf, scoreVerdicts } from "../../../evaluation/lib/truth/score.ts";
 import type { MemberScore, ScoreReport, SideScore } from "../../../evaluation/lib/truth/score.ts";
 import { STORED_RESULTS_VERSION } from "../../../evaluation/lib/truth/schemas.ts";
 import type { StoredFinding, StoredSubject, StoredVerdict } from "../../../evaluation/lib/truth/schemas.ts";
+import { subjectHash } from "../../../evaluation/lib/truth/subject-hash.ts";
 import { wilson } from "../../../evaluation/lib/truth/wilson.ts";
+import { formatScore } from "../../../evaluation/score/table.ts";
 
 const ROOT = repoRoot();
 const FIXTURE = path.join(ROOT, "tests/api/unit/fixtures/truth");
@@ -44,7 +47,7 @@ function finding(sequence: number | null, kind: string, severity: "minor" | "maj
 }
 
 function verdict(overrides: Partial<StoredVerdict> & Pick<StoredVerdict, "subject" | "judge">): StoredVerdict {
-  return { model: "opus", sample: 0, status: "pass", findings: [], duration_ms: 1000, cost_usd: 0.1, ...overrides };
+  return { judge_version: 1, subject_hash: overrides.subject_hash ?? subjectHash(set, overrides.subject), model: "opus", sample: 0, status: "pass", findings: [], duration_ms: 1000, cost_usd: 0.1, ...overrides };
 }
 
 /** A fabrication finding at the fixture's one labelled fabrication (turn 7), or none. */
@@ -175,6 +178,39 @@ describe("scoring a judge and kind", () => {
     // Turn 7 is labelled with fabrications only, so it is clean for not_age_fit.
     expect(member(report, "game", "age_appropriate_turn@sonnet").kinds[0].units).toEqual({ fault: 0, clean: 1, unknown: 0 });
     expect(side(report, "game").subsets.find((subset) => subset.members.length === 1 && subset.members[0].endsWith("sonnet"))?.false_reports).toBe(1);
+  });
+});
+
+describe("stale verdicts", () => {
+  it("scores only verdicts at their judge's current version, on their subject as it stands, and lists the rest", () => {
+    const current = judgeVersion("gm_fabrication") as number;
+    const report = scoreVerdicts(set, [
+      fabrication(0, true),
+      fabrication(1, true, { judge_version: current + 1 }),
+      fabrication(2, true, { judge_version: current + 1 }),
+      fabrication(3, false, { subject_hash: "ffffffffffffffff" }),
+    ]);
+    expect(member(report, "game", "gm_fabrication")).toMatchObject({ version: current, verdicts: 1 });
+    expect(report.stale).toEqual([
+      { judge: "gm_fabrication", model: "opus", version: current, current, reason: "subject", verdicts: 1 },
+      { judge: "gm_fabrication", model: "opus", version: current + 1, current, reason: "judge", verdicts: 2 },
+    ]);
+    const text = formatScore(report, { truth: "t", results: ["r"] });
+    expect(text).toContain(`gm_fabrication on opus: 2 verdicts at v${current + 1}, not scored; it is at v${current}.`);
+    expect(text).toContain(`gm_fabrication on opus: 1 verdict at v${current}, not scored; the subjects they judged have changed since.`);
+  });
+
+  it("scores nothing of a judge whose files match no recorded version, and says so", () => {
+    const report = scoreVerdicts(set, [verdict({ subject: MEDAL, judge: "a_judge_no_longer_registered" })]);
+    expect(report.sides).toEqual([]);
+    expect(report.stale).toEqual([{ judge: "a_judge_no_longer_registered", model: "opus", version: 1, current: null, reason: "judge", verdicts: 1 }]);
+    expect(formatScore(report, { truth: "t", results: ["r"] })).toContain("its files match no recorded version");
+  });
+
+  it("refuses one judge at two versions read together", () => {
+    expect(() => membersOf("game", [fabrication(0, true), fabrication(1, true, { judge_version: 7 })])).toThrow(
+      "gm_fabrication has verdicts at versions 1 and 7; keep one version of a judge in what is read together",
+    );
   });
 });
 
@@ -341,7 +377,7 @@ describe("./dev eval score", () => {
     expect(broken.code).toBe(1);
     expect(broken.err).toContain("is not JSON");
 
-    const stray = await writeResults(path.join(dir, "stray.json"), [verdict({ subject: { ...MEDAL, game: "absent" }, judge: "gm_spoiler" })]);
+    const stray = await writeResults(path.join(dir, "stray.json"), [verdict({ subject: { ...MEDAL, game: "absent" }, judge: "gm_spoiler", subject_hash: "0000000000000000" })]);
     const strayRun = await score([stray, "--truth", FIXTURE]);
     expect(strayRun.code).toBe(1);
     expect(strayRun.err).toContain('no stored game "absent"');

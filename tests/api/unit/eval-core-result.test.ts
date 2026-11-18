@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { ResolvedBinding } from "../../../evaluation/core/config.ts";
+import { judgeVersions } from "../../../evaluation/core/judge-version.ts";
 import {
   EXIT_PASSED,
   EXIT_RUN_BROKE,
@@ -66,6 +67,7 @@ function result(verdicts: Verdict[] = [verdict("schema", "pass")], overrides: Pa
       bindings: {
         "blueprint-judge": { cmd: "w.sh", args: [], extract_path: "result", model: "opus", timeout_ms: 1, retries: 1 },
       },
+      judge_versions: { fairness: 1, solve_depth: null },
     },
     subject: { kind: "blueprint", id: "lighthouse", path: "blueprint.json" },
     production: { calls: [call] },
@@ -100,6 +102,13 @@ describe("the result schema", () => {
     const file = path.join(dir, "result.json");
     await expect(writeResult(file, { ...result(), ...overrides } as Result)).rejects.toThrow(message);
     expect(fs.existsSync(file)).toBe(false);
+  });
+
+  it("reads a result written before runs recorded judge versions as recording none", async () => {
+    const file = path.join(dir, "old.json");
+    const { judge_versions: _dropped, ...run } = result().run;
+    fs.writeFileSync(file, JSON.stringify({ ...result(), run }));
+    expect((await readResult(file)).run.judge_versions).toEqual({});
   });
 
   it("refuses to read a malformed result, naming the file", async () => {
@@ -216,6 +225,10 @@ describe("the run folder", () => {
       ["lighthouse-lens", true],
       ["lighthouse-lens-2", false],
     ]);
+  });
+
+  it("records every judge's version as its files stand when the run starts", () => {
+    expect(open().info().judge_versions).toEqual(judgeVersions());
   });
 
   it("gives a second run in the same second its own folder", () => {

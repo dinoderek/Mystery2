@@ -1,5 +1,5 @@
 {
-  "schema_version": "mystery-truth-score/1",
+  "schema_version": "mystery-truth-score/2",
   "inputs": {
     "truth": "evaluation/truth",
     "results": [
@@ -10,6 +10,7 @@
   "rules": {
     "reports": "a finding of either severity is a report; major_only counts only major findings",
     "catch": "a judge catches a unit when most of its judging samples do; a tie is not a catch",
+    "stale": "only a verdict at its judge's current version, on its subject as it stands, is scored; the rest are listed as stale",
     "bar": {
       "kind": "lose_nothing",
       "text": "loses no fault the full battery catches"
@@ -22,6 +23,7 @@
         {
           "id": "age_appropriate_turn",
           "judge": "age_appropriate_turn",
+          "version": 1,
           "model": "sonnet",
           "verdicts": 1800,
           "not_judged": 0,
@@ -81,6 +83,7 @@
         {
           "id": "gm_broad",
           "judge": "gm_broad",
+          "version": 1,
           "model": "opus",
           "verdicts": 45,
           "not_judged": 0,
@@ -324,6 +327,7 @@
         {
           "id": "gm_clue_discipline",
           "judge": "gm_clue_discipline",
+          "version": 1,
           "model": "opus",
           "verdicts": 45,
           "not_judged": 0,
@@ -383,6 +387,7 @@
         {
           "id": "gm_fabrication",
           "judge": "gm_fabrication",
+          "version": 1,
           "model": "opus",
           "verdicts": 45,
           "not_judged": 0,
@@ -442,6 +447,7 @@
         {
           "id": "gm_roleplay",
           "judge": "gm_roleplay",
+          "version": 1,
           "model": "opus",
           "verdicts": 45,
           "not_judged": 0,
@@ -501,6 +507,7 @@
         {
           "id": "gm_spoiler",
           "judge": "gm_spoiler",
+          "version": 1,
           "model": "opus",
           "verdicts": 45,
           "not_judged": 0,
@@ -1717,5 +1724,6 @@
         "meets_bar": true
       }
     }
-  ]
+  ],
+  "stale": []
 }

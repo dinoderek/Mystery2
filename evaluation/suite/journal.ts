@@ -55,7 +55,7 @@ const LineSchema = z
 type Line = z.infer<typeof LineSchema>;
 
 /** The subject's fields in a fixed order, so a key never depends on the order an object was built or parsed in. */
-function subjectKey(subject: StoredSubject): unknown[] {
+export function subjectKey(subject: StoredSubject): unknown[] {
   return subject.side === "blueprint" ? [subject.side, subject.base, subject.plant] : [subject.side, subject.game, subject.variant, subject.sequence];
 }
 

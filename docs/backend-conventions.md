@@ -19,7 +19,7 @@ sanitized views of it.
 Handlers do **not** touch a database, a file path or an HTTP detail. They reach
 the host only through `EngineContext` (`packages/game-engine/src/context.ts`);
 `context-local.ts` is the only file that knows the state is a SQLite file and the
-content is two directories. A direct file or driver reference in a handler is a
+content is filesystem directories. A direct file or driver reference in a handler is a
 bug: a second adapter must fit beside the first.
 
 - Add a **named operation** to the store interface rather than reaching past
@@ -63,6 +63,6 @@ bug: a second adapter must fit beside the first.
 
 ## Content
 
-Blueprints and images are files. `content.ts` logs and skips anything
+Blueprints, scene recipes and images are files. `content.ts` logs and skips anything
 unparseable rather than failing the catalog, and `paths.ts` alone decides where
 they live.

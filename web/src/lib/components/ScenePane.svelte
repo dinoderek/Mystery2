@@ -1,16 +1,30 @@
 <script lang="ts">
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import BlueprintImage from './BlueprintImage.svelte';
-  import LighthouseScene from './LighthouseScene.svelte';
-  import { hasLighthouseScene } from '$lib/domain/scene-selection';
+  import SceneView from './SceneView.svelte';
+  import { sceneForPage, loadSceneManifest } from '$lib/domain/scene-selection';
+  import type { SceneManifest } from '@my2/shared';
 
   const page = $derived(gameSessionStore.activePage);
   const blueprintId = $derived(gameSessionStore.blueprint_id);
+  let manifest = $state<SceneManifest | null>(null);
+  const recipe = $derived(sceneForPage(manifest, page));
+
+  $effect(() => {
+    const id = blueprintId;
+    manifest = null;
+    if (!id) return;
+    let cancelled = false;
+    void loadSceneManifest(id).then((loaded) => { if (!cancelled) manifest = loaded; });
+    return () => { cancelled = true; };
+  });
 </script>
 
 <div class="story-image-panel h-full w-full overflow-hidden" data-testid="scene-pane">
-  {#if hasLighthouseScene(blueprintId, page)}
-    <LighthouseScene>{@render illustration()}</LighthouseScene>
+  {#if recipe}
+    {#key `${blueprintId}/${recipe.location_id}`}
+      <SceneView {recipe}>{@render illustration()}</SceneView>
+    {/key}
   {:else}
     {@render illustration()}
   {/if}
@@ -27,8 +41,7 @@
       />
     {/key}
   {:else}
-    <!-- The pane is two thirds of the screen, so an unlabelled blank reads as a
-         broken page rather than a case with no art for this scene. -->
+    <!-- An unlabelled blank reads as a broken page rather than a case with no art. -->
     <div
       class="story-image-placeholder flex h-full w-full items-center justify-center text-sm text-t-muted/80"
     >

@@ -9,11 +9,12 @@ import { ENDPOINTS } from "../../../packages/game-engine/src/endpoints/index.ts"
 // statically — a handler's access is a claim about what it touches — so the
 // claim is written down here, and a new endpoint has to come past it.
 
-const CATALOG_ENDPOINTS = ["blueprints-list"];
+const CATALOG_ENDPOINTS = ["blueprint-scenes", "blueprints-list"];
 
 describe("endpoint access", () => {
   it("lists exactly the endpoints the game answers", () => {
     expect(ENDPOINTS.map((endpoint) => endpoint.name).sort()).toEqual([
+      "blueprint-scenes",
       "blueprints-list",
       "game-enter",
       "game-get",

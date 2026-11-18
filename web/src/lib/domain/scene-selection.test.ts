@@ -1,40 +1,75 @@
-import { describe, expect, it } from 'vitest';
-import { hasLighthouseScene, LIGHTHOUSE_BLUEPRINT_ID } from './scene-selection';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadSceneManifest, sceneForPage } from './scene-selection';
 import type { SessionPage } from './session-pages';
+import { callApiGet } from '../api/client';
+import {
+  createSceneManifest,
+  createProceduralScene,
+} from '../../../../tests/testkit/src/fixtures';
 
+vi.mock('../api/client', () => ({ callApiGet: vi.fn() }));
+const recipe = createProceduralScene();
+const manifest = createSceneManifest({ scenes: [recipe] });
 const page: SessionPage = {
   index: 0,
   kind: 'location',
   title: null,
-  fallbackLabel: 'Lantern Room',
+  fallbackLabel: 'Kitchen',
   imageId: null,
-  locationId: 'lantern_room',
+  locationId: recipe.location_id,
   events: [],
 };
+beforeEach(() => {
+  vi.restoreAllMocks();
+  vi.mocked(callApiGet).mockReset();
+});
 
-describe('the authored lighthouse scene', () => {
-  it('belongs only to this case and its lantern-room location pages', () => {
-    expect(hasLighthouseScene(LIGHTHOUSE_BLUEPRINT_ID, page)).toBe(true);
-    expect(hasLighthouseScene(null, page)).toBe(false);
-    expect(hasLighthouseScene('another-case', page)).toBe(false);
-    expect(hasLighthouseScene(LIGHTHOUSE_BLUEPRINT_ID, null)).toBe(false);
+describe('scene artwork', () => {
+  it('selects historical scenery while preserving portraits and missing-art fallbacks', () => {
+    expect(sceneForPage(manifest, page)).toBe(manifest.scenes[0]);
     expect(
-      hasLighthouseScene(LIGHTHOUSE_BLUEPRINT_ID, {
+      sceneForPage(manifest, { ...page, locationId: 'another-place' }),
+    ).toBeNull();
+    expect(sceneForPage(manifest, { ...page, kind: 'conversation' })).toBe(
+      manifest.scenes[0],
+    );
+    expect(
+      sceneForPage(manifest, {
         ...page,
         kind: 'conversation',
+        imageId: 'portrait.png',
       }),
-    ).toBe(false);
+    ).toBeNull();
+    expect(sceneForPage(manifest, { ...page, kind: 'opening' })).toBeNull();
+    expect(sceneForPage(manifest, null)).toBeNull();
+    expect(sceneForPage(null, page)).toBeNull();
+  });
+  it('validates the public response against the requested case', async () => {
+    vi.mocked(callApiGet).mockResolvedValue({ data: manifest, error: null });
+    expect(await loadSceneManifest(manifest.blueprint_id)).toEqual(manifest);
+    expect(callApiGet).toHaveBeenCalledWith('blueprint-scenes', {
+      blueprint_id: manifest.blueprint_id,
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(
-      hasLighthouseScene(LIGHTHOUSE_BLUEPRINT_ID, {
-        ...page,
-        locationId: 'keepers_cottage',
-      }),
-    ).toBe(false);
-    expect(
-      hasLighthouseScene(LIGHTHOUSE_BLUEPRINT_ID, {
-        ...page,
-        locationId: null,
-      }),
-    ).toBe(false);
+      await loadSceneManifest('a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34'),
+    ).toBeNull();
+    expect(log).toHaveBeenCalledTimes(1);
+  });
+  it('logs a transport or contract failure once and returns the image fallback', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(callApiGet).mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Offline' },
+    });
+    expect(await loadSceneManifest(manifest.blueprint_id)).toBeNull();
+    expect(log).toHaveBeenCalledTimes(1);
+    log.mockClear();
+    vi.mocked(callApiGet).mockResolvedValueOnce({
+      data: { scenes: 'broken' },
+      error: null,
+    });
+    expect(await loadSceneManifest(manifest.blueprint_id)).toBeNull();
+    expect(log).toHaveBeenCalledTimes(1);
   });
 });

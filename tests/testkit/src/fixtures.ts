@@ -11,6 +11,10 @@
 
 import {
   SpeakerSchema,
+  SceneManifestSchema,
+  ProceduralSceneSchema,
+  type SceneManifest,
+  type ProceduralScene,
   NarrationPartSchema,
   NarrationEventSchema,
   GameStateSchema,
@@ -51,6 +55,20 @@ import {
 function validate<T>(schema: { parse: (v: unknown) => unknown }, obj: T): T {
   schema.parse(obj);
   return obj;
+}
+
+export function createProceduralScene(overrides: Partial<ProceduralScene> = {}): ProceduralScene {
+  return ProceduralSceneSchema.parse({
+    kind: "procedural", location_id: "loc-kitchen", label: "The kitchen.",
+    sky: "#aabbcc", ambient: "#ccddee", sun: { color: "#ffeedd", position: [-8, 15, 10] },
+    camera: { position: [10, 8, 12], target: [0, 1, 0] },
+    objects: [{ id: "floor", shape: "box", position: [0, -0.2, 0], rotation: [0, 0, 0], scale: [10, 0.2, 10], color: "#887766", material: "matte", motion: "still" }],
+    ...overrides,
+  });
+}
+
+export function createSceneManifest(overrides: Partial<SceneManifest> = {}): SceneManifest {
+  return SceneManifestSchema.parse({ schema_version: "scene/1", blueprint_id: "123e4567-e89b-12d3-a456-426614174000", scenes: [], ...overrides });
 }
 
 // ---------------------------------------------------------------------------

@@ -4,8 +4,6 @@
 
 - [Node.js](https://nodejs.org/) 24 (see `.nvmrc`), [npm](https://www.npmjs.com/)
 
-That is the whole list. The game is one Node process over a SQLite file.
-
 ## First-Time Setup
 
 **Optional shared config root** — to share local-only files across clones or
@@ -29,6 +27,7 @@ $MYSTERY_CONFIG_ROOT/
     <worktree>/game.db
   blueprints/
   blueprint-images/
+  blueprint-scenes/
 ```
 
 Blueprints and images are shared across worktrees; databases are not. Each
@@ -48,7 +47,7 @@ this checkout's port is free. For a second checkout, `./dev worktree create
 `docs/local-infrastructure.md`.
 
 There is nothing to seed. The database is created on first run, and blueprints
-are read off disk — the two committed in `blueprints/` are enough to play.
+are read off disk — the committed stories in `blueprints/` are enough to play.
 
 ## Local Development
 
@@ -136,7 +135,7 @@ login. Each blueprint gets the mechanical checks; `--judge` adds the judges.
 `--install` copies each blueprint that passed into `blueprints/` in the config root. Backends and `--model` repeat for side-by-side runs; `model` on
 `generator-api` in `evaluation/config.json` is the default.
 
-Every flag, default and file location: `./dev eval generate --help`.
+Flags: `./dev eval generate --help`.
 
 ## Evaluation Pipelines
 
@@ -183,6 +182,19 @@ npm run generate:images -- --blueprint-path spring-treats-6yo.json --all --chat-
 
 Every flag, default and file location: `node scripts/generate-blueprint-images.mjs --help`.
 Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
+
+## 3D scene recipes
+
+The lighthouse and Heartwood cases include saved scenes and need no model.
+
+```bash
+./dev eval scenes blueprints/my-case.json --install
+```
+
+This generates missing locations through the evaluation `scene-generator`
+binding (Claude CLI by default). Configure its wrapper before live generation;
+existing recipes are kept. Data flow and validation:
+`docs/blueprint-generation-flows.md`.
 
 ## Your data
 

@@ -56,6 +56,7 @@ describe("the committed example config", () => {
   it("names every binding, with the models in use", () => {
     const models = Object.fromEntries(Object.entries(example.bindings).map(([name, b]) => [name, b.model]));
     expect(models).toEqual({
+      "scene-generator": "sonnet",
       "generator-agent": "opus",
       "generator-api": null,
       "blueprint-judge": "opus",
@@ -70,7 +71,7 @@ describe("the committed example config", () => {
   });
 
   it("points the bindings that have a wrapper today at a wrapper that runs", () => {
-    for (const name of ["generator-agent", "blueprint-judge", "game-judge", "turn-judge", "narrator-claude", "narrator-stub", "judge-stub"]) {
+    for (const name of ["scene-generator", "generator-agent", "blueprint-judge", "game-judge", "turn-judge", "narrator-claude", "narrator-stub", "judge-stub"]) {
       expect(resolveBinding(example, name, { root: REPO_ROOT }).command).toBe(
         path.join(REPO_ROOT, example.bindings[name].cmd),
       );

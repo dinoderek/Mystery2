@@ -72,6 +72,7 @@ export function createLocalTraceSource({
   }
   const db = openDatabase({ path: resolvedPath, readonly: true });
   const content = createLocalContentStore({
+    sceneDirs: [],
     blueprintDirs: resolveBlueprintDirs(root, env),
     imagesDir: resolveBlueprintImagesDir(root, env),
   });

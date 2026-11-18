@@ -183,6 +183,7 @@ describe('opening confirmation', () => {
     expect(invokeMock).toHaveBeenCalledWith('game-enter', { game_id: 'game-1' });
     expect(store.pageCount).toBe(2);
     expect(store.pages[1].kind).toBe('location');
+    expect(store.pages[1].locationId).toBe('kitchen');
     expect(store.pages[1].imageId).toBe('kitchen.png');
     // The page is labelled with the place's name, not the id the answer carries.
     expect(store.pages[1].fallbackLabel).toBe('Kitchen');

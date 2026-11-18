@@ -1,15 +1,47 @@
+import { BlueprintScenesResponseSchema, type SceneManifest } from '@my2/shared';
 import type { SessionPage } from './session-pages';
+import { callApiGet } from '../api/client';
+import { readAnswer } from './contract';
 
-export const LIGHTHOUSE_BLUEPRINT_ID = '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47';
-
-// shortcut: one authored scene; replace this lookup when generated scene recipes arrive.
-export function hasLighthouseScene(
-  blueprintId: string | null,
+export function sceneForPage(
+  manifest: SceneManifest | null,
   page: SessionPage | null,
-): boolean {
+) {
+  if (
+    page?.kind !== 'location' &&
+    !(page?.kind === 'conversation' && !page.imageId)
+  )
+    return null;
   return (
-    blueprintId === LIGHTHOUSE_BLUEPRINT_ID &&
-    page?.kind === 'location' &&
-    page.locationId === 'lantern_room'
+    manifest?.scenes.find((scene) => scene.location_id === page.locationId) ??
+    null
   );
+}
+
+export async function loadSceneManifest(
+  blueprintId: string,
+): Promise<SceneManifest | null> {
+  const response = await callApiGet('blueprint-scenes', {
+    blueprint_id: blueprintId,
+  });
+  const parsed = readAnswer(
+    response,
+    BlueprintScenesResponseSchema,
+    'blueprint-scenes',
+  );
+  if (!parsed.ok) {
+    if (response.error)
+      console.error('[scene] Scene artwork unavailable', {
+        blueprint_id: blueprintId,
+        error: parsed.message,
+      });
+    return null;
+  }
+  if (parsed.value.blueprint_id !== blueprintId) {
+    console.error('[scene] Scene artwork belongs to another case', {
+      blueprint_id: blueprintId,
+    });
+    return null;
+  }
+  return parsed.value;
 }

@@ -74,8 +74,8 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="flex h-screen w-screen bg-t-bg font-mono text-t-primary">
-  <section class="flex h-full min-w-0 basis-1/3 flex-col p-4">
+<main class="flex h-dvh w-screen flex-col bg-t-bg font-mono text-t-primary lg:flex-row">
+  <section class="order-2 flex min-h-0 min-w-0 flex-1 flex-col p-4 lg:order-1 lg:h-full lg:basis-1/3">
     <Header />
     <PageNavigator />
     <PageNarration />
@@ -83,7 +83,7 @@
     <InputBox />
   </section>
 
-  <aside class="h-full basis-2/3">
+  <aside class="order-1 h-[32dvh] shrink-0 overflow-hidden lg:order-2 lg:h-full lg:basis-2/3">
     <ScenePane />
   </aside>
 

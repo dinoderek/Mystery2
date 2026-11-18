@@ -68,9 +68,10 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the twelve commands", () => {
+  it("lists exactly the thirteen commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "generate",
+      "scenes",
       "judge blueprint",
       "validate",
       "judge game",
@@ -85,7 +86,7 @@ describe("./dev eval", () => {
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(12);
+    expect(listed).toHaveLength(13);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
@@ -93,6 +94,7 @@ describe("./dev eval", () => {
     // row here, naming the test that runs it and what that test starts it with.
     const runBy: Record<string, [file: string, startedWith: string]> = {
       generate: ["tests/api/unit/eval-generate-command.test.ts", '["generate", ...argv]'],
+      scenes: ["tests/api/unit/eval-scenes-command.test.ts", '"scenes",'],
       "judge blueprint": ["tests/api/unit/eval-blueprint-command.test.ts", '["judge", "blueprint"'],
       validate: ["tests/api/unit/eval-blueprint-command.test.ts", '["validate"'],
       "judge game": ["tests/api/unit/trace-judge-game.test.ts", '["judge", "game"'],

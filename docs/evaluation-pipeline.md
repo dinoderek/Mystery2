@@ -48,7 +48,8 @@ Two lessons from the single-prompt evaluator it replaced:
   mechanical; the judge keeps the genuinely qualitative questions.
 
 One judge per dimension also buys isolation (editing the fairness prompt cannot
-move solve-depth scores) and targeted retries.
+move solve-depth scores), targeted retries and, versioned, re-running only the
+changed judge (`evaluation/README.md`).
 
 ## Three tiers of check
 
@@ -60,7 +61,7 @@ move solve-depth scores) and targeted retries.
 
 A dimension's result is `skipped` if nothing ran, `error` if its analyzer or
 judge failed after retries, `fail` if any result failed, else `pass`. The run
-summary counts them; consumers decide what is ship-ready.
+summary counts them.
 
 ## Stages
 

@@ -12,13 +12,10 @@ explain your reasoning with those clues.
 
 ## How the game works
 
-Each turn you are shown what the player can see: where you are, who is there,
-how many turns are left, your case notebook (the story so far, places, people,
-and the clues you have found), and everything said so far. You reply with the
-one line you type next.
-
-Each turn's status says which mode you are in: exploring, talking with
-someone, or making your accusation.
+Each turn you are shown what the player can see: your mode (exploring,
+talking or accusing), where you are, who is there, how many turns are left,
+your case notebook, and everything said so far. You reply with the one line
+you type next.
 
 While exploring, the game understands:
 
@@ -31,9 +28,8 @@ While exploring, the game understands:
 While talking to someone, whatever you type is said to them (questions are
 free). Type `bye` to stop talking.
 
-`accuse` works only while exploring. Typed while talking, `accuse …` is just
-said to the person, who answers it, and no accusation starts. To accuse someone
-you are talking to, type `bye` first, then `accuse <name> because <reason>`.
+`accuse` works only while exploring: typed while talking, it is just said to
+the person. To accuse them, type `bye` first, then `accuse`.
 
 When accusing, say who did it and why, using the clues you found. The game may
 ask you to explain more. When the turns run out, the accusation starts on its

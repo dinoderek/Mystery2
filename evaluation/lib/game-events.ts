@@ -99,3 +99,31 @@ export function revealedClueIdsForEvent(event: GameEventLike): string[] {
 export function offScriptClueIdsForEvent(event: GameEventLike): string[] {
   return readStringArray(event.payload ?? null, "revealed_off_script");
 }
+
+/** What an `ask` event recorded about the character's state that turn. */
+export interface RecordedUse {
+  used_clue_ids: string[];
+  used_quote: string | null;
+  new_commitments: string[];
+}
+
+// The gate clues the player used on the character, their words, and the
+// character's new commitments, as the engine recorded them on an `ask` event
+// (`turn/resolve-talk.ts` in the engine). Null for any other event, and for an
+// `ask` saved before the engine recorded them.
+export function recordedUseForEvent(event: GameEventLike): RecordedUse | null {
+  const payload = event.payload ?? null;
+  if (event.event_type !== "ask" || !payload || !Array.isArray(payload.used_clue_ids)) return null;
+  return {
+    used_clue_ids: readStringArray(payload, "used_clue_ids"),
+    used_quote: readField(payload, "used_quote"),
+    new_commitments: readStringArray(payload, "new_commitments"),
+  };
+}
+
+// The same fields from a talk_conversation answer the model returned, as a
+// runtime case's response carries it. Null when the answer has none of them.
+export function recordedUseFromOutput(raw: unknown): RecordedUse | null {
+  if (!raw || typeof raw !== "object" || !Array.isArray((raw as Record<string, unknown>).used_clue_ids)) return null;
+  return recordedUseForEvent({ event_type: "ask", payload: raw as Record<string, unknown> });
+}

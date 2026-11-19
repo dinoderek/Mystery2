@@ -46,12 +46,12 @@
     },
     {
       "op": "test",
-      "path": "/world/characters/1/agendas/0/parts/3/shows",
+      "path": "/world/characters/1/agendas/0/parts/2/shows",
       "value": "Mr. Thorne bought cake from Mia at the fair across town at nine."
     },
     {
       "op": "replace",
-      "path": "/world/characters/1/agendas/0/parts/3/shows",
+      "path": "/world/characters/1/agendas/0/parts/2/shows",
       "value": "Mr. Thorne bought cake from Mia at the fair across town at seven."
     },
     {
@@ -76,12 +76,12 @@
     },
     {
       "op": "test",
-      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "path": "/world/characters/1/agendas/0/parts/2/reaction",
       "value": "Mumbles that it wasn't Mia, then."
     },
     {
       "op": "replace",
-      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "path": "/world/characters/1/agendas/0/parts/2/reaction",
       "value": "Mumbles something about Mia and goes quiet."
     }
   ],

@@ -6,12 +6,12 @@
   "patch": [
     {
       "op": "test",
-      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "path": "/world/characters/1/agendas/0/parts/2/reaction",
       "value": "Mumbles that it wasn't Mia, then."
     },
     {
       "op": "replace",
-      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "path": "/world/characters/1/agendas/0/parts/2/reaction",
       "value": "Admits he smashed the window himself."
     }
   ],

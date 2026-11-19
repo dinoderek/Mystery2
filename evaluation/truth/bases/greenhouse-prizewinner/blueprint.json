@@ -420,22 +420,17 @@
             "details": "Toby sticks to his story and blames a burglar or Mr. Thorne. He stays polite but jumpy, and keeps steering talk to Mr. Thorne.",
             "parts": [
               {
-                "clue_id": "clue_glass_outside",
+                "clue_ids": ["clue_glass_outside"],
                 "shows": "The glass fell outside, so the window was knocked out from inside and nobody broke in.",
                 "reaction": "Drops the burglar story and says, 'Maybe it was a fox.' He was still at home with his jigsaw."
               },
               {
-                "clue_id": "clue_welly_prints",
-                "shows": "Leaf-pattern welly prints in the mush mean Toby or Mia stood there after the smash.",
-                "reaction": "Says Mia has the same wellies, and goes quiet."
+                "clue_ids": ["clue_welly_prints", "clue_key_in_water_butt"],
+                "shows": "Whoever smashed Bertha had the club's things: leaf-pattern wellies only Toby and Mia wear, or the missing key.",
+                "reaction": "Says it could just as well have been Mia, and goes quiet."
               },
               {
-                "clue_id": "clue_key_in_water_butt",
-                "shows": "Whoever smashed Bertha used the missing key and hid it in the water butt.",
-                "reaction": "Says he hasn't seen the key since Wednesday, and changes the subject."
-              },
-              {
-                "clue_id": "clue_thorne_mia_cake",
+                "clue_ids": ["clue_thorne_mia_cake"],
                 "shows": "Mr. Thorne bought cake from Mia at the fair across town at nine.",
                 "reaction": "Mumbles that it wasn't Mia, then."
               }
@@ -558,7 +553,7 @@
             "details": "Mia is embarrassed that she said she wished Bertha would go splat, so at first she denies it. She tells the truth about Friday freely: watering at five, returning the spare, and the cake tent from six to ten.",
             "parts": [
               {
-                "clue_id": "clue_toby_mia_splat",
+                "clue_ids": ["clue_toby_mia_splat"],
                 "shows": "Mia told Toby she wished Bertha would go splat.",
                 "reaction": "Goes pink and admits she said it."
               }
@@ -735,12 +730,12 @@
             "details": "Grumpy and offended, he insists he only ever looked over the fence. He is proud of his evening at the fair and shares it freely, including buying cake from Mia at nine. He hides that he climbed over on Friday afternoon, because he is embarrassed to have spied on a children's pumpkin.",
             "parts": [
               {
-                "clue_id": "clue_boot_prints",
+                "clue_ids": ["clue_boot_prints"],
                 "shows": "Huge boot prints by the window lead to Mr. Thorne's fence.",
                 "reaction": "Huffs and admits he climbed over at four on Friday to measure Bertha, and that she was whole when he left."
               },
               {
-                "clue_id": "clue_ladder_tape",
+                "clue_ids": ["clue_ladder_tape"],
                 "shows": "Mr. Thorne's ladder and tape measure stand right opposite the greenhouse.",
                 "reaction": "Sheepishly admits he measured Bertha from his ladder on Thursday."
               }

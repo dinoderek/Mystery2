@@ -18,7 +18,7 @@ export const schema = z.object({
   reactions: z.array(
     z.object({
       character_id: z.string(),
-      clue_id: z.string(),
+      clue_ids: z.array(z.string()),
       concedes_only_what_clue_shows: z.boolean(),
       note: z.string(),
     }),

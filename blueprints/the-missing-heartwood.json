@@ -344,12 +344,12 @@
             "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook.",
             "parts": [
               {
-                "clue_id": "clue_eva_gloves_glow",
+                "clue_ids": ["clue_eva_gloves_glow"],
                 "shows": "Her gloves carry fresh glow-dust, so she was pulling up magic plants last night.",
                 "reaction": "Says she must have brushed a glowing plant yesterday, and still says she slept all night."
               },
               {
-                "clue_id": "clue_trail_direction",
+                "clue_ids": ["clue_trail_direction"],
                 "shows": "The thief's glowing trail leads uphill toward the treehouses.",
                 "reaction": "Says lots of animals live up by the treehouses, and still says she slept all night."
               }

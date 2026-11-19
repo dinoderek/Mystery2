@@ -338,7 +338,7 @@ export const REGISTRY: readonly RegistryEntry[] = [
         skipIfEmpty: true,
       },
       { ...CHARACTER_REF, at: "reactions[].character_id" },
-      { kind: "ref", at: "reactions[].clue_id", set: "clue_ids", label: "blueprint clue id" },
+      { kind: "ref", at: "reactions[].clue_ids[]", set: "clue_ids", label: "blueprint clue id" },
     ],
   }),
   blueprintJudge("path_payoff"),

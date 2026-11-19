@@ -25,7 +25,7 @@ interface LockClue {
 
 interface LockAgenda {
   type?: string;
-  parts?: Array<{ clue_id?: string }> | null;
+  parts?: Array<{ clue_ids?: string[] | null }> | null;
   confession?: string | null;
 }
 
@@ -130,6 +130,14 @@ function lockFault(
   return pointed ? {} : { pointer: { clue_id: clue.id, target, problem: "no_prerequisite_points_there" } };
 }
 
+/** The part clue ids that name no clue; a part with no clue at all names "". */
+function unknownPartClues(agenda: LockAgenda, clueIds: ReadonlySet<string>): string[] {
+  return (agenda.parts ?? []).flatMap((part) => {
+    const ids = part.clue_ids ?? [];
+    return ids.length === 0 ? [""] : ids.filter((id) => !id || !clueIds.has(id)).map((id) => id ?? "");
+  });
+}
+
 /** Self-protect agendas missing a part list or confession, and parts naming no clue. */
 function agendaFaults(
   blueprint: LocksBlueprint | null | undefined,
@@ -140,9 +148,7 @@ function agendaFaults(
   for (const character of blueprint?.world?.characters ?? []) {
     for (const [agendaIndex, agenda] of (character.agendas ?? []).entries()) {
       const at = { character_id: character.id, agenda_index: agendaIndex };
-      for (const part of agenda.parts ?? []) {
-        if (!part.clue_id || !clueIds.has(part.clue_id)) unknown.push({ ...at, clue_id: part.clue_id ?? "" });
-      }
+      unknown.push(...unknownPartClues(agenda, clueIds).map((clue_id) => ({ ...at, clue_id })));
       if (agenda.type !== "self_protect") continue;
       const missing: Array<"parts" | "confession"> = [];
       if ((agenda.parts ?? []).length === 0) missing.push("parts");

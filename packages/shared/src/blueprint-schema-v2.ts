@@ -307,10 +307,14 @@ export type BlueprintV2CharacterTell = z.infer<
 >;
 
 export const BlueprintV2AgendaPartSchema = z.object({
-  clue_id: BlueprintV2IdSchema.describe(
-    "The clue (location, or a different character's) this part yields to. Validated "
-      + "to reference an existing clue.",
-  ),
+  clue_ids: z
+    .array(BlueprintV2IdSchema)
+    .min(1)
+    .describe(
+      "The clues (location, or a different character's) this part yields to: each is "
+        + "evidence that shows the same thing, and using any one of them earns the "
+        + "part. Validated to reference existing clues.",
+    ),
   shows: z
     .string()
     .trim()
@@ -379,9 +383,9 @@ export const BlueprintV2AgendaSchema = z.object({
     .array(BlueprintV2AgendaPartSchema)
     .optional()
     .describe(
-      "For self_protect: one entry per clue that breaks the cover story, each with what "
-        + "it shows and the reaction it earns. Required for self_protect; not used on "
-        + "other agenda types.",
+      "For self_protect: one entry per thing the evidence shows that breaks the cover "
+        + "story, each with the clues that show it and the reaction it earns. Required "
+        + "for self_protect; not used on other agenda types.",
     ),
   confession: z
     .string()
@@ -491,6 +495,33 @@ function addDuplicateIssue(
     path,
     message: `Duplicate id "${value}" is not allowed in Blueprint V2.`,
   });
+}
+
+// A self_protect agenda's part clues must exist and come from elsewhere than the
+// character, and a clue breaks at most one part of the agenda.
+function checkPartClues(
+  agenda: BlueprintV2Agenda,
+  agendaPath: Array<string | number>,
+  allClueIds: ReadonlySet<string>,
+  ownClueIds: ReadonlySet<string>,
+  context: z.RefinementCtx,
+): void {
+  const seen = new Set<string>();
+  for (const [partIndex, part] of (agenda.parts ?? []).entries()) {
+    for (const [clueIndex, clueId] of part.clue_ids.entries()) {
+      const path = [...agendaPath, "parts", partIndex, "clue_ids", clueIndex];
+      const problem = !allClueIds.has(clueId)
+        ? `parts references unknown clue id "${clueId}".`
+        : ownClueIds.has(clueId)
+        ? "parts must not reference clues from the same character."
+        : null;
+      if (problem) context.addIssue({ code: z.ZodIssueCode.custom, path, message: problem });
+      if (seen.has(clueId)) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path, message: `parts lists clue "${clueId}" more than once.` });
+      }
+      seen.add(clueId);
+    }
+  }
 }
 
 // A self_protect agenda breaks by its parts; every other type keeps its own fields.
@@ -1142,33 +1173,8 @@ export const BlueprintV2Schema = z
         }
       }
 
-      // self_protect parts must reference existing clues not in same character
       for (const [agendaIndex, agenda] of character.agendas.entries()) {
-        const seenPartClues = new Set<string>();
-        for (const [partIndex, part] of (agenda.parts ?? []).entries()) {
-          const partPath = ["world", "characters", characterIndex, "agendas", agendaIndex, "parts", partIndex, "clue_id"];
-          if (!allClueIds.has(part.clue_id)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: partPath,
-              message: `parts references unknown clue id "${part.clue_id}".`,
-            });
-          } else if (thisClueIds.has(part.clue_id)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: partPath,
-              message: "parts must not reference clues from the same character.",
-            });
-          }
-          if (seenPartClues.has(part.clue_id)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: partPath,
-              message: `parts lists clue "${part.clue_id}" more than once.`,
-            });
-          }
-          seenPartClues.add(part.clue_id);
-        }
+        checkPartClues(agenda, ["world", "characters", characterIndex, "agendas", agendaIndex], allClueIds, thisClueIds, context);
       }
 
       // --- Tell validations ---

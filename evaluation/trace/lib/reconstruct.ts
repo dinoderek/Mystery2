@@ -20,6 +20,8 @@ import {
   offScriptClueIdsForEvent,
   playedEvents,
   readField,
+  type RecordedUse,
+  recordedUseForEvent,
   revealedClueIdsForEvent,
 } from "../../lib/game-events.ts";
 import type {
@@ -204,6 +206,9 @@ export interface TurnRecord {
   narration: string;
   revealed_clue_ids: string[];
   revealed_off_script: string[];
+  // What an ask turn recorded about the character: clues used, the player's
+  // words, new commitments. Null elsewhere, and in games saved before it.
+  recorded_use: RecordedUse | null;
   location_id: string | null;
   character_id: string | null;
   pre_state: SessionState;
@@ -315,6 +320,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       // clue-discipline judge needs them to tell a declared brilliance bypass
       // apart from an unearned reveal.
       revealed_off_script: offScriptClueIdsForEvent(event),
+      recorded_use: recordedUseForEvent(event),
       location_id: locationId,
       character_id: roleName && roleName.startsWith("talk") ? characterId : null,
       pre_state: preState,

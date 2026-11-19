@@ -130,10 +130,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
    is a finding. Pronouns must follow the character's `sex` field.
 3. **Alibi and stance.** A character does not contradict their own
    `stated_alibi`, and the culprit does not drop their cover, beyond what the
-   conversation earned. Read the agenda's `parts` (each a clue, what it
-   `shows`, and its `reaction`), `details`, `condition` and
+   conversation earned. Read the agenda's `parts` (each its clues, what
+   they `show`, and its `reaction`), `details`, `condition` and
    `yields_to_clue_ids` as a list of parts. A part is earned when the player
-   uses its clue: makes its point and aims it at the character, with the clue
+   uses one of its clues: makes its point and aims it at the character, with the clue
    or a specific, plausible bluff or deduction this character would believe.
    Mentioning or holding it is not use; nor is naming the character as
    culprit, insisting, or a case that never touches that part. Sustained

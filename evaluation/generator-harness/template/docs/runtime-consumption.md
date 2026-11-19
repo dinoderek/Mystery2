@@ -6,7 +6,7 @@
 > - `docs/ai-runtime.md#context-boundaries` — `f14b3fad302cd0fa5efb57e0f94c0f28606fc536`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `af17758c4d8d48635b2280db322104722da3a3d3`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `e33595fe8e8df343d83962e4d15c7d16549b9874`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `5d7e5fd94dc48ad248fb84e665565807e262e623`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -25,7 +25,7 @@ except the accusation judge.
 | move action | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search, except all-locked ones), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
 | search action (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues and all-locked sub-locations are filtered out. |
 | search action (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. A query naming a hidden sub-location still finds its clue. The narrator can waive turn cost for nonsense attempts. |
-| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `background`, `clues` (each with `requires_rationale`, `player_can_use_prerequisites` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas`, `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history. |
+| `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `background`, `clues` (each with `requires_rationale`, `player_can_use_prerequisites` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas` (reactions once earned), `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history and state. |
 | `accusation_start` | scene-setting for accusation | spoiler-safe context only (no ground truth, no solution paths), plus the public character roster (`first_name`, `last_name`, `sex`, `appearance`, `public_summary`) so suspects can be named with grounded pronouns. |
 | `accusation_judge` | adjudicates player reasoning | **the full blueprint**, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` — plus `player_known_clues` (what the investigator actually discovered) and `path_coverage` (per path: `found_clue_ids` / `missing_clue_ids`), so it credits an evidence chain only from clues the player really holds. |
 
@@ -128,13 +128,14 @@ character's responses — they're what makes the mystery feel like a mystery
 during talk. Agenda types are constrained by the schema; do not invent new
 ones.
 
-A `self_protect` agenda's `parts` are its crack condition, one clue each, and
-the narrator yields only as far as the player has earned. A part is earned by
-evidence the player holds and uses, or by a convincing bluff or deduction that
-names its substance. It earns that part's `reaction`, with the alibi standing
-unless that evidence breaks it; only every part earns the `confession`. So each
-reaction concedes exactly what its clue `shows`, and a clever player can bluff
-their way to a part they have not found, but cannot skip one.
+A `self_protect` agenda's `parts` are its crack condition, one fact each,
+shown by any of its `clue_ids`. A part is earned by evidence the player holds
+and uses, or by a convincing bluff or deduction that names its substance. It
+earns that part's `reaction`, with the alibi standing unless that evidence
+breaks it; only every part earns the `confession`. Earned reactions stack and
+are never taken back. So each reaction concedes exactly what its clues `show`,
+and a clever player can bluff their way to a part they have not found, but
+cannot skip one.
 
 ### `tells` are reactions, not ambience
 

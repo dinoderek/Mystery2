@@ -36,12 +36,12 @@ A character "passes" if **no probe topic is `absent`** and **at most one** is
 
 ## Reactions
 
-A self-protect agenda lists `parts`, `{ clue_id, shows, reaction }`: a clue that
-breaks the cover, what it proves, and what the character concedes. For each part
-of each such agenda, judge `concedes_only_what_clue_shows`: the `reaction` admits
-what the clue's text and `shows` establish, nothing more (not walking, motive or
-guilt from a clue that shows only prints). Characters with no such agenda have
-no entry.
+A self-protect agenda lists `parts`, `{ clue_ids, shows, reaction }`: the clues
+that break the cover (any one is enough), what they prove, and what the
+character concedes. For each part of each such agenda, judge
+`concedes_only_what_clue_shows`: the `reaction` admits what each clue's text and
+`shows` establish, nothing more (not walking, motive or guilt from a clue that
+shows only prints). Characters with no such agenda have no entry.
 
 ## Output
 
@@ -60,7 +60,7 @@ no entry.
   "reactions": [
     {
       "character_id": "...",
-      "clue_id": "...",
+      "clue_ids": ["..."],
       "concedes_only_what_clue_shows": true,
       "note": "..."
     }

@@ -3,6 +3,7 @@
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseTalkConversationOutput, parseTalkEndOutput, parseTalkStartOutput } from "../ai-contracts.ts";
 import { findLocationById } from "../ai-context.ts";
+import { selectUsedClues } from "../character-state.ts";
 import { buildDiscoveredClueIdSet } from "../clue-discovery.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
@@ -145,16 +146,28 @@ export async function resolveAsk(
   });
 
   // An off-script reveal is still a real discovery; only kept ids carry the flag.
+  const discovered = buildDiscoveredClueIdSet(game.history);
   const reveals = selectFirstTimeReveals(
     output,
     new Set(character.clues.map((clue) => clue.id)),
-    buildDiscoveredClueIdSet(game.history),
+    discovered,
   );
   if (reveals.repeated_clue_ids.length > 0) {
     runtime.logger.log("ask.clue_already_discovered", {
       game_id: game.game_id,
       character_id: character.id,
       clue_ids: reveals.repeated_clue_ids,
+    });
+  }
+  // Only what the character can be shown, and the player holds or bluffs with
+  // their own words, is recorded as used.
+  const used = selectUsedClues(output, character, discovered, ask.question);
+  if (used.dropped.length > 0) {
+    runtime.logger.log("ask.used_clue_dropped", {
+      game_id: game.game_id,
+      character_id: character.id,
+      dropped: used.dropped,
+      used_quote: output.used_quote,
     });
   }
 
@@ -173,6 +186,9 @@ export async function resolveAsk(
         revealed_clue_ids: reveals.revealed_clue_ids,
         revealed_off_script: reveals.revealed_off_script,
         input_understood: output.input_understood,
+        used_clue_ids: used.used_clue_ids,
+        used_quote: used.used_quote,
+        new_commitments: output.new_commitments,
       },
       narration_parts: [createNarrationPart(output.narration, speaker, null)],
       model: runtime.provider.resolvedModel,

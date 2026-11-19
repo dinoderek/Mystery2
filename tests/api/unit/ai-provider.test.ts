@@ -481,6 +481,53 @@ describe("mock talk_conversation clue gating", () => {
   });
 });
 
+describe("mock talk_conversation use and commitments", () => {
+  const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+  const askWith = (activeCharacter: Record<string, unknown>, playerInput: string) =>
+    provider.generateRoleOutput({
+      role: "talk_conversation",
+      prompt: "prompt",
+      context: {
+        player_input: playerInput,
+        talk_context: { active_character: { first_name: "Alice", clues: [], ...activeCharacter } },
+      },
+      parse: parseTalkConversationOutput,
+    });
+
+  it("reports a gate clue the line names as used, quoting the line", async () => {
+    const out = await askWith(
+      { gate_clues: [{ id: "clue-crumb", held: true }, { id: "clue-wrapper", held: false }] },
+      "This clue-crumb says you were snacking.",
+    );
+    expect(out.used_clue_ids).toEqual(["clue-crumb"]);
+    expect(out.used_quote).toBe("This clue-crumb says you were snacking.");
+  });
+
+  it("reports no use when the line names no gate clue", async () => {
+    const out = await askWith({ gate_clues: [{ id: "clue-crumb", held: true }] }, "Were you snacking?");
+    expect(out.used_clue_ids).toEqual([]);
+    expect(out.used_quote).toBeNull();
+  });
+
+  it("records a denial when asked whether they did something", async () => {
+    const out = await askWith({}, "Did you eat the cookies?");
+    expect(out.new_commitments).toEqual(["denies: eat the cookies"]);
+  });
+
+  it("keeps to the latest earned line of the story, and says nothing of the bare alibi", async () => {
+    const earned = await askWith(
+      { stated_alibi: "I was reading.", state: { current_story: ["I was reading.", "Admits one snack."] } },
+      "Tell me again.",
+    );
+    expect(earned.narration).toContain("(Keeps to: Admits one snack.)");
+    const bare = await askWith(
+      { stated_alibi: "I was reading.", state: { current_story: ["I was reading."] } },
+      "Tell me again.",
+    );
+    expect(bare.narration).not.toContain("Keeps to");
+  });
+});
+
 describe("mock arrival narration", () => {
   const provider = () =>
     createAIProviderFromProfile({ provider: "mock", model: "mock/default" });

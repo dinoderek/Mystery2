@@ -247,6 +247,66 @@ describe("playTurn, for each action", () => {
   });
 });
 
+describe("playTurn, recording what a character was shown", () => {
+  // The mock narrator, with its talk_conversation answer replaced by `answer`.
+  const answering = (answer: Record<string, unknown>) => (profile: EngineAIProfile): AIProvider => {
+    const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+    return {
+      profile: inner.profile,
+      get resolvedModel() {
+        return inner.resolvedModel;
+      },
+      generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
+      generateRoleOutput: (request) =>
+        request.role === "talk_conversation"
+          ? Promise.resolve(request.parse({ narration: "Hmm.", revealed_clue_ids: [], ...answer }))
+          : inner.generateRoleOutput(request),
+    };
+  };
+
+  it("records only the character's gate clues the player holds, and logs the rest once", async () => {
+    await playAction("search");
+    await playAction("talk to Alice");
+    const log = vi.fn();
+
+    await playAction("The crumb says you were snacking.", {
+      logger: { log, logError: () => {} },
+      createProvider: answering({
+        used_clue_ids: ["clue-crumb", "clue-wrapper", "clue-alice-saw-bob"],
+        used_quote: null,
+        new_commitments: ["never snacks"],
+      }),
+    });
+
+    const ask = storedEvents().find((event) => event.event_type === "ask");
+    expect(ask?.payload).toMatchObject({
+      used_clue_ids: ["clue-crumb"],
+      used_quote: null,
+      new_commitments: ["never snacks"],
+    });
+    const dropped = log.mock.calls.filter(([event]) => event === "ask.used_clue_dropped");
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0][1]).toMatchObject({
+      character_id: "char-alice",
+      dropped: [
+        { clue_id: "clue-wrapper", reason: "not_held_and_no_quote" },
+        { clue_id: "clue-alice-saw-bob", reason: "not_a_gate_clue" },
+      ],
+    });
+  });
+
+  it("records a bluff with a clue the player does not hold when the quote is their own words", async () => {
+    await playAction("talk to Alice");
+
+    await playAction("I bet there's a wrapper on the sofa!", {
+      createProvider: answering({ used_clue_ids: ["clue-wrapper"], used_quote: "a wrapper on the sofa" }),
+    });
+
+    const ask = storedEvents().find((event) => event.event_type === "ask");
+    expect(ask?.payload).toMatchObject({ used_clue_ids: ["clue-wrapper"], used_quote: "a wrapper on the sofa" });
+  });
+});
+
 describe("playTurn, when it cannot finish", () => {
   /** The mock narrator, with some of its calls replaced. */
   function steered(overrides: Partial<Pick<AIProvider, "generateNarration" | "generateRoleOutput">>) {

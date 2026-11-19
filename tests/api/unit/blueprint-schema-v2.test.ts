@@ -115,7 +115,7 @@ describe("Blueprint V2 schema", () => {
       details: "Alice insists she was washing dishes the whole time.",
       parts: [
         {
-          clue_id: "loc-crumbs",
+          clue_ids: ["loc-crumbs"],
           shows: "Cookie crumbs lead from the plate.",
           reaction: "Says anyone could have dropped crumbs; she was still washing dishes.",
         },
@@ -127,25 +127,41 @@ describe("Blueprint V2 schema", () => {
       expect(() => BlueprintV2Schema.parse(withAgendas("alice", [aliceAlibi]))).not.toThrow();
     });
 
+    it("accepts a part any of several clues earns", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_ids: ["loc-crumbs", "char-bob-saw-bag"] }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
+    it("rejects a part with no clue", () => {
+      const bp = withAgendas("alice", [{ ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_ids: [] }] }]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow();
+    });
+
     it("rejects a self_protect part naming an unknown clue", () => {
       const bp = withAgendas("alice", [
-        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_id: "loc-nope" }] },
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_ids: ["loc-crumbs", "loc-nope"] }] },
       ]);
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(/parts references unknown clue id/);
     });
 
     it("rejects a self_protect part naming the character's own clue", () => {
       const bp = withAgendas("alice", [
-        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_id: "char-alice-bag" }] },
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_ids: ["char-alice-bag"] }] },
       ]);
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(/parts must not reference clues from the same character/);
     });
 
-    it("rejects a clue listed twice in one agenda's parts", () => {
-      const bp = withAgendas("alice", [
+    it("rejects a clue listed twice in one agenda's parts, across parts or within one", () => {
+      const twice = withAgendas("alice", [
         { ...aliceAlibi, parts: [aliceAlibi.parts[0], aliceAlibi.parts[0]] },
       ]);
-      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/more than once/);
+      expect(() => BlueprintV2Schema.parse(twice)).toThrow(/more than once/);
+      const within = withAgendas("alice", [
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_ids: ["loc-crumbs", "loc-crumbs"] }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(within)).toThrow(/more than once/);
     });
 
     it("lets an empty misplaced list through, as strict output may send one", () => {

@@ -443,29 +443,19 @@
             "details": "Clementine insists she only practiced her show words in the dungeon and never touched the stick. She never mentions the real stick hidden in her cape pocket, and she laughs off any talk of last year's show. If asked about paint, she says she only touched up her magic star.",
             "parts": [
               {
-                "clue_id": "clue_polish_four",
+                "clue_ids": ["clue_polish_four"],
                 "shows": "The stick was still real at the 4 o'clock polish, after Barnaby's visit and before hers.",
                 "reaction": "Says lots of animals visited after four."
               },
               {
-                "clue_id": "clue_paint_list",
-                "shows": "Only she and Barnaby signed for Sparkle Blue paint.",
-                "reaction": "Says she only used the paint on her magic star."
+                "clue_ids": ["clue_fake_stick", "clue_oswald_said_dull"],
+                "shows": "The stick on show had already been swapped for a fake.",
+                "reaction": "Says anyone could have swapped it, and her ear droops."
               },
               {
-                "clue_id": "clue_fake_stick",
-                "shows": "The fake is a willow twig painted Sparkle Blue.",
-                "reaction": "Says anyone could paint a twig, and her ear droops."
-              },
-              {
-                "clue_id": "clue_oswald_said_dull",
-                "shows": "The stick already looked dull when Oswald walked in at 5:30.",
-                "reaction": "Says then Ruby must have done it, since Ruby came before Oswald."
-              },
-              {
-                "clue_id": "clue_ruby_watched",
-                "shows": "Tobias never left Ruby alone with the stick.",
-                "reaction": "Goes very quiet and says maybe it lost its magic by itself."
+                "clue_ids": ["clue_paint_list", "clue_ruby_watched"],
+                "shows": "Someone else who could have swapped the stick is ruled out.",
+                "reaction": "Insists it could have been somebody else, but cannot say who."
               }
             ],
             "confession": "She cries, pulls the glowing stick from her cape, and says sorry."
@@ -565,7 +555,7 @@
             "details": "Barnaby gets flustered when sticks come up. At first he says he never said anything about a dam stick. He is honest about everything else.",
             "parts": [
               {
-                "clue_id": "clue_barnaby_dam_stick",
+                "clue_ids": ["clue_barnaby_dam_stick"],
                 "shows": "Nutmeg heard Barnaby call the magic stick the best dam stick ever.",
                 "reaction": "Laughs and admits he said it, but it was only a silly joke."
               }
@@ -644,17 +634,12 @@
             "details": "Nutmeg claims she spent the whole afternoon in her bakery and never went to the dungeon, because she is afraid of getting in trouble for sneaking cakes near the treasures.",
             "parts": [
               {
-                "clue_id": "clue_cake_plate",
-                "shows": "Nutmeg left a cake plate for Tobias in the dungeon today.",
-                "reaction": "Sighs and admits the cakes were from her."
-              },
-              {
-                "clue_id": "clue_visitor_book",
-                "shows": "Nutmeg signed the visitor book at 3:30.",
-                "reaction": "Admits she popped in at half past three and went straight back to bake."
+                "clue_ids": ["clue_cake_plate", "clue_visitor_book"],
+                "shows": "Nutmeg went down to the dungeon this afternoon.",
+                "reaction": "Sighs and admits she popped down with cakes for Tobias, then went straight back to bake."
               }
             ],
-            "confession": "She admits she brought cakes at 3:30, then hurried back to watch her oven until six."
+            "confession": "She admits she brought cakes down in the afternoon, then hurried back to watch her oven until six."
           },
           {
             "type": "implicate_other",
@@ -743,7 +728,7 @@
             "details": "Ruby says sticks are boring and that she only went to admire the Glimmer Cup.",
             "parts": [
               {
-                "clue_id": "clue_ruby_list",
+                "clue_ids": ["clue_ruby_list"],
                 "shows": "Ruby's wish list names the Glorious Stick.",
                 "reaction": "Blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk."
               }
@@ -841,7 +826,7 @@
             "details": "Oswald says he is not cross about the fair, though he clearly is.",
             "parts": [
               {
-                "clue_id": "clue_oswald_cross",
+                "clue_ids": ["clue_oswald_cross"],
                 "shows": "Oswald is cross that the treasures went to the fair, not his library.",
                 "reaction": "Puffs up and admits he thinks the treasures would be safer in his library, but says he would never take them."
               }

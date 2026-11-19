@@ -6,6 +6,7 @@ import {
   buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
+  buildTalkStartContext,
   type BlueprintContext,
   type ConversationFragment,
   selectCharacterConversationHistory,
@@ -453,14 +454,14 @@ describe("ai-context guardrails", () => {
     });
   });
 
-  it("carries each self-protect part's clue, what it shows and its reaction, plus the confession", () => {
+  it("carries each self-protect part's clues and what they show, but no reaction or confession until earned", () => {
     const agenda = {
       type: "self_protect",
       strategy: "keep the nap story",
       priority: "high",
       details: "calm and folksy",
       parts: [
-        { clue_id: "clue-crumbs", shows: "someone ate pie here", reaction: "admits a nibble, keeps the reading" },
+        { clue_ids: ["clue-crumbs"], shows: "someone ate pie here", reaction: "admits a nibble, keeps the reading" },
       ],
       confession: "I took the whole pie.",
     };
@@ -471,16 +472,47 @@ describe("ai-context guardrails", () => {
         characters: [{ ...blueprint.world.characters[0], agendas: [agenda] }, blueprint.world.characters[1]],
       },
     };
-    const context = buildTalkConversationContext({
-      game_id: "game-1",
-      session,
-      blueprint: withAgenda,
-      character_id: "char-alice",
-      player_input: "These crumbs are pie crumbs.",
-      location_id: "loc-kitchen",
-      conversation_history: [],
+    const build = (conversation_history: ConversationFragment[]) =>
+      buildTalkConversationContext({
+        game_id: "game-1",
+        session,
+        blueprint: withAgenda,
+        character_id: "char-alice",
+        player_input: "These crumbs are pie crumbs.",
+        location_id: "loc-kitchen",
+        conversation_history,
+      }).talk_context?.active_character;
+
+    const before = build([]);
+    expect(before?.agendas).toEqual([{
+      type: "self_protect",
+      strategy: "keep the nap story",
+      priority: "high",
+      details: "calm and folksy",
+      parts: [{ clue_ids: ["clue-crumbs"], shows: "someone ate pie here", earned: false }],
+      confession: null,
+    }]);
+    expect(JSON.stringify(before)).not.toContain("admits a nibble");
+    expect(before?.gate_clues).toEqual([{ id: "clue-crumbs", held: false }]);
+
+    const after = build([
+      { sequence: 1, event_type: "talk", actor: "system", narration: "", payload: { character_id: "char-alice" } },
+      {
+        sequence: 2,
+        event_type: "ask",
+        actor: "system",
+        narration: "",
+        payload: { character_id: "char-alice", used_clue_ids: ["clue-crumbs"], used_quote: "pie crumbs" },
+      },
+    ]);
+    expect(after?.agendas[0]).toMatchObject({
+      parts: [{ clue_ids: ["clue-crumbs"], earned: true }],
+      confession: "I took the whole pie.",
     });
-    expect(context.talk_context?.active_character.agendas).toEqual([agenda]);
+    expect(after?.state.current_story).toEqual([
+      blueprint.world.characters[0].stated_alibi,
+      "admits a nibble, keeps the reading",
+    ].filter(Boolean));
   });
 
   it("marks character clues the player already discovered as known_to_player", () => {
@@ -599,13 +631,12 @@ describe("ai-context guardrails", () => {
       has_visited_before: false,
       conversation_history: history,
     });
-    const talk = buildTalkConversationContext({
+    const talk = buildTalkStartContext({
       game_id: "game-1",
       session: { ...session, mode: "talk", current_talk_character_id: "char-alice" },
       blueprint,
       character_id: "char-alice",
       location_id: "loc-kitchen",
-      player_input: "Hello",
       conversation_history: history,
     });
 

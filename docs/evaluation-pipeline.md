@@ -94,7 +94,7 @@ kind each applies to (`blueprint`, `game`, `turn`). Ids are unique across it. A
 
 `clue_graph` also judges whether each lock's kind fits its fiction;
 `character_grounding`, whether each self-protect reaction concedes only what its
-clue shows.
+clues show.
 
 A blueprint dimension is two files and a registry entry. The brief,
 `evaluation/dimensions/<id>.md`, states the judge's questions and its

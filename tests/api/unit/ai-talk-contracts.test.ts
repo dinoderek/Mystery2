@@ -24,6 +24,9 @@ describe("talk AI output contracts", () => {
       revealed_clue_ids: [],
       revealed_off_script: [],
       input_understood: true,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     });
   });
 
@@ -38,6 +41,9 @@ describe("talk AI output contracts", () => {
       revealed_clue_ids: ["clue-alibi-witness"],
       revealed_off_script: [],
       input_understood: true,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     });
   });
 
@@ -58,18 +64,57 @@ describe("talk AI output contracts", () => {
     expect(result.revealed_clue_ids).toEqual(["valid-id", "another-valid"]);
   });
 
-  it("suppresses revealed clues when input is not understood", () => {
+  it("suppresses reveals, uses and commitments when input is not understood", () => {
     const result = parseTalkConversationOutput({
       narration: "Sorry — what?",
       revealed_clue_ids: ["clue-alibi-witness"],
       input_understood: false,
+      used_clue_ids: ["clue-prints"],
+      used_quote: "prints",
+      new_commitments: ["never there"],
     });
     expect(result).toEqual({
       narration: "Sorry — what?",
       revealed_clue_ids: [],
       revealed_off_script: [],
       input_understood: false,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     });
+  });
+
+  it("accepts the used clues, their quote and new commitments", () => {
+    const result = parseTalkConversationOutput({
+      narration: "Snowshoes? I never owned any.",
+      used_clue_ids: ["clue-prints", "clue-prints", "", 7],
+      used_quote: "the prints are snowshoes, not paws",
+      new_commitments: [" never owned snowshoes ", "", null],
+    });
+    expect(result).toMatchObject({
+      used_clue_ids: ["clue-prints"],
+      used_quote: "the prints are snowshoes, not paws",
+      new_commitments: ["never owned snowshoes"],
+    });
+  });
+
+  it("drops a quote when no clue was used, and treats a blank quote as none", () => {
+    expect(parseTalkConversationOutput({ narration: "Hm.", used_quote: "hello" }).used_quote).toBeNull();
+    expect(
+      parseTalkConversationOutput({ narration: "Hm.", used_clue_ids: ["clue-prints"], used_quote: "  " }).used_quote,
+    ).toBeNull();
+  });
+
+  it("rejects new fields of the wrong shape", () => {
+    expect(() => parseTalkConversationOutput({ narration: "Hm.", used_clue_ids: "clue-prints" })).toThrow(
+      '"used_clue_ids" must be a list of strings',
+    );
+    expect(() => parseTalkConversationOutput({ narration: "Hm.", used_quote: 3 })).toThrow(
+      '"used_quote" must be a non-empty string or null',
+    );
+    expect(() => parseTalkConversationOutput({ narration: "Hm.", new_commitments: { a: 1 } })).toThrow(
+      '"new_commitments" must be a list of strings',
+    );
   });
 
   it("accepts valid talk-end output", () => {

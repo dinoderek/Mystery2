@@ -131,6 +131,25 @@ function pronounForSex(sex: "male" | "female" | null): string {
   return sex === "male" ? "he" : sex === "female" ? "she" : "they";
 }
 
+// The mock's stand-in for judging use: a gate clue is used when the player's
+// line names its id, and the line itself is the quote. A line that starts "did
+// you …" draws a denial, recorded as a commitment.
+function mockUseAndCommitments(
+  playerInput: string,
+  gateClues: Array<{ id?: string }>,
+): { used_clue_ids: string[]; used_quote: string | null; new_commitments: string[] } {
+  const line = playerInput.toLowerCase();
+  const used = gateClues
+    .map((clue) => clue.id)
+    .filter((id): id is string => typeof id === "string" && line.includes(id.toLowerCase()));
+  const denial = /^\s*did you ([^?.!]+)/i.exec(playerInput)?.[1]?.trim();
+  return {
+    used_clue_ids: used,
+    used_quote: used.length > 0 ? playerInput.trim() : null,
+    new_commitments: denial ? [`denies: ${denial}`] : [],
+  };
+}
+
 /**
  * Deterministic gibberish heuristic for the mock runtime so tests can exercise
  * the unintelligible-input path. A word made only of consonants (keyboard mash
@@ -345,6 +364,9 @@ class MockAIProvider implements AIProvider {
                 player_can_use_prerequisites?: boolean | null;
                 known_to_player?: boolean;
               }>;
+              stated_alibi?: string | null;
+              gate_clues?: Array<{ id?: string; held?: boolean }>;
+              state?: { current_story?: string[] };
             };
           }
           | undefined;
@@ -358,8 +380,21 @@ class MockAIProvider implements AIProvider {
             revealed_clue_ids: [],
             revealed_off_script: [],
             input_understood: false,
+            used_clue_ids: [],
+            used_quote: null,
+            new_commitments: [],
           };
         }
+        const reported = {
+          ...mockUseAndCommitments(playerInput, talkCtx?.active_character?.gate_clues ?? []),
+          input_understood: true,
+        };
+        // The character keeps to the latest line of their story once a part
+        // has been earned, so a test can see the story carried between turns.
+        const latest = talkCtx?.active_character?.state?.current_story?.at(-1);
+        const keepsTo = latest && latest !== talkCtx?.active_character?.stated_alibi
+          ? ` (Keeps to: ${latest})`
+          : "";
         // Clues the player already holds are never reported again.
         const clues = (talkCtx?.active_character?.clues ?? []).filter(
           (c) => c.known_to_player !== true,
@@ -372,10 +407,10 @@ class MockAIProvider implements AIProvider {
           const locked = clues.find((c) => c.player_can_use_prerequisites === false && c.id);
           if (locked?.id) {
             return {
-              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}`,
+              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}${keepsTo}`,
               revealed_clue_ids: [locked.id],
               revealed_off_script: [locked.id],
-              input_understood: true,
+              ...reported,
             };
           }
         }
@@ -384,17 +419,17 @@ class MockAIProvider implements AIProvider {
         const unlocked = clues.find((c) => c.player_can_use_prerequisites !== false && c.id);
         if (unlocked?.id) {
           return {
-            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}`,
+            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}${keepsTo}`,
             revealed_clue_ids: [unlocked.id],
             revealed_off_script: [],
-            input_understood: true,
+            ...reported,
           };
         }
         return {
-          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".`,
+          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".${keepsTo}`,
           revealed_clue_ids: [],
           revealed_off_script: [],
-          input_understood: true,
+          ...reported,
         };
       }
       case "talk_end": {

@@ -90,6 +90,9 @@ describe("claude-cli provider requests", () => {
       revealed_clue_ids: ["clue-fox"],
       revealed_off_script: [],
       input_understood: true,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     });
 
     const [call] = recordedCalls();

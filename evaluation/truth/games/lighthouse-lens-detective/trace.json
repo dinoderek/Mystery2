@@ -372,7 +372,7 @@
               "details": "Finn is hiding Ada's birthday surprise, not the lens. He never lies about where he slept or what he saw.",
               "parts": [
                 {
-                  "clue_id": "c_round_bundle",
+                  "clue_ids": ["c_round_bundle"],
                   "shows": "A big round bundle, about as wide as the lens, is hidden behind the coal box.",
                   "reaction": "Says it is just old fishing floats, and quickly changes the subject."
                 }
@@ -471,17 +471,17 @@
               "details": "Roz insists she slept above her shop all night. She points to the keeper's tide schedule as proof nobody could cross before four.",
               "parts": [
                 {
-                  "clue_id": "c_changed_schedule",
+                  "clue_ids": ["c_changed_schedule"],
                   "shows": "Someone inked a 5 over last night's low tide time on Ada's schedule.",
                   "reaction": "Gets flustered and says anyone could have changed it. She still slept all night."
                 },
                 {
-                  "clue_id": "c_harbour_tide_board",
+                  "clue_ids": ["c_harbour_tide_board"],
                   "shows": "Last night's low tide was at two, so the causeway was dry from one to three.",
                   "reaction": "Says lots of people could have crossed at two, but she was asleep."
                 },
                 {
-                  "clue_id": "c_finn_saw_roz",
+                  "clue_ids": ["c_finn_saw_roz"],
                   "shows": "Roz was alone in Ada's cottage yesterday, where the schedule hangs.",
                   "reaction": "Goes pale and says she only popped in to show Ada her beacon drawings."
                 }
@@ -495,7 +495,7 @@
               "details": "She says her beacon is simply better and she would never want ships in danger. She claims she feels sorry for poor Ada.",
               "parts": [
                 {
-                  "clue_id": "c_beacon_poster",
+                  "clue_ids": ["c_beacon_poster"],
                   "shows": "Roz's beacon is up against the lighthouse in tomorrow's council vote.",
                   "reaction": "Admits she badly wants the council to pick her beacon, but says she would never put ships in danger."
                 }

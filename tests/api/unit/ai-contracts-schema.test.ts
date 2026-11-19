@@ -22,12 +22,23 @@ const MINIMAL_OUTPUTS: Record<
     parse: parseTalkStartOutput,
   },
   talk_conversation: {
-    fields: ["narration", "revealed_clue_ids", "revealed_off_script", "input_understood"],
+    fields: [
+      "narration",
+      "revealed_clue_ids",
+      "revealed_off_script",
+      "input_understood",
+      "used_clue_ids",
+      "used_quote",
+      "new_commitments",
+    ],
     sample: {
       narration: "Hi.",
       revealed_clue_ids: [],
       revealed_off_script: [],
       input_understood: true,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     },
     parse: parseTalkConversationOutput,
   },
@@ -148,6 +159,9 @@ describe("role output parsing tolerance", () => {
       revealed_clue_ids: [],
       revealed_off_script: [],
       input_understood: false,
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: [],
     });
   });
 

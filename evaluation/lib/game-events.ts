@@ -99,3 +99,24 @@ export function revealedClueIdsForEvent(event: GameEventLike): string[] {
 export function offScriptClueIdsForEvent(event: GameEventLike): string[] {
   return readStringArray(event.payload ?? null, "revealed_off_script");
 }
+
+/** What an `ask` event recorded about the character's state that turn. */
+export interface RecordedUse {
+  used_clue_ids: string[];
+  used_quote: string | null;
+  new_commitments: string[];
+}
+
+// The gate clues the player used on the character, their words, and the
+// character's new commitments, as the engine recorded them on an `ask` event
+// (`turn/resolve-talk.ts` in the engine). Null for any other event, and for an
+// `ask` saved before the engine recorded them.
+export function recordedUseForEvent(event: GameEventLike): RecordedUse | null {
+  const payload = event.payload ?? null;
+  if (event.event_type !== "ask" || !payload || !Array.isArray(payload.used_clue_ids)) return null;
+  return {
+    used_clue_ids: readStringArray(payload, "used_clue_ids"),
+    used_quote: readField(payload, "used_quote"),
+    new_commitments: readStringArray(payload, "new_commitments"),
+  };
+}

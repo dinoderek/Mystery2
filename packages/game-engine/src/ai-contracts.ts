@@ -35,6 +35,15 @@ export interface TalkConversationOutput {
   // narration is then an in-character "what?" beat and the backend suppresses
   // any clue reveal. Defaults to true when the model omits it.
   input_understood: boolean;
+  // Gate clues the player used on the character this turn (making the clue's
+  // point and aiming it at them), and the player's words that used them. The
+  // engine keeps only the character's gate clues that the player holds, or a
+  // bluff backed by the quote (`character-state.ts`).
+  used_clue_ids: string[];
+  used_quote: string | null;
+  // Denials or claims the character newly made this turn, each short and in
+  // their own terms ("never owned snowshoes").
+  new_commitments: string[];
 }
 
 export interface TalkEndOutput {
@@ -118,6 +127,24 @@ const idList = z.preprocess(
   z.array(z.string().min(1)),
 );
 
+// A list the model should always state, where a missing list is empty and junk
+// entries are dropped, but anything other than a list is a broken shape.
+function stringList(field: string) {
+  const message = `"${field}" must be a list of strings`;
+  return z.preprocess(
+    (value) =>
+      value === undefined || value === null
+        ? []
+        : Array.isArray(value)
+        ? value
+          .filter((entry): entry is string => typeof entry === "string")
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0)
+        : value,
+    z.array(z.string().min(1), { invalid_type_error: message }),
+  );
+}
+
 const TalkStartOutputSchema = roleObject({
   narration: nonEmptyString("narration"),
 });
@@ -127,11 +154,20 @@ const TalkConversationOutputSchema = roleObject({
   revealed_clue_ids: idList,
   revealed_off_script: idList,
   input_understood: flagDefaultingTo(true),
+  used_clue_ids: stringList("used_clue_ids"),
+  // A blank quote is no quote.
+  used_quote: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? null : value),
+    nullableNonEmptyString("used_quote"),
+  ),
+  new_commitments: stringList("new_commitments"),
 }).transform((output): TalkConversationOutput => {
-  // An unintelligible turn never reveals clues, regardless of what the model put
-  // in revealed_clue_ids.
-  const revealedClueIds = output.input_understood ? output.revealed_clue_ids : [];
+  // An unintelligible turn never reveals clues, uses one or commits to
+  // anything, regardless of what the model put in those fields.
+  const understood = output.input_understood;
+  const revealedClueIds = understood ? output.revealed_clue_ids : [];
   const revealedSet = new Set(revealedClueIds);
+  const usedClueIds = understood ? [...new Set(output.used_clue_ids)] : [];
   return {
     narration: output.narration,
     revealed_clue_ids: revealedClueIds,
@@ -139,7 +175,11 @@ const TalkConversationOutputSchema = roleObject({
     revealed_off_script: output.revealed_off_script.filter((id) =>
       revealedSet.has(id)
     ),
-    input_understood: output.input_understood,
+    input_understood: understood,
+    used_clue_ids: usedClueIds,
+    // A quote only backs a use; with no clue used there is nothing to quote.
+    used_quote: usedClueIds.length > 0 ? output.used_quote : null,
+    new_commitments: understood ? output.new_commitments : [],
   };
 });
 

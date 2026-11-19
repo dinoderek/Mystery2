@@ -50,7 +50,7 @@ function soundBlueprint(): BlueprintV2 {
       strategy: "maintain_false_alibi",
       priority: "high",
       details: "Alice insists she was washing dishes.",
-      parts: [{ clue_id: kitchen.clues[0].id, shows: "Crumbs lead from the plate.", reaction: "Says anyone could drop crumbs." }],
+      parts: [{ clue_ids: [kitchen.clues[0].id], shows: "Crumbs lead from the plate.", reaction: "Says anyone could drop crumbs." }],
       confession: "She admits she took the cookies.",
     },
   ];
@@ -138,12 +138,17 @@ describe("lock and reaction checks", () => {
     ]);
   });
 
-  it("fail a part whose clue does not exist", () => {
+  it("fail a part naming a clue that does not exist, or none at all", () => {
     // The schema refuses this too, so the analysis is read on the raw candidate.
     const bp = soundBlueprint();
-    bp.world.characters[0].agendas[0].parts = [{ clue_id: "loc-nope", shows: "Nothing.", reaction: "Nothing." }];
+    const real = bp.world.locations[0].clues[0].id;
+    bp.world.characters[0].agendas[0].parts = [
+      { clue_ids: [real, "loc-nope"], shows: "Nothing.", reaction: "Nothing." },
+      { clue_ids: [], shows: "Nothing.", reaction: "Nothing." },
+    ];
     expect(analyzeLocks(bp).parts_with_unknown_clues).toEqual([
       { character_id: "alice", agenda_index: 0, clue_id: "loc-nope" },
+      { character_id: "alice", agenda_index: 0, clue_id: "" },
     ]);
     expect(failing(bp)).toEqual(["blueprint_schema_valid"]);
   });

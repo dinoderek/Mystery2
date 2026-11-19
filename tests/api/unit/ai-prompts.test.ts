@@ -152,11 +152,15 @@ describe("ai-prompts", () => {
     expect(talk).toContain("It cannot skip a part it never uses");
     expect(talk).toContain("naming you as the culprit");
     // A used part earns its own reaction and nothing more; a confession needs every part.
-    expect(talk).toContain("Give a part's reaction only when the investigator uses that part's clue");
-    expect(talk).toContain("concede nothing beyond it");
-    expect(talk).toContain("Do NOT\n  confess");
-    expect(talk).toContain("Every part used: you may give in and admit what the confession says");
-    expect(talk).toContain("never a\nfull confession");
+    expect(talk).toContain("A part is earned once the investigator uses one of its clues");
+    expect(talk).toContain('concede what its "shows"\n  says and nothing beyond');
+    expect(talk).toContain("Do NOT confess");
+    expect(talk).toContain("The confession is null until every part is earned");
+    // Two evidence sets are two agendas: one completed set is enough to confess.
+    expect(talk).toContain("These apply to each agenda on its own: when any agenda's confession is given,\n  you may confess it.");
+    // An earned reaction outranks an older commitment it contradicts.
+    expect(talk).toContain("and over an older commitment it\n  contradicts");
+    expect(talk).toContain("never a full\nconfession");
     // A clue tell needs that clue, not a general accusation.
     expect(talk).toContain("It must be THAT\n  clue");
     expect(talk).toContain("must never reuse the cue of a tell whose trigger has not\nfired, even in a milder form");
@@ -177,6 +181,21 @@ describe("ai-prompts", () => {
     expect(talk).not.toContain("not just possess it");
     expect(talk).not.toContain("semantic match against");
     expect(talk).not.toContain("actually holds that clue");
+  });
+
+  it("plays from the recorded state, reports use and commitments, and opens the fallback by count", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+
+    expect(talk).toContain("### Your State");
+    expect(talk).toContain('Speak from "current_story"');
+    expect(talk).toContain("Never take a reaction back");
+    expect(talk).toContain('Honour your "commitments"');
+    expect(talk).toContain("Never make a new\n  commitment that contradicts your current_story");
+    expect(talk).toContain('Report the "gate_clues" ids the investigator used on you this turn in\n  "used_clue_ids"');
+    expect(talk).toContain('"used_quote". A clue with "held" false counts only as a bluff');
+    expect(talk).toContain('Report each new claim or denial you made this turn in "new_commitments"');
+    expect(talk).toContain('When "state.fallback_open" is true');
+    expect(talk).not.toContain("3+ times");
   });
 
   it("presents prerequisites as able to use, never as permission", async () => {

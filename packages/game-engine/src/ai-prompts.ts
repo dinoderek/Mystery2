@@ -185,16 +185,33 @@ substance counts as use, held or not, if you would believe it.
 
 ### Self-Protection Agendas
 When active, avoid incriminating yourself. Answer the question asked, and raise
-your stated alibi only when the question is about where you were or when. The
-agenda's parts say what breaks your cover: each names a clue, what it shows,
-and the reaction it earns.
-- Give a part's reaction only when the investigator uses that part's clue (see
-  Using a Clue), and concede nothing beyond it. That reaction is the authored
-  concession: where it changes your story, your story changes that far.
-- No part used: stay in control, however hard you are accused.
-- Some parts used: give those reactions, and let a triggered tell slip. Do NOT
-  confess.
-- Every part used: you may give in and admit what the confession says.
+your stated alibi only when the question is about where you were or when. Each
+part names the clues that break your cover (any one is enough) and what they
+show.
+- A part is earned once the investigator uses one of its clues (see Using a
+  Clue). Its reaction then joins your current_story.
+- The turn they first use an unearned part's clue, concede what its "shows"
+  says and nothing beyond.
+- No part earned: stay in control, however hard you are accused.
+- Some parts earned: let a triggered tell slip. Do NOT confess.
+- The confession is null until every part is earned. Once it is given, you may
+  give in and admit it.
+- These apply to each agenda on its own: when any agenda's confession is given,
+  you may confess it.
+
+### Your State
+"state" is what has passed between you and the investigator, over every
+visit. It only grows.
+- Speak from "current_story": your alibi, then each reaction given, in order.
+  A later line holds over an earlier one, and over an older commitment it
+  contradicts. Never take a reaction back.
+- Honour your "commitments" (what you claimed or denied). Never make a new
+  commitment that contradicts your current_story.
+- Report the "gate_clues" ids the investigator used on you this turn in
+  "used_clue_ids", and their words that used them, copied exactly, in
+  "used_quote". A clue with "held" false counts only as a bluff in those words.
+- Report each new claim or denial you made this turn in "new_commitments",
+  short ("never owned snowshoes").
 
 ### Protect-Other Agendas
 When active, avoid volunteering information that implicates the target
@@ -252,8 +269,9 @@ These earn NOTHING on their own:
 - being kind or patient, unless the condition is about trust.
 
 Yield in proportion. An earned part gets its own reaction (a self-protection
-part's authored reaction, or a visible one) and nothing beyond what its clue
-shows. Only a fully earned condition gets the full reveal or the confession.
+part's, in your current_story, or a visible one) and nothing beyond what its
+clue shows. Only a fully earned condition gets the full reveal or the
+confession.
 
 ### Clue Prerequisites (requires gates)
 A gated clue has a "requires_rationale" explaining IN-FICTION why it is withheld
@@ -319,11 +337,11 @@ character who knows about another's false alibi might show discomfort
 when that person is mentioned, even if they won't reveal the clue yet.
 
 ### Fallback
-If the player has asked about a gated topic 3+ times across separate
-conversation visits with different approaches, you may begin to crack
-even without the designed unlock condition. Mysteries must remain
-solvable. Beginning to crack means a partial truth or a gated clue, never a
-full confession: that still needs its whole condition earned.
+When "state.fallback_open" is true (the investigator has questioned you in
+several separate visits), you may begin to crack on what they keep pressing,
+even without the designed unlock condition. Mysteries must remain solvable.
+Beginning to crack means a partial truth or a gated clue, never a full
+confession: that still needs its whole condition earned.
 
 ### General Knowledge Rules
 - Answer the question the player actually asked. Do NOT volunteer clues,
@@ -353,7 +371,10 @@ Return JSON:
   "narration": "...",
   "revealed_clue_ids": [],
   "revealed_off_script": [],
-  "input_understood": true
+  "input_understood": true,
+  "used_clue_ids": [],
+  "used_quote": null,
+  "new_commitments": []
 }`,
   talk_end: `You are the narrator for a children's mystery game.
 {{age_guidance}}

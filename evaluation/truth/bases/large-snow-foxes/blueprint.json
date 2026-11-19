@@ -432,17 +432,17 @@
             "details": "Barnaby insists he napped in his train seat from ten past three until Howard shouted. He is chatty and helpful-sounding, and keeps talk away from himself.",
             "parts": [
               {
-                "clue_id": "clue_snowshoe_prints",
+                "clue_ids": ["clue_snowshoe_prints"],
                 "shows": "The luggage-car prints are snowshoe prints, not wolf paws.",
                 "reaction": "Backs off blaming Gus, flustered, but keeps the nap."
               },
               {
-                "clue_id": "clue_bramble_barnaby",
+                "clue_ids": ["clue_bramble_barnaby"],
                 "shows": "At ten past three he hopped toward the ticket hut, not the train.",
                 "reaction": "Says he took the long way to stretch his legs, then napped on the train."
               },
               {
-                "clue_id": "clue_wet_snowshoes",
+                "clue_ids": ["clue_wet_snowshoes"],
                 "shows": "Someone wore a snowshoe pair today and left white fur in a strap.",
                 "reaction": "Mutters that lots of animals have white fur."
               }
@@ -463,7 +463,7 @@
             "details": "If the museum or the map comes up, Barnaby says he only wants the map 'kept safe'. He gets prickly and grumbles that snow foxes never cared about bunny things anyway.",
             "parts": [
               {
-                "clue_id": "clue_howard_motive",
+                "clue_ids": ["clue_howard_motive"],
                 "shows": "Barnaby wants the map for his bunny museum.",
                 "reaction": "Admits he wants the map in his museum, but says he would never take anything from his old friend."
               }
@@ -577,7 +577,7 @@
             "details": "Gus is embarrassed about his secret party song, so he says he was 'checking the engine wheels' from ten past three until the bell. He hums nervously when pressed.",
             "parts": [
               {
-                "clue_id": "clue_songbook",
+                "clue_ids": ["clue_songbook"],
                 "shows": "Gus was behind the water tower with his songbook, dancing in the snow.",
                 "reaction": "His ears turn pink and he admits he was by the water tower, not the wheels."
               }
@@ -672,12 +672,12 @@
             "details": "Ruby says she stayed in her train seat reading the whole stop. She fears the snow foxes already think city foxes are tricky.",
             "parts": [
               {
-                "clue_id": "clue_juniper_ruby_case",
+                "clue_ids": ["clue_juniper_ruby_case"],
                 "shows": "Ruby stepped off the train at five past three with a brown case.",
                 "reaction": "Admits she got off the train, but says the case held just her own things, and changes the subject."
               },
               {
-                "clue_id": "clue_bramble_ruby",
+                "clue_ids": ["clue_bramble_ruby"],
                 "shows": "Ruby showed hats at the tea house counter from ten past three until the bell.",
                 "reaction": "Sighs and admits she was selling hats in the tea house."
               }

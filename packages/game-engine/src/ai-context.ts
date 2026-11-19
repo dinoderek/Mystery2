@@ -9,6 +9,7 @@ import {
   type KnownClueWithOrigin,
   type PathCoverage,
 } from "./clue-discovery.ts";
+import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned } from "./character-state.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
 
@@ -30,13 +31,15 @@ export interface BlueprintAgenda {
   gated_clue_id?: string;
   condition?: string;
   yields_to_clue_ids?: string[];
-  // self_protect only: each clue that breaks the cover story, and what it earns.
+  // self_protect only: each fact that breaks the cover story, the clues that show
+  // it, and what it earns.
   parts?: BlueprintAgendaPart[];
   confession?: string;
 }
 
 export interface BlueprintAgendaPart {
-  clue_id: string;
+  // Any one of these clues, used, earns the part.
+  clue_ids: string[];
   shows: string;
   reaction: string;
 }
@@ -229,6 +232,35 @@ export interface TalkClueContext {
   known_to_player: boolean;
 }
 
+// A self-protect part as the narrator sees it: what earns it and what it shows.
+// Its reaction is sent only once earned, as part of the character's story.
+export interface TalkAgendaPartContext {
+  clue_ids: string[];
+  shows: string;
+  earned: boolean;
+}
+
+// An agenda as the narrator sees it. A self-protect agenda's confession is sent
+// only once every part is earned, and is null until then.
+export type TalkAgendaContext = Omit<BlueprintAgenda, "parts" | "confession"> & {
+  parts?: TalkAgendaPartContext[];
+  confession?: string | null;
+};
+
+// What the player has done to this character so far, rebuilt from the session's
+// events across every visit (`character-state.ts`). It only grows.
+export interface TalkCharacterStateContext {
+  used_clue_ids: string[];
+  // The stated alibi, then each earned reaction in the order it was earned.
+  current_story: string[];
+  // Denials and claims the character made, newest last.
+  commitments: string[];
+  visits_with_questions: number;
+  // The player has questioned this character in enough separate visits that the
+  // repeated-asking fallback may give up a partial truth or a gated clue.
+  fallback_open: boolean;
+}
+
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
   background: string;
   personality: string;
@@ -238,9 +270,13 @@ export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary 
   clues: TalkClueContext[];
   flavor_knowledge: string[];
   actual_actions: BlueprintActualAction[];
-  agendas: BlueprintAgenda[];
+  agendas: TalkAgendaContext[];
   tells: BlueprintTell[];
   player_known_clues: Array<{ id: string; text: string }>;
+  // The clues the player could use on this character (what earns a part or
+  // opens a gate), each with whether they hold it. Only these are reported used.
+  gate_clues: Array<{ id: string; held: boolean }>;
+  state: TalkCharacterStateContext;
 }
 
 export interface TalkContext {
@@ -497,10 +533,33 @@ export function buildPlayerKnownClues(
   return mapClueIdsToClues(blueprint, clueIds);
 }
 
+type BlueprintCharacter = BlueprintContext["world"]["characters"][number];
+
+function buildTalkAgendas(character: BlueprintCharacter, state: ReturnType<typeof buildCharacterState>): TalkAgendaContext[] {
+  return (character.agendas ?? []).map((agenda, agendaIndex) => {
+    const { parts: authoredParts, confession, ...rest } = agenda;
+    if (agenda.type !== "self_protect") return rest;
+    const parts = authoredParts ?? [];
+    return {
+      ...rest,
+      parts: parts.map((part, partIndex) => ({
+        clue_ids: part.clue_ids,
+        shows: part.shows,
+        earned: state.earned_parts.some(
+          (earned) => earned.agenda_index === agendaIndex && earned.part_index === partIndex,
+        ),
+      })),
+      confession: isAgendaFullyEarned(state, agendaIndex, parts.length) ? confession ?? null : null,
+    };
+  });
+}
+
 function buildTalkCharacterPrivateContext(
   blueprint: BlueprintContext,
   characterId: string,
   playerKnownClues: Array<{ id: string; text: string }>,
+  conversationHistory: ConversationFragment[],
+  options: { asking_now?: boolean } = {},
 ): TalkCharacterPrivateContext {
   const character = blueprint.world.characters.find(
     (entry) => entry.id === characterId,
@@ -524,6 +583,7 @@ function buildTalkCharacterPrivateContext(
     player_can_use_prerequisites: clue.requires ? isClueUnlocked(clue, discoveredSet) : null,
     known_to_player: discoveredSet.has(clue.id),
   }));
+  const state = buildCharacterState(character, conversationHistory, options);
 
   return {
     id: character.id,
@@ -542,9 +602,17 @@ function buildTalkCharacterPrivateContext(
     clues,
     flavor_knowledge: character.flavor_knowledge,
     actual_actions: character.actual_actions,
-    agendas: character.agendas ?? [],
+    agendas: buildTalkAgendas(character, state),
     tells: character.tells ?? [],
     player_known_clues: playerKnownClues,
+    gate_clues: [...gateClueIds(character)].map((id) => ({ id, held: discoveredSet.has(id) })),
+    state: {
+      used_clue_ids: state.used_clue_ids,
+      current_story: state.current_story,
+      commitments: state.commitments,
+      visits_with_questions: state.visits_with_questions,
+      fallback_open: state.visits_with_questions >= FALLBACK_VISITS,
+    },
   };
 }
 
@@ -565,7 +633,7 @@ export function buildPresentCharacterContexts(
 
   const playerKnownClues = buildPlayerKnownClues(blueprint, conversationHistory);
   return present.map((character) =>
-    buildTalkCharacterPrivateContext(blueprint, character.id, playerKnownClues)
+    buildTalkCharacterPrivateContext(blueprint, character.id, playerKnownClues, conversationHistory)
   );
 }
 
@@ -573,7 +641,8 @@ function buildTalkContext(
   blueprint: BlueprintContext,
   locationId: string,
   characterId: string,
-  playerKnownClues: Array<{ id: string; text: string }>,
+  conversationHistory: ConversationFragment[],
+  options: { asking_now?: boolean } = {},
 ): TalkContext {
   const location = findLocationById(blueprint, locationId);
 
@@ -586,7 +655,9 @@ function buildTalkContext(
     active_character: buildTalkCharacterPrivateContext(
       blueprint,
       characterId,
-      playerKnownClues,
+      buildPlayerKnownClues(blueprint, conversationHistory),
+      conversationHistory,
+      options,
     ),
   };
 }
@@ -690,10 +761,6 @@ export function buildTalkStartContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const playerKnownClues = buildPlayerKnownClues(
-    input.blueprint,
-    input.conversation_history ?? [],
-  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_start",
@@ -706,7 +773,7 @@ export function buildTalkStartContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
-      playerKnownClues,
+      input.conversation_history ?? [],
     ),
   });
 }
@@ -720,10 +787,6 @@ export function buildTalkConversationContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const playerKnownClues = buildPlayerKnownClues(
-    input.blueprint,
-    input.conversation_history ?? [],
-  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_conversation",
@@ -737,7 +800,8 @@ export function buildTalkConversationContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
-      playerKnownClues,
+      input.conversation_history ?? [],
+      { asking_now: true },
     ),
   });
 }
@@ -750,10 +814,6 @@ export function buildTalkEndContext(input: {
   location_id: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const playerKnownClues = buildPlayerKnownClues(
-    input.blueprint,
-    input.conversation_history ?? [],
-  );
   return buildContext({
     game_id: input.game_id,
     role_name: "talk_end",
@@ -766,7 +826,7 @@ export function buildTalkEndContext(input: {
       input.blueprint,
       input.location_id,
       input.character_id,
-      playerKnownClues,
+      input.conversation_history ?? [],
     ),
   });
 }

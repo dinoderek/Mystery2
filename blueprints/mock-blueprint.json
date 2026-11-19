@@ -108,6 +108,22 @@
         "actual_actions": [
           { "sequence": 1, "summary": "Baked a batch of cookies at noon." },
           { "sequence": 2, "summary": "Ate the cookies at 12:15." }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "maintain false alibi: says she was reading",
+            "priority": "high",
+            "details": "Alice says she was reading all afternoon and fidgets when cookies come up.",
+            "parts": [
+              {
+                "clue_ids": ["clue-crumb", "clue-wrapper"],
+                "shows": "Someone was snacking on cookies today.",
+                "reaction": "Admits she had one snack, but says she was still reading."
+              }
+            ],
+            "confession": "She admits she ate the cookies at a quarter past twelve."
+          }
         ]
       },
       {

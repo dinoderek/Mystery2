@@ -16,11 +16,9 @@ blueprint's `target_age` and `narration_style`. It is the only place those two
 are applied, and it imports no database, so the runtime eval harness calls it
 directly instead of keeping a second copy.
 
-Keep it the only path: a second copy drifts silently and can build every
-evaluated prompt for the wrong age. `tests/api/unit/role-request.test.ts`
-asserts, for every role, that the assembled prompt carries the blueprint's age
-and voice. Output is validated before the turn is saved, so a provider or
-contract failure writes nothing.
+Keep it the only path: a second copy drifts, building prompts for the wrong
+age. `tests/api/unit/role-request.test.ts` asserts, for every role, that the
+assembled prompt carries the blueprint's age and voice.
 
 ## Roles
 
@@ -30,8 +28,8 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 `search_targeted` carries both, because the model decides the outcome
 (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
 round `continue`, `win` or `lose` by the rule in "The accusation" in
-`docs/game.md`. `talk_start` and `talk_end` keep the investigator where they
-stand: only `move` moves them, and `gm_fabrication` reports invented movement.
+`docs/game.md`. `talk_start` and `talk_end` move nobody; `gm_fabrication`
+reports invented movement.
 
 ## Narration style
 <!-- extract:narration-style -->
@@ -110,8 +108,8 @@ invalid output is a retriable error.
   clues), and a locked search reveal is rejected and logged
   (`search.clue_locked`).
 - When the model reports `input_understood: false` (gibberish), the parser
-  forces the reveals empty, and for a search the turn cost to zero, so a
-  confused turn can never leak a clue or cost the child a turn.
+  forces the reveals, uses and commitments empty, and for a search the turn
+  cost to zero, so a confused turn never leaks a clue or costs a turn.
 - Rules that span fields are applied by the parser only, never asked of the
   model.
 
@@ -159,10 +157,9 @@ answer.
 
 ## Earned, not free
 
-The talk prompt rewards good roleplay without giving anything away. Every
-conversational gate (a self-protection agenda's `parts`, a reveal's
-`yields_to_clue_ids`, a `requires` gate, a `clue` tell) opens only when the
-player **uses** a clue.
+Every conversational gate (a self-protection part, earned by any of its
+`clue_ids`; a reveal's `yields_to_clue_ids`; a `requires` gate; a `clue` tell)
+opens only when the player **uses** a clue.
 
 - **Use, defined once** here and in the prompt's "Using a Clue": the player
   makes the clue's point and aims it at this character. Could the character
@@ -173,21 +170,28 @@ player **uses** a clue.
 - **Some things never earn a part:** naming the character as culprit,
   insisting, repeating a demand, asking to look, or a case built only on other
   parts.
-- **The character yields in proportion.** A used part earns its authored
-  `reaction`, conceding what its clue shows and nothing beyond; the story
-  changes that far. Every part earns the `confession`. A suspect raises the
-  alibi only when asked where or when. The repeated-asking fallback can give up
-  a partial truth or a gated clue, never a confession.
-- **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
-  for "her tail puffs up" still leaks the tell, so greetings and improvised
-  reactions use different body language.
+- **The character yields in proportion.** A used part earns its `reaction`,
+  conceding what its clues show, no more. Every part earns the `confession`.
+  The alibi comes up only when asked where or when. After questions in
+  three separate visits (`fallback_open`), the repeated-asking fallback may
+  give up a partial truth or a gated clue, never a confession.
+- **Use is recorded.** `talk_conversation` reports the clues used
+  (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The
+  backend keeps a used gate clue the player holds, or bluffs in words the
+  quote shows are theirs, and logs the rest (`ask.used_clue_dropped`).
+  `character-state.ts` rebuilds each character's state from every visit's
+  `ask` events: clues used, parts earned, the current story (alibi, then
+  earned reactions in order) and the last five commitments. It only grows.
+  The context carries it as `state`, a reaction only once earned and the
+  confession only once all are. The prompt keeps to both and never takes a
+  reaction back.
+- **An untriggered tell stays hidden, even softened** ("one quick puff" for
+  "her tail puffs up").
 
-The proportion rule matters most: without it, a confident accusation backed by
-half the evidence draws a full confession. `gm_roleplay` judges against the
-same definition of earned.
+`gm_roleplay` judges against the same definition of earned.
 
-The notebook's case facts and each turn's revealed clues reach the browser as
-structured fields; nothing is parsed out of narration.
+Case facts and revealed clues reach the browser as structured fields, never
+parsed from narration.
 
 ## Entering the first location
 <!-- extract:game-enter -->
@@ -202,9 +206,9 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The default for `npm run dev` and every automated suite. It exercises the same
-paths as a live model, deterministically, and writes at the target reading age,
-since the runtime eval harness grades whatever the provider returns.
+The default for `npm run dev` and every automated suite. It exercises a live
+model's paths deterministically, at the target reading age, since the runtime
+eval harness grades whatever the provider returns.
 
 Changing a contract, a prompt, a context or provider selection changes the mock
 and its tests in the same change.
@@ -216,10 +220,9 @@ and its tests in the same change.
   web client owns the retry policy.
 - A blueprint that cannot be read or parsed is logged (`blueprint.read_failed`,
   `blueprint.parse_failed`) and treated as missing.
-- Every AI call logs one JSON line to stdout, with the requested model and the
-  one the provider reports. `AI_CALL_LOG` records full prompts and outputs
+- Every AI call logs one JSON line to stdout with the requested and reported
+  model; `AI_CALL_LOG` adds full prompts and outputs
   (`docs/ai-configuration.md`).
-- Each AI-narrated event stores the model that produced it in
-  `game_events.model`, captured right after its own call — a forced endgame is
-  two calls and two models. The trace pipeline reads this column rather than
-  the session's profile, which only says what was configured.
+- Each AI-narrated event stores the model of its own call in
+  `game_events.model` (a forced endgame is two calls); the trace pipeline reads
+  it, not the session's profile.

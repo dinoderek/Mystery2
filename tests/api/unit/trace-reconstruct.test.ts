@@ -14,11 +14,12 @@ type Turn = {
   character_id: string | null;
   player_input: string | null;
   context_error: string | null;
+  recorded_use: { used_clue_ids: string[]; used_quote: string | null; new_commitments: string[] } | null;
   pre_state: { mode: string; current_location_id: string | null };
   reconstructed_context: {
     mode?: string;
     search_context?: { location_id?: string; next_clue?: { id?: string } | null } | null;
-    talk_context?: { active_character?: { id?: string } } | null;
+    talk_context?: { active_character?: { id?: string; state?: { commitments: string[] } } } | null;
     move_context?: { has_visited_before?: boolean } | null;
     accusation_judge_context?: unknown | null;
   } | null;
@@ -96,6 +97,28 @@ describe("reconstructTrace", () => {
     const talk = turnBySeq(turns, 3);
     expect(talk.context_error).toBeNull();
     expect(talk.reconstructed_context?.talk_context?.active_character?.id).toBe("char_mara");
+  });
+
+  it("reads what an ask turn recorded about the character, and rebuilds the talk state from it", () => {
+    // The fixture's ask predates recorded use, so nothing is read from it.
+    expect(turnBySeq(turns, 4).recorded_use).toBeNull();
+    expect(turnBySeq(turns, 2).recorded_use).toBeNull();
+
+    const events = makeRawTrace().events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
+      event.sequence === 4
+        ? { ...event, payload: { ...event.payload, used_clue_ids: [], used_quote: null, new_commitments: ["saw only a shadow"] } }
+        : event
+    );
+    const replayed = reconstructTrace(makeRawTrace({ events })).turns;
+    expect(turnBySeq(replayed, 4).recorded_use).toEqual({
+      used_clue_ids: [],
+      used_quote: null,
+      new_commitments: ["saw only a shadow"],
+    });
+    // Saying goodbye to Mara, her rebuilt state holds the commitment.
+    expect(turnBySeq(replayed, 5).reconstructed_context?.talk_context?.active_character?.state?.commitments).toEqual([
+      "saw only a shadow",
+    ]);
   });
 
   it("keeps full-blueprint ground truth only in the accusation judge context", () => {

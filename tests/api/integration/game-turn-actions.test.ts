@@ -262,6 +262,34 @@ describe("game-turn actions", () => {
       expect(new Set(recorded).size).toBe(recorded.length);
     });
 
+    it("keeps a reaction the player earned in one visit when they come back for another", async () => {
+      const gameId = await startMockGame(auth);
+      await play(gameId, "search");
+      await play(gameId, "talk to Alice");
+      // The mock reads a line that names a gate clue's id as using it.
+      const shown = await play(gameId, "Look, clue-crumb: someone was snacking!");
+      expect(shown.events[0].payload).toMatchObject({
+        used_clue_ids: ["clue-crumb"],
+        used_quote: "Look, clue-crumb: someone was snacking!",
+      });
+      await play(gameId, "goodbye");
+      await play(gameId, "go to the Living Room");
+      await play(gameId, "go to the Kitchen");
+
+      await play(gameId, "talk to Alice");
+      const later = await play(gameId, "Did you eat the cookies?");
+
+      // The second visit's context carries the earned reaction as her story.
+      expect(later.events[0].narration_parts[0].text).toContain(
+        "(Keeps to: Admits she had one snack, but says she was still reading.)",
+      );
+      expect(later.events[0].payload).toMatchObject({
+        used_clue_ids: [],
+        used_quote: null,
+        new_commitments: ["denies: eat the cookies"],
+      });
+    });
+
     it("ends the conversation as the narrator, back in explore mode, with the turns as they were", async () => {
       const gameId = await startMockGame(auth);
       await play(gameId, "talk to Alice");

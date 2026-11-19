@@ -130,14 +130,13 @@ Plan with these steps; do not output them.
 6. Author agendas (behavioral directives shaping conversation):
    - The culprit MUST have ≥1 self-protection agenda (`maintain_false_alibi`,
      `deny_motive`, or `minimize_presence`) at `priority: "high"`.
-   - A `self_protect` agenda lists `parts`, one per clue that breaks its cover:
-     `{ clue_id, shows, reaction }`. `shows` is what that evidence proves;
-     `reaction` concedes exactly that, fitted into the character's story.
-     Evidence that misses the alibi leaves it standing: prints proving the wolf
-     innocent make the liar stop blaming the wolf, not admit he walked.
-     `confession` is what they admit once every part is earned; `details` keeps
-     the general manner. Part clues come from a location or a *different*
-     character.
+   - A `self_protect` agenda lists `parts`, one per fact that breaks its cover:
+     `{ clue_ids, shows, reaction }`. Any listed clue earns the part, so each
+     must prove all of `shows`; `reaction` concedes exactly that, fitted into
+     their story. Evidence that misses the alibi leaves it standing: prints
+     clearing the wolf end the wolf-blaming, not the alibi. `confession` comes
+     once every part is earned; two separate cases against one culprit are two
+     agendas. Part clues come from a location or *another* character.
    - Give non-culprits agendas that create friction where it serves the story
      (`protect_other`, `implicate_other`, `conditional_reveal`), each with a
      stated reason — including at least one narrative-condition
@@ -333,6 +332,6 @@ alibis, actions, and the final reasoning).
 - All ids resolve: `starting_location_id` and `location_id`; clue
   `about_character_id` / `hint_location_id`; agenda `target_character_id` (a
   *different* character) / `gated_clue_id` (same character's clue) /
-  `yields_to_clue_ids` and `parts[].clue_id` (obtainable, from a different
+  `yields_to_clue_ids` and `parts[].clue_ids` (obtainable, from a different
   source); `cover_image` ids.
 - Keep everything child-friendly and internally consistent.

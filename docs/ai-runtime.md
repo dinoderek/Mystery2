@@ -62,13 +62,13 @@ Which blueprint fields reach which role is the "Narration at play" table in
   enforces that for every other role. Knowledge about *other* characters
   travels only through explicit clues (`about_character_id`).
 - A talk clue carries its gate's `requires_rationale` (the in-fiction reason it
-  is withheld), a precomputed `prereqs_met` and `known_to_player`; the
-  prerequisite ids are not sent, so the model gates on the reason rather than
-  doing set arithmetic.
+  is withheld), `known_to_player`, and `player_can_use_prerequisites`: the
+  player holds the prerequisites, a precondition for using them, never
+  permission. Prerequisite ids are not sent, so the model gates on the reason,
+  not set arithmetic.
 - **Tells are reactions, not defaults.** Each has visible `text` and a
   `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
-  (fires only when the player raises the referenced `clue_ids` and is believed:
-  they hold the clue or bluff well). A cue surfaces only when its trigger fires,
+  (fires only when the player uses a referenced clue). A cue surfaces only when its trigger fires,
   or, with none authored, when the player touches something sensitive. A
   `talk_start` greeting and an arrival come before the player says anything, so
   a `clue` tell never fires there, and a `condition` tell fires only if the
@@ -81,7 +81,11 @@ Which blueprint fields reach which role is the "Narration at play" table in
   session's history, so the endpoints and the eval harness cannot disagree. Its
   word budget is roomy enough for the place, its searchable areas and whoever
   is there.
-- **Search never sees a locked clue**, so its text can never be woven in.
+- **Search never sees a locked clue**, so its text is never woven in, nor a
+  spot whose clues are all locked, so no search or arrival advertises it or
+  narrates "nothing here" there. A targeted search whose words name that spot
+  (`search-target.ts`) shows it and admits its clue, logged as
+  `search.clue_admitted_by_target`: specificity, not possession.
 - **The judge gets what the investigator earned**: `player_known_clues` (in
   order, each with an `origin_label`) and `path_coverage` (per reasoning path,
   found and missing clue ids). Without them it cannot tell an earned case from
@@ -130,13 +134,12 @@ already discovered before recording the event or answering, and log it
 Gates use each clue's optional `requires`:
 
 - **Search — hard.** A bare search reveals the first unrevealed *and* unlocked
-  location-level clue, skipping locked ones. A targeted search never sees
-  locked clues, and the backend rejects a locked reveal.
-- **Conversation — soft, with a brilliance override.** The narrator normally
-  withholds a clue whose `prereqs_met` is false, but may grant it off-script
-  for a clever question or a convincing bluff when the rationale implies a
-  social or knowledge gate. Such reveals are listed in `revealed_off_script`
-  and recorded as real discoveries.
+  location-level clue, skipping locked ones. The backend rejects a locked
+  reveal, except a named hidden spot's clue (above).
+- **Conversation — earned by use.** A gated clue is given once the player uses
+  its prerequisites; holding them never grants it. A bluff or deduction that
+  uses them earns it off-script unless the gate is physical. Such reveals are
+  listed in `revealed_off_script` and recorded as real discoveries.
 - **Accusation — judged, not mechanical.** Nothing in the accuse action rejects an
   accusation on coverage. The judge prompt applies three scoping rules:
   - The discovered set limits the **evidence-chain** route only. The true-
@@ -156,34 +159,32 @@ answer.
 
 ## Earned, not free
 
-The talk prompt rewards good roleplay without giving anything away. One rule
-covers every conversational gate: a self-protection agenda's crack, a
-conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
+The talk prompt rewards good roleplay without giving anything away. Every
+conversational gate (a self-protection agenda's `parts`, a reveal's
+`yields_to_clue_ids`, a `requires` gate, a `clue` tell) opens only when the
+player **uses** a clue.
 
-- **The condition is a list of parts.** These are a self-protection agenda's
-  `parts`, a reveal's `yields_to_clue_ids`, or the gate's clues.
-- **A part is earned** when the player puts its substance in front of the
-  character. Using a clue they hold does it. So does a specific, plausible
-  bluff or deduction that names the substance, which this character would
-  believe. Roleplay can stand in for evidence the player has not found, but it
-  cannot skip a part it never names.
+- **Use, defined once** here and in the prompt's "Using a Clue": the player
+  makes the clue's point and aims it at this character. Could the character
+  fairly react as if just shown it? Saying a word, or holding the clue, is not
+  enough; a specific, plausible bluff or deduction stating its substance is.
+  "Do you have snowshoes?" does not use the snowshoe prints. "The luggage-car
+  prints are snowshoes, not paws, so it wasn't Gus" does.
 - **Some things never earn a part:** naming the character as culprit,
-  insisting, repeating a demand, asking to look, or a strong case built only on
-  the other parts.
-- **The character yields in proportion.** Part of a condition earns a visible
-  crack, or that part's authored `reaction`, telling the player they are on the
-  right track. The stated alibi holds except where an earned reaction concedes
-  it, and nothing else from `actual_actions` is admitted until the whole
-  condition is earned; only then does the `confession` come. The repeated-asking fallback that keeps a case solvable can give
-  up a partial truth or a gated clue, never a confession.
+  insisting, repeating a demand, asking to look, or a case built only on other
+  parts.
+- **The character yields in proportion.** A used part earns its authored
+  `reaction`, conceding what its clue shows and nothing beyond; the story
+  changes that far. Every part earns the `confession`. A suspect raises the
+  alibi only when asked where or when. The repeated-asking fallback can give up
+  a partial truth or a gated clue, never a confession.
 - **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
   for "her tail puffs up" still leaks the tell, so greetings and improvised
   reactions use different body language.
 
-The proportion rule matters most. Without it, a confident accusation backed
-by half the evidence draws a full confession, handing over the answer before
-the player has earned it. `gm_roleplay` judges against
-the same definition of earned.
+The proportion rule matters most: without it, a confident accusation backed by
+half the evidence draws a full confession. `gm_roleplay` judges against the
+same definition of earned.
 
 The notebook's case facts and each turn's revealed clues reach the browser as
 structured fields; nothing is parsed out of narration.

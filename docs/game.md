@@ -58,16 +58,14 @@ While talking, every line is said to the character except the end-talk words,
 `accuse …`: "I think you took it!" is said to the suspect's face and answered in
 character. To accuse, say `bye` first.
 
-A character clue can be gated behind other clues. The character normally
-withholds it until the player has found them, but the narrator may give it up
-early for a genuinely clever question or a convincing bluff — only when the gate
-is social or about knowledge, never physical. Such a reveal counts as a real
-discovery, so a clever player is never stuck.
+A character clue can be gated behind other clues. The character withholds it
+until the player uses them in the conversation, not merely holds them. A
+convincing bluff or deduction can stand in, unless the gate is physical. Such a
+reveal counts as a real discovery, so a clever player is never stuck.
 
-A suspect's cover gives way only as far as the player has earned it, with
-evidence they hold or a convincing bluff or deduction that names what the
-evidence would show. Accusing them, however confidently, earns nothing on its
-own, and half the evidence gets a nervous slip rather than a confession.
+A suspect's cover gives way only as far as the player has earned it: each piece
+of evidence used draws its own concession, and no more. Accusing them earns
+nothing, and half the evidence gets half the story, never a confession.
 <!-- /extract:talking -->
 
 ## Searching
@@ -76,7 +74,7 @@ own, and half the evidence gets a nervous slip rather than a confession.
 Each location has at most one clue found by a plain `search`, and two to four
 named sub-locations ("under the desk"), each holding at most one clue. Some
 hold none. Sub-locations are mentioned on arrival so the player knows what to
-look at.
+look at, except a locked one, unmentioned until a clue points to it.
 
 - `search` reveals the location's clue, then hints at sub-locations still
   worth searching.
@@ -84,7 +82,8 @@ look at.
   a game master's leeway; a creative description can match. A miss earns a
   hint, and a nonsensical attempt costs no turn.
 - Search gates are hard: a clue whose prerequisites are not yet found cannot be
-  revealed by searching. A plain search skips it rather than dead-ending.
+  revealed by searching, and a plain search skips it. A search that names a
+  locked spot still finds its clue: working out where to look counts.
 - Once everything is found, searches still narrate but reveal nothing new.
 <!-- /extract:searching -->
 

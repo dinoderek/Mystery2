@@ -297,7 +297,7 @@ describe("ai-context guardrails", () => {
     });
   });
 
-  it("filters locked sub-location clues out of the search context", () => {
+  it("hides a sub-location whose clues are all locked until it is unlocked", () => {
     const gatedBlueprint: BlueprintContext = {
       ...blueprint,
       world: {
@@ -334,8 +334,24 @@ describe("ai-context guardrails", () => {
       discovered_clue_ids: [],
       next_clue: null,
     });
-    expect(locked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([]);
-    expect(locked.search_context?.sub_locations[0]?.has_unrevealed_clues).toBe(false);
+    // Neither the spot nor its clue reaches the narrator, so it cannot be advertised.
+    expect(locked.search_context?.sub_locations).toEqual([]);
+    expect(JSON.stringify(locked.search_context)).not.toContain("a hidden note");
+
+    // A targeted search that named the spot is shown it, clue included.
+    const admitted = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: [],
+      discovered_clue_ids: [],
+      next_clue: null,
+      search_query: "the drawer",
+      admitted_sub_location_id: "sub-drawer",
+    });
+    expect(admitted.search_context?.sub_locations.map((sl) => sl.id)).toEqual(["sub-drawer"]);
+    expect(admitted.search_context?.sub_locations[0]?.unrevealed_clues.map((c) => c.id)).toEqual(["clue-locked"]);
 
     const unlocked = buildSearchContext({
       game_id: "game-1",
@@ -351,7 +367,7 @@ describe("ai-context guardrails", () => {
     ]);
   });
 
-  it("computes prereqs_met for character clues in talk context", () => {
+  it("tells the talk narrator whether the player can use a clue's prerequisites, never that it is earned", () => {
     const gatedBlueprint: BlueprintContext = {
       ...blueprint,
       world: {
@@ -383,9 +399,11 @@ describe("ai-context guardrails", () => {
     });
     expect(before.talk_context?.active_character.clues[0]).toMatchObject({
       id: "clue-alice-secret",
-      prereqs_met: false,
+      player_can_use_prerequisites: false,
       requires_rationale: "she only confesses once shown the crumbs",
     });
+    // Possession is never presented as permission.
+    expect(before.talk_context?.active_character.clues[0]).not.toHaveProperty("prereqs_met");
 
     const after = buildTalkConversationContext({
       game_id: "game-1",
@@ -404,7 +422,53 @@ describe("ai-context guardrails", () => {
         },
       ],
     });
-    expect(after.talk_context?.active_character.clues[0]?.prereqs_met).toBe(true);
+    expect(after.talk_context?.active_character.clues[0]?.player_can_use_prerequisites).toBe(true);
+  });
+
+  it("leaves the able-to-use flag null on an ungated clue", () => {
+    const context = buildTalkConversationContext({
+      game_id: "game-1",
+      session,
+      blueprint,
+      character_id: "char-alice",
+      player_input: "Hello",
+      location_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    expect(context.talk_context?.active_character.clues[0]).toMatchObject({
+      requires_rationale: null,
+      player_can_use_prerequisites: null,
+    });
+  });
+
+  it("carries each self-protect part's clue, what it shows and its reaction, plus the confession", () => {
+    const agenda = {
+      type: "self_protect",
+      strategy: "keep the nap story",
+      priority: "high",
+      details: "calm and folksy",
+      parts: [
+        { clue_id: "clue-crumbs", shows: "someone ate pie here", reaction: "admits a nibble, keeps the reading" },
+      ],
+      confession: "I took the whole pie.",
+    };
+    const withAgenda: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        characters: [{ ...blueprint.world.characters[0], agendas: [agenda] }, blueprint.world.characters[1]],
+      },
+    };
+    const context = buildTalkConversationContext({
+      game_id: "game-1",
+      session,
+      blueprint: withAgenda,
+      character_id: "char-alice",
+      player_input: "These crumbs are pie crumbs.",
+      location_id: "loc-kitchen",
+      conversation_history: [],
+    });
+    expect(context.talk_context?.active_character.agendas).toEqual([agenda]);
   });
 
   it("marks character clues the player already discovered as known_to_player", () => {
@@ -491,7 +555,7 @@ describe("ai-context guardrails", () => {
               id: "clue-alice-bob",
               text: "Bob was in the garden.",
               requires_rationale: null,
-              prereqs_met: true,
+              player_can_use_prerequisites: null,
               known_to_player: false,
             },
           ],

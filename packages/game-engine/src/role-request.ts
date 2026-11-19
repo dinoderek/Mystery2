@@ -44,6 +44,7 @@ import {
   selectLocationConversationHistory,
   type SessionSnapshot,
 } from "./ai-context.ts";
+import { buildDiscoveredClueIdSet, isSpotHidden } from "./clue-discovery.ts";
 import {
   buildGameMovePrompt,
   buildGameStartPrompt,
@@ -96,6 +97,7 @@ interface SearchInputFields extends SessionInput {
   discovered_clue_ids?: string[];
   next_clue: BlueprintClue | null;
   search_query?: string | null;
+  admitted_sub_location_id?: string | null;
 }
 
 export type RoleRequestInput =
@@ -205,7 +207,11 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }
       const history = input.conversation_history ?? [];
       const destinationHistory = selectLocationConversationHistory(history, destination.id);
-      const subLocations = (destination.sub_locations ?? []).map((sl) => ({ name: sl.name }));
+      // A spot nothing has pointed to yet is not advertised (`isSpotHidden`).
+      const discovered = buildDiscoveredClueIdSet(history);
+      const subLocations = (destination.sub_locations ?? [])
+        .filter((sl) => !isSpotHidden(sl, discovered))
+        .map((sl) => ({ name: sl.name }));
       return buildGameMovePrompt({
         target_age: input.blueprint.metadata.target_age,
         destination_name: destination.name,
@@ -342,6 +348,7 @@ function buildSearchContextFrom(input: SearchInput): AIContext {
     discovered_clue_ids: input.discovered_clue_ids,
     next_clue: input.next_clue,
     search_query: input.search_query,
+    admitted_sub_location_id: input.admitted_sub_location_id,
     conversation_history: input.conversation_history,
   });
 }

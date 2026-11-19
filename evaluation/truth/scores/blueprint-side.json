@@ -45,7 +45,7 @@
       "judge": "clue_graph",
       "model": "opus",
       "version": 1,
-      "current": 2,
+      "current": 3,
       "reason": "judge",
       "verdicts": 28
     },

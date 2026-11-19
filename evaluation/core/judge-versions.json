@@ -5,7 +5,7 @@
   "knowledge_coherence": ["8a91ec6041353afb"],
   "character_grounding": ["3d822bf881ed261d", "0c3aa9892569f539", "3ed84e5e76a653f6"],
   "path_payoff": ["b3dbc505cf7f3c02"],
-  "clue_graph": ["aceb0b6c4ca6166f", "1dfa964ddee63a42"],
+  "clue_graph": ["aceb0b6c4ca6166f", "1dfa964ddee63a42", "30f09d8d57df6d77"],
   "age_appropriate": ["38158b97fc2c677b"],
   "gm_roleplay": ["78e4ea8f9c2ac7f3", "a12215c4f9ac7904", "fda45d42dba1d92a", "b22690447f99da64"],
   "gm_clue_discipline": ["dd8a5009def3f24f", "40b3298a40e1f424", "cf3b55c45f0972d7"],

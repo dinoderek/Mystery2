@@ -99,6 +99,23 @@ export function searchNamesSpot(query: string, spotName: string, locationName: s
   return queryWords.has(head) && hits >= Math.ceil(spotWords.length / 2);
 }
 
+// Words that link others and say nothing about which spot is meant.
+const LINKING_WORDS = new Set(["a", "an", "and", "at", "by", "in", "of", "on", "the", "to"]);
+
+/**
+ * How closely a query fits a spot it names: the spot's words it shares,
+ * position words such as "front" or "bottom" included, since those tell sibling
+ * spots apart. Null when the query does not name the spot (`searchNamesSpot`).
+ */
+export function spotMatchScore(query: string, spotName: string, locationName: string): number | null {
+  if (!searchNamesSpot(query, spotName, locationName)) return null;
+  const placeWords = new Set(contentWords(locationName));
+  const words = (text: string) =>
+    new Set(rawWords(text).filter((word) => !LINKING_WORDS.has(word)).map(stem).filter((word) => !placeWords.has(word)));
+  const queryWords = words(query);
+  return [...words(spotName)].filter((word) => queryWords.has(word)).length;
+}
+
 interface Spot {
   id: string;
   name: string;
@@ -108,7 +125,10 @@ interface Spot {
 /**
  * The hidden spot (`isSpotHidden`) a targeted search names, if any. The one
  * place this is decided: the search context shows it, and the search turn
- * admits its clue, so every caller agrees.
+ * admits its clue, so every caller agrees. A hidden spot wins only when it
+ * fits the query better than every spot in view: "the left drawer" finds a
+ * hidden left drawer beside a visible right one, while "the shelf" between a
+ * visible top shelf and a hidden bottom one is about the one in view.
  */
 export function namedHiddenSpot<S extends Spot>(
   location: { name: string; sub_locations?: S[] },
@@ -116,10 +136,13 @@ export function namedHiddenSpot<S extends Spot>(
   discovered: Set<string>,
 ): S | null {
   if (!query || query.trim().length === 0) return null;
-  const spots = location.sub_locations ?? [];
-  const named = (spot: S) => searchNamesSpot(query, spot.name, location.name);
-  // A query that names a spot already in view is about that one: the hidden
-  // spot sharing its head word ("the top shelf", "the bottom shelf") stays hidden.
-  if (spots.some((spot) => !isSpotHidden(spot, discovered) && named(spot))) return null;
-  return spots.find((spot) => isSpotHidden(spot, discovered) && named(spot)) ?? null;
+  let visibleBest = -1;
+  let hidden: { spot: S; score: number } | null = null;
+  for (const spot of location.sub_locations ?? []) {
+    const score = spotMatchScore(query, spot.name, location.name);
+    if (score === null) continue;
+    if (!isSpotHidden(spot, discovered)) visibleBest = Math.max(visibleBest, score);
+    else if (hidden === null || score > hidden.score) hidden = { spot, score };
+  }
+  return hidden !== null && hidden.score > visibleBest ? hidden.spot : null;
 }

@@ -62,8 +62,8 @@
       "judge": "gm_spoiler",
       "model": "opus",
       "version": 1,
-      "current": 1,
-      "reason": "subject",
+      "current": 2,
+      "reason": "judge",
       "verdicts": 45
     }
   ]

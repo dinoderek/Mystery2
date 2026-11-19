@@ -194,6 +194,25 @@ describe("namedHiddenSpot", () => {
     expect(namedHiddenSpot(shelves, "the top shelf", new Set())).toBeNull();
   });
 
+  it("finds a hidden spot that fits the query better than any spot in view", () => {
+    const spot = (id: string, name: string, locked: boolean) => ({
+      id,
+      name,
+      clues: [{ id: `c_${id}`, ...(locked ? { requires: POINTER } : {}) }],
+    });
+    const desk = { name: "Study", sub_locations: [spot("right", "the right drawer", false), spot("left", "the left drawer", true)] };
+    expect(namedHiddenSpot(desk, "the left drawer", new Set())?.id).toBe("left");
+    expect(namedHiddenSpot(desk, "the right drawer", new Set())).toBeNull();
+    expect(namedHiddenSpot(desk, "the drawer", new Set())).toBeNull();
+
+    const hall = { name: "Hall", sub_locations: [spot("front", "the front door", false), spot("back", "the back door", true)] };
+    expect(namedHiddenSpot(hall, "the back door", new Set())?.id).toBe("back");
+    expect(namedHiddenSpot(hall, "open the door", new Set())).toBeNull();
+
+    expect(namedHiddenSpot(shelves, "the bottom shelf", new Set())?.id).toBe("bottom");
+    expect(namedHiddenSpot(shelves, "the shelf", new Set())).toBeNull();
+  });
+
   it("finds the hidden spot when nothing in view is named", () => {
     const only = { ...shelves, sub_locations: [shelves.sub_locations[1]] };
     expect(namedHiddenSpot(only, "the bottom shelf", new Set())?.id).toBe("bottom");

@@ -807,7 +807,8 @@ export function buildSearchContext(input: {
   const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {
-      const visibleClues = sl.id === admitted ? sl.clues : sl.clues.filter(isVisible);
+      // A named hidden spot shows only the clue the search can admit.
+      const visibleClues = sl.id === admitted ? sl.clues.slice(0, 1) : sl.clues.filter(isVisible);
       const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
       return {
         id: sl.id,

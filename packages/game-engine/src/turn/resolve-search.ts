@@ -123,7 +123,8 @@ function admitClue(
     });
     return null;
   }
-  if (!isClueUnlocked(clue, found.anywhere) && target.spot?.clues.some((entry) => entry.id === named)) {
+  // A named hidden spot admits its first clue, the one its context shows.
+  if (!isClueUnlocked(clue, found.anywhere) && target.spot?.clues[0]?.id === named) {
     runtime.logger.log("search.clue_admitted_by_target", {
       game_id: runtime.game_id,
       ai_clue_id: named,

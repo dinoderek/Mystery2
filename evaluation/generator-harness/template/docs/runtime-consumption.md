@@ -192,9 +192,9 @@ or null `sex` causes pronoun drift in talk and move narration.
 ### `initial_attitude_towards_investigator` sets the first impression
 
 A character is first met on arrival, before any conversation. Arrival plays
-them in this attitude and personality, with a manner drawn from their agendas' types, so a guarded
-suspect who should keep visitors away from somewhere does so from the moment
-the player walks in.
+them in this attitude and personality, with a manner drawn from their agendas'
+types, so a guarded suspect who should keep visitors away from somewhere does
+so from the moment the player walks in.
 
 ## Generation contract reminders
 
@@ -221,7 +221,7 @@ the player walks in.
 - `narrative.starting_knowledge` needs an entry for **every** location and
   character; the schema rejects missing or duplicated ids. The character entries
   are also what become `public_summary` in conversations, so a thin summary here
-  means a thin first impression.
+  means a thin picture of them when talked to.
 - The accusation judge gets the full blueprint, so `ground_truth`,
   `solution_paths`, `red_herrings`, and `suspect_elimination_paths` are real
   consumers of your authoring effort — not metadata. They stay judge-side only:

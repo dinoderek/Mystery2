@@ -389,7 +389,7 @@ export function buildGameMovePrompt(input: {
   narration_style?: string | null;
 }): string {
   const revisitInstruction = input.has_visited_before
-    ? "The player has been here before. Explicitly acknowledge the return visit and keep the place as the last arrival described it."
+    ? "The player has been here before. Explicitly acknowledge the return visit and keep the place, not the people's moods, as the last arrival described it."
     : "The player is arriving here for the first time in this session.";
   const hasCharacters = input.destination_characters_json.trim() !== "[]";
 

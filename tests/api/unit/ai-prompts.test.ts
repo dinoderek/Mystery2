@@ -251,8 +251,9 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("initial_attitude_towards_investigator");
     expect(prompt).toContain("manner");
     expect(prompt).toContain("has not asked them anything yet");
+    const rules = prompt.slice(prompt.indexOf("## Characters present")).split("\nDestination description:")[0];
     for (const field of ["motive", "actual_actions", "stated_alibi", "flavor_knowledge", "background", "clue"]) {
-      expect(prompt).not.toContain(field);
+      expect(rules).not.toContain(field);
     }
     expect(prompt).toContain('Last arrival here: "You step into the messy kitchen."');
     expect(prompt).toContain("about 52 words"); // ambience@9

@@ -666,8 +666,9 @@ function agendaManner(
 }
 
 // An agenda the player has already broken no longer shapes the manner: a
-// confessed cover, a blame or protection that yielded to a used clue, a reveal
-// whose clue has been given.
+// confessed cover, an agenda that yielded to a used clue, a reveal whose clue
+// has been given. Protecting or blaming someone has no such end, as in talk, so
+// it stays in the manner.
 function isAgendaSpent(
   agenda: BlueprintAgenda,
   agendaIndex: number,

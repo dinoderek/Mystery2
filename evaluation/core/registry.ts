@@ -337,11 +337,14 @@ export const REGISTRY: readonly RegistryEntry[] = [
         label: "context.probe_topics entry, copied verbatim",
         skipIfEmpty: true,
       },
+      { ...CHARACTER_REF, at: "reactions[].character_id" },
+      { kind: "ref", at: "reactions[].clue_id", set: "clue_ids", label: "blueprint clue id" },
     ],
   }),
   blueprintJudge("path_payoff"),
   blueprintJudge("clue_graph", {
     analyzer: { module: "evaluation/checks/analyzers/clue-graph.ts", export: "analyze" },
+    idChecks: [{ kind: "ref", at: "locks[].clue_id", set: "clue_ids", label: "blueprint clue id", unique: true }],
   }),
   blueprintJudge("age_appropriate", {
     context: { tolerance: 2, min_words: 8 },

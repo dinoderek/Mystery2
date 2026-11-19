@@ -1,0 +1,33 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "clue_graph",
+  "judge": "clue_graph",
+  "note": "Finn's sighting of Roz is now leverage that needs the harbour tide board, which gives Finn no reason to speak of Roz: a lock with no fitting reason that the structural checks accept.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/characters/1/clues/1/requires/clue_ids",
+      "value": [
+        "c_changed_schedule"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/1/clues/1/requires/clue_ids",
+      "value": [
+        "c_harbour_tide_board"
+      ]
+    },
+    {
+      "op": "test",
+      "path": "/world/characters/1/clues/1/requires/rationale",
+      "value": "Finn doesn't think Roz's visit matters until he hears the tide schedule was changed. A clever question about who was alone in the cottage yesterday can also jog his memory."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/1/clues/1/requires/rationale",
+      "value": "Finn will not say who he saw in the cottage until you have read the harbour tide board."
+    }
+  ],
+  "caught_by": []
+}

@@ -28,14 +28,12 @@ How they connect:
 - **The truth set** holds subjects with known faults to score judges against
   (`evaluation/truth/README.md`).
 
-Readers of a played game skip `no_turn_line` events (a refused line or `help`)
-through `playedEvents` in `evaluation/lib/game-events.ts`.
+Readers of a played game skip `no_turn_line` events through `playedEvents` in `evaluation/lib/game-events.ts`.
 
 ## Why the blueprint pipeline is shaped this way
 
 The blueprint pipeline catches authoring failures before play,
-and it is built to change cheaply: a new dimension is files and a registry entry,
-not code. Every model call is a subprocess, with no LLM SDK. Judges run in
+and is built to change cheaply: a new dimension is files and a registry entry, not code. Every model call is a subprocess. Judges run in
 parallel, and a run that aborts still writes its result.
 
 Two lessons from the single-prompt evaluator it replaced:
@@ -46,9 +44,8 @@ Two lessons from the single-prompt evaluator it replaced:
   judgement drifts. Schema validity, brief-derived counts, orphan clues and lock
   shapes are mechanical; the judge keeps the qualitative questions.
 
-One judge per dimension also buys isolation (editing the fairness prompt cannot
-move solve-depth scores), targeted retries and, versioned, re-running only the
-changed judge (`evaluation/README.md`).
+One judge per dimension also buys isolation, targeted retries and, versioned,
+re-running only the changed judge (`evaluation/README.md`).
 
 ## Three tiers of check
 
@@ -94,6 +91,10 @@ pinned to the sections they summarise and checked by the gate
 kind each applies to (`blueprint`, `game`, `turn`). Ids are unique across it. A
 `candidate` judge runs only when named, as by `--judges`.
 
+`clue_graph` also judges whether each lock's kind fits its fiction;
+`character_grounding`, whether each self-protect reaction concedes only what its
+clue shows.
+
 A blueprint dimension is two files and a registry entry. The brief,
 `evaluation/dimensions/<id>.md`, states the judge's questions and its
 output. The Zod schema, `<id>.schema.ts`, is appended to the prompt as JSON
@@ -109,4 +110,4 @@ analyzer, and `idChecks`, the blueprint ids the answer may cite. Without
 - Storing and browsing run history beyond the run directories.
 - Further dimensions (clue economy, red-herring quality, cover-ups, narrative
   economy, tone) are intended but not built.
-- Measuring how long a case takes to solve in play, which is a runtime concern.
+- Measuring how long a case takes to solve in play.

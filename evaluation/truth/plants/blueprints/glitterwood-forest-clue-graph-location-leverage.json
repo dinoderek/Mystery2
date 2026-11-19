@@ -1,0 +1,21 @@
+{
+  "base": "glitterwood-forest",
+  "kind": "clue_graph",
+  "judge": "clue_graph",
+  "note": "The twig pile, a location clue found by searching, is locked as leverage: a character-style lock that no search can use.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/2/sub_locations/0/clues/0/requires/kind",
+      "value": "pointer"
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/2/sub_locations/0/clues/0/requires/kind",
+      "value": "leverage"
+    }
+  ],
+  "caught_by": [
+    "location_locks_are_pointers"
+  ]
+}

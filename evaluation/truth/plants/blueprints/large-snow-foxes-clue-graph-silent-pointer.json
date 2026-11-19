@@ -1,0 +1,19 @@
+{
+  "base": "large-snow-foxes",
+  "kind": "clue_graph",
+  "judge": "clue_graph",
+  "note": "The snowshoe prints still carry the woodshed hint field, but their text no longer says where they lead, so the woodshed's pointer lock does not point in the fiction.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/locations/1/sub_locations/1/clues/0/text",
+      "value": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed."
+    },
+    {
+      "op": "replace",
+      "path": "/world/locations/1/sub_locations/1/clues/0/text",
+      "value": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws!"
+    }
+  ],
+  "caught_by": []
+}

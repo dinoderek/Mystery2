@@ -8,55 +8,59 @@ tier: 2
 
 ## What this dimension asks
 
-Clues can be gated behind other clues: a clue's optional `requires` object
-(`{ clue_ids, rationale }`) means it cannot be discovered until every listed clue
-has been discovered. This turns each reasoning path into a small **mini-mystery
-graph** — a few ungated entry clues that unlock follow-on clues leading to the
-path's payoff.
+A clue's optional `requires` (`{ kind, clue_ids, rationale, target? }`) keeps it
+undiscovered until every listed clue is held, so each reasoning path is a small
+**mini-mystery graph**: ungated entry clues unlocking follow-ons to the payoff.
+Each lock says why it exists:
 
-A deterministic analyzer already guarantees the hard, code-decidable facts: every
-`requires` reference is real and non-self, the graph is acyclic, and no
-solution-path clue is locked behind something unreachable. **Do not re-litigate
-those.** This judge asks the qualitative question the analyzer cannot: *is the
-gating fun and fair?*
+- `pointer`: a prerequisite tells the player where to look or what to raise.
+  For a location clue, `target` is its sub-location.
+- `leverage`: a character gives the clue only once shown a prerequisite.
+
+Code already guarantees the decidable facts: references are real, the graph is
+acyclic, no solution clue is unreachable, and a location lock's target is pointed
+to by id. **Do not re-litigate those.** This judge asks: *is the gating fair, and
+does each lock's kind fit its fiction?*
 
 ## Judge instructions
 
-Reconstruct the discovery graph yourself from each clue's `requires.clue_ids`
-(look clues up in `world.locations[].clues`, `world.locations[].sub_locations[].clues`,
-and `world.characters[].clues`). For each reasoning path in `solution_paths`,
-`red_herrings`, and `suspect_elimination_paths`, consider only the clues it
-references and judge:
+Reconstruct the discovery graph from each clue's `requires.clue_ids` (clues sit
+in `world.locations[].clues`, `world.locations[].sub_locations[].clues` and
+`world.characters[].clues`). For each path in `solution_paths`, `red_herrings`
+and `suspect_elimination_paths`, consider only its clues and judge:
 
-1. **graph_is_sensible** — the gating within this mini-mystery makes narrative
-   sense: prerequisites genuinely set up the clues they unlock (the player learns
-   *where* to look or *how* to get someone to talk), rather than arbitrary locks.
-2. **is_one_giant_chain** — true if the path is a single long brittle line
-   (discover A → only then B → only then C …) with no branching and one entry.
-   Branchy, shallow graphs (depth 2–3, several roots) are healthier; flag a path
-   that is essentially one forced sequence.
-3. **creates_dead_end** — true if following this thread leaves the player stuck
-   with no discoverable next step (e.g. every follow-on clue is gated behind a clue
-   the player cannot get within this thread).
-4. **has_ungated_entry** — true if at least one clue in the path has no `requires`,
-   so the thread is startable.
+1. **graph_is_sensible** — prerequisites genuinely set up what they unlock.
+2. **is_one_giant_chain** — true if the path is one long brittle line with one
+   entry; branchy, shallow graphs are healthier.
+3. **creates_dead_end** — true if the thread leaves the player stuck.
+4. **has_ungated_entry** — true if at least one clue in the path has no `requires`.
 
 Then judge two blueprint-wide qualities:
 
 - **rationales_are_concrete** — each `requires.rationale` is a concrete in-fiction
-  reason, and plausibly signals whether cleverness could substitute (a social or
-  knowledge gate a sharp question might bypass, vs. a hard physical gate). Vague or
-  templated rationales ("needed to progress") fail this.
-- **gating_creates_momentum** — across the blueprint, unlocking a gated clue points
-  the player somewhere new, rather than imposing busywork. Most clues should be
-  ungated; gating should reward investigation.
+  reason, not templated ("needed to progress").
+- **gating_creates_momentum** — unlocking points the player somewhere new, not
+  busywork. Most clues should be ungated.
+
+Give one **locks** entry per clue with a `requires`, reading the prerequisite as
+the player would. `fits_its_kind` is false, with a `problem`, when:
+
+- `no_fitting_reason`: a `pointer` guards a spot the player can already name,
+  such as "you only think to look" on an ordinary object (that clue should be
+  ungated, found by a targeted search); or a `leverage` lock gives the character
+  no reason to hold out.
+- `does_not_point`: a `pointer` whose prerequisite never suggests the spot or
+  topic in the fiction, though the ids line up.
+- `busywork`: the lock fits its kind but is a chore with no discovery.
+
+Otherwise `fits_its_kind` is true and `problem` is `"none"`.
 
 ## Verdict
 
-Set `verdict` to `"fail"` if any path is a dead-end, lacks an ungated entry, or is
-an unmotivated giant chain, or if rationales are not concrete, or if gating is
-busywork rather than momentum. Otherwise `"pass"`. A blueprint with no gated clues
-at all trivially passes (it is simply ungated).
+Set `verdict` to `"fail"` if any path is a dead-end, lacks an ungated entry or is
+an unmotivated giant chain, if rationales are not concrete, if gating is busywork,
+or if any lock does not fit its kind. Otherwise `"pass"`. A blueprint with no
+gated clues passes.
 
 ## Output
 
@@ -70,6 +74,15 @@ at all trivially passes (it is simply ungated).
       "is_one_giant_chain": false,
       "creates_dead_end": false,
       "has_ungated_entry": true,
+      "reasoning": "Short explanation."
+    }
+  ],
+  "locks": [
+    {
+      "clue_id": "<clue id with a requires>",
+      "kind": "pointer" | "leverage",
+      "fits_its_kind": true,
+      "problem": "none" | "no_fitting_reason" | "does_not_point" | "busywork",
       "reasoning": "Short explanation."
     }
   ],

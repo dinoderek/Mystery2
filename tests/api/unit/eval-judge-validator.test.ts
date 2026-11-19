@@ -105,6 +105,7 @@ describe("character-grounding coverage regressions", () => {
     const definition = await loadJudge("character_grounding");
     const answer = {
       characters: blueprint.world.characters.map((c) => ({ character_id: c.id, first_name: c.first_name, topics: [], passes: true })),
+      reactions: [],
       verdict: "pass",
       reasoning: "r",
     };

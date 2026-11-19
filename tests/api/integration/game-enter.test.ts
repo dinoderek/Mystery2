@@ -58,7 +58,7 @@ describe("game-enter endpoint", () => {
       image_id: STARTING_LOCATION_IMAGE,
     });
     // Alice is in the kitchen: the arrival names her, and the mock never
-    // repeats anything from her private pack.
+    // repeats her manner or tells.
     expect(data.narration_parts[0].text).toBe("[Mock] You arrive at Kitchen. Alice is here.");
   });
 

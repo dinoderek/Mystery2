@@ -6,7 +6,6 @@ import {
   buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
-  buildTalkStartContext,
   type BlueprintContext,
   type ConversationFragment,
   selectCharacterConversationHistory,
@@ -544,7 +543,7 @@ describe("ai-context guardrails", () => {
     ).toMatchObject({ id: clueId, known_to_player: true });
   });
 
-  it("builds move context with each present character's private pack", () => {
+  it("builds move context with each present character's arrival pack and the last arrival", () => {
     const history: ConversationFragment[] = [
       {
         sequence: 1,
@@ -573,39 +572,23 @@ describe("ai-context guardrails", () => {
 
     expect(moveContext.role_name).toBe("ambience");
     expect(moveContext.shared_mystery_context).toEqual({ target_age: 9 });
-    expect(moveContext.move_context).toMatchObject({
+    expect(moveContext.move_context).toEqual({
       destination_id: "loc-kitchen",
       destination_name: "Kitchen",
       destination_description: "A messy kitchen",
       has_visited_before: true,
+      last_arrival_narration: "Moved to Kitchen.",
       destination_characters: [
         {
           id: "char-alice",
           first_name: "Alice",
           last_name: "Smith",
-          location_id: "loc-kitchen",
           sex: "female",
           appearance: "red hair",
-          public_summary: "The baker; was in the kitchen.",
-          background: "the baker",
           personality: "nervous",
           initial_attitude_towards_investigator: "wary",
-          stated_alibi: "I was reading",
-          motive: "hungry",
-          flavor_knowledge: ["Alice loves baking."],
-          actual_actions: [{ sequence: 1, summary: "stole the pie" }],
-          agendas: [],
+          manner: [],
           tells: [],
-          clues: [
-            {
-              id: "clue-alice-bob",
-              text: "Bob was in the garden.",
-              requires_rationale: null,
-              player_can_use_prerequisites: null,
-              known_to_player: false,
-            },
-          ],
-          player_known_clues: [],
         },
       ],
     });
@@ -615,7 +598,7 @@ describe("ai-context guardrails", () => {
     ]);
   });
 
-  it("gives arrival the same pack a conversation gets, and nothing about absent characters", () => {
+  it("gives arrival nothing a character knows, did or claims, and nothing about absent characters", () => {
     const history: ConversationFragment[] = [
       {
         sequence: 1,
@@ -633,22 +616,82 @@ describe("ai-context guardrails", () => {
       has_visited_before: false,
       conversation_history: history,
     });
-    const talk = buildTalkStartContext({
-      game_id: "game-1",
-      session: { ...session, mode: "talk", current_talk_character_id: "char-alice" },
-      blueprint,
-      character_id: "char-alice",
-      location_id: "loc-kitchen",
-      conversation_history: history,
-    });
 
-    expect(arrival.move_context?.destination_characters).toEqual([
-      talk.talk_context?.active_character,
-    ]);
-    // Bob is in the garden: nothing of his private pack reaches the kitchen.
     const serialized = JSON.stringify(arrival.move_context);
+    const alice = blueprint.world.characters.find((c) => c.id === "char-alice")!;
+    for (const secret of [
+      alice.clues[0].text,
+      alice.motive!,
+      alice.stated_alibi!,
+      alice.background,
+      alice.flavor_knowledge[0],
+      alice.actual_actions[0].summary,
+    ]) {
+      expect(serialized).not.toContain(secret);
+    }
+    // Bob is in the garden: nothing of his reaches the kitchen.
     expect(serialized).not.toContain("watering flowers");
     expect(serialized).not.toContain("Bob is visiting for the weekend.");
+    expect(arrival.move_context?.last_arrival_narration).toBeNull();
+  });
+
+  it("turns live agendas into manner, in priority order, and keeps only always tells", () => {
+    const withAims: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        characters: blueprint.world.characters.map((c) =>
+          c.id !== "char-alice" ? c : {
+            ...c,
+            agendas: [
+              { type: "conditional_reveal", strategy: "admits the secret", priority: "low", details: "SECRET-DETAILS", gated_clue_id: "clue-alice-bob" },
+              { type: "implicate_other", strategy: "blame Bob", priority: "medium", details: "SECRET-BLAME", target_character_id: "char-bob" },
+              {
+                type: "self_protect", strategy: "false alibi", priority: "high", details: "SECRET-COVER",
+                parts: [{ clue_ids: ["clue-pie"], shows: "SECRET-SHOWS", reaction: "SECRET-REACTION" }],
+                confession: "SECRET-CONFESSION",
+              },
+            ],
+            tells: [
+              { id: "t1", text: "She hums softly.", trigger: { kind: "always" } },
+              { id: "t2", text: "SECRET-CONDITION-TELL", trigger: { kind: "condition", condition: "asked about pie" } },
+              { id: "t3", text: "SECRET-CLUE-TELL", trigger: { kind: "clue", clue_ids: ["clue-pie"] } },
+            ],
+          }
+        ),
+      },
+    };
+    const arrive = (conversation_history: ConversationFragment[]) =>
+      buildMoveContext({
+        game_id: "game-1",
+        session: { ...session, mode: "explore", current_talk_character_id: null },
+        blueprint: withAims,
+        destination_id: "loc-kitchen",
+        has_visited_before: false,
+        conversation_history,
+      }).move_context!;
+
+    const first = arrive([]);
+    expect(first.destination_characters[0]).toMatchObject({
+      manner: ["keeps attention away from herself", "would rather the investigator looked at Bob", "holding something back"],
+      tells: ["She hums softly."],
+    });
+    expect(JSON.stringify(first)).not.toContain("SECRET");
+
+    // The reveal's clue has been given: that agenda no longer shapes her.
+    const afterReveal = arrive([
+      {
+        sequence: 1,
+        event_type: "ask",
+        actor: "char-alice",
+        narration: "told",
+        payload: { character_id: "char-alice", revealed_clue_ids: ["clue-alice-bob"] },
+      },
+    ]);
+    expect(afterReveal.destination_characters[0].manner).toEqual([
+      "keeps attention away from herself",
+      "would rather the investigator looked at Bob",
+    ]);
   });
 
   it("leaves an arrival with nobody present without characters", () => {
@@ -676,7 +719,7 @@ describe("ai-context guardrails", () => {
       destination_name: "Attic",
       destination_description: "A dusty attic",
       has_visited_before: false,
-      destination_history: [],
+      last_arrival_narration: null,
       destination_characters: [],
     });
   });

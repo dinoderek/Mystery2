@@ -365,19 +365,14 @@ export function buildGameStartPrompt(input: {
   ].join("\n");
 }
 
-// Who is present on arrival comes with each character's full private pack (the
-// one a conversation gets), so the narrator can play them as authored. Arrival
-// is not a conversation: nobody has asked anything, so no clue changes hands,
-// secrets stay unspoken, and only tells that need no player prompt can surface.
+// Arrival is not a conversation: nobody has asked anything, so each present
+// character comes only with how they look and carry themselves.
 const ARRIVAL_CHARACTER_RULES = [
   "## Characters present",
-  "Each character here comes with private notes so you can play them as authored. They are for consistency only.",
-  "- Play each character in their initial_attitude_towards_investigator, personality and background. A guarded character stays guarded; a nervous one shows it.",
-  "- Let their agendas shape their manner, in priority order. Someone protecting a place or a person might hover near it, change the subject, or steer the investigator elsewhere.",
-  "- A character may react or say one short line in the first person. They do not start a conversation or volunteer information; the investigator has not asked them anything yet.",
-  "- Arrival reveals no clues. Never state, hint at, or paraphrase any character's clues, even ones marked known_to_player.",
-  "- motive, actual_actions, stated_alibi, flavor_knowledge and background are private: never state them. Use them only to keep the character consistent.",
-  "- Tells: a tell with trigger.kind \"always\" may surface. A \"condition\" tell surfaces only if the destination history already shows its condition met. A \"clue\" tell never surfaces on arrival: nobody has raised a clue.",
+  "- Play each character in their initial_attitude_towards_investigator and personality. A guarded character stays guarded; a nervous one shows it.",
+  "- manner is how their aims show before anyone speaks, first matters most: hovering, changing the subject, a glance elsewhere. Show it; never explain it.",
+  "- A tell in tells may surface as written.",
+  "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
 ].join("\n");
 
 const ARRIVAL_HEADLINE = /^Describe the player arriving at (.+)\.$/m;
@@ -388,13 +383,13 @@ export function buildGameMovePrompt(input: {
   destination_name: string;
   destination_description: string;
   has_visited_before: boolean;
-  destination_history_json: string;
+  last_arrival_narration?: string | null;
   destination_characters_json: string;
   destination_sub_locations_json?: string;
   narration_style?: string | null;
 }): string {
   const revisitInstruction = input.has_visited_before
-    ? "The player has been here before. Explicitly acknowledge the return visit, keep details consistent with earlier descriptions, and do not contradict prior narration."
+    ? "The player has been here before. Explicitly acknowledge the return visit and keep the place, not the people's moods, as the last arrival described it."
     : "The player is arriving here for the first time in this session.";
   const hasCharacters = input.destination_characters_json.trim() !== "[]";
 
@@ -405,8 +400,7 @@ export function buildGameMovePrompt(input: {
     renderLengthGuidance("ambience", input.target_age),
     buildStyleGuidance(input.narration_style),
     revisitInstruction,
-    "Base the description on the provided destination description, destination-specific history, and the characters currently present.",
-    "If characters are present, mention who is visibly here using only the provided names and appearances.",
+    "Describe the place from the destination description, and who is visibly here from their names and appearances.",
     ...(hasCharacters ? [ARRIVAL_CHARACTER_RULES] : []),
     ...(input.destination_sub_locations_json
       ? [
@@ -416,7 +410,9 @@ export function buildGameMovePrompt(input: {
       : []),
     `Destination description: ${input.destination_description}`,
     `${ARRIVAL_CHARACTERS_PREFIX}${input.destination_characters_json}`,
-    `Destination history: ${input.destination_history_json}`,
+    ...(input.has_visited_before && input.last_arrival_narration
+      ? [`Last arrival here: ${JSON.stringify(input.last_arrival_narration)}`]
+      : []),
   ].join("\n");
 }
 

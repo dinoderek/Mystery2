@@ -105,7 +105,7 @@ Every row also receives `metadata.target_age` and `metadata.narration_style`.
 | Output | Source (role) | Blueprint input | Other input | Attached |
 |---|---|---|---|---|
 | Opening | `game-start` | `narrative.premise` | — | `metadata.image_id` |
-| Arrival | the move action, `game-enter` (`ambience`) | The destination's `name`, `description`, unhidden sub-location names; for each character there, the same private fields a conversation gets | History at that location, whether it was visited before; `player_known_clues` | `location_image_id` |
+| Arrival | the move action, `game-enter` (`ambience`) | The destination's `name`, `description`, unhidden sub-location names; for each character there, their looks, `personality`, attitude, `always` tells, and a manner per live agenda | The last arrival's narration there, whether it was visited before | `location_image_id` |
 | Search | the search action (`search_bare`, `search_targeted`) | The location's `description` and unlocked `clues`; each unhidden sub-location's `name`, `hint` and unlocked clues | History at that location; the player's `search_query` | — |
 | Conversation | the talk, ask and end-talk actions (`talk_*`) | Location summaries; every character's public face; the active character's private fields — `background`, `clues`, `flavor_knowledge`, `actual_actions` (only steps safe to say), `agendas` (reactions and confession once earned), `tells`, alibi, motive, personality, attitude | History with that character, and their state; `player_known_clues` | `portrait_image_id` (start, ask) |
 | Accusation start | the accuse action (`accusation_start`), or a forced endgame | Location and timing; the public roster | All history, or none | — |
@@ -113,8 +113,7 @@ Every row also receives `metadata.target_age` and `metadata.narration_style`.
 
 A character's **public face** is `first_name`, `last_name`, `sex`,
 `appearance`, and their `starting_knowledge` summary. Private
-fields reach only that character's own conversation and arrivals where they are
-present.
+fields reach only that character's own conversation.
 
 `narrative.starting_knowledge` is never narrated: `game-start` and `game-get`
 return it as the notebook's case facts (`mystery_summary`, and a `summary` per

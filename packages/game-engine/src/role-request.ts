@@ -33,7 +33,7 @@ import {
   type BlueprintContext,
   buildAccusationJudgeContext,
   buildAccusationStartContext,
-  buildPresentCharacterContexts,
+  buildArrivalCharacterContexts,
   buildSearchContext,
   buildTalkConversationContext,
   buildTalkEndContext,
@@ -41,6 +41,7 @@ import {
   type ConversationFragment,
   findCharacterById,
   findLocationById,
+  selectLastArrivalNarration,
   selectLocationConversationHistory,
   type SessionSnapshot,
 } from "./ai-context.ts";
@@ -206,7 +207,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         throw new Error(`Location ${input.destination_id} not found in blueprint`);
       }
       const history = input.conversation_history ?? [];
-      const destinationHistory = selectLocationConversationHistory(history, destination.id);
+      const lastArrival = selectLastArrivalNarration(history, destination.id);
       // A spot nothing has pointed to yet is not advertised (`isSpotHidden`).
       const discovered = buildDiscoveredClueIdSet(history);
       const subLocations = (destination.sub_locations ?? [])
@@ -216,10 +217,10 @@ const REGISTRY: Record<RoleRequestName, any> = {
         target_age: input.blueprint.metadata.target_age,
         destination_name: destination.name,
         destination_description: destination.description,
-        has_visited_before: destinationHistory.length > 0,
-        destination_history_json: JSON.stringify(destinationHistory),
+        has_visited_before: selectLocationConversationHistory(history, destination.id).length > 0,
+        last_arrival_narration: lastArrival,
         destination_characters_json: JSON.stringify(
-          buildPresentCharacterContexts(input.blueprint, destination.id, history),
+          buildArrivalCharacterContexts(input.blueprint, destination.id, history),
         ),
         destination_sub_locations_json:
           subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,

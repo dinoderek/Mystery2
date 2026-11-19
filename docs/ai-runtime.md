@@ -75,15 +75,17 @@ Which blueprint fields reach which role is the "Narration at play" table in
   `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
   (fires only when the player uses a referenced clue). A cue surfaces only when
   its trigger fires, or, with none authored, when the player touches something
-  sensitive. A `talk_start` greeting and an arrival come before the player says
-  anything, so a `clue` tell never fires there, and a `condition` tell fires
-  only if the history already meets it.
-- **Arrival gets each present character's private pack**, because without it
-  the narrator greets as a generic host, whatever the character's authored
-  attitude and agendas. The prompt plays each in that attitude, lets agendas
-  shape their manner and allows one short line; it reveals no clue and never
-  states the private fields. `role-request.ts` derives all of it from the
-  session's history, so the endpoints and the eval harness cannot disagree.
+  sensitive. A `talk_start` greeting comes before the player says anything, so a
+  `clue` tell never fires there, and a `condition` tell fires only if the
+  history already meets it.
+- **Arrival gets only what an arrival can use.** Each present character comes
+  with name, `sex`, appearance, personality, attitude, `always` tells, and a
+  `manner` line per agenda not yet broken, built from its type and target
+  (never `strategy` or `details`). No clue, motive, alibi, action,
+  background or flavour, so none slips out, and no `condition` tell: each
+  awaits the investigator's words. A return gets the last arrival's narration.
+  `role-request.ts` derives it from history
+  (`tests/api/unit/arrival-prompt.test.ts`).
 - **Search never sees a locked clue**, so its text is never woven in, nor a
   spot whose clues are all locked, so no search or arrival advertises it or
   narrates "nothing here" there. A targeted search whose words name that spot

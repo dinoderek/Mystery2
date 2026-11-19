@@ -28,8 +28,17 @@ function stem(word: string): string {
 // Words that join a thing to where it is: the thing comes before them.
 const JOINING_WORDS = new Set(["at", "beside", "by", "for", "from", "in", "near", "of", "on", "with"]);
 
+// Short words that never say what a thing is.
+const SHORT_WORDS = new Set([
+  "all", "and", "any", "are", "big", "bit", "can", "did", "few", "for", "get",
+  "had", "has", "her", "him", "his", "how", "its", "let", "may", "new", "not",
+  "now", "off", "old", "one", "our", "out", "own", "put", "see", "the", "too",
+  "top", "try", "two", "use", "was", "way", "who", "why", "you",
+]);
+
 function contentWord(word: string): string | null {
-  return word.length >= 4 && !IGNORED_WORDS.has(word) ? stem(word) : null;
+  if (word.length < 3 || SHORT_WORDS.has(word) || IGNORED_WORDS.has(word)) return null;
+  return stem(word);
 }
 
 function rawWords(text: string): string[] {
@@ -41,7 +50,7 @@ function rawWords(text: string): string[] {
     .filter((word) => word.length > 0);
 }
 
-/** The words that say what something is, in order: four letters or more, stemmed. */
+/** The words that say what something is, in order, stemmed. */
 export function contentWords(text: string): string[] {
   const words = rawWords(text).map(contentWord).filter((word): word is string => word !== null);
   return [...new Set(words)];

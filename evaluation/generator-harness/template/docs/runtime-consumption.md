@@ -84,8 +84,8 @@ each `rationale`:
   (prerequisite *ids* are not sent). Holding is not earning: the narrator
   withholds the clue until the player *uses* them, coloring the deflection with
   the rationale. A bluff or deduction that uses them earns it off-script **when
-  the rationale implies a social or knowledge gate cleverness could bypass**. Off-script reveals are recorded as real
-  discoveries. A clue the player already holds is marked `known_to_player`: the
+  the rationale implies a social or knowledge gate cleverness could bypass**.
+  Off-script reveals are recorded as real discoveries. A clue the player already holds is marked `known_to_player`: the
   character may restate it, but it is never discovered twice.
 
 So the rationale is doing double duty: flavor for the deflection, and the signal

@@ -68,11 +68,11 @@ Which blueprint fields reach which role is the "Narration at play" table in
   not set arithmetic.
 - **Tells are reactions, not defaults.** Each has visible `text` and a
   `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
-  (fires only when the player uses a referenced clue). A cue surfaces only when its trigger fires,
-  or, with none authored, when the player touches something sensitive. A
-  `talk_start` greeting and an arrival come before the player says anything, so
-  a `clue` tell never fires there, and a `condition` tell fires only if the
-  history already meets it.
+  (fires only when the player uses a referenced clue). A cue surfaces only when
+  its trigger fires, or, with none authored, when the player touches something
+  sensitive. A `talk_start` greeting and an arrival come before the player says
+  anything, so a `clue` tell never fires there, and a `condition` tell fires
+  only if the history already meets it.
 - **Arrival gets each present character's private pack**, because without it
   the narrator greets as a generic host, whatever the character's authored
   attitude and agendas. The prompt plays each in that attitude, lets agendas

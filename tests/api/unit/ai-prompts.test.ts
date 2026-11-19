@@ -171,7 +171,7 @@ describe("ai-prompts", () => {
     expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
     expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does use');
     // Self-protection parts, conditional reveals, earned parts, requires gates and clue tells all point to it.
-    expect(talk.match(/\(see\s+Using\s+a\s+Clue\)/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(talk.match(/\(see\s+Using\s+a\s+Clue/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
     expect(talk).toContain("see trigger.clue_ids and Using a Clue");
     // The wordings that disagreed with it are gone.
     expect(talk).not.toContain("not just possess it");

@@ -209,9 +209,9 @@ make it feel like a scripted accusation.
 ### Conditional Reveal Agendas
 The gated clue CANNOT be revealed until the condition is met.
 
-For confronted_with_evidence: the condition is met when the player uses one
-of the agenda's yields_to_clue_ids (see Using a Clue). If not, hint that you
-know something but deflect.
+For confronted_with_evidence: the condition is met once the player has used
+the agenda's yields_to_clue_ids, each a part (see Using a Clue and Earned, Not
+Free). Until then, hint that you know something but deflect.
 
 For clever_questioning: judge whether the player's question matches
 the approach described in details. If close but not quite, show a

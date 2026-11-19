@@ -190,7 +190,7 @@ describe("searchNamesSpot", () => {
   });
 
   it("folds plurals, a final -e or -y, and accents", () => {
-    expect(searchNamesSpot("the cookies", "the cookie tin", "Kitchen")).toBe(true);
+    expect(searchNamesSpot("the cookies", "a stray cookie", "Kitchen")).toBe(true);
     expect(searchNamesSpot("the berry bush", "the berries bushes", "Garden")).toBe(true);
     expect(searchNamesSpot("the café counter", "the cafe counter", "Shop")).toBe(true);
   });
@@ -200,6 +200,13 @@ describe("searchNamesSpot", () => {
     expect(searchNamesSpot("look under the willows", "under the weeping willow", "Moonglow Pond")).toBe(true);
     expect(searchNamesSpot("follow the fern path", "The Fading Fern Path", "Heartwood Hollow")).toBe(true);
     expect(searchNamesSpot("the ferns", "The Fading Fern Path", "Heartwood Hollow")).toBe(false);
+  });
+
+  it("names short nouns, but not short filler words", () => {
+    expect(searchNamesSpot("under the bed", "under the bed", "Bedroom")).toBe(true);
+    expect(searchNamesSpot("the rug", "the old rug", "Hall")).toBe(true);
+    expect(searchNamesSpot("the tin box", "the tin box", "Shed")).toBe(true);
+    expect(searchNamesSpot("look at the old one", "the old rug", "Hall")).toBe(false);
   });
 
   it("takes the thing before a joining word as the head", () => {

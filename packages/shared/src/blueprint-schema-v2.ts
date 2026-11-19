@@ -507,7 +507,9 @@ function addAgendaFieldIssues(
         ["confession", "confession belongs to self_protect agendas only."],
       ];
   for (const [field, message] of misplaced) {
-    if (agenda[field] !== undefined) {
+    const value = agenda[field];
+    // An empty list carries nothing, as strict structured output may send one.
+    if (value !== undefined && !(Array.isArray(value) && value.length === 0)) {
       context.addIssue({ code: z.ZodIssueCode.custom, path: [...agendaPath, field], message });
     }
   }

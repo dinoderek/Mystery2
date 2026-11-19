@@ -148,6 +148,11 @@ describe("Blueprint V2 schema", () => {
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(/more than once/);
     });
 
+    it("lets an empty misplaced list through, as strict output may send one", () => {
+      const bp = withAgendas("alice", [{ ...aliceAlibi, yields_to_clue_ids: [] }]);
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
     it("rejects yields_to_clue_ids on a self_protect agenda", () => {
       const bp = withAgendas("alice", [{ ...aliceAlibi, yields_to_clue_ids: ["loc-crumbs"] }]);
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(/self_protect agendas list parts, not yields_to_clue_ids/);

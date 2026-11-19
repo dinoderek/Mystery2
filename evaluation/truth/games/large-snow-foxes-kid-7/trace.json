@@ -201,7 +201,7 @@
                     "clue_ids": [
                       "clue_briefcase_found"
                     ],
-                    "rationale": "From a glance all the snowshoes look alike. The snowshoe prints at the woodshed lead back to the hooks behind the ticket hut, so you know to check each pair there.",
+                    "rationale": "The hooks hang out back, out of sight of the ticket window, so nobody goes round there without a reason. The briefcase clue says the snowshoe prints go back to those hooks.",
                     "target": {
                       "location_id": "ticket_hut",
                       "sub_location_id": "snowshoe_hooks"

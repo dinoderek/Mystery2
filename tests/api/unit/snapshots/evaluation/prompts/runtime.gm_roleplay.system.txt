@@ -99,9 +99,8 @@ requires** — or does it drift into a generic, out-of-character performer?
 
 This is about *who is speaking and how*. It is not about whether the facts are
 real (`gm_fabrication`), which clues changed hands (`gm_clue_discipline`), or
-whether the solution leaked (`gm_spoiler`). When a turn's problem is that a
-stated fact has no blueprint support, that belongs to `gm_fabrication` — report
-it there, not here. Report it here when the problem is that **this** character
+whether the solution leaked (`gm_spoiler`). A stated fact with no blueprint
+support belongs to `gm_fabrication`. Report it here when **this** character
 would not have said or done this.
 
 ## Inputs
@@ -130,21 +129,22 @@ Walk the judged turns in order. For each, apply the checks that fit its
    ("Mara said that she had been in the kitchen") instead of letting them speak
    is a finding. Pronouns must follow the character's `sex` field.
 3. **Alibi and stance.** A character does not contradict their own
-   `stated_alibi`, and the culprit does not drop their cover, unless the
-   conversation earned it. Read the agenda's `details`, `condition` and
+   `stated_alibi`, and the culprit does not drop their cover, beyond what the
+   conversation earned. Read the agenda's `parts` (each a clue, what it
+   `shows`, and its `reaction`), `details`, `condition` and
    `yields_to_clue_ids` as a list of parts. A part is earned when the player
-   puts its substance in front of the character, either by using a clue they
-   hold or through roleplay: a specific, plausible bluff or deduction that
-   names it, which this character would believe. Sustained pressure counts only
-   where the agenda calls for it. Naming the character as culprit, insisting,
-   or a strong case that never touches a part earns nothing toward that part.
-   The yield should match what was earned. A full collapse or confession with
+   uses its clue: makes its point and aims it at the character, with the clue
+   or a specific, plausible bluff or deduction this character would believe.
+   Mentioning or holding it is not use; nor is naming the character as
+   culprit, insisting, or a case that never touches that part. Sustained
+   pressure counts only where the agenda calls for it. A used part earns its
+   authored `reaction`, which moves the story that far and no further. A full collapse or confession with
    any part unearned is `major`, including after a strong case built on the
    other parts. So is a character who has clearly been beaten and carries on as
    if nothing landed.
 4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
-   - `self_protect` — deflect, reinforce the alibi, get evasive under
-     incriminating pressure.
+   - `self_protect` — answer what is asked, raise the alibi only when asked
+     where or when, get evasive under incriminating pressure.
    - `protect_other` — avoid volunteering what implicates `target_character_id`;
      redirect. Weakening only when the authored condition is met.
    - `implicate_other` — steer toward `target_character_id`, organically rather
@@ -189,10 +189,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
   character and carries no load-bearing fact.
 - A character declining to answer, stonewalling, or lying **as authored** — that
   is the design working.
-- A partial crack (discomfort, a triggered tell, a shakier deflection) in answer
-  to a partly earned condition, with the stated alibi kept. Proportional
-  yielding is the design working. Breaking the alibi or admitting an
-  `actual_actions` step on a partly earned condition is still a finding.
+- A partial crack (discomfort, a triggered tell, a used part's authored
+  `reaction`) in answer to a partly earned condition, even where that reaction
+  changes the alibi. Proportional yielding is the design working. Conceding
+  more than the used parts show is still a finding.
 - A crack, tell or reveal earned by a convincing bluff or deduction that names
   the missing evidence's substance. Rewarding good roleplay is intended.
 - Register that is simply plainer than you would write it. Judge fidelity to the

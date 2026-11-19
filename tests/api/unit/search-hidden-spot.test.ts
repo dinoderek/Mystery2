@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { isSpotHidden } from "../../../packages/game-engine/src/clue-discovery.ts";
@@ -104,8 +105,12 @@ describe("a targeted search", () => {
   it("that names the locked spot admits its clue, and logs why", async () => {
     const { outcome, logged } = await play("check the snowshoe hooks");
 
-    expect(outcome.revealed_clues.map((clue) => clue.id)).toEqual(["clue_wet"]);
+    expect(outcome.revealed_clues.map((clue) => ({ id: clue.id, off_script: clue.off_script }))).toEqual([
+      { id: "clue_wet", off_script: true },
+    ]);
     expect(outcome.event.payload.revealed_clue_id).toBe("clue_wet");
+    // Declared on the event, so the evaluators read it as a bypass, not a leak.
+    expect(outcome.event.payload.revealed_off_script).toEqual(["clue_wet"]);
     expect(logged).toContainEqual({
       event: "search.clue_admitted_by_target",
       fields: expect.objectContaining({
@@ -117,10 +122,24 @@ describe("a targeted search", () => {
     });
   });
 
+  it("that names the locked spot passes the requires check the evaluators run", async () => {
+    const { outcome } = await play("check the snowshoe hooks");
+    const event = { id: "s2", sequence: 2, actor: "system", narration: "", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z", ...outcome.event };
+    const checks = runTraceMechanicalChecks({
+      rawTrace: { blueprint, events: [event] } as never,
+      context: { enforce_requires: true },
+    }) as Array<{ id: string; status: string }>;
+
+    expect(checks.find((check) => check.id === "clue_requires_violation")?.status).toBe("pass");
+  });
+
   it("that names another spot finds that one, and never sees the hidden spot", async () => {
     const { outcome, logged } = await play("the frosty window");
 
-    expect(outcome.revealed_clues.map((clue) => clue.id)).toEqual(["clue_breath"]);
+    expect(outcome.revealed_clues.map((clue) => ({ id: clue.id, off_script: clue.off_script }))).toEqual([
+      { id: "clue_breath", off_script: false },
+    ]);
+    expect(outcome.event.payload.revealed_off_script).toEqual([]);
     expect(logged.map((entry) => entry.event)).not.toContain("search.clue_admitted_by_target");
   });
 
@@ -143,6 +162,19 @@ describe("an untargeted search", () => {
 });
 
 describe("searchNamesSpot", () => {
+  it("needs the spot's head word, not just a shared adjective", () => {
+    expect(searchNamesSpot("search the dusty floor", "the dusty bookshelf", "Library")).toBe(false);
+    expect(searchNamesSpot("check the muddy boots", "the pond's muddy edge", "Moonglow Pond")).toBe(false);
+    expect(searchNamesSpot("search for snowshoes", "the snowshoe hooks out back", "Ticket Hut")).toBe(false);
+    expect(searchNamesSpot("the dusty bookshelf", "the dusty bookshelf", "Library")).toBe(true);
+  });
+
+  it("folds plurals, a final -e or -y, and accents", () => {
+    expect(searchNamesSpot("the cookies", "the cookie tin", "Kitchen")).toBe(true);
+    expect(searchNamesSpot("the berry bush", "the berries bushes", "Garden")).toBe(true);
+    expect(searchNamesSpot("the café counter", "the cafe counter", "Shop")).toBe(true);
+  });
+
   it("matches the spot's own words, plurals included, at least half of them", () => {
     expect(searchNamesSpot("the hooks", "the snowshoe hooks out back", "Ticket Hut")).toBe(true);
     expect(searchNamesSpot("look under the willows", "under the weeping willow", "Moonglow Pond")).toBe(true);

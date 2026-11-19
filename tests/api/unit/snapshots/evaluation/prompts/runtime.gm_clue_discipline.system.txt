@@ -140,6 +140,9 @@ narration, and the recorded `revealed_clue_ids`.
      convincing bluff **and** the gate is social/knowledge-shaped. `minor` if
      the input did not earn it; `major` only if the gate is physical (a locked
      safe, a key the player does not have) and cleverness could not bypass it.
+   - On a search turn, an off-script clue sits in a hidden spot the player's
+     search named. Legitimate when the search's words name that sub-location;
+     `minor` otherwise.
    - The turn does **not** declare it off-script — an undeclared early release.
      `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue that

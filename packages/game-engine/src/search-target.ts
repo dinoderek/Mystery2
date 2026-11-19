@@ -11,34 +11,42 @@ const IGNORED_WORDS = new Set([
   "underneath", "with", "your",
 ]);
 
+// Folds plurals and a final -e or -y, so "cookies" and "cookie", "berries" and
+// "berry", "edges" and "edge" meet. Crude, and only ever compared with itself.
 function stem(word: string): string {
-  if (word.endsWith("ies")) return `${word.slice(0, -3)}y`;
-  if (/(sh|ch|x|ss)es$/.test(word)) return word.slice(0, -2);
-  if (word.endsWith("s") && !word.endsWith("ss")) return word.slice(0, -1);
-  return word;
+  let base = word;
+  if (/(sh|ch|x|ss)es$/.test(base)) base = base.slice(0, -2);
+  else if (base.endsWith("s") && !base.endsWith("ss")) base = base.slice(0, -1);
+  if (base.endsWith("ie")) return `${base.slice(0, -2)}i`;
+  if (base.endsWith("y")) return `${base.slice(0, -1)}i`;
+  if (base.endsWith("e")) return base.slice(0, -1);
+  return base;
 }
 
-/** The words that say what something is: four letters or more, stemmed. */
-export function contentWords(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .split(/[^a-z]+/)
-      .filter((word) => word.length >= 4 && !IGNORED_WORDS.has(word))
-      .map(stem),
-  );
+/** The words that say what something is, in order: four letters or more, stemmed. */
+export function contentWords(text: string): string[] {
+  const words = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z]+/)
+    .filter((word) => word.length >= 4 && !IGNORED_WORDS.has(word))
+    .map(stem);
+  return [...new Set(words)];
 }
 
 /**
- * True when the query names at least half the spot's own words (rounded up).
- * Words of the location's name do not count, so searching the place itself
- * never names a spot in it.
+ * True when the query names the spot's head word (its last own word, the thing
+ * itself) and at least half its own words, rounded up. A shared adjective alone
+ * ("the dusty floor" for "the dusty bookshelf") names nothing. Words of the
+ * location's name do not count, so searching the place never names a spot in it.
  */
 export function searchNamesSpot(query: string, spotName: string, locationName: string): boolean {
-  const placeWords = contentWords(locationName);
-  const spotWords = [...contentWords(spotName)].filter((word) => !placeWords.has(word));
-  if (spotWords.length === 0) return false;
-  const queryWords = contentWords(query);
+  const placeWords = new Set(contentWords(locationName));
+  const spotWords = contentWords(spotName).filter((word) => !placeWords.has(word));
+  const head = spotWords.at(-1);
+  if (head === undefined) return false;
+  const queryWords = new Set(contentWords(query));
   const hits = spotWords.filter((word) => queryWords.has(word)).length;
-  return hits >= Math.ceil(spotWords.length / 2);
+  return queryWords.has(head) && hits >= Math.ceil(spotWords.length / 2);
 }

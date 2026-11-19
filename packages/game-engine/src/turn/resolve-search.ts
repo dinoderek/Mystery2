@@ -112,7 +112,7 @@ function namedHiddenSpot(location: SearchedLocation, query: string | null, anywh
  * The clue the narrator named, if it may be found here now: it belongs to this
  * location, has not been found anywhere yet, and its prerequisites are found,
  * or it sits in the hidden spot this search named. There is no brilliance
- * override for a search, unlike a conversation.
+ * override for a search: naming a hidden spot is the only way past a lock.
  */
 function admitClue(
   runtime: TurnRuntime,
@@ -155,14 +155,14 @@ function admitClue(
   return clue;
 }
 
-function revealedRecord(clue: BlueprintClue, location: SearchedLocation): RevealedClue {
+function revealedRecord(clue: BlueprintClue, location: SearchedLocation, offScript: boolean): RevealedClue {
   return {
     id: clue.id,
     text: clue.text,
     source: "search",
     origin: { kind: "location", location_id: location.id, location_name: location.name },
     discovered_at: new Date().toISOString(),
-    off_script: false,
+    off_script: offScript,
   };
 }
 
@@ -205,6 +205,8 @@ export async function resolveSearch(
   const model = runtime.provider.resolvedModel;
 
   const clue = admitClue(runtime, location, output.revealed_clue_id, { here, anywhere }, { spot, query });
+  // A clue found past its lock is declared off script, as a conversation's is.
+  const offScript = clue !== null && !isClueUnlocked(clue, anywhere);
   // A plain search always costs, as does a find; otherwise the narrator decides.
   const costsTurn = query === null || clue !== null || output.costs_turn;
 
@@ -220,6 +222,7 @@ export async function resolveSearch(
         revealed_clue_id: clue?.id ?? null,
         revealed_clue_text: clue?.text ?? null,
         revealed_clue_ids: clue ? [...here, clue.id] : here,
+        revealed_off_script: offScript && clue ? [clue.id] : [],
         costs_turn: costsTurn,
         input_understood: output.input_understood,
         speaker: NARRATOR_SPEAKER,
@@ -235,7 +238,7 @@ export async function resolveSearch(
       current_talk_character_id: null,
       discovered_clues: clue ? [...new Set([...session.discovered_clues, clue.id])] : session.discovered_clues,
     },
-    revealed_clues: clue ? [revealedRecord(clue, location)] : [],
+    revealed_clues: clue ? [revealedRecord(clue, location, offScript)] : [],
     result: null,
     endgame: {
       scene_summary: `The investigator just searched ${location.name}, and this action exhausted the remaining time.`,

@@ -132,15 +132,16 @@ For character turns (`talk_start`, `talk_conversation`, `talk_end`):
 - **Voice**: direct first person with brief action beats, never reported in
   the third person; pronouns follow `sex`.
 - **Alibi and stance**: no contradiction of the character's own `stated_alibi`,
-  and no culprit dropping cover, unless earned. Read the agenda's `details`,
-  `condition` and `yields_to_clue_ids` as parts; a part is earned when the
-  player puts its substance in front of the character, with a clue they hold or
-  a specific, plausible bluff or deduction this character would believe.
+  and no culprit dropping cover, beyond what was earned. Read the agenda's
+  `parts`, `details`, `condition` and `yields_to_clue_ids` as parts; a part is
+  earned when the player uses its clue (makes its point at the character, with
+  the clue or a plausible bluff or deduction this character would believe), and
+  earns its authored `reaction`, no more.
   Sustained pressure counts only where the agenda calls for it; naming the
   culprit or insisting earns nothing. A full collapse or confession with any
   part unearned is `major`, and so is a character clearly beaten who carries on
   as if nothing landed. A partial crack in answer to a partly earned condition,
-  with the alibi kept, is the design working.
+  conceding only what the used parts show, is the design working.
 - **Agendas**, in `priority` order: `self_protect` deflects and gets evasive;
   `protect_other` avoids implicating `target_character_id`; `implicate_other`
   steers toward its target organically; `conditional_reveal` keeps its manner

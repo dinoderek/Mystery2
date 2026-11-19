@@ -135,7 +135,7 @@ Gates use each clue's optional `requires`:
 
 - **Search — hard.** A bare search reveals the first unrevealed *and* unlocked
   location-level clue, skipping locked ones. The backend rejects a locked
-  reveal, except a named hidden spot's clue (above).
+  reveal, except a named hidden spot's clue, declared off-script.
 - **Conversation — earned by use.** A gated clue is given once the player uses
   its prerequisites; holding them never grants it. A bluff or deduction that
   uses them earns it off-script unless the gate is physical. Such reveals are

@@ -7,13 +7,13 @@
   "path_payoff": ["b3dbc505cf7f3c02"],
   "clue_graph": ["aceb0b6c4ca6166f"],
   "age_appropriate": ["38158b97fc2c677b"],
-  "gm_roleplay": ["78e4ea8f9c2ac7f3"],
-  "gm_clue_discipline": ["dd8a5009def3f24f"],
+  "gm_roleplay": ["78e4ea8f9c2ac7f3", "2cbc3b6f2e3b322e"],
+  "gm_clue_discipline": ["dd8a5009def3f24f", "9098b670f3f971e0"],
   "gm_fabrication": ["143c182538a680b2", "a2c1d7984353cccf"],
   "gm_spoiler": ["70f8de7faf9a8cb0"],
   "age_appropriate_turn": ["59e60fa22e26563a"],
   "solve_depth_fairness": ["4f8d8968edd944ca"],
   "knowledge_timeline_coherence": ["69d73ef3e93d8b71"],
   "blueprint_broad": ["db9aba04f7b0a621"],
-  "gm_broad": ["14bfc937a21b1536"]
+  "gm_broad": ["14bfc937a21b1536", "180adbaef82ef2c7"]
 }

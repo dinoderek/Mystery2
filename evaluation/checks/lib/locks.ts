@@ -6,9 +6,11 @@
 // `hint_sub_location_id`. A self-protect agenda lists the clues that break it
 // as `parts` and says what the character finally admits as `confession`.
 //
-// The schema refuses unknown ids a blueprint names. These helpers read a
-// candidate that need not be well formed, so the mechanical checks report the
-// specifics, and so a blueprint that parses but breaks a rule is still caught.
+// The schema refuses unknown ids a blueprint names, and the mechanical checks
+// run only on a blueprint that parses, so `parts_name_real_clues` is a backstop
+// that never fails there: no plant should expect it to. The other rules are
+// checks, not schema, so a blueprint that breaks one still parses and is caught.
+// These helpers read a candidate that need not be well formed.
 
 interface LockClue {
   id: string;

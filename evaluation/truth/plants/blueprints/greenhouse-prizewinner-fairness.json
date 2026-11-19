@@ -47,12 +47,12 @@
     {
       "op": "test",
       "path": "/world/characters/1/agendas/0/parts/3/shows",
-      "value": "Mr. Thorne bought cake from Mia across town at nine, so she was at the fair when Bertha was smashed."
+      "value": "Mr. Thorne bought cake from Mia at the fair across town at nine."
     },
     {
       "op": "replace",
       "path": "/world/characters/1/agendas/0/parts/3/shows",
-      "value": "Mr. Thorne bought cake from Mia across town at seven, so she was at the fair when Bertha was smashed."
+      "value": "Mr. Thorne bought cake from Mia at the fair across town at seven."
     },
     {
       "op": "test",

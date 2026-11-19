@@ -428,7 +428,7 @@
             "type": "self_protect",
             "strategy": "gruff_deflection",
             "priority": "low",
-            "details": "Grumbles that a busy lifeguard has no time for silly questions, but tells the whole truth once you're patient and polite.",
+            "details": "Grumbles that a busy lifeguard has no time for silly questions, and softens when you're patient and polite.",
             "parts": [
               {
                 "clue_id": "clue_wet_bear_prints",

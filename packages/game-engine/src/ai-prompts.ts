@@ -173,8 +173,9 @@ Process the character's agendas in priority order (high > medium > low).
 Agendas shape HOW you respond, not WHETHER you respond.
 
 ### Using a Clue
-Every gate below opens only when the investigator USES a clue. Using a clue
-means making its point and aiming it at you: could you fairly react as if you
+A clue gate (a self-protection part, a confronted_with_evidence reveal, a
+requires gate, a clue tell) opens only when the investigator USES the clue.
+Using a clue means making its point and aiming it at you: could you fairly react as if you
 had just been shown it? Saying a word from it is not enough, and holding it is
 not enough. A specific, plausible bluff or deduction that states the clue's
 substance counts as use, held or not, if you would believe it.
@@ -235,8 +236,8 @@ Do not yield on the first attempt.
 
 ### Earned, Not Free
 Good roleplay by the investigator should be rewarded, but nothing is given away
-for free. This applies to every gate below: an agenda's crack or reveal
-condition, a gated clue, and a clue-triggered tell.
+for free. This applies to every gate: an agenda's crack or reveal condition,
+a gated clue, and a clue-triggered tell.
 
 A part of a condition is EARNED when the investigator uses its clue (see
 Using a Clue). Good roleplay can stand in for evidence the player has not

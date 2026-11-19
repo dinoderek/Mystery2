@@ -167,7 +167,7 @@ describe("ai-prompts", () => {
     const count = (needle: string) => talk.split(needle).length - 1;
 
     expect(count("### Using a Clue")).toBe(1);
-    expect(count("Using a clue\nmeans")).toBe(1);
+    expect(count("Using a clue means")).toBe(1);
     expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
     expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does use');
     // Self-protection parts, conditional reveals, earned parts, requires gates and clue tells all point to it.

@@ -64,7 +64,8 @@ The investigator says: {{player_input}}
 - Answer what they asked, in step with the conversation so far. Never volunteer clues, backstory or commentary they did not ask for; flavor_knowledge is a touch of color.
 - Keep to actual_actions, the parts of your day you will speak of. Never reveal the solution.`;
 
-const AGENDAS = "Your agendas shape how you answer, never whether; weigh them in priority order.";
+const AGENDAS =
+  "Your agendas shape how you answer, never whether; weigh them in priority order. current_story outranks them: never push again what a reaction there gave up.";
 
 const NO_AGENDAS = `## A willing witness
 You have nothing to hide, and no agenda holds a clue back.`;

@@ -181,12 +181,12 @@ opens only when the player **uses** a clue.
   clue, never a confession.
 - **Use is recorded.** `talk_conversation` reports the clues used
   (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The
-  backend keeps a used gate clue the player holds, or bluffs in their quoted
-  words, and logs the rest (`ask.used_clue_dropped`). `character-state.ts`
-  rebuilds from every visit's `ask` events the clues used, parts earned, current
-  story (alibi, then earned reactions) and last five commitments. It only grows,
-  and reaches the context as `state` (a reaction once earned, the confession
-  once all are); the prompt never takes a reaction back.
+  backend keeps a used gate clue the player holds, or bluffs in quoted words,
+  and logs the rest (`ask.used_clue_dropped`). `character-state.ts` rebuilds
+  from every visit's `ask` events the clues used, parts earned, current story
+  (alibi, then earned reactions) and last five commitments. It only grows, and
+  reaches the context as `state` (reactions once earned, the confession once all
+  are); nothing in the prompt, agendas included, takes one back.
 - **An untriggered tell stays hidden, even softened** ("one quick puff" for
   "her tail puffs up").
 

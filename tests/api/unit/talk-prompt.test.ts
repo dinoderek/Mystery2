@@ -11,8 +11,7 @@ import {
   talkPromptProfile,
 } from "../../../packages/game-engine/src/talk-prompt.ts";
 
-// The stored snow-foxes game, in which Barnaby swung between two stories. Its
-// turn-28 prompt was 12,661 characters of rules when the prompt was one block.
+// The stored snow-foxes game, in which Barnaby swung between two stories.
 const trace = JSON.parse(
   fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
 ) as { blueprint: Parameters<typeof buildRoleRequest>[0]["blueprint"]; events: ConversationFragment[] };

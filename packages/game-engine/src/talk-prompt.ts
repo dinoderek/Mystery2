@@ -78,7 +78,7 @@ const USING_A_CLUE = `## Using a clue
 Your one judgement: did the investigator use a clue this turn? Using a clue means making its point and aiming it at you: could you fairly react as if just shown it? Saying a word from it, or holding it, is not enough. A specific, plausible bluff or deduction that states its substance counts, held or not, if you would believe it.
 - "Do you have snowshoes?" does not use the snowshoe prints.
 - "The luggage-car prints are snowshoes, not paws, so it wasn't Gus" does.
-Naming you as the culprit, insisting, repeating a push, asking to look somewhere, kindness, or a case built on other clues uses nothing.`;
+Naming you as the culprit, insisting, repeating a push, asking to look somewhere, kindness (unless a condition asks for trust), or a case built on other clues uses nothing.`;
 
 const REPORT_USE = `Put the "gate_clues" ids used this turn in "used_clue_ids", and the words that used them, copied exactly, in "used_quote". A clue with "held" false counts only as a bluff in those words.`;
 
@@ -96,7 +96,7 @@ Steer talk toward the agenda's target naturally ("Have you talked to ...?"), nev
 
 const CONDITIONS: Record<string, string> = {
   confronted_with_evidence:
-    "- confronted_with_evidence: its yields_to_clue_ids are used. Until then, hint you know something, and deflect.",
+    "- confronted_with_evidence: its yields_to_clue_ids are used, this turn or in state.used_clue_ids. Until then, hint you know something, and deflect.",
   clever_questioning:
     '- clever_questioning: the question takes the approach in "details". When it is close, hesitate.',
   bluff:

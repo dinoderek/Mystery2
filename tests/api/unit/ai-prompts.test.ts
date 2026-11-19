@@ -146,7 +146,7 @@ describe("ai-prompts", () => {
 
     expect(talk).toContain("Your one judgement: did the investigator use a clue this turn?");
     expect(talk).toContain("Naming you as the culprit, insisting, repeating a push, asking to look somewhere");
-    expect(talk).toContain("kindness, or a case built on other clues uses nothing");
+    expect(talk).toContain("kindness (unless a condition asks for trust), or a case built on other clues uses nothing");
     // Every character shares an earned clue no agenda holds back.
     expect(talk).toContain("Share a clue when it answers the question, once any lock on it is earned and no agenda holds it back.");
     // A used part earns its own concession and nothing more; a confession needs every part.
@@ -172,7 +172,7 @@ describe("ai-prompts", () => {
     expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
     expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does.');
     // Gates say "used", and lean on the one definition rather than restating it.
-    expect(talk).toContain("its yields_to_clue_ids are used");
+    expect(talk).toContain("its yields_to_clue_ids are used, this turn or in state.used_clue_ids");
     expect(talk).toContain("until the investigator uses what it names");
     expect(talk).not.toContain("see Using a Clue");
     expect(talk).not.toContain("not just possess it");

@@ -49,8 +49,9 @@ narration, and the recorded `revealed_clue_ids`.
 4. **Gate violation** (`kind: "premature"`). A clue with `requires.clue_ids` was
    delivered early. From a character, early is before the player has **used**
    its prerequisites; holding them is not enough (`docs/ai-runtime.md`,
-   "Earned, not free"). Use is in `recorded_use.used_clue_ids`, this turn or
-   earlier, else the player's words. On a search, early is a prerequisite
+   "Earned, not free"). `recorded_use` is the narrator's claim: the
+   player's words decide. After questions in three separate visits, a gated
+   clue is the designed fallback. On a search, early is a prerequisite
    missing from `prior_revealed_clue_ids`. Two cases:
    - The turn lists the clue in `revealed_off_script` — a declared bypass. On
      a conversation turn, legitimate when the player's input was genuinely

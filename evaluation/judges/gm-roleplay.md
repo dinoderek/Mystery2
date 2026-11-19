@@ -12,10 +12,9 @@ When the game master voices a character or narrates a scene, does it perform
 **the character the blueprint authored** and **the narrator voice the game
 requires** — or does it drift into a generic, out-of-character performer?
 
-This is about *who is speaking and how*. It is not about whether the facts are
-real (`gm_fabrication`), which clues changed hands (`gm_clue_discipline`), or
-whether the solution leaked (`gm_spoiler`). A stated fact with no blueprint
-support belongs to `gm_fabrication`. Report it here when **this** character
+This is about *who is speaking and how*, not whether the facts are real
+(`gm_fabrication`), which clues changed hands (`gm_clue_discipline`), or whether
+the solution leaked (`gm_spoiler`). Report it here when **this** character
 would not have said or done this.
 
 ## Inputs
@@ -41,27 +40,28 @@ Walk the judged turns in order. For each, apply the checks that fit its
    authored "gruff and evasive" who answers warm and forthcoming, with nothing
    in the conversation to earn the change, is a finding.
 2. **Voice mechanics.** Characters speak in **direct first person** with brief
-   action beats. Narration that reports a character in the third person
-   ("Mara said that she had been in the kitchen") instead of letting them speak
-   is a finding. Pronouns must follow the character's `sex` field.
+   action beats. Reporting a character in the third person ("Mara said that she
+   had been in the kitchen") is a finding. Pronouns follow the character's `sex`.
 3. **Alibi and stance.** Judge each line against the story so far: the
-   character's earlier turns, the `stated_alibi`, and `recorded_use` (the
-   clues the player used, their `used_quote`, and the character's
-   `new_commitments`; absent where nothing was recorded, then read
-   `player_input`). Read the agenda's `parts` (`clue_ids`, what each
-   `shows`, its `reaction`) and `details`. A part is earned once the player
-   has used one of its clues (`docs/ai-runtime.md`, "Earned, not free"):
-   made its point and aimed it at this character, so they could fairly react
-   as if just shown it. Holding or mentioning a clue is not use, nor is
-   naming the character culprit, insisting, or a case on other parts. Sustained
-   pressure counts only where the agenda calls for it.
+   character's earlier turns, the `stated_alibi`, and `recorded_use`, what the
+   narrator reported (`used_clue_ids`, `used_quote`, `new_commitments`; absent
+   where unrecorded). The player's words decide whether a clue was used: an id
+   recorded for a mere mention is itself `unearned`. Read the agenda's
+   `parts` (`clue_ids`, what each `shows`, its `reaction`), `details`,
+   `condition` and `yields_to_clue_ids`. A part is earned once the player has
+   used one of its clues (`docs/ai-runtime.md`, "Earned, not free"): made its
+   point and aimed it at this character, so they could fairly react as if just
+   shown it. Holding or mentioning a clue is not use, nor is naming the
+   character culprit, insisting, or a case on other parts. After questions in
+   three separate visits, a partial truth is the designed fallback, never a
+   confession.
    - `unearned`: a concession after a mere mention, or beyond what the used
      parts' `reaction`s show; a full collapse or confession with any part
      unearned. `major`.
    - `taken_back`: denying or reversing what the character already conceded.
      `major`.
-   - `contradiction`: contradicting an earlier line or a `new_commitments`
-     entry. `major`.
+   - `contradiction`: the character's story going back on an earlier line or
+     a `new_commitments` entry (a world fact is `gm_fabrication`'s). `major`.
    - `alibi`: dropping the cover with nothing earned, or a character clearly
      beaten who carries on as if nothing landed. `major`.
 4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
@@ -71,8 +71,9 @@ Walk the judged turns in order. For each, apply the checks that fit its
      redirect. Weakening only when the authored condition is met.
    - `implicate_other` — steer toward `target_character_id`, organically rather
      than as a scripted accusation.
-   - `conditional_reveal` — the `gated_clue_id` stays shut until the player
-     uses the clue it yields to. (Whether it changed hands is
+   - `conditional_reveal` — the `gated_clue_id` stays shut until the
+     `condition` is met; for `confronted_with_evidence`, until the player uses
+     a `yields_to_clue_ids` clue. (Whether it changed hands is
      `gm_clue_discipline`'s call; the character's *manner* is this one's.)
    Ignoring an active high-priority agenda is `major`. Playing it heavy-handedly
    — announcing the agenda instead of embodying it — is `minor`.
@@ -90,9 +91,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    could know: their own `clues`, `flavor_knowledge`, `actual_actions`, and
    ordinary lived experience of the world. A character who answers with another
    character's private knowledge is `major`.
-7. **Answering the question.** The character answers what was actually asked.
-   Dumping `flavor_knowledge` as a checklist, or volunteering backstory nobody
-   asked for, is `minor`.
+7. **Answering the question.** The character answers what was asked. Dumping
+   `flavor_knowledge` as a checklist, or unasked backstory, is `minor`.
 
 ### Narrator turns (`search`, `move`, `accusation_start`, `accusation_judge`)
 

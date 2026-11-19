@@ -10,9 +10,8 @@ data into one shared subject:
 | `evaluation/trace/` | a whole played session, reconstructed from the game database | every turn | registry judges for a `game` |
 | `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | registry judges for a `turn` |
 
-A failure found on a played trace can be frozen into a runtime case
-(`./dev eval cases`) and re-judged by the same standard on another model or
-prompt.
+A failure on a played trace can be frozen into a runtime case
+(`./dev eval cases`) and re-judged by the same standard on another model or prompt.
 
 ## The battery
 
@@ -25,7 +24,7 @@ prompt.
 
 Four narrow judges, not one "blueprint adherence" judge
 (`docs/evaluation-pipeline.md`, "Three tiers of check"). Each brief states its
-boundaries with its siblings, so a defect is not reported four times.
+boundaries with its siblings, so no defect is reported four times.
 
 ## The subject
 
@@ -38,9 +37,9 @@ input, narration and revealed clues. Three fields carry the design:
   would be marked down for its own setup.
 - `prior_revealed_clue_ids`. A search gate is judged against what the player
   demonstrably had, from either subject, without the runtime's internal flags.
-- `recorded_use`. A character turn's recorded state: the gate clues the player
-  used, their words and the character's new commitments. Absent where not
-  recorded, so "used nothing" and "not recorded" differ. A talk gate
+- `recorded_use`. What the narrator reported for a character turn: gate clues
+  used, the player's words, new commitments (a runtime replay's is unfiltered by
+  the engine). Absent where not recorded, so "used nothing" and "not recorded" differ. A talk gate
   opens on use, not possession ([`docs/ai-runtime.md`](../../docs/ai-runtime.md),
   "Earned, not free").
 
@@ -76,7 +75,7 @@ Keep the common finding fields (`sequence`, `severity`, `quote`, `why`,
 Each judge is one model call per subject, run in parallel. The trace
 pipeline runs all four on every trace; the runtime harness makes them opt-in
 (`evaluation/runtime/README.md`, "What a run costs"). `judge-stub` answers with
-a canned clean verdict, for wiring checks with no model:
+a canned clean verdict for wiring checks:
 
 ```bash
 ./dev eval judge turn <cases> --narrator narrator-stub --judges gm_spoiler --judge-binding judge-stub

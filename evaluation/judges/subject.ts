@@ -53,8 +53,9 @@ export interface JudgeTurn {
   /** Clue ids established by every turn before this one, in reveal order. */
   prior_revealed_clue_ids: string[];
   /**
-   * A character turn's recorded state: the gate clues the player used, their
-   * words, and the character's new commitments. Absent where nothing was
+   * What the narrator reported for a character turn: the gate clues the player
+   * used, their words, and the character's new commitments. A stored game's is
+   * the engine's filtered record; a cli replay's is the raw reply, unfiltered. Absent where nothing was
    * recorded (a game saved before the engine recorded it, a server replay), so
    * "recorded nothing used" and "not recorded" differ.
    */

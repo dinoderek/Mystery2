@@ -5,7 +5,7 @@
       "sequence": 27,
       "kind": "out_of_character",
       "severity": "major",
-      "note": "Barnaby gives up that he took the long way after the player only asks whether he has snowshoes: a mention earns nothing, and no clue was used.",
+      "note": "Barnaby gives up that he took the long way after the player only asks whether he has snowshoes. The narrator records the snowshoe prints as used, but a mention earns nothing.",
       "edits": [
         {
           "type": "narration",
@@ -23,12 +23,14 @@
             {
               "op": "add",
               "path": "/payload/used_clue_ids",
-              "value": []
+              "value": [
+                "clue_snowshoe_prints"
+              ]
             },
             {
               "op": "add",
               "path": "/payload/used_quote",
-              "value": null
+              "value": "do you have snowshoes"
             },
             {
               "op": "add",
@@ -44,7 +46,7 @@
       "sequence": 33,
       "kind": "out_of_character",
       "severity": "major",
-      "note": "Barnaby takes back \"took the long way\" (turn 28) as soon as the player uses Bramble's sighting to show he was walking: the part is earned, so the concession must stand.",
+      "note": "Barnaby takes back \"took the long way\" (turn 28) just after the player's case that he was walking, not napping, a bluff the narrator records as using Bramble's sighting: the part is earned, so the concession must stand.",
       "edits": [
         {
           "type": "narration",
@@ -99,7 +101,7 @@
       "sequence": 35,
       "kind": "out_of_character",
       "severity": "major",
-      "note": "Barnaby confesses in full and gives his motive after the player used only the snowshoe prints, which earn a flustered back-off and nothing more.",
+      "note": "Barnaby confesses in full and gives his motive after the player's case on the prints and the walking, which earn only a flustered back-off and the long way: the wet snowshoes and motive parts are unearned.",
       "edits": [
         {
           "type": "narration",

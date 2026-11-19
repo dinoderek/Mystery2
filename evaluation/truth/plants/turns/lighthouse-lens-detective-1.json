@@ -16,20 +16,6 @@
       "caught_by": []
     },
     {
-      "sequence": 7,
-      "kind": "out_of_character",
-      "severity": "major",
-      "note": "Cheerful, eager Finn turns hostile and tells the investigator to clear off, with nothing to earn it.",
-      "edits": [
-        {
-          "type": "narration",
-          "find": "Finn shakes his head, and his striped hat wobbles. \"Nope, I didn't leave the sofa. Not once!\" He rubs his neck. \"I fell asleep about eleven. Then Ada's bell woke me at four. Honest!\"",
-          "replace": "Finn's grin vanishes and he glares at you. \"What's it to you? I didn't leave the sofa, so stop poking your nose in.\" He turns his back. \"I fell asleep about eleven and Ada's bell woke me at four. Now clear off and leave me alone.\""
-        }
-      ],
-      "caught_by": []
-    },
-    {
       "sequence": 10,
       "kind": "fabrication",
       "severity": "major",

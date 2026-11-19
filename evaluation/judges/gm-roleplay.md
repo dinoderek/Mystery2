@@ -25,7 +25,8 @@ would not have said or done this.
   `initial_attitude_towards_investigator`, `stated_alibi`, `motive`,
   `is_culprit`, `agendas`, `tells`, `flavor_knowledge`, and `actual_actions`.
 - `subject.turns` — the turns, each with `judged`, `role_name`, `character_id`,
-  `player_input`, and `narration`. Only `judged` turns can carry findings.
+  `player_input`, `narration`, and `recorded_use` where recorded. Only
+  `judged` turns can carry findings.
 
 ## Judge instructions
 
@@ -43,20 +44,26 @@ Walk the judged turns in order. For each, apply the checks that fit its
    action beats. Narration that reports a character in the third person
    ("Mara said that she had been in the kitchen") instead of letting them speak
    is a finding. Pronouns must follow the character's `sex` field.
-3. **Alibi and stance.** A character does not contradict their own
-   `stated_alibi`, and the culprit does not drop their cover, beyond what the
-   conversation earned. Read the agenda's `parts` (each its clues, what
-   they `show`, and its `reaction`), `details`, `condition` and
-   `yields_to_clue_ids` as a list of parts. A part is earned when the player
-   uses one of its clues: makes its point and aims it at the character, with the clue
-   or a specific, plausible bluff or deduction this character would believe.
-   Mentioning or holding it is not use; nor is naming the character as
-   culprit, insisting, or a case that never touches that part. Sustained
-   pressure counts only where the agenda calls for it. A used part earns its
-   authored `reaction`, which moves the story that far and no further. A full
-   collapse or confession with any part unearned is `major`, including after a
-   strong case built on the other parts. So is a character who has clearly been
-   beaten and carries on as if nothing landed.
+3. **Alibi and stance.** Judge each line against the story so far: the
+   character's earlier turns, the `stated_alibi`, and `recorded_use` (the
+   clues the player used, their `used_quote`, and the character's
+   `new_commitments`; absent where nothing was recorded, then read
+   `player_input`). Read the agenda's `parts` (`clue_ids`, what each
+   `shows`, its `reaction`) and `details`. A part is earned once the player
+   has used one of its clues (`docs/ai-runtime.md`, "Earned, not free"):
+   made its point and aimed it at this character, so they could fairly react
+   as if just shown it. Holding or mentioning a clue is not use, nor is
+   naming the character culprit, insisting, or a case on other parts. Sustained
+   pressure counts only where the agenda calls for it.
+   - `unearned`: a concession after a mere mention, or beyond what the used
+     parts' `reaction`s show; a full collapse or confession with any part
+     unearned. `major`.
+   - `taken_back`: denying or reversing what the character already conceded.
+     `major`.
+   - `contradiction`: contradicting an earlier line or a `new_commitments`
+     entry. `major`.
+   - `alibi`: dropping the cover with nothing earned, or a character clearly
+     beaten who carries on as if nothing landed. `major`.
 4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
    - `self_protect` — answer what is asked, raise the alibi only when asked
      where or when, get evasive under incriminating pressure.
@@ -64,15 +71,14 @@ Walk the judged turns in order. For each, apply the checks that fit its
      redirect. Weakening only when the authored condition is met.
    - `implicate_other` — steer toward `target_character_id`, organically rather
      than as a scripted accusation.
-   - `conditional_reveal` — the `gated_clue_id` stays shut until the authored
-     condition is met. (Whether the clue actually changed hands is
-     `gm_clue_discipline`'s call; whether the character's *manner* honored the
-     gate is this dimension's.)
+   - `conditional_reveal` — the `gated_clue_id` stays shut until the player
+     uses the clue it yields to. (Whether it changed hands is
+     `gm_clue_discipline`'s call; the character's *manner* is this one's.)
    Ignoring an active high-priority agenda is `major`. Playing it heavy-handedly
    — announcing the agenda instead of embodying it — is `minor`.
 5. **Tells.** A tell fires only when its `trigger` allows: `always` may surface
    naturally, `condition` only once the free-text condition is met, `clue` only
-   when the player raised that clue's substance and the character believes them.
+   when the player uses that clue.
    A `talk_start` greeting comes before the player says anything, so a `clue`
    tell there is always early, and a `condition` tell is early unless an earlier
    visit already met the condition.
@@ -105,9 +111,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
 - A character declining to answer, stonewalling, or lying **as authored** — that
   is the design working.
 - A partial crack (discomfort, a triggered tell, a used part's authored
-  `reaction`) in answer to a partly earned condition, even where that reaction
-  changes the alibi. Proportional yielding is the design working. Conceding
-  more than the used parts show is still a finding.
+  `reaction`), even where it changes the alibi: proportional yielding is the
+  design working.
 - A crack, tell or reveal earned by a convincing bluff or deduction that names
   the missing evidence's substance. Rewarding good roleplay is intended.
 - Register that is simply plainer than you would write it. Judge fidelity to the
@@ -121,7 +126,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
     {
       "sequence": 7,
       "severity": "major",
-      "kind": "persona" | "voice" | "alibi" | "agenda" | "tell" | "knowledge" | "narrator_voice",
+      "kind": "persona" | "voice" | "alibi" | "unearned" | "taken_back" | "contradiction" | "agenda" | "tell" | "knowledge" | "narrator_voice",
       "quote": "Short verbatim span from that turn's narration.",
       "why": "Which authored trait, agenda, or rule it breaks, naming the blueprint field.",
       "refers_to": "char-mara"

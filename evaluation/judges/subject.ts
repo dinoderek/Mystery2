@@ -10,7 +10,8 @@
 //     subject_kind: "trace" | "interaction",
 //     turns: [ { sequence, judged, role_name, location_id, character_id,
 //                player_input, search_query, revealed_clue_ids,
-//                revealed_off_script, prior_revealed_clue_ids, narration } ],
+//                revealed_off_script, prior_revealed_clue_ids, recorded_use?,
+//                narration } ],
 //     judged_sequences: number[],
 //   }
 //
@@ -30,6 +31,9 @@ import {
   type GameEventLike,
   offScriptClueIdsForEvent,
   readField,
+  readStringArray,
+  type RecordedUse,
+  recordedUseForEvent,
   revealedClueIdsForEvent,
 } from "../lib/game-events.ts";
 
@@ -48,6 +52,13 @@ export interface JudgeTurn {
   is_accusation_phase: boolean;
   /** Clue ids established by every turn before this one, in reveal order. */
   prior_revealed_clue_ids: string[];
+  /**
+   * A character turn's recorded state: the gate clues the player used, their
+   * words, and the character's new commitments. Absent where nothing was
+   * recorded (a game saved before the engine recorded it, a server replay), so
+   * "recorded nothing used" and "not recorded" differ.
+   */
+  recorded_use?: RecordedUse;
 }
 
 type TurnBeforePriors = Omit<JudgeTurn, "prior_revealed_clue_ids">;
@@ -69,6 +80,7 @@ export interface TraceTurnLike {
   search_query?: string | null;
   revealed_clue_ids?: string[];
   revealed_off_script?: string[];
+  recorded_use?: RecordedUse | null;
   narration: string;
 }
 
@@ -94,6 +106,10 @@ function priorRevealedClueIds(turns: readonly TurnBeforePriors[], index: number)
     }
   }
   return seen;
+}
+
+function recordedUseField(use: RecordedUse | null): { recorded_use?: RecordedUse } {
+  return use ? { recorded_use: use } : {};
 }
 
 function finalizeSubject(subjectKind: JudgeSubject["subject_kind"], turns: TurnBeforePriors[]): JudgeSubject {
@@ -126,6 +142,7 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       search_query: t.search_query ?? null,
       revealed_clue_ids: t.revealed_clue_ids ?? [],
       revealed_off_script: t.revealed_off_script ?? [],
+      ...recordedUseField(t.recorded_use ?? null),
       narration: t.narration,
       is_accusation_phase: ACCUSATION_EVENT_TYPES.has(t.event_type),
     }));
@@ -157,6 +174,18 @@ export function revealedClueIdsFromResponse(response: InteractionLike["response"
   return [];
 }
 
+// The cli narrator's raw reply carries the uses it reported; the engine's
+// endpoint body does not, so a server replay records none.
+function recordedUseFromResponse(response: InteractionLike["response"]): RecordedUse | null {
+  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.used_clue_ids)) return null;
+  return {
+    used_clue_ids: readStringArray(raw, "used_clue_ids"),
+    used_quote: readField(raw, "used_quote"),
+    new_commitments: readStringArray(raw, "new_commitments"),
+  };
+}
+
 function offScriptClueIdsFromResponse(response: InteractionLike["response"]): string[] {
   const raw = (response?.raw ?? null) as Record<string, unknown> | null;
   if (!raw || typeof raw !== "object") return [];
@@ -169,6 +198,7 @@ function offScriptClueIdsFromResponse(response: InteractionLike["response"]): st
 // same readers that parse a real trace parse them here.
 function historyTurns(history: readonly GameEventLike[] | undefined): TurnBeforePriors[] {
   return (history ?? []).map((event, index) => ({
+    ...recordedUseField(recordedUseForEvent(event)),
     sequence: index + 1,
     judged: false,
     role_name: EVENT_ROLE[event.event_type] ?? null,
@@ -212,6 +242,7 @@ export function projectInteractionSubject(
     search_query: action.search_query ?? null,
     revealed_clue_ids: revealedClueIdsFromResponse(response),
     revealed_off_script: offScriptClueIdsFromResponse(response),
+    ...recordedUseField(recordedUseFromResponse(response)),
     narration: response.narration_text ?? "",
     is_accusation_phase: isAccusationPhase,
   };

@@ -129,6 +129,37 @@ describe("revealedClueIdsFromResponse", () => {
   });
 });
 
+describe("recorded use in a subject", () => {
+  const USE = { used_clue_ids: ["clue-wrapper"], used_quote: "the wrapper was in your pocket", new_commitments: ["never opened the jar"] };
+
+  it("carries what a trace turn recorded, and nothing for a turn that recorded none", () => {
+    const raw = makeRawTrace();
+    const events = raw.events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
+      event.sequence === 4 ? { ...event, payload: { ...event.payload, ...USE } } : event,
+    );
+    const subject = projectTraceSubject(reconstructTrace(makeRawTrace({ events })).turns);
+    const bySequence = (n: number) => subject.turns.find((t: { sequence: number }) => t.sequence === n);
+    expect(bySequence(4)?.recorded_use).toEqual(USE);
+    // An ask saved before the engine recorded use stays "not recorded", never "used nothing".
+    expect("recorded_use" in (bySequence(2) ?? {})).toBe(false);
+  });
+
+  it("reads a replayed history row and the cli narrator's reply the same way", () => {
+    const interaction = makeInteraction({ response: { narration_text: "Alice sighs.", raw: { narration: "…", revealed_clue_ids: [], ...USE } } });
+    const history = interaction.given.history as Array<{ payload: Record<string, unknown> }>;
+    history[1].payload = { ...history[1].payload, used_clue_ids: [], used_quote: null, new_commitments: [] };
+    const subject = projectInteractionSubject(interaction, { roleName: "talk_conversation" });
+    expect(subject.turns[1].recorded_use).toEqual({ used_clue_ids: [], used_quote: null, new_commitments: [] });
+    expect(subject.turns[2].recorded_use).toEqual(USE);
+    expect("recorded_use" in subject.turns[0]).toBe(false);
+  });
+
+  it("records none for a server replay, whose body does not carry the uses", () => {
+    const subject = projectInteractionSubject(makeInteraction({ response: { narration_text: "Alice sighs.", raw: { revealed_clues: [] } } }), { roleName: "talk_conversation" });
+    expect("recorded_use" in subject.turns[2]).toBe(false);
+  });
+});
+
 describe("projectTraceSubject", () => {
   it("judges every turn and drops turns with no game-master role", () => {
     const subject = projectTraceSubject(reconstructTrace(makeRawTrace()).turns);

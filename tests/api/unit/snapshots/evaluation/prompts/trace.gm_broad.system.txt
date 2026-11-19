@@ -131,17 +131,17 @@ For character turns (`talk_start`, `talk_conversation`, `talk_end`):
   earned.
 - **Voice**: direct first person with brief action beats, never reported in
   the third person; pronouns follow `sex`.
-- **Alibi and stance**: no contradiction of the character's own `stated_alibi`,
-  and no culprit dropping cover, beyond what was earned. Read the agenda's
-  `parts`, `details`, `condition` and `yields_to_clue_ids` as parts; a part is
-  earned when the player uses its clue (makes its point at the character, with
-  the clue or a plausible bluff or deduction this character would believe), and
-  earns its authored `reaction`, no more.
-  Sustained pressure counts only where the agenda calls for it; naming the
-  culprit or insisting earns nothing. A full collapse or confession with any
-  part unearned is `major`, and so is a character clearly beaten who carries on
-  as if nothing landed. A partial crack in answer to a partly earned condition,
-  conceding only what the used parts show, is the design working.
+- **Alibi and stance**: judge against the story so far: the character's
+  earlier turns, `stated_alibi` and `recorded_use` (clues used, `used_quote`,
+  `new_commitments`; absent where unrecorded). A part of the agenda's `parts`
+  is earned once the player uses its clue (`docs/ai-runtime.md`, "Earned, not
+  free": makes its point at the character, so they could fairly react as if
+  just shown it) and earns its `reaction`, no more. `major`: a concession from
+  a mere mention, naming the culprit or insisting; one beyond the used parts,
+  or a confession with any part unearned; a concession taken back; a
+  contradiction of an earlier line or commitment; a character clearly beaten
+  who carries on as if nothing landed. A used part's reaction is the design
+  working.
 - **Agendas**, in `priority` order: `self_protect` deflects and gets evasive;
   `protect_other` avoids implicating `target_character_id`; `implicate_other`
   steers toward its target organically; `conditional_reveal` keeps its manner
@@ -156,11 +156,10 @@ For character turns (`talk_start`, `talk_conversation`, `talk_end`):
 - **Answering**: dumping `flavor_knowledge` as a checklist, or backstory nobody
   asked for, is `minor`.
 
-Not findings: atmosphere and small invented personal texture that fits the
-character and carries no load-bearing fact; a character declining, stonewalling
-or lying as authored; a crack, tell or reveal earned by a
-convincing bluff or deduction that names the missing evidence's substance;
-register plainer than you would write it.
+Not findings: atmosphere and small invented personal texture that carries no
+load-bearing fact; a character declining, stonewalling or lying as authored; a
+crack, tell or reveal earned by a convincing bluff or deduction that names the
+missing evidence's substance; plain register.
 
 For narrator turns (`search`, `move`, `accusation_start`, `accusation_judge`):
 the player is "you", in the present tense; the tone is warm and cozy, never
@@ -179,8 +178,10 @@ Compare each judged turn's narration with the blueprint's clue `text` and its
   matching no location clue is `major`.
 - A clue delivered with a different meaning (object, place, person,
   implication): `major`. A faithful rewording for a child is correct.
-- A clue with `requires.clue_ids` delivered before all are in
-  `prior_revealed_clue_ids`: undeclared, `major`; listed in
+- A clue with `requires.clue_ids` delivered early: undeclared, `major`. In
+  conversation, early is before the player has used the prerequisites
+  (`recorded_use`, else their words; holding them is not use); on a search,
+  before all are in `prior_revealed_clue_ids`. Listed in
   `revealed_off_script`, legitimate when the input was genuinely clever and the
   gate is social or knowledge-shaped, `minor` when unearned, `major` when the
   gate is physical. On a search, it is legitimate when the search's words name
@@ -191,9 +192,8 @@ Compare each judged turn's narration with the blueprint's clue `text` and its
 - An earned, ungated clue asked for directly and withheld without a fictional
   reason: `minor` once, `major` across repeated, differently-approached asks.
 
-Recalling a clue already held is not a new reveal. Atmospheric description
-with no clue substance, and a character hinting they know more without
-delivering it, are not findings.
+Recalling a held clue is not a new reveal; nor are atmosphere with no clue
+substance, or a character hinting they know more without delivering it.
 
 ## `spoiler`
 

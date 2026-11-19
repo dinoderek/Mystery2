@@ -96,13 +96,11 @@ tier: 1
 Did the game master hand over **the right clues, at the right time, and record
 what it handed over**?
 
-Clues are the game's currency. Releasing one early skips the work that makes it
-mean something; releasing one silently leaves the player's notebook out of step
-with what they were told; releasing one that does not exist corrupts the case.
-This dimension is the qualitative half of clue handling — the mechanical
-`clue_accounting` check already verifies ids exist, are in scope, and are not
-repeated. Your job is the part code cannot see: **does the narration's substance
-match the reveal it recorded?**
+Releasing a clue early skips the work that makes it mean something; releasing
+one silently leaves the player's notebook out of step with what they were told.
+The mechanical `clue_accounting` check already verifies ids exist, are in
+scope, and are not repeated. Your job is the part code cannot see: **does the
+narration's substance match the reveal it recorded?**
 
 ## Inputs
 
@@ -112,8 +110,10 @@ match the reveal it recorded?**
   prerequisite clues that gate it.
 - `subject.turns` — each judged turn carries `revealed_clue_ids` (what it
   recorded), `revealed_off_script` (reveals it declared as a deliberate bypass
-  of a `requires` gate), and `prior_revealed_clue_ids` (**authoritative**: what
-  the player already had going into this turn).
+  of a `requires` gate), `prior_revealed_clue_ids` (**authoritative**: what
+  the player already had going into this turn), and, on a character turn,
+  `recorded_use` (the gate clues the player used, `used_quote`; absent where
+  unrecorded).
 
 ## Judge instructions
 
@@ -123,18 +123,20 @@ narration, and the recorded `revealed_clue_ids`.
 1. **Silent reveal** (`kind: "unrecorded"`). The narration delivers the
    substance of a blueprint clue — the player now knows the fact — but that
    clue's id is not in `revealed_clue_ids`. `major`: the player was told
-   something their notebook will not have. Paraphrase counts as delivery;
+   something their notebook lacks. Paraphrase counts as delivery;
    *hinting that something exists* does not.
 2. **Phantom reveal** (`kind: "unsupported"`). A clue id is recorded but the
-   narration never conveys its content. `major` — the notebook gains a fact the
-   player was never told.
+   narration never conveys its content. `major`.
 3. **Distorted clue** (`kind: "distorted"`). The narration delivers a clue whose
    meaning differs from the blueprint's `text` — a different object, place,
    person, or implication. `major`. (A faithful rewording for a child's reading
    level is correct behavior, not a finding.)
 4. **Gate violation** (`kind: "premature"`). A clue with `requires.clue_ids` was
-   delivered when its prerequisites are not all in that turn's
-   `prior_revealed_clue_ids`. Two cases:
+   delivered early. From a character, early is before the player has **used**
+   its prerequisites; holding them is not enough (`docs/ai-runtime.md`,
+   "Earned, not free"). Use is in `recorded_use.used_clue_ids`, this turn or
+   earlier, else the player's words. On a search, early is a prerequisite
+   missing from `prior_revealed_clue_ids`. Two cases:
    - The turn lists the clue in `revealed_off_script` — a declared bypass. On
      a conversation turn, legitimate when the player's input was genuinely
      clever or a convincing bluff **and** the gate is social/knowledge-shaped;
@@ -149,7 +151,8 @@ narration, and the recorded `revealed_clue_ids`.
    with nothing in the blueprint giving them that knowledge (`about_character_id`,
    `hint_location_id`, or their own `clues`). `major`.
 6. **Withholding an earned clue** (`kind: "withheld"`). The player asked
-   directly, the clue's prerequisites are met, and no agenda gates it — but the
+   directly, the clue has no prerequisites or the player has used them, and
+   no agenda gates it — but the
    character neither delivers it nor gives a reason the fiction supports.
    `minor` on a single turn; `major` when the same clue is stonewalled across
    repeated, differently-approached asks, which is how a mystery becomes
@@ -161,12 +164,11 @@ matches no location clue is a `major` `unsupported` finding.
 
 ## Not findings
 
-- Reworded, shortened, or age-adjusted clue text that preserves the meaning.
-- Atmospheric description of a place or object that carries no clue substance.
-- A character hinting that they know more, without delivering the content.
-- Reminding the player of a clue already in `prior_revealed_clue_ids` — that is
-  recall, not a new reveal, and it is correctly absent from
-  `revealed_clue_ids`.
+- Reworded, shortened, or age-adjusted clue text that keeps the meaning.
+- Atmosphere that carries no clue substance.
+- A character hinting they know more, without delivering the content.
+- Recalling a clue already in `prior_revealed_clue_ids`: recall, not a new
+  reveal, correctly absent from `revealed_clue_ids`.
 
 ## Output
 

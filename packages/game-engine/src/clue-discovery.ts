@@ -82,6 +82,20 @@ export function isClueUnlocked(
   return required.every((id) => discovered.has(id));
 }
 
+// A sub-location stays hidden while every clue in it is locked and unfound:
+// nothing has pointed the player to it yet, so no narrator is told it exists,
+// and none can advertise it or narrate "nothing here" for it. A spot with no
+// clues is never hidden.
+export function isSpotHidden(
+  spot: { clues: GatedClue[] },
+  discovered: Set<string>,
+): boolean {
+  return (
+    spot.clues.length > 0 &&
+    spot.clues.every((clue) => !discovered.has(clue.id) && !isClueUnlocked(clue, discovered))
+  );
+}
+
 // --- Notebook: discovered-clue records grouped by mini-mystery thread ---
 
 interface NotebookClue {
@@ -299,7 +313,7 @@ export interface CoverageBlueprint {
 // them. The judge already holds every path via the full blueprint; this is the
 // intersection with what the player actually found, precomputed so the model
 // does not have to do set math over a long context (the same reasoning behind
-// `prereqs_met` in the talk context).
+// `player_can_use_prerequisites` in the talk context).
 export function buildPathCoverage(
   blueprint: CoverageBlueprint,
   discovered: Set<string>,

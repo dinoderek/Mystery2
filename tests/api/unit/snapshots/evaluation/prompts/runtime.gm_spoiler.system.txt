@@ -152,6 +152,8 @@ already hold, it is `minor`.
   content is not a spoiler even when it points hard at the culprit. If the
   concern is that a clue moved too early, that is `gm_clue_discipline`.
 - A character lying, deflecting, or defending a false alibi.
+- A character giving the authored `reaction` of an agenda part whose clue the
+  player used: that concession is earned (`gm_roleplay` judges its fit).
 - Tension, foreshadowing, suspicion, or a character voicing their own
   (unreliable) theory about someone else.
 - The narrator restating what the player already discovered, without adding a

@@ -38,7 +38,7 @@ input, narration and revealed clues. Two fields carry the design:
   would be marked down for its own setup.
 - `prior_revealed_clue_ids`. The judge compares a clue's `requires.clue_ids`
   against what the player demonstrably had, so gating is judgeable from either
-  subject without the runtime's internal `prereqs_met` flag.
+  subject without the runtime's internal `player_can_use_prerequisites` flag.
 
 ## The verdict rule
 

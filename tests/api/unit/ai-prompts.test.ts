@@ -146,22 +146,57 @@ describe("ai-prompts", () => {
   it("rewards good roleplay in conversation but gives nothing away for free", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 
-    // Roleplay can stand in for evidence, but only by naming its substance.
+    // Roleplay can stand in for evidence, but only by using it.
     expect(talk).toContain("### Earned, Not Free");
-    expect(talk).toContain("Good roleplay can");
-    expect(talk).toContain("It cannot skip a part it");
+    expect(talk).toContain("Good roleplay can stand in for evidence");
+    expect(talk).toContain("It cannot skip a part it never uses");
     expect(talk).toContain("naming you as the culprit");
-    // Cracks are proportional; a confession needs the whole condition.
-    expect(talk).toContain("Some of the parts earned: begin to crack");
-    expect(talk).toContain("Do NOT confess");
-    expect(talk).toContain("Every part earned");
-    // A partial crack points the way without breaking the alibi.
-    expect(talk).toContain("Your stated alibi still holds");
-    expect(talk).toContain("never breaks a\nstated alibi or admits anything from actual_actions");
+    // A used part earns its own reaction and nothing more; a confession needs every part.
+    expect(talk).toContain("Give a part's reaction only when the investigator uses that part's clue");
+    expect(talk).toContain("concede nothing beyond it");
+    expect(talk).toContain("Do NOT\n  confess");
+    expect(talk).toContain("Every part used: you may give in and admit what the confession says");
     expect(talk).toContain("never a\nfull confession");
     // A clue tell needs that clue, not a general accusation.
-    expect(talk).toContain("It must be THAT clue's substance");
+    expect(talk).toContain("It must be THAT\n  clue");
     expect(talk).toContain("must never reuse the cue of a tell whose trigger has not\nfired, even in a milder form");
+  });
+
+  it("defines using a clue once, and every talk gate refers to it", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+    const count = (needle: string) => talk.split(needle).length - 1;
+
+    expect(count("### Using a Clue")).toBe(1);
+    expect(count("Using a clue means")).toBe(1);
+    expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
+    expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does use');
+    // Self-protection parts, conditional reveals, earned parts, requires gates and clue tells all point to it.
+    expect(talk.match(/\(see\s+Using\s+a\s+Clue/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(talk).toContain("see trigger.clue_ids and Using a Clue");
+    // The wordings that disagreed with it are gone.
+    expect(talk).not.toContain("not just possess it");
+    expect(talk).not.toContain("semantic match against");
+    expect(talk).not.toContain("actually holds that clue");
+  });
+
+  it("presents prerequisites as able to use, never as permission", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+
+    expect(talk).toContain('"player_can_use_prerequisites" true means the player holds those clues');
+    expect(talk).toContain("It is a precondition, never permission");
+    expect(talk).not.toContain("prereqs_met");
+  });
+
+  it("lets an authored reaction move the alibi, and raises the alibi only when asked where or when", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+
+    expect(talk).not.toContain("Your stated alibi still holds");
+    expect(talk).not.toContain("admit nothing else from");
+    expect(talk).not.toContain("never breaks a\nstated alibi");
+    expect(talk).not.toContain("reinforce your stated");
+    expect(talk).toContain(
+      "Answer the question asked, and raise\nyour stated alibi only when the question is about where you were or when.",
+    );
   });
 
   it("builds a game-start prompt with target age and premise", () => {

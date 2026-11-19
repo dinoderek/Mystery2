@@ -255,7 +255,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       initial_attitude_towards_investigator:
         blueprint.world.characters[0].initial_attitude_towards_investigator,
       motive: blueprint.world.characters[0].motive,
-      clues: [expect.objectContaining({ prereqs_met: true, known_to_player: false })],
+      clues: [expect.objectContaining({ player_can_use_prerequisites: null, known_to_player: false })],
     });
     expect(prompt).not.toContain(blueprint.world.characters[1].background);
     expect(prompt).toContain("## Characters present");

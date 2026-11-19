@@ -4,8 +4,8 @@
 > Pinned sources:
 > - `docs/game.md#starting` — `fbb3445847cfa7cdcd303a96b4b228854d6e87c8`
 > - `docs/game.md#commands` — `ef885086ce83226ee0d329bfb329d4f51bc10cb0`
-> - `docs/game.md#talking` — `8a762a5410550196e60467742dcb68dc5ab824a6`
-> - `docs/game.md#searching` — `569d2c609bcb535d1bc3c8f1c6fd810121b75314`
+> - `docs/game.md#talking` — `3d486efcc5cc4f235571188489a8f49bb99da0a2`
+> - `docs/game.md#searching` — `2532c2c3ffb8ffe642e0f538a4b504862fde06c6`
 > - `docs/game.md#moving` — `da36d9c4d8be3b68a4aeae1d6c0d66fa9c7b050e`
 > - `docs/game.md#notebook` — `712576263594de7b4a572a69cd0e483159cbf3e0`
 > - `docs/game.md#accusation` — `9fdf410a153a4b20c85b4e756c3bee8ffd8305d8`
@@ -45,12 +45,14 @@ raise) or `leverage` (the character must be shown it).
 - **Search gates are hard.** Bare search reveals the next location-level clue
   that is both unrevealed *and* unlocked, skipping locked ones so the player is
   never dead-ended. Targeted search filters locked clues out of the narrator's
-  context entirely, and a backend backstop rejects a locked reveal.
-- **Conversation gates are soft.** A gated character clue is normally withheld,
-  and the narrator uses the gate's `rationale` to color the deflection. But the
-  narrator MAY grant an off-script reveal for a genuinely clever question or a
-  convincing bluff — *only* when the rationale implies a social or knowledge gate
-  that cleverness could bypass, never a hard physical one. Write each
+  context entirely, and a backend backstop rejects a locked reveal. An
+  all-locked spot goes unmentioned until its pointer is found; a search naming
+  it still finds its clue.
+- **Conversation gates need use.** A gated character clue is withheld, its
+  `rationale` coloring the deflection, until the player *uses* its
+  prerequisites; holding them is not enough. A convincing bluff that uses them
+  earns an off-script reveal — *only* for a social or knowledge gate, never a
+  hard physical one. Write each
   `rationale` so it signals which kind it is.
 - Off-script reveals are recorded as real discoveries, so a clever player is
   never hard-stuck on the critical path.
@@ -92,7 +94,7 @@ Authoring rules the schema, mechanical checks and `clue_graph` dimension enforce
   location)
 - `world.locations[].sub_locations[].clues[]` → revealed by **targeted**
   search (at most 1 per sub-location); sub-location names are surfaced when the
-  player arrives so they know what's investigable
+  player arrives so they know what's investigable, unless all-locked
 - `world.characters[].first_name / last_name / sex / appearance`
   → the **public** roster the narrator uses when describing who's present, plus
   that character's `starting_knowledge` summary. `background` is **not** public —

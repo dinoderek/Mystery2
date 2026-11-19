@@ -5,10 +5,12 @@ import {
   buildPathCoverage,
   type ClueRequires,
   isClueUnlocked,
+  isSpotHidden,
   type KnownClueWithOrigin,
   type PathCoverage,
 } from "./clue-discovery.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
+import { namedHiddenSpot } from "./search-target.ts";
 
 export interface BlueprintClue {
   id: string;
@@ -210,17 +212,19 @@ export interface TalkCharacterPublicSummary {
 
 // A character clue as presented to the narrator during conversation. Carries the
 // gate's `requires_rationale` (the in-fiction reason it is withheld) and
-// precomputed `prereqs_met` / `known_to_player` flags so the model does not have
-// to do set math. Clue ids of prerequisites are intentionally NOT sent — the
-// rationale + flag are enough for the narrator to gate (and to judge an
-// off-script unlock).
+// precomputed flags so the model does not have to do set math. Clue ids of
+// prerequisites are intentionally NOT sent: the rationale says what the player
+// must use, and the narrator judges use from the conversation.
 export interface TalkClueContext {
   id: string;
   text: string;
   about_character_id?: string;
   hint_location_id?: string;
   requires_rationale: string | null;
-  prereqs_met: boolean;
+  // The player holds this clue's prerequisites, so they are able to use them.
+  // A precondition, never permission: the clue is earned only once they do.
+  // Null for an ungated clue.
+  player_can_use_prerequisites: boolean | null;
   // The player already discovered this clue; restating it reveals nothing new.
   known_to_player: boolean;
 }
@@ -517,7 +521,7 @@ function buildTalkCharacterPrivateContext(
     about_character_id: clue.about_character_id,
     hint_location_id: clue.hint_location_id,
     requires_rationale: clue.requires?.rationale ?? null,
-    prereqs_met: isClueUnlocked(clue, discoveredSet),
+    player_can_use_prerequisites: clue.requires ? isClueUnlocked(clue, discoveredSet) : null,
     known_to_player: discoveredSet.has(clue.id),
   }));
 
@@ -796,9 +800,15 @@ export function buildSearchContext(input: {
   // narration before the player has earned them.
   const isVisible = (c: BlueprintClue) =>
     revealedSet.has(c.id) || isClueUnlocked(c, discoveredSet);
-  const subLocations: SubLocationContext[] = (location.sub_locations ?? []).map(
-    (sl) => {
-      const visibleClues = sl.clues.filter(isVisible);
+  // A spot whose clues are all locked is left out altogether, so the narrator
+  // never advertises it or narrates "nothing here" for it, unless this targeted
+  // search names it: then it is shown, clues and all, to narrate the find.
+  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
+  const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
+    .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
+    .map((sl) => {
+      // A named hidden spot shows only the clue the search can admit.
+      const visibleClues = sl.id === admitted ? sl.clues.slice(0, 1) : sl.clues.filter(isVisible);
       const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
       return {
         id: sl.id,
@@ -808,8 +818,7 @@ export function buildSearchContext(input: {
         unrevealed_clues: unrevealed,
         has_unrevealed_clues: unrevealed.length > 0,
       };
-    },
-  );
+    });
 
   return buildContext({
     game_id: input.game_id,

@@ -44,6 +44,7 @@ import {
   selectLocationConversationHistory,
   type SessionSnapshot,
 } from "./ai-context.ts";
+import { buildDiscoveredClueIdSet, isSpotHidden } from "./clue-discovery.ts";
 import {
   buildGameMovePrompt,
   buildGameStartPrompt,
@@ -205,7 +206,11 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }
       const history = input.conversation_history ?? [];
       const destinationHistory = selectLocationConversationHistory(history, destination.id);
-      const subLocations = (destination.sub_locations ?? []).map((sl) => ({ name: sl.name }));
+      // A spot nothing has pointed to yet is not advertised (`isSpotHidden`).
+      const discovered = buildDiscoveredClueIdSet(history);
+      const subLocations = (destination.sub_locations ?? [])
+        .filter((sl) => !isSpotHidden(sl, discovered))
+        .map((sl) => ({ name: sl.name }));
       return buildGameMovePrompt({
         target_age: input.blueprint.metadata.target_age,
         destination_name: destination.name,

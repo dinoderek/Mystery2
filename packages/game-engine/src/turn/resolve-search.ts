@@ -8,6 +8,7 @@ import { buildDiscoveredClueIdSet, isClueUnlocked } from "../clue-discovery.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest, resolveSearchRole } from "../role-request.ts";
+import { namedHiddenSpot } from "../search-target.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import { askRole } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
@@ -21,8 +22,10 @@ type SearchedLocation = {
   id: string;
   name: string;
   clues: BlueprintClue[];
-  sub_locations?: Array<{ clues: BlueprintClue[] }>;
+  sub_locations?: Array<{ id: string; name: string; clues: BlueprintClue[] }>;
 };
+
+type Spot = NonNullable<SearchedLocation["sub_locations"]>[number];
 
 function readPayloadField(payload: Record<string, unknown> | null | undefined, key: string): string | null {
   const value = payload?.[key];
@@ -97,14 +100,16 @@ function cluesAt(location: SearchedLocation): Map<string, BlueprintClue> {
 
 /**
  * The clue the narrator named, if it may be found here now: it belongs to this
- * location, has not been found anywhere yet, and its prerequisites are found.
- * There is no brilliance override for a search, unlike a conversation.
+ * location, has not been found anywhere yet, and its prerequisites are found,
+ * or it sits in the hidden spot this search named. There is no brilliance
+ * override for a search: naming a hidden spot is the only way past a lock.
  */
 function admitClue(
   runtime: TurnRuntime,
   location: SearchedLocation,
   named: string | null,
   found: { here: string[]; anywhere: Set<string> },
+  target: { spot: Spot | null; query: string | null },
 ): BlueprintClue | null {
   if (named === null) return null;
   const clue = cluesAt(location).get(named);
@@ -118,6 +123,18 @@ function admitClue(
     });
     return null;
   }
+  // A named hidden spot admits its first clue, the one its context shows.
+  if (!isClueUnlocked(clue, found.anywhere) && target.spot?.clues[0]?.id === named) {
+    runtime.logger.log("search.clue_admitted_by_target", {
+      game_id: runtime.game_id,
+      ai_clue_id: named,
+      sub_location_id: target.spot.id,
+      search_query: target.query,
+      reason: "the search named a locked spot, so specificity found it before its pointer",
+      requires: clue.requires?.clue_ids ?? [],
+    });
+    return clue;
+  }
   if (!isClueUnlocked(clue, found.anywhere)) {
     runtime.logger.log("search.clue_locked", {
       game_id: runtime.game_id,
@@ -129,14 +146,14 @@ function admitClue(
   return clue;
 }
 
-function revealedRecord(clue: BlueprintClue, location: SearchedLocation): RevealedClue {
+function revealedRecord(clue: BlueprintClue, location: SearchedLocation, offScript: boolean): RevealedClue {
   return {
     id: clue.id,
     text: clue.text,
     source: "search",
     origin: { kind: "location", location_id: location.id, location_name: location.name },
     discovered_at: new Date().toISOString(),
-    off_script: false,
+    off_script: offScript,
   };
 }
 
@@ -159,6 +176,8 @@ export async function resolveSearch(
     query === null
       ? (location.clues.find((clue) => !here.includes(clue.id) && isClueUnlocked(clue, anywhere)) ?? null)
       : null;
+  // A targeted search that names a hidden spot is shown it, and finds its clue.
+  const spot = namedHiddenSpot(location, query, anywhere);
 
   const { prompt, context } = await buildRoleRequest({
     role: resolveSearchRole(query),
@@ -175,7 +194,9 @@ export async function resolveSearch(
   const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });
   const model = runtime.provider.resolvedModel;
 
-  const clue = admitClue(runtime, location, output.revealed_clue_id, { here, anywhere });
+  const clue = admitClue(runtime, location, output.revealed_clue_id, { here, anywhere }, { spot, query });
+  // A clue found past its lock is declared off script, as a conversation's is.
+  const offScript = clue !== null && !isClueUnlocked(clue, anywhere);
   // A plain search always costs, as does a find; otherwise the narrator decides.
   const costsTurn = query === null || clue !== null || output.costs_turn;
 
@@ -191,6 +212,7 @@ export async function resolveSearch(
         revealed_clue_id: clue?.id ?? null,
         revealed_clue_text: clue?.text ?? null,
         revealed_clue_ids: clue ? [...here, clue.id] : here,
+        revealed_off_script: offScript && clue ? [clue.id] : [],
         costs_turn: costsTurn,
         input_understood: output.input_understood,
         speaker: NARRATOR_SPEAKER,
@@ -206,7 +228,7 @@ export async function resolveSearch(
       current_talk_character_id: null,
       discovered_clues: clue ? [...new Set([...session.discovered_clues, clue.id])] : session.discovered_clues,
     },
-    revealed_clues: clue ? [revealedRecord(clue, location)] : [],
+    revealed_clues: clue ? [revealedRecord(clue, location, offScript)] : [],
     result: null,
     endgame: {
       scene_summary: `The investigator just searched ${location.name}, and this action exhausted the remaining time.`,

@@ -251,11 +251,10 @@ export type BlueprintV2AgendaCondition = z.infer<
  * - `always`: the tell is always present (ambient).
  * - `condition`: the tell surfaces once a free-text narrative condition is met,
  *   judged by the narrator (e.g. "the investigator accuses her of lying").
- * - `clue`: the tell surfaces once the investigator brings up the referenced
- *   clue(s) AND the character believes them — which happens when the
- *   investigator actually possesses the clue, or pulls off a convincing bluff.
- *   If the investigator neither has the clue nor bluffs convincingly, the
- *   character does not believe them and the tell stays hidden.
+ * - `clue`: the tell surfaces once the investigator uses a referenced clue:
+ *   makes its point at the character, with the clue or a believable bluff
+ *   (`docs/ai-runtime.md`, "Earned, not free"). Mentioning it, or merely
+ *   holding it, keeps the tell hidden.
  */
 export const BlueprintV2TellTriggerSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -278,9 +277,9 @@ export const BlueprintV2TellTriggerSchema = z.discriminatedUnion("kind", [
       .array(BlueprintV2IdSchema)
       .min(1)
       .describe(
-        "Clue IDs (location or character) the investigator must bring up — and "
-          + "be believed about (possession or a convincing bluff) — to surface "
-          + "the tell. Validated to reference existing clues.",
+        "Clue IDs (location or character) the investigator must use — make "
+          + "its point at the character, with the clue or a believable bluff — "
+          + "to surface the tell. Validated to reference existing clues.",
       ),
   }),
 ]);

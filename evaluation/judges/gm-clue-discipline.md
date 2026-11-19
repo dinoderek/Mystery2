@@ -50,11 +50,13 @@ narration, and the recorded `revealed_clue_ids`.
 4. **Gate violation** (`kind: "premature"`). A clue with `requires.clue_ids` was
    delivered when its prerequisites are not all in that turn's
    `prior_revealed_clue_ids`. Two cases:
-   - The turn lists the clue in `revealed_off_script` — a declared brilliance
-     bypass. Legitimate when the player's input was genuinely clever or a
-     convincing bluff **and** the gate is social/knowledge-shaped. `minor` if
-     the input did not earn it; `major` only if the gate is physical (a locked
-     safe, a key the player does not have) and cleverness could not bypass it.
+   - The turn lists the clue in `revealed_off_script` — a declared bypass. On
+     a conversation turn, legitimate when the player's input was genuinely
+     clever or a convincing bluff **and** the gate is social/knowledge-shaped;
+     `minor` if the input did not earn it; `major` only if the gate is physical
+     (a locked safe, a key the player does not have) and cleverness could not
+     bypass it. On a search turn the clue sits in a hidden spot: legitimate
+     when the search's words name that sub-location, `minor` otherwise.
    - The turn does **not** declare it off-script — an undeclared early release.
      `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue that

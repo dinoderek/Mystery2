@@ -6,6 +6,7 @@ import {
   type ClaudeCliRuntimeConfig,
 } from "./ai-provider-claude-cli.ts";
 import { RetriableAIError } from "./errors.ts";
+import { searchNamesSpot } from "./search-target.ts";
 
 export type AIProviderName = "mock" | "openrouter" | "claude-cli";
 
@@ -341,7 +342,7 @@ class MockAIProvider implements AIProvider {
               clues?: Array<{
                 id?: string;
                 text?: string;
-                prereqs_met?: boolean;
+                player_can_use_prerequisites?: boolean | null;
                 known_to_player?: boolean;
               }>;
             };
@@ -368,7 +369,7 @@ class MockAIProvider implements AIProvider {
         // boundaries avoid matching inside ordinary words (e.g. "Sahara").
         const isBrilliant = /\b(aha|i bet)\b/i.test(playerInput);
         if (isBrilliant) {
-          const locked = clues.find((c) => c.prereqs_met === false && c.id);
+          const locked = clues.find((c) => c.player_can_use_prerequisites === false && c.id);
           if (locked?.id) {
             return {
               narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}`,
@@ -378,8 +379,9 @@ class MockAIProvider implements AIProvider {
             };
           }
         }
-        // Otherwise reveal the first unlocked clue.
-        const unlocked = clues.find((c) => c.prereqs_met !== false && c.id);
+        // Otherwise reveal the first clue the player can earn: any understood
+        // question stands in for using the prerequisites they hold.
+        const unlocked = clues.find((c) => c.player_can_use_prerequisites !== false && c.id);
         if (unlocked?.id) {
           return {
             narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}`,
@@ -448,9 +450,10 @@ class MockAIProvider implements AIProvider {
               input_understood: false,
             };
           }
-          const matchedSub = searchContext.sub_locations.find(
-            (sl) => sl.has_unrevealed_clues,
-          );
+          // A spot the query names wins; otherwise the mock is generous.
+          const open = searchContext.sub_locations.filter((sl) => sl.has_unrevealed_clues);
+          const matchedSub =
+            open.find((sl) => searchNamesSpot(searchQuery, sl.name ?? "", locationName)) ?? open[0];
           if (matchedSub?.unrevealed_clues?.[0]) {
             const clue = matchedSub.unrevealed_clues[0];
             return {

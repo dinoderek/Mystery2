@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
-import { makeEvents, makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
+import { makeBlueprint, makeEvents, makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
 
 function moveEvent(seq: number, locationId: string): TraceEventRow {
   return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload: { location_id: locationId }, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
@@ -169,5 +169,72 @@ describe("events that store the line as typed", () => {
 
     expect(reconstructTrace(typed)).toEqual(reconstructTrace(plain));
     expect(runTraceMechanicalChecks({ rawTrace: typed })).toEqual(runTraceMechanicalChecks({ rawTrace: plain }));
+  });
+});
+
+describe("reconstructTrace, for a spot whose pointer was found elsewhere", () => {
+  // The garden's shed is locked behind the hall footprint, found in the hall.
+  function pointedBlueprint() {
+    const bp = makeBlueprint();
+    return {
+      ...bp,
+      world: {
+        ...bp.world,
+        locations: bp.world.locations.map((loc) =>
+          loc.id === "loc_garden"
+            ? {
+                ...loc,
+                sub_locations: [
+                  {
+                    id: "sl_shed",
+                    name: "the potting shed",
+                    hint: "A shed door.",
+                    clues: [
+                      {
+                        id: "clue_shed_1",
+                        text: "A trowel with fresh mud.",
+                        requires: {
+                          kind: "pointer" as const,
+                          clue_ids: ["clue_hall_1"],
+                          rationale: "The footprint leads to the shed.",
+                          target: { location_id: "loc_garden", sub_location_id: "sl_shed" },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              }
+            : loc,
+        ),
+      },
+    };
+  }
+  const search = (seq: number, location: string, payload: Record<string, unknown>): TraceEventRow => ({
+    id: `s${seq}`, sequence: seq, event_type: "search", actor: "system",
+    payload: { location_id: location, ...payload },
+    narration: "You look around.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z",
+  });
+  const spotsAt = (events: TraceEventRow[]) => {
+    const { turns } = reconstructTrace(makeRawTrace({ blueprint: pointedBlueprint(), events }));
+    const context = turnBySeq(turns, events.at(-1)!.sequence).reconstructed_context as {
+      search_context?: { sub_locations?: Array<{ id: string }> };
+    } | null;
+    return context?.search_context?.sub_locations?.map((spot) => spot.id);
+  };
+
+  it("shows the spot once the session holds its pointer, as the game did", () => {
+    expect(
+      spotsAt([
+        search(1, "loc_hall", { revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"] }),
+        moveEvent(2, "loc_garden"),
+        search(3, "loc_garden", { revealed_clue_id: null, revealed_clue_ids: [] }),
+      ]),
+    ).toEqual(["sl_shed"]);
+  });
+
+  it("hides it before then", () => {
+    expect(
+      spotsAt([moveEvent(1, "loc_garden"), search(2, "loc_garden", { revealed_clue_id: null, revealed_clue_ids: [] })]),
+    ).toEqual([]);
   });
 });

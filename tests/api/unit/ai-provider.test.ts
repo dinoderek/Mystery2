@@ -431,8 +431,8 @@ describe("mock talk_conversation clue gating", () => {
   it("reveals the first unlocked clue", async () => {
     const out = await askWith(
       [
-        { id: "locked", text: "secret", prereqs_met: false },
-        { id: "open", text: "open clue", prereqs_met: true },
+        { id: "locked", text: "secret", player_can_use_prerequisites: false },
+        { id: "open", text: "open clue", player_can_use_prerequisites: true },
       ],
       "What did you see?",
     );
@@ -443,8 +443,8 @@ describe("mock talk_conversation clue gating", () => {
   it("skips clues the player already holds", async () => {
     const out = await askWith(
       [
-        { id: "known", text: "old news", prereqs_met: true, known_to_player: true },
-        { id: "open", text: "open clue", prereqs_met: true, known_to_player: false },
+        { id: "known", text: "old news", player_can_use_prerequisites: true, known_to_player: true },
+        { id: "open", text: "open clue", player_can_use_prerequisites: true, known_to_player: false },
       ],
       "Where exactly did you find it?",
     );
@@ -454,8 +454,8 @@ describe("mock talk_conversation clue gating", () => {
   it("reveals nothing once the player holds every clue", async () => {
     const out = await askWith(
       [
-        { id: "known", text: "old news", prereqs_met: true, known_to_player: true },
-        { id: "granted", text: "secret", prereqs_met: false, known_to_player: true },
+        { id: "known", text: "old news", player_can_use_prerequisites: true, known_to_player: true },
+        { id: "granted", text: "secret", player_can_use_prerequisites: false, known_to_player: true },
       ],
       "Aha — I bet you know more!",
     );
@@ -465,7 +465,7 @@ describe("mock talk_conversation clue gating", () => {
 
   it("withholds clues whose prerequisites are not met", async () => {
     const out = await askWith(
-      [{ id: "locked", text: "secret", prereqs_met: false }],
+      [{ id: "locked", text: "secret", player_can_use_prerequisites: false }],
       "What did you see?",
     );
     expect(out.revealed_clue_ids).toEqual([]);
@@ -473,7 +473,7 @@ describe("mock talk_conversation clue gating", () => {
 
   it("grants a locked clue off-script on a brilliance sentinel", async () => {
     const out = await askWith(
-      [{ id: "locked", text: "secret", prereqs_met: false }],
+      [{ id: "locked", text: "secret", player_can_use_prerequisites: false }],
       "Aha — I bet you were at the dock!",
     );
     expect(out.revealed_clue_ids).toEqual(["locked"]);

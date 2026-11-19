@@ -83,8 +83,9 @@ Which blueprint fields reach which role is the "Narration at play" table in
   `manner` line per agenda not yet broken, built from its type and target
   (never `strategy` or `details`). No clue, motive, alibi, action,
   background or flavour, so none slips out, and no `condition` tell: each
-  awaits the investigator's words. A return gets the last arrival's narration. `role-request.ts` derives
-  it from history (`tests/api/unit/arrival-prompt.test.ts`).
+  awaits the investigator's words. A return gets the last arrival's narration.
+  `role-request.ts` derives it from history
+  (`tests/api/unit/arrival-prompt.test.ts`).
 - **Search never sees a locked clue**, so its text is never woven in, nor a
   spot whose clues are all locked, so no search or arrival advertises it or
   narrates "nothing here" there. A targeted search whose words name that spot

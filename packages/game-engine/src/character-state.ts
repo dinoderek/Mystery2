@@ -89,11 +89,15 @@ function normalizeWords(text: string): string {
   return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
-/** Whether the narrator's quote is the player's own words, ignoring case and punctuation. */
+/**
+ * Whether the narrator's quote is the player's own words, ignoring case and
+ * punctuation. A single word is never a quote that backs a use: saying a word
+ * is not using a clue.
+ */
 export function quoteIsPlayerWords(quote: string | null, playerInput: string): boolean {
   if (!quote) return false;
   const words = normalizeWords(quote);
-  return words.length > 0 && ` ${normalizeWords(playerInput)} `.includes(` ${words} `);
+  return words.split(" ").length >= 2 && ` ${normalizeWords(playerInput)} `.includes(` ${words} `);
 }
 
 export type UsedClueDropReason = "not_a_gate_clue" | "not_held_and_no_quote";
@@ -124,7 +128,8 @@ export function selectUsedClues(
     else if (discovered.has(id) || quoted) kept.push(id);
     else dropped.push({ clue_id: id, reason: "not_held_and_no_quote" });
   }
-  return { used_clue_ids: kept, used_quote: kept.length > 0 ? output.used_quote : null, dropped };
+  // Only the player's own words are recorded as their quote.
+  return { used_clue_ids: kept, used_quote: kept.length > 0 && quoted ? output.used_quote : null, dropped };
 }
 
 /**
@@ -179,9 +184,9 @@ export function buildCharacterState(
   return {
     used_clue_ids: used,
     earned_parts: earned,
+    // A reaction two agendas share (one clue in two evidence sets) is told once.
     current_story: [
-      ...(character.stated_alibi ? [character.stated_alibi] : []),
-      ...earned.map((part) => part.reaction),
+      ...new Set([...(character.stated_alibi ? [character.stated_alibi] : []), ...earned.map((part) => part.reaction)]),
     ],
     commitments: commitments.slice(-COMMITMENT_CAP),
     visits_with_questions: questionedVisits.size,

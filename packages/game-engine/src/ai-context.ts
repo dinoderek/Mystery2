@@ -31,7 +31,8 @@ export interface BlueprintAgenda {
   gated_clue_id?: string;
   condition?: string;
   yields_to_clue_ids?: string[];
-  // self_protect only: each clue that breaks the cover story, and what it earns.
+  // self_protect only: each fact that breaks the cover story, the clues that show
+  // it, and what it earns.
   parts?: BlueprintAgendaPart[];
   confession?: string;
 }

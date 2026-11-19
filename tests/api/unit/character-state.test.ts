@@ -77,9 +77,17 @@ describe("selecting the clues a turn used", () => {
     ).toMatchObject({ used_clue_ids: [], used_quote: null, dropped: [{ clue_id: "sighting", reason: "not_held_and_no_quote" }] });
   });
 
-  it("matches a quote on whole words, ignoring case and punctuation", () => {
+  it("records a held clue's use, but not a quote that is not the player's words", () => {
+    expect(
+      selectUsedClues({ used_clue_ids: ["prints"], used_quote: "you wore snowshoes" }, fox, new Set(["prints"]), "The prints are snowshoes, not paws"),
+    ).toEqual({ used_clue_ids: ["prints"], used_quote: null, dropped: [] });
+  });
+
+  it("matches a quote on whole words, ignoring case and punctuation, and never on one word", () => {
     expect(quoteIsPlayerWords("snowshoes, not paws", "The prints are SNOWSHOES not paws!")).toBe(true);
-    expect(quoteIsPlayerWords("shoes", "The prints are snowshoes")).toBe(false);
+    expect(quoteIsPlayerWords("prints are", "The prints are snowshoes")).toBe(true);
+    expect(quoteIsPlayerWords("snowshoes", "The prints are snowshoes")).toBe(false);
+    expect(quoteIsPlayerWords("are snow", "The prints are snowshoes")).toBe(false);
     expect(quoteIsPlayerWords("...", "anything")).toBe(false);
     expect(quoteIsPlayerWords(null, "anything")).toBe(false);
   });
@@ -128,6 +136,22 @@ describe("a character's state", () => {
       "Stops blaming the wolf, keeps the nap.",
     ]);
     expect(state.earned_parts.map((part) => part.part_index)).toEqual([1, 0]);
+  });
+
+  it("tells a reaction two evidence sets share once, and confesses when either set is complete", () => {
+    const polish = { clue_ids: ["polish"], reaction: "Says lots of animals came after four." };
+    const twoSets: StateCharacter = {
+      id: "fox",
+      stated_alibi: null,
+      clues: [],
+      agendas: [
+        { type: "self_protect", parts: [polish, { clue_ids: ["paint"], reaction: "Only used the paint on her star." }], confession: "Took it." },
+        { type: "self_protect", parts: [polish, { clue_ids: ["dull"], reaction: "Blames Ruby." }], confession: "Took it." },
+      ],
+    };
+    const state = buildCharacterState(twoSets, [talk(), ask({ used_clue_ids: ["polish"] }), ask({ used_clue_ids: ["dull"] })]);
+    expect(state.current_story).toEqual(["Says lots of animals came after four.", "Blames Ruby."]);
+    expect(state.earned_parts.map((part) => [part.agenda_index, part.part_index])).toEqual([[0, 0], [1, 0], [1, 1]]);
   });
 
   it("caps commitments, dropping the oldest first, and keeps a repeated one once at its latest place", () => {

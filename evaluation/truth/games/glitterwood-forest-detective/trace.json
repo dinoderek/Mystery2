@@ -482,14 +482,38 @@
                   "reaction": "Says lots of animals visited after four."
                 },
                 {
-                  "clue_ids": ["clue_fake_stick", "clue_oswald_said_dull"],
-                  "shows": "The stick on show had already been swapped for a fake.",
-                  "reaction": "Says anyone could have swapped it, and her ear droops."
+                  "clue_ids": ["clue_paint_list"],
+                  "shows": "Only she and Barnaby signed for Sparkle Blue paint.",
+                  "reaction": "Says she only used the paint on her magic star."
                 },
                 {
-                  "clue_ids": ["clue_paint_list", "clue_ruby_watched"],
-                  "shows": "Someone else who could have swapped the stick is ruled out.",
-                  "reaction": "Insists it could have been somebody else, but cannot say who."
+                  "clue_ids": ["clue_fake_stick"],
+                  "shows": "The fake is a willow twig painted Sparkle Blue.",
+                  "reaction": "Says anyone could paint a twig, and her ear droops."
+                }
+              ],
+              "confession": "She cries, pulls the glowing stick from her cape, and says sorry."
+            },
+            {
+              "type": "self_protect",
+              "strategy": "deny_the_chance",
+              "priority": "high",
+              "details": "Clementine says plenty of animals were in the dungeon after four, so anyone could have swapped the stick.",
+              "parts": [
+                {
+                  "clue_ids": ["clue_polish_four"],
+                  "shows": "The stick was still real at the 4 o'clock polish, after Barnaby's visit and before hers.",
+                  "reaction": "Says lots of animals visited after four."
+                },
+                {
+                  "clue_ids": ["clue_oswald_said_dull"],
+                  "shows": "The stick already looked dull when Oswald walked in at 5:30.",
+                  "reaction": "Says then Ruby must have done it, since Ruby came before Oswald."
+                },
+                {
+                  "clue_ids": ["clue_ruby_watched"],
+                  "shows": "Tobias never left Ruby alone with the stick.",
+                  "reaction": "Goes very quiet and says maybe it lost its magic by itself."
                 }
               ],
               "confession": "She cries, pulls the glowing stick from her cape, and says sorry."

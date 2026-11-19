@@ -7,7 +7,7 @@
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `e33595fe8e8df343d83962e4d15c7d16549b9874`
-> - `docs/blueprint-generation-flows.md#generator-prompt` — `5d7e5fd94dc48ad248fb84e665565807e262e623`
+> - `docs/blueprint-generation-flows.md#generator-prompt` — `ff596125947e94ebe0c3064db368d1712cd2296b`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.

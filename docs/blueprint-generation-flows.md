@@ -35,8 +35,8 @@ What the generator prompt asks for, in short:
   location description and every clue). Names carry no word budget.
 - Challenge sized to `timeBudget`, and a shortest solution path of at least
   `minPathLength` distinct, necessary clues, deepened if it falls short.
-- Agendas (self-protection, with each breaking clue's reaction and a
-  confession; protect-other, implicate-other, conditional reveal) and
+- Agendas (self-protection, with each breaking fact's clues and reaction,
+  and a confession; protect-other, implicate-other, conditional reveal) and
   cross-character clues, with a solution path free of condition-gated clues.
 - A clue discovery graph through `requires`, each lock a `pointer` or
   `leverage`: mostly ungated, acyclic, every solution clue reachable from an

@@ -32,9 +32,10 @@ Readers of a played game skip `no_turn_line` events through `playedEvents` in `e
 
 ## Why the blueprint pipeline is shaped this way
 
-The blueprint pipeline catches authoring failures before play,
-and is built to change cheaply: a new dimension is files and a registry entry, not code. Every model call is a subprocess. Judges run in
-parallel, and a run that aborts still writes its result.
+The blueprint pipeline catches authoring failures before play and changes
+cheaply: a new dimension is files and a registry entry, not code. Every model
+call is a subprocess, with no LLM SDK. Judges run in parallel, and a run that
+aborts still writes its result.
 
 Two lessons from the single-prompt evaluator it replaced:
 

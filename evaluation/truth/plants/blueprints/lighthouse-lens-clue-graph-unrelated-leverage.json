@@ -2,7 +2,7 @@
   "base": "lighthouse-lens",
   "kind": "clue_graph",
   "judge": "clue_graph",
-  "note": "Finn's sighting of Roz is now leverage that needs the harbour tide board, which gives Finn no reason to speak of Roz: a lock with no fitting reason that the structural checks accept.",
+  "note": "Finn's sighting of Roz is now leverage that needs Roz's beacon poster, which gives Finn no reason to speak of what he saw in the cottage: a lock with no fitting reason that the structural checks accept.",
   "patch": [
     {
       "op": "test",
@@ -15,7 +15,7 @@
       "op": "replace",
       "path": "/world/characters/1/clues/1/requires/clue_ids",
       "value": [
-        "c_harbour_tide_board"
+        "c_beacon_poster"
       ]
     },
     {
@@ -26,7 +26,7 @@
     {
       "op": "replace",
       "path": "/world/characters/1/clues/1/requires/rationale",
-      "value": "Finn will not say who he saw in the cottage until you have read the harbour tide board."
+      "value": "Finn will only say who he saw in the cottage once you have read Roz's beacon poster on the lamp shop door."
     }
   ],
   "caught_by": []

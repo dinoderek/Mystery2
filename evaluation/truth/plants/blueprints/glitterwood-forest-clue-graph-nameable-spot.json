@@ -2,7 +2,7 @@
   "base": "glitterwood-forest",
   "kind": "clue_graph",
   "judge": "clue_graph",
-  "note": "The twig pile now sits in plain view by the pond bench, yet stays locked behind Barnaby's clue with a \"you only think to look\" rationale: a pointer with no fitting reason on a spot anyone can name.",
+  "note": "The twig pile now lies in plain view under the willow, yet stays locked behind Barnaby's clue with a \"you only think to look\" rationale: a pointer with no fitting reason on a spot anyone can name.",
   "patch": [
     {
       "op": "test",
@@ -12,7 +12,7 @@
     {
       "op": "replace",
       "path": "/world/locations/2/sub_locations/0/hint",
-      "value": "Barnaby's spare twigs are in a pile by the pond bench, in plain view."
+      "value": "Barnaby's spare twigs lie in a pile under the willow, in plain view."
     },
     {
       "op": "test",
@@ -22,7 +22,7 @@
     {
       "op": "replace",
       "path": "/world/locations/2/sub_locations/0/clues/0/text",
-      "value": "A pile of nibbled twigs sits by the pond bench. Anyone could take one."
+      "value": "Under the willow is a pile of nibbled twigs. Anyone could take one."
     },
     {
       "op": "test",
@@ -32,7 +32,7 @@
     {
       "op": "replace",
       "path": "/world/locations/2/sub_locations/0/clues/0/requires/rationale",
-      "value": "You only think to look at the twig pile once Barnaby says he left his spare twigs by the pond."
+      "value": "You only think to look at the twig pile under the willow once Barnaby says he left his spare twigs by the pond."
     }
   ],
   "caught_by": []

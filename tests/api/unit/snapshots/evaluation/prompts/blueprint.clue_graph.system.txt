@@ -73,10 +73,10 @@ Then judge two blueprint-wide qualities:
 Give one **locks** entry per clue with a `requires`, reading the prerequisite as
 the player would. `fits_its_kind` is false, with a `problem`, when:
 
-- `no_fitting_reason`: a `pointer` guards a spot the player can already name,
-  such as "you only think to look" on an ordinary object (that clue should be
-  ungated, found by a targeted search); or a `leverage` lock gives the character
-  no reason to hold out.
+- `no_fitting_reason`: a `pointer` on a clue lying in plain view in its spot,
+  such as "you only think to look" on an ordinary object (a targeted search
+  finds it; leave it ungated); or a `leverage` lock gives the character no
+  reason to hold out.
 - `does_not_point`: a `pointer` whose prerequisite never suggests the spot or
   topic in the fiction, though the ids line up.
 - `busywork`: the lock fits its kind but is a chore with no discovery.

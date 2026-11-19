@@ -25,8 +25,15 @@ function stem(word: string): string {
   return base;
 }
 
-// Words that join a thing to where it is: the thing comes before them.
-const JOINING_WORDS = new Set(["at", "beside", "by", "for", "from", "in", "near", "of", "on", "with"]);
+// Words that join a thing to where it is: the thing comes before them ("the
+// bench under the clock" is a bench).
+const JOINING_WORDS = new Set([
+  "above", "at", "behind", "below", "beneath", "beside", "by", "for", "from",
+  "in", "inside", "near", "of", "on", "over", "under", "underneath", "with",
+]);
+
+// Words that count a thing rather than name it: "the row of key hooks" is hooks.
+const QUANTITY_WORDS = new Set(["bunch", "couple", "heap", "line", "lot", "pair", "pile", "row", "set", "stack"]);
 
 // Short words that never say what a thing is.
 const SHORT_WORDS = new Set([
@@ -35,6 +42,9 @@ const SHORT_WORDS = new Set([
   "now", "off", "old", "one", "our", "out", "own", "put", "see", "the", "too",
   "top", "try", "two", "use", "was", "way", "who", "why", "you",
 ]);
+
+// Quantity words say how much, not what: they never need naming.
+const COUNTING_STEMS = new Set([...QUANTITY_WORDS].map(stem));
 
 function contentWord(word: string): string | null {
   if (word.length < 3 || SHORT_WORDS.has(word) || IGNORED_WORDS.has(word)) return null;
@@ -59,14 +69,18 @@ export function contentWords(text: string): string[] {
 /**
  * The thing a spot name names: its last content word before a joining word
  * ("the shelf by the door" is a shelf), else its last content word ("behind the
- * big woodpile" is a woodpile).
+ * big woodpile" is a woodpile). Before "of", a quantity word gives way to what
+ * it counts ("the stack of lobster pots" is pots).
  */
 function headWord(spotName: string, ignore: Set<string>): string | undefined {
   const words = rawWords(spotName);
   const own = (list: string[]) =>
     list.map(contentWord).filter((word): word is string => word !== null && !ignore.has(word));
   const join = words.findIndex((word) => JOINING_WORDS.has(word));
-  return (join > 0 ? own(words.slice(0, join)).at(-1) : undefined) ?? own(words).at(-1);
+  if (join <= 0) return own(words).at(-1);
+  const before = own(words.slice(0, join)).at(-1);
+  const counted = words[join] === "of" && before !== undefined && QUANTITY_WORDS.has(words[join - 1] ?? "");
+  return (counted ? own(words.slice(join + 1)).at(-1) : before) ?? own(words).at(-1);
 }
 
 /**
@@ -77,7 +91,7 @@ function headWord(spotName: string, ignore: Set<string>): string | undefined {
  */
 export function searchNamesSpot(query: string, spotName: string, locationName: string): boolean {
   const placeWords = new Set(contentWords(locationName));
-  const spotWords = contentWords(spotName).filter((word) => !placeWords.has(word));
+  const spotWords = contentWords(spotName).filter((word) => !placeWords.has(word) && !COUNTING_STEMS.has(word));
   const head = headWord(spotName, placeWords);
   if (head === undefined) return false;
   const queryWords = new Set(contentWords(query));
@@ -102,9 +116,10 @@ export function namedHiddenSpot<S extends Spot>(
   discovered: Set<string>,
 ): S | null {
   if (!query || query.trim().length === 0) return null;
-  return (
-    (location.sub_locations ?? []).find(
-      (spot) => isSpotHidden(spot, discovered) && searchNamesSpot(query, spot.name, location.name),
-    ) ?? null
-  );
+  const spots = location.sub_locations ?? [];
+  const named = (spot: S) => searchNamesSpot(query, spot.name, location.name);
+  // A query that names a spot already in view is about that one: the hidden
+  // spot sharing its head word ("the top shelf", "the bottom shelf") stays hidden.
+  if (spots.some((spot) => !isSpotHidden(spot, discovered) && named(spot))) return null;
+  return spots.find((spot) => isSpotHidden(spot, discovered) && named(spot)) ?? null;
 }

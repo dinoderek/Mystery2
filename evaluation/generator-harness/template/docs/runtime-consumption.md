@@ -85,8 +85,9 @@ each `rationale`:
   withholds the clue until the player *uses* them, coloring the deflection with
   the rationale. A bluff or deduction that uses them earns it off-script **when
   the rationale implies a social or knowledge gate cleverness could bypass**.
-  Off-script reveals are recorded as real discoveries. A clue the player already holds is marked `known_to_player`: the
-  character may restate it, but it is never discovered twice.
+  Off-script reveals are recorded as real discoveries. A clue the player
+  already holds is marked `known_to_player`: the character may restate it, but
+  it is never discovered twice.
 
 So the rationale is doing double duty: flavor for the deflection, and the signal
 the narrator uses to decide whether cleverness may substitute. Make the
@@ -144,9 +145,8 @@ tightens") with a `trigger` that decides when it surfaces:
 - `always` — ambient, always present
 - `condition` — a free-text narrative condition the narrator judges (e.g. "the
   investigator brings up the missing key")
-- `clue` — fires only when the player raises the referenced `clue_ids` *and* the
-  character believes them, meaning the player actually holds the clue or bluffs
-  convincingly
+- `clue` — fires only when the player *uses* a referenced clue (makes its point,
+  held or bluffed), never on a mention
 
 The `talk_conversation` prompt treats tells as reactions: a cue surfaces only
 when its trigger fires. The `talk_start` greeting comes before the player has

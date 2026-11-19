@@ -156,8 +156,8 @@ Plan with these steps; do not output them.
      notice, e.g. "glances at the back door", "voice tightens"), and a `trigger`
      object that keeps it reactive instead of ambient. Pick the trigger kind:
      - `{ "kind": "clue", "clue_ids": [...] }`: the cue shows once the player
-       brings up those clues and the character believes them (the player holds
-       the clue, or bluffs convincingly). Reference real, obtainable clue IDs.
+       uses one of those clues (makes its point, held or bluffed), not on a
+       mere mention. Reference real, obtainable clue IDs.
      - `{ "kind": "condition", "condition": "free text" }`: the cue shows once a
        narrative condition is met (e.g. "the investigator accuses her of lying").
        Write the condition concretely enough for the narrator to judge.

@@ -9,7 +9,7 @@ import { createAIProviderFromProfile } from "../../../packages/game-engine/src/a
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { isSpotHidden } from "../../../packages/game-engine/src/clue-discovery.ts";
 import { buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
-import { searchNamesSpot } from "../../../packages/game-engine/src/search-target.ts";
+import { namedHiddenSpot, searchNamesSpot } from "../../../packages/game-engine/src/search-target.ts";
 import { resolveSearch } from "../../../packages/game-engine/src/turn/resolve-search.ts";
 import type { TurnGame, TurnRuntime } from "../../../packages/game-engine/src/turn/types.ts";
 
@@ -181,6 +181,25 @@ describe("an untargeted search", () => {
   });
 });
 
+describe("namedHiddenSpot", () => {
+  const shelves = {
+    name: "Pantry",
+    sub_locations: [
+      { id: "top", name: "the top shelf", clues: [{ id: "c_top" }] },
+      { id: "bottom", name: "the bottom shelf", clues: [{ id: "c_bottom", requires: POINTER }] },
+    ],
+  };
+
+  it("leaves a hidden spot hidden when the query names a spot already in view", () => {
+    expect(namedHiddenSpot(shelves, "the top shelf", new Set())).toBeNull();
+  });
+
+  it("finds the hidden spot when nothing in view is named", () => {
+    const only = { ...shelves, sub_locations: [shelves.sub_locations[1]] };
+    expect(namedHiddenSpot(only, "the bottom shelf", new Set())?.id).toBe("bottom");
+  });
+});
+
 describe("searchNamesSpot", () => {
   it("needs the spot's head word, not just a shared adjective", () => {
     expect(searchNamesSpot("search the dusty floor", "the dusty bookshelf", "Library")).toBe(false);
@@ -207,6 +226,21 @@ describe("searchNamesSpot", () => {
     expect(searchNamesSpot("the rug", "the old rug", "Hall")).toBe(true);
     expect(searchNamesSpot("the tin box", "the tin box", "Shed")).toBe(true);
     expect(searchNamesSpot("look at the old one", "the old rug", "Hall")).toBe(false);
+  });
+
+  it("takes the thing before a position word as the head", () => {
+    expect(searchNamesSpot("search the bench", "the bench under the big clock", "Station")).toBe(true);
+    expect(searchNamesSpot("look at the big clock", "the bench under the big clock", "Station")).toBe(false);
+    expect(searchNamesSpot("the cupboard", "the cupboard under the stairs", "Hall")).toBe(true);
+    expect(searchNamesSpot("the stairs", "the cupboard under the stairs", "Hall")).toBe(false);
+    expect(searchNamesSpot("the little room", "The Little Room Behind the Curtain", "Theatre")).toBe(true);
+  });
+
+  it("takes what a quantity word counts as the head", () => {
+    expect(searchNamesSpot("the key hooks", "the row of key hooks", "Hut")).toBe(true);
+    expect(searchNamesSpot("the lobster pots", "the stack of lobster pots", "Dock")).toBe(true);
+    expect(searchNamesSpot("the trunks", "the tall stack of trunks", "Attic")).toBe(true);
+    expect(searchNamesSpot("the row", "the row of key hooks", "Hut")).toBe(false);
   });
 
   it("takes the thing before a joining word as the head", () => {

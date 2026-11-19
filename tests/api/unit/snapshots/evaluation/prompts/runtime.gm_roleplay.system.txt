@@ -138,10 +138,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
    Mentioning or holding it is not use; nor is naming the character as
    culprit, insisting, or a case that never touches that part. Sustained
    pressure counts only where the agenda calls for it. A used part earns its
-   authored `reaction`, which moves the story that far and no further. A full collapse or confession with
-   any part unearned is `major`, including after a strong case built on the
-   other parts. So is a character who has clearly been beaten and carries on as
-   if nothing landed.
+   authored `reaction`, which moves the story that far and no further. A full
+   collapse or confession with any part unearned is `major`, including after a
+   strong case built on the other parts. So is a character who has clearly been
+   beaten and carries on as if nothing landed.
 4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
    - `self_protect` — answer what is asked, raise the alibi only when asked
      where or when, get evasive under incriminating pressure.

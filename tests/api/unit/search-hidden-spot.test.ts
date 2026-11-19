@@ -124,7 +124,7 @@ describe("a targeted search", () => {
 
   it("that names the locked spot passes the requires check the evaluators run", async () => {
     const { outcome } = await play("check the snowshoe hooks");
-    const event = { id: "s2", sequence: 2, actor: "system", narration: "", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z", ...outcome.event };
+    const event = { ...outcome.event, id: "s2", sequence: 2, narration: "", clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
     const checks = runTraceMechanicalChecks({
       rawTrace: { blueprint, events: [event] } as never,
       context: { enforce_requires: true },

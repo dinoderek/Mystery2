@@ -713,7 +713,7 @@
                   "reaction": "Sighs and admits she was selling hats in the tea house."
                 }
               ],
-              "confession": "She admits she sold hats from ten past three until the bell without asking the station master first, and opens her case to show them."
+              "confession": "She opens her case to show the hats, and asks you not to tell the station master."
             },
             {
               "type": "conditional_reveal",

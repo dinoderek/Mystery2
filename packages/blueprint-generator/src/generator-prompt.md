@@ -264,8 +264,9 @@ rather than write one that fights the age.
 (source + quality), `texture` (optional), `portrait_background` (optional). Seed
 from `artStyle` but expand. `portrait_background` is the backdrop behind
 **character portraits only**: one sentence of abstract colour, light and blur
-(e.g. 'flat vertical wash of dusty rose fading to slate'), never depicting, naming
-or alluding to any place in the mystery. Omit it (not `null`) for the default bokeh.
+(e.g. 'flat vertical wash of dusty rose fading to slate'), never depicting,
+naming or alluding to any place in the mystery. Omit it (not `null`) for the
+default bokeh.
 
 **Cover image.** `description`: 2–4 vivid, child-friendly sentences, intriguing
 without spoiling the culprit. `location_ids` / `character_ids`: ids featured, or
@@ -290,9 +291,10 @@ sub-location needs a clue — some are atmospheric.
 `flavor_knowledge[]`, ordered `world.characters[].actual_actions[]`, and
 `agendas[]` (`type`, `strategy`, `priority`, `details`, plus optional
 `target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`, and for
-`self_protect` `parts` and `confession`; default `[]`), and `tells[]` (each `id`, `text`, and a `trigger` object whose
-`kind` is `always`, `condition` (with free-text `condition`), or `clue` (with
-`clue_ids` referencing real clues); default `[]`).
+`self_protect` `parts` and `confession`; default `[]`), and `tells[]` (each `id`,
+`text`, and a `trigger` object whose `kind` is `always`, `condition` (with
+free-text `condition`), or `clue` (with `clue_ids` referencing real clues);
+default `[]`).
 
 **Reasoning paths.** `solution_paths[]`, `red_herrings[]`, and
 `suspect_elimination_paths[]` share one shape: `id`, `summary`, optional

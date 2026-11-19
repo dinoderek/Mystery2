@@ -4,7 +4,7 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
 > - `docs/ai-runtime.md#context-boundaries` — `b950850430700c53a88a0ddfa967ed5318d1b844`
-> - `docs/ai-runtime.md#clue-gating` — `00d0d82983f875c6fa64e6d4af2dd505aae8d4f1`
+> - `docs/ai-runtime.md#clue-gating` — `7a986218662bf0983b5d46a98448cb1a94199be9`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `c905ddd4066cae2c6da5ee32ba3b33c09dac4946`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `5d7e5fd94dc48ad248fb84e665565807e262e623`

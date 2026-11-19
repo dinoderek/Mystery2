@@ -182,8 +182,9 @@ Free):
   accused.
 - Some of the parts earned: begin to crack. Show discomfort, let a triggered
   tell slip, or give an earned part's reaction, which tells the investigator
-  they are on the right track. Do NOT confess. Your stated alibi still holds,
-  and you admit nothing from actual_actions: those wait for every part.
+  they are on the right track. Do NOT confess. Your stated alibi still holds
+  except where an earned reaction concedes it, and you admit nothing else from
+  actual_actions: the rest waits for every part.
 - Every part earned: you may give in and admit what the confession says.
 
 ### Protect-Other Agendas

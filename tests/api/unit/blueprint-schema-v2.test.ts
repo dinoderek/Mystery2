@@ -174,6 +174,25 @@ describe("Blueprint V2 schema", () => {
       expect(() => BlueprintV2Schema.parse(bp)).toThrow(/self_protect agendas list parts, not yields_to_clue_ids/);
     });
 
+    it("accepts hidden steps that name the character's own actions, and parts that concede some", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, hides_steps: [2], parts: [{ ...aliceAlibi.parts[0], concedes_steps: [2] }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
+    it("rejects a hidden step that is not one of the character's actions", () => {
+      const bp = withAgendas("alice", [{ ...aliceAlibi, hides_steps: [9] }]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/hides_steps names step 9/);
+    });
+
+    it("rejects a part conceding a step its agenda does not hide", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, hides_steps: [], parts: [{ ...aliceAlibi.parts[0], concedes_steps: [1] }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/concedes_steps names step 1/);
+    });
+
     it("rejects parts or a confession on another agenda type", () => {
       const bp = withAgendas("bob", [
         {
@@ -184,12 +203,14 @@ describe("Blueprint V2 schema", () => {
           target_character_id: "alice",
           parts: aliceAlibi.parts,
           confession: "He admits it.",
+          hides_steps: [1],
         },
       ]);
       const result = BlueprintV2Schema.safeParse(bp);
       expect(result.success ? [] : result.error.issues.map((issue) => issue.message)).toEqual([
         "parts belongs to self_protect agendas only.",
         "confession belongs to self_protect agendas only.",
+        "hides_steps belongs to self_protect agendas only.",
       ]);
     });
 

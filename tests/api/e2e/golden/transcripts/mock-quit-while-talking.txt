@@ -15,6 +15,6 @@ pages
     step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
   page 2 conversation "Alice"
     step 2 | You (investigator): "talk to Alice"
-    step 2 | Narrator (narrator): "[Mock] You walk up to Alice in Kitchen. she looks Tall with red hair.."
+    step 2 | Narrator (narrator): "[Mock] Alice is here in Kitchen. she looks Tall with red hair.."
     step 3 | You (investigator): "quit"
     step 3 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."

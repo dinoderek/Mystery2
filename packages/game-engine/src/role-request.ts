@@ -51,6 +51,7 @@ import {
   loadPromptTemplate,
   renderPrompt,
 } from "./ai-prompts.ts";
+import { talkPromptProfile } from "./talk-prompt.ts";
 
 /**
  * The two narrator outputs that are plain narration rather than a role-output
@@ -401,18 +402,22 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
     throw new Error(`Role "${input.role}" is a narration role — use buildNarrationPrompt`);
   }
 
+  const context = spec.context(input as never);
+  // A conversation's rules are chosen by what its character has.
+  const character = input.role === "talk_conversation" ? context.talk_context?.active_character : undefined;
   const template = await loadPromptTemplate(
     input.role,
     input.blueprint.metadata.target_age,
     {
       interaction: spec.interaction?.(input as never),
       narrationStyle: input.blueprint.metadata.narration_style ?? null,
+      talkProfile: character ? talkPromptProfile(character) : undefined,
     },
   );
 
   return {
     role: input.role,
     prompt: renderPrompt(template, spec.vars(input as never)),
-    context: spec.context(input as never),
+    context,
   };
 }

@@ -458,7 +458,8 @@
                 "reaction": "Says anyone could paint a twig, and her ear droops."
               }
             ],
-            "confession": "She cries, pulls the glowing stick from her cape, and says sorry."
+            "confession": "She cries, pulls the glowing stick from her cape, and says sorry.",
+            "hides_steps": [1, 2, 3, 5, 7, 8]
           },
           {
             "type": "self_protect",
@@ -482,7 +483,8 @@
                 "reaction": "Goes very quiet and says maybe it lost its magic by itself."
               }
             ],
-            "confession": "She cries, pulls the glowing stick from her cape, and says sorry."
+            "confession": "She cries, pulls the glowing stick from her cape, and says sorry.",
+            "hides_steps": [1, 2, 3, 5, 7, 8]
           },
           {
             "type": "implicate_other",
@@ -584,7 +586,8 @@
                 "reaction": "Laughs and admits he said it, but it was only a silly joke."
               }
             ],
-            "confession": "He admits the dam stick was only a joke, and says he would never take the treasure."
+            "confession": "He admits the dam stick was only a joke, and says he would never take the treasure.",
+            "hides_steps": []
           }
         ],
         "tells": [
@@ -660,10 +663,12 @@
               {
                 "clue_ids": ["clue_cake_plate", "clue_visitor_book"],
                 "shows": "Nutmeg went down to the dungeon this afternoon.",
-                "reaction": "Sighs and admits she popped down to the dungeon, then went straight back to bake."
+                "reaction": "Sighs and admits she popped down to the dungeon, then went straight back to bake.",
+                "concedes_steps": [2, 3]
               }
             ],
-            "confession": "She admits she brought cakes down in the afternoon, then hurried back to watch her oven until six."
+            "confession": "She admits she brought cakes down in the afternoon, then hurried back to watch her oven until six.",
+            "hides_steps": [1, 2, 3]
           },
           {
             "type": "implicate_other",
@@ -754,10 +759,12 @@
               {
                 "clue_ids": ["clue_ruby_list"],
                 "shows": "Ruby's wish list names the Glorious Stick.",
-                "reaction": "Blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk."
+                "reaction": "Blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk.",
+                "concedes_steps": [1, 2]
               }
             ],
-            "confession": "She admits she asked Tobias to sell her the stick, he said no, and she never touched the shelf."
+            "confession": "She admits she asked Tobias to sell her the stick, he said no, and she never touched the shelf.",
+            "hides_steps": [1, 2]
           },
           {
             "type": "implicate_other",
@@ -852,10 +859,12 @@
               {
                 "clue_ids": ["clue_oswald_cross"],
                 "shows": "Oswald is cross that the treasures went to the fair, not his library.",
-                "reaction": "Puffs up and admits he thinks the treasures would be safer in his library, but says he would never take them."
+                "reaction": "Puffs up and admits he thinks the treasures would be safer in his library, but says he would never take them.",
+                "concedes_steps": [6]
               }
             ],
-            "confession": "He admits he is cross about the fair, and still says he never touched the shelf."
+            "confession": "He admits he is cross about the fair, and still says he never touched the shelf.",
+            "hides_steps": [6]
           }
         ],
         "tells": [

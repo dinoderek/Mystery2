@@ -348,7 +348,8 @@
                 "reaction": "Says it is just old fishing floats, and quickly changes the subject."
               }
             ],
-            "confession": "He admits the bundle is his, but keeps what it is a secret until he trusts you."
+            "confession": "He admits the bundle is his, but keeps what it is a secret until he trusts you.",
+            "hides_steps": [1, 2, 9]
           },
           {
             "type": "conditional_reveal",
@@ -457,7 +458,8 @@
                 "reaction": "Goes pale and says she only popped in to show Ada her beacon drawings."
               }
             ],
-            "confession": "She admits she changed the tide time, crossed the dry causeway at one in the morning, and took the lens to make her beacon win the vote."
+            "confession": "She admits she changed the tide time, crossed the dry causeway at one in the morning, and took the lens to make her beacon win the vote.",
+            "hides_steps": [2, 4, 5, 6, 7]
           },
           {
             "type": "self_protect",
@@ -471,7 +473,8 @@
                 "reaction": "Admits she badly wants the council to pick her beacon, but says she would never put ships in danger."
               }
             ],
-            "confession": "She admits she badly wants the council to drop the old lighthouse for her beacon."
+            "confession": "She admits she badly wants the council to drop the old lighthouse for her beacon.",
+            "hides_steps": []
           },
           {
             "type": "implicate_other",

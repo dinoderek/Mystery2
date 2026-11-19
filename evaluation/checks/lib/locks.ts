@@ -4,7 +4,8 @@
 // it sits in a sub-location, its `requires.target` names that spot, and a
 // prerequisite points there through `hint_location_id` and
 // `hint_sub_location_id`. A self-protect agenda lists the clues that break it
-// as `parts` and says what the character finally admits as `confession`.
+// as `parts`, says what the character finally admits as `confession`, and
+// names the steps of their day the cover hides as `hides_steps`.
 //
 // The schema refuses unknown ids a blueprint names, and the mechanical checks
 // run only on a blueprint that parses, so `parts_name_real_clues` is a backstop
@@ -27,6 +28,7 @@ interface LockAgenda {
   type?: string;
   parts?: Array<{ clue_ids?: string[] | null }> | null;
   confession?: string | null;
+  hides_steps?: number[] | null;
 }
 
 /** The fields read below, all optional: a candidate blueprint need not be well formed. */
@@ -60,7 +62,7 @@ export interface PointerFault {
 export interface SelfProtectFault {
   character_id: string;
   agenda_index: number;
-  missing: Array<"parts" | "confession">;
+  missing: Array<"parts" | "confession" | "hides_steps">;
 }
 
 export interface PartFault {
@@ -138,7 +140,7 @@ function unknownPartClues(agenda: LockAgenda, clueIds: ReadonlySet<string>): str
   });
 }
 
-/** Self-protect agendas missing a part list or confession, and parts naming no clue. */
+/** Self-protect agendas missing a part list, confession or hidden steps, and parts naming no clue. */
 function agendaFaults(
   blueprint: LocksBlueprint | null | undefined,
   clueIds: ReadonlySet<string>,
@@ -150,9 +152,11 @@ function agendaFaults(
       const at = { character_id: character.id, agenda_index: agendaIndex };
       unknown.push(...unknownPartClues(agenda, clueIds).map((clue_id) => ({ ...at, clue_id })));
       if (agenda.type !== "self_protect") continue;
-      const missing: Array<"parts" | "confession"> = [];
+      const missing: SelfProtectFault["missing"] = [];
       if ((agenda.parts ?? []).length === 0) missing.push("parts");
       if (!agenda.confession?.trim()) missing.push("confession");
+      // An empty list is a decision (the cover hides a motive, not a step); absent is not.
+      if (!Array.isArray(agenda.hides_steps)) missing.push("hides_steps");
       if (missing.length > 0) incomplete.push({ ...at, missing });
     }
   }

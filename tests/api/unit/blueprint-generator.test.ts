@@ -128,11 +128,9 @@ describe("blueprint generator", () => {
     expect(body.messages[0].content).toContain("## Challenge Calibration");
     expect(body.messages[0].content).toContain("## Field Sizing Guidance");
     expect(body.messages[0].content).toContain(
-      "Every location clue and character clue must be intentionally authored.",
+      "Every location and character clue is intentionally authored and belongs to at\nleast one reasoning path.",
     );
-    expect(body.messages[0].content).toContain(
-      "Every location clue and character clue must belong to at least one authored",
-    );
+    expect(body.messages[0].content).toContain("`hides_steps` lists the `actual_actions` the cover hides");
     expect(body.messages[0].content).toContain(
       "world.characters[].actual_actions[]",
     );

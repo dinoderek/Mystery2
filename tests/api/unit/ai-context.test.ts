@@ -414,6 +414,7 @@ describe("ai-context guardrails", () => {
       id: "clue-alice-secret",
       player_can_use_prerequisites: false,
       requires_rationale: "she only confesses once shown the crumbs",
+      requires_kind: "leverage",
     });
     // Possession is never presented as permission.
     expect(before.talk_context?.active_character.clues[0]).not.toHaveProperty("prereqs_met");
@@ -450,6 +451,7 @@ describe("ai-context guardrails", () => {
     });
     expect(context.talk_context?.active_character.clues[0]).toMatchObject({
       requires_rationale: null,
+      requires_kind: null,
       player_can_use_prerequisites: null,
     });
   });

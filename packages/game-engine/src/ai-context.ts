@@ -9,7 +9,7 @@ import {
   type KnownClueWithOrigin,
   type PathCoverage,
 } from "./clue-discovery.ts";
-import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned } from "./character-state.ts";
+import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned, safeSteps } from "./character-state.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
 
@@ -35,6 +35,8 @@ export interface BlueprintAgenda {
   // it, and what it earns.
   parts?: BlueprintAgendaPart[];
   confession?: string;
+  // The actual_actions sequences this cover hides from the speaker.
+  hides_steps?: number[];
 }
 
 export interface BlueprintAgendaPart {
@@ -42,6 +44,8 @@ export interface BlueprintAgendaPart {
   clue_ids: string[];
   shows: string;
   reaction: string;
+  // The actual_actions sequences this reaction owns up to, once earned.
+  concedes_steps?: number[];
 }
 
 export type BlueprintTellTrigger =
@@ -224,6 +228,9 @@ export interface TalkClueContext {
   about_character_id?: string;
   hint_location_id?: string;
   requires_rationale: string | null;
+  // Why it is locked: `pointer` (an earlier clue tells the player what to
+  // raise) or `leverage` (the character must be shown it). Null when ungated.
+  requires_kind: ClueRequires["kind"] | null;
   // The player holds this clue's prerequisites, so they are able to use them.
   // A precondition, never permission: the clue is earned only once they do.
   // Null for an ungated clue.
@@ -242,7 +249,7 @@ export interface TalkAgendaPartContext {
 
 // An agenda as the narrator sees it. A self-protect agenda's confession is sent
 // only once every part is earned, and is null until then.
-export type TalkAgendaContext = Omit<BlueprintAgenda, "parts" | "confession"> & {
+export type TalkAgendaContext = Omit<BlueprintAgenda, "parts" | "confession" | "hides_steps"> & {
   parts?: TalkAgendaPartContext[];
   confession?: string | null;
 };
@@ -269,6 +276,8 @@ export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary 
   motive: string | null;
   clues: TalkClueContext[];
   flavor_knowledge: string[];
+  // Only the steps safe to say (`safeSteps`): what no cover hides, and what an
+  // earned part or confession has given up.
   actual_actions: BlueprintActualAction[];
   agendas: TalkAgendaContext[];
   tells: BlueprintTell[];
@@ -539,6 +548,8 @@ function buildTalkAgendas(character: BlueprintCharacter, state: ReturnType<typeo
   return (character.agendas ?? []).map((agenda, agendaIndex) => {
     const { parts: authoredParts, confession, ...rest } = agenda;
     if (agenda.type !== "self_protect") return rest;
+    // The hidden steps decide what reaches actual_actions; the list itself stays back.
+    delete rest.hides_steps;
     const parts = authoredParts ?? [];
     return {
       ...rest,
@@ -580,6 +591,7 @@ function buildTalkCharacterPrivateContext(
     about_character_id: clue.about_character_id,
     hint_location_id: clue.hint_location_id,
     requires_rationale: clue.requires?.rationale ?? null,
+    requires_kind: clue.requires?.kind ?? null,
     player_can_use_prerequisites: clue.requires ? isClueUnlocked(clue, discoveredSet) : null,
     known_to_player: discoveredSet.has(clue.id),
   }));
@@ -601,7 +613,7 @@ function buildTalkCharacterPrivateContext(
     motive: character.motive,
     clues,
     flavor_knowledge: character.flavor_knowledge,
-    actual_actions: character.actual_actions,
+    actual_actions: safeSteps(character, state, character.actual_actions),
     agendas: buildTalkAgendas(character, state),
     tells: character.tells ?? [],
     player_known_clues: playerKnownClues,

@@ -465,7 +465,8 @@
                   "reaction": "Mumbles that it wasn't Mia, then."
                 }
               ],
-              "confession": "He bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
+              "confession": "He bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar.",
+              "hides_steps": [3, 6, 7, 8, 9]
             },
             {
               "type": "implicate_other",
@@ -585,10 +586,12 @@
                 {
                   "clue_ids": ["clue_toby_mia_splat"],
                   "shows": "Mia told Toby she wished Bertha would go splat.",
-                  "reaction": "Goes pink and admits she said it."
+                  "reaction": "Goes pink and admits she said it.",
+                  "concedes_steps": [3]
                 }
               ],
-              "confession": "She explains she only meant she was fed up missing dance practice, and would never hurt Bertha."
+              "confession": "She explains she only meant she was fed up missing dance practice, and would never hurt Bertha.",
+              "hides_steps": [3]
             },
             {
               "type": "protect_other",
@@ -762,15 +765,18 @@
                 {
                   "clue_ids": ["clue_boot_prints"],
                   "shows": "Huge boot prints by the window lead to Mr. Thorne's fence.",
-                  "reaction": "Huffs and admits he climbed over at four on Friday to measure Bertha, and that she was whole when he left."
+                  "reaction": "Huffs and admits he climbed over at four on Friday to measure Bertha, and that she was whole when he left.",
+                  "concedes_steps": [2]
                 },
                 {
                   "clue_ids": ["clue_ladder_tape"],
                   "shows": "Mr. Thorne's ladder and tape measure stand right opposite the greenhouse.",
-                  "reaction": "Sheepishly admits he measured Bertha from his ladder on Thursday."
+                  "reaction": "Sheepishly admits he measured Bertha from his ladder on Thursday.",
+                  "concedes_steps": [1]
                 }
               ],
-              "confession": "He admits he spied on Bertha because he feared losing his prize, and insists he never touched her."
+              "confession": "He admits he spied on Bertha because he feared losing his prize, and insists he never touched her.",
+              "hides_steps": [1, 2]
             },
             {
               "type": "conditional_reveal",

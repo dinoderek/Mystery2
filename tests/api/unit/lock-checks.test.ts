@@ -52,6 +52,7 @@ function soundBlueprint(): BlueprintV2 {
       details: "Alice insists she was washing dishes.",
       parts: [{ clue_ids: [kitchen.clues[0].id], shows: "Crumbs lead from the plate.", reaction: "Says anyone could drop crumbs." }],
       confession: "She admits she took the cookies.",
+      hides_steps: [],
     },
   ];
   return bp;
@@ -127,15 +128,22 @@ describe("lock and reaction checks", () => {
     expect(failing(bp)).toEqual([]);
   });
 
-  it("fail a self-protect agenda without parts or a confession", () => {
+  it("fail a self-protect agenda without parts, a confession or its hidden steps", () => {
     const bp = soundBlueprint();
     const agenda = bp.world.characters[0].agendas[0];
     delete agenda.parts;
     delete agenda.confession;
+    delete agenda.hides_steps;
     expect(failing(bp)).toEqual(["self_protect_has_parts"]);
     expect(analyzeLocks(bp).self_protect_incomplete).toEqual([
-      { character_id: "alice", agenda_index: 0, missing: ["parts", "confession"] },
+      { character_id: "alice", agenda_index: 0, missing: ["parts", "confession", "hides_steps"] },
     ]);
+  });
+
+  it("accept an empty hides_steps: a cover that hides a motive, not a step", () => {
+    const bp = soundBlueprint();
+    expect(bp.world.characters[0].agendas[0].hides_steps).toEqual([]);
+    expect(analyzeLocks(bp).self_protect_incomplete).toEqual([]);
   });
 
   it("fail a part naming a clue that does not exist, or none at all", () => {

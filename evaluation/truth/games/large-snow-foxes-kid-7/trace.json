@@ -470,7 +470,8 @@
                 {
                   "clue_ids": ["clue_bramble_barnaby"],
                   "shows": "At ten past three he hopped toward the ticket hut, not the train.",
-                  "reaction": "Says he took the long way to stretch his legs, then napped on the train."
+                  "reaction": "Says he took the long way to stretch his legs, then napped on the train.",
+                  "concedes_steps": [3]
                 },
                 {
                   "clue_ids": ["clue_wet_snowshoes"],
@@ -478,7 +479,8 @@
                   "reaction": "Mutters that lots of animals have white fur."
                 }
               ],
-              "confession": "Teary-eyed, he admits he took the case to keep the map for his museum, and says sorry to Howard."
+              "confession": "Teary-eyed, he admits he took the case to keep the map for his museum, and says sorry to Howard.",
+              "hides_steps": [3, 4, 5, 6, 7, 8]
             },
             {
               "type": "implicate_other",
@@ -499,7 +501,8 @@
                   "reaction": "Admits he wants the map in his museum, but says he would never take anything from his old friend."
                 }
               ],
-              "confession": "He admits he wants the map for his bunny museum, because he thinks it should stay with bunnies."
+              "confession": "He admits he wants the map for his bunny museum, because he thinks it should stay with bunnies.",
+              "hides_steps": []
             }
           ],
           "tells": [
@@ -610,10 +613,12 @@
                 {
                   "clue_ids": ["clue_songbook"],
                   "shows": "Gus was behind the water tower with his songbook, dancing in the snow.",
-                  "reaction": "His ears turn pink and he admits he was by the water tower, not the wheels."
+                  "reaction": "His ears turn pink and he admits he was by the water tower, not the wheels.",
+                  "concedes_steps": [3]
                 }
               ],
-              "confession": "He admits he practiced his secret party song behind the water tower from ten past three until the bell, and asks you to keep it a surprise."
+              "confession": "He admits he practiced his secret party song behind the water tower from ten past three until the bell, and asks you to keep it a surprise.",
+              "hides_steps": [3, 4]
             },
             {
               "type": "conditional_reveal",
@@ -705,15 +710,18 @@
                 {
                   "clue_ids": ["clue_juniper_ruby_case"],
                   "shows": "Ruby stepped off the train at five past three with a brown case.",
-                  "reaction": "Admits she got off the train, but says the case held just her own things, and changes the subject."
+                  "reaction": "Admits she got off the train, but says the case held just her own things, and changes the subject.",
+                  "concedes_steps": [2]
                 },
                 {
                   "clue_ids": ["clue_bramble_ruby"],
                   "shows": "Ruby showed hats at the tea house counter from ten past three until the bell.",
-                  "reaction": "Sighs and admits she was selling hats in the tea house."
+                  "reaction": "Sighs and admits she was selling hats in the tea house.",
+                  "concedes_steps": [3]
                 }
               ],
-              "confession": "She opens her case to show the hats, and asks you not to tell the station master."
+              "confession": "She opens her case to show the hats, and asks you not to tell the station master.",
+              "hides_steps": [2, 3]
             },
             {
               "type": "conditional_reveal",

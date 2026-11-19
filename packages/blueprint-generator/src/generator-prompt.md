@@ -34,9 +34,8 @@ brief and honor every field:
 **Coherence.** Everything must agree with the hidden truth
 (`ground_truth.what_happened`, `why_it_happened`, `timeline`), and every
 physical fact agrees across fields (see **Physical consistency**).
-Every location clue and character clue must be intentionally authored.
-Every location clue and character clue must belong to at least one authored
-reasoning path. Player-facing text (premise, one-liner, starting knowledge) may
+Every location and character clue is intentionally authored and belongs to at
+least one reasoning path. Player-facing text (premise, one-liner, starting knowledge) may
 name only characters, locations, and events that exist in the blueprint.
 Innocent characters may look suspicious, but only for a real, non-culprit reason.
 
@@ -57,7 +56,7 @@ concrete imaginative detail over filler; kid-friendly stakes.
 
 ## Solution depth
 
-This is the most common failure. Read it carefully.
+This is the most common failure.
 
 **Length is measured, not declared.** A path's length is the size of the
 *smallest subset of its clues* a child at `targetAge` genuinely needs to be sure
@@ -137,6 +136,9 @@ Plan with these steps; do not output them.
      clearing the wolf end the wolf-blaming, not the alibi. `confession` comes
      once every part is earned; two separate cases against one culprit are two
      agendas. Part clues come from a location or *another* character.
+     `hides_steps` lists the `actual_actions` the cover hides (`[]` if only a
+     motive); a part's `concedes_steps`, those its reaction owns up to. The
+     speaker never sees a hidden step until it is conceded.
    - Give non-culprits agendas that create friction where it serves the story
      (`protect_other`, `implicate_other`, `conditional_reveal`), each with a
      stated reason — including at least one narrative-condition
@@ -167,8 +169,7 @@ Plan with these steps; do not output them.
 7. Author clues — location and character. Where it helps, give characters
    cross-character clues that confirm/deny another's alibi, report what they saw
    another do, reveal a motive, or point at a location; set `about_character_id` /
-   `hint_location_id` accordingly. Every clue must belong to ≥1 reasoning path.
-   Set `requires` on a clue that should be earned (show-then-reveal,
+   `hint_location_id` accordingly. Set `requires` on a clue that should be earned (show-then-reveal,
    point-then-search) per the **Discovery graph** rules.
 8. Place clues: at most one clue at a location's top level and at most one per
    sub-location; spread them so the player must explore.
@@ -177,7 +178,6 @@ Plan with these steps; do not output them.
     - For each `solution_path`, find the smallest clue subset that still makes a
       `targetAge` child sure of the culprit — test each clue by removal. That
       subset's size is the path's true length.
-    - Take the minimum length across all solution paths. That is what will be graded.
     - If it is below `minPathLength`, do **not** add corroboration (it won't count).
       Split one decisive clue into two that are each insufficient alone, or insert
       a genuinely necessary narrowing step, then re-trace.
@@ -290,7 +290,7 @@ sub-location needs a clue — some are atmospheric.
 `flavor_knowledge[]`, ordered `world.characters[].actual_actions[]`, and
 `agendas[]` (`type`, `strategy`, `priority`, `details`, plus optional
 `target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`, and for
-`self_protect` `parts` and `confession`; default `[]`), and `tells[]` (each `id`,
+`self_protect` `parts`, `confession`, `hides_steps`; default `[]`), and `tells[]` (each `id`,
 `text`, and a `trigger` object whose `kind` is `always`, `condition` (with
 free-text `condition`), or `clue` (with `clue_ids` referencing real clues);
 default `[]`).
@@ -322,7 +322,7 @@ alibis, actions, and the final reasoning).
   clues stay ungated; every reasoning path has ≥1 ungated entry clue. Each
   `requires` gate has a `kind` and a concrete `rationale`; a location clue's is a
   `pointer` whose `target` a prerequisite points to.
-- Every `self_protect` agenda has `parts` and a `confession`.
+- Every `self_protect` agenda has `parts`, a `confession` and `hides_steps`.
 - The shortest solution path needs ≥ `minPathLength` necessary clues; no
   sub-floor subset of clues identifies the culprit.
 - Every suspect has an elimination path; none cleared by a blanket shared trait.

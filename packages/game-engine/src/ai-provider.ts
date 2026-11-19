@@ -349,7 +349,7 @@ class MockAIProvider implements AIProvider {
         );
         return {
           narration:
-            `[Mock] You walk up to ${characterName} in ${locationName}. ${pronoun} looks ${appearance}.` +
+            `[Mock] ${characterName} is here in ${locationName}. ${pronoun} looks ${appearance}.` +
             (ambientTell ? ` (${ambientTell.text})` : ""),
         };
       }

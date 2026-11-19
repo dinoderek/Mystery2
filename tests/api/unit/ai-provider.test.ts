@@ -600,7 +600,7 @@ describe("mock greeting tells", () => {
     const narration = await greet([
       { id: "t1", text: "tail puffs up", trigger: { kind: "clue", clue_ids: ["c1"] } },
     ]);
-    expect(narration).toBe("[Mock] You walk up to Eva in Leaf-Lab. she looks neat.");
+    expect(narration).toBe("[Mock] Eva is here in Leaf-Lab. she looks neat.");
   });
 });
 

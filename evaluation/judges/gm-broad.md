@@ -9,9 +9,9 @@ tier: 1
 ## What this dimension asks
 
 Did the game master play the blueprint faithfully, for a child of
-`blueprint.metadata.target_age`? One pass asks every question the game-side
-judges ask, below, one section per `kind`. Each finding names the section it
-answers as its `kind`, and points at one judged turn by its `sequence`.
+`blueprint.metadata.target_age`? One pass asks every game-side judge's
+question, one section per `kind`. Each finding names its section as its `kind`,
+and points at one judged turn by its `sequence`.
 
 Report each problem once, under the section that owns it: a stated fact with
 no blueprint support is `fabrication`, a character who would not say this is
@@ -63,7 +63,7 @@ For character turns (`talk_start`, `talk_conversation`, `talk_end`):
   shut until the condition is met. Ignoring an active high-priority agenda is
   `major`; announcing it instead of embodying it is `minor`.
 - **Tells**: `always` may surface; `condition` only once met; `clue` only when
-  the player raised that clue's substance and the character believes them. A
+  the player uses that clue (makes its point, held or bluffed). A
   `talk_start` greeting comes before the player speaks. An authored tell fired
   early is `major`; the same tell every turn is `minor`; an improvised reaction
   is not a finding.
@@ -89,7 +89,7 @@ Compare each judged turn's narration with the blueprint's clue `text` and its
 
 - The narration delivers a clue's substance (paraphrase counts, a hint that
   something exists does not) but its id is not recorded: `major`.
-- An id is recorded but its content is never conveyed: `major`. A `search` turn
+- An id is recorded but its content is never conveyed: `major`. A bare `search`
   reveals at most the next unrevealed, unlocked clue of the location; a find
   matching no location clue is `major`.
 - A clue delivered with a different meaning (object, place, person,
@@ -98,7 +98,8 @@ Compare each judged turn's narration with the blueprint's clue `text` and its
   `prior_revealed_clue_ids`: undeclared, `major`; listed in
   `revealed_off_script`, legitimate when the input was genuinely clever and the
   gate is social or knowledge-shaped, `minor` when unearned, `major` when the
-  gate is physical.
+  gate is physical. On a search, it is legitimate when the search's words name
+  the hidden sub-location holding it, else `minor`.
 - A character delivering a clue that belongs to another character or an
   unsearched location, with nothing (`about_character_id`, `hint_location_id`,
   their own `clues`) giving them it: `major`.

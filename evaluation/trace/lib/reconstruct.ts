@@ -39,6 +39,7 @@ import {
   findLocationById,
   selectLocationConversationHistory,
 } from "../../../packages/game-engine/src/ai-context.ts";
+import { buildDiscoveredClueIdSet } from "../../../packages/game-engine/src/clue-discovery.ts";
 import type { Payload, RawEvent, RawTrace } from "./normalize.ts";
 
 // Re-exported so this module stays the trace pipeline's entry point for
@@ -153,6 +154,8 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
         ...common,
         location_id: locationId,
         revealed_clue_ids: revealed,
+        // Gates read the whole session, as the game does.
+        discovered_clue_ids: [...buildDiscoveredClueIdSet(ctx.priorEvents)],
         next_clue: nextClue,
         search_query: ctx.searchQuery ?? null,
       });

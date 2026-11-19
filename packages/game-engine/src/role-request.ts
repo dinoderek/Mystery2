@@ -97,7 +97,6 @@ interface SearchInputFields extends SessionInput {
   discovered_clue_ids?: string[];
   next_clue: BlueprintClue | null;
   search_query?: string | null;
-  admitted_sub_location_id?: string | null;
 }
 
 export type RoleRequestInput =
@@ -348,7 +347,6 @@ function buildSearchContextFrom(input: SearchInput): AIContext {
     discovered_clue_ids: input.discovered_clue_ids,
     next_clue: input.next_clue,
     search_query: input.search_query,
-    admitted_sub_location_id: input.admitted_sub_location_id,
     conversation_history: input.conversation_history,
   });
 }

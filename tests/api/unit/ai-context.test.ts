@@ -338,7 +338,7 @@ describe("ai-context guardrails", () => {
     expect(locked.search_context?.sub_locations).toEqual([]);
     expect(JSON.stringify(locked.search_context)).not.toContain("a hidden note");
 
-    // A targeted search that named the spot is shown it, clue included.
+    // A targeted search that names the spot is shown it, clue included.
     const admitted = buildSearchContext({
       game_id: "game-1",
       session,
@@ -347,11 +347,23 @@ describe("ai-context guardrails", () => {
       revealed_clue_ids: [],
       discovered_clue_ids: [],
       next_clue: null,
-      search_query: "the drawer",
-      admitted_sub_location_id: "sub-drawer",
+      search_query: "open the drawer",
     });
     expect(admitted.search_context?.sub_locations.map((sl) => sl.id)).toEqual(["sub-drawer"]);
     expect(admitted.search_context?.sub_locations[0]?.unrevealed_clues.map((c) => c.id)).toEqual(["clue-locked"]);
+
+    // One that names something else is not.
+    const missed = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: [],
+      discovered_clue_ids: [],
+      next_clue: null,
+      search_query: "under the rug",
+    });
+    expect(missed.search_context?.sub_locations).toEqual([]);
 
     const unlocked = buildSearchContext({
       game_id: "game-1",

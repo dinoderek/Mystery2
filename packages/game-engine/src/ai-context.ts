@@ -10,6 +10,7 @@ import {
   type PathCoverage,
 } from "./clue-discovery.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
+import { namedHiddenSpot } from "./search-target.ts";
 
 export interface BlueprintClue {
   id: string;
@@ -782,9 +783,6 @@ export function buildSearchContext(input: {
   discovered_clue_ids?: string[];
   next_clue: BlueprintClue | null;
   search_query?: string | null;
-  // A hidden sub-location the targeted search named (`searchNamesSpot`): shown
-  // with its clues this turn so the narrator can narrate the find.
-  admitted_sub_location_id?: string | null;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   const location = findLocationById(input.blueprint, input.location_id);
@@ -803,8 +801,9 @@ export function buildSearchContext(input: {
   const isVisible = (c: BlueprintClue) =>
     revealedSet.has(c.id) || isClueUnlocked(c, discoveredSet);
   // A spot whose clues are all locked is left out altogether, so the narrator
-  // never advertises it or narrates "nothing here" for it.
-  const admitted = input.admitted_sub_location_id ?? null;
+  // never advertises it or narrates "nothing here" for it, unless this targeted
+  // search names it: then it is shown, clues and all, to narrate the find.
+  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
   const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {

@@ -240,7 +240,8 @@ for free. This applies to every gate: an agenda's crack or reveal condition,
 a gated clue, and a clue-triggered tell.
 
 A part of a condition is EARNED when the investigator uses its clue (see
-Using a Clue). Good roleplay can stand in for evidence the player has not
+Using a Clue). A part with no clue is earned when they put its substance in
+front of you. Good roleplay can stand in for evidence the player has not
 found. It cannot skip a part it never uses.
 
 These earn NOTHING on their own:

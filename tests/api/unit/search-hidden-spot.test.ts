@@ -8,7 +8,7 @@ import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanic
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { isSpotHidden } from "../../../packages/game-engine/src/clue-discovery.ts";
-import { buildNarrationPrompt } from "../../../packages/game-engine/src/role-request.ts";
+import { buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import { searchNamesSpot } from "../../../packages/game-engine/src/search-target.ts";
 import { resolveSearch } from "../../../packages/game-engine/src/turn/resolve-search.ts";
 import type { TurnGame, TurnRuntime } from "../../../packages/game-engine/src/turn/types.ts";
@@ -102,6 +102,26 @@ describe("a hidden spot", () => {
 });
 
 describe("a targeted search", () => {
+  it("shows the spot it names to the narrator, from the query alone, for every caller", async () => {
+    const request = (search_query: string) =>
+      buildRoleRequest({
+        role: "search_targeted",
+        game_id: "case",
+        blueprint,
+        session: { mode: "explore", current_location_id: "hut", current_talk_character_id: null, time_remaining: 5 },
+        location_id: "hut",
+        revealed_clue_ids: [],
+        discovered_clue_ids: [],
+        next_clue: null,
+        search_query,
+      });
+    const spots = async (query: string) =>
+      (await request(query)).context.search_context?.sub_locations.map((spot) => spot.id);
+
+    expect(await spots("the snowshoe hooks")).toEqual(["sl_window", "sl_hooks"]);
+    expect(await spots("the frosty window")).toEqual(["sl_window"]);
+  });
+
   it("that names the locked spot admits its clue, and logs why", async () => {
     const { outcome, logged } = await play("check the snowshoe hooks");
 
@@ -180,6 +200,12 @@ describe("searchNamesSpot", () => {
     expect(searchNamesSpot("look under the willows", "under the weeping willow", "Moonglow Pond")).toBe(true);
     expect(searchNamesSpot("follow the fern path", "The Fading Fern Path", "Heartwood Hollow")).toBe(true);
     expect(searchNamesSpot("the ferns", "The Fading Fern Path", "Heartwood Hollow")).toBe(false);
+  });
+
+  it("takes the thing before a joining word as the head", () => {
+    expect(searchNamesSpot("the shelf", "the shelf by the door", "Hall")).toBe(true);
+    expect(searchNamesSpot("the door", "the shelf by the door", "Hall")).toBe(false);
+    expect(searchNamesSpot("the letter box", "the box of letters", "Hall")).toBe(true);
   });
 
   it("ignores where-to-look words and the place's own name", () => {

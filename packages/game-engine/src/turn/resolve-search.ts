@@ -4,11 +4,11 @@
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseSearchOutput } from "../ai-contracts.ts";
 import { findLocationById, type BlueprintClue } from "../ai-context.ts";
-import { buildDiscoveredClueIdSet, isClueUnlocked, isSpotHidden } from "../clue-discovery.ts";
+import { buildDiscoveredClueIdSet, isClueUnlocked } from "../clue-discovery.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest, resolveSearchRole } from "../role-request.ts";
-import { searchNamesSpot } from "../search-target.ts";
+import { namedHiddenSpot } from "../search-target.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import { askRole } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
@@ -98,16 +98,6 @@ function cluesAt(location: SearchedLocation): Map<string, BlueprintClue> {
   return clues;
 }
 
-/** The hidden spot (`isSpotHidden`) a targeted search names, if any. */
-function namedHiddenSpot(location: SearchedLocation, query: string | null, anywhere: Set<string>): Spot | null {
-  if (query === null) return null;
-  return (
-    (location.sub_locations ?? []).find(
-      (spot) => isSpotHidden(spot, anywhere) && searchNamesSpot(query, spot.name, location.name),
-    ) ?? null
-  );
-}
-
 /**
  * The clue the narrator named, if it may be found here now: it belongs to this
  * location, has not been found anywhere yet, and its prerequisites are found,
@@ -185,7 +175,7 @@ export async function resolveSearch(
     query === null
       ? (location.clues.find((clue) => !here.includes(clue.id) && isClueUnlocked(clue, anywhere)) ?? null)
       : null;
-  // A targeted search that names a hidden spot shows it to the narrator.
+  // A targeted search that names a hidden spot is shown it, and finds its clue.
   const spot = namedHiddenSpot(location, query, anywhere);
 
   const { prompt, context } = await buildRoleRequest({
@@ -198,7 +188,6 @@ export async function resolveSearch(
     discovered_clue_ids: [...anywhere],
     next_clue: nextClue,
     search_query: query,
-    admitted_sub_location_id: spot?.id ?? null,
     conversation_history: history,
   });
   const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });

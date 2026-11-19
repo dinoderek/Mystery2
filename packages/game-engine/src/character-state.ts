@@ -17,6 +17,7 @@ export const FALLBACK_VISITS = 3;
 interface StatePart {
   clue_ids: string[];
   reaction: string;
+  concedes_steps?: number[];
 }
 
 interface StateAgenda {
@@ -24,6 +25,7 @@ interface StateAgenda {
   yields_to_clue_ids?: string[];
   parts?: StatePart[];
   confession?: string;
+  hides_steps?: number[];
 }
 
 /** The character fields the state reads. */
@@ -197,4 +199,33 @@ export function buildCharacterState(
 export function isAgendaFullyEarned(state: CharacterState, agendaIndex: number, partCount: number): boolean {
   if (partCount === 0) return false;
   return state.earned_parts.filter((part) => part.agenda_index === agendaIndex).length === partCount;
+}
+
+/**
+ * The character's steps that are safe to say: every step no self-protect cover
+ * hides, plus those a cover has given up, by an earned part's `concedes_steps`
+ * or by the agenda being fully earned (its confession). A step two covers hide
+ * is safe once either gives it up. The rest of the truth never reaches the
+ * speaker, so it cannot leak what the investigator has not earned.
+ */
+export function safeSteps<T extends { sequence: number }>(
+  character: StateCharacter,
+  state: CharacterState,
+  actions: readonly T[],
+): T[] {
+  const hidden = new Set<number>();
+  const conceded = new Set<number>();
+  (character.agendas ?? []).forEach((agenda, agendaIndex) => {
+    if (agenda.type !== "self_protect") return;
+    const hides = agenda.hides_steps ?? [];
+    for (const step of hides) hidden.add(step);
+    if (isAgendaFullyEarned(state, agendaIndex, agenda.parts?.length ?? 0)) {
+      for (const step of hides) conceded.add(step);
+    }
+    for (const earned of state.earned_parts) {
+      if (earned.agenda_index !== agendaIndex) continue;
+      for (const step of agenda.parts?.[earned.part_index]?.concedes_steps ?? []) conceded.add(step);
+    }
+  });
+  return actions.filter((action) => !hidden.has(action.sequence) || conceded.has(action.sequence));
 }

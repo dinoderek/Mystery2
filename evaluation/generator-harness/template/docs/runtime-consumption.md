@@ -3,10 +3,10 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `f14b3fad302cd0fa5efb57e0f94c0f28606fc536`
+> - `docs/ai-runtime.md#context-boundaries` — `7ba666de02d684a1c6387de706a29156af67b006`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `e33595fe8e8df343d83962e4d15c7d16549b9874`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `8833f8f3b53ae346dee3bcbaae7bd10e645eb3c4`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `ff596125947e94ebe0c3064db368d1712cd2296b`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -100,24 +100,24 @@ dock" (bypassable) vs. "the safe physically cannot be opened without the key"
 ### `flavor_knowledge` is non-negotiable
 
 Players ask about things outside the mystery — "do you like your job?", "what
-did you have for breakfast?", "what's the deal with that broken sign on the
-door?". The narrator AI fills these answers from `flavor_knowledge`. If a
-character's `flavor_knowledge` is thin or doesn't cover the topics the
-investigator would naturally probe, the narrator either:
-- refuses to answer (kills immersion), or
-- invents (kills coherence and consistency).
+did you have for breakfast?". The narrator answers from `flavor_knowledge`. If
+it is thin or misses what the investigator would naturally probe, the narrator
+either refuses (kills immersion) or invents (kills coherence).
 
 Cover the likely probe topics for each character. The `character_grounding`
 eval dimension scores exactly this.
 
 ### `actual_actions` keeps characters consistent
 
-During talk, the narrator AI uses `actual_actions` as the hidden timeline of
-what the character actually did, in sequence. This is what stops a character
-from saying contradictory things across questions in the same session. If
-`actual_actions` is sparse or vague, the narrator improvises and drifts.
+During talk, the narrator uses `actual_actions` as the timeline of what the
+character did, so they do not contradict themselves across questions. Sparse or
+vague entries make it improvise and drift. Cover the time window, ordered by
+`sequence`.
 
-Use enough entries to cover the relevant time window, ordered by `sequence`.
+The speaker hears only the steps safe to say: a `self_protect` agenda's
+`hides_steps` are withheld until a part's `concedes_steps` or the confession
+gives them up. Mark every step the cover hides, or the speaker knows it and may
+leak it.
 
 ### `agendas` create conversational friction
 

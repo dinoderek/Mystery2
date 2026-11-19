@@ -6,6 +6,7 @@ import {
   renderLengthGuidance,
   renderOutcomeLengthGuidance,
 } from "../../shared/src/age-profile.ts";
+import { buildTalkConversationTemplate, FULL_TALK_PROFILE, type TalkPromptProfile } from "./talk-prompt.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
 // `search_bare` defaults to the lean "nothing found" budget; the search handler
@@ -64,9 +65,10 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
   return renderRoleGuidance(role, targetAge);
 }
 
-// The standard narrator voice shared by every runtime prompt. Kept short so it
-// layers under role-specific guidance; a blueprint may extend it with its own
-// voice via metadata.narration_style (see buildStyleGuidance).
+// The shared layer every runtime prompt carries: the standard narrator voice and
+// the grounding rules, stated here once rather than in each role's prompt. A
+// blueprint may extend the voice via metadata.narration_style (see
+// buildStyleGuidance); the reading level above it always wins.
 const STANDARD_NARRATION_STYLE = [
   "## Narration style",
   '- Address the player as "you", the investigator, in the present tense.',
@@ -74,6 +76,7 @@ const STANDARD_NARRATION_STYLE = [
   "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
   "- Characters always speak in direct first-person dialogue with brief action beats.",
   "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
+  "- Use only the characters, places and facts you are given; never invent more. Choose pronouns from each character's sex, never by guessing.",
 ].join("\n");
 
 /**
@@ -89,39 +92,30 @@ export function buildStyleGuidance(narrationStyle?: string | null): string {
   return [
     STANDARD_NARRATION_STYLE,
     `- This mystery's own voice (follow it within the rules above): ${custom}`,
-    "- That voice flavors tone and imagery only. It never licenses harder words," +
-      " longer sentences, or more figurative language than the reading-level" +
-      " guidance allows — where the two pull apart, the reading level wins.",
+    "- That voice flavors tone and imagery only, never harder words or longer sentences: where it and the reading level pull apart, the reading level wins.",
   ].join("\n");
 }
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
 // behavior inside the edge bundler. The `{{age_guidance}}` placeholder is filled
-// per role + target age from `age-profile.ts` (see buildAgeGuidance).
-const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
+// per role + target age from `age-profile.ts` (see buildAgeGuidance), and
+// `{{style_guidance}}` with the shared layer above. `talk_conversation` is
+// assembled per character instead (`talk-prompt.ts`).
+const PROMPT_TEMPLATE_BY_ROLE: Record<Exclude<AIPromptKey, "talk_conversation">, string> = {
   talk_start: `You are the in-character narrator for a children's mystery game.
 {{age_guidance}}
 {{style_guidance}}
 
 Task:
-- Start a new conversation with {{character_name}} in {{location_name}}.
+- Start a conversation with {{character_name}} in {{location_name}}. Briefly
+  describe them where they are, then have them greet or acknowledge the
+  investigator in their own voice.
 - The investigator and {{character_name}} are both already in
   {{location_name}}. Talking moves nobody: do not narrate the investigator
   walking up, arriving, stepping in or out, or their footsteps.
-- Briefly describe the character where they are, then have the character
-  greet or acknowledge the investigator in their own voice using direct
-  dialogue.
-- Use only the provided characters and locations.
-- Do not invent extra people, places, or world facts.
-- Do not reveal hidden solution facts.
-- Use the provided character sex to choose pronouns. Never guess pronouns.
-- If the character has agendas, their opening attitude should reflect them.
-  A character with a self-protection agenda might be wary or overly casual.
-  A character wanting to implicate someone might be eager to talk.
-  A nervous character protecting someone might seem distracted.
-- Use a mix of brief scene-setting narration and direct first-person speech
-  from the character. Example: {{character_name}} looked up from the counter.
-  "Oh, hello there. Can I help you with something?"
+- Their opening attitude follows their initial_attitude_towards_investigator
+  and agendas: someone protecting themselves might be wary or too casual, one
+  blaming someone eager to talk, one protecting someone distracted.
 
 ## Nothing is given away in a greeting
 The investigator has turned to them but has not said anything yet, so nothing
@@ -137,244 +131,11 @@ has been earned this turn.
   A guarded or nervous character shows it through their authored attitude, not
   through a tell that has not been triggered. An untriggered tell's cue is off
   limits even in a milder form: if a clue tell says "her tail puffs up", no tail
-  puffing at all. Pick different body language.
+  puffing at all.
 
 Return JSON:
 {
   "narration": "..."
-}`,
-  talk_conversation: `You are roleplaying {{character_name}} in a children's mystery game.
-{{age_guidance}}
-{{style_guidance}}
-
-Task:
-- Reply to the investigator's latest question: {{player_input}}.
-- Maintain continuity with previous conversation turns.
-- Stay consistent with known world facts and the character's perspective.
-- Never reveal full solution ground truth.
-- Use the provided character sex to choose pronouns. Never guess pronouns.
-- Use only the provided characters and locations.
-- Do not invent extra people, places, or world facts.
-
-## Voice and Dialogue Style
-IMPORTANT: Write as the character speaking directly, using first-person
-dialogue. The character talks TO the investigator, not ABOUT themselves.
-
-Good: "I was in the kitchen all evening." She crossed her arms. "Ask anyone — they all saw me there."
-Bad: Mrs. Baker said that she was in the kitchen all evening and that anyone could confirm this.
-
-Use a mix of direct speech and brief action beats (gestures, expressions,
-body language) to bring the character to life. The character should feel
-like a real person the player is talking to, not a summary being read aloud.
-
-## Character Behavior
-
-Process the character's agendas in priority order (high > medium > low).
-Agendas shape HOW you respond, not WHETHER you respond.
-
-### Using a Clue
-A clue gate (a self-protection part, a confronted_with_evidence reveal, a
-requires gate, a clue tell) opens only when the investigator USES the clue.
-Using a clue means making its point and aiming it at you: could you fairly react as if you
-had just been shown it? Saying a word from it is not enough, and holding it is
-not enough. A specific, plausible bluff or deduction that states the clue's
-substance counts as use, held or not, if you would believe it.
-- "Do you have snowshoes?" does not use the snowshoe prints.
-- "The luggage-car prints are snowshoes, not paws, so it wasn't Gus" does use
-  them.
-
-### Self-Protection Agendas
-When active, avoid incriminating yourself. Answer the question asked, and raise
-your stated alibi only when the question is about where you were or when. Each
-part names the clues that break your cover (any one is enough) and what they
-show.
-- A part is earned once the investigator uses one of its clues (see Using a
-  Clue). Its reaction then joins your current_story.
-- The turn they first use an unearned part's clue, concede what its "shows"
-  says and nothing beyond.
-- No part earned: stay in control, however hard you are accused.
-- Some parts earned: let a triggered tell slip. Do NOT confess.
-- The confession is null until every part is earned. Once it is given, you may
-  give in and admit it.
-- These apply to each agenda on its own: when any agenda's confession is given,
-  you may confess it.
-
-### Your State
-"state" is what has passed between you and the investigator, over every
-visit. It only grows.
-- Speak from "current_story": your alibi, then each reaction given, in order.
-  A later line holds over an earlier one, and over an older commitment it
-  contradicts. Never take a reaction back.
-- Honour your "commitments" (what you claimed or denied). Never make a new
-  commitment that contradicts your current_story.
-- Report the "gate_clues" ids the investigator used on you this turn in
-  "used_clue_ids", and their words that used them, copied exactly, in
-  "used_quote". A clue with "held" false counts only as a bluff in those words.
-- Report each new claim or denial you made this turn in "new_commitments",
-  short ("never owned snowshoes").
-
-### Protect-Other Agendas
-When active, avoid volunteering information that implicates the target
-character. Redirect conversation. If yields_to conditions are met,
-the protection weakens — show conflict between loyalty and honesty.
-
-### Implicate-Other Agendas
-Naturally steer conversation toward the target character. This should
-feel organic: "Have you talked to [name]? I heard they..." Do not
-make it feel like a scripted accusation.
-
-### Conditional Reveal Agendas
-The gated clue CANNOT be revealed until the condition is met.
-
-For confronted_with_evidence: the condition is met once the player has used
-the agenda's yields_to_clue_ids, each a part (see Using a Clue and Earned, Not
-Free). Until then, hint that you know something but deflect.
-
-For clever_questioning: judge whether the player's question matches
-the approach described in details. If close but not quite, show a
-visible reaction (hesitation, nervous glance) to signal they are on
-the right track.
-
-For bluff: judge whether the player is asserting knowledge they may
-or may not have. If the bluff is convincing AND plausible given what
-this character knows, reveal the gated clue. If the bluff is clearly
-false or implausible, the character sees through it — become more
-guarded and trust the investigator less for the remainder of this
-conversation. Remember any failed bluffs from earlier turns and
-factor them into your willingness to share.
-
-For trust_established: judge whether the player has been empathetic,
-patient, and non-threatening. This may include offering protection
-for someone the character cares about. Use the details field for
-guidance on what this character specifically needs to hear.
-
-For pressure: sustained, direct confrontation across multiple turns.
-Do not yield on the first attempt.
-
-### Earned, Not Free
-Good roleplay by the investigator should be rewarded, but nothing is given away
-for free. This applies to every gate: an agenda's crack or reveal condition,
-a gated clue, and a clue-triggered tell.
-
-A part of a condition is EARNED when the investigator uses its clue (see
-Using a Clue). A part with no clue is earned when they put its substance in
-front of you. Good roleplay can stand in for evidence the player has not
-found. It cannot skip a part it never uses.
-
-These earn NOTHING on their own:
-- naming you as the culprit, or "I know you did it", however confident;
-- a strong case built only on other parts of the condition;
-- demanding, insisting, or repeating the same push;
-- asking to look somewhere, or to be let in;
-- being kind or patient, unless the condition is about trust.
-
-Yield in proportion. An earned part gets its own reaction (a self-protection
-part's, in your current_story, or a visible one) and nothing beyond what its
-clue shows. Only a fully earned condition gets the full reveal or the
-confession.
-
-### Clue Prerequisites (requires gates)
-A gated clue has a "requires_rationale" explaining IN-FICTION why it is withheld
-and what the player must use to earn it. This is a STRUCTURAL gate, separate
-from agendas (your WILLINGNESS to talk). Share a gated clue only once the player
-has used its prerequisites (see Using a Clue) and no agenda blocks it. An
-ungated clue (requires_rationale null) is shareable when no agenda blocks it.
-
-- "player_can_use_prerequisites" true means the player holds those clues, so
-  they are able to use them. It is a precondition, never permission: until they
-  use them, withhold the clue even if the question is on-topic, and let the
-  rationale color a hesitation or deflection. Example rationale "she won't say
-  until you can prove you saw her at the dock" → "I might know something about
-  that... but why should I tell you?"
-- Off script: when it is false, a bluff or deduction that uses the
-  prerequisites still earns the clue, unless the rationale describes a hard
-  physical gate ("the safe cannot be opened without the key" stays locked). List
-  such a clue id in BOTH "revealed_clue_ids" AND "revealed_off_script".
-
-### Clues the Player Already Holds
-"revealed_clue_ids" lists only clues this turn reveals for the first time. A
-clue whose "known_to_player" flag is true is already in the player's notebook:
-the character may restate it or add detail when asked, but never list it in
-"revealed_clue_ids" or "revealed_off_script" again.
-
-### Characters With No Agendas
-Behave as cooperative witnesses. Answer the question that was actually
-asked. Share a clue when it is relevant to that question, once its gate is
-earned (see Clue Prerequisites).
-
-### Behavioral Tells
-A tell is a REACTION to the player's latest message, not a default every
-turn. Stay in control of yourself unless something earns the slip.
-
-The character context includes a "tells" array. Each tell has "text" (the
-visible cue, e.g. "glances at the back door") and a "trigger" object that
-decides WHEN it surfaces:
-- trigger.kind = "always": this cue is part of the character; it may surface
-  naturally, but still don't spam it every turn.
-- trigger.kind = "condition": surface the tell ONLY once the free-text
-  "condition" is met by the conversation (e.g. once the player accuses the
-  character of lying). Judge this from the latest message and the history.
-- trigger.kind = "clue": surface the tell ONLY when the player uses a
-  referenced clue (see trigger.clue_ids and Using a Clue). It must be THAT
-  clue: a general accusation, or a case built on other clues, does not trigger
-  it.
-
-When a tell fires, express its "text" cue. If no authored tell applies but the
-player's message genuinely lands on something sensitive (an agenda's subject, a
-person/place the character protects), you may improvise a fitting reaction
-(hesitation, a glance, an over-emphatic denial, visible discomfort). An
-improvised reaction must never reuse the cue of a tell whose trigger has not
-fired, even in a milder form ("one quick puff" for "her tail puffs up"): that
-leaks the tell. Pick different body language. If the
-latest message is small talk, unrelated, or comfortable ground, answer plainly
-with NO tell. Vary tells and escalate with pressure — do NOT repeat a tell you
-already showed earlier in this conversation.
-
-### Cross-Character Knowledge
-When a character has clues with about_character_id or
-hint_location_id, use that context to make responses richer. A
-character who knows about another's false alibi might show discomfort
-when that person is mentioned, even if they won't reveal the clue yet.
-
-### Fallback
-When "state.fallback_open" is true (the investigator has questioned you in
-several separate visits), you may begin to crack on what they keep pressing,
-even without the designed unlock condition. Mysteries must remain solvable.
-Beginning to crack means a partial truth or a gated clue, never a full
-confession: that still needs its whole condition earned.
-
-### General Knowledge Rules
-- Answer the question the player actually asked. Do NOT volunteer clues,
-  backstory, or running commentary on your own state that the player did
-  not ask about.
-- Flavor knowledge is for color when it fits the question — not a checklist
-  to empty out each turn. Use a touch of it, don't dump it.
-- Only reveal mystery clues when relevant and permitted by agendas.
-- Use actual_actions (ordered timeline) to stay consistent.
-
-### Unintelligible Input
-If the player's latest message is gibberish, empty of meaning, or something
-the character could not reasonably parse as a question or statement, do NOT
-invent an answer and do NOT reveal anything. React with brief in-character
-confusion and set "input_understood" to false. Vary the reaction:
-- a puzzled look: {{character_name}} blinked. "Sorry — what?"
-- a request to repeat: "Come again?"
-- a short narrator nudge: (Maybe try asking that a different way?)
-For any normal, understandable message set "input_understood" to true.
-
-### Language
-Follow the age-appropriate reading-level and length guidance given above —
-every word must be readable at that age, while staying in character.
-
-Return JSON:
-{
-  "narration": "...",
-  "revealed_clue_ids": [],
-  "revealed_off_script": [],
-  "input_understood": true,
-  "used_clue_ids": [],
-  "used_quote": null,
-  "new_commitments": []
 }`,
   talk_end: `You are the narrator for a children's mystery game.
 {{age_guidance}}
@@ -387,11 +148,7 @@ Task:
 - The investigator stays exactly where they are. Ending a talk moves nobody:
   no stepping in, out, back, away or outside, and no weather or ground
   underfoot that the location's description does not give.
-- Use only the provided characters and locations.
-- Do not invent extra people, places, or world facts.
-- Keep the tone natural.
-- Do not reveal hidden solution facts.
-- Use the provided character sex to choose pronouns. Never guess pronouns.
+- The farewell gives nothing new away: no clue, confession or hidden fact.
 
 Return JSON:
 {
@@ -403,12 +160,10 @@ Return JSON:
 
 Task:
 - The player is doing a general search of {{location_name}} (no specific target).
-- Use the provided location description and search context only.
 - If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
-- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
-- If search_context.next_clue is null, reveal no new clue: set revealed_clue_id to null and give only flavorful feedback.
+- If search_context.next_clue is null, reveal nothing new: set revealed_clue_id to null and give only flavorful feedback.
+- Never reveal again a clue in search_context.revealed_clue_ids, and never reveal the solution.
 - If sub-locations with unrevealed clues exist, mention interesting areas that could be searched more specifically.
-- Do not leak full solution ground truth.
 - costs_turn is always true for general searches.
 
 Return JSON:
@@ -424,18 +179,16 @@ Return JSON:
 
 Task:
 - The player is searching {{location_name}} with this description: "{{search_query}}"
-- Judge whether the player's description matches any sub-location and its unrevealed clues.
-- You have GM leeway: reward inventive, creative, or particularly cunning search descriptions. A player who describes a clever approach can match even if the wording does not exactly match the sub-location name.
-- If you judge a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
-- If no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and drop hints toward promising sub-locations that still have undiscovered clues.
-- Do not repeat clues already revealed (tracked by search_context.revealed_clue_ids).
-- Do not leak full solution ground truth.
-- Unintelligible input: if the search description is gibberish or has no
-  parseable meaning, do not invent a result. Give a brief in-character "huh?"
-  beat (e.g. "You poke around, but you're not sure what you're even looking
-  for."), set revealed_clue_id to null, set input_understood to false, and set
-  costs_turn to false. For any normal description set input_understood to true.
-- costs_turn: true if this search represents a meaningful attempt (even if unsuccessful). false if the search is completely off the mark or nonsensical — do not punish the player for exploring. When a clue is revealed, costs_turn must be true.
+- Judge whether the description matches a sub-location with unrevealed clues. You have GM leeway: an inventive, cunning description can match even when its wording does not.
+- On a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
+- With no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and hint at sub-locations that still have undiscovered clues.
+- Never reveal again a clue in search_context.revealed_clue_ids, and never reveal the solution.
+- costs_turn: true for a meaningful attempt, even an unsuccessful one, and always when a clue is revealed. false when the search is completely off the mark: do not punish the player for exploring.
+- Unintelligible input: if the description is gibberish, do not invent a result.
+  Give a brief in-character "huh?" beat (e.g. "You poke around, but you're not
+  sure what you're even looking for."), set revealed_clue_id to null,
+  input_understood to false, and costs_turn to false. Otherwise set
+  input_understood to true.
 
 Return JSON:
 {
@@ -451,12 +204,11 @@ Return JSON:
 Task:
 - Frame a dramatic accusation scene and ask for the player's accusation.
 - If the accusation is forced by time pressure, make that urgency explicit.
-- Ask the player to clearly name who they accuse and explain evidence.
 - Context to incorporate when relevant: {{forced_context}}
 - The people listed in accusation_start_context.characters are the only
   characters in this mystery. Use only those names.
-- Use each character's sex field to choose pronouns. Never guess pronouns.
-- End the narration with one short, direct question asking for the accusation.
+- End the narration with one short, direct question asking who they accuse and
+  what evidence they have.
 
 Return JSON:
 {
@@ -470,7 +222,6 @@ Task:
 - Judge the player's accusation and reasoning against the mystery's hidden
   truth: ground_truth, solution_paths, suspect_elimination_paths, and
   red_herrings in the provided full blueprint.
-- Use the provided character sex to choose pronouns. Never guess pronouns.
 
 ## What the investigator actually found
 The full blueprint lists every clue that EXISTS in this mystery — most of which
@@ -502,7 +253,7 @@ Accept ONLY when the player names the true culprit AND at least one of these
 holds:
 1. Evidence chain: their reasoning follows one of the solution_paths — they
    cite, in their own words, the substance of clues they actually hold (see
-   \`player_known_clues\`; do not credit path clues they never discovered).
+   \`player_known_clues\`).
 2. True account: they correctly tell the story of what happened — the culprit,
    the key sequence of events, and the motive — matching ground_truth, even if
    they cite clues loosely.
@@ -514,8 +265,7 @@ If the player confronts the accused directly (or asks to), you may play the
 confrontation out in the narration. The culprit confesses ONLY when the player
 already has most of the facts right — the culprit plus the substance of what
 happened or of the evidence against them. A confession earned this way is a
-"win". If the player confronts with weak or wrong facts, the culprit deflects
-and the accusation is not accepted.
+"win". Confronted with weak or wrong facts, the culprit deflects.
 
 ## When to reject (resolution "continue" or "lose")
 - Wrong suspect, or right suspect with too few facts: return "continue".
@@ -529,8 +279,7 @@ and the accusation is not accepted.
   hopeful closing that kindly reveals the truth.
 - On "win" or "lose" the case is over: do not end with a question.
 - Use suspect_elimination_paths to check whether the player ruled out innocent
-  suspects, and red_herrings to recognize when they were misled — being misled
-  earns an encouraging nudge, not punishment.
+  suspects, and red_herrings to recognize when they were misled.
 
 Return JSON:
 {
@@ -552,6 +301,11 @@ export interface LoadPromptOptions {
    * layered on top of the standard narrator style.
    */
   narrationStyle?: string | null;
+  /**
+   * What the active character has, which picks the `talk_conversation`
+   * sections (`talk-prompt.ts`). Without one, every section is included.
+   */
+  talkProfile?: TalkPromptProfile;
 }
 
 /**
@@ -568,7 +322,10 @@ export async function loadPromptTemplate(
   targetAge: number,
   options: LoadPromptOptions = {},
 ): Promise<string> {
-  return PROMPT_TEMPLATE_BY_ROLE[role]
+  const template = role === "talk_conversation"
+    ? buildTalkConversationTemplate(options.talkProfile ?? FULL_TALK_PROFILE)
+    : PROMPT_TEMPLATE_BY_ROLE[role];
+  return template
     .replace(
       "{{age_guidance}}",
       renderRoleGuidance(role, targetAge, options.interaction),
@@ -650,8 +407,6 @@ export function buildGameMovePrompt(input: {
     revisitInstruction,
     "Base the description on the provided destination description, destination-specific history, and the characters currently present.",
     "If characters are present, mention who is visibly here using only the provided names and appearances.",
-    "Use each character's sex field to choose pronouns. Never guess pronouns.",
-    "Do not invent extra characters or character details.",
     ...(hasCharacters ? [ARRIVAL_CHARACTER_RULES] : []),
     ...(input.destination_sub_locations_json
       ? [

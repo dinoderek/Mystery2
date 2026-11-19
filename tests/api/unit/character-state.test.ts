@@ -8,6 +8,7 @@ import {
   COMMITMENT_CAP,
   gateClueIds,
   quoteIsPlayerWords,
+  safeSteps,
   selectUsedClues,
   type StateCharacter,
   type StateHistoryRow,
@@ -172,6 +173,45 @@ describe("a character's state", () => {
   });
 });
 
+describe("the steps a character may speak of", () => {
+  const steps = [1, 2, 3, 4].map((sequence) => ({ sequence, summary: `step ${sequence}` }));
+  const hiding: StateCharacter = {
+    ...fox,
+    agendas: [
+      {
+        type: "self_protect",
+        parts: [
+          { clue_ids: ["prints"], reaction: "Stops blaming the wolf, keeps the nap." },
+          { clue_ids: ["sighting"], reaction: "Took the long way, then napped.", concedes_steps: [2] },
+        ],
+        confession: "Took the case.",
+        hides_steps: [2, 3],
+      },
+      { type: "self_protect", parts: [{ clue_ids: ["map"], reaction: "Wants the map." }], confession: "Wants it badly.", hides_steps: [4] },
+    ],
+  };
+  const sequences = (history: StateHistoryRow[]) =>
+    safeSteps(hiding, buildCharacterState(hiding, history), steps).map((step) => step.sequence);
+
+  it("withholds every step a cover hides until it is given up", () => {
+    expect(sequences([talk()])).toEqual([1]);
+  });
+
+  it("gives up a step once the part that concedes it is earned, and no other", () => {
+    expect(sequences([talk(), ask({ used_clue_ids: ["sighting"] })])).toEqual([1, 2]);
+    expect(sequences([talk(), ask({ used_clue_ids: ["prints"] })])).toEqual([1]);
+  });
+
+  it("gives up all an agenda hides once its confession is earned", () => {
+    expect(sequences([talk(), ask({ used_clue_ids: ["prints", "sighting"] })])).toEqual([1, 2, 3]);
+    expect(sequences([talk(), ask({ used_clue_ids: ["map"] })])).toEqual([1, 4]);
+  });
+
+  it("hides nothing for a character whose agendas name no steps", () => {
+    expect(safeSteps(fox, buildCharacterState(fox, []), steps)).toEqual(steps);
+  });
+});
+
 describe("Barnaby's talk context, rebuilt from the stored snow-foxes game", () => {
   const trace = JSON.parse(
     fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
@@ -203,6 +243,10 @@ describe("Barnaby's talk context, rebuilt from the stored snow-foxes game", () =
     ]);
     expect(barnaby.gate_clues).toContainEqual({ id: "clue_snowshoe_prints", held: true });
     expect(JSON.stringify(barnaby)).not.toContain("Backs off blaming Gus");
+    // He may speak of the cocoa and the shout; how he took the case stays back.
+    expect(barnaby.actual_actions.map((step) => step.sequence)).toEqual([1, 2, 9]);
+    expect(JSON.stringify(barnaby)).not.toContain("snowshoes from the hooks");
+    expect(JSON.stringify(barnaby)).not.toContain("hides_steps");
   });
 
   it("with the prints used, his only earned reaction is backing off blaming Gus, and he keeps the nap", () => {

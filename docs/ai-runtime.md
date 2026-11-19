@@ -13,12 +13,16 @@ for plain narration (`intro`, `ambience`). It picks the role from the action
 and state (`resolveSearchRole`, `resolveAccusationRole`), builds the role's
 context (`ai-context.ts`), and renders its prompt (`ai-prompts.ts`) with the
 blueprint's `target_age` and `narration_style`. It is the only place those two
-are applied, and it imports no database, so the runtime eval harness calls it
-directly instead of keeping a second copy.
+are applied and imports no database, so the eval harness calls it directly; a
+second copy would drift (`tests/api/unit/role-request.test.ts`).
 
-Keep it the only path: a second copy drifts, building prompts for the wrong
-age. `tests/api/unit/role-request.test.ts` asserts, for every role, that the
-assembled prompt carries the blueprint's age and voice.
+**Lean prompts.** Each rule is stated once and no two conflict
+(`tests/api/unit/talk-prompt.test.ts`). Voice, reading level and grounding
+(only given facts, pronouns from `sex`) live in the shared layer alone.
+`talk-prompt.ts` builds `talk_conversation` from sections the character needs:
+its agenda types and conditions, lock kinds, tell kinds, an open fallback.
+Recorded state replaces refereeing; the one judgement left is whether a clue
+was used this turn.
 
 ## Roles
 
@@ -60,10 +64,13 @@ Which blueprint fields reach which role is the "Narration at play" table in
   enforces that for every other role. Knowledge about *other* characters
   travels only through explicit clues (`about_character_id`).
 - A talk clue carries its gate's `requires_rationale` (the in-fiction reason it
-  is withheld), `known_to_player`, and `player_can_use_prerequisites`: the
-  player holds the prerequisites, a precondition for using them, never
-  permission. Prerequisite ids are not sent, so the model gates on the reason,
-  not set arithmetic.
+  is withheld), `requires_kind`, `known_to_player`, and
+  `player_can_use_prerequisites`: the player holds the prerequisites, a
+  precondition for using them, never permission. Prerequisite ids are not sent,
+  so the model gates on the reason, not set arithmetic.
+- **The speaker hears only steps safe to say.** A talk pack's `actual_actions`
+  drops every step a self-protect cover `hides_steps`, until an earned part's
+  `concedes_steps` or the confession gives it up.
 - **Tells are reactions, not defaults.** Each has visible `text` and a
   `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
   (fires only when the player uses a referenced clue). A cue surfaces only when
@@ -76,9 +83,7 @@ Which blueprint fields reach which role is the "Narration at play" table in
   attitude and agendas. The prompt plays each in that attitude, lets agendas
   shape their manner and allows one short line; it reveals no clue and never
   states the private fields. `role-request.ts` derives all of it from the
-  session's history, so the endpoints and the eval harness cannot disagree. Its
-  word budget is roomy enough for the place, its searchable areas and whoever
-  is there.
+  session's history, so the endpoints and the eval harness cannot disagree.
 - **Search never sees a locked clue**, so its text is never woven in, nor a
   spot whose clues are all locked, so no search or arrival advertises it or
   narrates "nothing here" there. A targeted search whose words name that spot
@@ -95,14 +100,13 @@ Which blueprint fields reach which role is the "Narration at play" table in
 
 ## Trusting the output
 
-Each role's output contract is a Zod schema in `ai-contracts.ts`; the parser
-and the JSON Schema a provider hands the model (`roleOutputJsonSchema`) come
-from the same schema. Output is validated before anything is written, and
+Each role's output contract is a Zod schema in `ai-contracts.ts`, the source of
+the parser and of the JSON Schema a provider hands the model
+(`roleOutputJsonSchema`). Output is validated before anything is written;
 invalid output is a retriable error.
 
-- The parser forgives noise — a missing flag takes its default, junk entries in
-  an id list are dropped — while the JSON Schema asks the model for the clean
-  shape with every field required.
+- The parser forgives noise (a missing flag takes its default, junk ids are
+  dropped); the JSON Schema asks for the clean shape, every field required.
 - The backend re-checks every revealed clue id against what the role was
   allowed to reveal (the active character's clues, the location's unlocked
   clues), and a locked search reveal is rejected and logged
@@ -161,7 +165,7 @@ Every conversational gate (a self-protection part, earned by any of its
 `clue_ids`; a reveal's `yields_to_clue_ids`; a `requires` gate; a `clue` tell)
 opens only when the player **uses** a clue.
 
-- **Use, defined once** here and in the prompt's "Using a Clue": the player
+- **Use, defined once** here and in the prompt's "Using a clue": the player
   makes the clue's point and aims it at this character. Could the character
   fairly react as if just shown it? Saying a word, or holding the clue, is not
   enough; a specific, plausible bluff or deduction stating its substance is.
@@ -171,20 +175,18 @@ opens only when the player **uses** a clue.
   insisting, repeating a demand, asking to look, or a case built only on other
   parts.
 - **The character yields in proportion.** A used part earns its `reaction`,
-  conceding what its clues show, no more. Every part earns the `confession`.
-  The alibi comes up only when asked where or when. After questions in
-  three separate visits (`fallback_open`), the repeated-asking fallback may
-  give up a partial truth or a gated clue, never a confession.
+  conceding what its clues show; every part earns the `confession`. The alibi
+  comes up only when asked where or when. After questions in three separate
+  visits (`fallback_open`), the fallback may give up a partial truth or a gated
+  clue, never a confession.
 - **Use is recorded.** `talk_conversation` reports the clues used
   (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The
-  backend keeps a used gate clue the player holds, or bluffs in words the
-  quote shows are theirs, and logs the rest (`ask.used_clue_dropped`).
-  `character-state.ts` rebuilds each character's state from every visit's
-  `ask` events: clues used, parts earned, the current story (alibi, then
-  earned reactions in order) and the last five commitments. It only grows.
-  The context carries it as `state`, a reaction only once earned and the
-  confession only once all are. The prompt keeps to both and never takes a
-  reaction back.
+  backend keeps a used gate clue the player holds, or bluffs in their quoted
+  words, and logs the rest (`ask.used_clue_dropped`). `character-state.ts`
+  rebuilds from every visit's `ask` events the clues used, parts earned, current
+  story (alibi, then earned reactions) and last five commitments. It only grows,
+  and reaches the context as `state` (a reaction once earned, the confession
+  once all are); the prompt never takes a reaction back.
 - **An untriggered tell stays hidden, even softened** ("one quick puff" for
   "her tail puffs up").
 
@@ -206,12 +208,9 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The default for `npm run dev` and every automated suite. It exercises a live
-model's paths deterministically, at the target reading age, since the runtime
-eval harness grades whatever the provider returns.
-
-Changing a contract, a prompt, a context or provider selection changes the mock
-and its tests in the same change.
+The default for `npm run dev` and every automated suite: a live model's paths,
+deterministically, at the target reading age. Changing a contract, prompt,
+context or provider selection changes the mock and its tests with it.
 
 ## Failures, logs and attribution
 

@@ -119,10 +119,12 @@
               {
                 "clue_ids": ["clue-crumb", "clue-wrapper"],
                 "shows": "Someone was snacking on cookies today.",
-                "reaction": "Admits she had one snack, but says she was still reading."
+                "reaction": "Admits she had one snack, but says she was still reading.",
+                "concedes_steps": [2]
               }
             ],
-            "confession": "She admits she ate the cookies at a quarter past twelve."
+            "confession": "She admits she ate the cookies at a quarter past twelve.",
+            "hides_steps": [1, 2]
           }
         ]
       },

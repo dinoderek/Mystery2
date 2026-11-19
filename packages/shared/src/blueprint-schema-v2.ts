@@ -329,6 +329,14 @@ export const BlueprintV2AgendaPartSchema = z.object({
         + "into their story. It concedes exactly what `shows` proves: when the "
         + "evidence does not touch the alibi, the alibi stands.",
     ),
+  concedes_steps: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe(
+      "The `actual_actions` sequences this reaction owns up to, once earned: the "
+        + "character may then speak of them. Each must be one of the agenda's "
+        + "`hides_steps`. Omit when the reaction admits no step.",
+    ),
 });
 export type BlueprintV2AgendaPart = z.infer<typeof BlueprintV2AgendaPartSchema>;
 
@@ -395,6 +403,15 @@ export const BlueprintV2AgendaSchema = z.object({
     .describe(
       "For self_protect: what the character finally admits, only once every part has "
         + "been earned. Required for self_protect; not used on other agenda types.",
+    ),
+  hides_steps: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe(
+      "For self_protect: the `actual_actions` sequences this cover story hides. The "
+        + "character is never told them in conversation until a part's "
+        + "`concedes_steps` or the confession gives them up; every other step is "
+        + "safe to say. Empty when the cover hides a motive, not a step.",
     ),
 });
 export type BlueprintV2Agenda = z.infer<typeof BlueprintV2AgendaSchema>;
@@ -524,6 +541,37 @@ function checkPartClues(
   }
 }
 
+// A self_protect agenda's hidden steps name the character's own actions, and a
+// part concedes only steps the agenda hides.
+function checkHiddenSteps(
+  agenda: BlueprintV2Agenda,
+  agendaPath: Array<string | number>,
+  sequences: ReadonlySet<number>,
+  context: z.RefinementCtx,
+): void {
+  const hidden = new Set(agenda.hides_steps ?? []);
+  for (const [index, step] of (agenda.hides_steps ?? []).entries()) {
+    if (!sequences.has(step)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [...agendaPath, "hides_steps", index],
+        message: `hides_steps names step ${step}, which is not one of this character's actual_actions.`,
+      });
+    }
+  }
+  for (const [partIndex, part] of (agenda.parts ?? []).entries()) {
+    for (const [index, step] of (part.concedes_steps ?? []).entries()) {
+      if (!hidden.has(step)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...agendaPath, "parts", partIndex, "concedes_steps", index],
+          message: `concedes_steps names step ${step}, which the agenda's hides_steps does not hide.`,
+        });
+      }
+    }
+  }
+}
+
 // A self_protect agenda breaks by its parts; every other type keeps its own fields.
 function addAgendaFieldIssues(
   context: z.RefinementCtx,
@@ -535,6 +583,7 @@ function addAgendaFieldIssues(
     : [
         ["parts", "parts belongs to self_protect agendas only."],
         ["confession", "confession belongs to self_protect agendas only."],
+        ["hides_steps", "hides_steps belongs to self_protect agendas only."],
       ];
   for (const [field, message] of misplaced) {
     const value = agenda[field];
@@ -1174,7 +1223,9 @@ export const BlueprintV2Schema = z
       }
 
       for (const [agendaIndex, agenda] of character.agendas.entries()) {
-        checkPartClues(agenda, ["world", "characters", characterIndex, "agendas", agendaIndex], allClueIds, thisClueIds, context);
+        const agendaPath = ["world", "characters", characterIndex, "agendas", agendaIndex];
+        checkPartClues(agenda, agendaPath, allClueIds, thisClueIds, context);
+        checkHiddenSteps(agenda, agendaPath, new Set(character.actual_actions.map((action) => action.sequence)), context);
       }
 
       // --- Tell validations ---

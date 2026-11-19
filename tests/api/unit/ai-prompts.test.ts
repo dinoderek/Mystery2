@@ -89,7 +89,7 @@ describe("ai-prompts", () => {
     const styled = await loadPromptTemplate("talk_start", 10, {
       narrationStyle: "wry, gothic, faintly archaic",
     });
-    expect(styled).toContain("where the two pull apart, the reading level wins");
+    expect(styled).toContain("where it and the reading level pull apart, the reading level wins");
   });
 
   it("has the accusation roles ask their question in the narration", async () => {
@@ -109,14 +109,12 @@ describe("ai-prompts", () => {
     expect(wordTarget(verdict)).toBeGreaterThan(wordTarget(farewell));
   });
 
-  it("reinforces anti-hallucination guidance in talk prompts", async () => {
-    const talkStart = await loadPromptTemplate("talk_start", 10);
-    const talkConversation = await loadPromptTemplate("talk_conversation", 10);
-    const talkEnd = await loadPromptTemplate("talk_end", 10);
-
-    expect(talkStart).toContain("Do not invent extra people, places, or world facts.");
-    expect(talkConversation).toContain("Do not invent extra people, places, or world facts.");
-    expect(talkEnd).toContain("Do not invent extra people, places, or world facts.");
+  it("carries the anti-hallucination rule in the shared layer of every talk prompt", async () => {
+    for (const role of ["talk_start", "talk_conversation", "talk_end"] as const) {
+      const prompt = await loadPromptTemplate(role, 10);
+      expect(prompt).toContain("Use only the characters, places and facts you are given; never invent more.");
+      expect(prompt).toContain("Choose pronouns from each character's sex, never by guessing.");
+    }
   });
 
   it("keeps a greeting from firing tells or cracks the investigator has not earned", async () => {
@@ -143,41 +141,37 @@ describe("ai-prompts", () => {
     expect(talkEnd).not.toContain("returns to exploration");
   });
 
-  it("rewards good roleplay in conversation but gives nothing away for free", async () => {
+  it("leaves one judgement to the narrator, whether a clue was used, and gives nothing away for free", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 
-    // Roleplay can stand in for evidence, but only by using it.
-    expect(talk).toContain("### Earned, Not Free");
-    expect(talk).toContain("Good roleplay can stand in for evidence");
-    expect(talk).toContain("It cannot skip a part it never uses");
-    expect(talk).toContain("naming you as the culprit");
-    // A used part earns its own reaction and nothing more; a confession needs every part.
-    expect(talk).toContain("A part is earned once the investigator uses one of its clues");
-    expect(talk).toContain('concede what its "shows"\n  says and nothing beyond');
-    expect(talk).toContain("Do NOT confess");
-    expect(talk).toContain("The confession is null until every part is earned");
-    // Two evidence sets are two agendas: one completed set is enough to confess.
-    expect(talk).toContain("These apply to each agenda on its own: when any agenda's confession is given,\n  you may confess it.");
-    // An earned reaction outranks an older commitment it contradicts.
-    expect(talk).toContain("and over an older commitment it\n  contradicts");
-    expect(talk).toContain("never a full\nconfession");
-    // A clue tell needs that clue, not a general accusation.
-    expect(talk).toContain("It must be THAT\n  clue");
-    expect(talk).toContain("must never reuse the cue of a tell whose trigger has not\nfired, even in a milder form");
+    expect(talk).toContain("Your one judgement: did the investigator use a clue this turn?");
+    expect(talk).toContain("Naming you as the culprit, insisting, repeating a push, asking to look somewhere");
+    // A used part earns its own concession and nothing more; a confession needs every part.
+    expect(talk).toContain('When an unearned part\'s clue is used, concede what its "shows" says');
+    expect(talk).toContain("and nothing beyond");
+    expect(talk).toContain('An agenda\'s "confession" is null until all its parts are earned; once it is given, you may confess it.');
+    expect(talk).toContain("never a confession");
+    // A clue tell needs that clue, not a general accusation, and never leaks softened.
+    expect(talk).toContain('- "clue": only when that clue is used. A general accusation does not count.');
+    expect(talk).toContain("Never show an untriggered tell's cue, even softened");
+    // The referee rules the engine's state replaced are gone.
+    expect(talk).not.toContain("### Earned, Not Free");
+    expect(talk).not.toContain("Some parts earned");
+    expect(talk).not.toContain("A part with no clue is earned");
   });
 
-  it("defines using a clue once, and every talk gate refers to it", async () => {
+  it("defines using a clue once, with the snowshoe examples", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
     const count = (needle: string) => talk.split(needle).length - 1;
 
-    expect(count("### Using a Clue")).toBe(1);
+    expect(count("## Using a clue")).toBe(1);
     expect(count("Using a clue means")).toBe(1);
     expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
-    expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does use');
-    // Self-protection parts, conditional reveals, earned parts, requires gates and clue tells all point to it.
-    expect(talk.match(/\(see\s+Using\s+a\s+Clue/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
-    expect(talk).toContain("see trigger.clue_ids and Using a Clue");
-    // The wordings that disagreed with it are gone.
+    expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does.');
+    // Gates say "used", and lean on the one definition rather than restating it.
+    expect(talk).toContain("its yields_to_clue_ids are used");
+    expect(talk).toContain("until the investigator uses what it names");
+    expect(talk).not.toContain("see Using a Clue");
     expect(talk).not.toContain("not just possess it");
     expect(talk).not.toContain("semantic match against");
     expect(talk).not.toContain("actually holds that clue");
@@ -186,23 +180,22 @@ describe("ai-prompts", () => {
   it("plays from the recorded state, reports use and commitments, and opens the fallback by count", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 
-    expect(talk).toContain("### Your State");
+    expect(talk).toContain("## Your state");
     expect(talk).toContain('Speak from "current_story"');
+    expect(talk).toContain("and any older commitment it contradicts");
     expect(talk).toContain("Never take a reaction back");
-    expect(talk).toContain('Honour your "commitments"');
-    expect(talk).toContain("Never make a new\n  commitment that contradicts your current_story");
-    expect(talk).toContain('Report the "gate_clues" ids the investigator used on you this turn in\n  "used_clue_ids"');
+    expect(talk).toContain('Keep your "commitments", and never make one that contradicts current_story');
+    expect(talk).toContain('Put the "gate_clues" ids used this turn in "used_clue_ids"');
     expect(talk).toContain('"used_quote". A clue with "held" false counts only as a bluff');
-    expect(talk).toContain('Report each new claim or denial you made this turn in "new_commitments"');
-    expect(talk).toContain('When "state.fallback_open" is true');
+    expect(talk).toContain('List each new claim or denial in "new_commitments"');
+    expect(talk).toContain('"state.fallback_open" is true');
     expect(talk).not.toContain("3+ times");
   });
 
   it("presents prerequisites as able to use, never as permission", async () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 
-    expect(talk).toContain('"player_can_use_prerequisites" true means the player holds those clues');
-    expect(talk).toContain("It is a precondition, never permission");
+    expect(talk).toContain('"player_can_use_prerequisites" true means they hold it: a precondition, never permission.');
     expect(talk).not.toContain("prereqs_met");
   });
 
@@ -211,11 +204,13 @@ describe("ai-prompts", () => {
 
     expect(talk).not.toContain("Your stated alibi still holds");
     expect(talk).not.toContain("admit nothing else from");
-    expect(talk).not.toContain("never breaks a\nstated alibi");
     expect(talk).not.toContain("reinforce your stated");
-    expect(talk).toContain(
-      "Answer the question asked, and raise\nyour stated alibi only when the question is about where you were or when.",
-    );
+    expect(talk).toContain("Raise your alibi only when asked where you were or when.");
+  });
+
+  it("keeps the speaker to the steps it may speak of", async () => {
+    const talk = await loadPromptTemplate("talk_conversation", 10);
+    expect(talk).toContain("Keep to actual_actions, the parts of your day you will speak of.");
   });
 
   it("builds a game-start prompt with target age and premise", () => {
@@ -245,8 +240,8 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("Characters at destination");
     expect(prompt).toContain('"first_name":"Alice"');
     expect(prompt).toContain('"sex":"female"');
-    expect(prompt).toContain("Never guess pronouns");
-    expect(prompt).toContain("Do not invent extra characters");
+    expect(prompt).toContain("never by guessing");
+    expect(prompt).toContain("never invent more");
     expect(prompt).toContain("Narration style");
     // Characters are present, so the arrival plays them as authored without
     // giving anything away.

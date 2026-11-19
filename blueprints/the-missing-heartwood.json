@@ -354,7 +354,8 @@
                 "reaction": "Says lots of animals live up by the treehouses, and still says she slept all night."
               }
             ],
-            "confession": "She crumbles and admits she 'only borrowed' the Heartwood to study it."
+            "confession": "She crumbles and admits she 'only borrowed' the Heartwood to study it.",
+            "hides_steps": [1, 2, 3, 4, 5]
           }
         ],
         "tells": [

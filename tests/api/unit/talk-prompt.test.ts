@@ -107,6 +107,7 @@ const RULES = [
   "Saying a word from it, or holding it, is not enough",
   "Naming you as the culprit",
   "Never take a reaction back",
+  "current_story outranks them",
   "never make one that contradicts current_story",
   "Raise your alibi only when asked where you were or when",
   "concede what its \"shows\" says",

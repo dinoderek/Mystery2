@@ -97,13 +97,18 @@ leading to the path's payoff. `kind` says why the lock exists:
   `target` names that `{ location_id, sub_location_id }`, and a prerequisite
   points there with `hint_location_id` and `hint_sub_location_id` (the snowshoe
   trail leads behind the woodpile). Character clues omit `target`.
+- **A locked spot stays secret.** A sub-location whose clues are all locked is
+  hidden until its pointer is found, so no location `description` names or hints
+  at it: if the snowshoe hooks are the locked spot, the hut's description has no
+  snowshoes and no hooks.
 - **`leverage`**: the character gives the clue up only once shown the earlier one.
 - **Specific, not hidden.** "You only spot it once you know to look" is not a
   lock. Leave that clue ungated in a sub-location a specific search can name.
 - **Shape, not chains.** Aim for shallow, branchy graphs (depth 2–3, several roots),
   never one long brittle chain. Every path — solution, red herring, elimination —
   needs at least one **ungated entry clue** so the thread is always startable.
-- **Gate about a third,** for momentum, never busywork or dead-ends.
+- **Gate about a third,** for momentum, never busywork or dead-ends. Leave a
+  clue ungated when a sharp player could plausibly deduce it early.
 - **`rationale` is load-bearing.** Give a concrete in-fiction reason, and signal
   whether cleverness can substitute: a social gate a clever question could bypass
   ("she only opens up once you can prove you saw her at the dock") vs. a hard gate
@@ -322,6 +327,7 @@ alibis, actions, and the final reasoning).
   clues stay ungated; every reasoning path has ≥1 ungated entry clue. Each
   `requires` gate has a `kind` and a concrete `rationale`; a location clue's is a
   `pointer` whose `target` a prerequisite points to.
+- No location `description` names a sub-location whose clues are all locked.
 - Every `self_protect` agenda has `parts`, a `confession` and `hides_steps`.
 - The shortest solution path needs ≥ `minPathLength` necessary clues; no
   sub-floor subset of clues identifies the culprit.

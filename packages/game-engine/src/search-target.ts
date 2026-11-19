@@ -84,6 +84,15 @@ function headWord(spotName: string, ignore: Set<string>): string | undefined {
 }
 
 /**
+ * The words of a spot's name that say which spot it is, stemmed: neither the
+ * location's own words nor a counting word ("pile", "row").
+ */
+export function spotNameWords(spotName: string, locationName: string): string[] {
+  const placeWords = new Set(contentWords(locationName));
+  return contentWords(spotName).filter((word) => !placeWords.has(word) && !COUNTING_STEMS.has(word));
+}
+
+/**
  * True when the query names the spot's head word (`headWord`) and at least half
  * its own words, rounded up. A shared adjective alone ("the dusty floor" for
  * "the dusty bookshelf") names nothing. Words of the location's name do not
@@ -91,7 +100,7 @@ function headWord(spotName: string, ignore: Set<string>): string | undefined {
  */
 export function searchNamesSpot(query: string, spotName: string, locationName: string): boolean {
   const placeWords = new Set(contentWords(locationName));
-  const spotWords = contentWords(spotName).filter((word) => !placeWords.has(word) && !COUNTING_STEMS.has(word));
+  const spotWords = spotNameWords(spotName, locationName);
   const head = headWord(spotName, placeWords);
   if (head === undefined) return false;
   const queryWords = new Set(contentWords(query));

@@ -133,7 +133,7 @@ describe("judge blueprint", () => {
     expect(Object.keys(result.run.bindings)).toEqual(["blueprint-judge"]);
 
     const tiers = (tier: string) => result.verdicts.filter((v) => v.tier === tier).map((v) => v.id);
-    expect(tiers("mechanical")).toHaveLength(12);
+    expect(tiers("mechanical")).toHaveLength(13);
     expect(tiers("analyzer")).toEqual(["clue_graph.analyzer", "age_appropriate.analyzer"]);
     expect(tiers("judge")).toEqual(DIMENSIONS);
     for (const verdict of result.verdicts.filter((v) => v.tier === "judge")) {
@@ -304,6 +304,7 @@ describe("validate", () => {
       "pointers_point_to_target",
       "self_protect_has_parts",
       "parts_name_real_clues",
+      "descriptions_hide_locked_spots",
     ]);
     expect(result.verdicts.every((v) => v.tier === "mechanical" && v.status === "pass")).toBe(true);
     expect(result.run.bindings).toEqual({});

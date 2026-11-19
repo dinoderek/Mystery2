@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { findNamedHiddenSpots } from "../../../evaluation/checks/lib/hidden-spots.ts";
 import { analyzeLocks } from "../../../evaluation/checks/lib/locks.ts";
 import { runMechanicalChecks } from "../../../evaluation/checks/mechanical.ts";
 import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
@@ -12,6 +13,7 @@ const LOCK_CHECKS = [
   "pointers_point_to_target",
   "self_protect_has_parts",
   "parts_name_real_clues",
+  "descriptions_hide_locked_spots",
 ];
 
 /**
@@ -70,7 +72,7 @@ function failing(bp: BlueprintV2): string[] {
     .map((check) => check.id);
 }
 
-describe("lock and reaction checks", () => {
+describe("lock, reaction and hidden-spot checks", () => {
   it("pass on a blueprint that keeps every rule", () => {
     expect(failing(soundBlueprint())).toEqual([]);
   });
@@ -159,5 +161,31 @@ describe("lock and reaction checks", () => {
       { character_id: "alice", agenda_index: 0, clue_id: "" },
     ]);
     expect(failing(bp)).toEqual(["blueprint_schema_valid"]);
+  });
+
+  it("fail a location description that names a spot whose clues are all locked, even by a short word", () => {
+    const bp = soundBlueprint();
+    bp.world.locations[1].description = "A long hallway with a muddy mat.";
+    expect(failing(bp)).toEqual(["descriptions_hide_locked_spots"]);
+    expect(findNamedHiddenSpots(bp)).toEqual([{ location_id: "hallway", sub_location_id: "under-mat", words: ["mat"] }]);
+  });
+
+  it("let a description name a spot once one of its clues is unlocked, or share only a place word", () => {
+    const unlocked = soundBlueprint();
+    unlocked.world.locations[1].description = "A hallway with a door mat.";
+    delete unlocked.world.locations[1].sub_locations[0].clues[0].requires;
+    expect(findNamedHiddenSpots(unlocked)).toEqual([]);
+
+    const placeWord = soundBlueprint();
+    placeWord.world.locations[1].sub_locations[0].name = "under the back stairs";
+    placeWord.world.locations[1].description = "Snow blows in under the back window.";
+    expect(findNamedHiddenSpots(placeWord)).toEqual([]);
+  });
+
+  it("match plural and singular words, but not the location's own name", () => {
+    const bp = soundBlueprint();
+    bp.world.locations[1].sub_locations[0].name = "the snowshoe hooks in the hallway";
+    bp.world.locations[1].description = "A cold hallway. Snowshoes hang by the coats.";
+    expect(findNamedHiddenSpots(bp)).toMatchObject([{ words: ["snowsho"] }]);
   });
 });

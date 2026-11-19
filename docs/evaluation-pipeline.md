@@ -68,8 +68,8 @@ its brief, then runs:
 1. **Mechanical checks**: the clue graph is acyclic, references real clues,
    and reaches every solution clue from an ungated root; a location lock is a
    pointer a prerequisite points to; a self-protect agenda has a confession,
-   its hidden steps, and parts naming real clues. A failure does not stop the
-   dimensions: judges may find it another way.
+   hidden steps and parts naming real clues; no description names a locked
+   spot. A failing check still lets the judges run.
 2. **Dimensions**, in parallel. Within one, the analyzer runs before the judge,
    and an analyzer error skips only that dimension's judge.
 

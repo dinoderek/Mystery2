@@ -10,8 +10,7 @@
 //     subject_kind: "trace" | "interaction",
 //     turns: [ { sequence, judged, role_name, location_id, character_id,
 //                player_input, search_query, revealed_clue_ids,
-//                revealed_off_script, recorded_use?, prior_revealed_clue_ids,
-//                narration } ],
+//                revealed_off_script, prior_revealed_clue_ids, narration } ],
 //     judged_sequences: number[],
 //   }
 //
@@ -31,9 +30,6 @@ import {
   type GameEventLike,
   offScriptClueIdsForEvent,
   readField,
-  type RecordedUse,
-  recordedUseForEvent,
-  recordedUseFromOutput,
   revealedClueIdsForEvent,
 } from "../lib/game-events.ts";
 
@@ -48,11 +44,6 @@ export interface JudgeTurn {
   search_query: string | null;
   revealed_clue_ids: string[];
   revealed_off_script: string[];
-  // Present only on a conversation turn that recorded the character's state:
-  // the clues used on them, the player's words, new commitments. A trace
-  // carries what the engine kept; a runtime case's judged turn carries what
-  // the model reported, before the engine's checks.
-  recorded_use?: RecordedUse;
   narration: string;
   is_accusation_phase: boolean;
   /** Clue ids established by every turn before this one, in reveal order. */
@@ -78,7 +69,6 @@ export interface TraceTurnLike {
   search_query?: string | null;
   revealed_clue_ids?: string[];
   revealed_off_script?: string[];
-  recorded_use?: RecordedUse | null;
   narration: string;
 }
 
@@ -136,7 +126,6 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       search_query: t.search_query ?? null,
       revealed_clue_ids: t.revealed_clue_ids ?? [],
       revealed_off_script: t.revealed_off_script ?? [],
-      ...withRecordedUse(t.recorded_use ?? null),
       narration: t.narration,
       is_accusation_phase: ACCUSATION_EVENT_TYPES.has(t.event_type),
     }));
@@ -176,12 +165,6 @@ function offScriptClueIdsFromResponse(response: InteractionLike["response"]): st
     : [];
 }
 
-// A turn carries what it recorded only when it recorded something, so a game
-// saved before the engine recorded it projects exactly as it always did.
-function withRecordedUse(recorded: RecordedUse | null): { recorded_use?: RecordedUse } {
-  return recorded ? { recorded_use: recorded } : {};
-}
-
 // The case's `given.history` rows use the persisted game_events shape, so the
 // same readers that parse a real trace parse them here.
 function historyTurns(history: readonly GameEventLike[] | undefined): TurnBeforePriors[] {
@@ -197,7 +180,6 @@ function historyTurns(history: readonly GameEventLike[] | undefined): TurnBefore
     search_query: readField(event.payload, "search_query"),
     revealed_clue_ids: revealedClueIdsForEvent(event),
     revealed_off_script: offScriptClueIdsForEvent(event),
-    ...withRecordedUse(recordedUseForEvent(event)),
     narration: event.narration ?? "",
     is_accusation_phase: ACCUSATION_EVENT_TYPES.has(event.event_type),
   }));
@@ -230,7 +212,6 @@ export function projectInteractionSubject(
     search_query: action.search_query ?? null,
     revealed_clue_ids: revealedClueIdsFromResponse(response),
     revealed_off_script: offScriptClueIdsFromResponse(response),
-    ...withRecordedUse(recordedUseFromOutput(response.raw)),
     narration: response.narration_text ?? "",
     is_accusation_phase: isAccusationPhase,
   };

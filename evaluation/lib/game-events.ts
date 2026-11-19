@@ -120,10 +120,3 @@ export function recordedUseForEvent(event: GameEventLike): RecordedUse | null {
     new_commitments: readStringArray(payload, "new_commitments"),
   };
 }
-
-// The same fields from a talk_conversation answer the model returned, as a
-// runtime case's response carries it. Null when the answer has none of them.
-export function recordedUseFromOutput(raw: unknown): RecordedUse | null {
-  if (!raw || typeof raw !== "object" || !Array.isArray((raw as Record<string, unknown>).used_clue_ids)) return null;
-  return recordedUseForEvent({ event_type: "ask", payload: raw as Record<string, unknown> });
-}

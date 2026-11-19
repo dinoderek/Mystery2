@@ -92,26 +92,6 @@ describe("projectInteractionSubject", () => {
     });
   });
 
-  it("carries what a conversation turn recorded about the character, and nothing for one that recorded none", () => {
-    const recorded = { used_clue_ids: ["clue-crumb"], used_quote: "the crumb", new_commitments: ["never near the jar"] };
-    const base = makeInteraction();
-    const subject = projectInteractionSubject(
-      makeInteraction({
-        given: {
-          ...base.given,
-          history: [base.given.history[0], { ...base.given.history[1], payload: { ...base.given.history[1].payload, ...recorded } }],
-        },
-        response: { ...base.response, raw: { ...base.response.raw, ...recorded, new_commitments: [] } },
-      }),
-      { roleName: "talk_conversation" },
-    );
-    expect(subject.turns[0]).not.toHaveProperty("recorded_use");
-    expect(subject.turns[1].recorded_use).toEqual(recorded);
-    expect(subject.turns[2].recorded_use).toEqual({ ...recorded, new_commitments: [] });
-    // A case written before the engine recorded use projects exactly as before.
-    expect(projectInteractionSubject(makeInteraction(), { roleName: "talk_conversation" }).turns.some((turn) => "recorded_use" in turn)).toBe(false);
-  });
-
   it("handles a case with no prior history", () => {
     const subject = projectInteractionSubject(
       makeInteraction({ given: { mode: "explore", location_id: "loc-kitchen", history: [] } }),

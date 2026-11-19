@@ -498,7 +498,7 @@
               "type": "self_protect",
               "strategy": "deny_the_chance",
               "priority": "high",
-              "details": "Clementine says plenty of animals were in the dungeon after four, so anyone could have swapped the stick.",
+              "details": "Clementine insists she never touched the stick, and says anyone could have swapped it.",
               "parts": [
                 {
                   "clue_ids": ["clue_polish_four"],

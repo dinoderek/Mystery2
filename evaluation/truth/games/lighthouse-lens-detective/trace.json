@@ -369,12 +369,12 @@
               "type": "self_protect",
               "strategy": "Cover story for the bundle: it is 'just old fishing floats'",
               "priority": "medium",
-              "details": "Finn is hiding Ada's birthday surprise, not the lens. If asked about the bundle behind the coal box, he quickly changes the subject. He never lies about where he slept or what he saw.",
+              "details": "Finn is hiding Ada's birthday surprise, not the lens. If asked about the bundle behind the coal box, he says it is just old fishing floats and quickly changes the subject. He never lies about where he slept or what he saw.",
               "parts": [
                 {
                   "clue_id": "c_round_bundle",
                   "shows": "A big round bundle, about as wide as the lens, is hidden behind the coal box.",
-                  "reaction": "Admits the bundle is his, but says it is just old fishing floats."
+                  "reaction": "Admits the bundle is his and says it is a surprise, but will not say what."
                 }
               ],
               "confession": "He admits the bundle is a wooden birthday sign he carved for Ada, and begs you not to tell her."

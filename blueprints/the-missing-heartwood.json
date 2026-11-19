@@ -423,22 +423,7 @@
             "summary": "Kept a watchful eye on Sophie in the shallows until morning."
           }
         ],
-        "agendas": [
-          {
-            "type": "self_protect",
-            "strategy": "gruff_deflection",
-            "priority": "low",
-            "details": "Grumbles that a busy lifeguard has no time for silly questions, and softens when you're patient and polite.",
-            "parts": [
-              {
-                "clue_id": "clue_wet_bear_prints",
-                "shows": "The big prints on the dock are wet with river water and do not glow.",
-                "reaction": "Grumbles that of course they are his: he was diving on night watch."
-              }
-            ],
-            "confession": "He tells the whole truth: he was diving after a stuck turtle at two, and Sophie splashed in the shallows the whole time."
-          }
-        ],
+        "agendas": [],
         "tells": [
           {
             "id": "tell_sam_soft",

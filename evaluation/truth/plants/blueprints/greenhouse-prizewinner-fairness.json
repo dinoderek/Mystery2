@@ -73,6 +73,16 @@
       "op": "replace",
       "path": "/ground_truth/timeline/4",
       "value": "Friday: at 4pm Mr. Thorne climbs over the fence to measure Bertha through the side window, leaving huge boot prints. At 5pm Mia waters Bertha, sees the prints, locks up and returns the spare at 5:20. Mr. Thorne takes Goliath to the fair at 6:30pm and is at the growers' barbecue from 7 to 11; Mia serves at the cake tent from 6 to 10 and sells him carrot cake at 7. At 8pm Mr. Dobbs sees Bertha whole and the door locked."
+    },
+    {
+      "op": "test",
+      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "value": "Mumbles that it wasn't Mia, then."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/1/agendas/0/parts/3/reaction",
+      "value": "Mumbles something about Mia and goes quiet."
     }
   ],
   "caught_by": []

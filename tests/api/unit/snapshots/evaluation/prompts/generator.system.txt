@@ -264,8 +264,8 @@ rather than write one that fights the age.
 (source + quality), `texture` (optional), `portrait_background` (optional). Seed
 from `artStyle` but expand. `portrait_background` is the backdrop behind
 **character portraits only**: one sentence of abstract colour, light and blur
-(e.g. 'flat vertical wash of dusty rose fading to slate'), never depicting or
-naming any place in the mystery. Omit it (not `null`) for the default bokeh.
+(e.g. 'flat vertical wash of dusty rose fading to slate'), never depicting, naming
+or alluding to any place in the mystery. Omit it (not `null`) for the default bokeh.
 
 **Cover image.** `description`: 2–4 vivid, child-friendly sentences, intriguing
 without spoiling the culprit. `location_ids` / `character_ids`: ids featured, or

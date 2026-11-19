@@ -223,7 +223,7 @@
                     "clue_ids": [
                       "clue_barnaby_twigs"
                     ],
-                    "rationale": "The pile is out of sight behind the willow's curtain of branches. Barnaby's word that he left his spare twigs by the willow tells you where to look.",
+                    "rationale": "The pile is out of sight behind the willow's curtain of branches. Once Barnaby says he left his spare twigs by the pond, you know to look in its hidden spot behind the willow.",
                     "target": {
                       "location_id": "moonglow_pond",
                       "sub_location_id": "sub_willow"

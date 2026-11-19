@@ -12,6 +12,15 @@ export const schema = z.object({
       reasoning: z.string(),
     }),
   ),
+  locks: z.array(
+    z.object({
+      clue_id: z.string(),
+      kind: z.enum(["pointer", "leverage"]),
+      fits_its_kind: z.boolean(),
+      problem: z.enum(["none", "no_fitting_reason", "does_not_point", "busywork"]),
+      reasoning: z.string(),
+    }),
+  ),
   rationales_are_concrete: z.boolean(),
   gating_creates_momentum: z.boolean(),
   verdict: z.enum(["pass", "fail"]),

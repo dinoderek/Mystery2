@@ -136,14 +136,22 @@ describe("the real truth set's planted faults", () => {
     }
   });
 
-  it("plant three faults for each blueprint judge of the default battery, each on a different base, over every base", () => {
+  it("plant at least three faults for each blueprint judge of the default battery, over at least three bases, and cover every base", () => {
     const judges = judgesFor("blueprint").map((judge) => judge.id);
-    expect(countKinds(set.blueprintPlants.map((plant) => plant.judge))).toEqual(new Map(judges.map((judge) => [judge, 3])));
+    const planted = countKinds(set.blueprintPlants.map((plant) => plant.judge));
     for (const judge of judges) {
+      expect(planted.get(judge) ?? 0, judge).toBeGreaterThanOrEqual(3);
       const bases = set.blueprintPlants.filter((plant) => plant.judge === judge).map((plant) => plant.base);
-      expect(new Set(bases).size, judge).toBe(3);
+      expect(new Set(bases).size, judge).toBeGreaterThanOrEqual(3);
     }
     expect(new Set(set.blueprintPlants.map((plant) => plant.base))).toEqual(new Set(set.bases.map((base) => base.id)));
+  });
+
+  it("keep at least three plants of each lock and reaction judge that no deterministic check catches", () => {
+    for (const judge of ["clue_graph", "character_grounding"]) {
+      const uncaught = set.blueprintPlants.filter((plant) => plant.judge === judge && plant.caught_by.length === 0);
+      expect(uncaught.length, judge).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("name for each blueprint fault the kind of the judge it is meant for, in the blueprint vocabulary", () => {

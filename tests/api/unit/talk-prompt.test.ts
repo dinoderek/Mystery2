@@ -44,6 +44,8 @@ describe("the talk_conversation prompt, assembled by character", () => {
     expect(prompt.length).toBeLessThanOrEqual(5500);
     expect(prompt).toContain("You are Barnaby");
     expect(prompt).toContain("the prints were snowshoes not wolf paws");
+    // An earned reaction outranks the agenda it touches: no blaming Gus again.
+    expect(prompt).toContain("current_story outranks them");
   });
 
   it("leaves out every agenda section for a character with no agendas", async () => {

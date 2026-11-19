@@ -285,7 +285,6 @@ describe("game-turn actions", () => {
       await play(gameId, "goodbye");
       await play(gameId, "go to the Living Room");
       await play(gameId, "go to the Kitchen");
-      setStoredTimeRemaining(gameId, 10);
 
       await play(gameId, "talk to Alice");
       const later = await play(gameId, "Where were you this afternoon?");
@@ -299,10 +298,12 @@ describe("game-turn actions", () => {
       // Its context, rebuilt from the stored events before it by the builder the
       // turn used, carries both.
       const events = readStoredEvents(gameId);
+      const session = readStoredSession(gameId)!;
+      expect(session.mode).toBe("talk");
       const { context } = await buildRoleRequest({
         role: "talk_conversation",
         game_id: gameId,
-        session: { mode: "talk", current_location_id: "loc-kitchen", current_talk_character_id: "char-alice", time_remaining: 10 },
+        session: { ...session, mode: "talk" },
         blueprint: mockBlueprint,
         character_id: "char-alice",
         location_id: "loc-kitchen",

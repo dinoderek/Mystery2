@@ -1,0 +1,19 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "character_grounding",
+  "judge": "character_grounding",
+  "note": "Roz's tide-board part now admits she crossed the causeway at one, though the board shows only when the tide was low.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/characters/2/agendas/0/parts/1/reaction",
+      "value": "Says lots of people could have crossed at two, but she was asleep."
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/2/agendas/0/parts/1/reaction",
+      "value": "Admits she crossed the dry causeway at one in the morning."
+    }
+  ],
+  "caught_by": []
+}

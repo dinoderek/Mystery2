@@ -47,6 +47,7 @@
         "passes": true
       }
     ],
+    "reactions": [],
     "verdict": "pass",
     "reasoning": "Alice can be talked to about most topics."
   },
@@ -69,6 +70,7 @@
         "reasoning": "Two clues can be found first."
       }
     ],
+    "locks": [],
     "rationales_are_concrete": true,
     "gating_creates_momentum": true,
     "verdict": "pass",

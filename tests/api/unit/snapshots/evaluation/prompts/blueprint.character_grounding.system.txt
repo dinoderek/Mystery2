@@ -36,33 +36,24 @@ tier: 1
 
 ## What this dimension asks
 
-Does each character have **enough authored material** that the runtime
-narrator/GM AI does not need to invent facts when the player asks
-edge-of-knowledge questions?
-
-A character that is thin — sparse `background`, empty `flavor_knowledge`,
-one-line `personality` — invites the runtime GM to fabricate when probed.
-This dimension catches that risk at authoring time.
+Does each character have **enough authored material** that the runtime GM does
+not need to invent facts when probed? A thin character (sparse `background`,
+empty `flavor_knowledge`) invites fabrication. This also checks that a
+self-protect agenda's reactions concede no more than their clues show.
 
 ## Judge instructions
 
-For each character in `world.characters`, assess whether the available
-authored material would let a competent game-master answer plausible player
-questions without inventing facts.
+Probe topics are supplied under `probe_topics` (in `./context.json` in the judge
+workspace): the **same baseline for every character in every mystery**, not
+story-specific. Use each topic string verbatim. They cover a character's
+background, likes and dislikes, personality, attitude, appearance, and knowledge
+of the others, the locations and the mystery.
 
-Probe topics are supplied to you under `probe_topics` (in `./context.json` in
-the judge workspace). They are the **same baseline for every character in every
-mystery** — grounding is not story-specific. Use each topic string verbatim. The
-baseline covers the character's own background and a brief sketch of their life;
-their likes and dislikes; their personality, attitude, and appearance; and their
-knowledge of the other characters, the locations, and the central mystery.
+For each character in `world.characters`, simulate a player asking each probe
+topic, and decide whether a competent game-master could answer without inventing:
 
-For each character, simulate: a player walks up and asks each probe topic. For
-each topic, decide:
-
-- **`grounded`** — the existing `background`, `personality`,
-  `actual_actions`, `flavor_knowledge`, and `clues` give the GM enough
-  material to answer specifically and in-character.
+- **`grounded`** — `background`, `personality`, `actual_actions`,
+  `flavor_knowledge` and `clues` give enough to answer specifically.
 - **`thin`** — the GM would have to extrapolate or invent (e.g., "I assume
   she gets up early but it's not actually said").
 - **`absent`** — no authored material at all on this topic; the GM must
@@ -70,6 +61,15 @@ each topic, decide:
 
 A character "passes" if **no probe topic is `absent`** and **at most one** is
 `thin`.
+
+## Reactions
+
+A self-protect agenda lists `parts`, `{ clue_id, shows, reaction }`: a clue that
+breaks the cover, what it proves, and what the character concedes. For each part
+of each such agenda, judge `concedes_only_what_clue_shows`: the `reaction` admits
+what the clue's text and `shows` establish, nothing more (not walking, motive or
+guilt from a clue that shows only prints). Characters with no such agenda have
+no entry.
 
 ## Output
 
@@ -85,8 +85,16 @@ A character "passes" if **no probe topic is `absent`** and **at most one** is
       "passes": true
     }
   ],
+  "reactions": [
+    {
+      "character_id": "...",
+      "clue_id": "...",
+      "concedes_only_what_clue_shows": true,
+      "note": "..."
+    }
+  ],
   "verdict": "pass" | "fail",
-  "reasoning": "One paragraph. 'pass' iff every character passes."
+  "reasoning": "One paragraph. 'pass' iff every character passes and every reaction concedes only what its clue shows."
 }
 ```
 
@@ -153,6 +161,33 @@ Your response MUST be a single JSON object matching this schema. If the prose co
         "additionalProperties": false
       }
     },
+    "reactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "character_id": {
+            "type": "string"
+          },
+          "clue_id": {
+            "type": "string"
+          },
+          "concedes_only_what_clue_shows": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "character_id",
+          "clue_id",
+          "concedes_only_what_clue_shows",
+          "note"
+        ],
+        "additionalProperties": false
+      }
+    },
     "verdict": {
       "type": "string",
       "enum": [
@@ -166,6 +201,7 @@ Your response MUST be a single JSON object matching this schema. If the prose co
   },
   "required": [
     "characters",
+    "reactions",
     "verdict",
     "reasoning"
   ],

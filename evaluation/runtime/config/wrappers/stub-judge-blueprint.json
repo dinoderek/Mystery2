@@ -132,6 +132,7 @@
         "passes": true
       }
     ],
+    "reactions": [],
     "verdict": "pass",
     "reasoning": "Stub verdict: nothing to report."
   },
@@ -195,6 +196,7 @@
         "reasoning": "Stub verdict: nothing to report."
       }
     ],
+    "locks": [],
     "rationales_are_concrete": true,
     "gating_creates_momentum": true,
     "verdict": "pass",

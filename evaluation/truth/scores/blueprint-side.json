@@ -37,16 +37,16 @@
       "judge": "character_grounding",
       "model": "opus",
       "version": 1,
-      "current": 1,
-      "reason": "subject",
+      "current": 2,
+      "reason": "judge",
       "verdicts": 28
     },
     {
       "judge": "clue_graph",
       "model": "opus",
       "version": 1,
-      "current": 1,
-      "reason": "subject",
+      "current": 2,
+      "reason": "judge",
       "verdicts": 28
     },
     {

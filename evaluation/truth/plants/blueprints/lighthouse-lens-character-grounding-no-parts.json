@@ -1,0 +1,37 @@
+{
+  "base": "lighthouse-lens",
+  "kind": "character_grounding",
+  "judge": "character_grounding",
+  "note": "Roz's cover-story agenda loses its parts, so nothing says which clue breaks her alibi or what each earns.",
+  "patch": [
+    {
+      "op": "test",
+      "path": "/world/characters/2/agendas/0/parts",
+      "value": [
+        {
+          "clue_id": "c_changed_schedule",
+          "shows": "Someone inked a 5 over last night's low tide time on Ada's schedule.",
+          "reaction": "Gets flustered and says anyone could have changed it. She still slept all night."
+        },
+        {
+          "clue_id": "c_harbour_tide_board",
+          "shows": "Last night's low tide was at two, so the causeway was dry from one to three.",
+          "reaction": "Says lots of people could have crossed at two, but she was asleep."
+        },
+        {
+          "clue_id": "c_finn_saw_roz",
+          "shows": "Roz was alone in Ada's cottage yesterday, where the schedule hangs.",
+          "reaction": "Goes pale and says she only popped in to show Ada her beacon drawings."
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/world/characters/2/agendas/0/parts",
+      "value": []
+    }
+  ],
+  "caught_by": [
+    "self_protect_has_parts"
+  ]
+}

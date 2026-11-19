@@ -35,7 +35,7 @@
         "sequence": null
       },
       "judge": "gm_spoiler",
-      "judge_version": 1,
+      "judge_version": 2,
       "subject_hash": "47c0ca0592a8a7f9",
       "model": "claude-opus-stub",
       "sample": 0,

@@ -80,7 +80,7 @@ describe("registry entries", () => {
       "gm_spoiler",
       "age_appropriate_turn",
     ]);
-    expect(checksFor("blueprint")).toHaveLength(8);
+    expect(checksFor("blueprint")).toHaveLength(12);
     expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak", "clue_requires_violation"]);
     expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
   });

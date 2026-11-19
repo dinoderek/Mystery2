@@ -37,9 +37,10 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
 
 ## Clue gating (the discovery graph)
 
-Any clue may carry an optional `requires` object (`{ clue_ids, rationale }`): it
-cannot be revealed until every prerequisite clue has already been discovered.
-This is what turns a flat clue list into a discovery-driven investigation.
+Any clue may carry an optional `requires` object (`{ kind, clue_ids, rationale,
+target }`): it cannot be revealed until every prerequisite clue has been
+discovered. `kind` is `pointer` (an earlier clue says where to look or what to
+raise) or `leverage` (the character must be shown it).
 
 - **Search gates are hard.** Bare search reveals the next location-level clue
   that is both unrevealed *and* unlocked, skipping locked ones so the player is
@@ -50,18 +51,19 @@ This is what turns a flat clue list into a discovery-driven investigation.
   narrator MAY grant an off-script reveal for a genuinely clever question or a
   convincing bluff — *only* when the rationale implies a social or knowledge gate
   that cleverness could bypass, never a hard physical one. Write each
-  `rationale` so it signals which kind it is ("she only opens up once you can
-  prove you saw her at the dock" vs. "the safe cannot be opened without the key").
+  `rationale` so it signals which kind it is.
 - Off-script reveals are recorded as real discoveries, so a clever player is
   never hard-stuck on the critical path.
-- **A suspect's cover gives way in proportion.** It cracks only as far as the
-  player has earned, with evidence they hold or a convincing bluff or deduction
-  that names what the evidence would show. Accusing them earns nothing on its
-  own, and half the evidence gets a nervous slip rather than a confession.
+- **A suspect's cover gives way in proportion.** Each clue it lists in `parts`
+  earns that part's reaction once the player uses it, or bluffs it convincingly.
+  Accusing earns nothing, and only every part earns the `confession`.
 
-Authoring rules the schema and the `clue_graph` eval dimension enforce:
+Authoring rules the schema, mechanical checks and `clue_graph` dimension enforce:
 
 - keep most clues **ungated** — gating should create momentum, never dead-ends
+- a location clue's lock is a **pointer**: the clue sits in a sub-location its
+  `target` names, and a prerequisite points there (`hint_location_id`,
+  `hint_sub_location_id`); a clue you "only spot once you know" stays ungated
 - the graph must be **acyclic**, and a clue may not require itself
 - every reasoning path is a small mini-mystery with **at least one ungated entry
   clue**, and every solution-path clue must be reachable from ungated roots

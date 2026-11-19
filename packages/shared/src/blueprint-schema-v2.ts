@@ -8,8 +8,26 @@ const BlueprintV2IdSchema = z
 
 export const BlueprintV2CharacterSexSchema = z.enum(["male", "female"]);
 
+export const BlueprintV2LockKindSchema = z
+  .enum(["pointer", "leverage"])
+  .describe(
+    "Why the lock exists. `pointer`: an earlier clue tells the player where to look or "
+      + "what to raise. `leverage`: the character must be shown the earlier clue before "
+      + "they give this one up. A location clue's lock is always `pointer`.",
+  );
+export type BlueprintV2LockKind = z.infer<typeof BlueprintV2LockKindSchema>;
+
+export const BlueprintV2SearchSpotSchema = z.object({
+  location_id: BlueprintV2IdSchema.describe("A world.locations[].id."),
+  sub_location_id: BlueprintV2IdSchema.describe(
+    "A sub_locations[].id inside that location.",
+  ),
+});
+export type BlueprintV2SearchSpot = z.infer<typeof BlueprintV2SearchSpotSchema>;
+
 export const BlueprintV2ClueRequiresSchema = z
   .object({
+    kind: BlueprintV2LockKindSchema,
     clue_ids: z
       .array(BlueprintV2IdSchema)
       .min(1)
@@ -31,12 +49,32 @@ export const BlueprintV2ClueRequiresSchema = z
           + "bypass) vs. 'the safe physically cannot be opened without the key' (a hard "
           + "gate with no substitute).",
       ),
+    target: BlueprintV2SearchSpotSchema.optional().describe(
+      "For a location clue's pointer: the sub-location the gated clue sits in. At least "
+        + "one prerequisite must point there through its hint_location_id and "
+        + "hint_sub_location_id. Omitted on character clues, whose pointer leads to the "
+        + "character who holds the clue.",
+    ),
   })
   .describe(
     "Optional discovery gate. Absent/null means the clue is ungated and available from "
       + "the start. Gates define an implicit acyclic discovery graph whose edges point "
       + "from a clue to its prerequisites. Keep most clues ungated; gating should create "
       + "momentum, never dead-ends.",
+  );
+
+const hintLocationIdField = z
+  .string()
+  .optional()
+  .describe(
+    "Optional. If this clue points the investigator at a specific location, the id of that location. Validated to reference an existing location.",
+  );
+
+const hintSubLocationIdField = z
+  .string()
+  .optional()
+  .describe(
+    "Optional. With hint_location_id, the sub-location inside it this clue points to. A pointer lock on the clue found there names this spot as its target. Validated to belong to hint_location_id.",
   );
 
 export const BlueprintV2LocationClueSchema = z.object({
@@ -48,6 +86,8 @@ export const BlueprintV2LocationClueSchema = z.object({
     .trim()
     .min(1)
     .describe("Concrete clue text discovered by searching a location."),
+  hint_location_id: hintLocationIdField,
+  hint_sub_location_id: hintSubLocationIdField,
   requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
@@ -66,12 +106,8 @@ export const BlueprintV2CharacterClueSchema = z.object({
     .describe(
       "Optional. If this clue concerns another character (alibi, observation, motive), the id of that character. Validated to reference an existing character.",
     ),
-  hint_location_id: z
-    .string()
-    .optional()
-    .describe(
-      "Optional. If this clue points the investigator at a specific location, the id of that location. Validated to reference an existing location.",
-    ),
+  hint_location_id: hintLocationIdField,
+  hint_sub_location_id: hintSubLocationIdField,
   requires: BlueprintV2ClueRequiresSchema.optional().nullable(),
 });
 
@@ -271,6 +307,28 @@ export type BlueprintV2CharacterTell = z.infer<
   typeof BlueprintV2CharacterTellSchema
 >;
 
+export const BlueprintV2AgendaPartSchema = z.object({
+  clue_id: BlueprintV2IdSchema.describe(
+    "The clue (location, or a different character's) this part yields to. Validated "
+      + "to reference an existing clue.",
+  ),
+  shows: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("What this evidence proves, and no more."),
+  reaction: z
+    .string()
+    .trim()
+    .min(1)
+    .describe(
+      "What the character concedes once the player uses this clue on them, fitted "
+        + "into their story. It concedes exactly what `shows` proves: when the "
+        + "evidence does not touch the alibi, the alibi stands.",
+    ),
+});
+export type BlueprintV2AgendaPart = z.infer<typeof BlueprintV2AgendaPartSchema>;
+
 export const BlueprintV2AgendaSchema = z.object({
   type: z.enum([
     "self_protect",
@@ -292,7 +350,8 @@ export const BlueprintV2AgendaSchema = z.object({
     .min(1)
     .describe(
       "Narrative guidance for the narrator AI. Describes the specific behavior, "
-        + "what triggers it, and how it manifests in conversation.",
+        + "what triggers it, and how it manifests in conversation. For self_protect, "
+        + "the general manner only: what each clue earns lives in `parts`.",
     ),
   target_character_id: z
     .string()
@@ -314,7 +373,25 @@ export const BlueprintV2AgendaSchema = z.object({
     .optional()
     .describe(
       "For confronted_with_evidence: specific clue IDs whose content the player "
-        + "must reference in conversation to break through.",
+        + "must reference in conversation to break through. Not used on self_protect, "
+        + "which lists `parts` instead.",
+    ),
+  parts: z
+    .array(BlueprintV2AgendaPartSchema)
+    .optional()
+    .describe(
+      "For self_protect: one entry per clue that breaks the cover story, each with what "
+        + "it shows and the reaction it earns. Required for self_protect; not used on "
+        + "other agenda types.",
+    ),
+  confession: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      "For self_protect: what the character finally admits, only once every part has "
+        + "been earned. Required for self_protect; not used on other agenda types.",
     ),
 });
 export type BlueprintV2Agenda = z.infer<typeof BlueprintV2AgendaSchema>;
@@ -415,6 +492,25 @@ function addDuplicateIssue(
     path,
     message: `Duplicate id "${value}" is not allowed in Blueprint V2.`,
   });
+}
+
+// A self_protect agenda breaks by its parts; every other type keeps its own fields.
+function addAgendaFieldIssues(
+  context: z.RefinementCtx,
+  agenda: BlueprintV2Agenda,
+  agendaPath: (string | number)[],
+): void {
+  const misplaced: Array<[keyof BlueprintV2Agenda, string]> = agenda.type === "self_protect"
+    ? [["yields_to_clue_ids", "self_protect agendas list parts, not yields_to_clue_ids."]]
+    : [
+        ["parts", "parts belongs to self_protect agendas only."],
+        ["confession", "confession belongs to self_protect agendas only."],
+      ];
+  for (const [field, message] of misplaced) {
+    if (agenda[field] !== undefined) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: [...agendaPath, field], message });
+    }
+  }
 }
 
 export const BlueprintV2Schema = z
@@ -612,6 +708,13 @@ export const BlueprintV2Schema = z
   .superRefine((value, context) => {
     const locationIds = new Set<string>();
     const subLocationIds = new Set<string>();
+    const subLocationsByLocation = new Map<string, Set<string>>();
+    // Every clue with where it lives, for the checks that need every location first.
+    const placedClues: Array<{
+      clue: z.infer<typeof BlueprintV2LocationClueSchema>;
+      path: (string | number)[];
+      isLocationClue: boolean;
+    }> = [];
     const characterIds = new Set<string>();
     const locationClueIds = new Set<string>();
     const characterClueIds = new Set<string>();
@@ -630,8 +733,17 @@ export const BlueprintV2Schema = z
         addDuplicateIssue(context, ["world", "locations", locationIndex, "id"], location.id);
       }
       locationIds.add(location.id);
+      subLocationsByLocation.set(
+        location.id,
+        new Set((location.sub_locations ?? []).map((subLoc) => subLoc.id)),
+      );
 
       for (const [clueIndex, clue] of location.clues.entries()) {
+        placedClues.push({
+          clue,
+          path: ["world", "locations", locationIndex, "clues", clueIndex],
+          isLocationClue: true,
+        });
         if (locationClueIds.has(clue.id) || characterClueIds.has(clue.id)) {
           addDuplicateIssue(
             context,
@@ -659,6 +771,11 @@ export const BlueprintV2Schema = z
         subLocationIds.add(subLoc.id);
 
         for (const [clueIndex, clue] of subLoc.clues.entries()) {
+          placedClues.push({
+            clue,
+            path: ["world", "locations", locationIndex, "sub_locations", subLocIndex, "clues", clueIndex],
+            isLocationClue: true,
+          });
           if (locationClueIds.has(clue.id) || characterClueIds.has(clue.id)) {
             addDuplicateIssue(
               context,
@@ -759,6 +876,11 @@ export const BlueprintV2Schema = z
         }
         characterClueIds.add(clue.id);
         thisCharacterClueIds.add(clue.id);
+        placedClues.push({
+          clue,
+          path: ["world", "characters", characterIndex, "clues", clueIndex],
+          isLocationClue: false,
+        });
         if (clue.requires) {
           clueRequiresMap.set(clue.id, {
             requires: clue.requires.clue_ids,
@@ -781,6 +903,8 @@ export const BlueprintV2Schema = z
             message: `Agenda type "${agenda.type}" requires target_character_id.`,
           });
         }
+
+        addAgendaFieldIssues(context, agenda, agendaPath);
 
         if (agenda.type === "conditional_reveal") {
           if (!agenda.gated_clue_id) {
@@ -917,6 +1041,52 @@ export const BlueprintV2Schema = z
         }
       }
     }
+    // A clue's pointing fields and its lock's target name real spots.
+    const spotProblem = (locationId: string, subLocationId: string | undefined): string | null => {
+      if (!locationIds.has(locationId)) return `"${locationId}" is not a location`;
+      if (subLocationId !== undefined && !subLocationsByLocation.get(locationId)?.has(subLocationId)) {
+        return `"${subLocationId}" is not a sub-location of "${locationId}"`;
+      }
+      return null;
+    };
+    for (const { clue, path, isLocationClue } of placedClues) {
+      if (clue.hint_location_id !== undefined && !locationIds.has(clue.hint_location_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...path, "hint_location_id"],
+          message: `hint_location_id "${clue.hint_location_id}" must reference an existing location.`,
+        });
+      }
+      if (clue.hint_sub_location_id !== undefined) {
+        // An unknown hint_location_id is reported above, so only its sub-location is judged here.
+        const problem = clue.hint_location_id === undefined
+          ? "it needs hint_location_id"
+          : locationIds.has(clue.hint_location_id)
+            ? spotProblem(clue.hint_location_id, clue.hint_sub_location_id)
+            : null;
+        if (problem) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...path, "hint_sub_location_id"],
+            message: `hint_sub_location_id "${clue.hint_sub_location_id}" is invalid: ${problem}.`,
+          });
+        }
+      }
+      const target = clue.requires?.target;
+      if (target) {
+        const problem = isLocationClue
+          ? spotProblem(target.location_id, target.sub_location_id)
+          : "a target names a search spot, so only a location clue's lock has one";
+        if (problem) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...path, "requires", "target"],
+            message: `requires.target is invalid: ${problem}.`,
+          });
+        }
+      }
+    }
+
     for (const [characterIndex, character] of value.world.characters.entries()) {
       const thisClueIds = new Set(character.clues.map((c) => c.id));
 
@@ -927,13 +1097,6 @@ export const BlueprintV2Schema = z
             code: z.ZodIssueCode.custom,
             path: ["world", "characters", characterIndex, "clues", clueIndex, "about_character_id"],
             message: `about_character_id "${clue.about_character_id}" must reference an existing character.`,
-          });
-        }
-        if (clue.hint_location_id && !locationIds.has(clue.hint_location_id)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["world", "characters", characterIndex, "clues", clueIndex, "hint_location_id"],
-            message: `hint_location_id "${clue.hint_location_id}" must reference an existing location.`,
           });
         }
       }
@@ -975,6 +1138,35 @@ export const BlueprintV2Schema = z
               });
             }
           }
+        }
+      }
+
+      // self_protect parts must reference existing clues not in same character
+      for (const [agendaIndex, agenda] of character.agendas.entries()) {
+        const seenPartClues = new Set<string>();
+        for (const [partIndex, part] of (agenda.parts ?? []).entries()) {
+          const partPath = ["world", "characters", characterIndex, "agendas", agendaIndex, "parts", partIndex, "clue_id"];
+          if (!allClueIds.has(part.clue_id)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: partPath,
+              message: `parts references unknown clue id "${part.clue_id}".`,
+            });
+          } else if (thisClueIds.has(part.clue_id)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: partPath,
+              message: "parts must not reference clues from the same character.",
+            });
+          }
+          if (seenPartClues.has(part.clue_id)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: partPath,
+              message: `parts lists clue "${part.clue_id}" more than once.`,
+            });
+          }
+          seenPartClues.add(part.clue_id);
         }
       }
 

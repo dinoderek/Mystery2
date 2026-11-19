@@ -88,27 +88,30 @@ the culprit, so a narrowing step is missing.
 ## Discovery graph
 
 Clues can gate other clues. Any clue may carry an optional `requires` object —
-`{ "clue_ids": [...], "rationale": "..." }` — meaning it cannot be discovered until
-every listed clue has already been discovered. This turns each reasoning path into a
+`{ "kind", "clue_ids": [...], "rationale", "target" }` — meaning it cannot be
+discovered until every listed clue has been. This turns each reasoning path into a
 small **mini-mystery graph**: a few ungated entry clues that unlock follow-on clues
-leading to the path's payoff.
+leading to the path's payoff. `kind` says why the lock exists:
 
+- **`pointer`**: an earlier clue tells the player where to look or what to raise.
+  A location clue's lock is always a pointer: the clue sits in a sub-location,
+  `target` names that `{ location_id, sub_location_id }`, and a prerequisite
+  points there with `hint_location_id` and `hint_sub_location_id` (the snowshoe
+  trail leads behind the woodpile). Character clues omit `target`.
+- **`leverage`**: the character gives the clue up only once shown the earlier one.
+- **Specific, not hidden.** "You only spot it once you know to look" is not a
+  lock. Leave that clue ungated in a sub-location a specific search can name.
 - **Shape, not chains.** Aim for shallow, branchy graphs (depth 2–3, several roots),
   never one long brittle chain. Every path — solution, red herring, elimination —
   needs at least one **ungated entry clue** so the thread is always startable.
-- **Gate about a third.** Leave the majority of clues ungated; gating should create
-  momentum, never busywork or dead-ends. Prefer leaving a clue ungated when a sharp
-  player could plausibly deduce it early.
-- **`rationale` is load-bearing.** Write a concrete in-fiction reason the clue is
-  gated, and make it signal whether cleverness can substitute: a social/knowledge
-  gate a clever question could bypass ("she only opens up once you can prove you saw
-  her at the dock") vs. a hard physical gate with no substitute ("the safe cannot be
-  opened without the key"). The narrator uses this both for flavor and to judge
-  off-script unlocks.
-- **Stay solvable.** The graph must be acyclic (no clue may, directly or through a
-  chain, require itself). Never gate a clue the main solution needs behind something
-  unreachable — at least one `solution_path` must be completable through ungated and
-  shallowly-gated clues only.
+- **Gate about a third,** for momentum, never busywork or dead-ends.
+- **`rationale` is load-bearing.** Give a concrete in-fiction reason, and signal
+  whether cleverness can substitute: a social gate a clever question could bypass
+  ("she only opens up once you can prove you saw her at the dock") vs. a hard gate
+  ("the safe cannot be opened without the key"). The narrator uses it for flavor
+  and to judge off-script unlocks.
+- **Stay solvable.** Acyclic, and at least one `solution_path` completable through
+  ungated and shallowly gated clues only.
 
 ## Internal Workflow
 
@@ -127,6 +130,14 @@ Plan with these steps; do not output them.
 6. Author agendas (behavioral directives shaping conversation):
    - The culprit MUST have ≥1 self-protection agenda (`maintain_false_alibi`,
      `deny_motive`, or `minimize_presence`) at `priority: "high"`.
+   - A `self_protect` agenda lists `parts`, one per clue that breaks its cover:
+     `{ clue_id, shows, reaction }`. `shows` is what that evidence proves;
+     `reaction` concedes exactly that, fitted into the character's story.
+     Evidence that misses the alibi leaves it standing: prints proving the wolf
+     innocent make the liar stop blaming the wolf, not admit he walked.
+     `confession` is what they admit once every part is earned; `details` keeps
+     the general manner. Part clues come from a location or a *different*
+     character.
    - Give non-culprits agendas that create friction where it serves the story
      (`protect_other`, `implicate_other`, `conditional_reveal`), each with a
      stated reason — including at least one narrative-condition
@@ -135,9 +146,8 @@ Plan with these steps; do not output them.
    - `confronted_with_evidence` reveals: every `yields_to_clue_ids` entry must
      reference an obtainable clue from a location or a *different* character.
      Narrative-condition reveals (`clever_questioning`, `bluff`,
-     `trust_established`, `pressure`) need `details` rich enough for the narrator
-     to judge the condition consistently; for `trust_established`, hint at what
-     reassures the character.
+     `trust_established`, `pressure`) need `details` rich enough to judge the
+     condition consistently; for `trust_established`, hint at what reassures.
    - No circular gating (A needs B needs A). At least one `solution_path` must be
      completable without any narrative-condition reveal (`confronted_with_evidence`
      on the critical path is fine — its unlock is deterministic).
@@ -153,16 +163,14 @@ Plan with these steps; do not output them.
        Write the condition concretely enough for the narrator to judge.
      - `{ "kind": "always" }`: reserve for a cue the character carries from the
        first exchange; use sparingly.
-     Prefer `clue`/`condition` triggers so tells reward investigation. Leaving
-     `tells` empty is fine for minor characters — the narrator still reacts
-     organically — but a memorable suspect deserves an authored, consistent tell.
+     Prefer `clue`/`condition` triggers so tells reward investigation. Minor
+     characters may have none; a memorable suspect deserves one.
 7. Author clues — location and character. Where it helps, give characters
    cross-character clues that confirm/deny another's alibi, report what they saw
    another do, reveal a motive, or point at a location; set `about_character_id` /
    `hint_location_id` accordingly. Every clue must belong to ≥1 reasoning path.
-   Set `requires` on a clue that should be earned (confront-then-reveal,
-   hint-then-search), always with a concrete `rationale`; follow the **Discovery
-   graph** rules (mostly ungated, acyclic, solution reachable).
+   Set `requires` on a clue that should be earned (show-then-reveal,
+   point-then-search) per the **Discovery graph** rules.
 8. Place clues: at most one clue at a location's top level and at most one per
    sub-location; spread them so the player must explore.
 9. Add `flavor_knowledge` for texture, separate from clues.
@@ -178,9 +186,8 @@ Plan with these steps; do not output them.
       combinations *outside* your intended path. Patch any sub-floor shortcut.
     - Confirm the brief's counts (culprits/suspects/witnesses/locations/
       redHerringTrails) and that every suspect has an elimination path.
-    - Trace the discovery graph: every `requires` references a real clue (not
-      itself), the graph is acyclic, and every clue the solution needs is reachable
-      from ungated clues. Each path keeps at least one ungated entry clue.
+    - Trace the discovery graph against its rules, including each pointer's
+      target, and each `self_protect` part's reaction against what its clue shows.
 11. Final flavor pass: sharpen descriptions, backgrounds, and personalities;
     compose `metadata.visual_direction` and `cover_image`; keep every addition
     consistent with the locked facts.
@@ -189,11 +196,9 @@ Plan with these steps; do not output them.
     they disagree. See **Physical consistency**.
     - For each clue, list the physical facts it states: where each object is,
       what state it is in, what a character looks like or carries.
-    - Check every other field against that list: other clues, every
-      `actual_actions` entry, location `description`, sub-location `name` and
-      `hint`, character `appearance`, `tells`, `flavor_knowledge`,
-      `starting_knowledge` summaries, `premise`, `one_liner`, and
-      `ground_truth`.
+    - Check every other field against that list: other clues, `actual_actions`,
+      descriptions, sub-locations, `appearance`, `tells`, `flavor_knowledge`,
+      summaries, `premise`, `one_liner`, `ground_truth`.
     - Fix every disagreement, then re-run step 10's checks on anything you
       changed.
 
@@ -224,9 +229,8 @@ Every physical fact the blueprint states agrees across fields.
 Use these bands unless the brief justifies otherwise; prefer the smaller end for
 younger ages or tighter budgets.
 
-The game is meant to feel clue-rich and discovery-driven — clues can now be gated
-behind one another (see **Discovery graph**), so prefer more small, specific clues
-over fewer dense ones.
+The game should feel clue-rich: prefer more small, specific clues over fewer dense
+ones.
 
 - **Cast & locations:** 3–5 characters (exactly 1 culprit) and 3–5 locations.
   Include 1–2 innocent suspects with plausible reasons to seem suspicious.
@@ -249,25 +253,19 @@ do not scale with reading age.
 
 **Metadata.** `schema_version`: `"v2"`. `title`: 2–6 words. `target_age`: copy
 from the brief. `time_budget`: per the rule above.
-`narration_style`: optional — one sentence of narration voice/tone direction for
-the in-game narrator, layered on top of the standard narrator voice (e.g. 'salty
-harbor air, gull cries, a gentle pirate lilt'); omit to use the standard voice.
-It may direct tone, mood, and imagery only. It must never call for archaic,
-ornate, technical, or heavily figurative diction: the narrator applies it on top
-of the target age's reading level, and a voice the age band cannot carry will
-either be ignored or push the narration above the reading level. Omit it rather
-than write one that fights the age.
+`narration_style`: optional — one sentence of voice/tone direction layered on the
+standard narrator voice (e.g. 'salty harbor air, gull cries, a gentle pirate
+lilt'). Tone, mood and imagery only: never archaic, ornate, technical or heavily
+figurative diction, which the target age's reading level cannot carry. Omit it
+rather than write one that fights the age.
 `art_style`: null (superseded). `visual_direction`: structured object —
 `art_style` (specific medium, not just "watercolor"), `color_palette` (3–5 colors
 + emotional register, tied to the setting), `mood` (1–2 phrases), `lighting`
 (source + quality), `texture` (optional), `portrait_background` (optional). Seed
-from `artStyle` but expand. `portrait_background` directs the backdrop behind
-**character portraits only** — one sentence of abstract colour, light, and blur
-that suits the art style and palette (e.g. 'flat vertical wash of dusty rose
-fading to slate'). It must never depict, name, or allude to any location, room,
-building, or setting from the mystery: portraits stay location-agnostic on
-purpose. Omit the field entirely (do not set it to `null`) to use the default
-warm/cool bokeh wash.
+from `artStyle` but expand. `portrait_background` is the backdrop behind
+**character portraits only**: one sentence of abstract colour, light and blur
+(e.g. 'flat vertical wash of dusty rose fading to slate'), never depicting or
+naming any place in the mystery. Omit it (not `null`) for the default bokeh.
 
 **Cover image.** `description`: 2–4 vivid, child-friendly sentences, intriguing
 without spoiling the culprit. `location_ids` / `character_ids`: ids featured, or
@@ -287,13 +285,12 @@ sub-location needs a clue — some are atmospheric.
 **Characters.** `id`, `first_name`/`last_name` (age-appropriate), `location_id`
 (real), `appearance`, `background`, `personality`,
 `initial_attitude_towards_investigator`, `stated_alibi` (may be false), `motive`
-(innocents may have one too, for fair suspicion), `clues[]` (each clue may carry an
-optional `requires` gate — `{ clue_ids[], rationale }`; omit/null for ungated clues,
-which should be the majority), optional
+(innocents may have one too, for fair suspicion), `clues[]` (each with an optional
+`requires` gate; omit/null for ungated clues, the majority), optional
 `flavor_knowledge[]`, ordered `world.characters[].actual_actions[]`, and
 `agendas[]` (`type`, `strategy`, `priority`, `details`, plus optional
-`target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`;
-default `[]`), and `tells[]` (each `id`, `text`, and a `trigger` object whose
+`target_character_id`, `gated_clue_id`, `condition`, `yields_to_clue_ids`, and for
+`self_protect` `parts` and `confession`; default `[]`), and `tells[]` (each `id`, `text`, and a `trigger` object whose
 `kind` is `always`, `condition` (with free-text `condition`), or `clue` (with
 `clue_ids` referencing real clues); default `[]`).
 
@@ -322,7 +319,9 @@ alibis, actions, and the final reasoning).
 - Clue `requires` references existing clue ids only (never itself); the discovery
   graph is acyclic and every solution clue is reachable from ungated clues. Most
   clues stay ungated; every reasoning path has ≥1 ungated entry clue. Each
-  `requires` gate carries a concrete `rationale`.
+  `requires` gate has a `kind` and a concrete `rationale`; a location clue's is a
+  `pointer` whose `target` a prerequisite points to.
+- Every `self_protect` agenda has `parts` and a `confession`.
 - The shortest solution path needs ≥ `minPathLength` necessary clues; no
   sub-floor subset of clues identifies the culprit.
 - Every suspect has an elimination path; none cleared by a blanket shared trait.
@@ -332,5 +331,6 @@ alibis, actions, and the final reasoning).
 - All ids resolve: `starting_location_id` and `location_id`; clue
   `about_character_id` / `hint_location_id`; agenda `target_character_id` (a
   *different* character) / `gated_clue_id` (same character's clue) /
-  `yields_to_clue_ids` (obtainable, from a different source); `cover_image` ids.
+  `yields_to_clue_ids` and `parts[].clue_id` (obtainable, from a different
+  source); `cover_image` ids.
 - Keep everything child-friendly and internally consistent.

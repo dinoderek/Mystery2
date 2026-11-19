@@ -314,7 +314,7 @@ describe("ai-context guardrails", () => {
                   {
                     id: "clue-locked",
                     text: "a hidden note",
-                    requires: { clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" },
+                    requires: { kind: "pointer", clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" },
                   },
                 ],
               },
@@ -347,7 +347,7 @@ describe("ai-context guardrails", () => {
       next_clue: null,
     });
     expect(unlocked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([
-      { id: "clue-locked", text: "a hidden note", requires: { clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" } },
+      { id: "clue-locked", text: "a hidden note", requires: { kind: "pointer", clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" } },
     ]);
   });
 
@@ -363,7 +363,7 @@ describe("ai-context guardrails", () => {
               {
                 id: "clue-alice-secret",
                 text: "I took it.",
-                requires: { clue_ids: ["clue-crumbs"], rationale: "she only confesses once shown the crumbs" },
+                requires: { kind: "leverage", clue_ids: ["clue-crumbs"], rationale: "she only confesses once shown the crumbs" },
               },
             ],
           },

@@ -7,7 +7,7 @@
     {
       "op": "test",
       "path": "/world/locations/2/sub_locations/0/clues/0/requires/rationale",
-      "value": "Hard search gate: from a glance all the snowshoes look alike. Only after finding the snowshoe prints by the luggage car do you know to check each pair closely."
+      "value": "From a glance all the snowshoes look alike. The snowshoe prints at the woodshed lead back to the hooks behind the ticket hut, so you know to check each pair there."
     },
     {
       "op": "replace",

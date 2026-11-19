@@ -46,13 +46,13 @@
     },
     {
       "op": "test",
-      "path": "/world/characters/1/agendas/0/details",
-      "value": "Toby sticks to his story and blames a burglar or Mr. Thorne. His cover cracks only as far as the player has earned. The parts are: (1) the glass lying outside, which proves the break-in was faked; (2) the leaf-pattern welly prints in the pumpkin mush, or the key found in the water butt; (3) proof Mia was at the fair at the time of the crash (Mr. Thorne bought cake from her at nine, and Mr. Dobbs heard the crash at ten to nine). One or two parts earn only a nervous slip: he goes quiet, changes the subject, or says 'Maybe it was a fox.' With all three, he bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
+      "path": "/world/characters/1/agendas/0/parts/3/shows",
+      "value": "Mr. Thorne bought cake from Mia across town at nine, so she was at the fair when Bertha was smashed."
     },
     {
       "op": "replace",
-      "path": "/world/characters/1/agendas/0/details",
-      "value": "Toby sticks to his story and blames a burglar or Mr. Thorne. His cover cracks only as far as the player has earned. The parts are: (1) the glass lying outside, which proves the break-in was faked; (2) the leaf-pattern welly prints in the pumpkin mush, or the key found in the water butt; (3) proof Mia was at the fair at the time of the crash (Mr. Thorne bought cake from her at seven, and Mr. Dobbs heard the crash at ten to nine). One or two parts earn only a nervous slip: he goes quiet, changes the subject, or says 'Maybe it was a fox.' With all three, he bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
+      "path": "/world/characters/1/agendas/0/parts/3/shows",
+      "value": "Mr. Thorne bought cake from Mia across town at seven, so she was at the fair when Bertha was smashed."
     },
     {
       "op": "test",

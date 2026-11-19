@@ -68,7 +68,7 @@ describe("isClueUnlocked", () => {
   });
 
   it("requires every prerequisite to be discovered", () => {
-    const clue = { id: "c", requires: { clue_ids: ["a", "b"], rationale: "r" } };
+    const clue = { id: "c", requires: { kind: "pointer" as const, clue_ids: ["a", "b"], rationale: "r" } };
     expect(isClueUnlocked(clue, new Set(["a"]))).toBe(false);
     expect(isClueUnlocked(clue, new Set(["a", "b"]))).toBe(true);
   });

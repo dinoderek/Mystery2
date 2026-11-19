@@ -110,7 +110,9 @@
         "clues": [
           {
             "id": "clue_footprint_trail",
-            "text": "Glowing footprints lead out of the empty pit. They go off through the ferns. Whoever took the trunk carried it away on foot."
+            "text": "Glowing footprints lead out of the empty pit. They go off through the ferns. Whoever took the trunk carried it away on foot.",
+            "hint_location_id": "heartwood_hollow",
+            "hint_sub_location_id": "sl_fern_path"
           }
         ],
         "sub_locations": [
@@ -145,10 +147,15 @@
                 "id": "clue_trail_direction",
                 "text": "The glowing footprints lead away from the river. They go uphill toward the treehouses. Then the glow fades.",
                 "requires": {
+                  "kind": "pointer",
                   "clue_ids": [
                     "clue_footprint_trail"
                   ],
-                  "rationale": "You can only follow the trail once you've spotted the glowing footprints leaving the pit."
+                  "rationale": "The glowing footprints head off into the ferns. Once you have seen them, you know to follow the fern path.",
+                  "target": {
+                    "location_id": "heartwood_hollow",
+                    "sub_location_id": "sl_fern_path"
+                  }
                 }
               }
             ]
@@ -163,13 +170,7 @@
         "clues": [
           {
             "id": "clue_eva_gloves_glow",
-            "text": "Eva's little gardening gloves lie on the workbench. They are dusted with fresh, still-glowing sparkle. So Eva was pulling up magic plants last night. She was not asleep.",
-            "requires": {
-              "clue_ids": [
-                "clue_trail_direction"
-              ],
-              "rationale": "The glowing gloves only catch your eye once the glowing trail has led you up to Eva's lab."
-            }
+            "text": "Eva's little gardening gloves lie on the workbench. They are dusted with fresh, still-glowing sparkle. So Eva was pulling up magic plants last night. She was not asleep."
           }
         ],
         "sub_locations": [
@@ -340,7 +341,20 @@
             "type": "self_protect",
             "strategy": "maintain_false_alibi",
             "priority": "high",
-            "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook. Only crumbles and admits she 'only borrowed' the Heartwood if shown both her still-glowing gloves and that the trail leads up to her lab."
+            "details": "Insists she slept in her lab all night and heard nothing, and gently steers the conversation away from the curtained back-nook.",
+            "parts": [
+              {
+                "clue_id": "clue_eva_gloves_glow",
+                "shows": "Her gloves carry fresh glow-dust, so she was pulling up magic plants last night.",
+                "reaction": "Says she must have brushed a glowing plant yesterday, and still says she slept all night."
+              },
+              {
+                "clue_id": "clue_trail_direction",
+                "shows": "The thief's glowing trail leads uphill toward the treehouses.",
+                "reaction": "Says lots of animals live up by the treehouses, and still says she slept all night."
+              }
+            ],
+            "confession": "She crumbles and admits she 'only borrowed' the Heartwood to study it."
           }
         ],
         "tells": [
@@ -414,7 +428,15 @@
             "type": "self_protect",
             "strategy": "gruff_deflection",
             "priority": "low",
-            "details": "Grumbles that a busy lifeguard has no time for silly questions, but tells the whole truth once you're patient and polite."
+            "details": "Grumbles that a busy lifeguard has no time for silly questions, but tells the whole truth once you're patient and polite.",
+            "parts": [
+              {
+                "clue_id": "clue_wet_bear_prints",
+                "shows": "The big prints on the dock are wet with river water and do not glow.",
+                "reaction": "Grumbles that of course they are his: he was diving on night watch."
+              }
+            ],
+            "confession": "He tells the whole truth: he was diving after a stuck turtle at two, and Sophie splashed in the shallows the whole time."
           }
         ],
         "tells": [

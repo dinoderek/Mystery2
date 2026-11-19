@@ -160,8 +160,8 @@ The talk prompt rewards good roleplay without giving anything away. One rule
 covers every conversational gate: a self-protection agenda's crack, a
 conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
 
-- **The condition is a list of parts.** These are the agenda's `details` and
-  `yields_to_clue_ids`, or the gate's clues.
+- **The condition is a list of parts.** These are a self-protection agenda's
+  `parts`, a reveal's `yields_to_clue_ids`, or the gate's clues.
 - **A part is earned** when the player puts its substance in front of the
   character. Using a clue they hold does it. So does a specific, plausible
   bluff or deduction that names the substance, which this character would
@@ -171,9 +171,10 @@ conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
   insisting, repeating a demand, asking to look, or a strong case built only on
   the other parts.
 - **The character yields in proportion.** Part of a condition earns a visible
-  crack and a shakier deflection that tells the player they are on the right
-  track. The stated alibi holds, and nothing from `actual_actions` is admitted
-  until the whole condition is earned; only then does a confession come. The repeated-asking fallback that keeps a case solvable can give
+  crack, or that part's authored `reaction`, telling the player they are on the
+  right track. The stated alibi holds, and nothing from `actual_actions` is
+  admitted until the whole condition is earned; only then does the `confession`
+  come. The repeated-asking fallback that keeps a case solvable can give
   up a partial truth or a gated clue, never a confession.
 - **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
   for "her tail puffs up" still leaks the tell, so greetings and improvised

@@ -116,13 +116,7 @@
             "clues": [
               {
                 "id": "clue_key_in_water_butt",
-                "text": "At the bottom of the murky water butt, your fingers find a key with a green tag: GREENHOUSE. It's the missing key!",
-                "requires": {
-                  "clue_ids": [
-                    "clue_glass_outside"
-                  ],
-                  "rationale": "The water butt is deep and murky, and nothing shows from the top. You only think to fish around in it once you know the break-in was faked and a key was used. This is a hard search gate with no shortcut."
-                }
+                "text": "At the bottom of the murky water butt, your fingers find a key with a green tag: GREENHOUSE. It's the missing key!"
               }
             ]
           }
@@ -247,6 +241,7 @@
             "text": "I changed the rota myself on Wednesday. My pen ran dry, so I borrowed Mia's sparkly purple one.",
             "about_character_id": "mia",
             "requires": {
+              "kind": "pointer",
               "clue_ids": [
                 "clue_rota_purple_ink"
               ],
@@ -258,6 +253,7 @@
             "text": "I took Toby off the last shifts after he forgot to lock up on Monday. I said no going in without a grown-up. He shouted, 'She's MY pumpkin!'",
             "about_character_id": "toby",
             "requires": {
+              "kind": "pointer",
               "clue_ids": [
                 "clue_rota_purple_ink"
               ],
@@ -357,6 +353,7 @@
             "text": "Mia said she wished Bertha would just go splat, so she could get back to her dance practice.",
             "about_character_id": "mia",
             "requires": {
+              "kind": "pointer",
               "clue_ids": [
                 "clue_rota_purple_ink"
               ],
@@ -420,7 +417,30 @@
             "type": "self_protect",
             "strategy": "Maintain a false alibi: home all evening doing his jigsaw, and he has not seen the key since Wednesday.",
             "priority": "high",
-            "details": "Toby sticks to his story and blames a burglar or Mr. Thorne. His cover cracks only as far as the player has earned. The parts are: (1) the glass lying outside, which proves the break-in was faked; (2) the leaf-pattern welly prints in the pumpkin mush, or the key found in the water butt; (3) proof Mia was at the fair at the time of the crash (Mr. Thorne bought cake from her at nine, and Mr. Dobbs heard the crash at ten to nine). One or two parts earn only a nervous slip: he goes quiet, changes the subject, or says 'Maybe it was a fox.' With all three, he bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
+            "details": "Toby sticks to his story and blames a burglar or Mr. Thorne. He stays polite but jumpy, and keeps steering talk to Mr. Thorne.",
+            "parts": [
+              {
+                "clue_id": "clue_glass_outside",
+                "shows": "The glass fell outside, so the window was knocked out from inside and nobody broke in.",
+                "reaction": "Drops the burglar story and says, 'Maybe it was a fox.' He was still at home with his jigsaw."
+              },
+              {
+                "clue_id": "clue_welly_prints",
+                "shows": "Leaf-pattern welly prints in the mush mean Toby or Mia stood there after the smash.",
+                "reaction": "Says Mia has the same wellies, and goes quiet."
+              },
+              {
+                "clue_id": "clue_key_in_water_butt",
+                "shows": "Whoever smashed Bertha used the missing key and hid it in the water butt.",
+                "reaction": "Says he hasn't seen the key since Wednesday, and changes the subject."
+              },
+              {
+                "clue_id": "clue_thorne_mia_cake",
+                "shows": "Mr. Thorne bought cake from Mia across town at nine, so she was at the fair when Bertha was smashed.",
+                "reaction": "Mumbles that it wasn't Mia, then."
+              }
+            ],
+            "confession": "He bursts into tears and tells the truth: he took the key on Wednesday, sneaked in to give Bertha extra water, tripped on the hose, the rotten bench collapsed onto her, and he broke the window so it would look like a burglar."
           },
           {
             "type": "implicate_other",
@@ -535,7 +555,15 @@
             "type": "self_protect",
             "strategy": "Keep up a cover story: deny the 'go splat' grumble.",
             "priority": "medium",
-            "details": "Mia is embarrassed that she said she wished Bertha would go splat, so at first she denies it. If the investigator repeats what Toby said, she goes pink and admits it, explaining she only meant she was fed up missing dance practice. She tells the truth about Friday freely: watering at five, returning the spare, and the cake tent from six to ten."
+            "details": "Mia is embarrassed that she said she wished Bertha would go splat, so at first she denies it. She tells the truth about Friday freely: watering at five, returning the spare, and the cake tent from six to ten.",
+            "parts": [
+              {
+                "clue_id": "clue_toby_mia_splat",
+                "shows": "Mia told Toby she wished Bertha would go splat.",
+                "reaction": "Goes pink and admits she said it."
+              }
+            ],
+            "confession": "She explains she only meant she was fed up missing dance practice, and would never hurt Bertha."
           },
           {
             "type": "protect_other",
@@ -656,6 +684,7 @@
             "text": "All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
             "hint_location_id": "greenhouse",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_boot_prints"
               ],
@@ -703,7 +732,20 @@
             "type": "self_protect",
             "strategy": "Keep up a cover story: he never set foot in the school garden.",
             "priority": "medium",
-            "details": "Grumpy and offended, he insists he only ever looked over the fence. He is proud of his evening at the fair and shares it freely, including buying cake from Mia at nine. He hides that he climbed over on Friday afternoon, because he is embarrassed to have spied on a children's pumpkin."
+            "details": "Grumpy and offended, he insists he only ever looked over the fence. He is proud of his evening at the fair and shares it freely, including buying cake from Mia at nine. He hides that he climbed over on Friday afternoon, because he is embarrassed to have spied on a children's pumpkin.",
+            "parts": [
+              {
+                "clue_id": "clue_boot_prints",
+                "shows": "Huge boot prints by the window lead to Mr. Thorne's fence.",
+                "reaction": "Huffs and admits he climbed over at four on Friday to measure Bertha, and that she was whole when he left."
+              },
+              {
+                "clue_id": "clue_ladder_tape",
+                "shows": "Mr. Thorne's ladder and tape measure stand right opposite the greenhouse.",
+                "reaction": "Sheepishly admits he has been measuring Bertha from his ladder all week."
+              }
+            ],
+            "confession": "He admits he spied on Bertha because he feared losing his prize, and insists he never touched her."
           },
           {
             "type": "conditional_reveal",

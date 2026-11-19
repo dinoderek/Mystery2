@@ -108,7 +108,7 @@ describe("blueprint generator", () => {
         .characters.items.properties.portrait_image_id,
     ).toBeUndefined();
     // The clue `requires` gate survives the strict-output round-trip as a
-    // nullable object carrying clue_ids + rationale (optional+nullable nests as
+    // nullable object carrying kind, clue_ids and rationale (optional+nullable nests as
     // anyOf with a {type:"null"} variant). Assert the gate is present, carries
     // both fields, and remains nullable on both location and character clues.
     for (const owner of ["locations", "characters"] as const) {
@@ -118,6 +118,7 @@ describe("blueprint generator", () => {
         ].items.properties.clues.items.properties.requires;
       expect(requiresNode).toBeDefined();
       const serialized = JSON.stringify(requiresNode);
+      expect(serialized).toContain('"kind"');
       expect(serialized).toContain('"clue_ids"');
       expect(serialized).toContain('"rationale"');
       expect(serialized).toContain('{"type":"null"}');
@@ -164,7 +165,7 @@ describe("blueprint generator", () => {
 
     const clue = schema.properties.world.properties.locations.items.properties.clues.items;
     expect(clue.properties.requires.anyOf.map((variant: { type: unknown }) => variant.type)).toEqual(["object", "null"]);
-    expect(clue.properties.requires.anyOf[0].required).toEqual(["clue_ids", "rationale"]);
+    expect(clue.properties.requires.anyOf[0].required).toEqual(["kind", "clue_ids", "rationale", "target"]);
   });
 
   it("names the provider's error when OpenRouter answers 200 with an error instead of a completion", async () => {

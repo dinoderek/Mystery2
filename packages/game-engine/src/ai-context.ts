@@ -15,6 +15,7 @@ export interface BlueprintClue {
   text: string;
   about_character_id?: string;
   hint_location_id?: string;
+  hint_sub_location_id?: string;
   requires?: ClueRequires | null;
 }
 
@@ -27,6 +28,15 @@ export interface BlueprintAgenda {
   gated_clue_id?: string;
   condition?: string;
   yields_to_clue_ids?: string[];
+  // self_protect only: each clue that breaks the cover story, and what it earns.
+  parts?: BlueprintAgendaPart[];
+  confession?: string;
+}
+
+export interface BlueprintAgendaPart {
+  clue_id: string;
+  shows: string;
+  reaction: string;
 }
 
 export type BlueprintTellTrigger =

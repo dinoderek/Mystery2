@@ -178,13 +178,7 @@
               "clues": [
                 {
                   "id": "c_velvet_scrap",
-                  "text": "Caught on the iron railing at the top of the causeway steps is a small scrap of blue velvet. It matches the torn lining of the lens cradle!",
-                  "requires": {
-                    "clue_ids": [
-                      "c_torn_velvet"
-                    ],
-                    "rationale": "The scrap is tiny and grey with salt spray. You only spot it once you know the lens cradle's velvet was torn. This is a hard search gate; no clever guess finds it sooner."
-                  }
+                  "text": "Caught on the iron railing at the top of the causeway steps is a small scrap of blue velvet. It matches the torn lining of the lens cradle!"
                 }
               ]
             },
@@ -303,6 +297,7 @@
               "text": "Yesterday after lunch, Ada went out to the well. I was chopping wood outside and saw Roz through the window, alone in the cottage for a few minutes.",
               "about_character_id": "roz",
               "requires": {
+                "kind": "leverage",
                 "clue_ids": [
                   "c_changed_schedule"
                 ],
@@ -313,6 +308,7 @@
               "id": "c_finn_birthday_sign",
               "text": "Finn turns red. 'It's a wooden sign I carved for Ada's birthday tomorrow. It says Forty Years of Light. Please don't tell her!'",
               "requires": {
+                "kind": "leverage",
                 "clue_ids": [
                   "c_round_bundle"
                 ],
@@ -373,7 +369,15 @@
               "type": "self_protect",
               "strategy": "Cover story for the bundle: it is 'just old fishing floats'",
               "priority": "medium",
-              "details": "Finn is hiding Ada's birthday surprise, not the lens. If asked about the bundle behind the coal box, he says it is just old fishing floats and quickly changes the subject. He never lies about where he slept or what he saw."
+              "details": "Finn is hiding Ada's birthday surprise, not the lens. If asked about the bundle behind the coal box, he quickly changes the subject. He never lies about where he slept or what he saw.",
+              "parts": [
+                {
+                  "clue_id": "c_round_bundle",
+                  "shows": "A big round bundle, about as wide as the lens, is hidden behind the coal box.",
+                  "reaction": "Admits the bundle is his, but says it is just old fishing floats."
+                }
+              ],
+              "confession": "He admits the bundle is a wooden birthday sign he carved for Ada, and begs you not to tell her."
             },
             {
               "type": "conditional_reveal",
@@ -464,18 +468,39 @@
               "type": "self_protect",
               "strategy": "Keep the false alibi: asleep above the lamp shop all night",
               "priority": "high",
-              "details": "Roz insists she slept above her shop all night. She points to the keeper's tide schedule as proof nobody could cross before four. Shown that the schedule was changed and that the harbour tide board says low tide was 2 a.m., she gets flustered and says anyone could have changed it. If also told that Finn saw her alone in the cottage yesterday, she goes pale and her story starts to wobble.",
-              "yields_to_clue_ids": [
-                "c_changed_schedule",
-                "c_harbour_tide_board",
-                "c_finn_saw_roz"
-              ]
+              "details": "Roz insists she slept above her shop all night. She points to the keeper's tide schedule as proof nobody could cross before four.",
+              "parts": [
+                {
+                  "clue_id": "c_changed_schedule",
+                  "shows": "Someone inked a 5 over last night's low tide time on Ada's schedule.",
+                  "reaction": "Gets flustered and says anyone could have changed it. She still slept all night."
+                },
+                {
+                  "clue_id": "c_harbour_tide_board",
+                  "shows": "Last night's low tide was at two, so the causeway was dry from one to three.",
+                  "reaction": "Says lots of people could have crossed at two, but she was asleep."
+                },
+                {
+                  "clue_id": "c_finn_saw_roz",
+                  "shows": "Roz was alone in Ada's cottage yesterday, where the schedule hangs.",
+                  "reaction": "Goes pale and says she only popped in to show Ada her beacon drawings."
+                }
+              ],
+              "confession": "She admits she changed the tide time, crossed the dry causeway at one in the morning, and took the lens to make her beacon win the vote."
             },
             {
               "type": "self_protect",
               "strategy": "Deny the motive",
               "priority": "medium",
-              "details": "She says her beacon is simply better and she would never want ships in danger. She claims she feels sorry for poor Ada."
+              "details": "She says her beacon is simply better and she would never want ships in danger. She claims she feels sorry for poor Ada.",
+              "parts": [
+                {
+                  "clue_id": "c_beacon_poster",
+                  "shows": "Roz's beacon is up against the lighthouse in tomorrow's council vote.",
+                  "reaction": "Admits she badly wants the council to pick her beacon, but says she would never put ships in danger."
+                }
+              ],
+              "confession": "She admits she wanted the old light to fail tonight so her beacon could 'save the ships' and win the vote."
             },
             {
               "type": "implicate_other",

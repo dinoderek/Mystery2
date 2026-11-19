@@ -185,10 +185,15 @@
                 "id": "clue_twig_pile",
                 "text": "Behind the willow is a pile of nibbled twigs. Anyone could take one.",
                 "requires": {
+                  "kind": "pointer",
                   "clue_ids": [
                     "clue_barnaby_twigs"
                   ],
-                  "rationale": "The pile is out of sight behind the willow's curtain of branches. You only know to look there once Barnaby tells you where he left his spare twigs."
+                  "rationale": "The pile is out of sight behind the willow's curtain of branches. Barnaby's word that he left his spare twigs by the willow tells you where to look.",
+                  "target": {
+                    "location_id": "moonglow_pond",
+                    "sub_location_id": "sub_willow"
+                  }
                 }
               }
             ]
@@ -294,6 +299,7 @@
             "text": "I never left Ruby alone, not even to make tea. She never touched the stick.",
             "about_character_id": "ruby",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_ruby_list"
               ],
@@ -305,6 +311,7 @@
             "text": "When Oswald walked in, he said the stick looked dull. I did not even check!",
             "about_character_id": "oswald",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_sketch"
               ],
@@ -433,7 +440,35 @@
             "type": "self_protect",
             "strategy": "deny_the_swap",
             "priority": "high",
-            "details": "Clementine insists she only practiced her show words in the dungeon and never touched the stick. She never mentions the real stick hidden in her cape pocket, and she laughs off any talk of last year's show. If asked about paint, she says she only touched up her magic star. Her cover cracks only as far as the investigator has earned, with either of two sets of evidence. Set one: (1) the paint sheet showing only she and Barnaby used Sparkle Blue, (2) the fake being a twig painted Sparkle Blue, and (3) the proof that the stick was real at the 4 o'clock polish, after Barnaby's 3:00 visit but before her own 5:00 visit. Set two: (1) the stick was real at the 4 o'clock polish, (2) it already looked dull when Oswald walked in at 5:30, and (3) Tobias never left Ruby alone at 4:30. Part of a set earns only a nervous slip. A whole set earns a tearful confession: she pulls the glowing stick from her cape and says sorry."
+            "details": "Clementine insists she only practiced her show words in the dungeon and never touched the stick. She never mentions the real stick hidden in her cape pocket, and she laughs off any talk of last year's show. If asked about paint, she says she only touched up her magic star.",
+            "parts": [
+              {
+                "clue_id": "clue_polish_four",
+                "shows": "The stick was still real at the 4 o'clock polish, after Barnaby's visit and before hers.",
+                "reaction": "Says lots of animals visited after four."
+              },
+              {
+                "clue_id": "clue_paint_list",
+                "shows": "Only she and Barnaby signed for Sparkle Blue paint.",
+                "reaction": "Says she only used the paint on her magic star."
+              },
+              {
+                "clue_id": "clue_fake_stick",
+                "shows": "The fake is a willow twig painted Sparkle Blue.",
+                "reaction": "Says anyone could paint a twig, and her ear droops."
+              },
+              {
+                "clue_id": "clue_oswald_said_dull",
+                "shows": "The stick already looked dull when Oswald walked in at 5:30.",
+                "reaction": "Says then Ruby must have done it, since Ruby came before Oswald."
+              },
+              {
+                "clue_id": "clue_ruby_watched",
+                "shows": "Tobias never left Ruby alone with the stick.",
+                "reaction": "Goes very quiet and says maybe it lost its magic by itself."
+              }
+            ],
+            "confession": "She cries, pulls the glowing stick from her cape, and says sorry."
           },
           {
             "type": "implicate_other",
@@ -482,7 +517,9 @@
             "id": "clue_barnaby_twigs",
             "text": "I chewed willow for the new shelf leg. I left the spare twigs by the pond.",
             "hint_location_id": "moonglow_pond",
+            "hint_sub_location_id": "sub_willow",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_fake_stick"
               ],
@@ -525,7 +562,15 @@
             "type": "self_protect",
             "strategy": "laugh_off_the_dam_joke",
             "priority": "low",
-            "details": "Barnaby gets flustered when sticks come up. At first he says he never said anything about a dam stick. When the investigator tells him what Nutmeg heard, he laughs and admits it was only a silly joke. He is honest about everything else."
+            "details": "Barnaby gets flustered when sticks come up. At first he says he never said anything about a dam stick. He is honest about everything else.",
+            "parts": [
+              {
+                "clue_id": "clue_barnaby_dam_stick",
+                "shows": "Nutmeg heard Barnaby call the magic stick the best dam stick ever.",
+                "reaction": "Laughs and admits he said it, but it was only a silly joke."
+              }
+            ],
+            "confession": "He admits the dam stick was only a joke, and says he would never take the treasure."
           }
         ],
         "tells": [
@@ -596,7 +641,20 @@
             "type": "self_protect",
             "strategy": "deny_the_cake_visit",
             "priority": "medium",
-            "details": "Nutmeg claims she spent the whole afternoon in her bakery and never went to the dungeon, because she is afraid of getting in trouble for sneaking cakes near the treasures. When the investigator mentions the cake plate note or her name in the visitor book, she sighs and admits she brought cakes at 3:30 and went straight back to bake."
+            "details": "Nutmeg claims she spent the whole afternoon in her bakery and never went to the dungeon, because she is afraid of getting in trouble for sneaking cakes near the treasures.",
+            "parts": [
+              {
+                "clue_id": "clue_cake_plate",
+                "shows": "Nutmeg left a cake plate for Tobias in the dungeon today.",
+                "reaction": "Sighs and admits the cakes were from her, but says she did not stay."
+              },
+              {
+                "clue_id": "clue_visitor_book",
+                "shows": "Nutmeg signed the visitor book at 3:30.",
+                "reaction": "Admits she popped in at half past three and went straight back to bake."
+              }
+            ],
+            "confession": "She admits she brought cakes at 3:30, then hurried back to watch her oven until six."
           },
           {
             "type": "implicate_other",
@@ -639,6 +697,7 @@
             "about_character_id": "oswald",
             "hint_location_id": "library",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_visitor_book"
               ],
@@ -681,7 +740,15 @@
             "type": "self_protect",
             "strategy": "hide_her_wish",
             "priority": "medium",
-            "details": "Ruby says sticks are boring and that she only went to admire the Glimmer Cup. When the investigator mentions her wish list note, she blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk."
+            "details": "Ruby says sticks are boring and that she only went to admire the Glimmer Cup.",
+            "parts": [
+              {
+                "clue_id": "clue_ruby_list",
+                "shows": "Ruby's wish list names the Glorious Stick.",
+                "reaction": "Blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk."
+              }
+            ],
+            "confession": "She admits she asked Tobias to sell her the stick, he said no, and she never touched the shelf."
           },
           {
             "type": "implicate_other",
@@ -771,7 +838,15 @@
             "type": "self_protect",
             "strategy": "deny_the_grudge",
             "priority": "low",
-            "details": "Oswald says he is not cross about the fair, though he clearly is. If the investigator mentions that he wants the treasures in his library, he puffs up and admits he thinks they would be safer there, but says he would never take them."
+            "details": "Oswald says he is not cross about the fair, though he clearly is.",
+            "parts": [
+              {
+                "clue_id": "clue_oswald_cross",
+                "shows": "Oswald is cross that the treasures went to the fair, not his library.",
+                "reaction": "Puffs up and admits he thinks the treasures would be safer in his library, but says he would never take them."
+              }
+            ],
+            "confession": "He admits he is cross about the fair, and still says he never touched the shelf."
           }
         ],
         "tells": [
@@ -810,6 +885,7 @@
             "text": "Last year, Clementine's big trick went wrong. Everyone laughed, and she hid behind the stage.",
             "about_character_id": "clementine",
             "requires": {
+              "kind": "leverage",
               "clue_ids": [
                 "clue_clementine_asked"
               ],

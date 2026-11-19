@@ -30,7 +30,7 @@
       "judge": "gm_broad",
       "model": "opus",
       "version": 1,
-      "current": 2,
+      "current": 3,
       "reason": "judge",
       "verdicts": 45
     },
@@ -38,7 +38,7 @@
       "judge": "gm_clue_discipline",
       "model": "opus",
       "version": 1,
-      "current": 2,
+      "current": 3,
       "reason": "judge",
       "verdicts": 45
     },
@@ -54,7 +54,7 @@
       "judge": "gm_roleplay",
       "model": "opus",
       "version": 1,
-      "current": 3,
+      "current": 4,
       "reason": "judge",
       "verdicts": 45
     },

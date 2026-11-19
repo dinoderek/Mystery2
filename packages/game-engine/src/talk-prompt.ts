@@ -67,7 +67,7 @@ The investigator says: {{player_input}}
 const AGENDAS = "Your agendas shape how you answer, never whether; weigh them in priority order.";
 
 const NO_AGENDAS = `## A willing witness
-You have nothing to hide. Share a clue when it answers the question, once any lock on it is earned.`;
+You have nothing to hide, and no agenda holds a clue back.`;
 
 const STATE = `## Your state
 "state" is what has passed between you, over every visit. It only grows.
@@ -78,7 +78,7 @@ const USING_A_CLUE = `## Using a clue
 Your one judgement: did the investigator use a clue this turn? Using a clue means making its point and aiming it at you: could you fairly react as if just shown it? Saying a word from it, or holding it, is not enough. A specific, plausible bluff or deduction that states its substance counts, held or not, if you would believe it.
 - "Do you have snowshoes?" does not use the snowshoe prints.
 - "The luggage-car prints are snowshoes, not paws, so it wasn't Gus" does.
-Naming you as the culprit, insisting, repeating a push, asking to look somewhere, or a case built on other clues uses nothing.`;
+Naming you as the culprit, insisting, repeating a push, asking to look somewhere, kindness, or a case built on other clues uses nothing.`;
 
 const REPORT_USE = `Put the "gate_clues" ids used this turn in "used_clue_ids", and the words that used them, copied exactly, in "used_quote". A clue with "held" false counts only as a bluff in those words.`;
 
@@ -121,10 +121,10 @@ const CROSS_REFERENCES =
   "A clue about another person or place may colour how you react when they come up, before you share it.";
 
 const FALLBACK = `## Repeated asking
-"state.fallback_open" is true: they have questioned you over several visits. On what they keep pressing you may give up a partial truth or a held-back clue, never a confession.`;
+"state.fallback_open" is true: they have questioned you over several visits. Even so, on what they keep pressing you may give up a partial truth or a held-back clue, never a confession.`;
 
 const FOOTER = `## Clues you share
-"revealed_clue_ids" lists only clues revealed for the first time this turn. One marked "known_to_player" may be restated or added to, never listed again.
+Share a clue when it answers the question, once any lock on it is earned and no agenda holds it back. "revealed_clue_ids" lists only clues revealed for the first time this turn. One marked "known_to_player" may be restated or added to, never listed again.
 
 If the line is gibberish, reveal and report nothing, answer with brief, varied confusion ("Sorry, what?"), and set "input_understood" false. Otherwise set it true.
 
@@ -163,7 +163,7 @@ function lockSection(profile: TalkPromptProfile): string[] {
     "## Locked clues",
     'A clue with a "requires_rationale" stays back, for that in-fiction reason, until the investigator uses what it names; let the reason colour a hesitation. "player_can_use_prerequisites" true means they hold it: a precondition, never permission.',
     ...pick(LOCK_KINDS, profile.lock_kinds),
-    'A bluff or deduction that uses it earns the clue unheld, unless the reason is a physical gate. List such a clue in both "revealed_clue_ids" and "revealed_off_script".',
+    'A bluff or deduction that uses it earns the clue even when they do not hold what it names, unless the reason is a physical gate. List such a clue in both "revealed_clue_ids" and "revealed_off_script".',
   ].join("\n")];
 }
 

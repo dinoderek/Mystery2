@@ -146,6 +146,9 @@ describe("ai-prompts", () => {
 
     expect(talk).toContain("Your one judgement: did the investigator use a clue this turn?");
     expect(talk).toContain("Naming you as the culprit, insisting, repeating a push, asking to look somewhere");
+    expect(talk).toContain("kindness, or a case built on other clues uses nothing");
+    // Every character shares an earned clue no agenda holds back.
+    expect(talk).toContain("Share a clue when it answers the question, once any lock on it is earned and no agenda holds it back.");
     // A used part earns its own concession and nothing more; a confession needs every part.
     expect(talk).toContain('When an unearned part\'s clue is used, concede what its "shows" says');
     expect(talk).toContain("and nothing beyond");

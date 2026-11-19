@@ -54,6 +54,7 @@ describe("the talk_conversation prompt, assembled by character", () => {
     const { prompt } = await talkAt(15, "bramble", "tea_house");
     for (const section of AGENDA_SECTIONS) expect(prompt).not.toContain(section);
     expect(prompt).toContain("## A willing witness");
+    expect(prompt.split("Share a clue when it answers the question").length - 1).toBe(1);
     expect(prompt).toContain('"requires_kind" pointer');
     expect(prompt).not.toContain('"requires_kind" leverage');
   });
@@ -103,6 +104,7 @@ describe("the talk_conversation prompt, assembled by character", () => {
 // Each of these is a rule. Wherever it is included, it is stated once.
 const RULES = [
   "Using a clue means",
+  "Share a clue when it answers the question",
   "Saying a word from it, or holding it, is not enough",
   "Naming you as the culprit",
   "Never take a reaction back",

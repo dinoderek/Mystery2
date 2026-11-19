@@ -205,8 +205,8 @@ export function isAgendaFullyEarned(state: CharacterState, agendaIndex: number, 
  * The character's steps that are safe to say: every step no self-protect cover
  * hides, plus those a cover has given up, by an earned part's `concedes_steps`
  * or by the agenda being fully earned (its confession). A step two covers hide
- * is safe once either gives it up. The rest of the truth never reaches the
- * speaker, so it cannot leak what the investigator has not earned.
+ * is safe once either gives it up. Hidden steps never reach the speaker as
+ * actual_actions, so it is not handed what the investigator has not earned.
  */
 export function safeSteps<T extends { sequence: number }>(
   character: StateCharacter,

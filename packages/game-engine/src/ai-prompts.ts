@@ -120,8 +120,8 @@ Task:
 ## Nothing is given away in a greeting
 The investigator has turned to them but has not said anything yet, so nothing
 has been earned this turn.
-- Do not reveal or hint at any of the character's clues, and do not confess,
-  crack, or drop the stated alibi.
+- Do not reveal or hint at any of the character's clues or hidden facts, and
+  do not confess, crack, or drop the stated alibi.
 - Tells: the character context's "tells" array decides what may show.
   - trigger.kind = "always": may surface naturally.
   - trigger.kind = "condition": only if the conversation history already shows

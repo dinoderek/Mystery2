@@ -702,7 +702,7 @@
                 }
               ],
               "confession": "She admits she brought cakes down in the afternoon, then hurried back to watch her oven until six.",
-              "hides_steps": [2, 3]
+              "hides_steps": [1, 2, 3]
             },
             {
               "type": "implicate_other",
@@ -794,11 +794,11 @@
                   "clue_ids": ["clue_ruby_list"],
                   "shows": "Ruby's wish list names the Glorious Stick.",
                   "reaction": "Blushes and admits she wanted to buy the Glorious Stick fair and square, and says Tobias watched her like a hawk.",
-                  "concedes_steps": [1]
+                  "concedes_steps": [1, 2]
                 }
               ],
               "confession": "She admits she asked Tobias to sell her the stick, he said no, and she never touched the shelf.",
-              "hides_steps": [1]
+              "hides_steps": [1, 2]
             },
             {
               "type": "implicate_other",

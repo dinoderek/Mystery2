@@ -35,6 +35,7 @@ describe("analyzeClueGraph", () => {
   it("accepts a clue gated behind an ungated root", () => {
     const bp = clone();
     setRequires(bp, "loc-bag", {
+      kind: "pointer",
       clue_ids: ["loc-crumbs"],
       rationale: "The bag only matters once you follow the crumbs.",
     });
@@ -45,8 +46,8 @@ describe("analyzeClueGraph", () => {
 
   it("detects a dependency cycle and the resulting locked solution clues", () => {
     const bp = clone();
-    setRequires(bp, "loc-crumbs", { clue_ids: ["loc-bag"], rationale: "A." });
-    setRequires(bp, "loc-bag", { clue_ids: ["loc-crumbs"], rationale: "B." });
+    setRequires(bp, "loc-crumbs", { kind: "pointer", clue_ids: ["loc-bag"], rationale: "A." });
+    setRequires(bp, "loc-bag", { kind: "pointer", clue_ids: ["loc-crumbs"], rationale: "B." });
     const result = analyzeClueGraph(bp);
     expect(result.acyclic).toBe(false);
     expect(result.cycles.length).toBeGreaterThan(0);
@@ -58,7 +59,7 @@ describe("analyzeClueGraph", () => {
 
   it("flags self-references", () => {
     const bp = clone();
-    setRequires(bp, "loc-crumbs", { clue_ids: ["loc-crumbs"], rationale: "self." });
+    setRequires(bp, "loc-crumbs", { kind: "pointer", clue_ids: ["loc-crumbs"], rationale: "self." });
     const result = analyzeClueGraph(bp);
     expect(result.self_references).toContain("loc-crumbs");
     expect(result.ok).toBe(false);
@@ -66,7 +67,7 @@ describe("analyzeClueGraph", () => {
 
   it("flags unknown prerequisite references", () => {
     const bp = clone();
-    setRequires(bp, "loc-bag", { clue_ids: ["loc-nope"], rationale: "ghost." });
+    setRequires(bp, "loc-bag", { kind: "pointer", clue_ids: ["loc-nope"], rationale: "ghost." });
     const result = analyzeClueGraph(bp);
     expect(result.unknown_requires).toContainEqual({ clue_id: "loc-bag", missing: "loc-nope" });
     expect(result.ok).toBe(false);

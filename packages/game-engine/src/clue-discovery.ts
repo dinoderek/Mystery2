@@ -10,8 +10,13 @@
 // must be discovered first); `isClueUnlocked` decides whether a gate is satisfied.
 
 export interface ClueRequires {
+  // `pointer`: an earlier clue says where to look or what to raise; `leverage`:
+  // the character must be shown it (`packages/shared/src/blueprint-schema-v2.ts`).
+  kind: "pointer" | "leverage";
   clue_ids: string[];
   rationale: string;
+  // A location clue's pointer: the sub-location it leads to.
+  target?: { location_id: string; sub_location_id: string };
 }
 
 export interface GatedClue {

@@ -108,16 +108,73 @@ describe("Blueprint V2 schema", () => {
       };
     }
 
-    it("accepts a valid self_protect agenda", () => {
-      const bp = withAgendas("alice", [
+    const aliceAlibi = {
+      type: "self_protect",
+      strategy: "maintain_false_alibi",
+      priority: "high",
+      details: "Alice insists she was washing dishes the whole time.",
+      parts: [
         {
-          type: "self_protect",
-          strategy: "maintain_false_alibi",
-          priority: "high",
-          details: "Alice insists she was washing dishes the whole time.",
+          clue_id: "loc-crumbs",
+          shows: "Cookie crumbs lead from the plate.",
+          reaction: "Says anyone could have dropped crumbs; she was still washing dishes.",
+        },
+      ],
+      confession: "She admits she took the cookies.",
+    };
+
+    it("accepts a valid self_protect agenda", () => {
+      expect(() => BlueprintV2Schema.parse(withAgendas("alice", [aliceAlibi]))).not.toThrow();
+    });
+
+    it("rejects a self_protect part naming an unknown clue", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_id: "loc-nope" }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/parts references unknown clue id/);
+    });
+
+    it("rejects a self_protect part naming the character's own clue", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, parts: [{ ...aliceAlibi.parts[0], clue_id: "char-alice-bag" }] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/parts must not reference clues from the same character/);
+    });
+
+    it("rejects a clue listed twice in one agenda's parts", () => {
+      const bp = withAgendas("alice", [
+        { ...aliceAlibi, parts: [aliceAlibi.parts[0], aliceAlibi.parts[0]] },
+      ]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/more than once/);
+    });
+
+    it("lets an empty misplaced list through, as strict output may send one", () => {
+      const bp = withAgendas("alice", [{ ...aliceAlibi, yields_to_clue_ids: [] }]);
+      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+    });
+
+    it("rejects yields_to_clue_ids on a self_protect agenda", () => {
+      const bp = withAgendas("alice", [{ ...aliceAlibi, yields_to_clue_ids: ["loc-crumbs"] }]);
+      expect(() => BlueprintV2Schema.parse(bp)).toThrow(/self_protect agendas list parts, not yields_to_clue_ids/);
+    });
+
+    it("rejects parts or a confession on another agenda type", () => {
+      const bp = withAgendas("bob", [
+        {
+          type: "protect_other",
+          strategy: "deflect_questions",
+          priority: "medium",
+          details: "Bob avoids talking about Alice's movements.",
+          target_character_id: "alice",
+          parts: aliceAlibi.parts,
+          confession: "He admits it.",
         },
       ]);
-      expect(() => BlueprintV2Schema.parse(bp)).not.toThrow();
+      const result = BlueprintV2Schema.safeParse(bp);
+      expect(result.success ? [] : result.error.issues.map((issue) => issue.message)).toEqual([
+        "parts belongs to self_protect agendas only.",
+        "confession belongs to self_protect agendas only.",
+      ]);
     });
 
     it("accepts a valid protect_other agenda", () => {
@@ -375,6 +432,7 @@ describe("Blueprint V2 schema", () => {
 
     it("accepts a clue gated behind an ungated clue", () => {
       const bp = withLocationClueRequires("loc-bag", {
+        kind: "pointer",
         clue_ids: ["loc-crumbs"],
         rationale: "The bag only stands out once you have followed the crumbs.",
       });
@@ -395,6 +453,7 @@ describe("Blueprint V2 schema", () => {
 
     it("rejects a clue that requires itself", () => {
       const bp = withLocationClueRequires("loc-crumbs", {
+        kind: "pointer",
         clue_ids: ["loc-crumbs"],
         rationale: "Impossible self-gate.",
       });
@@ -403,6 +462,7 @@ describe("Blueprint V2 schema", () => {
 
     it("rejects requires referencing an unknown clue id", () => {
       const bp = withLocationClueRequires("loc-bag", {
+        kind: "pointer",
         clue_ids: ["loc-nope"],
         rationale: "Gated behind a clue that does not exist.",
       });
@@ -422,13 +482,13 @@ describe("Blueprint V2 schema", () => {
               if (clue.id === "loc-crumbs") {
                 return {
                   ...clue,
-                  requires: { clue_ids: ["loc-bag"], rationale: "A needs B." },
+                  requires: { kind: "pointer", clue_ids: ["loc-bag"], rationale: "A needs B." },
                 };
               }
               if (clue.id === "loc-bag") {
                 return {
                   ...clue,
-                  requires: { clue_ids: ["loc-crumbs"], rationale: "B needs A." },
+                  requires: { kind: "pointer", clue_ids: ["loc-crumbs"], rationale: "B needs A." },
                 };
               }
               return clue;
@@ -443,6 +503,7 @@ describe("Blueprint V2 schema", () => {
 
     it("rejects a requires gate with an empty rationale", () => {
       const bp = withLocationClueRequires("loc-bag", {
+        kind: "pointer",
         clue_ids: ["loc-crumbs"],
         rationale: "",
       });
@@ -451,10 +512,122 @@ describe("Blueprint V2 schema", () => {
 
     it("rejects a requires gate with no prerequisite clue_ids", () => {
       const bp = withLocationClueRequires("loc-bag", {
+        kind: "pointer",
         clue_ids: [],
         rationale: "A no-op gate should not be allowed.",
       });
       expect(() => BlueprintV2Schema.parse(bp)).toThrow();
+    });
+  });
+
+  describe("lock kinds, targets and pointing fields", () => {
+    // The hallway gains a mat to search under, with a note gated behind the crumbs.
+    function withMatNote(
+      requires: Record<string, unknown>,
+      crumbs: Record<string, unknown> = {},
+    ) {
+      return {
+        ...validBlueprintV2,
+        world: {
+          ...validBlueprintV2.world,
+          locations: validBlueprintV2.world.locations.map((location) => {
+            if (location.id === "kitchen") {
+              return {
+                ...location,
+                clues: location.clues.map((clue) =>
+                  clue.id === "loc-crumbs" ? { ...clue, ...crumbs } : clue,
+                ),
+              };
+            }
+            if (location.id !== "hallway") return location;
+            return {
+              ...location,
+              sub_locations: [
+                {
+                  id: "under-mat",
+                  name: "under the door mat",
+                  hint: "A lumpy mat by the door.",
+                  clues: [{ id: "loc-mat-note", text: "A note under the mat.", requires }],
+                },
+              ],
+            };
+          }),
+        },
+      };
+    }
+    const pointer = {
+      kind: "pointer",
+      clue_ids: ["loc-crumbs"],
+      rationale: "The crumbs lead to the mat.",
+      target: { location_id: "hallway", sub_location_id: "under-mat" },
+    };
+    const pointsToMat = { hint_location_id: "hallway", hint_sub_location_id: "under-mat" };
+    const problems = (bp: unknown) => {
+      const result = BlueprintV2Schema.safeParse(bp);
+      return result.success ? [] : result.error.issues.map((issue) => issue.message);
+    };
+
+    it("accepts a pointer whose prerequisite points to its target", () => {
+      expect(problems(withMatNote(pointer, pointsToMat))).toEqual([]);
+    });
+
+    it("rejects a lock without a kind, or with an unknown one", () => {
+      const noKind: Record<string, unknown> = { ...pointer };
+      delete noKind.kind;
+      expect(problems(withMatNote(noKind, pointsToMat))).toEqual(["Required"]);
+      expect(problems(withMatNote({ ...pointer, kind: "hunch" }, pointsToMat)).join("\n")).toMatch(/pointer.*leverage/);
+    });
+
+    it("accepts a leverage lock on a character clue", () => {
+      const bp = {
+        ...validBlueprintV2,
+        world: {
+          ...validBlueprintV2.world,
+          characters: validBlueprintV2.world.characters.map((c) =>
+            c.id === "bob"
+              ? {
+                  ...c,
+                  clues: c.clues.map((clue) => ({
+                    ...clue,
+                    requires: { kind: "leverage", clue_ids: ["loc-crumbs"], rationale: "Show him the crumbs." },
+                  })),
+                }
+              : c,
+          ),
+        },
+      };
+      expect(problems(bp)).toEqual([]);
+    });
+
+    it("rejects a target that is not a sub-location of its location", () => {
+      const bp = withMatNote({ ...pointer, target: { location_id: "kitchen", sub_location_id: "under-mat" } }, pointsToMat);
+      expect(problems(bp)).toEqual([
+        'requires.target is invalid: "under-mat" is not a sub-location of "kitchen".',
+      ]);
+    });
+
+    it("rejects a target on a character clue's lock", () => {
+      const bp = structuredClone(withMatNote(pointer, pointsToMat));
+      const bob = bp.world.characters.find((c) => c.id === "bob")!;
+      Object.assign(bob.clues[0], { requires: pointer });
+      expect(problems(bp)).toEqual([
+        "requires.target is invalid: a target names a search spot, so only a location clue's lock has one.",
+      ]);
+    });
+
+    it("rejects a hint_sub_location_id without hint_location_id, or outside it", () => {
+      expect(problems(withMatNote(pointer, { hint_sub_location_id: "under-mat" }))).toEqual([
+        'hint_sub_location_id "under-mat" is invalid: it needs hint_location_id.',
+      ]);
+      expect(problems(withMatNote(pointer, { hint_location_id: "kitchen", hint_sub_location_id: "under-mat" }))).toEqual([
+        'hint_sub_location_id "under-mat" is invalid: "under-mat" is not a sub-location of "kitchen".',
+      ]);
+    });
+
+    it("rejects a location clue pointing at an unknown location", () => {
+      expect(problems(withMatNote(pointer, { hint_location_id: "attic" }))).toEqual([
+        'hint_location_id "attic" must reference an existing location.',
+      ]);
     });
   });
 

@@ -13,10 +13,15 @@
       "op": "add",
       "path": "/world/locations/0/sub_locations/0/clues/0/requires",
       "value": {
+        "kind": "pointer",
         "clue_ids": [
           "clue_visitor_book"
         ],
-        "rationale": "You must read the visitor book before you are allowed to look at the shelf."
+        "rationale": "You must read the visitor book before you are allowed to look at the shelf.",
+        "target": {
+          "location_id": "dungeon",
+          "sub_location_id": "sub_treasure_shelf"
+        }
       }
     },
     {
@@ -28,10 +33,15 @@
       "op": "add",
       "path": "/world/locations/1/sub_locations/2/clues/0/requires",
       "value": {
+        "kind": "pointer",
         "clue_ids": [
           "clue_fake_stick"
         ],
-        "rationale": "The paint sheet only appears once you have looked at the fake."
+        "rationale": "The paint sheet only appears once you have looked at the fake.",
+        "target": {
+          "location_id": "fair_meadow",
+          "sub_location_id": "sub_paint_pots"
+        }
       }
     },
     {
@@ -43,6 +53,7 @@
       "op": "add",
       "path": "/world/characters/0/clues/0/requires",
       "value": {
+        "kind": "leverage",
         "clue_ids": [
           "clue_paint_list"
         ],
@@ -50,5 +61,7 @@
       }
     }
   ],
-  "caught_by": []
+  "caught_by": [
+    "pointers_point_to_target"
+  ]
 }

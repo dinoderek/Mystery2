@@ -62,6 +62,26 @@
       "id": "requires_satisfiable",
       "status": "pass",
       "details": null
+    },
+    {
+      "id": "location_locks_are_pointers",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "pointers_point_to_target",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "self_protect_has_parts",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "parts_name_real_clues",
+      "status": "pass",
+      "details": null
     }
   ],
   "dimensions": [

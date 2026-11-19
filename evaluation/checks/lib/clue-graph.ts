@@ -1,7 +1,7 @@
 // Deterministic helpers for the clue discovery graph.
 //
-// A clue may carry an optional `requires` gate ({ clue_ids, rationale }) meaning
-// it cannot be discovered until every listed clue has been discovered. The set of
+// A clue may carry an optional `requires` gate ({ kind, clue_ids, rationale })
+// meaning it cannot be discovered until every listed clue has been. The set of
 // clues plus these prerequisite edges forms an implicit directed graph. These
 // helpers build that graph and compute the structural facts both the
 // `requires_satisfiable` mechanical check and the `clue_graph` analyzer rely on:

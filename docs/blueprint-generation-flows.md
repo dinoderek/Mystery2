@@ -3,7 +3,7 @@
 Blueprint, artwork and narration inputs. Field intent:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
 `docs/ai-runtime.md`. “Input” means sent to the model; “attached” means paired
-with its output afterwards. Sessions store ids.
+with its output. Sessions store ids.
 
 ## Generating a blueprint
 
@@ -17,8 +17,8 @@ with its output afterwards. Sessions store ids.
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, excluding
   image ids. Strict-mode nulls for absent optional fields are removed.
 
-The agent backend receives the same prompt and brief in its workspace. Both
-backends validate the schema and mechanical checks and save `result.json`.
+The agent backend gets the same prompt and brief in its workspace. Both
+validate the schema and mechanical checks and save `result.json`.
 Rejected blueprints are kept for inspection and never installed
 (`evaluation/README.md`).
 
@@ -35,13 +35,13 @@ What the generator prompt asks for, in short:
   location description and every clue). Names carry no word budget.
 - Challenge sized to `timeBudget`, and a shortest solution path of at least
   `minPathLength` distinct, necessary clues, deepened if it falls short.
-- Agendas (self-protection, protect-other, implicate-other, conditional
-  reveal) and cross-character clues (`alibi_knowledge`, `witness_testimony`,
-  `motive_knowledge`, `location_hint`), with at least one solution path
-  completable without condition-gated clues.
-- A clue discovery graph through `requires`: mostly ungated, acyclic, every
-  solution clue reachable from an ungated root. The schema's `superRefine` and
-  the `clue_graph` dimension enforce it.
+- Agendas (self-protection, with each breaking clue's reaction and a
+  confession; protect-other, implicate-other, conditional reveal) and
+  cross-character clues, with a solution path free of condition-gated clues.
+- A clue discovery graph through `requires`, each lock a `pointer` or
+  `leverage`: mostly ungated, acyclic, every solution clue reachable from an
+  ungated root, a location lock always a pointer. The schema, the mechanical
+  checks and the `clue_graph` dimension enforce it.
 - Physical consistency: where an object is, what state it is in, and what a
   character looks like or carries agree across clues, `actual_actions`,
   descriptions, `appearance`, `flavor_knowledge` and summaries. Nothing the
@@ -77,11 +77,10 @@ ones:
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-Aspect-ratio support varies by model, and the CLI checks a ratio only against
-the full list OpenRouter documents; `openai/gpt-image-1`, for one, accepts only
-`1:1`, `3:2`, `2:3` and `auto`. A failed or cancelled generation comes back as
-a 502 and is not billed. The run continues past a failed target, so re-run just
-those targets.
+The CLI checks a ratio only against OpenRouter's full list, and models vary:
+`openai/gpt-image-1` accepts only `1:1`, `3:2`, `2:3` and `auto`. A failed or
+cancelled generation is a 502, not billed. The run continues past a failed
+target, so re-run just those.
 
 ## Generating 3D scenes
 

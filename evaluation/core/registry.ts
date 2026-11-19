@@ -238,6 +238,10 @@ export const REGISTRY: readonly RegistryEntry[] = [
   blueprintCheck("red_herring_count_matches_brief"),
   blueprintCheck("no_orphan_clues"),
   blueprintCheck("requires_satisfiable"),
+  blueprintCheck("location_locks_are_pointers"),
+  blueprintCheck("pointers_point_to_target"),
+  blueprintCheck("self_protect_has_parts"),
+  blueprintCheck("parts_name_real_clues"),
 
   blueprintJudge("solve_depth", {
     context: SOLVE_FLOOR,

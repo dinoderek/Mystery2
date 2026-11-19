@@ -163,7 +163,9 @@
               "clues": [
                 {
                   "id": "clue_snowshoe_prints",
-                  "text": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed."
+                  "text": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed.",
+                  "hint_location_id": "woodshed",
+                  "hint_sub_location_id": "behind_woodpile"
                 }
               ]
             },
@@ -195,10 +197,15 @@
                   "id": "clue_wet_snowshoes",
                   "text": "One pair of snowshoes is caked in fresh snow. White fur is caught in a strap.",
                   "requires": {
+                    "kind": "pointer",
                     "clue_ids": [
-                      "clue_snowshoe_prints"
+                      "clue_briefcase_found"
                     ],
-                    "rationale": "Hard search gate: from a glance all the snowshoes look alike. Only after finding the snowshoe prints by the luggage car do you know to check each pair closely."
+                    "rationale": "From a glance all the snowshoes look alike. The snowshoe prints at the woodshed lead back to the hooks behind the ticket hut, so you know to check each pair there.",
+                    "target": {
+                      "location_id": "ticket_hut",
+                      "sub_location_id": "snowshoe_hooks"
+                    }
                   }
                 }
               ]
@@ -266,12 +273,19 @@
               "clues": [
                 {
                   "id": "clue_briefcase_found",
-                  "text": "Howard's case is under an old sack! Snowshoe prints go back to the ticket hut.",
+                  "text": "Howard's case is under an old sack! Snowshoe prints go back to the hooks at the ticket hut.",
+                  "hint_location_id": "ticket_hut",
+                  "hint_sub_location_id": "snowshoe_hooks",
                   "requires": {
+                    "kind": "pointer",
                     "clue_ids": [
                       "clue_snowshoe_prints"
                     ],
-                    "rationale": "Hard search gate: the case is buried under a sack deep behind the woodpile. You only know to dig there by following the snowshoe trail from the luggage car."
+                    "rationale": "The case is buried under a sack deep behind the woodpile. The snowshoe trail from the luggage car leads you there.",
+                    "target": {
+                      "location_id": "woodshed",
+                      "sub_location_id": "behind_woodpile"
+                    }
                   }
                 }
               ]
@@ -446,12 +460,25 @@
               "type": "self_protect",
               "strategy": "maintain false alibi: insists he napped on the train",
               "priority": "high",
-              "details": "Barnaby insists he napped in his train seat from ten past three until Howard shouted. His story cracks in parts: (1) Bramble's word that he hopped toward the ticket hut, not the train; (2) the snowshoes caked in fresh snow with white fur in the strap; (3) the snowshoe prints by the luggage car's far door. With one part he slips nervously, saying he 'took the long way to stretch his legs'. With two he goes quiet and mutters that lots of animals have white fur. Only with all three does he admit, teary-eyed, that he took the case to keep the map for his museum, and he says sorry to Howard.",
-              "yields_to_clue_ids": [
-                "clue_bramble_barnaby",
-                "clue_wet_snowshoes",
-                "clue_snowshoe_prints"
-              ]
+              "details": "Barnaby insists he napped in his train seat from ten past three until Howard shouted. He is chatty and helpful-sounding, and keeps talk away from himself.",
+              "parts": [
+                {
+                  "clue_id": "clue_snowshoe_prints",
+                  "shows": "The luggage-car prints are snowshoe prints, not wolf paws.",
+                  "reaction": "Backs off blaming Gus, flustered, but keeps the nap."
+                },
+                {
+                  "clue_id": "clue_bramble_barnaby",
+                  "shows": "At ten past three he hopped toward the ticket hut, not the train.",
+                  "reaction": "Says he took the long way to stretch his legs, then napped on the train."
+                },
+                {
+                  "clue_id": "clue_wet_snowshoes",
+                  "shows": "Someone wore a snowshoe pair today and left white fur in a strap.",
+                  "reaction": "Mutters that lots of animals have white fur."
+                }
+              ],
+              "confession": "Teary-eyed, he admits he took the case to keep the map for his museum, and says sorry to Howard."
             },
             {
               "type": "implicate_other",
@@ -464,7 +491,15 @@
               "type": "self_protect",
               "strategy": "deny motive: plays down the museum quarrel",
               "priority": "medium",
-              "details": "If the museum or the map comes up, Barnaby says he only wants the map 'kept safe' and that he would never take anything from his old friend. He gets prickly and grumbles that snow foxes never cared about bunny things anyway."
+              "details": "If the museum or the map comes up, Barnaby says he only wants the map 'kept safe'. He gets prickly and grumbles that snow foxes never cared about bunny things anyway.",
+              "parts": [
+                {
+                  "clue_id": "clue_howard_motive",
+                  "shows": "Barnaby wants the map for his bunny museum.",
+                  "reaction": "Admits he wants the map in his museum, but says he would never take anything from his old friend."
+                }
+              ],
+              "confession": "He admits he wants the map for his bunny museum, because he thinks it should stay with bunnies."
             }
           ],
           "tells": [
@@ -522,6 +557,7 @@
               "text": "From ten past three, I hid by the water tower. I sang my party song.",
               "hint_location_id": "platform",
               "requires": {
+                "kind": "leverage",
                 "clue_ids": [
                   "clue_songbook"
                 ],
@@ -569,7 +605,15 @@
               "type": "self_protect",
               "strategy": "false alibi: says he was checking the engine wheels",
               "priority": "medium",
-              "details": "Gus is embarrassed about his secret party song, so he says he was 'checking the engine wheels' from ten past three until the bell. He hums nervously when pressed, but sticks to the wheels story until shown his songbook."
+              "details": "Gus is embarrassed about his secret party song, so he says he was 'checking the engine wheels' from ten past three until the bell. He hums nervously when pressed.",
+              "parts": [
+                {
+                  "clue_id": "clue_songbook",
+                  "shows": "Gus was behind the water tower with his songbook, dancing in the snow.",
+                  "reaction": "His ears turn pink and he admits he was by the water tower, not the wheels."
+                }
+              ],
+              "confession": "He admits he practiced his secret party song behind the water tower from ten past three until the bell, and asks you to keep it a surprise."
             },
             {
               "type": "conditional_reveal",
@@ -613,6 +657,7 @@
               "text": "All right! I sold hats in the tea house. I didn't ask the station master first.",
               "hint_location_id": "tea_house",
               "requires": {
+                "kind": "leverage",
                 "clue_ids": [
                   "clue_bramble_ruby"
                 ],
@@ -655,7 +700,20 @@
               "type": "self_protect",
               "strategy": "false alibi: says she stayed in her train seat",
               "priority": "medium",
-              "details": "Ruby says she stayed in her train seat reading the whole stop. Really she was selling hats in the tea house without asking the station master, and she fears the snow foxes already think city foxes are tricky. If told Juniper saw her carry a brown case, she says it was 'just my own things' and changes the subject."
+              "details": "Ruby says she stayed in her train seat reading the whole stop. She fears the snow foxes already think city foxes are tricky.",
+              "parts": [
+                {
+                  "clue_id": "clue_juniper_ruby_case",
+                  "shows": "Ruby stepped off the train at five past three with a brown case.",
+                  "reaction": "Admits she got off the train, but says the case held just her own things, and changes the subject."
+                },
+                {
+                  "clue_id": "clue_bramble_ruby",
+                  "shows": "Ruby showed hats at the tea house counter from ten past three until the bell.",
+                  "reaction": "Sighs and admits she was selling hats in the tea house."
+                }
+              ],
+              "confession": "She opens her case to show the hats, and asks you not to tell the station master."
             },
             {
               "type": "conditional_reveal",
@@ -706,6 +764,7 @@
               "text": "Anyone can use my snowshoes. They don't have to ask. I never left my window!",
               "hint_location_id": "ticket_hut",
               "requires": {
+                "kind": "leverage",
                 "clue_ids": [
                   "clue_wet_snowshoes"
                 ],
@@ -888,6 +947,7 @@
               "about_character_id": "barnaby",
               "hint_location_id": "ticket_hut",
               "requires": {
+                "kind": "pointer",
                 "clue_ids": [
                   "clue_howard_barnaby_left"
                 ],

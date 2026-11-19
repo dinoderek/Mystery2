@@ -1,6 +1,7 @@
 import { BlueprintV2Schema, type BlueprintV2 } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import { StoryBriefSchema, type StoryBrief } from "../../packages/blueprint-generator/src/story-brief.ts";
 import { analyzeClueGraph } from "./lib/clue-graph.ts";
+import { analyzeLocks } from "./lib/locks.ts";
 
 export interface MechanicalCheck {
   id: string;
@@ -126,7 +127,21 @@ function structureChecks(blueprint: BlueprintV2): MechanicalCheck[] {
       locked_solution_clues: graph.locked_solution_clues,
     }),
   );
+  checks.push(...lockChecks(blueprint));
   return checks;
+}
+
+// Why each lock exists, and what breaks each cover story (`lib/locks.ts`).
+function lockChecks(blueprint: BlueprintV2): MechanicalCheck[] {
+  const locks = analyzeLocks(blueprint);
+  const check = <T>(id: string, key: string, faults: T[]) =>
+    mkCheck(id, faults.length === 0, faults.length === 0 ? null : { [key]: faults });
+  return [
+    check("location_locks_are_pointers", "locks", locks.location_locks_not_pointers),
+    check("pointers_point_to_target", "pointers", locks.pointers_off_target),
+    check("self_protect_has_parts", "agendas", locks.self_protect_incomplete),
+    check("parts_name_real_clues", "parts", locks.parts_with_unknown_clues),
+  ];
 }
 
 function mkCheck(id: string, passed: boolean, details?: Record<string, unknown> | null): MechanicalCheck {

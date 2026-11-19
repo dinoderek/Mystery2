@@ -127,7 +127,7 @@ not list it again. The ask and search actions both drop an id the session has
 already discovered before recording the event or answering, and log it
 (`ask.clue_already_discovered`, `search.clue_validation_failed`).
 
-Gates use each clue's optional `requires` (`{ clue_ids, rationale }`):
+Gates use each clue's optional `requires`:
 
 - **Search — hard.** A bare search reveals the first unrevealed *and* unlocked
   location-level clue, skipping locked ones. A targeted search never sees
@@ -160,8 +160,8 @@ The talk prompt rewards good roleplay without giving anything away. One rule
 covers every conversational gate: a self-protection agenda's crack, a
 conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
 
-- **The condition is a list of parts.** These are the agenda's `details` and
-  `yields_to_clue_ids`, or the gate's clues.
+- **The condition is a list of parts.** These are a self-protection agenda's
+  `parts`, a reveal's `yields_to_clue_ids`, or the gate's clues.
 - **A part is earned** when the player puts its substance in front of the
   character. Using a clue they hold does it. So does a specific, plausible
   bluff or deduction that names the substance, which this character would
@@ -171,17 +171,18 @@ conditional reveal, a `requires`-gated clue and a `clue`-triggered tell.
   insisting, repeating a demand, asking to look, or a strong case built only on
   the other parts.
 - **The character yields in proportion.** Part of a condition earns a visible
-  crack and a shakier deflection that tells the player they are on the right
-  track. The stated alibi holds, and nothing from `actual_actions` is admitted
-  until the whole condition is earned; only then does a confession come. The repeated-asking fallback that keeps a case solvable can give
+  crack, or that part's authored `reaction`, telling the player they are on the
+  right track. The stated alibi holds except where an earned reaction concedes
+  it, and nothing else from `actual_actions` is admitted until the whole
+  condition is earned; only then does the `confession` come. The repeated-asking fallback that keeps a case solvable can give
   up a partial truth or a gated clue, never a confession.
 - **An untriggered tell's cue stays hidden, even softened.** "One quick puff"
   for "her tail puffs up" still leaks the tell, so greetings and improvised
   reactions use different body language.
 
 The proportion rule matters most. Without it, a confident accusation backed
-by half the evidence draws a full confession, and the culprit's admission hands
-over the answer before the player has earned it. `gm_roleplay` judges against
+by half the evidence draws a full confession, handing over the answer before
+the player has earned it. `gm_roleplay` judges against
 the same definition of earned.
 
 The notebook's case facts and each turn's revealed clues reach the browser as

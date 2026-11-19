@@ -18,8 +18,8 @@ How they connect:
   rebuilds what the narrator saw with the runtime's own context builders.
 - **Runtime** fixes one interaction's prior state and history, so the input is
   identical across runs and models. It grades the narration with `flesch`,
-  `age_appropriate_turn` and the `gm_*` judges. A failure found in play can be frozen into a runtime case
-  and re-judged against another model by the same standard.
+  `age_appropriate_turn` and the `gm_*` judges. A failure found in play can be
+  frozen into a runtime case and re-judged against another model.
 - **The `gm_*` judges** (`gm_roleplay`, `gm_clue_discipline`,
   `gm_fabrication`, `gm_spoiler`) belong to neither: they live in
   `evaluation/judges/` and read a subject projection (`evaluation/judges/README.md`).
@@ -28,9 +28,8 @@ How they connect:
 - **The truth set** holds subjects with known faults to score judges against
   (`evaluation/truth/README.md`).
 
-Every reader of a played game's events skips `no_turn_line` (the event a refused
-line or `help` is saved as) through `playedEvents` in
-`evaluation/lib/game-events.ts`.
+Readers of a played game skip `no_turn_line` events (a refused line or `help`)
+through `playedEvents` in `evaluation/lib/game-events.ts`.
 
 ## Why the blueprint pipeline is shaped this way
 
@@ -44,8 +43,8 @@ Two lessons from the single-prompt evaluator it replaced:
 - **A narrow judge judges better.** One prompt assessing solvability, fairness,
   coherence and grounding at once gave worse signal on each.
 - **What code can check, code checks.** LLM time is the bottleneck and LLM
-  judgement drifts. Schema validity, brief-derived counts and orphan clues are
-  mechanical; the judge keeps the genuinely qualitative questions.
+  judgement drifts. Schema validity, brief-derived counts, orphan clues and lock
+  shapes are mechanical; the judge keeps the qualitative questions.
 
 One judge per dimension also buys isolation (editing the fairness prompt cannot
 move solve-depth scores), targeted retries and, versioned, re-running only the
@@ -65,12 +64,14 @@ summary counts them.
 
 ## Stages
 
-`./dev eval judge blueprint` (`evaluation/blueprint/`), on the core, loads the
-blueprint and its brief, then runs:
+`./dev eval judge blueprint` (`evaluation/blueprint/`) loads the blueprint and
+its brief, then runs:
 
-1. **Mechanical checks**: the clue discovery graph is acyclic, references real
-   clues, and reaches every solution clue from an ungated root. A failure does not
-   stop the dimensions, since judges often find the same problem another way.
+1. **Mechanical checks**: the clue graph is acyclic, references real clues,
+   and reaches every solution clue from an ungated root; a location lock is a
+   pointer a prerequisite points to; a self-protect agenda has a confession and
+   parts naming real clues. A failure does not stop the dimensions: judges often
+   find the same problem another way.
 2. **Dimensions**, in parallel. Within one, the analyzer runs before the judge,
    and an analyzer error skips only that dimension's judge.
 

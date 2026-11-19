@@ -4,10 +4,10 @@
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
 > - `docs/ai-runtime.md#context-boundaries` — `b950850430700c53a88a0ddfa967ed5318d1b844`
-> - `docs/ai-runtime.md#clue-gating` — `00d0d82983f875c6fa64e6d4af2dd505aae8d4f1`
+> - `docs/ai-runtime.md#clue-gating` — `7a986218662bf0983b5d46a98448cb1a94199be9`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `c905ddd4066cae2c6da5ee32ba3b33c09dac4946`
-> - `docs/blueprint-generation-flows.md#generator-prompt` — `5361c3c95c349855e79f49db05adce1317ce671c`
+> - `docs/blueprint-generation-flows.md#generator-prompt` — `5d7e5fd94dc48ad248fb84e665565807e262e623`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
@@ -69,7 +69,7 @@ Every runtime prompt carries a style slot the runtime always fills:
 
 ## Clue gating at runtime
 
-Each clue's optional `requires` (`{ clue_ids, rationale }`) is consumed
+Each clue's optional `requires` (`{ kind, clue_ids, rationale, target }`) is consumed
 differently by search and by talk, and the difference should shape how you write
 each `rationale`:
 
@@ -126,15 +126,13 @@ character's responses — they're what makes the mystery feel like a mystery
 during talk. Agenda types are constrained by the schema; do not invent new
 ones.
 
-The narrator reads an agenda's crack condition (in `details`, and
-`yields_to_clue_ids`) as a list of parts, and yields only as far as the player
-has earned. A part is earned by evidence the player holds and uses, or by a
-convincing bluff or deduction that names its substance. Part of the condition
-earns a nervous slip, with the alibi still standing; only all of it earns a
-confession. So write the condition
-as concrete, nameable evidence ("shown both her glowing gloves and the trail
-leading to her lab"), not a mood ("if pressed hard enough"). A clever player
-can then bluff their way to a part they have not found, but cannot skip one.
+A `self_protect` agenda's `parts` are its crack condition, one clue each, and
+the narrator yields only as far as the player has earned. A part is earned by
+evidence the player holds and uses, or by a convincing bluff or deduction that
+names its substance. It earns that part's `reaction`, with the alibi standing
+unless that evidence breaks it; only every part earns the `confession`. So each
+reaction concedes exactly what its clue `shows`, and a clever player can bluff
+their way to a part they have not found, but cannot skip one.
 
 ### `tells` are reactions, not ambience
 

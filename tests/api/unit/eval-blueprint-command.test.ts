@@ -133,7 +133,7 @@ describe("judge blueprint", () => {
     expect(Object.keys(result.run.bindings)).toEqual(["blueprint-judge"]);
 
     const tiers = (tier: string) => result.verdicts.filter((v) => v.tier === tier).map((v) => v.id);
-    expect(tiers("mechanical")).toHaveLength(8);
+    expect(tiers("mechanical")).toHaveLength(12);
     expect(tiers("analyzer")).toEqual(["clue_graph.analyzer", "age_appropriate.analyzer"]);
     expect(tiers("judge")).toEqual(DIMENSIONS);
     for (const verdict of result.verdicts.filter((v) => v.tier === "judge")) {
@@ -296,7 +296,15 @@ describe("validate", () => {
     expect(await eval_(argv)).toBe(0);
 
     const result = await theResult();
-    expect(result.verdicts.map((v) => v.id)).toEqual(["blueprint_schema_valid", "no_orphan_clues", "requires_satisfiable"]);
+    expect(result.verdicts.map((v) => v.id)).toEqual([
+      "blueprint_schema_valid",
+      "no_orphan_clues",
+      "requires_satisfiable",
+      "location_locks_are_pointers",
+      "pointers_point_to_target",
+      "self_protect_has_parts",
+      "parts_name_real_clues",
+    ]);
     expect(result.verdicts.every((v) => v.tier === "mechanical" && v.status === "pass")).toBe(true);
     expect(result.run.bindings).toEqual({});
     expect(fs.existsSync(path.join(path.dirname(results()[0]), "brief.json"))).toBe(false);

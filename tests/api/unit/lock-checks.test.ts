@@ -163,14 +163,14 @@ describe("lock, reaction and hidden-spot checks", () => {
     expect(failing(bp)).toEqual(["blueprint_schema_valid"]);
   });
 
-  it("fail a location description that names a spot whose clues are all locked", () => {
+  it("fail a location description that names a spot whose clues are all locked, even by a short word", () => {
     const bp = soundBlueprint();
-    bp.world.locations[1].description = "A long hallway. Two Door Mats lie by the front door.";
+    bp.world.locations[1].description = "A long hallway with a muddy mat.";
     expect(failing(bp)).toEqual(["descriptions_hide_locked_spots"]);
-    expect(findNamedHiddenSpots(bp)).toEqual([{ location_id: "hallway", sub_location_id: "under-mat", words: ["door"] }]);
+    expect(findNamedHiddenSpots(bp)).toEqual([{ location_id: "hallway", sub_location_id: "under-mat", words: ["mat"] }]);
   });
 
-  it("let a description name a spot once one of its clues is unlocked, or a place word it shares", () => {
+  it("let a description name a spot once one of its clues is unlocked, or share only a place word", () => {
     const unlocked = soundBlueprint();
     unlocked.world.locations[1].description = "A hallway with a door mat.";
     delete unlocked.world.locations[1].sub_locations[0].clues[0].requires;
@@ -178,14 +178,14 @@ describe("lock, reaction and hidden-spot checks", () => {
 
     const placeWord = soundBlueprint();
     placeWord.world.locations[1].sub_locations[0].name = "under the back stairs";
-    placeWord.world.locations[1].description = "A hallway. Snow blows in under the back window.";
+    placeWord.world.locations[1].description = "Snow blows in under the back window.";
     expect(findNamedHiddenSpots(placeWord)).toEqual([]);
   });
 
-  it("match plural and singular words", () => {
+  it("match plural and singular words, but not the location's own name", () => {
     const bp = soundBlueprint();
-    bp.world.locations[1].sub_locations[0].name = "the snowshoe hooks";
-    bp.world.locations[1].description = "Snowshoes hang by the coats.";
-    expect(findNamedHiddenSpots(bp)).toMatchObject([{ words: ["snowshoe"] }]);
+    bp.world.locations[1].sub_locations[0].name = "the snowshoe hooks in the hallway";
+    bp.world.locations[1].description = "A cold hallway. Snowshoes hang by the coats.";
+    expect(findNamedHiddenSpots(bp)).toMatchObject([{ words: ["snowsho"] }]);
   });
 });

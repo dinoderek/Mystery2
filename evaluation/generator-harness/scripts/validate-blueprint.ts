@@ -76,7 +76,7 @@ async function main() {
   const failedChecks = runMechanicalChecks({ blueprintCandidate: parsed }).filter((check) => check.status === "fail");
   if (failedChecks.length > 0) {
     ok = false;
-    process.stderr.write(`FAILED CHECKS: ${blueprintPath} — ${failedChecks.length} check(s). The game-design rules say how to fix each:\n`);
+    process.stderr.write(`FAILED CHECKS: ${blueprintPath} — ${failedChecks.length} check(s). "Discovery graph" and "Hard Constraints" in prompts/generator-prompt.md say how to fix each:\n`);
     for (const check of failedChecks) {
       process.stderr.write(`  - ${check.id}: ${JSON.stringify(check.details)}\n`);
     }

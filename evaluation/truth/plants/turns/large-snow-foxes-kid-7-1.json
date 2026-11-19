@@ -44,20 +44,6 @@
       "caught_by": []
     },
     {
-      "sequence": 20,
-      "kind": "out_of_character",
-      "severity": "major",
-      "note": "Shy, soft-spoken Tilly shouts at the investigator to go away, unlike her authored self.",
-      "edits": [
-        {
-          "type": "narration",
-          "find": "She peeks over her sketchbook. \"Oh. Hello,\" she whispers. \"Are you here for a ticket?\"",
-          "replace": "She jumps up and stamps her paw. \"Go away!\" she shouts. \"I'm busy. I don't talk to nosy strangers!\""
-        }
-      ],
-      "caught_by": []
-    },
-    {
       "sequence": 32,
       "kind": "not_age_fit",
       "severity": "major",

@@ -1,0 +1,142 @@
+{
+  "game": "large-snow-foxes-kid-7",
+  "plants": [
+    {
+      "sequence": 27,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Barnaby gives up that he took the long way after the player only asks whether he has snowshoes. The narrator records the snowshoe prints as used, but a mention earns nothing.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Snowshoes? Me? Goodness, no! I was napping on the train.\"",
+          "replace": "\"Snowshoes? Okay, okay! I did take the long way round to stretch my legs. Then I napped on the train.\""
+        },
+        {
+          "type": "patch",
+          "ops": [
+            {
+              "op": "test",
+              "path": "/payload/input_understood",
+              "value": true
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_clue_ids",
+              "value": [
+                "clue_snowshoe_prints"
+              ]
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_quote",
+              "value": "do you have snowshoes"
+            },
+            {
+              "op": "add",
+              "path": "/payload/new_commitments",
+              "value": []
+            }
+          ]
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 33,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Barnaby takes back \"took the long way\" (turn 28) just after the player's case that he was walking, not napping, a bluff the narrator records as using Bramble's sighting: the part is earned, so the concession must stand.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"A tiny walk! Maybe. That's not stealing!\"",
+          "replace": "\"A walk? I never took any walk! I never took the long way. I napped the whole time!\""
+        },
+        {
+          "type": "patch",
+          "ops": [
+            {
+              "op": "test",
+              "path": "/payload/input_understood",
+              "value": true
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_clue_ids",
+              "value": [
+                "clue_bramble_barnaby"
+              ]
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_quote",
+              "value": "he was walking not napping"
+            },
+            {
+              "op": "add",
+              "path": "/payload/new_commitments",
+              "value": []
+            }
+          ]
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 34,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Barnaby says he was wide awake watching the platform, contradicting his own nap alibi and every earlier line of it.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"The woodshed? Don't be silly! I was napping, I said!\"",
+          "replace": "\"The woodshed? Don't be silly! I was wide awake the whole time, watching the platform!\""
+        }
+      ],
+      "caught_by": []
+    },
+    {
+      "sequence": 35,
+      "kind": "out_of_character",
+      "severity": "major",
+      "note": "Barnaby confesses in full and gives his motive after the player's case on the prints and the walking, which earn only a flustered back-off and the long way: the wet snowshoes and motive parts are unearned.",
+      "edits": [
+        {
+          "type": "narration",
+          "find": "\"Snowshoe prints? Lots of animals wear those! Lots!\"",
+          "replace": "\"Fine! I took Howard's case and hid it in the woodshed. I wanted the map for my museum. I'm sorry!\""
+        },
+        {
+          "type": "patch",
+          "ops": [
+            {
+              "op": "test",
+              "path": "/payload/input_understood",
+              "value": true
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_clue_ids",
+              "value": [
+                "clue_snowshoe_prints"
+              ]
+            },
+            {
+              "op": "add",
+              "path": "/payload/used_quote",
+              "value": "the prints went to the woodshed"
+            },
+            {
+              "op": "add",
+              "path": "/payload/new_commitments",
+              "value": []
+            }
+          ]
+        }
+      ],
+      "caught_by": []
+    }
+  ]
+}

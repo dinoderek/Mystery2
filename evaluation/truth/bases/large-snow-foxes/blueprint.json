@@ -149,7 +149,7 @@
       {
         "id": "ticket_hut",
         "name": "Ticket Hut",
-        "description": "A snug little hut with a round ticket window and a warm stove. Snowshoes hang on hooks on the back wall outside.",
+        "description": "A snug little hut with a round ticket window and a warm stove.",
         "clues": [
           {
             "id": "clue_ticket_book",

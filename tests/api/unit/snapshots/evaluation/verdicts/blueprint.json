@@ -82,6 +82,11 @@
       "id": "parts_name_real_clues",
       "status": "pass",
       "details": null
+    },
+    {
+      "id": "descriptions_hide_locked_spots",
+      "status": "pass",
+      "details": null
     }
   ],
   "dimensions": [

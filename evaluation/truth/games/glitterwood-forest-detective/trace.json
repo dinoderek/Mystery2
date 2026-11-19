@@ -202,7 +202,7 @@
         {
           "id": "moonglow_pond",
           "name": "Moonglow Pond",
-          "description": "A still pond that shines like a mirror. Lily pads glow pink and gold. A huge weeping willow dips its long branches in the water.",
+          "description": "A still pond that shines like a mirror. Lily pads glow pink and gold.",
           "clues": [
             {
               "id": "clue_ruby_list",

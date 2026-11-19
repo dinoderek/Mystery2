@@ -232,9 +232,9 @@ describe("ai-prompts", () => {
       destination_name: "Kitchen",
       destination_description: "A messy kitchen.",
       has_visited_before: true,
-      destination_history_json: "[]",
+      last_arrival_narration: "You step into the messy kitchen.",
       destination_characters_json:
-        '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","public_summary":"The baker; was in the kitchen."}]',
+        '[{"first_name":"Alice","last_name":"Smith","sex":"female","appearance":"red hair","manner":[],"tells":[]}]',
     });
 
     expect(prompt).toContain("9 years old");
@@ -246,12 +246,15 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("never by guessing");
     expect(prompt).toContain("never invent more");
     expect(prompt).toContain("Narration style");
-    // Characters are present, so the arrival plays them as authored without
-    // giving anything away.
+    // Characters are present, so the arrival plays them as authored. The rules
+    // name only fields the pack carries: no private field is listed to forbid it.
     expect(prompt).toContain("initial_attitude_towards_investigator");
-    expect(prompt).toContain("Arrival reveals no clues");
-    expect(prompt).toContain("never state them");
-    expect(prompt).toContain('A "clue" tell never surfaces on arrival');
+    expect(prompt).toContain("manner");
+    expect(prompt).toContain("has not asked them anything yet");
+    for (const field of ["motive", "actual_actions", "stated_alibi", "flavor_knowledge", "background", "clue"]) {
+      expect(prompt).not.toContain(field);
+    }
+    expect(prompt).toContain('Last arrival here: "You step into the messy kitchen."');
     expect(prompt).toContain("about 52 words"); // ambience@9
   });
 
@@ -269,7 +272,6 @@ describe("ai-prompts", () => {
       destination_name: "Kitchen",
       destination_description: "A messy kitchen.",
       has_visited_before: false,
-      destination_history_json: "[]",
       destination_characters_json: "[]",
     });
     expect(move).toContain("Narration style");

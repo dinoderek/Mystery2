@@ -3,10 +3,10 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `7ba666de02d684a1c6387de706a29156af67b006`
+> - `docs/ai-runtime.md#context-boundaries` — `dd1e3ea504920d23323f67b3f6256bb05a3b329b`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `8833f8f3b53ae346dee3bcbaae7bd10e645eb3c4`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `8117b3394386cc4cc73a8dd80e8a075a7c9ad952`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `ff596125947e94ebe0c3064db368d1712cd2296b`
 > - `docs/blueprint-generation-flows.md#image-generation` — `d4a6c490f04639a83061e2b008ff1b6169c1aa2f`
 > Verifier: `npm run check:curated-docs`
@@ -22,7 +22,7 @@ except the accusation judge.
 |---|---|---|
 | `game-start` | opening narration | `metadata.target_age`, `narrative.premise`. `narrative.starting_knowledge` is not used for narration — it is surfaced verbatim (not generated) as the player's in-game notebook (case facts, people, places). |
 | `game-enter` | arrival at the **starting** location, once, after the player confirms the opening | same slice as a move for `world.starting_location_id`, with no prior history. Your starting location's `description`, sub-locations, and characters are therefore read out at the very start of play, not first seen on a return visit. |
-| move action | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search, except all-locked ones), plus, for each character currently at that location, the **same private roleplay block a talk turn gets** (see below), so they are played in their authored `initial_attitude_towards_investigator` and agendas. Arrival reveals no clues, never states the private fields, and fires only `always` tells (or a `condition` tell the history already meets). Characters elsewhere are not sent. Plus prior history at that location. |
+| move action | arrival narration | destination's `location.{name, description, sub_locations[].name}` (sub-location names surface so player knows what to search, except all-locked ones), plus, for each character currently at that location, only names, `sex`, `appearance`, `personality`, `initial_attitude_towards_investigator`, `always` tells, and a manner line per unbroken agenda, from its type and target. Nothing private, and no `condition` or `clue` tell. Characters elsewhere are not sent. A return visit also gets the narration of the last arrival there, not the searches since. |
 | search action (bare) | reveals next location-level clue | current location, its `clues[]` in order, sub-location names + hints (narrator-only) + unrevealed clues; AI picks the next clue. Locked clues and all-locked sub-locations are filtered out. |
 | search action (targeted) | judges player's freeform search text | same as bare plus the player's `search_query`; AI matches it against a sub-location and may reveal that sub-location's clue. A query naming a hidden sub-location still finds its clue. The narrator can waive turn cost for nonsense attempts. |
 | `talk_start` / `talk_conversation` / `talk_end` | character dialogue | location context, public-only summaries of the other characters, plus the *active character's* private roleplay block: `background`, `clues` (each with `requires_rationale`, `player_can_use_prerequisites` and `known_to_player`), `flavor_knowledge`, `actual_actions`, `agendas` (reactions once earned), `tells`, `stated_alibi`, `motive`, `personality`, `initial_attitude_towards_investigator`, and `player_known_clues`. Plus same-character history and state. |
@@ -192,7 +192,7 @@ or null `sex` causes pronoun drift in talk and move narration.
 ### `initial_attitude_towards_investigator` sets the first impression
 
 A character is first met on arrival, before any conversation. Arrival plays
-them in this attitude and lets their agendas shape their manner, so a guarded
+them in this attitude and personality, with a manner drawn from their agendas' types, so a guarded
 suspect who should keep visitors away from somewhere does so from the moment
 the player walks in.
 
@@ -220,8 +220,8 @@ the player walks in.
   `prompts/generator-prompt.md`; the `knowledge_coherence` judge checks it).
 - `narrative.starting_knowledge` needs an entry for **every** location and
   character; the schema rejects missing or duplicated ids. The character entries
-  are also what become `public_summary` at runtime, so a thin summary here means
-  a thin arrival scene.
+  are also what become `public_summary` in conversations, so a thin summary here
+  means a thin first impression.
 - The accusation judge gets the full blueprint, so `ground_truth`,
   `solution_paths`, `red_herrings`, and `suspect_elimination_paths` are real
   consumers of your authoring effort — not metadata. They stay judge-side only:

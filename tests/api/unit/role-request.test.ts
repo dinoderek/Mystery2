@@ -241,7 +241,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
     return JSON.parse(line!.slice("Characters at destination: ".length));
   }
 
-  it("sends each present character's private pack and nothing about absent ones", () => {
+  it("sends each present character's arrival pack and nothing about absent ones", () => {
     const prompt = buildNarrationPrompt({
       role: "ambience",
       game_id: "case",
@@ -251,38 +251,16 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
     });
     const characters = charactersIn(prompt);
     expect(characters.map((c) => c.id)).toEqual(["char-alice"]);
-    expect(characters[0]).toMatchObject({
-      initial_attitude_towards_investigator:
-        blueprint.world.characters[0].initial_attitude_towards_investigator,
-      motive: blueprint.world.characters[0].motive,
-      clues: [expect.objectContaining({ player_can_use_prerequisites: null, known_to_player: false })],
-    });
+    expect(Object.keys(characters[0]).sort()).toEqual([
+      "appearance", "first_name", "id", "initial_attitude_towards_investigator",
+      "last_name", "manner", "personality", "sex", "tells",
+    ]);
+    expect(characters[0].initial_attitude_towards_investigator).toBe(
+      blueprint.world.characters[0].initial_attitude_towards_investigator,
+    );
+    expect(prompt).not.toContain(blueprint.world.characters[0].clues[0].text);
     expect(prompt).not.toContain(blueprint.world.characters[1].background);
     expect(prompt).toContain("## Characters present");
-    expect(prompt).toContain("Arrival reveals no clues");
-    expect(prompt).toContain("never surfaces on arrival");
-  });
-
-  it("marks clues the player already holds", () => {
-    const clueId = blueprint.world.characters[0].clues[0].id;
-    const prompt = buildNarrationPrompt({
-      role: "ambience",
-      game_id: "case",
-      blueprint,
-      destination_id: "loc-kitchen",
-      conversation_history: [
-        {
-          sequence: 1,
-          event_type: "ask",
-          actor: "char-alice",
-          narration: "told",
-          payload: { character_id: "char-alice", revealed_clue_ids: [clueId] },
-        },
-      ],
-    });
-    expect(charactersIn(prompt)[0].clues).toEqual([
-      expect.objectContaining({ id: clueId, known_to_player: true }),
-    ]);
   });
 
   it("leaves an empty location with no characters and no character rules", () => {
@@ -322,9 +300,19 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
           narration: "You step into the kitchen.",
           payload: { destination: "loc-kitchen", location_id: "loc-kitchen" },
         },
+        {
+          sequence: 2,
+          event_type: "search",
+          actor: "system",
+          narration: "Under the shelf you find a trail of crumbs.",
+          payload: { location_id: "loc-kitchen" },
+        },
       ],
     });
     expect(back).toContain("acknowledge the return visit");
-    expect(back).toContain("You step into the kitchen.");
+    expect(back).toContain('Last arrival here: "You step into the kitchen."');
+    expect(first).not.toContain("Last arrival here");
+    // Only the last arrival travels: earlier searches and their finds stay out.
+    expect(back).not.toContain("trail of crumbs");
   });
 });

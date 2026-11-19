@@ -165,11 +165,25 @@ export interface MoveContext {
   destination_name: string;
   destination_description: string;
   has_visited_before: boolean;
-  destination_history: ConversationFragment[];
-  // Every character standing at the destination, with the same private pack a
-  // conversation gives its active character, so arrival plays them in their
-  // authored attitude rather than as a generic greeter.
-  destination_characters: TalkCharacterPrivateContext[];
+  // What the last arrival here said about the place, so a return stays consistent.
+  last_arrival_narration: string | null;
+  destination_characters: ArrivalCharacterContext[];
+}
+
+// Who is standing at a destination, as much as an arrival can use: how they
+// look and carry themselves, never what they know or did.
+export interface ArrivalCharacterContext {
+  id: string;
+  first_name: string;
+  last_name: string;
+  sex: "male" | "female";
+  appearance: string;
+  personality: string;
+  initial_attitude_towards_investigator: string;
+  // Each agenda still in play, in priority order, as the manner it gives them.
+  manner: string[];
+  // Only tells that need nothing from the player: `always` ones.
+  tells: string[];
 }
 
 export interface SubLocationContext {
@@ -628,25 +642,97 @@ function buildTalkCharacterPrivateContext(
   };
 }
 
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+// An agenda as the manner it gives a character before anyone asks them
+// anything. Built from its type and target only: strategy and details name the
+// secret behind it.
+function agendaManner(
+  agenda: BlueprintAgenda,
+  sex: "male" | "female",
+  nameOf: (id: string) => string,
+): string {
+  const target = agenda.target_character_id ? nameOf(agenda.target_character_id) : "someone";
+  switch (agenda.type) {
+    case "self_protect":
+      return `keeps attention away from ${sex === "female" ? "herself" : "himself"}`;
+    case "protect_other":
+      return `protective of ${target}`;
+    case "implicate_other":
+      return `would rather the investigator looked at ${target}`;
+    default:
+      return "holding something back";
+  }
+}
+
+// An agenda the player has already broken no longer shapes the manner: a
+// confessed cover, a blame or protection that yielded to a used clue, a reveal
+// whose clue has been given.
+function isAgendaSpent(
+  agenda: BlueprintAgenda,
+  agendaIndex: number,
+  state: ReturnType<typeof buildCharacterState>,
+  discovered: Set<string>,
+): boolean {
+  if (agenda.type === "self_protect") {
+    return isAgendaFullyEarned(state, agendaIndex, agenda.parts?.length ?? 0);
+  }
+  if (agenda.yields_to_clue_ids?.some((id) => state.used_clue_ids.includes(id))) return true;
+  return agenda.gated_clue_id !== undefined && discovered.has(agenda.gated_clue_id);
+}
+
 /**
- * The private pack of every character standing at a location — what arrival
- * narration needs to play whoever is there. Same builder as a conversation's
- * active character, so the two never disagree about what a character is.
+ * Every character standing at a location, as arrival narration needs them:
+ * looks, personality, attitude, the manner their live agendas give them and
+ * their `always` tells. Nobody has asked anything yet, so nothing they know,
+ * did or claim is passed, and neither is a tell that waits on the player.
  */
-export function buildPresentCharacterContexts(
+export function buildArrivalCharacterContexts(
   blueprint: BlueprintContext,
   locationId: string,
   conversationHistory: ConversationFragment[],
-): TalkCharacterPrivateContext[] {
+): ArrivalCharacterContext[] {
   const present = blueprint.world.characters.filter(
     (character) => character.location_id === locationId,
   );
   if (present.length === 0) return [];
 
-  const playerKnownClues = buildPlayerKnownClues(blueprint, conversationHistory);
-  return present.map((character) =>
-    buildTalkCharacterPrivateContext(blueprint, character.id, playerKnownClues, conversationHistory)
-  );
+  const discovered = buildDiscoveredClueIdSet(conversationHistory);
+  const nameOf = (id: string) =>
+    blueprint.world.characters.find((entry) => entry.id === id)?.first_name ?? "someone";
+  return present.map((character) => {
+    const state = buildCharacterState(character, conversationHistory);
+    const manner = (character.agendas ?? [])
+      .map((agenda, index) => ({ agenda, index }))
+      .filter(({ agenda, index }) => !isAgendaSpent(agenda, index, state, discovered))
+      .sort((a, b) =>
+        (PRIORITY_ORDER[a.agenda.priority] ?? 3) - (PRIORITY_ORDER[b.agenda.priority] ?? 3)
+      )
+      .map(({ agenda }) => agendaManner(agenda, character.sex, nameOf));
+    return {
+      id: character.id,
+      first_name: character.first_name,
+      last_name: character.last_name,
+      sex: character.sex,
+      appearance: character.appearance,
+      personality: character.personality,
+      initial_attitude_towards_investigator: character.initial_attitude_towards_investigator,
+      manner: [...new Set(manner)],
+      tells: (character.tells ?? [])
+        .filter((tell) => tell.trigger.kind === "always")
+        .map((tell) => tell.text),
+    };
+  });
+}
+
+/** The narration of the most recent arrival at a location, or null if none. */
+export function selectLastArrivalNarration(
+  conversationHistory: ConversationFragment[],
+  locationId: string,
+): string | null {
+  const arrivals = filterLocationHistory(conversationHistory, locationId)
+    .filter((entry) => entry.event_type === "move");
+  return arrivals.at(-1)?.narration ?? null;
 }
 
 function buildTalkContext(
@@ -926,11 +1012,7 @@ export function buildMoveContext(input: {
     throw new Error(`Location ${input.destination_id} not found in blueprint`);
   }
 
-  const destinationHistory = selectLocationConversationHistory(
-    input.conversation_history ?? [],
-    input.destination_id,
-  );
-  const destinationCharacters = buildPresentCharacterContexts(
+  const destinationCharacters = buildArrivalCharacterContexts(
     input.blueprint,
     location.id,
     input.conversation_history ?? [],
@@ -948,7 +1030,10 @@ export function buildMoveContext(input: {
       destination_name: location.name,
       destination_description: location.description,
       has_visited_before: input.has_visited_before,
-      destination_history: destinationHistory,
+      last_arrival_narration: selectLastArrivalNarration(
+        input.conversation_history ?? [],
+        input.destination_id,
+      ),
       destination_characters: destinationCharacters,
     },
   });

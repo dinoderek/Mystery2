@@ -49,7 +49,9 @@ export interface JudgeTurn {
   revealed_clue_ids: string[];
   revealed_off_script: string[];
   // Present only on a conversation turn that recorded the character's state:
-  // the clues used on them, the player's words, new commitments.
+  // the clues used on them, the player's words, new commitments. A trace
+  // carries what the engine kept; a runtime case's judged turn carries what
+  // the model reported, before the engine's checks.
   recorded_use?: RecordedUse;
   narration: string;
   is_accusation_phase: boolean;

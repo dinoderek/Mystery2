@@ -156,6 +156,10 @@ describe("ai-prompts", () => {
     expect(talk).toContain('concede what its "shows"\n  says and nothing beyond');
     expect(talk).toContain("Do NOT confess");
     expect(talk).toContain("The confession is null until every part is earned");
+    // Two evidence sets are two agendas: one completed set is enough to confess.
+    expect(talk).toContain("These apply to each agenda on its own: when any agenda's confession is given,\n  you may confess it.");
+    // An earned reaction outranks an older commitment it contradicts.
+    expect(talk).toContain("and over an older commitment it\n  contradicts");
     expect(talk).toContain("never a full\nconfession");
     // A clue tell needs that clue, not a general accusation.
     expect(talk).toContain("It must be THAT\n  clue");

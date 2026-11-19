@@ -131,12 +131,12 @@ Plan with these steps; do not output them.
    - The culprit MUST have ≥1 self-protection agenda (`maintain_false_alibi`,
      `deny_motive`, or `minimize_presence`) at `priority: "high"`.
    - A `self_protect` agenda lists `parts`, one per fact that breaks its cover:
-     `{ clue_ids, shows, reaction }`. `shows` is what the evidence proves; any
-     listed clue earns the part. `reaction` concedes exactly that, fitted into
+     `{ clue_ids, shows, reaction }`. Any listed clue earns the part, so each
+     must prove all of `shows`; `reaction` concedes exactly that, fitted into
      their story. Evidence that misses the alibi leaves it standing: prints
-     clearing the wolf make the liar stop blaming him, not admit he walked.
-     `confession` is what they admit once every part is earned; `details` keeps
-     the manner. Part clues come from a location or *another* character.
+     clearing the wolf end the wolf-blaming, not the alibi. `confession` comes
+     once every part is earned; two separate cases against one culprit are two
+     agendas. Part clues come from a location or *another* character.
    - Give non-culprits agendas that create friction where it serves the story
      (`protect_other`, `implicate_other`, `conditional_reveal`), each with a
      stated reason — including at least one narrative-condition

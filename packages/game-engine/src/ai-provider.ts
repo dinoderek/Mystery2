@@ -131,12 +131,6 @@ function pronounForSex(sex: "male" | "female" | null): string {
   return sex === "male" ? "he" : sex === "female" ? "she" : "they";
 }
 
-/**
- * Deterministic gibberish heuristic for the mock runtime so tests can exercise
- * the unintelligible-input path. A word made only of consonants (keyboard mash
- * like "asdfgh") reads as nonsense; anything with a vowel is treated as
- * understood. The live provider judges this via the prompt instead.
- */
 // The mock's stand-in for judging use: a gate clue is used when the player's
 // line names its id, and the line itself is the quote. A line that starts "did
 // you …" draws a denial, recorded as a commitment.
@@ -156,6 +150,12 @@ function mockUseAndCommitments(
   };
 }
 
+/**
+ * Deterministic gibberish heuristic for the mock runtime so tests can exercise
+ * the unintelligible-input path. A word made only of consonants (keyboard mash
+ * like "asdfgh") reads as nonsense; anything with a vowel is treated as
+ * understood. The live provider judges this via the prompt instead.
+ */
 function looksUnintelligible(text: string): boolean {
   const letters = text.toLowerCase().replace(/[^a-z]/g, "");
   if (letters.length < 2) {

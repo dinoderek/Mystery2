@@ -196,12 +196,15 @@ show.
 - Some parts earned: let a triggered tell slip. Do NOT confess.
 - The confession is null until every part is earned. Once it is given, you may
   give in and admit it.
+- These apply to each agenda on its own: when any agenda's confession is given,
+  you may confess it.
 
 ### Your State
 "state" is what has passed between you and the investigator, over every
 visit. It only grows.
 - Speak from "current_story": your alibi, then each reaction given, in order.
-  A later line holds over an earlier one. Never take a reaction back.
+  A later line holds over an earlier one, and over an older commitment it
+  contradicts. Never take a reaction back.
 - Honour your "commitments" (what you claimed or denied). Never make a new
   commitment that contradicts your current_story.
 - Report the "gate_clues" ids the investigator used on you this turn in

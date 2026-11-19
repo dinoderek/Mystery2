@@ -62,6 +62,7 @@
     }
   ],
   "caught_by": [
+    "descriptions_hide_locked_spots",
     "pointers_point_to_target"
   ]
 }

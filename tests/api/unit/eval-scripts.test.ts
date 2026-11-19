@@ -101,7 +101,7 @@ describe('validate-blueprint', () => {
 	});
 
 	it('exits 1, naming each failed check beside the reading grade, for one that passes the schema only', async () => {
-		const orphan = structuredClone(validBlueprintV2);
+		const orphan = structuredClone(validBlueprintV2) as unknown as { world: { locations: Array<{ clues: object[] }> } };
 		orphan.world.locations[0].clues.push({ id: 'loc-stray', text: 'A stray button.' });
 		const file = write('blueprint.json', orphan);
 		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);

@@ -289,7 +289,10 @@ describe("game-turn actions", () => {
       await play(gameId, "talk to Alice");
       const later = await play(gameId, "Where were you this afternoon?");
 
-      expect(later.events[0].narration_parts[0].text).not.toContain("Keeps to:");
+      // The second visit's narration keeps to the earned reaction.
+      expect(later.events[0].narration_parts[0].text).toContain(
+        "(Keeps to: Admits she had one snack, but says she was still reading.)",
+      );
       expect(later.events[0].payload).toMatchObject({ used_clue_ids: [], used_quote: null, new_commitments: [] });
 
       // Its context, rebuilt from the stored events before it by the builder the

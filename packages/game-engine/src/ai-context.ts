@@ -1,4 +1,7 @@
 import type { AIRoleName } from "./ai-contracts.ts";
+import type { MsfCaseFile } from "../../shared/src/msf-case.ts";
+import { evaluateMysteryStructure } from "../../shared/src/mystery-structure-progress.ts";
+import { msfCharacterKnowledge } from "./msf-context.ts";
 import {
   buildDiscoveredClueIdSet,
   buildKnownCluesWithOrigin,
@@ -73,6 +76,7 @@ export interface BlueprintReasoningPath {
 }
 
 export interface BlueprintContext {
+  msf?: MsfCaseFile;
   metadata: {
     title: string;
     one_liner: string;
@@ -283,6 +287,7 @@ export interface TalkCharacterStateContext {
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
+  msf?: ReturnType<typeof msfCharacterKnowledge>;
   background: string;
   personality: string;
   initial_attitude_towards_investigator: string;
@@ -324,6 +329,7 @@ export interface AccusationStartContext {
 // What it cannot infer reliably from a long transcript is which of those the
 // investigator actually earned — that is what these two fields carry.
 export interface AccusationJudgeContext {
+  msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
   round: number;
   full_blueprint: BlueprintContext;
   // Every clue discovered this session, in discovery order. The only thing
@@ -599,7 +605,10 @@ function buildTalkCharacterPrivateContext(
     )?.summary ?? null;
 
   const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
-  const clues: TalkClueContext[] = character.clues.map((clue) => ({
+  const clues: TalkClueContext[] = character.clues.filter((clue) => {
+    const node = blueprint.msf?.structure.nodes[clue.id];
+    return node?.kind !== "clue" || node.requires?.kind !== "physical" || isClueUnlocked(clue, discoveredSet);
+  }).map((clue) => ({
     id: clue.id,
     text: clue.text,
     about_character_id: clue.about_character_id,
@@ -610,6 +619,7 @@ function buildTalkCharacterPrivateContext(
     known_to_player: discoveredSet.has(clue.id),
   }));
   const state = buildCharacterState(character, conversationHistory, options);
+  const msf = blueprint.msf ? msfCharacterKnowledge(blueprint.msf.structure, character.id, discoveredSet, state.used_clue_ids) : undefined;
 
   return {
     id: character.id,
@@ -631,14 +641,15 @@ function buildTalkCharacterPrivateContext(
     agendas: buildTalkAgendas(character, state),
     tells: character.tells ?? [],
     player_known_clues: playerKnownClues,
-    gate_clues: [...gateClueIds(character)].map((id) => ({ id, held: discoveredSet.has(id) })),
+    gate_clues: [...new Set([...gateClueIds(character), ...(blueprint.msf ? discoveredSet : [])])].map((id) => ({ id, held: discoveredSet.has(id) })),
     state: {
       used_clue_ids: state.used_clue_ids,
-      current_story: state.current_story,
+      current_story: msf ? [...msf.claims.map((claim) => `${claim.disproved ? "Evidence disproves my earlier claim: " : ""}${claim.value ? "" : "It is false that "}${claim.text}`), ...state.commitments] : state.current_story,
       commitments: state.commitments,
       visits_with_questions: state.visits_with_questions,
       fallback_open: state.visits_with_questions >= FALLBACK_VISITS,
     },
+    ...(msf ? { msf } : {}),
   };
 }
 
@@ -962,7 +973,7 @@ export function buildSearchContext(input: {
   // A spot whose clues are all locked is left out altogether, so the narrator
   // never advertises it or narrates "nothing here" for it, unless this targeted
   // search names it: then it is shown, clues and all, to narrate the find.
-  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
+  const admitted = input.blueprint.msf ? null : namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
   const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {
@@ -1097,6 +1108,7 @@ export function buildAccusationJudgeContext(input: {
       full_blueprint: input.blueprint,
       player_known_clues: buildKnownCluesWithOrigin(input.blueprint, discovered),
       path_coverage: buildPathCoverage(input.blueprint, discovered),
+      ...(input.blueprint.msf ? { msf_progress: evaluateMysteryStructure(input.blueprint.msf.structure, discovered) } : {}),
     },
   });
 }

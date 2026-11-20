@@ -1,8 +1,8 @@
 # Mystery Structure Format
 
 Draft 0.1.0 represents hidden events, evidence, testimony and deductions.
-Schema and validator are implemented; gameplay still uses
-[Blueprint V2](../packages/shared/src/blueprint-schema-v2.ts).
+Schema and validator are implemented. [Blueprint V2](../packages/shared/src/blueprint-schema-v2.ts)
+remains default; [paired MSF gameplay](msf-gameplay.md) is selectable.
 
 Inspired by [RUML 1.0.0](https://ruml.org/1.0.0/):
 [flat node map](https://ruml.org/data-model/3-1-architecture-principles),
@@ -307,6 +307,5 @@ automatically disclose its conclusion.
 | Three reasoning-path collections | Rules, red herrings and eliminations |
 
 Conversion needs author review: V2 prose does not specify event boundaries,
-knowledge or deductions mechanically. Runtime adoption still needs generator,
-narrator, judge, fixture and truth-set updates, preserving replay and self-play.
-The validator installs no converter or replacement runtime.
+knowledge or deductions mechanically. [Paired gameplay](msf-gameplay.md) uses
+MSF directly; generation remains V2. No automatic converter is installed.

@@ -1,5 +1,5 @@
 import { GameStartRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
+import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
 import {
   DEFAULT_AI_PROFILE_ID,
   type EngineAIProfile,
@@ -73,7 +73,7 @@ async function resolveProfile(
 }
 
 /** The opening diagnostics; the response carries them with the sequence they relate to. */
-function startDiagnostics(blueprint: BlueprintV2, relatedSequence?: number) {
+function startDiagnostics(blueprint: PlayableBlueprint, relatedSequence?: number) {
   return createNarrationDiagnostics({
     action: "start",
     event_category: "start",
@@ -88,8 +88,9 @@ function startDiagnostics(blueprint: BlueprintV2, relatedSequence?: number) {
   });
 }
 
-function startPayload(blueprint: BlueprintV2) {
+function startPayload(blueprint: PlayableBlueprint) {
   return {
+    ...(blueprint.msf ? { case_format: "msf/0.1.0", case_revision: blueprint.msf.structure.metadata.revision } : {}),
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
     starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
@@ -101,7 +102,7 @@ async function openCase(
   req: Request,
   ctx: EngineContext,
   logger: ReturnType<typeof createRequestLogger>,
-  blueprint: BlueprintV2,
+  blueprint: PlayableBlueprint,
   profile: EngineAIProfile,
 ) {
   // The id exists before the session does: nothing is written until the
@@ -147,6 +148,7 @@ async function openCase(
         mode: "explore",
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
+        ...(blueprint.msf ? { msf_snapshot: blueprint.msf } : {}),
       },
       events: [buildNarrationEvent(startEvent, 1)],
     });
@@ -165,7 +167,7 @@ async function openCase(
 }
 
 function startResponse(
-  blueprint: BlueprintV2,
+  blueprint: PlayableBlueprint,
   opened: { gameId: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
 ): Response {
   const state = buildGameState(blueprint, {

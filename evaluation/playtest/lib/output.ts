@@ -10,6 +10,7 @@
 //   summary.json    outcome and counts
 
 import fs from "node:fs";
+import type { MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import path from "node:path";
 
 import type { PlayedEvent } from "./database.ts";
@@ -21,6 +22,7 @@ type Clues = { clues?: unknown[] };
 
 /** The parts of a blueprint a game's folder reads. */
 export interface PlaytestBlueprint {
+  msf?: MsfCaseFile;
   id: string;
   metadata: { title: string; time_budget: number; target_age?: number };
   world: {
@@ -46,7 +48,7 @@ export interface GameSummary {
   /** Its place among the run's games, as the run's progress lines number it; null outside a run. */
   game_number: number | null;
   game_id: string;
-  blueprint: { id: string; title: string };
+  blueprint: { id: string; title: string; format?: string; revision?: number };
   persona: string;
   narrator_model: string;
   investigator_model: string;
@@ -123,7 +125,9 @@ export function summarizeGame({
   return {
     game_number: number ?? null,
     game_id: game.gameId,
-    blueprint: { id: blueprint.id, title: blueprint.metadata.title },
+    blueprint: { id: blueprint.id, title: blueprint.metadata.title,
+      ...(blueprint.msf ? { format: "msf/0.1.0", revision: blueprint.msf.structure.metadata.revision } : {}),
+    },
     persona,
     narrator_model: narratorModel,
     investigator_model: investigatorModel,

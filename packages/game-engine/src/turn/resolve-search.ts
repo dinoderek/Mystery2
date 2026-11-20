@@ -10,7 +10,7 @@ import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest, resolveSearchRole } from "../role-request.ts";
 import { namedHiddenSpot } from "../search-target.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
-import { askRole } from "./narrator.ts";
+import { askRole, rejectOutput } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
 
 type SearchHistoryRow = {
@@ -177,7 +177,7 @@ export async function resolveSearch(
       ? (location.clues.find((clue) => !here.includes(clue.id) && isClueUnlocked(clue, anywhere)) ?? null)
       : null;
   // A targeted search that names a hidden spot is shown it, and finds its clue.
-  const spot = namedHiddenSpot(location, query, anywhere);
+  const spot = blueprint.msf ? null : namedHiddenSpot(location, query, anywhere);
 
   const { prompt, context } = await buildRoleRequest({
     role: resolveSearchRole(query),
@@ -193,6 +193,11 @@ export async function resolveSearch(
   });
   const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });
   const model = runtime.provider.resolvedModel;
+
+  if (blueprint.msf && output.revealed_clue_id !== null) {
+    const candidate = cluesAt(location).get(output.revealed_clue_id);
+    if (!candidate || !isClueUnlocked(candidate, anywhere)) rejectOutput(runtime, "search", "MSF search revealed an unavailable clue");
+  }
 
   const clue = admitClue(runtime, location, output.revealed_clue_id, { here, anywhere }, { spot, query });
   // A clue found past its lock is declared off script, as a conversation's is.

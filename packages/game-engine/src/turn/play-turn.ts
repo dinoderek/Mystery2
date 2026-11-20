@@ -11,7 +11,7 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import type { BlueprintV2 } from "../../../shared/src/blueprint-schema-v2.ts";
+import { buildMsfBlueprint, type PlayableBlueprint } from "../../../shared/src/msf-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
@@ -49,7 +49,7 @@ function defaultProvider(profile: EngineAIProfile): AIProvider {
 }
 
 /** What the line means here: the places, and everyone with where they stand. */
-export function grammarStateOf(session: GameSessionRow, blueprint: BlueprintV2): GrammarState {
+export function grammarStateOf(session: GameSessionRow, blueprint: PlayableBlueprint): GrammarState {
   return {
     mode: session.mode,
     location: session.current_location_id,
@@ -93,7 +93,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
   const history = await ctx.events.listBySession(gameId);
   const session = await ctx.sessions.getById(gameId);
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
-  const blueprint = await ctx.content.loadBlueprint(session.blueprint_id, logger);
+  const blueprint = session.msf_snapshot ? buildMsfBlueprint(session.msf_snapshot) : await ctx.content.loadBlueprint(session.blueprint_id, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
   return {
     game_id: gameId,

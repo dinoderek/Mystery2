@@ -9,7 +9,7 @@ export type GameStanding = Pick<
   "discovered_clues" | "time_remaining" | "location" | "mode" | "current_talk_character"
 >;
 
-export function buildGameState(blueprint: BlueprintV2, standing: GameStanding): GameState {
+export function buildGameState(blueprint: Pick<BlueprintV2, "metadata" | "narrative" | "world">, standing: GameStanding): GameState {
   const startingKnowledge = blueprint.narrative.starting_knowledge;
   const locationSummaries = new Map(
     (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),

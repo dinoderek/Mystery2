@@ -10,6 +10,8 @@
  */
 
 import {
+  validateMsfCaseFile,
+  type MsfCaseFile,
   validateMysteryStructure,
   type MysteryStructure,
   SpeakerSchema,
@@ -49,6 +51,23 @@ import {
   type GameGetResponse,
   type RevealedClue,
 } from "@my2/shared";
+
+export function createMsfCaseFile(overrides: Partial<MsfCaseFile> = {}): MsfCaseFile {
+  const structure = createMysteryStructure();
+  structure.metadata.id = "46e4e135-82fe-4389-af0b-80aa749867a1";
+  structure.nodes.ada = { ...structure.nodes.ada, kind: "character", name: "Ada Bell", location_id: "hall", knows_fact_ids: ["motive"] };
+  return validateMsfCaseFile({
+    $format: "MSF-CASE/1", paired_blueprint_id: "123e4567-e89b-12d3-a456-426614174000", structure,
+    presentation: {
+      metadata: { one_liner: "Find the medal." },
+      starting_knowledge: { mystery_summary: "The medal is missing.", locations: [{ location_id: "hall", summary: "The medal was here." }], characters: [{ character_id: "ada", summary: "Ada helps in the hall." }] },
+      locations: [{ id: "hall", description: "A sunny hall.", sub_locations: [] }],
+      characters: [{ id: "ada", first_name: "Ada", last_name: "Bell", sex: "female", appearance: "A blue coat.", personality: "Friendly.", initial_attitude_towards_investigator: "Helpful." }],
+      cover_image: { description: "A sunny hall.", location_ids: ["hall"], character_ids: ["ada"] },
+    },
+    ...overrides,
+  });
+}
 
 export function createMysteryStructure(overrides: Partial<MysteryStructure> = {}): MysteryStructure {
   return validateMysteryStructure({

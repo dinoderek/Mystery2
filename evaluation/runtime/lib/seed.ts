@@ -44,8 +44,8 @@ export function seedSessionWithHistory({ databaseFile, blueprint, given, aiProfi
       `insert into game_sessions (
          id, player_id, blueprint_id, ai_profile_id, mode, current_location_id,
          current_talk_character_id, time_remaining, discovered_clues,
-         created_at, updated_at
-       ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         created_at, updated_at, msf_snapshot
+       ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       gameId,
       player.id,
@@ -58,6 +58,7 @@ export function seedSessionWithHistory({ databaseFile, blueprint, given, aiProfi
       JSON.stringify(given.discovered_clues ?? []),
       now,
       now,
+      blueprint.msf ? JSON.stringify(blueprint.msf) : null,
     );
 
     const insertEvent = db.prepare(

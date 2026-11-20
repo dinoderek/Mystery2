@@ -1,8 +1,8 @@
 # Blueprint Generation Flows
 
-Blueprint, artwork and narration inputs. Field intent:
+V2 generation, artwork and narration. Schema:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`. “Input” is sent to the model; “attached” is paired with
+`docs/ai-runtime.md`; [MSF runtime](msf-gameplay.md). “Input” is sent to the model; “attached” is paired with
 its output. Sessions store ids.
 
 ## Generating a blueprint

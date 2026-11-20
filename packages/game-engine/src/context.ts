@@ -13,7 +13,7 @@
 // throws, and "the thing does not exist" is a `null`/empty return. Handlers
 // therefore map a thrown error to 500 and a null to 404/400.
 
-import type { BlueprintV2 } from "../../shared/src/blueprint-schema-v2.ts";
+import type { PlayableBlueprint, MsfCaseFile } from "../../shared/src/msf-case.ts";
 import type { SceneManifest } from "../../shared/src/scene-schema.ts";
 import type { LogWriter } from "./logging.ts";
 import type { NarrationPart } from "./narration.ts";
@@ -27,6 +27,7 @@ export interface EnginePlayer {
 
 /** A row of `game_sessions`, as every handler expects to read it. */
 export interface GameSessionRow {
+  msf_snapshot?: MsfCaseFile;
   id: string;
   player_id: string;
   blueprint_id: string;
@@ -43,6 +44,7 @@ export interface GameSessionRow {
 
 /** The subset of session columns the catalog endpoint reads. */
 export interface GameSessionSummaryRow {
+  msf_title?: string;
   id: string;
   blueprint_id: string;
   mode: GameMode;
@@ -53,6 +55,7 @@ export interface GameSessionSummaryRow {
 }
 
 export interface NewGameSession {
+  msf_snapshot?: MsfCaseFile;
   player_id: string;
   blueprint_id: string;
   ai_profile_id: string;
@@ -139,7 +142,7 @@ export interface EventStore {
 }
 
 export interface BlueprintSummaryEntry {
-  blueprint: BlueprintV2;
+  blueprint: PlayableBlueprint;
   /** Storage key / filename the blueprint was read from, for diagnostics. */
   source: string;
 }
@@ -151,9 +154,9 @@ export interface ContentStore {
    */
   listBlueprints(logger?: LogWriter): Promise<BlueprintSummaryEntry[]>;
   /** Returns null when the blueprint is missing or unparseable. */
-  loadBlueprint(blueprintId: string, logger: LogWriter): Promise<BlueprintV2 | null>;
+  loadBlueprint(blueprintId: string, logger: LogWriter): Promise<PlayableBlueprint | null>;
   /** Optional public artwork; missing returns null, invalid content throws. */
-  loadScenes(blueprint: BlueprintV2): Promise<SceneManifest | null>;
+  loadScenes(blueprint: PlayableBlueprint): Promise<SceneManifest | null>;
 }
 
 /** Resolved AI runtime profile, including the provider secret. */

@@ -67,7 +67,7 @@ export interface Db {
  * always the current end state, and the steps below only exist to carry files
  * that already exist up to it.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /** One forward step: the SQL, and the version the database is at afterwards. */
 export interface Migration {
@@ -85,6 +85,7 @@ export interface Migration {
  * rather than stamping a version nothing produced.
  */
 const MIGRATIONS: ReadonlyArray<Migration> = [
+  { to: 4, sql: "alter table game_sessions add column msf_snapshot text;" },
   {
     // The AIs moved into ai.json, so the database keeps only the one that was
     // chosen. The labelled keys and models go, and the settings row is replaced

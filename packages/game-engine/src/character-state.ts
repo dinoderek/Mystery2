@@ -117,11 +117,11 @@ export interface UsedClueSelection {
  */
 export function selectUsedClues(
   output: { used_clue_ids: string[]; used_quote: string | null },
-  character: StateCharacter,
+  character: StateCharacter | ReadonlySet<string>,
   discovered: ReadonlySet<string>,
   playerInput: string,
 ): UsedClueSelection {
-  const gates = gateClueIds(character);
+  const gates = "clues" in character ? gateClueIds(character) : character;
   const quoted = quoteIsPlayerWords(output.used_quote, playerInput);
   const kept: string[] = [];
   const dropped: UsedClueSelection["dropped"] = [];

@@ -107,7 +107,9 @@ export class ServerNarrator {
     if (path.dirname(request.blueprintPath) !== repoBlueprints) {
       const dir = path.join(server.configRoot, "blueprints");
       fs.mkdirSync(dir, { recursive: true });
-      fs.copyFileSync(request.blueprintPath, path.join(dir, path.basename(request.blueprintPath)));
+      const target = path.join(dir, path.basename(request.blueprintPath));
+      if (request.blueprint.msf) fs.writeFileSync(target, JSON.stringify(request.blueprint.msf));
+      else fs.copyFileSync(request.blueprintPath, target);
     }
   }
 

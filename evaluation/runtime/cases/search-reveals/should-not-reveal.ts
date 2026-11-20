@@ -74,7 +74,7 @@ export default [
     expect: { revealed_clue_id: null, input_understood: true },
   }),
   // The pile behind the willow is locked until Barnaby mentions his twigs;
-  // "by the pond" does not name it.
+  // "round the edge of the pond" does not name it.
   searchCase({
     id: "hidden-near-the-pond",
     group: "not-hidden-vague",

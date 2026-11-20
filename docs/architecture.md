@@ -29,6 +29,8 @@ security boundary.
 A turn is in-process end to end except the model call, and one transaction
 saves the session change and its events.
 
+Proposed structural authoring format: [Mystery Structure Format](mystery-structure.md).
+
 ## Identity and access
 
 Signing in names a profile, creating it if missing; the answer is a cookie

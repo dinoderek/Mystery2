@@ -1,19 +1,16 @@
 # Mystery Structure Format
 
-Draft 0.1.0. A JSON representation of a mystery's hidden events, evidence,
-testimony and deductions. This is an authoring and evaluation proposal; the
-running game still accepts [Blueprint V2](../packages/shared/src/blueprint-schema-v2.ts).
+Draft 0.1.0 represents hidden events, evidence, testimony and deductions.
+Schema and validator are implemented; gameplay still uses
+[Blueprint V2](../packages/shared/src/blueprint-schema-v2.ts).
 
-The template is [RUML 1.0.0](https://ruml.org/1.0.0/), particularly its
+Inspired by [RUML 1.0.0](https://ruml.org/1.0.0/):
 [flat node map](https://ruml.org/data-model/3-1-architecture-principles),
 [operators](https://ruml.org/data-model/3-6-operators) and
-[separate results](https://ruml.org/result-format). This proposal borrows those
-design principles, with independently written mystery semantics. Its files
-have their own format identifier.
+[separate results](https://ruml.org/result-format), with independently written
+mystery semantics.
 
 ## 1. Scope
-
-Represent four distinct things:
 
 - **Reality:** who did what, where, when and why.
 - **Knowledge:** what each character knows, believes and claims.
@@ -21,10 +18,21 @@ Represent four distinct things:
 - **Reasoning:** how evidence supports conclusions, clears suspects and
   resolves misleading leads.
 
-The blueprint fixes reality before play. The narrator expresses it, judges
-questions and records discoveries; it cannot rewrite it. Session progress,
-model settings, art and narrative style belong outside this structural core.
-The player-facing contract remains [the game](game.md).
+The blueprint fixes reality; the narrator cannot rewrite it. Progress, models,
+art and style live outside this core. Player-facing rules: [the game](game.md).
+
+## Validation entry points
+
+`@my2/shared` exports `MysteryStructureSchema` for strict shape checks and
+`validateMysteryStructure(value)` for shape, references, graphs and solvability.
+Both return typed data or throw ZodError with field paths.
+
+```sh
+npm run validate:mystery-structure -- case.json
+```
+
+Exit codes: 0 valid; 1 invalid structure; 2 file/JSON error (including duplicate
+keys); 3 usage error. No models or installation.
 
 ## 2. Document envelope
 
@@ -41,11 +49,11 @@ Files are UTF-8 JSON objects. Required root fields:
 | `red_herrings` | Array of `hypothesis_fact_id`, `lead_clue_ids`, `resolution_rule_id`, `payoff` |
 | `eliminations` | Array of `character_id`, `rule_id`, `payoff` |
 
-IDs are nonempty strings, unique across the node map. A node's map key is its
-only ID. References use IDs, never names or copied nodes. Preserve IDs through
-edits; increment `revision` whenever content changes. Readers reject unsupported
-spec versions and unknown fields or node kinds. Empty arrays are explicit;
-optional fields are omitted. No executable expressions or external references.
+IDs are nonblank strings, unique across the node map; `__proto__` is reserved.
+The map key is the node's only ID; references preserve it exactly. Keep IDs
+through edits and increment `revision`. Unsupported versions, unknown fields
+and kinds are rejected. Empty arrays are explicit; optional fields are omitted.
+No executable expressions or external references.
 
 ## 3. Node vocabulary
 
@@ -117,8 +125,7 @@ following an authored route. See [accusations](game.md#the-accusation).
 
 ## 5. Worked example
 
-This compact case illustrates the format, rather than production difficulty
-or all the prose required by Blueprint V2.
+Example structure; production difficulty and V2 narration are excluded.
 
 ```json
 {
@@ -253,8 +260,8 @@ resolve a misleading lead without establishing the solution.
 
 ## 6. Validation and disclosure
 
-A future validator must reject malformed fields and wrong-kind or dangling
-references. It must also enforce:
+The validator rejects malformed fields and wrong-kind or dangling references,
+and enforces:
 
 - Acyclic event precedence, clue prerequisites and rule dependencies;
   causal predecessors occur earlier in `solution.event_ids`.
@@ -265,23 +272,28 @@ references. It must also enforce:
   route needs no discretionary conversational bypass and fits the turn budget.
   Rules contain no duplicated inputs or self references.
 
-Content review must check truth/claim consistency, causal plausibility,
-necessary evidence, unique culprit, age suitability and useful payoffs. A
-matching Boolean value or a large graph cannot replace those judgments.
+Solution rules must conclude the true motive and a true fact linking culprit
+and incident; eliminations need a false fact linking character and incident.
+These reference checks cannot establish what prose means. Content review still
+checks entailment, suspect coverage, credibility, fairness and age suitability.
 
-The full graph is server-side authoring data. Public responses contain only
-approved opening text, public entity descriptions and discovered clue text.
-They must exclude fact truth values, private knowledge, culprit identity,
-rules and path membership. Character narration receives only that character's
-permitted knowledge and discoveries relevant to the interaction. Accusation
-evaluation can receive the complete structure. Runtime projections remain
-governed by [narration inputs](blueprint-generation-flows.md#narration-at-play).
+Budget checking searches discovery orders: moves between any locations cost
+one, each search clue costs one, starting/restarting a conversation costs one;
+questions and ending talk are free. Shared clues count once; prerequisites and
+revisits count. A last-turn search resolves, but last-turn talk leaves no time
+for questions. No discretionary bypass is assumed. Search is exact and may be
+exponential for branching graphs.
 
-Progress and evaluation results stay separate, pinned to mystery `id` and
-`revision`. Discovered clue IDs and recorded off-script reveals are replay
-inputs; supported rules and known fact values are derived outputs. Model
-decisions and bypass reasons must be recorded so replay does not rerun them.
-Reaching a rule does not itself disclose its conclusion to the player.
+The full graph is server-side authoring data. Public responses contain approved
+opening/entity text and discovered clue text, excluding truth values, private
+knowledge, culprit identity, rules and path membership. Character narration
+receives only permitted knowledge; accusation evaluation can receive everything.
+Runtime projections: [narration inputs](blueprint-generation-flows.md#narration-at-play).
+
+Progress/results stay separate, pinned to `id` and `revision`. Discoveries,
+off-script reveals, model decisions and bypass reasons are replay inputs;
+supported rules and known facts are derived. Supporting a rule does not
+automatically disclose its conclusion.
 
 ## 7. Relationship to Blueprint V2
 
@@ -294,9 +306,7 @@ Reaching a rule does not itself disclose its conclusion to the player.
 | `requires` | Clue discovery prerequisites with explicit gate kind |
 | Three reasoning-path collections | Rules, red herrings and eliminations |
 
-V2 prose does not determine event boundaries, knowledge, gate kinds or deduction
-steps mechanically. Conversion therefore needs author review; it cannot be
-lossless by renaming fields. Adoption would also update generator prompts,
-narrator projections, mechanical checks, judges, fixtures and truth sets,
-while retaining replay and self-play. This proposal installs no converter,
-validator or replacement runtime schema.
+Conversion needs author review: V2 prose does not specify event boundaries,
+knowledge or deductions mechanically. Runtime adoption still needs generator,
+narrator, judge, fixture and truth-set updates, preserving replay and self-play.
+The validator installs no converter or replacement runtime.

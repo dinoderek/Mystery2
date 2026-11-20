@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { SceneManifestSchema } from "./scene-schema.ts";
+export { MysteryStructureSchema, MysteryStructureNodeSchema, type MysteryStructure, type MysteryStructureNode } from "./mystery-structure-schema.ts";
+export { validateMysteryStructure } from "./mystery-structure-validator.ts";
 export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
 
 export const BlueprintScenesRequestSchema = z.object({ blueprint_id: z.string().uuid() });

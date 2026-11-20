@@ -769,7 +769,7 @@
                 {
                   "clue_ids": ["clue_boot_prints"],
                   "shows": "Huge boot prints by the window lead to Mr. Thorne's fence.",
-                  "reaction": "Huffs and admits he climbed over at four on Friday to measure Bertha, and that she was whole when he left.",
+                  "reaction": "Huffs and admits the prints are his, and that Bertha was whole when he left.",
                   "concedes_steps": [2]
                 },
                 {

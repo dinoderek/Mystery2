@@ -514,17 +514,19 @@ describe("mock talk_conversation use and commitments", () => {
     expect(out.new_commitments).toEqual(["denies: eat the cookies"]);
   });
 
-  it("keeps to the latest earned line of the story, and says nothing of the bare alibi", async () => {
-    const earned = await askWith(
-      { stated_alibi: "I was reading.", state: { current_story: ["I was reading.", "Admits one snack."] } },
-      "Tell me again.",
-    );
-    expect(earned.narration).toContain("(Keeps to: Admits one snack.)");
-    const bare = await askWith(
-      { stated_alibi: "I was reading.", state: { current_story: ["I was reading."] } },
-      "Tell me again.",
-    );
-    expect(bare.narration).not.toContain("Keeps to");
+  it.each([
+    { clues: [], input: "Tell me again." },
+    { clues: [{ id: "open", text: "An open clue." }], input: "What did you see?" },
+    { clues: [{ id: "locked", text: "A secret clue.", player_can_use_prerequisites: false }], input: "Aha, I bet you know more!" },
+  ])("keeps internal story annotations out of dialogue: $input", async ({ clues, input }) => {
+    const output = await askWith({
+      clues,
+      stated_alibi: "I was reading.",
+      state: { current_story: ["I was reading.", "Admits one snack."] },
+    }, input);
+    expect(output.narration).not.toContain("Keeps to:");
+    expect(output.narration).not.toContain("Admits one snack.");
+    expect(output.narration).not.toContain("I was reading.");
   });
 });
 

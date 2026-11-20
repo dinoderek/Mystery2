@@ -210,9 +210,11 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The default for `npm run dev` and every automated suite: a live model's paths,
-deterministically, at the target reading age. Changing a contract, prompt,
-context or provider selection changes the mock and its tests with it.
+The default for `npm run dev` and automated suites, exercising live-model paths
+deterministically at the target reading age. Dialogue reveals the next available
+clue regardless of the question. Remembered accounts stay in structured
+context, without diagnostic annotations. Contract, prompt, context or provider
+changes update the mock and tests.
 
 ## Failures, logs and attribution
 

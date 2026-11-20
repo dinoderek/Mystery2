@@ -27,6 +27,7 @@ import type { ResolvedBinding } from "./config.ts";
 import { judgeVersions } from "./judge-version.ts";
 import {
   RESULT_SCHEMA_VERSION,
+  ResultSchemaVersionSchema,
   RunInfoSchema,
   SubjectSchema,
   SummarySchema,
@@ -41,7 +42,7 @@ export const RESULT_FILE = "result.json";
 
 export const RunIndexSchema = z
   .object({
-    schema_version: z.literal(RESULT_SCHEMA_VERSION),
+    schema_version: ResultSchemaVersionSchema,
     run: RunInfoSchema,
     subjects: z.array(
       SubjectSchema.omit({ path: true })

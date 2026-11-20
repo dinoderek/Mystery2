@@ -8,7 +8,11 @@
 #        exactly what the standalone generator would send. Without it (a hand
 #        run) the workspace keeps the link to the canonical prompt, which has no
 #        age section, and the wrapper warns on stderr.
-#   $2 — path to the user message JSON ({ story_brief, instructions })
+#   $2 — path to the user message JSON ({ story_brief, instructions }). A
+#        repair round's message also holds `repair`: { round, blueprint,
+#        notice, reports }. The wrapper then seeds the workspace with that
+#        blueprint as ./blueprint.json and the rest as ./repair.json, and
+#        starts the agent on the repair protocol in CLAUDE.md.
 #
 #   stdout — must be a single JSON object whose extract_path resolves to a
 #            valid Blueprint V2 JSON string. We emit { "result": "<bp>" } so
@@ -61,16 +65,35 @@ else
   echo "warning: no rendered system prompt (arg 1: '${SYSTEM_PROMPT_FILE}'); the workspace keeps the canonical generator prompt without age-specific guidance" >&2
 fi
 
-# Write the brief into the workspace, pretty-printed when it is JSON.
+# Write the brief into the workspace, pretty-printed when it is JSON. A repair
+# round's message also seeds ./blueprint.json and ./repair.json.
 node -e '
   const fs = require("fs");
-  const raw = fs.readFileSync(process.argv[1], "utf8");
+  const path = require("path");
+  const [file, workspace] = process.argv.slice(1);
+  const raw = fs.readFileSync(file, "utf8");
+  let message;
   try {
-    fs.writeFileSync(process.argv[2], JSON.stringify(JSON.parse(raw), null, 2) + "\n");
+    message = JSON.parse(raw);
   } catch {
-    fs.writeFileSync(process.argv[2], raw);
+    fs.writeFileSync(path.join(workspace, "brief.json"), raw);
+    process.exit(0);
   }
-' "$USER_MESSAGE_FILE" "$WORKSPACE/brief.json"
+  const { repair, ...brief } = message;
+  const write = (name, value) => fs.writeFileSync(path.join(workspace, name), JSON.stringify(value, null, 2) + "\n");
+  write("brief.json", brief);
+  if (repair !== undefined) {
+    const { blueprint, ...reports } = repair;
+    write("blueprint.json", blueprint);
+    write("repair.json", reports);
+  }
+' "$USER_MESSAGE_FILE" "$WORKSPACE"
+
+if [[ -f "$WORKSPACE/repair.json" ]]; then
+  KICKOFF="Begin. Read ./CLAUDE.md and follow the repair protocol: ./blueprint.json is your earlier blueprint, and ./repair.json quotes the reports it failed. Fix those faults in ./blueprint.json, in place, until it passes the validator."
+else
+  KICKOFF="Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./blueprint.json that passes the validator."
+fi
 
 cd "$WORKSPACE"
 # The agent reads brief.json + CLAUDE.md from the workspace; the CLI prompt is
@@ -98,7 +121,7 @@ claude --print --output-format stream-json --verbose \
        --disable-slash-commands \
        --no-session-persistence \
        --permission-mode auto \
-       "Begin. Read ./CLAUDE.md and follow the mandatory iteration protocol. Produce ./blueprint.json that passes the validator." \
+       "$KICKOFF" \
        >"$STREAM_FILE" \
        2>"$WORKSPACE/claude.stderr.log"
 

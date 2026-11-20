@@ -14,7 +14,8 @@ import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
-import { parseBackends, passedMechanicalChecks } from "../../../evaluation/generate/commands.ts";
+import { parseBackends, parseRepair, passedMechanicalChecks } from "../../../evaluation/generate/commands.ts";
+import { REPORTS_NOTICE } from "../../../evaluation/generate/repair.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 import { generatorBrief } from "./fixtures/generator-brief.ts";
 import { expectStored, promptFiles } from "./eval-snapshot-store.ts";
@@ -296,6 +297,149 @@ describe("generate", () => {
   });
 });
 
+describe("generate --repair", () => {
+  // The fixture reads above an 8-year-old's grade, so a battery that passes it is one for 14-year-olds.
+  const green = { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, target_age: 14 } };
+  const greenBrief = { ...passingBrief, targetAge: 14 };
+  beforeEach(() => {
+    write("brief.json", greenBrief);
+  });
+
+  /**
+   * A generator that answers a generation with `first` and a repair round with
+   * `repaired` (or exits 1 when it is undefined), and keeps every repair
+   * message it is sent in `repairs/<round>.json`.
+   */
+  function repairingConfig(first: unknown, repaired: unknown, judges: Record<string, unknown> = {}): string {
+    const answers = write("repair-answers.json", { first, repaired: repaired ?? null });
+    const repairs = path.join(dir, "repairs");
+    const generator = write(
+      "repairing.mjs",
+      `import fs from "node:fs";
+       import path from "node:path";
+       const message = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+       const answers = JSON.parse(fs.readFileSync(${JSON.stringify(answers)}, "utf8"));
+       if (message.repair) {
+         fs.mkdirSync(${JSON.stringify(repairs)}, { recursive: true });
+         fs.writeFileSync(path.join(${JSON.stringify(repairs)}, message.repair.round + ".json"), JSON.stringify(message));
+         if (answers.repaired === null) process.exit(1);
+       }
+       const cost = message.repair ? 0.5 : 1.25;
+       process.stdout.write(JSON.stringify({ total_cost_usd: cost, result: JSON.stringify(message.repair ? answers.repaired : answers.first) }));`,
+    );
+    const passing = Object.fromEntries(DIMENSIONS.map((id) => [`blueprint.${id}`, { ...JUDGE_ANSWERS[`blueprint.${id}`], verdict: "pass" }]));
+    const judgeAnswers = write("judge-answers.json", { ...passing, ...judges });
+    return write("repair-config.json", {
+      "generator-agent": { cmd: process.execPath, args: [generator, "{{system_prompt_file}}", "{{user_message_file}}"], extract_path: "result", model: "agent-model", timeout_ms: 60_000, retries: 0 },
+      "blueprint-judge": stubBinding(judgeAnswers, "blueprint.{id}"),
+    });
+  }
+
+  function repairMessage(round: number): { story_brief: unknown; repair: { round: number; blueprint: unknown; notice: string; reports: Array<Record<string, unknown>> } } {
+    return JSON.parse(fs.readFileSync(path.join(dir, "repairs", `${round}.json`), "utf8"));
+  }
+
+  it("repairs a failing blueprint to green, keeping round 0, and installs only the final blueprint", async () => {
+    const broken = { title: "not a blueprint" };
+    const config = repairingConfig(broken, green);
+    const root = path.join(dir, "root");
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "2", "--install"]), { MYSTERY_CONFIG_ROOT: root })).toBe(0);
+
+    const [result] = await results();
+    expect(result.rounds?.map((round) => round.round)).toEqual([0, 1]);
+    const [first, final] = result.rounds ?? [];
+    expect(first.path).toBe("blueprint.json");
+    expect(first.summary.passed).toBe(false);
+    expect(first.verdicts.find((verdict) => verdict.id === "blueprint_schema_valid")?.status).toBe("fail");
+    expect(final.path).toBe(path.join("rounds", "1", "blueprint.json"));
+    expect(final.summary.passed).toBe(true);
+    expect(result.subject.path).toBe(final.path);
+    expect(result.verdicts).toEqual(final.verdicts);
+    expect(result.summary.passed).toBe(true);
+    expect(result.production?.calls.map((call) => call.binding)).toEqual(["generator-agent", "generator-agent"]);
+    expect(first.cost_usd).toBe(1.25);
+    expect(final.cost_usd).toBe(0.5);
+    expect(final.timing?.stages.map((stage) => stage.name)).toEqual(expect.arrayContaining(["repair", "mechanical", "dimensions"]));
+
+    // Round 0 stays where it was; the repaired blueprint and its brief sit in its round's folder.
+    const subjectDir = path.dirname(resultFiles()[0]);
+    expect(JSON.parse(fs.readFileSync(path.join(subjectDir, "blueprint.json"), "utf8"))).toEqual(broken);
+    expect(JSON.parse(fs.readFileSync(path.join(subjectDir, "rounds", "1", "blueprint.json"), "utf8"))).toEqual(green);
+    expect(JSON.parse(fs.readFileSync(path.join(subjectDir, "rounds", "1", "brief.json"), "utf8"))).toEqual(greenBrief);
+
+    // The generator was sent its blueprint and the failing check, as quoted data.
+    const message = repairMessage(1);
+    expect(message.story_brief).toEqual(greenBrief);
+    expect(message.repair.blueprint).toEqual(broken);
+    expect(message.repair.notice).toBe(REPORTS_NOTICE);
+    expect(message.repair.reports.map((report) => report.id)).toContain("blueprint_schema_valid");
+    expect(message.repair.reports.every((report) => report.tier === "mechanical")).toBe(true);
+
+    expect(JSON.parse(fs.readFileSync(path.join(root, "blueprints", "brief-agent-agent-model.json"), "utf8"))).toEqual(green);
+    const printed = out.join("\n");
+    expect(printed).toContain("[eval] first pass: failed (");
+    expect(printed).toContain("final: passed after 1 repair round(s)");
+    expect(printed).toContain("[eval] cost: round 0 $1.25, round 1 $0.50; total $1.75");
+    expect(printed).toContain("[eval] run cost: $1.75");
+  });
+
+  it("stops after n rounds when a judge keeps failing, sends the judge's reasoning, and installs nothing", async () => {
+    const failing = { issues: [{ subject: "alice", description: "Alice is in two places at four." }], verdict: "fail", reasoning: "The timeline breaks at four." };
+    const config = repairingConfig(green, green, { "blueprint.timeline_coherence": failing });
+    const root = path.join(dir, "root");
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "2", "--install"]), { MYSTERY_CONFIG_ROOT: root })).toBe(2);
+
+    const [result] = await results();
+    expect(result.rounds?.map((round) => round.summary.passed)).toEqual([false, false, false]);
+    expect(result.subject.path).toBe(path.join("rounds", "2", "blueprint.json"));
+    const report = repairMessage(2).repair.reports.find((each) => each.id === "timeline_coherence");
+    expect(report).toEqual({ id: "timeline_coherence", tier: "judge", answer: failing });
+    expect(fs.existsSync(path.join(root, "blueprints"))).toBe(false);
+    expect(out.join("\n")).toContain("final blueprint did not pass every check and judge");
+  });
+
+  it("breaks the run when a repair call gives nothing to keep, keeping the rounds before it", async () => {
+    const config = repairingConfig({ title: "not a blueprint" }, undefined);
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "1"]))).toBe(1);
+    const [result] = await results();
+    expect(result.run_error?.stage).toBe("repair_round_1");
+    expect(result.rounds).toHaveLength(1);
+    expect(result.subject.path).toBe("blueprint.json");
+    expect(result.production?.calls).toHaveLength(2);
+    expect(result.production?.calls[1].attempts.map((attempt) => attempt.outcome)).toEqual(["exit"]);
+    expect(out.join("\n")).toContain("final: broke during a repair round");
+  });
+
+  it("runs no repair round on a blueprint that passes", async () => {
+    const config = repairingConfig(green, undefined);
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "3"]))).toBe(0);
+    const [result] = await results();
+    expect(result.rounds).toHaveLength(1);
+    expect(fs.existsSync(path.join(dir, "repairs"))).toBe(false);
+    expect(out.join("\n")).toContain("final: passed after 0 repair round(s)");
+  });
+
+  it("records no rounds with --repair 0", async () => {
+    const config = repairingConfig({ title: "not a blueprint" }, green);
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "0"]))).toBe(2);
+    const [result] = await results();
+    expect(result.rounds).toBeUndefined();
+    expect(out.join("\n")).not.toContain("run cost");
+  });
+});
+
+describe("parseRepair", () => {
+  it("defaults to 0 and needs --judge and the agent backend for more", () => {
+    expect(parseRepair(undefined, false, ["api"])).toBe(0);
+    expect(parseRepair("0", false, ["api"])).toBe(0);
+    expect(parseRepair("2", true, ["agent"])).toBe(2);
+    expect(() => parseRepair("1", false, ["agent"])).toThrow("--repair needs --judge");
+    expect(() => parseRepair("1", true, ["agent", "api"])).toThrow("--repair works only with the agent backend");
+    expect(() => parseRepair("-1", true, ["agent"])).toThrow("--repair needs a whole number");
+    expect(() => parseRepair("one", true, ["agent"])).toThrow("--repair needs a whole number");
+  });
+});
+
 describe("generate, before it starts", () => {
   async function refused(extra: string[], env: NodeJS.ProcessEnv = {}, config = stubConfig({ answers: {} })) {
     expect(await generate(argv(["--config", config, ...extra]), env)).toBe(1);
@@ -334,6 +478,10 @@ describe("generate, before it starts", () => {
 
   it("stops on an unknown backend", async () => {
     expect(await refused(["--backend", "chat"])).toContain("--backend must be one of agent, api");
+  });
+
+  it("stops on --repair with the api backend, before any generation", async () => {
+    expect(await refused(["--backend", "api", "--judge", "--repair", "1"], { OPENROUTER_API_KEY: KEY })).toContain("--repair works only with the agent backend");
   });
 
   it("stops on a bad --parallelism", async () => {

@@ -68,6 +68,7 @@ const PERSONAS = listPersonas() as string[];
 const PROMPT_IDS = [
   ...BLUEPRINT_DIMENSIONS.map((id) => `blueprint.${id}`),
   "generator",
+  "generator.repair",
   ...GM_JUDGES.map((id) => `trace.${id}`),
   ...GM_JUDGES.map((id) => `runtime.${id}`),
   "runtime.age_appropriate",
@@ -235,6 +236,29 @@ async function runBlueprintPipeline(answersFile: string) {
   verdicts.set("blueprint", blueprintVerdicts(result));
   prompts.set("generator", capturedPrompt("generator"));
   for (const id of BLUEPRINT_DIMENSIONS) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
+}
+
+/** A repair round on the blueprint the stub judges fail: what the generator is sent to repair it. */
+async function runRepairRound(answersFile: string) {
+  const briefFile = path.join(scratch, "repair", "brief.json");
+  const config = path.join(scratch, "repair", "config.json");
+  fs.mkdirSync(path.dirname(briefFile), { recursive: true });
+  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
+  fs.writeFileSync(
+    config,
+    JSON.stringify({
+      "generator-agent": stubBinding(answersFile, "generator.repair"),
+      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}", "-"),
+    }),
+  );
+  const outputRoot = path.join(scratch, "repair", "out");
+  const result = (await runForResult(
+    ["dev", "eval", "generate", briefFile, "--judge", "--repair", "1", "--config", config, "--output-root", outputRoot, "--quiet"],
+    outputRoot,
+  )) as Result;
+  if (result.rounds?.length !== 2) throw new Error(`the repair run made ${result.rounds?.length ?? 0} round(s), not 2`);
+  // The generation and the repair share the key; the repair is sent last.
+  prompts.set("generator.repair", capturedPrompt("generator.repair"));
 }
 
 async function runTraceHarness(answersFile: string) {
@@ -481,10 +505,11 @@ beforeAll(async () => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-eval-snapshots-"));
   const answersFile = path.join(scratch, "answers.json");
   // The generator "answers" with a blueprint, the same fixture the runtime case judges.
-  fs.writeFileSync(answersFile, JSON.stringify({ ...ANSWERS, generator: validBlueprintV2 }));
+  fs.writeFileSync(answersFile, JSON.stringify({ ...ANSWERS, generator: validBlueprintV2, "generator.repair": validBlueprintV2 }));
 
   await Promise.all([
     runBlueprintPipeline(answersFile),
+    runRepairRound(answersFile),
     runTraceHarness(answersFile),
     runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),

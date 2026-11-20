@@ -22,6 +22,36 @@ validate the schema and mechanical checks and save `result.json`.
 Rejected blueprints are kept for inspection and never installed
 (`evaluation/README.md`).
 
+### Repair rounds
+
+`./dev eval generate <brief> --judge --repair <n>` (default 0: none) adds up to
+`n` repair rounds after round 0, the generation as above
+(`evaluation/generate/repair.ts`):
+
+- A round runs only while a check or judge **failed** (an `error` is not the
+  blueprint's fault). The generator agent gets a fresh workspace seeded with the
+  last round's blueprint and `repair.json`, and follows the repair protocol in
+  `evaluation/generator-harness/template/CLAUDE.md`: fix those faults only, in
+  place, and pass the validator.
+- `repair.json` quotes each failing verdict: a check's or analyzer's
+  `details`, or a judge's answer with its reasoning, less the items it found
+  sound. They travel inside the user message under a notice that they are data,
+  not instructions.
+- Every mechanical check and every judge then runs again, through the binding and
+  battery `--judge` uses, so they are the judges the truth set measures. Judges
+  are sent the brief and the blueprint only, never the generator's work or an
+  earlier round. `--model-override blueprint-judge=…` leaves the measured
+  judges.
+- Each round's cost (generator and judge calls) is printed, with the run's
+  total.
+
+The api backend is one call that writes a blueprint from a brief and cannot edit
+one, so `--repair` refuses it. Round 0 is always kept: its first-pass status is
+the signal for improving the generator prompt, and the round cap and the stored
+round 0 guard against teaching to the test (a fix that satisfies a judge's
+wording, or makes the blueprint blander). The output is in
+`evaluation/README.md`.
+
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
 

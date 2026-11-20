@@ -44,6 +44,15 @@ A blueprint that never passes the schema is kept and fails its check.
 `blueprints/` in the config root; it never replaces a file there, and a failed
 install exits 1.
 
+**Repair.** `generate --judge --repair <n>` runs up to `n` repair rounds on a
+blueprint that failed a check or judge (`docs/blueprint-generation-flows.md`);
+agent backend only. `result.json` keeps every round in `rounds[]`, round 0
+first, each with its blueprint, model call, verdicts, summary, cost and timing;
+the result's own verdicts and blueprint are the last round's. Round `n` keeps
+its blueprint, brief, logs and workspaces in `rounds/<n>/` beside the result.
+The summary prints first-pass and final status and each round's cost. With
+rounds, `--install` takes only a final blueprint that passed everything.
+
 ## Output
 
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
@@ -54,7 +63,8 @@ and each agent's workspace. A suite keeps its journal and runs in
 `<root>/suites/<name>/`; only its results file goes in the repo.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
-aborts. The `logs/<step>*.stream.jsonl` stream is for watching only.
+aborts. It is version `mystery-eval-result/2`; version 1, without `rounds`, is
+still read. The `logs/<step>*.stream.jsonl` stream is for watching only.
 
 ## Exit codes
 

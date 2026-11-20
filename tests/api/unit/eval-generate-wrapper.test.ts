@@ -30,6 +30,7 @@ const FIXTURE_BLUEPRINT = { title: "Stand-in blueprint" };
 const STAND_IN_CLAUDE = `#!/usr/bin/env bash
 node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify(process.argv.slice(2)))' claude-args.json "$@"
 cp prompts/generator-prompt.md prompt-seen-by-agent.md
+if [[ -f blueprint.json ]]; then cp blueprint.json blueprint-seen-by-agent.json; fi
 printf '%s' '${JSON.stringify(FIXTURE_BLUEPRINT)}' > blueprint.json
 `;
 
@@ -47,7 +48,7 @@ async function tmpDir() {
   return dir;
 }
 
-async function runWrapper(options: { renderedPrompt?: string | null }) {
+async function runWrapper(options: { renderedPrompt?: string | null; userMessage?: unknown }) {
   const dir = await tmpDir();
   const binDir = path.join(dir, "bin");
   const runDir = path.join(dir, "run");
@@ -57,7 +58,7 @@ async function runWrapper(options: { renderedPrompt?: string | null }) {
   });
 
   const userMessageFile = path.join(dir, "user-message.json");
-  await fs.writeFile(userMessageFile, JSON.stringify({ story_brief: {} }));
+  await fs.writeFile(userMessageFile, JSON.stringify(options.userMessage ?? { story_brief: {} }));
 
   const args: string[] = [];
   if (options.renderedPrompt !== null) {
@@ -114,6 +115,28 @@ describe("claude-generate.sh wrapper", () => {
     ]) {
       expect(args, flag).toContain(flag);
     }
+  });
+
+  it("seeds a repair round's workspace with the blueprint and the reports, and starts the repair protocol", async () => {
+    const repair = { round: 1, blueprint: { title: "earlier" }, notice: "quoted data", reports: [{ id: "orphans", tier: "mechanical", details: { orphans: ["c9"] } }] };
+    const { result, workspace } = await runWrapper({ renderedPrompt: "prompt", userMessage: { story_brief: { brief: "b" }, instructions: "i", repair } });
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "brief.json"), "utf8"))).toEqual({ story_brief: { brief: "b" }, instructions: "i" });
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "blueprint-seen-by-agent.json"), "utf8"))).toEqual({ title: "earlier" });
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "repair.json"), "utf8"))).toEqual({ round: 1, notice: "quoted data", reports: repair.reports });
+    const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
+    expect(args.at(-1)).toContain("follow the repair protocol");
+    expect(JSON.parse(result.stdout)).toEqual({ result: JSON.stringify(FIXTURE_BLUEPRINT, null, 2) + "\n" });
+  });
+
+  it("starts a generation without a repair file, on the iteration protocol", async () => {
+    const { result, workspace } = await runWrapper({ renderedPrompt: "prompt" });
+    expect(result.status, result.stderr).toBe(0);
+    await expect(fs.access(path.join(workspace, "repair.json"))).rejects.toThrow();
+    await expect(fs.access(path.join(workspace, "blueprint-seen-by-agent.json"))).rejects.toThrow();
+    const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
+    expect(args.at(-1)).toContain("mandatory iteration protocol");
   });
 
   it("gives the agent the prompt the pipeline rendered, with the brief's age guidance", async () => {

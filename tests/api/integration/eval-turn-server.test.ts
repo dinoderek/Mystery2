@@ -17,11 +17,13 @@ import { startTestServer } from "../../../scripts/lib/test-server.mjs";
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
+import { readSummary } from "../../../evaluation/runtime/lib/expect-summary.ts";
 import { createJudgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import type { StartServer, ThrowawayServer } from "../../../evaluation/runtime/lib/replay-server.ts";
 
 const REPO_ROOT = process.cwd();
 const CASES = "evaluation/runtime/cases/age-readability.ts";
+const EXPECT_CASES = "evaluation/runtime/cases/expect-example.ts";
 
 /** What the suite's own runner points its server at, so this one cannot reach a real model either. */
 const MOCK_ONLY_ENV = {
@@ -111,5 +113,35 @@ describe("judge turn through a throwaway server", () => {
       expect(turn).toMatchObject({ narrator: "server", model: "mock" });
       expect(turn.response.narration_text.length).toBeGreaterThan(0);
     }
+  }, 60_000);
+
+  it("grades an expect case on what the server saved, over every sample", async () => {
+    const config = path.join(scratch, "config-expect.json");
+    fs.writeFileSync(config, JSON.stringify({}));
+    const startServer: StartServer = (options) => startTestServer({ ...options, build: false, env: MOCK_ONLY_ENV }) as Promise<ThrowawayServer>;
+
+    const lines: string[] = [];
+    const outputRoot = path.join(scratch, "out-expect");
+    const code = await runEval(
+      ["judge", "turn", EXPECT_CASES, "--narrator", "server", "--ai-profile", "mock", "--samples", "2", "--config", config, "--output-root", outputRoot],
+      { root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env: process.env },
+      [createJudgeTurnCommand({ startServer })],
+    );
+    expect(code, lines.join("\n")).toBe(0);
+
+    const [day] = fs.readdirSync(outputRoot);
+    const [run] = fs.readdirSync(path.join(outputRoot, day));
+    const summary = readSummary(path.join(outputRoot, day, run));
+    expect(summary.complete).toBe(true);
+    expect(summary.narrators.map((entry) => [entry.narrator, entry.model])).toEqual([["server", "mock"]]);
+    // The mock reveals the clue in the spot a search names, and the first clue Alice can share.
+    expect(summary.narrators[0].cases.map((entry) => [entry.id, entry.right, entry.graded])).toEqual([
+      ["search-pantry-shelf-reveals-jar", 2, 2],
+      ["ask-alice-about-bob-shares-sighting", 2, 2],
+    ]);
+    expect(summary.narrators[0].groups.map((entry) => [entry.group, entry.share])).toEqual([
+      ["example-should-reveal", 1],
+      ["example-should-give", 1],
+    ]);
   }, 60_000);
 });

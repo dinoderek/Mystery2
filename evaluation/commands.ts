@@ -9,6 +9,7 @@ import { compareCommand } from "./compare/command.ts";
 import { generateCommand } from "./generate/commands.ts";
 import { scenesCommand } from "./generate/scenes.ts";
 import { labelCommand } from "./label/command.ts";
+import { baselineCompareCommand, baselineSaveCommand } from "./runtime/baseline.ts";
 import { casesCommand } from "./runtime/cases.ts";
 import { playCommand } from "./playtest/play.ts";
 import { reportCommand } from "./playtest/report.ts";
@@ -25,6 +26,8 @@ export const COMMANDS: readonly EvalCommand[] = [
   judgeGame,
   judgeTurnCommand,
   casesCommand,
+  baselineSaveCommand,
+  baselineCompareCommand,
   playCommand,
   reportCommand,
   labelCommand,

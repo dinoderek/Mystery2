@@ -20,6 +20,12 @@
  * A stored game (a trace) is judged on the narration it already holds: every
  * played event that has narration is one turn, named by its event sequence, and
  * no narrator is called.
+ *
+ * A case with `expect` is replayed `--samples` times per narrator, each sample
+ * a subject `<case>__<narrator>__s<n>` graded by code (`lib/expect.ts`); the
+ * run's graded summary is written beside `run.json` as `expect.json` and
+ * printed (`lib/expect-summary.ts`). A case without `expect` runs once, as it
+ * always has.
  */
 
 import fs from "node:fs";
@@ -39,8 +45,11 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import { loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
+import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect } from "./lib/expect.ts";
+import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
+import type { Sample } from "./lib/expect-summary.ts";
 import { judgeTurn } from "./lib/judges.ts";
-import { replayThroughNarrator } from "./lib/replay-cli.ts";
+import { modelLabel, replayThroughNarrator } from "./lib/replay-cli.ts";
 import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
@@ -52,6 +61,8 @@ import type { StoredTurn } from "./lib/turn.ts";
 export const SERVER_NARRATOR = "server";
 export const DEFAULT_JUDGE_BINDING = "turn-judge";
 const DEFAULT_CONCURRENCY = 4;
+/** How many times a case with `expect` is replayed per narrator, unless `--samples` says otherwise. */
+export const DEFAULT_SAMPLES = 5;
 const NARRATOR_BINDING = /^narrator-/;
 const DEFAULT_JUDGES = ["flesch"];
 /** What a stored game's turns are judged with: the turn-level checks that read the narration alone. */
@@ -68,6 +79,7 @@ const HELP = formatHelp({
     ["--ai-profile <name>", "the AI a server narrator is asked for: a name from ai.json, or mock (default: the case's, else default, which is mock on its fresh database)"],
     ["--judges <a,b>", "the checks and judges to run (cases: their judges, else none; stored turns: earlier result's judges, else flesch; a stored game: flesch,age_appropriate_turn, the only two it takes)"],
     ["--judge-binding <name>", `the binding every model judge calls (default: ${DEFAULT_JUDGE_BINDING}; judge-stub answers offline)`],
+    ["--samples <n>", `replays per narrator of each case with expect, graded by code and summed into expect.json (default: ${DEFAULT_SAMPLES}); a case without expect runs once`],
     ["--concurrency <n>", `turns replayed and judged at once (default: ${DEFAULT_CONCURRENCY})`],
   ],
 });
@@ -79,6 +91,7 @@ const SPEC = {
     judges: { type: "string" },
     "judge-binding": { type: "string" },
     concurrency: { type: "string" },
+    samples: { type: "string" },
   },
   positionals: { min: 1, max: Number.MAX_SAFE_INTEGER },
 } as const;
@@ -95,10 +108,10 @@ function list(value: OptionValue): string[] | null {
   return items;
 }
 
-function parseConcurrency(value: OptionValue): number {
-  if (value === undefined) return DEFAULT_CONCURRENCY;
+function positiveInteger(flag: string, value: OptionValue, fallback: number): number {
+  if (value === undefined) return fallback;
   const n = Number(value);
-  if (!Number.isInteger(n) || n < 1) throw new UsageError(`--concurrency needs a positive integer, got "${String(value)}"`);
+  if (!Number.isInteger(n) || n < 1) throw new UsageError(`--${flag} needs a positive integer, got "${String(value)}"`);
   return n;
 }
 
@@ -165,15 +178,18 @@ async function loadInput(target: string): Promise<Input[]> {
 async function earlierJudges(file: string): Promise<string[] | null> {
   try {
     const earlier = await readResult(path.join(path.dirname(file), "result.json"));
-    return earlier.verdicts.length > 0 ? earlier.verdicts.map((verdict) => verdict.id) : null;
+    // The grade reads the case's expect, which a stored turn does not carry.
+    const ids = earlier.verdicts.map((verdict) => verdict.id).filter((id) => id !== EXPECT_VERDICT);
+    return ids.length > 0 ? ids : null;
   } catch {
     return null;
   }
 }
 
 function judgesFor(input: Input, chosen: string[] | null, earlier: string[] | null): string[] {
+  // The judges an expect grades on run whatever was chosen: without them the sample could not be graded.
+  if (input.kind === "case") return [...new Set([...(chosen ?? input.testCase.judges ?? []), ...expectJudges(input.testCase)])];
   if (chosen) return chosen;
-  if (input.kind === "case") return input.testCase.judges ?? [];
   if (input.fromGame) return GAME_TURN_JUDGES;
   return earlier ?? DEFAULT_JUDGES;
 }
@@ -209,6 +225,8 @@ interface WorkItem {
   /** Who replays a case; null for a stored turn, which is not replayed. */
   narrator: string | null;
   judges: string[];
+  /** Which sample of a case with `expect` this is, from 1; null for anything else. */
+  sample: number | null;
 }
 
 function narratorsFor(input: Input, chosen: string[] | null): Array<string | null> {
@@ -223,16 +241,18 @@ function assertNarratorKnown(narrator: string): void {
 }
 
 /** Every (input, narrator) to run, with the judges it gets; refuses a judge that does not apply to its input. */
-async function workItems(inputs: Input[], narrators: string[] | null, chosenJudges: string[] | null): Promise<WorkItem[]> {
+async function workItems(inputs: Input[], narrators: string[] | null, chosenJudges: string[] | null, samples: number): Promise<WorkItem[]> {
   const items: WorkItem[] = [];
   for (const input of inputs) {
     const earlier = input.kind === "stored" && !input.fromGame && !chosenJudges ? await earlierJudges(input.file) : null;
     const judges = judgesFor(input, chosenJudges, earlier);
     assertJudgesApply(judges);
     if (input.kind === "stored" && input.fromGame) assertGameTurnJudges(judges);
+    const graded = input.kind === "case" && input.testCase.expect !== undefined;
     for (const narrator of narratorsFor(input, narrators)) {
       if (narrator !== null) assertNarratorKnown(narrator);
-      items.push({ input, narrator, judges });
+      if (!graded) items.push({ input, narrator, judges, sample: null });
+      for (let sample = 1; graded && sample <= samples; sample += 1) items.push({ input, narrator, judges, sample });
     }
   }
   return items;
@@ -254,9 +274,31 @@ function serverAI(testCase: TurnCase, flag: string | null): string {
 }
 
 function subjectId(item: WorkItem): string {
-  return item.input.kind === "case"
-    ? `${item.input.testCase.id}__${item.narrator}`
-    : `${item.input.turn.case_id}__${item.input.turn.narrator}`;
+  if (item.input.kind === "stored") return `${item.input.turn.case_id}__${item.input.turn.narrator}`;
+  const base = `${item.input.testCase.id}__${item.narrator}`;
+  return item.sample === null ? base : `${base}__s${item.sample}`;
+}
+
+/** The model a sample is summed under: a binding's name and model, or the AI a server is asked for. */
+function sampleModel(item: WorkItem, testCase: TurnCase, runtime: Runtime): string {
+  if (item.narrator === SERVER_NARRATOR) return serverAI(testCase, runtime.aiProfile);
+  return modelLabel(runtime.narrators.get(item.narrator as string) as ResolvedBinding);
+}
+
+/** The samples of every case with `expect`, each with its grade (null when it did not run), in run order. */
+function gradedSamples(items: readonly WorkItem[], results: readonly Result[], runtime: Runtime): Sample[] {
+  return items.flatMap((item, index) => {
+    if (item.sample === null || item.input.kind !== "case") return [];
+    const testCase = item.input.testCase;
+    return [{
+      caseId: testCase.id,
+      narrator: item.narrator as string,
+      model: sampleModel(item, testCase, runtime),
+      group: testCase.group ?? null,
+      ungraded: testCase.ungraded === true,
+      verdict: results[index].verdicts.find((verdict) => verdict.id === EXPECT_VERDICT) ?? null,
+    }];
+  });
 }
 
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
@@ -330,6 +372,8 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
       logDir: folder.logDir,
       options: judgeOptions(item.input),
     });
+    const expected = item.input.kind === "case" ? item.input.testCase.expect : undefined;
+    if (expected) verdicts.push(gradeExpect(expected, turn, verdicts));
     stages.push({ name: "judge", duration_ms: Math.round(performance.now() - judgeStart) });
   } catch (error) {
     runError = { stage: turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };
@@ -378,13 +422,18 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
       narrators?.forEach(assertNarratorKnown);
       const chosenJudges = list(values.judges);
       if (chosenJudges) assertJudgesApply(chosenJudges);
-      const concurrency = parseConcurrency(values.concurrency);
+      const concurrency = positiveInteger("concurrency", values.concurrency, DEFAULT_CONCURRENCY);
+      const samples = positiveInteger("samples", values.samples, DEFAULT_SAMPLES);
 
       const inputs = (await Promise.all(positionals.map(loadInput))).flat();
       if (inputs.length === 0) throw new UsageError("no cases found");
-      inputs.forEach((input) => input.kind === "case" && validateCase(input.testCase, input.testCase.id));
+      for (const input of inputs) {
+        if (input.kind !== "case") continue;
+        validateCase(input.testCase, input.testCase.id);
+        validateExpect(input.testCase);
+      }
 
-      const items = await workItems(inputs, narrators, chosenJudges);
+      const items = await workItems(inputs, narrators, chosenJudges, samples);
 
       const config = loadConfig({ root: context.root, configPath: common.configPath, modelOverrides: common.modelOverrides });
       const resolve = (name: string) => resolveBinding(config, name, { root: context.root });
@@ -419,8 +468,9 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
       const runtime: Runtime = { context, folder, judgeBinding, narrators: narratorBindings, server, aiProfile };
 
       context.out(`[judge turn] ${items.length} turn(s) -> ${folder.dir}`);
+      let results: Result[];
       try {
-        await mapPool(items, concurrency, async (item) => {
+        results = await mapPool(items, concurrency, async (item) => {
           const result = await runSubject(item, runtime);
           context.out(`[judge turn] ${result.subject.id} -> ${describe(result)}`);
           return result;
@@ -429,6 +479,13 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         await server.stop();
       }
       const index = await folder.finish();
+      const graded = gradedSamples(items, results, runtime);
+      if (graded.length > 0) {
+        const summary = summarizeSamples(graded, samples, index.run);
+        writeSummary(path.join(folder.dir, EXPECT_FILE), summary);
+        for (const line of formatSummary(summary)) context.out(line ? `[judge turn] ${line}` : "");
+        context.out(`[judge turn] wrote ${path.join(folder.dir, EXPECT_FILE)}`);
+      }
       context.out(`[judge turn] wrote ${path.join(folder.dir, "run.json")} (exit ${index.exit_code})`);
       return index.exit_code;
     },

@@ -62,6 +62,23 @@ export interface JudgeOptions {
   blueprintPath?: string;
 }
 
+/** Which way a failing judge in `expect.judges` means the narrator erred. */
+export type JudgedDirection = "withheld" | "given_away" | "either";
+
+/**
+ * What the narrator's structured output must say, graded by code over every
+ * sample (`expect.ts`). A key left out is not graded. `revealed_clue_id` is a
+ * search's; `revealed_clue_ids` and `used_clue_ids` are a talk turn's (`ask`).
+ * `judges` names turn judges whose fail makes a sample wrong, and which way.
+ */
+export interface Expect {
+  revealed_clue_id?: string | null;
+  revealed_clue_ids?: string[];
+  used_clue_ids?: string[];
+  input_understood?: boolean;
+  judges?: Record<string, JudgedDirection>;
+}
+
 export interface TurnCase {
   id: string;
   blueprint: { path: string };
@@ -74,6 +91,12 @@ export interface TurnCase {
   narrator?: string;
   /** The profile a server narrator is asked for. */
   aiProfile?: string;
+  /** Grades the case by code over `--samples` replays; without it a case runs once, as it always has. */
+  expect?: Expect;
+  /** The group an `expect` case's share is summed into. */
+  group?: string;
+  /** An `expect` case that is shown but never counted in its group's share. */
+  ungraded?: boolean;
 }
 
 interface Named {

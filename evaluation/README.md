@@ -7,7 +7,7 @@ options.
 Each harness has its README beside its code:
 
 - played games, `judge game`: `evaluation/trace/README.md`
-- one turn replayed, `judge turn` and `cases`: `evaluation/runtime/README.md`
+- one turn replayed, `judge turn`, `cases` and `baseline`: `evaluation/runtime/README.md`
 - self-play, `play` and `report`: `evaluation/playtest/README.md`
 - the truth set, `label`, `score`, `compare` and `suite`:
   `evaluation/truth/README.md`
@@ -58,7 +58,7 @@ and each agent's workspace. A suite keeps its journal and runs in
 `<root>/suites/<name>/`; only its results file goes in the repo.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
-aborts. The `logs/<step>*.stream.jsonl` stream is for watching only.
+aborts. `logs/<step>*.stream.jsonl` is for watching only.
 
 ## Exit codes
 

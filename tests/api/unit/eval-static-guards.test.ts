@@ -68,7 +68,7 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the thirteen commands", () => {
+  it("lists exactly the fifteen commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "generate",
       "scenes",
@@ -77,6 +77,8 @@ describe("./dev eval", () => {
       "judge game",
       "judge turn",
       "cases",
+      "baseline save",
+      "baseline compare",
       "play",
       "report",
       "label",
@@ -86,7 +88,7 @@ describe("./dev eval", () => {
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(13);
+    expect(listed).toHaveLength(15);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
@@ -100,6 +102,8 @@ describe("./dev eval", () => {
       "judge game": ["tests/api/unit/trace-judge-game.test.ts", '["judge", "game"'],
       "judge turn": ["tests/api/unit/runtime-judge-turn.test.ts", '["judge", "turn"'],
       cases: ["tests/api/unit/no-turn-readers.test.ts", "casesCommand.run("],
+      "baseline save": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "save"'],
+      "baseline compare": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "compare"'],
       play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
       report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
       score: ["tests/api/unit/eval-score.test.ts", '["score", ...argv]'],

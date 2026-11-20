@@ -26,8 +26,7 @@ The canned narrator proves only the plumbing; keep stub runs to `flesch`.
 `narrator-claude` runs with no tools, MCP servers or settings, so the model
 under test does not read this repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
 `narrator-claude` and `turn-judge` (judges held to their schema); skipping
-settings skips logins configured only in `settings.json` (`apiKeyHelper`,
-Bedrock or Vertex env).
+settings skips logins set only in `settings.json`.
 
 ### The throwaway server
 
@@ -67,8 +66,7 @@ Each passes `flesch` on both fixture narrators.
 
 **Which judges run:** `--judges a,b`, else the case's `judges`, else none. A stored
 turn judged again (below) falls back to its earlier result's judges, else
-`flesch`. No committed case declares a `gm_*` judge, so the battery is opt-in
-here; the game harness runs all four.
+`flesch`. The `gm_*` battery is opt-in here.
 
 **Options** go in the case's `judgeConfig.<judge>`: `tolerance` (`flesch`, grade
 levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
@@ -90,11 +88,12 @@ errs (`withheld`, `given_away`, `either`); it always runs. See
 
 It runs `--samples` times per narrator (default 5), as `<case>__<narrator>__s<n>`.
 A wrong sample **withheld** (an expected clue or use missing), **gave away** (one
-not expected) or **misread**; withholding an expected use, it went **unseen** or
-was **refused**. The run's `expect.json`, also printed, holds each case's and
-`group`'s share right; `ungraded: true` keeps a case out of its group. A sample
-that did not run or could not be graded counts neither way and marks the run
-INCOMPLETE.
+not expected), **misread**, or was **judged** (an `either` judge failed); one that
+withheld on a case expecting a use went **unseen** (use missing) or was **refused**.
+`expect.json`, also printed, holds each case's and `group`'s share
+right; `ungraded: true` keeps a case out of its group. A sample that did not run
+or could not be graded, such as a give-away a server refuses, counts neither way
+and marks the run INCOMPLETE.
 
 `./dev eval baseline save <run> <file>` stores a complete run's summary (narrator,
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;

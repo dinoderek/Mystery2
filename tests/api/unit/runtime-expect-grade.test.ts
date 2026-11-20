@@ -149,6 +149,7 @@ describe("validating expect", () => {
 
   it("refuses an empty expect, bad values, and a group without expect", () => {
     expect(check({ expect: {} })).toThrow(/nothing to grade/);
+    expect(check({ expect: { judges: {} } })).toThrow(/nothing to grade/);
     expect(check({ expect: { revealed_clue_ids: "x" as unknown as string[] } })).toThrow(/list of clue ids/);
     expect(check({ expect: { judges: { gm_roleplay: "maybe" as "either" } } })).toThrow(/must be one of/);
     expect(check({ group: "g" })).toThrow(/only to a case with expect/);

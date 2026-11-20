@@ -49,7 +49,8 @@ function isIdList(value: unknown): value is string[] {
 function checkExpectKeys(expect: Expect, action: string, where: string): void {
   const allowed = new Set([...GRADED_KEYS[action], "input_understood", "judges"]);
   const keys = Object.keys(expect);
-  if (keys.length === 0) throw new UsageError(`${where}: expect names nothing to grade`);
+  const grades = keys.some((key) => key !== "judges") || Object.keys(expect.judges ?? {}).length > 0;
+  if (!grades) throw new UsageError(`${where}: expect names nothing to grade`);
   for (const key of keys) {
     if (!allowed.has(key)) throw new UsageError(`${where}: expect.${key} does not apply to a ${action} case`);
   }

@@ -80,10 +80,10 @@ Which blueprint fields reach which role is the "Narration at play" table in
   history already meets it.
 - **Arrival gets only what an arrival can use.** Each present character comes
   with name, `sex`, appearance, personality, attitude, `always` tells, and a
-  `manner` line per agenda not yet broken, built from its type and target
-  (never `strategy` or `details`). No clue, motive, alibi, action,
-  background or flavour, so none slips out, and no `condition` tell: each
-  awaits the investigator's words. A return gets the last arrival's narration.
+  `manner` line per unbroken agenda, from its type and target. No clue,
+  motive, alibi, action, background, flavour or `condition` tell (each awaits
+  the investigator's words). It steers toward people, never things: any could
+  be a hiding place. A return gets the last arrival's narration.
   `role-request.ts` derives it from history
   (`tests/api/unit/arrival-prompt.test.ts`).
 - **Search never sees a locked clue**, so its text is never woven in, nor a

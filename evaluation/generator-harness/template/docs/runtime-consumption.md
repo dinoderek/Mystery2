@@ -3,7 +3,7 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `dd1e3ea504920d23323f67b3f6256bb05a3b329b`
+> - `docs/ai-runtime.md#context-boundaries` — `da0a5bc87e3ba7fe9317b60d8bcb7d3494bf2185`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `8117b3394386cc4cc73a8dd80e8a075a7c9ad952`
@@ -193,8 +193,8 @@ or null `sex` causes pronoun drift in talk and move narration.
 
 A character is first met on arrival, before any conversation. Arrival plays
 them in this attitude and personality, with a manner drawn from their agendas'
-types, so a guarded suspect who should keep visitors away from somewhere does
-so from the moment the player walks in.
+types. It steers attention toward people, never things, so an attitude wanting
+the investigator elsewhere names someone.
 
 ## Generation contract reminders
 

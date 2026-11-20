@@ -56,7 +56,7 @@ describe("the search-reveals library", () => {
     }
   });
 
-  it("covers every group of the brief, reveal and not", () => {
+  it("covers every group the library is built in, reveal and not", () => {
     const groups = new Set(cases.map((c) => c.group));
     for (const group of [
       "reveal-exact", "reveal-loose", "reveal-inventive", "reveal-evidence", "reveal-unlocked",
@@ -91,6 +91,9 @@ describe("the search-reveals library", () => {
     for (const c of cases.filter((x) => x.expect?.revealed_clue_id === null)) {
       const place = await placeFor(c);
       const held = new Set(c.given.discovered_clues ?? []);
+      // A vague search could be read as earning the location's own clue, so it is found.
+      const vague = c.group === "not-vague-search" || c.group === "not-hidden-vague";
+      for (const clue of vague ? place.clues : []) expect(held.has(clue.id), `${c.id}: ${clue.id} could be revealed`).toBe(true);
       const spot = (place.sub_locations ?? []).find((s) => c.action.search_query!.includes(s.name));
       // A spot the query names must hold nothing to find: its clues are found, or locked.
       for (const clue of spot?.clues ?? []) {

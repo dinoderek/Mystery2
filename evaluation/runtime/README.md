@@ -10,7 +10,7 @@ every run and across models.
 
 ## Choosing a narrator
 
-`--narrator` takes a list; every case runs per narrator on byte-identical input.
+`--narrator` takes a list; each narrator gets byte-identical input.
 
 | Narrator | Narration comes from | Needs |
 |---|---|---|
@@ -58,7 +58,8 @@ Each passes `flesch` on both fixture narrators.
 - `flesch`, a check: the deterministic Flesch–Kincaid grade against the
   blueprint's `target_age`.
 - `age_appropriate_turn`, a judge for what the formula cannot see (vocabulary,
-  figurative language), against the narrator prompt's age profile.
+  figurative language), against the narrator prompt's age profile; not the
+  blueprint dimension `age_appropriate`.
 - `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler`: the
   adherence judges shared with the game harness (`evaluation/judges/README.md`).
   Here the case's history is context and the action under test is the one judged

@@ -15,10 +15,11 @@
  * whether the use went `unseen` (one is missing from `used_clue_ids`) or was
  * `refused` (every one is there, but the clue or part was not given).
  *
- * The output read is the one the game reads: a CLI narrator's reply parsed by
- * the engine's own role contract, or the event a server saved. A reply the
- * contract refuses, or a named judge that could not judge, cannot be graded:
- * the sample is an error, counted neither right nor wrong.
+ * A CLI narrator is graded on its reply as the engine's role contract parses
+ * it, before the game's own checks (which clues it admits, which uses it
+ * keeps); a server narrator on the event the game saved. A reply the contract
+ * refuses, or a named judge that could not judge, cannot be graded: the sample
+ * is an error, counted neither right nor wrong.
  */
 
 import { UsageError } from "../../core/errors.ts";

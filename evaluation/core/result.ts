@@ -166,7 +166,7 @@ export const RoundSchema = z
     summary: SummarySchema,
     /** The round's generator and judge calls' reported costs, summed; null when none reported one. */
     cost_usd: z.number().min(0).nullable(),
-    /** This round's stage timings; round 0's are the result's own. */
+    /** This round's stage timings; round 0's are in the result's timing, which covers every round. */
     timing: TimingSchema.nullable(),
   })
   .strict();

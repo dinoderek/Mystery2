@@ -19,9 +19,9 @@ Each harness has its README beside its code:
 Every model call goes through a binding, named in `evaluation/config.json`
 (gitignored), else `evaluation/config.example.json`; `--config <file>` replaces both. `--model-override <binding>=<model>` changes
 one binding's model for one run. A missing binding, or one whose command cannot
-run, stops the command, naming it. A wrapper may
-stream events to `$EVAL_STREAM_FILE`; they never affect the result. A turn judge hands its answer
-schema in `$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds the answer to it.
+run, stops the command, naming it: no judge is skipped silently. Wrappers may
+stream to `$EVAL_STREAM_FILE`, never affecting the result. A turn judge hands its answer
+schema in `$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds answers to it.
 
 ## Judges
 

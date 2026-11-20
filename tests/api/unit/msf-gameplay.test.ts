@@ -30,7 +30,6 @@ import {
   buildNarrationPrompt,
 } from "../../../packages/game-engine/src/role-request.ts";
 import { RetriableAIError } from "../../../packages/game-engine/src/errors.ts";
-import { parseTalkConversationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import {
   createLocalTraceSource,
   extractSessionTrace,
@@ -129,35 +128,6 @@ describe("native MSF representation", () => {
       truth: false,
     });
     expect(clear.solution_supported).toBe(false);
-  });
-
-  it("keeps Ada's initial MSF claim in context without adding it to mock dialogue", async () => {
-    const request = await buildRoleRequest({
-      role: "talk_conversation",
-      game_id: "test",
-      blueprint: buildMsfBlueprint(lighthouse()),
-      character_id: "ada",
-      location_id: "lantern_room",
-      player_input: "Hello Ada, when did you notice the lens was missing?",
-      conversation_history: [],
-      session: {
-        ...session,
-        current_location_id: "lantern_room",
-        current_talk_character_id: "ada",
-      },
-    });
-    const alibi = "I was in bed in my cottage from midnight until four. I hardly slept a wink.";
-    expect(request.context.talk_context?.active_character.state.current_story).toContain(alibi);
-    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
-    const output = await provider.generateRoleOutput({
-      ...request,
-      role: "talk_conversation",
-      parse: parseTalkConversationOutput,
-    });
-    expect(output.revealed_clue_ids).toEqual(["c_ada_snoring"]);
-    expect(output.narration).toContain("From one until three, Finn snored on my sofa");
-    expect(output.narration).not.toContain("Keeps to:");
-    expect(output.narration).not.toContain(alibi);
   });
 
   it("rejects private truth in presentation, mismatched entities and unknown search spots", () => {

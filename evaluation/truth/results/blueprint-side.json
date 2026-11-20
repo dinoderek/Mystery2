@@ -4422,13 +4422,13 @@
       },
       "judge": "age_appropriate",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 33327,
-      "cost_usd": 0.15483439999999998
+      "duration_ms": 39115,
+      "cost_usd": 0.1595286
     },
     {
       "subject": {
@@ -4438,22 +4438,11 @@
       },
       "judge": "blueprint_broad",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [
-        {
-          "sequence": null,
-          "kinds": [
-            "solve_depth"
-          ],
-          "severity": "minor",
-          "judge_kind": "solve_depth",
-          "quote": "The window was knocked out from inside the greenhouse. Nobody climbed in here!",
-          "why": "elim_thorne collapses to about one clue: clue_glass_outside states outright that nobody climbed in, and Thorne has no key, so a 10-year-old is close to sure he is cleared before the crash-time and barbecue clues. Elimination path of length ~1.",
-          "refers_to": "elim_thorne"
-        },
         {
           "sequence": null,
           "kinds": [
@@ -4462,52 +4451,19 @@
           "severity": "minor",
           "judge_kind": "fairness",
           "quote": "After my eight o'clock rounds I was in my cottage all evening, watching my quiz show.",
-          "why": "Dobbs holds the spare key, lives beside the garden and has an alibi nobody confirms or contradicts. No suspect_elimination_paths entry covers him. He is cleared only indirectly, by clue_welly_prints (child-size, pupils only) and by his own key book (clue_spare_key_book). That works because he has no motive, but it is thin.",
+          "why": "Dobbs holds the spare key, lives beside the garden and heard the crash without checking, so a child may suspect him. No suspect_elimination_paths entry covers him and his stated_alibi is never confirmed. He is cleared only indirectly: clue_welly_prints (small leaf-pattern wellies, pupils only) and clue_key_in_water_butt (the original key, which clue_hale_key_last_seen ties to Toby/Mia). That is discoverable evidence, so this is minor.",
           "refers_to": "dobbs"
         },
         {
           "sequence": null,
           "kinds": [
-            "knowledge_coherence"
+            "fairness"
           ],
           "severity": "minor",
-          "judge_kind": "knowledge_coherence",
-          "quote": "After that, only Toby and Mia were in the shed until I locked it.",
-          "why": "Observability: Hale's actual_actions seq 3 puts her in the staff room making tea from 3:35 to 4:15, and the pupils took turns going out to the compost heap. She could not have seen who was in the shed. Her clue states as fact something she could only assume.",
-          "refers_to": "clue_hale_key_last_seen"
-        },
-        {
-          "sequence": null,
-          "kinds": [
-            "knowledge_coherence"
-          ],
-          "severity": "minor",
-          "judge_kind": "knowledge_coherence",
-          "quote": "She was serving there from six till ten.",
-          "why": "Observability: Thorne's actual_actions have him driving to the showground at 6:30 and joining the barbecue from 7pm, so he could not have seen Mia serving from six. This is believable as hearsay, but it is presented as his own observation.",
-          "refers_to": "clue_thorne_mia_cake"
-        },
-        {
-          "sequence": null,
-          "kinds": [
-            "character_grounding"
-          ],
-          "severity": "minor",
-          "judge_kind": "character_grounding",
-          "quote": "He keeps every school key on his belt ring and writes down whoever borrows one.",
-          "why": "Dobbs's knowledge of the other characters is thin. His authored material covers lending Mia and Hale the key and hearing Thorne's trailer, but says nothing about Toby or about his view of the pupils or Thorne. A game master would have to extrapolate. One thin topic.",
-          "refers_to": "dobbs"
-        },
-        {
-          "sequence": null,
-          "kinds": [
-            "clue_graph"
-          ],
-          "severity": "minor",
-          "judge_kind": "clue_graph",
-          "quote": "Mr. Thorne won't admit climbing into the school garden until you can tell him about the huge boot prints",
-          "why": "Some gates point outside the path that uses them. clue_thorne_measured (in elim_thorne) needs clue_boot_prints, and clue_hale_toby_upset (in sp_key_trail) needs clue_rota_purple_ink, but neither prerequisite is in that path. Both prerequisites are ungated and signposted in the starting knowledge and the greenhouse, so the player is not stuck.",
-          "refers_to": "elim_thorne"
+          "judge_kind": "fairness",
+          "quote": "At home on Friday evening marking spelling tests.",
+          "why": "Hale's stated_alibi is never confirmed and she has no elimination path. Like Dobbs, she is ruled out only by inference from clue_welly_prints (child-sized pupil wellies). She has no motive, so it is minor.",
+          "refers_to": "hale"
         },
         {
           "sequence": null,
@@ -4516,13 +4472,13 @@
           ],
           "severity": "minor",
           "judge_kind": "age_appropriate",
-          "quote": "the water butt by the door",
-          "why": "'Water butt' is a regional stretch word for a 10-year-old. clue_key_in_water_butt's 'murky water ... your fingers find a key' gives enough context, so it is within the age-10 allowance.",
-          "refers_to": "world.locations[0].sub_locations[3].name"
+          "quote": "At the bottom of the murky water butt, your fingers find a key",
+          "why": "'water butt' is a regional stretch word for a 10-year-old. It is within the age-10 allowance of 3 new words and the sub-location hint calls it a rain barrel, but the clue text itself does not gloss it.",
+          "refers_to": "world.locations[0].sub_locations[3].clues[0].text"
         }
       ],
-      "duration_ms": 109185,
-      "cost_usd": 0.5351096
+      "duration_ms": 94576,
+      "cost_usd": 0.5188536
     },
     {
       "subject": {
@@ -4532,25 +4488,13 @@
       },
       "judge": "character_grounding",
       "judge_version": 3,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
-      "status": "fail",
-      "findings": [
-        {
-          "sequence": null,
-          "kinds": [
-            "character_grounding"
-          ],
-          "severity": "major",
-          "judge_kind": null,
-          "quote": null,
-          "why": null,
-          "refers_to": null
-        }
-      ],
-      "duration_ms": 70456,
-      "cost_usd": 0.39363119999999996
+      "status": "pass",
+      "findings": [],
+      "duration_ms": 67654,
+      "cost_usd": 0.38059380000000004
     },
     {
       "subject": {
@@ -4560,13 +4504,13 @@
       },
       "judge": "clue_graph",
       "judge_version": 3,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 52160,
-      "cost_usd": 0.24432040000000002
+      "duration_ms": 45317,
+      "cost_usd": 0.2072386
     },
     {
       "subject": {
@@ -4576,13 +4520,13 @@
       },
       "judge": "fairness",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 53471,
-      "cost_usd": 0.3009496
+      "duration_ms": 56559,
+      "cost_usd": 0.32801899999999995
     },
     {
       "subject": {
@@ -4592,13 +4536,13 @@
       },
       "judge": "knowledge_coherence",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 71305,
-      "cost_usd": 0.4120082
+      "duration_ms": 76943,
+      "cost_usd": 0.42622059999999995
     },
     {
       "subject": {
@@ -4608,7 +4552,7 @@
       },
       "judge": "knowledge_timeline_coherence",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
@@ -4620,19 +4564,8 @@
           ],
           "severity": "minor",
           "judge_kind": "knowledge_coherence",
-          "quote": "After that, only Toby and Mia were in the shed until I locked it.",
-          "why": "Hale's actual_actions seq 3 put her in the staff room 3:35-4:15 while the pupils tidied, so she did not watch the shed herself. She can reasonably infer it because she left the two of them there, but the clue states it as something she saw.",
-          "refers_to": "clue_hale_key_last_seen"
-        },
-        {
-          "sequence": null,
-          "kinds": [
-            "knowledge_coherence"
-          ],
-          "severity": "minor",
-          "judge_kind": "knowledge_coherence",
           "quote": "She was serving there from six till ten.",
-          "why": "Thorne's actual_actions seq 3-4 have him leaving at 6:30pm to drive across town and reaching the barbecue at 7pm. He could not have seen Mia serving from six, though he could have heard it from someone. The clue is true (Mia seq 6), but its source is unstated.",
+          "why": "Thorne's actual_actions put him on the road at 6:30pm and at the barbecue only from 7pm, so he could not have seen Mia serving from six. He might have heard it from Mia or her mum, but no field says so. The 9pm cake sale that clears her is something he did witness.",
           "refers_to": "clue_thorne_mia_cake"
         },
         {
@@ -4642,13 +4575,13 @@
           ],
           "severity": "minor",
           "judge_kind": "knowledge_coherence",
-          "quote": "I came in at 7:25 this morning to water Bertha before loading.",
-          "why": "The rota (Hale seq 2, clue_rota_purple_ink) gave the Saturday shift to Mia, and Hale's actual_actions seq 6 says only that she borrowed the spare key. Her agenda says she never lies about facts, so her saying she came in to water is a small mismatch, though an adult watering early is plausible.",
-          "refers_to": "hale"
+          "quote": "After that, only Toby and Mia were in the shed until I locked it.",
+          "why": "Hale's actual_actions seq 3 put her in the staff room from 3:35 to 4:15pm. Mia's seq 2 has both pupils taking seed trays out to the compost heap, so the shed was sometimes left empty. Hale is stating as fact something she could only infer.",
+          "refers_to": "clue_hale_key_last_seen"
         }
       ],
-      "duration_ms": 73481,
-      "cost_usd": 0.437036
+      "duration_ms": 75139,
+      "cost_usd": 0.43160480000000007
     },
     {
       "subject": {
@@ -4658,13 +4591,13 @@
       },
       "judge": "path_payoff",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 42388,
-      "cost_usd": 0.193666
+      "duration_ms": 41341,
+      "cost_usd": 0.2024134
     },
     {
       "subject": {
@@ -4674,13 +4607,13 @@
       },
       "judge": "solve_depth",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 45118,
-      "cost_usd": 0.23076939999999999
+      "duration_ms": 51684,
+      "cost_usd": 0.3037456
     },
     {
       "subject": {
@@ -4690,11 +4623,22 @@
       },
       "judge": "solve_depth_fairness",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [
+        {
+          "sequence": null,
+          "kinds": [
+            "fairness"
+          ],
+          "severity": "minor",
+          "judge_kind": "fairness",
+          "quote": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town.",
+          "why": "Mia and Thorne are each other's only alibi witness (clue_thorne_mia_cake / clue_mia_thorne_barbecue). Circular, but not fatal: Thorne is also cleared by clue_glass_outside plus the key evidence, and Mia's account matches her stated alibi with no contradiction. Mia's clearance rests entirely on Thorne's word.",
+          "refers_to": "elim_mia"
+        },
         {
           "sequence": null,
           "kinds": [
@@ -4703,12 +4647,12 @@
           "severity": "minor",
           "judge_kind": "solve_depth",
           "quote": "Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.",
-          "why": "clue_welly_prints alone narrows the field to Toby or Mia, so sp_welly_trail only needs the crash time (clue_dobbs_crash_time) and Mia's cake-tent alibi (clue_thorne_mia_cake) to settle it. That is 3 clues, exactly the floor of 3, with no margin. clue_snapped_bench explains how Bertha was smashed but isn't needed to identify Toby.",
-          "refers_to": "clue_welly_prints"
+          "why": "clue_welly_prints alone cuts the field to two children, so sp_welly_trail sits exactly at the floor of 3 (welly prints + crash time + Mia's cake alibi). Not below the floor, but it is a strong narrowing clue.",
+          "refers_to": "sp_welly_trail"
         }
       ],
-      "duration_ms": 66704,
-      "cost_usd": 0.3577724
+      "duration_ms": 52366,
+      "cost_usd": 0.35377480000000006
     },
     {
       "subject": {
@@ -4718,13 +4662,13 @@
       },
       "judge": "timeline_coherence",
       "judge_version": 1,
-      "subject_hash": "4ef5d15174e10789",
+      "subject_hash": "9391f7fdfbed1ba5",
       "model": "opus",
       "sample": 0,
       "status": "pass",
       "findings": [],
-      "duration_ms": 50082,
-      "cost_usd": 0.2957484
+      "duration_ms": 41149,
+      "cost_usd": 0.2013074
     },
     {
       "subject": {

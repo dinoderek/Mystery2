@@ -1,0 +1,1176 @@
+{
+  "schema_version": "v2",
+  "id": "7c3e9a2b-4f1d-4a6e-9b8c-2d5f1e7a3c90",
+  "metadata": {
+    "title": "Howard Roundtail and the Snowline Briefcase",
+    "one_liner": "Who took the old bunny's case off the snow train?",
+    "target_age": 7,
+    "time_budget": 50,
+    "narration_style": "Crisp snow, puffing steam and warm lantern glow, told in a gentle, cozy voice.",
+    "visual_direction": {
+      "art_style": "Woodland sketchbook visual language: soft graphite pencil lines with light watercolour washes, like a naturalist's field notebook, with tiny handwritten nature-note labels, pawprint and pine-sprig doodles in the margins, and expressive humanoid foxes, bears, wolves and bunnies bundled in knitted scarves and mittens.",
+      "color_palette": "Snowy winter calm: frost white, pine green, berry red, warm lantern gold and soft slate blue, feeling hushed, safe and hopeful.",
+      "mood": "Cozy and curious, with a gentle hush of falling snow and a warm, hopeful heart.",
+      "lighting": "Low winter afternoon sun fading into soft golden lantern glow, diffuse and gentle.",
+      "texture": "Visible cream paper grain, pencil smudges and soft watercolour blooms, like pages from a well-loved field sketchbook.",
+      "portrait_background": "A soft wash of cream paper fading into pale frosty blue, with faint pencil grain and gentle blur."
+    }
+  },
+  "narrative": {
+    "premise": "The mountain train stops at Snow Foxes Village in the deep snow. Old Howard Roundtail's briefcase is gone! Inside is his grandma's sketchbook. Foxes, wolves, bears and bunnies all eye each other. Can you find the truth?",
+    "starting_knowledge": {
+      "mystery_summary": "Howard's case was on his seat at quarter past three. At twenty to four, it was gone. Mabel checked the clock.",
+      "locations": [
+        {
+          "location_id": "station",
+          "summary": "Snowline Station, where the mountain train stopped. Mabel's post room is here."
+        },
+        {
+          "location_id": "carriage",
+          "summary": "The last train carriage. Howard left his briefcase on his seat here."
+        },
+        {
+          "location_id": "teahouse",
+          "summary": "Bruno's warm tea house. It smells of cocoa and honey."
+        },
+        {
+          "location_id": "workshop",
+          "summary": "Sylvie's lantern shop. Lots of lanterns hang here."
+        },
+        {
+          "location_id": "square",
+          "summary": "The snowy village square, with the big Star Lantern for the prize."
+        }
+      ],
+      "characters": [
+        {
+          "character_id": "howard",
+          "summary": "Old bunny on the train. His lost case holds his grandma's sketchbook."
+        },
+        {
+          "character_id": "mabel",
+          "summary": "Bunny station master. She keeps the clock and sorts the post."
+        },
+        {
+          "character_id": "tansy",
+          "summary": "Little snow fox who draws everything she sees. She loves lanterns."
+        },
+        {
+          "character_id": "rufus",
+          "summary": "Red fox porter on the train. He moves the bags and the post."
+        },
+        {
+          "character_id": "wanda",
+          "summary": "Wolf on the train. She carves little wooden sleds to sell."
+        },
+        {
+          "character_id": "bruno",
+          "summary": "Bear who runs the tea house. He sold cocoa on the train today."
+        },
+        {
+          "character_id": "sylvie",
+          "summary": "Snow fox lantern maker. She hung welcome lanterns on the train today."
+        }
+      ]
+    }
+  },
+  "world": {
+    "starting_location_id": "station",
+    "locations": [
+      {
+        "id": "station",
+        "name": "Snowline Station",
+        "description": "A snowy platform with a red station clock. The mountain train puffs steam. A wooden fence runs along the edge. A door says Post Room.",
+        "clues": [],
+        "sub_locations": [
+          {
+            "id": "post_room",
+            "name": "the post room",
+            "hint": "Mabel's little post room. Six wooden post crates are stacked here, all opened and checked.",
+            "clues": [
+              {
+                "id": "clue_post_crates",
+                "text": "Six open crates, stuffed with letters. Every lid has Mabel's tick mark on it."
+              }
+            ]
+          },
+          {
+            "id": "station_fence",
+            "name": "the station fence",
+            "hint": "The fence faces the whole train. Tansy sat here drawing for a long time.",
+            "clues": [
+              {
+                "id": "clue_fence_shavings",
+                "text": "Pencil shavings in the snow by the fence. Someone sat drawing here for ages."
+              }
+            ]
+          },
+          {
+            "id": "station_clock",
+            "name": "the big red clock",
+            "hint": "Just a big friendly clock with a brass bell beside it. Nothing hidden here.",
+            "clues": []
+          }
+        ]
+      },
+      {
+        "id": "carriage",
+        "name": "The Last Carriage",
+        "description": "A warm wooden train carriage with red seats and frosty windows. A little stove glows at one end. A door at the back opens onto snowy steps.",
+        "clues": [
+          {
+            "id": "clue_wolf_pawprints",
+            "text": "Big wolf pawprints in the snow, going down the back steps of the carriage."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "howard_seat",
+            "name": "Howard's seat",
+            "hint": "Where Howard left his briefcase. Look up above the seat.",
+            "clues": [
+              {
+                "id": "clue_lantern_hook",
+                "text": "A new paper star lantern hangs above Howard's seat. Its glue is still sticky."
+              }
+            ]
+          },
+          {
+            "id": "luggage_rack",
+            "name": "the luggage rack",
+            "hint": "The rack just behind Howard's seat. One spot is empty, with a paper tag.",
+            "clues": [
+              {
+                "id": "clue_rack_tag",
+                "text": "An empty rack just behind Howard's seat. Its tag says: Wanda Greycoat, sled box."
+              }
+            ]
+          },
+          {
+            "id": "seat_across",
+            "name": "the seat across the aisle",
+            "hint": "The seat facing Howard's. The cushion looks sat on.",
+            "clues": [
+              {
+                "id": "clue_fox_hair",
+                "text": "Red fox hairs on the seat across the aisle. The cushion is squashed flat."
+              }
+            ]
+          },
+          {
+            "id": "carriage_stove",
+            "name": "the little stove",
+            "hint": "A cozy iron stove, warm to stand by. Nothing hidden here.",
+            "clues": []
+          }
+        ]
+      },
+      {
+        "id": "teahouse",
+        "name": "Honeypaw Tea House",
+        "description": "A cozy log tea house. A fire crackles. Honey jars shine on the counter. Bruno's cocoa cart stands by the door.",
+        "clues": [
+          {
+            "id": "clue_cart_cupboard",
+            "text": "The cocoa cart has one tiny cupboard, full of cups. A briefcase could never fit."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "fireside",
+            "name": "the fireside tables",
+            "hint": "Warm tables by the fire, with cocoa mugs and crumbs. Nothing hidden here.",
+            "clues": []
+          },
+          {
+            "id": "counter",
+            "name": "the honey counter",
+            "hint": "Jars of golden honey and a plate of biscuits. Nothing hidden here.",
+            "clues": []
+          },
+          {
+            "id": "back_porch",
+            "name": "the back porch, round behind the tea house",
+            "hint": "A cold porch round the back, out of sight. A big brown-paper box sits here.",
+            "clues": [
+              {
+                "id": "clue_friends_cake",
+                "text": "A big box wrapped in brown paper. Inside is a cake: foxes, a wolf, a bear and a bunny holding paws!",
+                "requires": {
+                  "kind": "pointer",
+                  "clue_ids": [
+                    "clue_rufus_bundle"
+                  ],
+                  "rationale": "The porch is round the back of the tea house, out of sight, and the box is wrapped up tight. Nobody goes looking there until they hear Bruno carried a bundle out to it.",
+                  "target": {
+                    "location_id": "teahouse",
+                    "sub_location_id": "back_porch"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "workshop",
+        "name": "Lantern Workshop",
+        "description": "Paper lanterns hang everywhere, like soft little moons. Shelves hold rolls of paper. A big wicker basket sits by the door.",
+        "clues": [
+          {
+            "id": "clue_basket_deep",
+            "text": "Sylvie's big lantern basket. It's empty now, and deep enough to hold a briefcase."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "drawing_desk",
+            "name": "the drawing desk",
+            "hint": "Sylvie's desk, covered in lantern plans. An old page lies under the rest.",
+            "clues": [
+              {
+                "id": "clue_desk_page",
+                "text": "An old torn page with a star lantern drawing. The name in the corner is rubbed out."
+              }
+            ]
+          },
+          {
+            "id": "paper_shelves",
+            "name": "the paper shelves",
+            "hint": "Rolls of coloured paper, glue pots and string. Nothing hidden here.",
+            "clues": []
+          }
+        ]
+      },
+      {
+        "id": "square",
+        "name": "Village Square",
+        "description": "Snowy cottages ring a little square. In the middle stands a giant paper Star Lantern. There is a notice board and a snowy bench.",
+        "clues": [
+          {
+            "id": "clue_prize_card",
+            "text": "A card on the Star Lantern says: An old snow fox design. By Sylvie."
+          }
+        ],
+        "sub_locations": [
+          {
+            "id": "notice_board",
+            "name": "the notice board",
+            "hint": "A poster says the Lantern Prize is tonight at six. Nothing hidden here.",
+            "clues": []
+          },
+          {
+            "id": "snowy_bench",
+            "name": "the snowy bench",
+            "hint": "A bench with a soft pile of snow on it. Nothing hidden here.",
+            "clues": []
+          },
+          {
+            "id": "lost_chest",
+            "name": "inside the lost-and-found chest",
+            "hint": "A wooden chest of lost mittens and hats, tucked by a cottage wall. Something is buried under the mittens.",
+            "clues": [
+              {
+                "id": "clue_case_found",
+                "text": "Under a heap of lost mittens sits Howard's brown briefcase! The sketchbook is safe inside.",
+                "requires": {
+                  "kind": "pointer",
+                  "clue_ids": [
+                    "clue_rufus_chest"
+                  ],
+                  "rationale": "The chest is shut and full of old mittens, and the case is buried at the bottom. Nobody digs in it until they hear someone left it open this afternoon.",
+                  "target": {
+                    "location_id": "square",
+                    "sub_location_id": "lost_chest"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "characters": [
+      {
+        "id": "howard",
+        "first_name": "Howard",
+        "last_name": "Roundtail",
+        "location_id": "station",
+        "sex": "male",
+        "appearance": "An old brown bunny with a round white puff of a tail, round spectacles, a green tweed coat and a long grey knitted scarf.",
+        "background": "Howard is riding the mountain train to Snow Foxes Village for the Lantern Festival. His briefcase belonged to his grandma, Rosie Roundtail. Inside is her sketchbook. She walked the mountain long ago and drew every animal family she met: snow foxes, red foxes, wolves, bears and bunnies, all sharing one page. She also drew the very first star lantern. Howard wanted to show the book tonight, so the village could see the groups were once friends. He has been a bit grumpy and wary of strangers on the trip, and he is starting to feel sorry about it.",
+        "personality": "Gentle, fussy and a little proud. Polishes his spectacles when upset. Loves his grandma's memory dearly. Admits his mistakes when asked kindly.",
+        "initial_attitude_towards_investigator": "Relieved and hopeful. He is very glad someone has come to help.",
+        "stated_alibi": "I left my case on my seat under my scarf at quarter past three. Then I went to look at the lanterns in Sylvie's workshop. I came back at twenty to four and it was gone.",
+        "motive": null,
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_howard_book",
+            "text": "My grandma drew the very first star lantern. It's in her sketchbook!",
+            "hint_location_id": "square"
+          },
+          {
+            "id": "clue_howard_rufus",
+            "text": "On the train, I snapped at the fox porter. I said foxes are rough. Not kind of me.",
+            "about_character_id": "rufus"
+          },
+          {
+            "id": "clue_howard_wanda",
+            "text": "The wolf lady asked to see my sketchbook. I said no. I didn't trust her.",
+            "about_character_id": "wanda",
+            "requires": {
+              "kind": "leverage",
+              "clue_ids": [
+                "clue_wolf_pawprints"
+              ],
+              "rationale": "Howard feels ashamed of how he treated the wolf. He only owns up once the investigator brings up the wolf pawprints. A gentle, kind question about the wolf traveller could also coax it out."
+            }
+          },
+          {
+            "id": "clue_howard_workshop",
+            "text": "I was in Sylvie's shop till I went back to the train. She never came in.",
+            "about_character_id": "sylvie",
+            "hint_location_id": "workshop"
+          }
+        ],
+        "flavor_knowledge": [
+          "Grandma Rosie's sketchbook has a green cloth cover and pressed snowdrops between the pages.",
+          "The brown briefcase has a little gold clasp. It was Grandma Rosie's too.",
+          "Howard lives in a burrow cottage at the bottom of the mountain and grows carrots and parsnips.",
+          "He loves carrot cake and very milky cocoa.",
+          "His grey scarf was knitted by his grandma. He keeps it on even when he's warm.",
+          "He thinks the mountain train is the finest train in the world, with the best views of the snowy peaks."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "Earlier on the journey, the porter Rufus bumps Howard's briefcase. Howard snaps that foxes are rough with bags."
+          },
+          {
+            "sequence": 2,
+            "summary": "Earlier on the journey, the wolf Wanda asks to see his sketchbook. Howard says no, because he doesn't trust wolves."
+          },
+          {
+            "sequence": 3,
+            "summary": "At three o'clock on the platform, Howard tells Mabel and Sylvie that his grandma's sketchbook shows the first star lantern, drawn by a bunny. He says he will show it at tonight's festival. Sylvie asks him not to, but he says he will. Bruno, handing out honey biscuits, jokes about the gold clasp."
+          },
+          {
+            "sequence": 4,
+            "summary": "At quarter past three, he tucks his briefcase on his seat under his grey scarf and walks to Sylvie's lantern workshop."
+          },
+          {
+            "sequence": 5,
+            "summary": "From about twenty past three until nearly twenty to four, he looks at the lanterns in the empty workshop. Sylvie never comes in."
+          },
+          {
+            "sequence": 6,
+            "summary": "At twenty to four, he finds only his scarf on his seat. The case is gone. He calls out, and Mabel checks the station clock."
+          },
+          {
+            "sequence": 7,
+            "summary": "He wraps his scarf back on and waits on the platform, worried."
+          }
+        ],
+        "agendas": [],
+        "tells": [
+          {
+            "id": "tell_howard_paws",
+            "text": "He keeps patting his empty paws, as if his case were still there.",
+            "trigger": {
+              "kind": "always"
+            }
+          }
+        ]
+      },
+      {
+        "id": "mabel",
+        "first_name": "Mabel",
+        "last_name": "Thistledown",
+        "location_id": "station",
+        "sex": "female",
+        "appearance": "A plump grey-and-white bunny in a navy station master's coat and cap, with a silver whistle and a big brass pocket watch.",
+        "background": "Mabel has run Snowline Station for thirty winters. She rings the bell, keeps the big clock right and sorts all the village post. She is fair but a little set in her ways, and she grumbles that the red fox porter is always sneaking off. She was on the platform at three o'clock and heard everything Howard said.",
+        "personality": "Brisk, tidy and proud of her station. Loves rules and timetables. Grumbles, but tells the truth.",
+        "initial_attitude_towards_investigator": "Businesslike but helpful. She wants this sorted before the train leaves.",
+        "stated_alibi": "From half past three I was in my post room, opening every crate Rufus brought me.",
+        "motive": null,
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_mabel_crates",
+            "text": "Rufus brought six crates to my post room. I opened every one. Just letters!",
+            "about_character_id": "rufus",
+            "hint_location_id": "station",
+            "hint_sub_location_id": "post_room"
+          },
+          {
+            "id": "clue_mabel_sylvie",
+            "text": "Sylvie heard about Howard's sketchbook. She asked him not to show it tonight.",
+            "about_character_id": "sylvie"
+          },
+          {
+            "id": "clue_mabel_bruno",
+            "text": "Bruno saw Howard's gold clasp. He joked it would pay for his leaky roof.",
+            "about_character_id": "bruno"
+          }
+        ],
+        "flavor_knowledge": [
+          "The train must wait here until the snowplough clears the mountain pass.",
+          "Mabel has never once let the station clock run late.",
+          "She eats a dandelion sandwich at the same time every day.",
+          "She thinks snow foxes, wolves and red foxes should all mind their manners at her station.",
+          "The Lantern Festival happens every winter. The best lantern wins a gold ribbon.",
+          "She knits mittens for the lost-and-found chest in the square."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "At three o'clock on the platform, she hears Howard tell about his grandma's sketchbook and the first star lantern. She sees Sylvie ask him not to show it, and hears Bruno joke about the gold clasp fixing his roof."
+          },
+          {
+            "sequence": 2,
+            "summary": "At quarter past three, she rings the bell for the long stop while the snowplough works."
+          },
+          {
+            "sequence": 3,
+            "summary": "From half past three, she opens and ticks every one of the six post crates Rufus wheels into her post room. They hold only letters."
+          },
+          {
+            "sequence": 4,
+            "summary": "At twenty to four, she hears Howard call out and checks the station clock."
+          },
+          {
+            "sequence": 5,
+            "summary": "She stays on the platform with Howard and keeps the train waiting."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "implicate_other",
+            "strategy": "grumbles about the red fox porter",
+            "priority": "low",
+            "details": "Mabel thinks red foxes are sneaky and Rufus is always slipping off duty. She sniffs that the investigator should 'keep an eye on that fox'. But she is honest: if asked about the post crates, she says plainly that she opened all six and found only letters.",
+            "target_character_id": "rufus"
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_mabel_watch",
+            "text": "She sniffs and taps her brass pocket watch.",
+            "trigger": {
+              "kind": "condition",
+              "condition": "The investigator asks about Rufus the porter."
+            }
+          }
+        ]
+      },
+      {
+        "id": "tansy",
+        "first_name": "Tansy",
+        "last_name": "Snowberry",
+        "location_id": "square",
+        "sex": "female",
+        "appearance": "A small snow fox kit with fluffy white fur, pink mittens that are too big, a pencil behind one ear and a little sketchbook.",
+        "background": "Tansy wants to be an artist. She helps Sylvie cut lantern paper after school and thinks Sylvie is the cleverest fox in the world. This afternoon she sat on the station fence and drew everyone who got on and off the train. She is friendly to everyone, wolves and red foxes too.",
+        "personality": "Bright, chatty and honest. Notices little things. Gets teary if someone she loves is in trouble.",
+        "initial_attitude_towards_investigator": "Excited. She has never met a real detective and wants to show her drawings.",
+        "stated_alibi": "I sat on the station fence drawing the train from quarter past three till Howard shouted.",
+        "motive": null,
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_tansy_sketch",
+            "text": "I drew all who got off the train. No one had a brown case! Just Rufus's crates, Wanda's box, Bruno's cart and Sylvie's basket.",
+            "hint_location_id": "station",
+            "hint_sub_location_id": "station_fence"
+          }
+        ],
+        "flavor_knowledge": [
+          "Tansy's sketchbook is full of pawprints, pine cones and funny train drawings.",
+          "She thinks wolves have the best fluffy tails and wants to draw Wanda.",
+          "Her favourite lantern is a blue fish lantern Sylvie helped her make.",
+          "She is drawing the big Star Lantern for her school project.",
+          "She has never ridden the mountain train, but she dreams of it.",
+          "She loves Bruno's honey biscuits."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "At quarter past three, she sits on the station fence and starts drawing the train."
+          },
+          {
+            "sequence": 2,
+            "summary": "Until twenty to four, she draws everyone who gets off: Rufus with his trolley of crates, Wanda with a long box, Bruno with his cocoa cart, and Sylvie with her lantern basket. Nobody carries a brown case."
+          },
+          {
+            "sequence": 3,
+            "summary": "At twenty to four, she hears Howard call out and runs over to help."
+          },
+          {
+            "sequence": 4,
+            "summary": "Later, she goes to the square to draw the Star Lantern."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "protect_other",
+            "strategy": "defends her lantern teacher",
+            "priority": "medium",
+            "details": "Tansy adores Sylvie. She shares her drawing honestly, Sylvie and all, but she insists Sylvie is far too kind to take anything. She doesn't believe Sylvie's basket could hold anything bad and says it was 'just lanterns, I'm sure'. She never lies about what she drew.",
+            "target_character_id": "sylvie"
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_tansy_wobble",
+            "text": "Her lip wobbles and she hugs her sketchbook tight.",
+            "trigger": {
+              "kind": "condition",
+              "condition": "The investigator suggests Sylvie might be the one who took the case."
+            }
+          }
+        ]
+      },
+      {
+        "id": "rufus",
+        "first_name": "Rufus",
+        "last_name": "Rustbrush",
+        "location_id": "carriage",
+        "sex": "male",
+        "appearance": "A lanky young red fox with bright red fur, a navy porter's jacket with brass buttons and a peaked cap.",
+        "background": "Rufus is the porter on the mountain train. He works long, cold shifts and is often sleepy. Many snow foxes in the village eye red foxes with doubt, and Howard called him rough today, which stung. This afternoon he sneaked into the warm last carriage for a honey bun and a nap, which is against the rules. He's scared Mabel will report him.",
+        "personality": "Jumpy, a bit cheeky, kind underneath. Talks fast when nervous. Hates being judged for his red fur.",
+        "initial_attitude_towards_investigator": "Wary. He expects to be blamed because he's a red fox.",
+        "stated_alibi": "I was in the luggage car and the post room the whole time. I never went into the last carriage.",
+        "motive": "Howard was rude to him and said foxes are rough. He might want to pay Howard back.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_rufus_chest",
+            "text": "Near quarter to four, the lost-and-found chest in the square was open. Snow got in!",
+            "hint_location_id": "square",
+            "hint_sub_location_id": "lost_chest"
+          },
+          {
+            "id": "clue_rufus_bundle",
+            "text": "I saw Bruno carry a big brown bundle round to his back porch.",
+            "about_character_id": "bruno",
+            "hint_location_id": "teahouse",
+            "hint_sub_location_id": "back_porch"
+          }
+        ],
+        "flavor_knowledge": [
+          "Rufus has worked on the mountain train for two winters.",
+          "He knows every bump and tunnel on the line.",
+          "He loves honey buns from the bakery in the valley.",
+          "He wants to be a train driver one day.",
+          "His cap is a bit too big, so he stuffs a sock inside it.",
+          "He thinks Mabel is strict but fair."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "Earlier on the journey, he bumps Howard's case. Howard snaps that foxes are rough. Rufus feels hurt."
+          },
+          {
+            "sequence": 2,
+            "summary": "At about quarter past three, he sneaks into the warm last carriage and sits on the seat across the aisle from Howard's."
+          },
+          {
+            "sequence": 3,
+            "summary": "He eats a honey bun and dozes off, snoring."
+          },
+          {
+            "sequence": 4,
+            "summary": "At about twenty-five past three, he wakes and hurries to the luggage car. He loads six post crates onto his trolley."
+          },
+          {
+            "sequence": 5,
+            "summary": "At half past three, he wheels the crates into the post room. Mabel opens every one."
+          },
+          {
+            "sequence": 6,
+            "summary": "Just after twenty to four, he walks to the square with letters. Passing the tea house, he sees Bruno carry a big brown bundle round to the back porch."
+          },
+          {
+            "sequence": 7,
+            "summary": "At quarter to four in the square, he sees the lost-and-found chest open with snow getting in. He shuts it without looking inside."
+          },
+          {
+            "sequence": 8,
+            "summary": "He goes back to keep watch in the last carriage."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "hides his nap on duty",
+            "priority": "high",
+            "details": "Rufus is scared of getting in trouble for napping on duty, and scared of being blamed because he's a red fox. He sticks to his story that he never went in the last carriage. He gets flustered and talks fast when pushed.",
+            "parts": [
+              {
+                "clue_ids": [
+                  "clue_fox_hair"
+                ],
+                "shows": "A red fox sat on the seat across from Howard's, so Rufus was in the last carriage.",
+                "reaction": "Okay, okay! I sat there a bit to warm my paws. But I never touched his case!",
+                "concedes_steps": [
+                  2
+                ]
+              },
+              {
+                "clue_ids": [
+                  "clue_wanda_rufus"
+                ],
+                "shows": "Rufus was asleep on that seat with a honey bun.",
+                "reaction": "Fine, I fell asleep with my bun. Please don't tell Mabel! I woke up and went straight to the crates.",
+                "concedes_steps": [
+                  3
+                ]
+              }
+            ],
+            "confession": "I sneaked into the warm carriage, ate my honey bun and fell asleep. I woke up and rushed to load the crates. I never touched Howard's case. I was just scared you'd blame the fox.",
+            "hides_steps": [
+              2,
+              3
+            ]
+          },
+          {
+            "type": "conditional_reveal",
+            "strategy": "only shares what he saw once he feels treated fairly",
+            "priority": "medium",
+            "details": "Rufus thinks nobody believes a red fox, so he keeps quiet about seeing Bruno's bundle. He opens up if the investigator shows they judge by evidence, not by fur. For example, saying so out loud, or asking him kindly without accusing him.",
+            "gated_clue_id": "clue_rufus_bundle",
+            "condition": "trust_established"
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_rufus_yawn",
+            "text": "His ears go pink and he lets out a big, sleepy yawn by accident.",
+            "trigger": {
+              "kind": "clue",
+              "clue_ids": [
+                "clue_fox_hair"
+              ]
+            }
+          },
+          {
+            "id": "tell_rufus_cap",
+            "text": "He tugs his cap down over his eyes and goes very quiet.",
+            "trigger": {
+              "kind": "condition",
+              "condition": "Someone says foxes, or red foxes, can't be trusted."
+            }
+          }
+        ]
+      },
+      {
+        "id": "wanda",
+        "first_name": "Wanda",
+        "last_name": "Greycoat",
+        "location_id": "teahouse",
+        "sex": "female",
+        "appearance": "A tall grey wolf with a red woolly hat, a patched brown coat, bare grey paws, and wood shavings on her sleeves.",
+        "background": "Wanda carves little wooden sleds and is taking them to sell at the Lantern Festival. Her great-grandpa helped build the mountain railway long ago, and she hoped he might be in Howard's grandma's sketchbook. Howard said no when she asked to see it. People often whisper about wolves, so she is used to being blamed and tries to stay out of the way.",
+        "personality": "Quiet, careful and kind. Speaks softly. Warms up fast to anyone who treats her fairly.",
+        "initial_attitude_towards_investigator": "Shy and guarded. She expects to be suspected because she's a wolf.",
+        "stated_alibi": "I got my sled box from the front of the train and came to the tea house. I never went near that bunny's seat.",
+        "motive": "Howard wouldn't let her see the sketchbook, which might show her great-grandpa.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_wanda_rufus",
+            "text": "The fox porter was snoring on a seat in that carriage. Honey bun in paw!",
+            "about_character_id": "rufus",
+            "requires": {
+              "kind": "leverage",
+              "clue_ids": [
+                "clue_rack_tag",
+                "clue_fox_hair"
+              ],
+              "rationale": "Wanda won't admit she was in the last carriage until shown her own rack tag, and she won't tell on another traveller until she sees the fox hairs already point at him. A kind, clever explanation that the truth would help Rufus could also win her over."
+            }
+          }
+        ],
+        "flavor_knowledge": [
+          "Wanda carves her sleds from fallen pine branches. She never cuts living trees.",
+          "Each sled has a tiny pawprint carved under the seat.",
+          "She lives in a cabin high on the mountain with her two brothers.",
+          "Wolves don't need boots. Their paws are tough enough for snow.",
+          "Her great-grandpa laid the train tracks through the long tunnel.",
+          "She loves Bruno's cocoa with a spoon of honey."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "Earlier on the journey, she asks Howard to see his sketchbook. He says no."
+          },
+          {
+            "sequence": 2,
+            "summary": "At about twenty past three, she goes into the last carriage and takes her long sled box from the rack behind Howard's seat. Rufus is snoring on the seat across the aisle, holding a honey bun."
+          },
+          {
+            "sequence": 3,
+            "summary": "She leaves by the back steps, leaving pawprints in the snow."
+          },
+          {
+            "sequence": 4,
+            "summary": "She waits on the platform with her box."
+          },
+          {
+            "sequence": 5,
+            "summary": "Just after half past three, she buys cocoa from Bruno's cart. He opens the tiny cupboard to get her a cup."
+          },
+          {
+            "sequence": 6,
+            "summary": "At the tea house, she opens her long box to show Bruno her sleds. It is packed tight."
+          },
+          {
+            "sequence": 7,
+            "summary": "She stays by the tea house fire."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "minimizes being near Howard's seat",
+            "priority": "high",
+            "details": "Wanda fears that if anyone knows she was near Howard's seat, everyone will blame the wolf. She says she fetched her box from the front of the train. She speaks softly and looks away when pushed.",
+            "parts": [
+              {
+                "clue_ids": [
+                  "clue_rack_tag"
+                ],
+                "shows": "Wanda's sled box was on the rack just behind Howard's seat, so she went there to fetch it.",
+                "reaction": "Yes. My box was right behind his seat. I fetched it. I was scared you'd blame the wolf, so I fibbed.",
+                "concedes_steps": [
+                  2
+                ]
+              },
+              {
+                "clue_ids": [
+                  "clue_wolf_pawprints"
+                ],
+                "shows": "A wolf went down the back steps of the last carriage.",
+                "reaction": "I went out the back way. The front was busy, and folks stare at wolves.",
+                "concedes_steps": [
+                  3
+                ]
+              }
+            ],
+            "confession": "I fetched my sled box from behind Howard's seat and went out the back steps. His case was still under his scarf. I never touched it. I only wished I could see the book.",
+            "hides_steps": [
+              2,
+              3
+            ]
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_wanda_toes",
+            "text": "She curls her bare grey toes and stares at them.",
+            "trigger": {
+              "kind": "clue",
+              "clue_ids": [
+                "clue_wolf_pawprints"
+              ]
+            }
+          },
+          {
+            "id": "tell_wanda_relax",
+            "text": "Her shoulders drop and she gives a small, shy smile.",
+            "trigger": {
+              "kind": "condition",
+              "condition": "The investigator says they judge by evidence, not by what kind of animal someone is."
+            }
+          }
+        ]
+      },
+      {
+        "id": "bruno",
+        "first_name": "Bruno",
+        "last_name": "Honeypaw",
+        "location_id": "teahouse",
+        "sex": "male",
+        "appearance": "A big round brown bear in a striped blue apron, with a dusting of flour on his paws and a warm, rumbly laugh.",
+        "background": "Bruno runs the Honeypaw Tea House. Its roof leaks, and he's saving coins to fix it. Early today he baked a secret Friends Cake for the festival. It shows foxes, a wolf, a bear and a bunny holding paws, because he's sad the groups don't get along. He wants it to be a surprise, so he hides it from everyone.",
+        "personality": "Jolly, warm and a terrible secret-keeper. Makes jokes. Loves feeding people.",
+        "initial_attitude_towards_investigator": "Friendly and welcoming. He offers cocoa straight away.",
+        "stated_alibi": "I sold cocoa on the train, then came back to my tea house. I've been inside ever since.",
+        "motive": "He joked that Howard's gold clasp could pay for his leaky roof.",
+        "is_culprit": false,
+        "clues": [
+          {
+            "id": "clue_bruno_sledbox",
+            "text": "Wanda opened her long box in my tea house. Packed tight with little sleds. No room left!",
+            "about_character_id": "wanda"
+          }
+        ],
+        "flavor_knowledge": [
+          "Bruno's honey comes from his cousin's hives in the valley.",
+          "His roof drips on table three when the snow melts.",
+          "His best cocoa has a swirl of honey and a pinch of cinnamon.",
+          "He has run the tea house for ten years, just like his dad did.",
+          "He thinks everyone is nicer after a warm drink.",
+          "He sneezes when he gets flour on his nose."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "Early in the morning, he bakes a secret Friends Cake for the festival and wraps its box in brown paper."
+          },
+          {
+            "sequence": 2,
+            "summary": "At three o'clock on the platform, he hands out honey biscuits. He admires Howard's gold clasp and jokes it would pay for his leaky roof."
+          },
+          {
+            "sequence": 3,
+            "summary": "At twenty past three, he wheels his cocoa cart onto the train and sells cocoa through the carriages."
+          },
+          {
+            "sequence": 4,
+            "summary": "Just after half past three, he wheels the cart off the train. He sells Wanda a cocoa, opening the tiny cupboard for a cup."
+          },
+          {
+            "sequence": 5,
+            "summary": "Back at the tea house, Wanda opens her long box to show him her sleds. It is packed tight."
+          },
+          {
+            "sequence": 6,
+            "summary": "Just after twenty to four, he carries the brown-paper cake box round to the cold back porch to keep the icing firm."
+          },
+          {
+            "sequence": 7,
+            "summary": "He goes back inside and serves cocoa."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "keeps his surprise cake secret",
+            "priority": "medium",
+            "details": "Bruno doesn't want to spoil his surprise, so he says he hasn't been out since coming back. He laughs too loudly and changes the subject to cocoa when asked about the back of the tea house.",
+            "parts": [
+              {
+                "clue_ids": [
+                  "clue_rufus_bundle"
+                ],
+                "shows": "Bruno carried a big brown bundle round to his back porch.",
+                "reaction": "Ho ho, you caught me! I did carry something out back. But it's a surprise, please don't peek!",
+                "concedes_steps": [
+                  6
+                ]
+              },
+              {
+                "clue_ids": [
+                  "clue_friends_cake"
+                ],
+                "shows": "The bundle is a cake box, a Friends Cake for the festival.",
+                "reaction": "Oh, you found my Friends Cake! I baked it this morning, for everyone tonight.",
+                "concedes_steps": [
+                  1
+                ]
+              }
+            ],
+            "confession": "I baked a Friends Cake to share at the festival, so everyone might be friends. I hid it on the back porch to keep it cold and secret. I never saw Howard's case after three o'clock.",
+            "hides_steps": [
+              1,
+              6
+            ]
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_bruno_door",
+            "text": "He shuffles to stand in front of the back door, smiling far too wide.",
+            "trigger": {
+              "kind": "clue",
+              "clue_ids": [
+                "clue_rufus_bundle"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sylvie",
+        "first_name": "Sylvie",
+        "last_name": "Frostwhisker",
+        "location_id": "workshop",
+        "sex": "female",
+        "appearance": "A graceful snow fox with snowy white fur, a pale blue apron with glue spots, a silver star pin, and paper scraps in her tail.",
+        "background": "Sylvie is the village lantern maker. Her giant Star Lantern is in tonight's Lantern Prize, and she has told everyone it is an old snow fox design. Years ago she found an old torn page of the star lantern in the village library. It was signed by a bunny, Rosie Roundtail. She took it home, rubbed the name out, and keeps it under the plans on her drawing desk. When Howard said his grandma drew the first star lantern, Sylvie panicked. She didn't want to hurt anyone. She only wanted to keep the book hidden until after the prize, then let it be found.",
+        "personality": "Proud, artistic and quick. Polite on the outside, worried inside. Not cruel, just scared of losing face.",
+        "initial_attitude_towards_investigator": "Polite and a little too sweet. She is eager to point the investigator somewhere else.",
+        "stated_alibi": "I hung lanterns in the front carriages only. Then I carried my basket of spare paper straight back to my workshop.",
+        "motive": "The sketchbook shows a bunny drew the first star lantern, but her prize lantern says it's an old snow fox design.",
+        "is_culprit": true,
+        "clues": [
+          {
+            "id": "clue_sylvie_wolf",
+            "text": "I saw that wolf lady sneak out the back with a long box. Just saying!",
+            "about_character_id": "wanda",
+            "hint_location_id": "carriage"
+          }
+        ],
+        "flavor_knowledge": [
+          "Sylvie has made the village lanterns for twelve winters.",
+          "Her lanterns are made of paper, wire and a little glue.",
+          "She thinks snow fox art is the finest on the mountain.",
+          "She is teaching Tansy to fold paper stars.",
+          "The Lantern Prize winner gets a gold ribbon and lights the first lantern of the night.",
+          "She drinks mint tea, never cocoa."
+        ],
+        "actual_actions": [
+          {
+            "sequence": 1,
+            "summary": "At three o'clock on the platform, she hears Howard say his grandma's sketchbook shows the first star lantern, drawn by a bunny. She asks him not to show it tonight. He says he will."
+          },
+          {
+            "sequence": 2,
+            "summary": "At twenty past three, she boards the train with her lantern basket and hangs welcome lanterns in the front carriages."
+          },
+          {
+            "sequence": 3,
+            "summary": "At nearly half past three, she goes into the empty last carriage and hangs a paper star lantern above Howard's seat."
+          },
+          {
+            "sequence": 4,
+            "summary": "She sees the briefcase under Howard's scarf. She slips it into her basket under spare lantern paper and ties the lid."
+          },
+          {
+            "sequence": 5,
+            "summary": "At half past three, she steps off the train with the basket and walks to the village square, not her workshop."
+          },
+          {
+            "sequence": 6,
+            "summary": "In the square, she slides the briefcase into the lost-and-found chest under a heap of old mittens. She means for it to be found after the prize. She leaves the lid open a crack."
+          },
+          {
+            "sequence": 7,
+            "summary": "Just after twenty to four, she reaches her workshop, empties her basket, and fusses over lanterns, feeling worried."
+          }
+        ],
+        "agendas": [
+          {
+            "type": "self_protect",
+            "strategy": "maintains a false alibi about where she went",
+            "priority": "high",
+            "details": "Sylvie stays polite and sweet. She insists she only did the front carriages and went straight home with spare paper. She steers talk toward the wolf and away from her basket. When cornered she gives a small, tidy excuse and smooths her apron.",
+            "parts": [
+              {
+                "clue_ids": [
+                  "clue_lantern_hook"
+                ],
+                "shows": "Someone hung a fresh lantern right above Howard's seat, so the lantern maker was in the last carriage, not just the front ones.",
+                "reaction": "Oh, that one! I did pop into the last carriage to hang a lantern. I forgot. But I never touched his case.",
+                "concedes_steps": [
+                  3
+                ]
+              },
+              {
+                "clue_ids": [
+                  "clue_mabel_sylvie"
+                ],
+                "shows": "Sylvie did not want Howard to show his sketchbook tonight.",
+                "reaction": "Yes, I asked him not to show it. The prize is tonight, and I was worried. That's all.",
+                "concedes_steps": [
+                  1
+                ]
+              },
+              {
+                "clue_ids": [
+                  "clue_howard_workshop"
+                ],
+                "shows": "Sylvie did not go straight back to her workshop. She never came in while Howard waited there, right up until he went back to the train.",
+                "reaction": "Well, I took the long way round. I wanted to look at the snow."
+              }
+            ],
+            "confession": "It was me. I hid Howard's case in my basket and put it in the lost-and-found chest in the square. My star lantern really came from his grandma's drawing. I was scared everyone would say it wasn't a snow fox lantern. I'm so sorry. The sketchbook is safe.",
+            "hides_steps": [
+              1,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "type": "implicate_other",
+            "strategy": "points at the wolf",
+            "priority": "medium",
+            "details": "Sylvie nudges the investigator toward Wanda, saying she saw the wolf slip out the back with a long box. She hints that strangers from up the mountain can't be trusted. She never says anything truly cruel, just sly little hints.",
+            "target_character_id": "wanda"
+          }
+        ],
+        "tells": [
+          {
+            "id": "tell_sylvie_ears",
+            "text": "Her white ears flatten, and she smooths her apron again and again.",
+            "trigger": {
+              "kind": "clue",
+              "clue_ids": [
+                "clue_lantern_hook"
+              ]
+            }
+          },
+          {
+            "id": "tell_sylvie_window",
+            "text": "Her tail drops, and she glances out of the window toward the square.",
+            "trigger": {
+              "kind": "clue",
+              "clue_ids": [
+                "clue_case_found",
+                "clue_rufus_chest"
+              ]
+            }
+          },
+          {
+            "id": "tell_sylvie_basket",
+            "text": "She folds her arms tight and stares at the basket by the door.",
+            "trigger": {
+              "kind": "condition",
+              "condition": "The investigator says the other big things carried off the train were all checked, but her basket never was."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "cover_image": {
+    "description": "A steaming mountain train waits at a snowy little station in a sketchbook-style village of snow-capped cottages and glowing paper lanterns. An old bunny in a grey scarf looks at an empty train seat, while humanoid foxes, bears, wolves and bunnies peek from the platform and the tea house door. Pencil notes and pawprint doodles fill the page margins.",
+    "location_ids": [
+      "station",
+      "square"
+    ],
+    "character_ids": [
+      "howard",
+      "tansy",
+      "rufus",
+      "wanda",
+      "bruno",
+      "sylvie"
+    ]
+  },
+  "ground_truth": {
+    "what_happened": "While the mountain train waited at Snow Foxes Village for the snowplough, Howard Roundtail left his briefcase on his seat under his grey scarf and went to look at lanterns in Sylvie's workshop. Sylvie Frostwhisker, the snow fox lantern maker, was hanging welcome lanterns on the train. At nearly half past three she went into the empty last carriage, hung a star lantern above Howard's seat, and slipped the briefcase into her lantern basket under spare paper. She carried the basket off the train, walked to the village square, and hid the case at the bottom of the lost-and-found chest under old mittens, meaning it to be found after the prize. Tansy, drawing from the station fence, saw that nobody carried a brown case off the train. Only four people carried big things off: Rufus's crates, which Mabel opened; Wanda's sled box, which Bruno saw packed tight; Bruno's cocoa cart, whose cupboard is far too small; and Sylvie's basket, which nobody checked. The sketchbook is safe inside the case.",
+    "why_it_happened": "Howard's grandma's sketchbook shows that a bunny, Rosie Roundtail, drew the very first star lantern. Sylvie's Star Lantern, entered in tonight's Lantern Prize, is labelled an old snow fox design. Years ago she copied it from an old page signed by Rosie and rubbed the name out. Proud and scared that the village would say her lantern wasn't truly snow fox work, she hid the book until after the prize. She never meant to keep it or hurt it.",
+    "timeline": [
+      "Earlier on the journey, Howard snaps at porter Rufus for bumping his case, and refuses to show Wanda his sketchbook.",
+      "2:55 - The mountain train stops at Snow Foxes Village and must wait for the snowplough to clear the pass.",
+      "3:00 - On the platform, Howard tells Mabel and Sylvie his grandma drew the first star lantern and he'll show it tonight. Sylvie asks him not to. Bruno jokes the gold clasp would fix his roof.",
+      "3:15 - Mabel rings the bell. Howard leaves his case on his seat under his scarf and goes to Sylvie's empty workshop. Tansy starts drawing the train from the station fence.",
+      "3:15-3:25 - Rufus sneaks into the last carriage, eats a honey bun and naps across from Howard's seat. About 3:20 Wanda fetches her sled box from the rack behind Howard's seat, sees Rufus snoring, and leaves by the back steps.",
+      "3:20 - Sylvie boards with her lantern basket, and Bruno wheels his cocoa cart aboard.",
+      "3:28 - Sylvie hangs a star lantern above Howard's seat and slips the briefcase into her basket.",
+      "3:30 - Sylvie leaves the train with her basket and walks to the square. Rufus wheels six post crates to the post room, where Mabel opens every one.",
+      "3:33 - Bruno wheels his cart off. Wanda buys cocoa and sees the tiny cupboard holds only cups. At the tea house, Wanda opens her sled box for Bruno.",
+      "3:35 - In the square, Sylvie hides the case in the lost-and-found chest under mittens.",
+      "3:40 - Howard finds his case gone. Mabel checks the station clock: twenty to four.",
+      "3:42 - Sylvie reaches her workshop. Rufus sees Bruno carry his brown-paper cake box to the back porch.",
+      "3:45 - Rufus finds the lost-and-found chest open in the square and shuts it without looking inside."
+    ]
+  },
+  "solution_paths": [
+    {
+      "id": "sp_unchecked_basket",
+      "summary": "The case left the train hidden in something big. Three of the four big things were checked and held no case. Only Sylvie's basket is left.",
+      "description": "Tansy's drawing shows nobody carried a brown case off the train, so it must have been hidden inside something. Only four things big enough left the train: Rufus's crates, Wanda's long box, Bruno's cocoa cart and Sylvie's basket. Mabel opened every crate and found just letters. Bruno saw Wanda's box packed tight with sleds. The cocoa cart's cupboard is far too small. That leaves only Sylvie's basket. Each step is needed: without the drawing, the case could have been carried off openly, and without any one check, that suspect stays possible. The lantern above Howard's seat, her request that Howard not show the book, her missing time and the case found in the lost-and-found chest all back this up.",
+      "payoff": "Sylvie Frostwhisker hid Howard's briefcase in her lantern basket and tucked it in the lost-and-found chest. The sketchbook is safe.",
+      "location_clue_ids": [
+        "clue_fence_shavings",
+        "clue_post_crates",
+        "clue_cart_cupboard",
+        "clue_lantern_hook",
+        "clue_basket_deep",
+        "clue_prize_card",
+        "clue_desk_page",
+        "clue_case_found"
+      ],
+      "character_clue_ids": [
+        "clue_tansy_sketch",
+        "clue_mabel_crates",
+        "clue_bruno_sledbox",
+        "clue_howard_workshop",
+        "clue_mabel_sylvie",
+        "clue_howard_book",
+        "clue_rufus_chest"
+      ]
+    }
+  ],
+  "red_herrings": [
+    {
+      "id": "rh_the_wolf",
+      "summary": "Wolf pawprints lead down the back steps, Sylvie says the wolf sneaked out with a long box, and Howard refused to show Wanda his book.",
+      "description": "Wanda looks guilty: her pawprints lead down the back steps, Sylvie points at her, and Howard was unkind to her. But the rack tag shows she was only fetching her own sled box from behind Howard's seat. Bruno saw that box packed tight with sleds, so there was no room for a briefcase.",
+      "payoff": "The wolf trail is disproved: the pawprints and the long box belong to Wanda fetching her own sleds, and her box had no room for the case.",
+      "location_clue_ids": [
+        "clue_wolf_pawprints",
+        "clue_rack_tag"
+      ],
+      "character_clue_ids": [
+        "clue_sylvie_wolf",
+        "clue_howard_wanda",
+        "clue_bruno_sledbox"
+      ]
+    },
+    {
+      "id": "rh_the_porter",
+      "summary": "Howard was rude to the red fox porter, and red fox hairs sit on the seat right across from Howard's.",
+      "description": "Rufus has a grudge, and his fur shows he sat across from Howard's seat even though he says he never went in. But Wanda saw him snoring there with a honey bun, so he was only napping on duty. Mabel opened every one of his crates and found just letters.",
+      "payoff": "The porter trail is disproved: Rufus was only sneaking a nap, and his crates held only letters.",
+      "location_clue_ids": [
+        "clue_fox_hair",
+        "clue_post_crates"
+      ],
+      "character_clue_ids": [
+        "clue_howard_rufus",
+        "clue_wanda_rufus",
+        "clue_mabel_crates"
+      ]
+    }
+  ],
+  "suspect_elimination_paths": [
+    {
+      "id": "elim_rufus",
+      "summary": "Rufus was napping, not stealing, and his crates held only letters.",
+      "description": "Wanda saw Rufus snoring with a honey bun, which explains the fox hairs and his fib. Mabel opened all six of his post crates herself and ticked each lid, and the post room shows the open crates full of letters. With nobody carrying a brown case off the train, his trolley was his only way to move it, and it is clear.",
+      "payoff": "Rufus Rustbrush is cleared: his crates held only letters, and he was just napping in the carriage.",
+      "location_clue_ids": [
+        "clue_post_crates"
+      ],
+      "character_clue_ids": [
+        "clue_mabel_crates",
+        "clue_wanda_rufus"
+      ]
+    },
+    {
+      "id": "elim_wanda",
+      "summary": "Wanda only fetched her own sled box, and that box was packed tight with sleds.",
+      "description": "The rack tag shows Wanda's box sat right behind Howard's seat, so she had a real reason to be there. Bruno watched her open the box in the tea house, packed tight with sleds, with no room for a briefcase.",
+      "payoff": "Wanda Greycoat is cleared: she was fetching her own sleds, and her box had no room for the case.",
+      "location_clue_ids": [
+        "clue_rack_tag"
+      ],
+      "character_clue_ids": [
+        "clue_bruno_sledbox"
+      ]
+    },
+    {
+      "id": "elim_bruno",
+      "summary": "Bruno's cart cupboard is far too small, and his secret bundle is a Friends Cake.",
+      "description": "Mabel heard Bruno joke about the gold clasp, and Rufus saw him carry a brown bundle out back, which looks bad. But the cocoa cart's only cupboard is tiny and full of cups, and the bundle on the back porch turns out to be a cake for the festival.",
+      "payoff": "Bruno Honeypaw is cleared: his cart could never hold the case, and his secret bundle is a Friends Cake.",
+      "location_clue_ids": [
+        "clue_cart_cupboard",
+        "clue_friends_cake"
+      ],
+      "character_clue_ids": [
+        "clue_mabel_bruno",
+        "clue_rufus_bundle"
+      ]
+    }
+  ]
+}

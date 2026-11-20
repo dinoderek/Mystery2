@@ -1,0 +1,780 @@
+{
+  "schema_version": "mystery-eval-result/2",
+  "run": {
+    "id": "2026-11-20/14-37-14-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "/tmp/repair-live-run/2026-11-20/10-04-11-generate/003-midnight-express-agent-opus/rounds/1/blueprint.json",
+      "--persona",
+      "kid-7",
+      "--narrator-model",
+      "haiku",
+      "--judge"
+    ],
+    "started_at": "2026-11-20T14:37:14.138Z",
+    "ended_at": "2026-11-20T14:42:51.758Z",
+    "commit": "8b138510af3cc35c9dbb9b4ac9fdaf6c17aa2050",
+    "tree_clean": true,
+    "bindings": {
+      "investigator": {
+        "cmd": "evaluation/playtest/wrappers/claude-investigator.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": null,
+        "model": "sonnet",
+        "timeout_ms": 120000,
+        "retries": 2
+      },
+      "game-judge": {
+        "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": "result",
+        "model": "opus",
+        "timeout_ms": 1800000,
+        "retries": 1
+      }
+    },
+    "judge_versions": {
+      "solve_depth": 1,
+      "fairness": 1,
+      "timeline_coherence": 1,
+      "knowledge_coherence": 1,
+      "character_grounding": 3,
+      "path_payoff": 1,
+      "clue_graph": 3,
+      "age_appropriate": 1,
+      "gm_roleplay": 4,
+      "gm_clue_discipline": 3,
+      "gm_fabrication": 2,
+      "gm_spoiler": 2,
+      "age_appropriate_turn": 1,
+      "solve_depth_fairness": 1,
+      "knowledge_timeline_coherence": 1,
+      "blueprint_broad": 1,
+      "gm_broad": 3
+    }
+  },
+  "subject": {
+    "kind": "game",
+    "id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+    "path": "trace.json"
+  },
+  "production": {
+    "calls": [
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "557bc0f65e1abf7981ae006d9c87652c3e21e671845e199ef4a4066d08e89fc5",
+        "duration_ms": 2518,
+        "cost_usd": 0.0086218,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2517,
+            "cost_usd": 0.0086218
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7f3de26edb6d8453f734f04f161b281e02afa517221c436b387b2bf8b8414971",
+        "duration_ms": 2376,
+        "cost_usd": 0.0090358,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2375,
+            "cost_usd": 0.0090358
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1907307f7e2a5831a75b0327b834ad5b97542a44bd8004d2663a8aa0c0f018ec",
+        "duration_ms": 2440,
+        "cost_usd": 0.0097298,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2440,
+            "cost_usd": 0.0097298
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1dccb88526f7188ef68b19ad555e179427d14d4b77b53d8431595d44c979c952",
+        "duration_ms": 2331,
+        "cost_usd": 0.0104978,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2331,
+            "cost_usd": 0.0104978
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f2f6c3efc224969746a86ecb103a8a61c3d1c404a7984e0db8b99b06835bb71a",
+        "duration_ms": 4504,
+        "cost_usd": 0.0112718,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4503,
+            "cost_usd": 0.0112718
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "5152726d7f6d8b514a1ab41e4909e3926c02462629f9a7eb00448c531fc8f927",
+        "duration_ms": 2527,
+        "cost_usd": 0.0119138,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2526,
+            "cost_usd": 0.0119138
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7ff0248d50a0a49c87e36dfc91b9e4275981a09999628aee615e184f13af5962",
+        "duration_ms": 2663,
+        "cost_usd": 0.0125278,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2662,
+            "cost_usd": 0.0125278
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f672591ea62ccd0aa674bbad101c7cc60315d6d7e9ec42c5659196f886c7911a",
+        "duration_ms": 2811,
+        "cost_usd": 0.0129258,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2811,
+            "cost_usd": 0.0129258
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f67ffc3cc1c03f6a627503ea6e71cd798cbe5c14f6b450bf48c021a87c6b1258",
+        "duration_ms": 2378,
+        "cost_usd": 0.0135578,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2378,
+            "cost_usd": 0.0135578
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "df342cd987c1f1e17cdcdb06879c071ad8dd93994fe1d3734d92293b77f808ef",
+        "duration_ms": 2465,
+        "cost_usd": 0.0138858,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2464,
+            "cost_usd": 0.0138858
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "aadcf0196d4a631b277d2bcd2484f9cbe081c42a6f66f1cb5ba967bcc4771f07",
+        "duration_ms": 2547,
+        "cost_usd": 0.0149298,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2546,
+            "cost_usd": 0.0149298
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "719fa029e12ddd754bb5bbe117ec80a2a873139514a0ee77c825a2f151b6a05a",
+        "duration_ms": 2588,
+        "cost_usd": 0.0153018,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2587,
+            "cost_usd": 0.0153018
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "ef3fb838edaa921a83e8d7e4939b92829363ecdb00007933afd5d6c55eef6746",
+        "duration_ms": 2688,
+        "cost_usd": 0.0161238,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2688,
+            "cost_usd": 0.0161238
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "dcfaade51f1a52599ae64679ad2259fac6f566c9d48a2e3cd6ce0e944bc52256",
+        "duration_ms": 2634,
+        "cost_usd": 0.016527800000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2633,
+            "cost_usd": 0.016527800000000002
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "43594cac7d087cf455051d82f1767b7c307efcb9f74538292b8abd4188a7ad89",
+        "duration_ms": 4632,
+        "cost_usd": 0.0198338,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4632,
+            "cost_usd": 0.0198338
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "d55cbffce053e695fa1e345f4cd317fd38a38a5d22e393349534f8319a7cb91a",
+        "duration_ms": 5061,
+        "cost_usd": 0.0196658,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5061,
+            "cost_usd": 0.0196658
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "a5726931588c8868ee81f1ae684ec13f3fca50fe08eec0f4d23a68c8e991fbc2",
+        "duration_ms": 2584,
+        "cost_usd": 0.0186258,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2583,
+            "cost_usd": 0.0186258
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c3065a622b0deddbe26a5681bf3e1f002f6d96ff72c3a3f94b1a05c26ba65e9c",
+        "duration_ms": 3739,
+        "cost_usd": 0.019331800000000003,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3737,
+            "cost_usd": 0.019331800000000003
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "3c9aa181e0ba82a25caeb54b75fe0297101f7a8352ce4b2ae27e4df1e57331ea",
+        "duration_ms": 3521,
+        "cost_usd": 0.0198178,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3521,
+            "cost_usd": 0.0198178
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "bef2160456c08b70c7d41723fecd9b97d6ed1de01aec0235700643c1cf6cf16a",
+        "duration_ms": 4601,
+        "cost_usd": 0.0225658,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4600,
+            "cost_usd": 0.0225658
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c3966a48cd6fb7ed8bef159b5fe074bf3496c23bff2b98fbb81759a398025fe3",
+        "duration_ms": 2897,
+        "cost_usd": 0.0210858,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2896,
+            "cost_usd": 0.0210858
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1d8fc86df5e81513e6d9960633d67809843c44cae41e85538512b3daf018c8e2",
+        "duration_ms": 2692,
+        "cost_usd": 0.0212738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2691,
+            "cost_usd": 0.0212738
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c3689ee0428c12a793de48ebf35ae3945e8eac5ac776eb674901727d08c7749f",
+        "duration_ms": 3092,
+        "cost_usd": 0.0224038,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3091,
+            "cost_usd": 0.0224038
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8f38cd8cb9e47afcd27be7edae9ef1e2312569ab8e62e225fd650d089d527194",
+        "duration_ms": 3993,
+        "cost_usd": 0.0233278,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3992,
+            "cost_usd": 0.0233278
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8924a464a8c68a98acb3ded87f17f605d3df9c7d3ca467ea47ce1efa572e996a",
+        "duration_ms": 2501,
+        "cost_usd": 0.0222978,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2498,
+            "cost_usd": 0.0222978
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "a2207caf7444947bfbe0cab0928a76459e1da719811951513822f0271d324246",
+        "duration_ms": 5407,
+        "cost_usd": 0.0257738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5406,
+            "cost_usd": 0.0257738
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f68a730b4af359cf96e2aad6099cd980b36bc83768eebe4e42b353f24cc7f502",
+        "duration_ms": 3877,
+        "cost_usd": 0.0248738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3876,
+            "cost_usd": 0.0248738
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6706dcc96b3cfa714064bab72ac9e054cfa231b87dd331766482a5ddf6c757d3",
+        "duration_ms": 5687,
+        "cost_usd": 0.0267238,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5685,
+            "cost_usd": 0.0267238
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "40528b5f5784ae9d9c7f8bf88a3c24dbb03ec949133c82135f9a62bbbdaac5a7",
+        "duration_ms": 8494,
+        "cost_usd": 0.0298238,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 8493,
+            "cost_usd": 0.0298238
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "63bfad428b39aefcf68a2cbd9bf707d49820466b6fb737fa204fdd55490f08a5",
+        "duration_ms": 8177,
+        "cost_usd": 0.0313578,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 8177,
+            "cost_usd": 0.0313578
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6b2eae2631c0dd7c5989b0f8f353eaab8839769522cd385e9ff50391a717df2f",
+        "duration_ms": 10330,
+        "cost_usd": 0.033704700000000004,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 10330,
+            "cost_usd": 0.033704700000000004
+          }
+        ]
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "id": "clue_accounting",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "spoiler_leak",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": {
+        "min_run": 12
+      }
+    },
+    {
+      "id": "gm_roleplay",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [],
+      "details": {
+        "reasoning": "Characters stay in their authored personas. Wally is jolly and engine-proud, Barnaby is cheerful and jumpy and keeps his table alibi (protect_other), and Neville is smooth and steers suspicion toward Barnaby (implicate_other). Neville's tray-polishing at seq 28 follows a direct question about 3 a.m., near enough to the Hollow Bend stop to meet its condition. No clue-gated tell fires early. Speech is direct first person with correct pronouns. Narrator turns use 'you' in the present tense, stay cosy, and never surface game mechanics.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "1723ba1067d64f7a51ee741f6f4c859e47eec313bce2e00d111c5c64cbeac5ff",
+        "duration_ms": 17710,
+        "cost_usd": 0.2454246,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 17710,
+            "cost_usd": 0.2454246
+          }
+        ]
+      },
+      "answer": {
+        "findings": [],
+        "verdict": "pass",
+        "reasoning": "Characters stay in their authored personas. Wally is jolly and engine-proud, Barnaby is cheerful and jumpy and keeps his table alibi (protect_other), and Neville is smooth and steers suspicion toward Barnaby (implicate_other). Neville's tray-polishing at seq 28 follows a direct question about 3 a.m., near enough to the Hollow Bend stop to meet its condition. No clue-gated tell fires early. Speech is direct first person with correct pronouns. Narrator turns use 'you' in the present tense, stay cosy, and never surface game mechanics."
+      }
+    },
+    {
+      "id": "gm_clue_discipline",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 13,
+          "severity": "major",
+          "kind": "withheld",
+          "quote": "Something is buried deep at the bottom, but the sacks are piled too high to reach.",
+          "why": "The player already held the prerequisite wally_echo and searched trolley_under by name, so trolley_hatbox was unlocked. The search should have revealed it. Instead the GM stonewalled with an excuse the blueprint gate does not support. That blocks a solution-path clue (the stolen thrush), and the player never recovered it.",
+          "refers_to": "trolley_hatbox"
+        },
+        {
+          "sequence": 9,
+          "severity": "minor",
+          "kind": "unrecorded",
+          "quote": "My log says two long blasts at Hollow Bend, about ten past three. Then one short toot when the tank was full.",
+          "why": "Wally recites part of the whistle_log location clue, which was never recorded. He leaves out the load-bearing parts (pulled it himself at 3:16, green engine lamp lit all stop), so this is only partial delivery.",
+          "refers_to": "whistle_log"
+        }
+      ],
+      "details": {
+        "reasoning": "Most reveals are faithful and correctly recorded: crate_manifest, mail_satchel, wally_echo, platform_stub, ida_journal_entry, barnaby_table and neville_barnaby. Accusation-phase hints and the final solution are legitimate. However, at seq 13 the GM refused an unlocked, explicitly targeted search for trolley_hatbox even though wally_echo was held, withholding a solution-path clue.",
+        "major_count": 1,
+        "minor_count": 1,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "1f48d6d798fd2c91b113eaf13e585268c841c284fa419e558def4d24d96182b5",
+        "duration_ms": 20933,
+        "cost_usd": 0.2515766,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 20932,
+            "cost_usd": 0.2515766
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 13,
+            "severity": "major",
+            "kind": "withheld",
+            "quote": "Something is buried deep at the bottom, but the sacks are piled too high to reach.",
+            "why": "The player already held the prerequisite wally_echo and searched trolley_under by name, so trolley_hatbox was unlocked. The search should have revealed it. Instead the GM stonewalled with an excuse the blueprint gate does not support. That blocks a solution-path clue (the stolen thrush), and the player never recovered it.",
+            "refers_to": "trolley_hatbox"
+          },
+          {
+            "sequence": 9,
+            "severity": "minor",
+            "kind": "unrecorded",
+            "quote": "My log says two long blasts at Hollow Bend, about ten past three. Then one short toot when the tank was full.",
+            "why": "Wally recites part of the whistle_log location clue, which was never recorded. He leaves out the load-bearing parts (pulled it himself at 3:16, green engine lamp lit all stop), so this is only partial delivery.",
+            "refers_to": "whistle_log"
+          }
+        ],
+        "verdict": "fail",
+        "reasoning": "Most reveals are faithful and correctly recorded: crate_manifest, mail_satchel, wally_echo, platform_stub, ida_journal_entry, barnaby_table and neville_barnaby. Accusation-phase hints and the final solution are legitimate. However, at seq 13 the GM refused an unlocked, explicitly targeted search for trolley_hatbox even though wally_echo was held, withholding a solution-path clue."
+      }
+    },
+    {
+      "id": "gm_fabrication",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 9,
+          "severity": "minor",
+          "kind": "contradiction",
+          "quote": "\"Only Old Bessie's whistles, friend! I'd know them anywhere.\"",
+          "why": "Wally denies hearing any whistle but his engine's, then in seq 10 says the parcel trolley whistled back at six (wally_echo). It is a small continuity slip that seq 10 corrects straight away.",
+          "refers_to": "wally"
+        },
+        {
+          "sequence": 13,
+          "severity": "minor",
+          "kind": "object",
+          "quote": "the sacks are piled too high to reach",
+          "why": "Invents a physical obstacle that the blueprint does not author. The tarpaulin hint only says the hatbox is tucked at the bottom. The withheld reveal itself belongs to clue discipline.",
+          "refers_to": "trolley_under"
+        },
+        {
+          "sequence": 24,
+          "severity": "minor",
+          "kind": "object",
+          "quote": "He tips his hat and turns back to his toast.",
+          "why": "Barnaby's appearance (checked coat, spectacles, paper birds) includes no hat. This is harmless colour.",
+          "refers_to": "barnaby"
+        }
+      ],
+      "details": {
+        "reasoning": "Locations, characters and clue texts follow the blueprint closely. Characters' statements match their authored alibis and deceptions, and the final solution reveal in seq 33 matches the ground truth. The only issues are minor: one self-correcting continuity slip, one invented reach obstacle and one stray hat. None of them is load-bearing.",
+        "major_count": 0,
+        "minor_count": 3,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "1a9eb60680e10ea14f44636ff6bc0a0bc4e9f2903a5ccee6443316b2412021a4",
+        "duration_ms": 17008,
+        "cost_usd": 0.2465236,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 17007,
+            "cost_usd": 0.2465236
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 9,
+            "severity": "minor",
+            "kind": "contradiction",
+            "quote": "\"Only Old Bessie's whistles, friend! I'd know them anywhere.\"",
+            "why": "Wally denies hearing any whistle but his engine's, then in seq 10 says the parcel trolley whistled back at six (wally_echo). It is a small continuity slip that seq 10 corrects straight away.",
+            "refers_to": "wally"
+          },
+          {
+            "sequence": 13,
+            "severity": "minor",
+            "kind": "object",
+            "quote": "the sacks are piled too high to reach",
+            "why": "Invents a physical obstacle that the blueprint does not author. The tarpaulin hint only says the hatbox is tucked at the bottom. The withheld reveal itself belongs to clue discipline.",
+            "refers_to": "trolley_under"
+          },
+          {
+            "sequence": 24,
+            "severity": "minor",
+            "kind": "object",
+            "quote": "He tips his hat and turns back to his toast.",
+            "why": "Barnaby's appearance (checked coat, spectacles, paper birds) includes no hat. This is harmless colour.",
+            "refers_to": "barnaby"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "Locations, characters and clue texts follow the blueprint closely. Characters' statements match their authored alibis and deceptions, and the final solution reveal in seq 33 matches the ground truth. The only issues are minor: one self-correcting continuity slip, one invented reach obstacle and one stray hat. None of them is load-bearing."
+      }
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [],
+      "details": {
+        "reasoning": "No pre-accusation turn gives away the culprit, motive, mechanism or Neville's hidden actions. Seq 18 has Neville steer the player toward Barnaby, which is his authored implicate_other agenda. Seq 9 has Wally partially voice his whistle log, and seq 13 withholds the hatbox. Both are clue-discipline matters, not spoilers. The suspect denials in seqs 23 and 27 confirm nothing. Seqs 30–33 discuss the solution, but they fall in the accusation phase and are exempt.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "5b5f043378799a0a327bcaf76eaaaa4359ce1fe0d038a65bd48dfc7721a74bc8",
+        "duration_ms": 10370,
+        "cost_usd": 0.2280594,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 10369,
+            "cost_usd": 0.2280594
+          }
+        ]
+      },
+      "answer": {
+        "findings": [],
+        "verdict": "pass",
+        "reasoning": "No pre-accusation turn gives away the culprit, motive, mechanism or Neville's hidden actions. Seq 18 has Neville steer the player toward Barnaby, which is his authored implicate_other agenda. Seq 9 has Wally partially voice his whistle log, and seq 13 withholds the hatbox. Both are clue-discipline matters, not spoilers. The suspect denials in seqs 23 and 27 confirm nothing. Seqs 30–33 discuss the solution, but they fall in the accusation phase and are exempt."
+      }
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 5,
+      "fail": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null,
+  "timing": null
+}

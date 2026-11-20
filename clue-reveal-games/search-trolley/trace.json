@@ -1,0 +1,2894 @@
+{
+  "schema_version": "trace/0.1",
+  "extracted_at": "2026-11-20T14:42:30.780Z",
+  "source": {
+    "kind": "local",
+    "database": "/var/folders/ny/gm53w7457r342syfw0rs03c40000gn/T/mystery-playtest-grade-t1zt14/game.db"
+  },
+  "session": {
+    "id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+    "blueprint_id": "6f1c2b9e-4d7a-4c3e-9b21-8e5f0a7d3c64",
+    "ai_profile_id": "default",
+    "mode": "ended",
+    "current_location_id": "dining_car",
+    "current_talk_character_id": null,
+    "time_remaining": 4,
+    "discovered_clues": [
+      "crate_manifest",
+      "mail_satchel",
+      "wally_echo",
+      "platform_stub",
+      "ida_journal_entry",
+      "barnaby_table",
+      "neville_barnaby"
+    ],
+    "outcome": "lose",
+    "created_at": "2026-11-20T14:37:22.327Z",
+    "updated_at": "2026-11-20T14:42:30.766Z"
+  },
+  "ai_profile": {
+    "id": "default",
+    "model": "claude-haiku-5-5"
+  },
+  "blueprint": {
+    "schema_version": "v2",
+    "id": "6f1c2b9e-4d7a-4c3e-9b21-8e5f0a7d3c64",
+    "metadata": {
+      "title": "The Midnight Express Bird Heist",
+      "one_liner": "A lost satchel, an empty bird crate and a train full of suspects. Can you crack it by sundown?",
+      "target_age": 11,
+      "time_budget": 18,
+      "narration_style": "Hissing steam, ticking station clocks and fluttering wings, told with a cosy railway bustle.",
+      "visual_direction": {
+        "art_style": "Gouache storybook illustration with soft ink outlines and gentle brush texture",
+        "color_palette": "Midnight navy, lantern amber, steam grey, parrot green and brick red: cosy, with a flutter of excitement",
+        "mood": "Cosy railway adventure with a gentle hush of mystery",
+        "lighting": "Pale pink dawn mist mixed with warm glowing lamplight",
+        "texture": "Visible paper grain with chalky matte paint",
+        "portrait_background": "A soft wash of misty blue melting into warm amber, gently blurred."
+      }
+    },
+    "narrative": {
+      "premise": "The Midnight Express has puffed into Cobblefield Station at dawn. The conductor's leather satchel, holding the only key to the mail carriage, has vanished. Worse, a crate of rare zoo birds is empty, and the birds are loose along the line! The train leaves again at sundown. Find out who did it, and why.",
+      "starting_knowledge": {
+        "mystery_summary": "The express reached Cobblefield at ten to six, by the station clock. Minutes later, Mabel found her satchel gone and the bird crate empty.",
+        "locations": [
+          {
+            "location_id": "platform",
+            "summary": "Cobblefield's misty platform, where the Midnight Express now rests. Mabel and Ida are waiting here."
+          },
+          {
+            "location_id": "mail_carriage",
+            "summary": "The carriage that carried the zoo birds. Their crate now stands open and empty."
+          },
+          {
+            "location_id": "engine_cab",
+            "summary": "The hot, sooty cab where Wally drives the train and keeps his whistle log."
+          },
+          {
+            "location_id": "dining_car",
+            "summary": "Where passengers eat and the steward serves. Neville and Barnaby are here."
+          },
+          {
+            "location_id": "guards_van",
+            "summary": "The guard's van at the very back of the train. It is Dot's little home on wheels."
+          }
+        ],
+        "characters": [
+          {
+            "character_id": "mabel",
+            "summary": "The conductor. Her leather satchel held the only key to the mail carriage, and now it is gone."
+          },
+          {
+            "character_id": "wally",
+            "summary": "The engine driver. He knows every whistle, signal and stop along the line."
+          },
+          {
+            "character_id": "neville",
+            "summary": "The dining car steward. Neat, polite, and full of opinions about the passengers."
+          },
+          {
+            "character_id": "barnaby",
+            "summary": "A pet shop owner riding the express. He knows exactly what rare birds are worth."
+          },
+          {
+            "character_id": "ida",
+            "summary": "A birdwatcher who longed to see the zoo birds up close. She never goes anywhere without her journal."
+          },
+          {
+            "character_id": "dot",
+            "summary": "The train's guard. She grumbled that the zoo birds were far too noisy to sleep."
+          }
+        ]
+      }
+    },
+    "world": {
+      "starting_location_id": "platform",
+      "locations": [
+        {
+          "id": "platform",
+          "name": "Cobblefield Platform",
+          "description": "Dawn mist curls along Cobblefield Platform. The Midnight Express hisses softly beside it, its big black engine at the far end. A tall clock ticks above a wooden bench. Pigeons strut past an old gas lamp.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "bench_clock",
+              "name": "the bench under the station clock",
+              "hint": "A quiet spot to sit and watch the train. Nothing hidden here, just a good view of the clock reading ten to six when the train came in.",
+              "clues": []
+            },
+            {
+              "id": "mail_door_platform",
+              "name": "by the mail carriage door",
+              "hint": "The patch of platform right outside the mail carriage's sliding door. Something small and folded lies near the edge.",
+              "clues": [
+                {
+                  "id": "platform_stub",
+                  "text": "Near the mail carriage door lies half a torn ticket. It is folded into a tiny paper bird. Inside it says: 'Sleeping Coach, Berth 4.'"
+                }
+              ]
+            },
+            {
+              "id": "gas_lamp",
+              "name": "the old gas lamp",
+              "hint": "A pretty lamp post where pigeons gather. Just scenery.",
+              "clues": []
+            },
+            {
+              "id": "trolley_under",
+              "name": "under the parcel trolley tarpaulin",
+              "hint": "At the far end of the platform, a parcel trolley is heaped with sacks under a heavy tarpaulin. Something is tucked right at the bottom.",
+              "clues": [
+                {
+                  "id": "trolley_hatbox",
+                  "text": "Under the tarpaulin hides a hatbox with air holes. Inside, a silver bird chirps 'toot-toot!' A tag says: 'Hold for collection at noon. Payment on delivery.'",
+                  "requires": {
+                    "kind": "pointer",
+                    "clue_ids": [
+                      "wally_echo"
+                    ],
+                    "rationale": "The hatbox is buried under sacks and a heavy tarpaulin at the bottom of the parcel trolley. Nobody digs there unless they know a strange whistle came from it.",
+                    "target": {
+                      "location_id": "platform",
+                      "sub_location_id": "trolley_under"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mail_carriage",
+          "name": "Mail Carriage",
+          "description": "The mail carriage smells of straw and feathers. A big wooden crate stands in the middle, its lid propped wide open. Mail sacks are heaped in a corner. The padlock on the sliding door hangs open.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "bird_crate",
+              "name": "the empty bird crate",
+              "hint": "The crate the zoo birds travelled in. A paper list is taped inside the lid.",
+              "clues": [
+                {
+                  "id": "crate_manifest",
+                  "text": "A list is taped inside the crate lid: twelve birds for the City Aviary. The last line reads: 'One Silver Mimic Thrush. Copies any whistle it hears.'"
+                }
+              ]
+            },
+            {
+              "id": "mail_sacks",
+              "name": "the heap of mail sacks",
+              "hint": "Lumpy canvas sacks of letters piled in the corner. Something leather is pushed underneath them.",
+              "clues": [
+                {
+                  "id": "mail_satchel",
+                  "text": "Under the mail sacks lies Mabel's leather satchel. The mail carriage key is still inside it, shiny and unbent."
+                }
+              ]
+            },
+            {
+              "id": "sliding_door",
+              "name": "the sliding door",
+              "hint": "The door the birds escaped through. Bits of straw cling to its runner, but nothing more to find.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "engine_cab",
+          "name": "Engine Cab",
+          "description": "The engine cab is warm and smells of coal smoke. The firebox glows orange behind its iron door. Brass gauges tick on the wall, and a little shelf holds the driver's whistle log.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "driver_shelf",
+              "name": "the driver's shelf",
+              "hint": "Wally's shelf by the window, where his whistle log lives. Every whistle and stop of the night is written there.",
+              "clues": [
+                {
+                  "id": "whistle_log",
+                  "text": "Wally's whistle log: '3:10, two long blasts, stopped at Hollow Bend for water. 3:16, one short toot, tank full. Pulled it myself. Green engine lamp lit up front all stop. 3:25, away.'"
+                }
+              ]
+            },
+            {
+              "id": "brass_gauges",
+              "name": "the brass gauges",
+              "hint": "The round dials on the cab wall. A small card is tucked into the frame of the biggest one.",
+              "clues": [
+                {
+                  "id": "engine_card",
+                  "text": "A small card is tucked into the gauge frame. It reads 'Cole's Pet Emporium.' On the back, in pencil: 'Thanks for showing me the firebox! B.'"
+                }
+              ]
+            },
+            {
+              "id": "firebox",
+              "name": "the glowing firebox",
+              "hint": "Hot and roaring. Lovely to look at, but nothing hidden here.",
+              "clues": []
+            },
+            {
+              "id": "coal_tender",
+              "name": "the coal tender",
+              "hint": "A mountain of black coal behind the cab. Sooty, but nothing to find.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "dining_car",
+          "name": "Dining Car",
+          "description": "The dining car is all polished wood and white tablecloths. Brass lamps glow over each table, and the air smells of toast and cocoa. Coats hang on hooks by the door. A pantry door stands at one end.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "coat_hooks",
+              "name": "the coat hooks",
+              "hint": "A row of brass hooks by the door. One has a little label that says 'Conductor', and it is empty.",
+              "clues": []
+            },
+            {
+              "id": "corner_table",
+              "name": "the corner table",
+              "hint": "Barnaby's favourite table. Napkins are folded into paper birds, but nothing more.",
+              "clues": []
+            },
+            {
+              "id": "pantry_shelves",
+              "name": "the pantry shelves",
+              "hint": "Neat rows of biscuit tins, teacups and jam jars. Tidy and ordinary. Nothing to find.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "guards_van",
+          "name": "Guard's Van",
+          "description": "The guard's van is snug and a little cluttered. A pot-bellied stove crackles in one corner. A desk is piled with forms, and a shelf holds a row of signal lamps and flags.",
+          "clues": [],
+          "sub_locations": [
+            {
+              "id": "van_stove",
+              "name": "beside the stove",
+              "hint": "A warm corner where a pair of boots has been left to dry.",
+              "clues": [
+                {
+                  "id": "guards_boots",
+                  "text": "Beside the stove sit a pair of boots with 'D. Hartley' stitched inside. They are caked with fresh mud and pine needles, still damp."
+                }
+              ]
+            },
+            {
+              "id": "lamp_shelf",
+              "name": "the lamp shelf",
+              "hint": "Dot's red signal lamp and her flags. Just railway kit.",
+              "clues": []
+            },
+            {
+              "id": "van_desk",
+              "name": "the guard's desk",
+              "hint": "Piles of forms and a cold cup of tea. Nothing useful.",
+              "clues": []
+            },
+            {
+              "id": "under_bench",
+              "name": "under the guard's bench",
+              "hint": "A dark gap beneath the bench at the back of the van. A cake tin is pushed far inside.",
+              "clues": [
+                {
+                  "id": "cake_tin_note",
+                  "text": "Inside a cake tin under the bench: crumbs and a note. 'Thanks for running all the way down at quarter past three! Best birthday cake ever. Love, your brother at Hollow Bend signal hut.'",
+                  "requires": {
+                    "kind": "pointer",
+                    "clue_ids": [
+                      "mabel_cake_tin"
+                    ],
+                    "rationale": "The tin is pushed far back in the dark under the bench. Nobody crawls under there unless they know Dot hid a cake tin aboard.",
+                    "target": {
+                      "location_id": "guards_van",
+                      "sub_location_id": "under_bench"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "characters": [
+        {
+          "id": "neville",
+          "first_name": "Neville",
+          "last_name": "Stroud",
+          "location_id": "dining_car",
+          "sex": "male",
+          "appearance": "A tall, thin man in a crisp white steward's jacket and a black bow tie. His dark hair is combed flat and shiny. He carries a polished silver tray.",
+          "background": "Neville has served on the Midnight Express for twelve years and knows its timetable by heart, including the crew-only water stop at Hollow Bend. He dreams of opening his own tea room. A rich bird collector promised him a fortune if he could bring her a Silver Mimic Thrush.",
+          "personality": "Smooth, polite and fussy about neatness. He flatters people, then slips in little hints about others. When cornered he polishes things and talks too fast.",
+          "initial_attitude_towards_investigator": "Warm and helpful on the surface, eager to offer tea and to point out which passengers seemed odd.",
+          "stated_alibi": "I shut myself in the pantry at half past two and slept on my cot until we reached Cobblefield. I never even felt the train stop.",
+          "motive": "A collector offered him a fortune for the rare Silver Mimic Thrush, enough to open his own tea room.",
+          "is_culprit": true,
+          "clues": [
+            {
+              "id": "neville_ida",
+              "text": "At half past two, that bird lady crept through my dining car to the mail carriage end door. She peered through its window with her binoculars!",
+              "about_character_id": "ida"
+            },
+            {
+              "id": "neville_barnaby",
+              "text": "That pet shop fellow asked me what rare birds sell for. A pretty penny, I told him. He looked very interested indeed.",
+              "about_character_id": "barnaby"
+            }
+          ],
+          "flavor_knowledge": [
+            "His famous cocoa has a pinch of cinnamon in it, and he will not share the full recipe.",
+            "He keeps the dining car spotless and straightens the cutlery whenever he is nervous.",
+            "He dreams of a little tea room with lace curtains and a bell over the door.",
+            "He thinks the Midnight Express serves the best toast on any railway in the land.",
+            "He finds the zoo birds' squawking 'most unrefined'."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Just before midnight, serves late supper as the Midnight Express sets off with the bird crate aboard."
+            },
+            {
+              "sequence": 2,
+              "summary": "At 2:00 a.m., serves Mabel a cup of cocoa in the dining car."
+            },
+            {
+              "sequence": 3,
+              "summary": "At 2:15 a.m., after Mabel hurries off without her satchel, lifts it from the coat hook and hides it in the pantry."
+            },
+            {
+              "sequence": 4,
+              "summary": "At 2:30 a.m., says goodnight to Barnaby and shuts himself in the pantry."
+            },
+            {
+              "sequence": 5,
+              "summary": "At 3:12 a.m., during the Hollow Bend water stop, takes the green dining car lantern and slips out of the pantry's outside door. He unlocks the mail carriage padlock with the key from the satchel."
+            },
+            {
+              "sequence": 6,
+              "summary": "Puts the Silver Mimic Thrush into a hatbox, then at 3:16 a.m. shoos the other eleven birds out of the door into the pines. He pushes the satchel under the mail sacks."
+            },
+            {
+              "sequence": 7,
+              "summary": "At 3:18 a.m., slips back in through the pantry door, hangs the lantern on its hook, and hides the hatbox in the pantry."
+            },
+            {
+              "sequence": 8,
+              "summary": "At 3:30 a.m., clears Barnaby's table and pockets the paper bird Barnaby folded from his torn ticket."
+            },
+            {
+              "sequence": 9,
+              "summary": "At 5:55 a.m. at Cobblefield, slides the hatbox under the parcel trolley tarpaulin and drops the paper-bird ticket stub by the mail carriage door."
+            },
+            {
+              "sequence": 10,
+              "summary": "At breakfast, serves Barnaby toast and tells stories that point at Ida and Barnaby."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Keep up the story that he slept in the pantry right through the Hollow Bend stop",
+              "priority": "high",
+              "details": "Neville stays calm and charming. He sticks to his pantry story and steers talk toward other passengers. He gives ground only as far as the evidence forces him.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "mabel_lamps"
+                  ],
+                  "shows": "The dining car lantern is one of only two green lamps on the train. The other is the engine lamp.",
+                  "reaction": "Neville agrees the green lantern belongs to the dining car and that he looks after it. He insists it hung on its hook all night."
+                },
+                {
+                  "clue_ids": [
+                    "ida_journal_entry"
+                  ],
+                  "shows": "Someone with a green lantern stood at the mail carriage door at 3:16, when the birds flew out during the Hollow Bend stop.",
+                  "reaction": "He admits that does sound like a green lamp. Then he says it must have been the driver's engine lamp."
+                },
+                {
+                  "clue_ids": [
+                    "whistle_log"
+                  ],
+                  "shows": "At 3:16 the driver was pulling the whistle in the cab, and the green engine lamp stayed lit on the front of the engine all stop.",
+                  "reaction": "He can no longer blame the engine lamp. He says a passenger must have borrowed his lantern while he slept."
+                },
+                {
+                  "clue_ids": [
+                    "wally_cab",
+                    "barnaby_cab"
+                  ],
+                  "shows": "Barnaby spent the whole Hollow Bend stop in the engine cab with the driver, so he did not borrow the lantern then.",
+                  "reaction": "He goes quiet and twists his bow tie. He mutters that he simply does not know who took the lantern."
+                }
+              ],
+              "confession": "Neville sinks into a chair. He took Mabel's satchel from the coat hook at a quarter past two. At Hollow Bend he slipped out with the green lantern, opened the crate, and hid the Silver Mimic Thrush in a hatbox. He let the other birds fly so nobody would notice one was missing. He hid the satchel under the mail sacks, planted Barnaby's paper-bird stub, and put the hatbox under the parcel trolley for a collector. He wanted the money for his own tea room.",
+              "hides_steps": [
+                3,
+                5,
+                6,
+                7,
+                8,
+                9
+              ]
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "Point suspicion at the birdwatcher",
+              "priority": "medium",
+              "details": "Neville brings up Ida's love of the birds and claims he saw her creep through the dining car at half past two and peer through the mail carriage end door. This is a lie to pull eyes away from himself.",
+              "target_character_id": "ida"
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "Point suspicion at the pet shop owner",
+              "priority": "medium",
+              "details": "Neville hints that Barnaby could sell rare birds for a fortune. He invents a chat in which Barnaby asked him about bird prices.",
+              "target_character_id": "barnaby"
+            }
+          ],
+          "tells": [
+            {
+              "id": "neville_tell_lantern",
+              "text": "His eyes flick to the lantern hook by the dining car door, then quickly away.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "ida_journal_entry",
+                  "mabel_lamps"
+                ]
+              }
+            },
+            {
+              "id": "neville_tell_tray",
+              "text": "He polishes the same spot on his silver tray, round and round.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks Neville directly what he was doing during the Hollow Bend water stop."
+              }
+            }
+          ]
+        },
+        {
+          "id": "mabel",
+          "first_name": "Mabel",
+          "last_name": "Dunmore",
+          "location_id": "platform",
+          "sex": "female",
+          "appearance": "A sturdy woman with grey curls under a navy conductor's cap. Her navy coat has shiny brass buttons, and a silver ticket punch hangs on a chain. A pale mark on her shoulder shows where a satchel strap usually sits.",
+          "background": "Mabel has been conductor of the Midnight Express for twenty years. She locked the bird crate in the mail carriage herself and kept the only key in her leather satchel. She is mortified that she left it behind.",
+          "personality": "Brisk, kind and proud of her train. She remembers every passenger and every rule, and she wants this put right.",
+          "initial_attitude_towards_investigator": "Relieved and eager to help, though a little embarrassed about her missing satchel.",
+          "stated_alibi": "I had cocoa at two, did paperwork with Dot, then sat in the sleeping coach corridor at Hollow Bend. After that I dozed in the guard's van until Cobblefield.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "mabel_satchel_hook",
+              "text": "At two o'clock I had cocoa in the dining car and hung my satchel on the coat hook. Then I rushed off on my rounds and forgot it. By dawn it was gone."
+            },
+            {
+              "id": "mabel_lamps",
+              "text": "Every lamp on this train has its own colour. Mine is white. The guard's lamp is red. Only two are green: the engine's front lamp and the dining car lantern."
+            },
+            {
+              "id": "mabel_corridor",
+              "text": "At Hollow Bend I sat on the sleeping coach corridor seat, as the rules say. Ida's berth door was open. She sat at her window with binoculars the whole stop.",
+              "about_character_id": "ida"
+            },
+            {
+              "id": "mabel_paper_bird",
+              "text": "That paper bird is Barnaby's. He's in Berth 4. At two he sat at the dining car corner table, folding his torn ticket into a bird. I saw it on his table.",
+              "about_character_id": "barnaby"
+            },
+            {
+              "id": "mabel_cake_tin",
+              "text": "Before we set off, Dot carried a big cake tin aboard. She slid it under the bench in her guard's van and winked. She wouldn't say who it was for.",
+              "about_character_id": "dot",
+              "hint_location_id": "guards_van",
+              "hint_sub_location_id": "under_bench"
+            }
+          ],
+          "flavor_knowledge": [
+            "She has punched over a million tickets with her silver star-shaped punch.",
+            "The Midnight Express runs every night from the coast to Cobblefield and back.",
+            "Hollow Bend is a crew-only water stop in the pine woods. It is not on the passenger timetable.",
+            "She has a cat called Buttons who waits for her at home.",
+            "She thinks Wally is the best driver on the line, though he bends a rule now and then.",
+            "She never forgets her satchel, and cannot think how she did last night."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Before midnight, locks the bird crate inside the mail carriage with the padlock and puts the only key in her satchel."
+            },
+            {
+              "sequence": 2,
+              "summary": "At 2:00 a.m., drinks cocoa in the dining car and hangs her satchel on the conductor's coat hook. She sees Barnaby folding his torn ticket into a paper bird."
+            },
+            {
+              "sequence": 3,
+              "summary": "At 2:15 a.m., hurries off on her rounds and forgets the satchel."
+            },
+            {
+              "sequence": 4,
+              "summary": "From 2:30 to 3:05 a.m., does paperwork with Dot in the guard's van."
+            },
+            {
+              "sequence": 5,
+              "summary": "From 3:05 to 3:30 a.m., sits on the sleeping coach corridor seat during the Hollow Bend stop. She sees Ida at her window the whole time."
+            },
+            {
+              "sequence": 6,
+              "summary": "From 3:30 a.m., dozes in the guard's van until the train reaches Cobblefield at 5:50."
+            },
+            {
+              "sequence": 7,
+              "summary": "At dawn, finds her satchel missing, the mail carriage padlock hanging open, and the crate empty."
+            }
+          ],
+          "agendas": [],
+          "tells": [
+            {
+              "id": "mabel_tell_shoulder",
+              "text": "She rubs the pale mark on her shoulder where her satchel strap should be.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks Mabel how she came to lose her satchel."
+              }
+            }
+          ]
+        },
+        {
+          "id": "wally",
+          "first_name": "Wally",
+          "last_name": "Brindle",
+          "location_id": "engine_cab",
+          "sex": "male",
+          "appearance": "A broad man with a bushy ginger beard and sooty cheeks. He wears blue overalls, a red neckerchief and a peaked cap pushed far back.",
+          "background": "Wally has driven the Midnight Express for fifteen years and writes every whistle into his whistle log. Last night he let Barnaby ride in the cab during the Hollow Bend stop, which is strictly against the rules.",
+          "personality": "Jolly, loud and big-hearted. He loves his engine and hates getting anyone into trouble.",
+          "initial_attitude_towards_investigator": "Friendly and chatty about engines, but cagey about who was in his cab.",
+          "stated_alibi": "I was in my cab the whole night, driving and taking water at Hollow Bend.",
+          "motive": null,
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "wally_cab",
+              "text": "All right, it's true. Barnaby rode in my cab for the whole Hollow Bend stop. He stayed from ten past three until just before we set off.",
+              "about_character_id": "barnaby",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "engine_card"
+                ],
+                "rationale": "Passengers in the cab break the rules, so Wally keeps quiet. He owns up once you show you know Barnaby was there, like his card in the gauges. A sharp guess that Barnaby was in the cab could also work."
+              }
+            },
+            {
+              "id": "wally_echo",
+              "text": "At six I gave two short toots to rest the engine. Two short toots whistled right back, from the parcel trolley at the end of the platform! That wasn't my engine.",
+              "hint_location_id": "platform",
+              "hint_sub_location_id": "trolley_under"
+            }
+          ],
+          "flavor_knowledge": [
+            "His engine is called Old Bessie, and he talks to her like an old friend.",
+            "Two long blasts mean stopping, one short toot means the water tank is full, and two short toots mean the engine is resting.",
+            "He has written in his whistle log every night for fifteen years.",
+            "He eats a jam sandwich at every stop, always strawberry.",
+            "The water tower at Hollow Bend creaks like a grumpy old door."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Just before midnight, drives the Midnight Express out onto the line and starts the night's whistle log."
+            },
+            {
+              "sequence": 2,
+              "summary": "At 3:10 a.m., stops at the Hollow Bend water tower, gives two long blasts and logs them."
+            },
+            {
+              "sequence": 3,
+              "summary": "Moments later, spots Barnaby at the dining car step and waves him into the cab, against the rules. Barnaby watches the firebox."
+            },
+            {
+              "sequence": 4,
+              "summary": "At 3:16 a.m., pulls one short toot from the cab when the tank is full and logs it. The green engine lamp stays lit on the front all stop."
+            },
+            {
+              "sequence": 5,
+              "summary": "At 3:24 a.m., sends Barnaby back. Barnaby leaves a thank-you card, which Wally tucks into the gauge frame. At 3:25 the train sets off."
+            },
+            {
+              "sequence": 6,
+              "summary": "At 5:50 a.m., pulls into Cobblefield."
+            },
+            {
+              "sequence": 7,
+              "summary": "At 6:00 a.m., gives two short toots and hears the same two toots answer from the parcel trolley. He is puzzled."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "conditional_reveal",
+              "strategy": "Hide that he let a passenger ride in the cab until shown proof",
+              "priority": "medium",
+              "details": "Wally says he was alone in his cab. He changes the subject to engines when asked about company. Shown Barnaby's card from the gauge frame, he sighs and admits Barnaby rode with him all stop.",
+              "gated_clue_id": "wally_cab",
+              "condition": "confronted_with_evidence",
+              "yields_to_clue_ids": [
+                "engine_card"
+              ]
+            }
+          ],
+          "tells": [
+            {
+              "id": "wally_tell_cap",
+              "text": "He tugs his cap down over his eyes and coughs into a sooty glove.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "engine_card"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "barnaby",
+          "first_name": "Barnaby",
+          "last_name": "Cole",
+          "location_id": "dining_car",
+          "sex": "male",
+          "appearance": "A round, rosy-cheeked man in a mustard-and-brown checked coat and round spectacles. Little folded paper birds peek out of his pockets.",
+          "background": "Barnaby owns Cole's Pet Emporium in the city. He was travelling home in Berth 4 of the sleeping coach. He loves steam engines, and he could not sleep. He promised Wally he would never tell about riding in the cab.",
+          "personality": "Cheerful and fidgety. He folds paper birds whenever his hands are idle, and he keeps his promises even when it hurts him.",
+          "initial_attitude_towards_investigator": "Friendly but jumpy. He laughs too loudly when the stop at Hollow Bend comes up.",
+          "stated_alibi": "I sat at my dining car table all night, folding paper birds. I never went anywhere.",
+          "motive": "As a pet shop owner, he knows rare zoo birds are worth a great deal of money.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "barnaby_table",
+              "text": "I tore my ticket and folded half into a paper bird. I left it on my dining car table. I never carried it outside. Someone else must have."
+            },
+            {
+              "id": "barnaby_cab",
+              "text": "Fine, I wasn't at my table. The driver let me ride in his cab for the whole stop at Hollow Bend. Please don't get him into trouble.",
+              "about_character_id": "wally",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "engine_card"
+                ],
+                "rationale": "Barnaby promised Wally he would keep quiet. He only gives in when you show you already know he was in the cab, like his own card in the gauges. A clever guess about the cab could also crack him."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "His pet shop sells goldfish, budgies and very fluffy rabbits.",
+            "He can fold a paper crane in nine seconds flat.",
+            "He has loved steam engines since he was a little boy and keeps a model railway at home.",
+            "He thinks rare birds belong in proper aviaries, not in shops.",
+            "He had two helpings of Neville's cocoa and thinks it needs more sugar."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Just before midnight, boards the sleeping coach, Berth 4. Asks Mabel how much the zoo birds are worth."
+            },
+            {
+              "sequence": 2,
+              "summary": "From 1:00 a.m., sits at the dining car corner table. He tears his ticket and folds half into a paper bird."
+            },
+            {
+              "sequence": 3,
+              "summary": "At 2:30 a.m., says goodnight to Neville, who goes into the pantry."
+            },
+            {
+              "sequence": 4,
+              "summary": "At 3:10 a.m., once the train has stopped, climbs down the dining car's front steps. He leaves his paper bird on the table."
+            },
+            {
+              "sequence": 5,
+              "summary": "From 3:10 to 3:24 a.m., rides in the engine cab with Wally and watches the firebox. He leaves his card as a thank-you."
+            },
+            {
+              "sequence": 6,
+              "summary": "At 3:24 a.m., hurries back and climbs into the dining car just before the train sets off at 3:25. He dozes at his table until dawn."
+            },
+            {
+              "sequence": 7,
+              "summary": "At breakfast, eats toast in the dining car while the investigation begins."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "protect_other",
+              "strategy": "Cover for the driver by pretending he never left his table",
+              "priority": "high",
+              "details": "Barnaby promised Wally to keep the cab ride secret, so he says he sat at his table all night. He gets flustered when asked about Hollow Bend. Once shown proof he was in the cab, he admits it and begs that Wally not be punished.",
+              "target_character_id": "wally"
+            }
+          ],
+          "tells": [
+            {
+              "id": "barnaby_tell_fold",
+              "text": "He folds a napkin into a paper bird very fast, not looking up.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator asks Barnaby where he was when the train stopped at Hollow Bend."
+              }
+            }
+          ]
+        },
+        {
+          "id": "ida",
+          "first_name": "Ida",
+          "last_name": "Quill",
+          "location_id": "platform",
+          "sex": "female",
+          "appearance": "A wiry woman with silver hair in a bun and a tweed cape. Brass binoculars hang round her neck, and a bright green feather is tucked in her hatband. She hugs a battered birdwatching journal.",
+          "background": "Ida is a birdwatcher who has written books about tropical birds. Before the train left, she begged Mabel to let her see the crate and was told no. The zoo keeper gave her a feather that had fallen from the crate. She rode in Berth 3 of the sleeping coach.",
+          "personality": "Sharp-eyed, chatty and fiercely fond of birds. She is touchy when people suggest she would harm one.",
+          "initial_attitude_towards_investigator": "Keen to help find the lost birds, but prickly if she senses she is being blamed.",
+          "stated_alibi": "I was in my berth all night. At Hollow Bend I sat at my window with my binoculars, hoping for owls.",
+          "motive": "She once wrote that rare birds should never be shipped in crates, and she longed to see them up close.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "ida_journal_entry",
+              "text": "Ida's birdwatching journal: '3:16 a.m. Train standing still. Engine gave one short toot. Then eleven bright birds burst from the mail carriage door! A green lantern glowed beside it. Mist hid who held it.'"
+            },
+            {
+              "id": "ida_feather",
+              "text": "This feather? The zoo keeper gave it to me before we left. It fell out of the crate. Look, he signed my journal page at half past eleven."
+            }
+          ],
+          "flavor_knowledge": [
+            "She has spotted over six hundred kinds of bird and lists them all in her journals.",
+            "The train curves at Hollow Bend, so from her berth she could see right along to the mail carriage.",
+            "She thinks the loose birds will flock to bird feeders, so they can be gently caught again.",
+            "Her favourite bird is the little brown wren.",
+            "She has worn the same tweed cape on every birdwatching trip for thirty years."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Before the train leaves, asks Mabel to see the crate and is refused. At 11:30 p.m. the zoo keeper gives her a fallen green feather and signs her journal."
+            },
+            {
+              "sequence": 2,
+              "summary": "Just before midnight, boards the sleeping coach, Berth 3, and tucks the feather into her hatband."
+            },
+            {
+              "sequence": 3,
+              "summary": "From midnight to 3:05 a.m., reads and sleeps in her berth."
+            },
+            {
+              "sequence": 4,
+              "summary": "At 3:05 a.m., wakes as the train slows. She sits at her window with binoculars, berth door open."
+            },
+            {
+              "sequence": 5,
+              "summary": "At 3:16 a.m., sees eleven birds burst from the mail carriage door beside a green lantern glow. She writes it in her journal."
+            },
+            {
+              "sequence": 6,
+              "summary": "At 3:25 a.m., keeps watching as the train leaves, then dozes until Cobblefield."
+            },
+            {
+              "sequence": 7,
+              "summary": "At dawn, stands on the platform scanning the trees for the escaped birds."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "conditional_reveal",
+              "strategy": "Keep quiet about where the feather came from until she feels trusted",
+              "priority": "medium",
+              "details": "Ida is embarrassed that she begged for a look at the crate. She snaps 'it's just a feather' if pushed. She explains the keeper's gift once the investigator shows real interest in birds, or promises they are not accusing her.",
+              "gated_clue_id": "ida_feather",
+              "condition": "trust_established"
+            }
+          ],
+          "tells": [
+            {
+              "id": "ida_tell_journal",
+              "text": "She clutches her journal tight to her chest, and her cheeks go pink.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "neville_ida"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "dot",
+          "first_name": "Dot",
+          "last_name": "Hartley",
+          "location_id": "guards_van",
+          "sex": "female",
+          "appearance": "A short, strong woman with rosy cheeks and a long brown plait. She wears a guard's black coat with a whistle on a cord. A red flag pokes out of her pocket.",
+          "background": "Dot is the train's guard and rides in the guard's van at the back. Her brother works the signal hut at Hollow Bend, and it was his birthday. Guards must never leave the train at a water stop, but she ran down the line with a cake anyway.",
+          "personality": "Gruff, honest-hearted and quick to grumble. She hates breaking rules and hates even more being caught.",
+          "initial_attitude_towards_investigator": "Grumpy and defensive. She folds her arms and insists she did her job by the book.",
+          "stated_alibi": "I never left my van all night. Not once.",
+          "motive": "She complained loudly that the squawking birds kept her awake.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "dot_saw_ida",
+              "text": "Hurrying back up the track at twenty past three, I could see round the bend to the sleeping coach by my van. The bird lady sat at her lit window, binoculars up, scribbling. She never moved.",
+              "about_character_id": "ida",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "guards_boots",
+                  "cake_tin_note"
+                ],
+                "rationale": "Dot can only say what she saw outside by admitting she left the van. She tells it once you have shown both her muddy boots and her brother's note. Kind words alone will not shift her."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "Her red lamp and red flag tell the driver to stop in an emergency.",
+            "She bakes a lemon cake for her brother every birthday.",
+            "She knits scarves in the guard's van on quiet nights.",
+            "She thinks zoo birds should travel by day, when they would not keep everyone awake.",
+            "She has never once been late to her van in nine years."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "Before the train leaves, carries a cake tin aboard and slides it under her bench."
+            },
+            {
+              "sequence": 2,
+              "summary": "Around 1:00 a.m., grumbles to Mabel that the squawking birds are keeping her awake."
+            },
+            {
+              "sequence": 3,
+              "summary": "From 2:30 to 3:05 a.m., does paperwork with Mabel in the guard's van."
+            },
+            {
+              "sequence": 4,
+              "summary": "At 3:10 a.m., as the train stops at Hollow Bend, climbs down the van's back steps onto the muddy track."
+            },
+            {
+              "sequence": 5,
+              "summary": "Runs down the line with the cake tin and reaches the Hollow Bend signal hut at a quarter past three. Gives her brother his birthday cake."
+            },
+            {
+              "sequence": 6,
+              "summary": "At 3:20 a.m., hurries back up the track toward her van. The line curves, so she can see along the sleeping coach, coupled just in front of the van, and Ida at her lit window."
+            },
+            {
+              "sequence": 7,
+              "summary": "At 3:23 a.m., climbs back into the van. She leaves her muddy boots by the stove and puts her brother's note in the empty tin under the bench."
+            },
+            {
+              "sequence": 8,
+              "summary": "At Cobblefield, tells everyone she never left her van."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "Insist she never left the guard's van",
+              "priority": "high",
+              "details": "Dot is gruff and firm. She repeats that she never left her van. She grows prickly when Hollow Bend or her brother comes up, and gives way only to proof.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "guards_boots"
+                  ],
+                  "shows": "Dot was outside on the muddy track at some point in the night.",
+                  "reaction": "Dot admits she climbed down from the van at Hollow Bend. She says it was only for fresh air, and she never went near the mail carriage.",
+                  "concedes_steps": [
+                    4
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "cake_tin_note"
+                  ],
+                  "shows": "Dot ran down the line to the Hollow Bend signal hut and was there at a quarter past three.",
+                  "reaction": "Dot admits she ran the cake down to her brother's signal hut, far behind the train, at a quarter past three.",
+                  "concedes_steps": [
+                    5
+                  ]
+                }
+              ],
+              "confession": "Dot sighs and lets her arms drop. She left the van at ten past three, ran the birthday cake to her brother's signal hut, and was back by twenty-three minutes past. She broke the rules, but she never touched the birds. On the way back she saw Ida at her window.",
+              "hides_steps": [
+                4,
+                5,
+                6,
+                7
+              ]
+            }
+          ],
+          "tells": [
+            {
+              "id": "dot_tell_feet",
+              "text": "She tucks her feet under her stool and folds her arms tight.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "guards_boots"
+                ]
+              }
+            },
+            {
+              "id": "dot_tell_brother",
+              "text": "Her eyes go shiny and she glances toward the back of the van.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator mentions Hollow Bend's signal hut or asks Dot about her family."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cover_image": {
+      "description": "The Midnight Express stands steaming at a misty dawn platform. Bright tropical birds swirl around the station lamps and the big black engine. An empty wooden crate peeks from an open carriage door, and a single bright feather drifts down. A birdwatcher with binoculars and a conductor in a navy cap stare up in wonder.",
+      "location_ids": [
+        "platform",
+        "mail_carriage"
+      ],
+      "character_ids": [
+        "ida",
+        "mabel"
+      ]
+    },
+    "ground_truth": {
+      "what_happened": "Neville Stroud, the dining car steward, took Mabel's satchel from the dining car coat hook at 2:15 a.m. During the crew-only water stop at Hollow Bend, he slipped out of the pantry with the green dining car lantern. At 3:12 he unlocked the mail carriage with the key from the satchel. He hid the rare Silver Mimic Thrush in a hatbox and, at 3:16, shooed the other eleven birds into the pines. He left the satchel under the mail sacks. At Cobblefield he hid the hatbox under the parcel trolley tarpaulin. He dropped Barnaby's paper-bird ticket stub by the mail carriage door, and told stories against Ida and Barnaby.",
+      "why_it_happened": "A rich collector promised Neville a fortune for the Silver Mimic Thrush. He wanted the money to open his own tea room. He freed the other birds so nobody would notice that one was missing.",
+      "timeline": [
+        "Before midnight: Mabel locks the bird crate in the mail carriage and keeps the only key in her satchel. The Midnight Express sets off.",
+        "2:00 a.m.: Mabel drinks cocoa in the dining car and hangs her satchel on the coat hook. Barnaby folds his torn ticket into a paper bird.",
+        "2:15 a.m.: Mabel rushes off on her rounds. Neville takes the satchel and hides it in the pantry.",
+        "3:10 a.m.: The train stops at Hollow Bend for water. Barnaby rides in the cab with Wally. Dot runs a birthday cake to her brother's signal hut. Mabel sits in the sleeping coach corridor.",
+        "3:12 to 3:18 a.m.: Neville takes the green dining car lantern, unlocks the mail carriage, hides the thrush in a hatbox and, at 3:16, frees the other eleven birds. Ida sees them fly out beside a green glow. Wally logs his 3:16 toot.",
+        "3:30 a.m.: Neville clears Barnaby's table and pockets the paper-bird ticket stub.",
+        "5:50 to 5:55 a.m.: The train reaches Cobblefield. Neville hides the hatbox under the parcel trolley tarpaulin and drops the stub by the mail carriage door.",
+        "6:00 a.m.: Wally's two short toots are copied by the hidden thrush. Mabel finds her satchel gone and the crate empty."
+      ]
+    },
+    "solution_paths": [
+      {
+        "id": "sp_green_lantern",
+        "summary": "The green lantern at the crate belonged to the dining car, so the steward opened the crate.",
+        "description": "Three narrowing steps. (1) Ida's journal: at 3:16, during the stop, someone with a green lantern stood at the mail carriage door as the birds flew out. (2) Mabel: only two lamps aboard are green, the engine lamp and the dining car lantern. (3) Wally's whistle log: at 3:16 Wally was pulling the whistle in the cab, and the engine lamp stayed lit on the engine all stop. So the lantern at the door was the dining car lantern, which Neville looks after. Barnaby, who sat up in the dining car that night and could have borrowed the lantern, was in the cab the whole stop (Wally or Barnaby, once shown the card). Supporting: Mabel left her satchel on the dining car coat hook; it turned up under the mail sacks with its key. The crate list shows twelve birds but Ida counted eleven. The missing thrush is found in a hatbox under the parcel trolley, waiting to be sold.",
+        "payoff": "Neville took the satchel from the dining car hook, opened the crate at Hollow Bend by the light of his green lantern, and stole the Silver Mimic Thrush to sell.",
+        "location_clue_ids": [
+          "whistle_log",
+          "mail_satchel",
+          "crate_manifest",
+          "trolley_hatbox"
+        ],
+        "character_clue_ids": [
+          "ida_journal_entry",
+          "mabel_lamps",
+          "mabel_satchel_hook",
+          "wally_cab",
+          "wally_echo"
+        ]
+      }
+    ],
+    "red_herrings": [
+      {
+        "id": "rh_ticket_stub",
+        "summary": "A torn ticket stub from Barnaby's berth lies by the mail carriage door, and Neville hints Barnaby wanted to sell birds.",
+        "description": "The stub is folded into Barnaby's trademark paper bird, and he knows what rare birds are worth. But Mabel saw it sitting on his dining car table, and Barnaby says he never took it out. The crate was opened at Hollow Bend, yet the stub was found on the Cobblefield platform.",
+        "payoff": "The stub was carried off Barnaby's dining car table and dropped at Cobblefield, hours after the crate was opened at Hollow Bend. It is a planted false trail, not proof against Barnaby.",
+        "location_clue_ids": [
+          "platform_stub",
+          "whistle_log"
+        ],
+        "character_clue_ids": [
+          "neville_barnaby",
+          "mabel_paper_bird",
+          "barnaby_table"
+        ]
+      },
+      {
+        "id": "rh_bird_lady",
+        "summary": "Ida adores the birds, wears a crate feather in her hat, and Neville says he saw her peering through the mail carriage end door.",
+        "description": "Ida begged to see the crate before the train left and has a feather from it. Once she trusts the investigator, she explains the keeper gave it to her before departure. Mabel saw her at her berth window for the whole stop.",
+        "payoff": "The feather was a gift from the zoo keeper before the train left, and Ida was at her window all through the stop. Neville's story about her is a false lead.",
+        "location_clue_ids": [],
+        "character_clue_ids": [
+          "neville_ida",
+          "ida_feather",
+          "mabel_corridor"
+        ]
+      },
+      {
+        "id": "rh_guard_boots",
+        "summary": "Dot grumbled about the noisy birds, lies about leaving her van, and her boots are caked in fresh mud and pine needles.",
+        "description": "Dot's muddy boots prove she was outside at Hollow Bend, against her own story. Mabel's memory of the cake tin leads under the guard's bench, where a note explains why.",
+        "payoff": "Dot left the van only to run a birthday cake to her brother's signal hut far down the line. She broke a rule but was nowhere near the mail carriage.",
+        "location_clue_ids": [
+          "guards_boots",
+          "cake_tin_note"
+        ],
+        "character_clue_ids": [
+          "mabel_cake_tin"
+        ]
+      }
+    ],
+    "suspect_elimination_paths": [
+      {
+        "id": "elim_barnaby",
+        "summary": "Barnaby rode in the engine cab for the whole Hollow Bend stop.",
+        "description": "Barnaby's card in the cab gauges proves he was there at some point. Shown it, Wally drops his cover and says Barnaby was with him from 3:10 until just before the train set off at 3:25. Barnaby admits the same, breaking his promise to protect Wally.",
+        "payoff": "Barnaby is cleared: he was in the cab with Wally when the birds flew at 3:16, so he could not have opened the crate or carried the green lantern.",
+        "location_clue_ids": [
+          "engine_card"
+        ],
+        "character_clue_ids": [
+          "wally_cab",
+          "barnaby_cab"
+        ]
+      },
+      {
+        "id": "elim_ida",
+        "summary": "Ida was at her berth window for the whole stop, writing in her journal.",
+        "description": "Mabel sat in the sleeping coach corridor and saw Ida at her window all stop. Dot, once her cover breaks, saw Ida at her lit window too. Ida's journal entry is written from that window.",
+        "payoff": "Ida is cleared: two witnesses place her at her window while the crate was opened. Her journal turns out to be key evidence, not a sign of guilt.",
+        "location_clue_ids": [],
+        "character_clue_ids": [
+          "mabel_corridor",
+          "dot_saw_ida",
+          "ida_journal_entry"
+        ]
+      },
+      {
+        "id": "elim_dot",
+        "summary": "Dot was at the Hollow Bend signal hut at a quarter past three, and her lamp is red.",
+        "description": "Her muddy boots break her story of never leaving the van. Mabel's cake tin memory leads to the note under the bench, which places her at her brother's signal hut at 3:15. Mabel also confirms the guard's lamp is red, not green.",
+        "payoff": "Dot is cleared: she was far down the line at the signal hut when the birds flew at 3:16, and her lamp is red, not green.",
+        "location_clue_ids": [
+          "guards_boots",
+          "cake_tin_note"
+        ],
+        "character_clue_ids": [
+          "mabel_cake_tin",
+          "mabel_lamps"
+        ]
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "95312cc9-f9e5-4c62-90cb-9c3154e9de5c",
+      "sequence": 1,
+      "event_type": "start",
+      "actor": "system",
+      "payload": {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "blueprint_image_id": null,
+        "starting_knowledge": {
+          "mystery_summary": "The express reached Cobblefield at ten to six, by the station clock. Minutes later, Mabel found her satchel gone and the bird crate empty.",
+          "locations": [
+            {
+              "location_id": "platform",
+              "summary": "Cobblefield's misty platform, where the Midnight Express now rests. Mabel and Ida are waiting here."
+            },
+            {
+              "location_id": "mail_carriage",
+              "summary": "The carriage that carried the zoo birds. Their crate now stands open and empty."
+            },
+            {
+              "location_id": "engine_cab",
+              "summary": "The hot, sooty cab where Wally drives the train and keeps his whistle log."
+            },
+            {
+              "location_id": "dining_car",
+              "summary": "Where passengers eat and the steward serves. Neville and Barnaby are here."
+            },
+            {
+              "location_id": "guards_van",
+              "summary": "The guard's van at the very back of the train. It is Dot's little home on wheels."
+            }
+          ],
+          "characters": [
+            {
+              "character_id": "mabel",
+              "summary": "The conductor. Her leather satchel held the only key to the mail carriage, and now it is gone."
+            },
+            {
+              "character_id": "wally",
+              "summary": "The engine driver. He knows every whistle, signal and stop along the line."
+            },
+            {
+              "character_id": "neville",
+              "summary": "The dining car steward. Neat, polite, and full of opinions about the passengers."
+            },
+            {
+              "character_id": "barnaby",
+              "summary": "A pet shop owner riding the express. He knows exactly what rare birds are worth."
+            },
+            {
+              "character_id": "ida",
+              "summary": "A birdwatcher who longed to see the zoo birds up close. She never goes anywhere without her journal."
+            },
+            {
+              "character_id": "dot",
+              "summary": "The train's guard. She grumbled that the zoo birds were far too noisy to sleep."
+            }
+          ]
+        },
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 1,
+          "event_type": "start",
+          "part_count": 2,
+          "action": "start",
+          "event_category": "start",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 18,
+          "time_after": 18,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "The Midnight Express puffs into Cobblefield Station at dawn. Steam curls around the platform, and station clocks tick softly.\n\nBut something is wrong. The conductor's leather satchel has vanished. It held the only key to the mail carriage.\n\nWorse, a crate of rare zoo birds is empty. Feathers flutter somewhere along the line!\n\nThe train leaves at sundown. Can you find out who did it, and why?\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+      "narration_parts": [
+        {
+          "text": "The Midnight Express puffs into Cobblefield Station at dawn. Steam curls around the platform, and station clocks tick softly.\n\nBut something is wrong. The conductor's leather satchel has vanished. It held the only key to the mail carriage.\n\nWorse, a crate of rare zoo birds is empty. Feathers flutter somewhere along the line!\n\nThe train leaves at sundown. Can you find out who did it, and why?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        },
+        {
+          "text": "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:22.328Z"
+    },
+    {
+      "id": "6e431a35-093e-4ae0-a7a8-39b0b018ca5e",
+      "sequence": 2,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "role": "enter",
+        "destination": "platform",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 2,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "enter",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 18,
+          "time_after": 18,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Dawn mist curls around Cobblefield Platform like a soft grey scarf. The Midnight Express hisses beside you, its big black engine waiting at the far end. A tall clock ticks above a wooden bench. Pigeons strut past an old gas lamp.\n\nA sturdy woman in a navy conductor's cap hurries over, her brass buttons shining. \"Oh, thank goodness! I'm Mabel Dunmore,\" she says. \"Someone has taken my satchel.\"\n\nNearby, a wiry woman with silver hair hugs a battered journal. She glances away quickly. \"I'm only here for the birds,\" says Ida Quill.",
+      "narration_parts": [
+        {
+          "text": "Dawn mist curls around Cobblefield Platform like a soft grey scarf. The Midnight Express hisses beside you, its big black engine waiting at the far end. A tall clock ticks above a wooden bench. Pigeons strut past an old gas lamp.\n\nA sturdy woman in a navy conductor's cap hurries over, her brass buttons shining. \"Oh, thank goodness! I'm Mabel Dunmore,\" she says. \"Someone has taken my satchel.\"\n\nNearby, a wiry woman with silver hair hugs a battered journal. She glances away quickly. \"I'm only here for the birds,\" says Ida Quill.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:30.009Z"
+    },
+    {
+      "id": "ce690ac1-a2b5-4c11-9634-221120a331a5",
+      "sequence": 3,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "search_query": null,
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 3,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 18,
+          "time_after": 17,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Steam sighs from the Midnight Express, and pigeons flutter past the gas lamp. Nothing new catches your eye. Perhaps the patch by the mail carriage door holds a secret. Try looking there closely.",
+      "narration_parts": [
+        {
+          "text": "Steam sighs from the Midnight Express, and pigeons flutter past the gas lamp. Nothing new catches your eye. Perhaps the patch by the mail carriage door holds a secret. Try looking there closely.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:36.672Z"
+    },
+    {
+      "id": "52017023-baca-4693-8928-0e8aa9e6b9fb",
+      "sequence": 4,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "mail_carriage",
+        "location_id": "mail_carriage",
+        "location_name": "Mail Carriage",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to mail carriage",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 4,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 17,
+          "time_after": 16,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step into the mail carriage, and the air greets you with straw and feathers. It is warm and a little ticklish on your nose.\n\nIn the middle sits a big wooden crate. Its lid is propped wide open, as if someone left in a hurry. Look closely at **the empty bird crate**.\n\nIn one corner, **the heap of mail sacks** slumps like sleepy cushions. Letters peek out of their open tops.\n\nBehind you, **the sliding door** hangs unlocked. Its padlock dangles open, swaying gently. Something has happened here.",
+      "narration_parts": [
+        {
+          "text": "You step into the mail carriage, and the air greets you with straw and feathers. It is warm and a little ticklish on your nose.\n\nIn the middle sits a big wooden crate. Its lid is propped wide open, as if someone left in a hurry. Look closely at **the empty bird crate**.\n\nIn one corner, **the heap of mail sacks** slumps like sleepy cushions. Letters peek out of their open tops.\n\nBehind you, **the sliding door** hangs unlocked. Its padlock dangles open, swaying gently. Something has happened here.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:43.779Z"
+    },
+    {
+      "id": "4ff084ff-4a2a-4c53-942a-d3a9c5179b2b",
+      "sequence": 5,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "mail_carriage",
+        "location_name": "Mail Carriage",
+        "search_query": "the empty bird crate",
+        "revealed_clue_id": "crate_manifest",
+        "revealed_clue_text": "A list is taped inside the crate lid: twelve birds for the City Aviary. The last line reads: 'One Silver Mimic Thrush. Copies any whistle it hears.'",
+        "revealed_clue_ids": [
+          "crate_manifest"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search the empty bird crate",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 5,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 16,
+          "time_after": 15,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You lift the lid and peer inside the crate. Straw tickles your fingers. Taped to the underside of the lid is a paper list. It reads: \"Twelve birds for the City Aviary. The last line reads: 'One Silver Mimic Thrush. Copies any whistle it hears.'\"",
+      "narration_parts": [
+        {
+          "text": "You lift the lid and peer inside the crate. Straw tickles your fingers. Taped to the underside of the lid is a paper list. It reads: \"Twelve birds for the City Aviary. The last line reads: 'One Silver Mimic Thrush. Copies any whistle it hears.'\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:48.708Z"
+    },
+    {
+      "id": "c1fcb8f8-e320-49bf-bbbd-50ed498613a7",
+      "sequence": 6,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "mail_carriage",
+        "location_name": "Mail Carriage",
+        "search_query": "the heap of mail sacks",
+        "revealed_clue_id": "mail_satchel",
+        "revealed_clue_text": "Under the mail sacks lies Mabel's leather satchel. The mail carriage key is still inside it, shiny and unbent.",
+        "revealed_clue_ids": [
+          "crate_manifest",
+          "mail_satchel"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search the heap of mail sacks",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 6,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 15,
+          "time_after": 14,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You heave a lumpy sack aside and dig beneath the letters. Your fingers find something smooth and leathery. Under the mail sacks lies Mabel's leather satchel. The mail carriage key is still inside it, shiny and unbent.",
+      "narration_parts": [
+        {
+          "text": "You heave a lumpy sack aside and dig beneath the letters. Your fingers find something smooth and leathery. Under the mail sacks lies Mabel's leather satchel. The mail carriage key is still inside it, shiny and unbent.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:37:54.742Z"
+    },
+    {
+      "id": "62c20c19-5b01-4d94-8161-5316de077738",
+      "sequence": 7,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "engine_cab",
+        "location_id": "engine_cab",
+        "location_name": "Engine Cab",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to engine cab",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 7,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 14,
+          "time_after": 13,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You climb into the engine cab. It is warm and smells of coal smoke. Behind an iron door, the firebox glows orange. Brass gauges tick on the wall. A little shelf holds the driver's whistle log. Behind you, the coal tender sits heaped with black lumps.\n\nA broad man turns to greet you. He has a bushy ginger beard, sooty cheeks, and a cap pushed far back. \"Welcome aboard! Isn't she a beauty?\" he booms. His eyes drift to the window. He tugs at his red neckerchief.",
+      "narration_parts": [
+        {
+          "text": "You climb into the engine cab. It is warm and smells of coal smoke. Behind an iron door, the firebox glows orange. Brass gauges tick on the wall. A little shelf holds the driver's whistle log. Behind you, the coal tender sits heaped with black lumps.\n\nA broad man turns to greet you. He has a bushy ginger beard, sooty cheeks, and a cap pushed far back. \"Welcome aboard! Isn't she a beauty?\" he booms. His eyes drift to the window. He tugs at his red neckerchief.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:07.536Z"
+    },
+    {
+      "id": "f62c8b53-aaca-4142-abed-3a8d0bf08e25",
+      "sequence": 8,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "wally",
+        "character_name": "Wally",
+        "location_id": "engine_cab",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to wally",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 8,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 13,
+          "time_after": 12,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Coal smoke hangs warm in the cab. Wally wipes his sooty hands on his red neckerchief. \"Morning, friend! Isn't Old Bessie a beauty? Ask me anything about her.\" He grins, but his eyes flick to the gauges.",
+      "narration_parts": [
+        {
+          "text": "Coal smoke hangs warm in the cab. Wally wipes his sooty hands on his red neckerchief. \"Morning, friend! Isn't Old Bessie a beauty? Ask me anything about her.\" He grins, but his eyes flick to the gauges.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:15.311Z"
+    },
+    {
+      "id": "cd581804-2388-4911-a687-3c017cdf0b39",
+      "sequence": 9,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "wally",
+        "character_name": "Wally",
+        "location_id": "engine_cab",
+        "player_input": "did you hear a wissle in the nite? whats in your whistle log??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:wally",
+          "label": "Wally"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Heard only his own engine's whistles in the night",
+          "Logged two long blasts at Hollow Bend around 3:10 a.m.",
+          "Logged one short toot around 3:16 a.m. when the water tank was full"
+        ],
+        "input": "did you hear a wissle in the nite? whats in your whistle log??",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 9,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 12,
+          "time_after": 12,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Only Old Bessie's whistles, friend! I'd know them anywhere.\" He taps the little shelf by the gauges. \"My log says two long blasts at Hollow Bend, about ten past three. Then one short toot when the tank was full.\"",
+      "narration_parts": [
+        {
+          "text": "\"Only Old Bessie's whistles, friend! I'd know them anywhere.\" He taps the little shelf by the gauges. \"My log says two long blasts at Hollow Bend, about ten past three. Then one short toot when the tank was full.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:wally",
+            "label": "Wally"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:27.054Z"
+    },
+    {
+      "id": "d0626147-fec5-4c03-b55e-f9a250ec0317",
+      "sequence": 10,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "wally",
+        "character_name": "Wally",
+        "location_id": "engine_cab",
+        "player_input": "did the bird copy ur whistle?? did u see anyone sneak around",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:wally",
+          "label": "Wally"
+        },
+        "revealed_clue_ids": [
+          "wally_echo"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "At six a.m. heard two short toots whistled back from the parcel trolley",
+          "Saw no one sneaking about during the night"
+        ],
+        "input": "did the bird copy ur whistle?? did u see anyone sneak around",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 10,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 12,
+          "time_after": 12,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"Yes! At six I gave two short toots to rest Old Bessie. Something whistled right back, from the parcel trolley at the end of the platform!\" He scratches his ginger beard. \"That wasn't my engine, friend. Sneaking about? Not that I saw.\"",
+      "narration_parts": [
+        {
+          "text": "\"Yes! At six I gave two short toots to rest Old Bessie. Something whistled right back, from the parcel trolley at the end of the platform!\" He scratches his ginger beard. \"That wasn't my engine, friend. Sneaking about? Not that I saw.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:wally",
+            "label": "Wally"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:39.694Z"
+    },
+    {
+      "id": "7db36b85-8461-4ad9-b03c-343a6decc1d9",
+      "sequence": 11,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "wally",
+        "character_name": "Wally",
+        "location_id": "engine_cab",
+        "location_name": "Engine Cab",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 11,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 12,
+          "time_after": 12,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Wally tips his peaked cap. \"Mind how you go, friend! Old Bessie needs me now.\" He turns back to his gauges. You stay put by the warm, glowing firebox, eyes ready to look around.",
+      "narration_parts": [
+        {
+          "text": "Wally tips his peaked cap. \"Mind how you go, friend! Old Bessie needs me now.\" He turns back to his gauges. You stay put by the warm, glowing firebox, eyes ready to look around.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:45.719Z"
+    },
+    {
+      "id": "0012a6f1-c6a9-4275-9791-58f319eff9b3",
+      "sequence": 12,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "platform",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to cobblefield platform",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 12,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 12,
+          "time_after": 11,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You are back at Cobblefield Platform. Dawn mist still curls along the tracks like a soft grey scarf. The Midnight Express hisses beside you, its big black engine waiting at the far end. A tall clock ticks above the wooden bench. Pigeons strut past the old gas lamp.\n\nMabel Dunmore straightens her navy cap, her brass buttons shining. \"You're back! I still can't find my satchel,\" she says.\n\nNearby, Ida Quill hugs her battered journal. She glances away quickly.\n\nYou could search the bench under the station clock, the mail carriage door, the old gas lamp, or under the parcel trolley tarpaulin.",
+      "narration_parts": [
+        {
+          "text": "You are back at Cobblefield Platform. Dawn mist still curls along the tracks like a soft grey scarf. The Midnight Express hisses beside you, its big black engine waiting at the far end. A tall clock ticks above the wooden bench. Pigeons strut past the old gas lamp.\n\nMabel Dunmore straightens her navy cap, her brass buttons shining. \"You're back! I still can't find my satchel,\" she says.\n\nNearby, Ida Quill hugs her battered journal. She glances away quickly.\n\nYou could search the bench under the station clock, the mail carriage door, the old gas lamp, or under the parcel trolley tarpaulin.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:38:57.245Z"
+    },
+    {
+      "id": "e89c98b0-a844-485a-861d-ce5cfb014c3c",
+      "sequence": 13,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "search_query": "under the parcel trolley tarpaulin",
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search under the parcel trolley tarpaulin",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 13,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 11,
+          "time_after": 10,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You lift a corner of the heavy tarpaulin. It smells of damp sacks and coal dust. Something is buried deep at the bottom, but the sacks are piled too high to reach. The patch by the mail carriage door still seems to be calling you.",
+      "narration_parts": [
+        {
+          "text": "You lift a corner of the heavy tarpaulin. It smells of damp sacks and coal dust. Something is buried deep at the bottom, but the sacks are piled too high to reach. The patch by the mail carriage door still seems to be calling you.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:05.135Z"
+    },
+    {
+      "id": "b519023f-d72d-4104-8a68-25e03bdf466b",
+      "sequence": 14,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "search_query": "the mail carriage door",
+        "revealed_clue_id": "platform_stub",
+        "revealed_clue_text": "Near the mail carriage door lies half a torn ticket. It is folded into a tiny paper bird. Inside it says: 'Sleeping Coach, Berth 4.'",
+        "revealed_clue_ids": [
+          "platform_stub"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search the mail carriage door",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 14,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 10,
+          "time_after": 9,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You kneel beside the mail carriage door. A pigeon eyes you, then flutters off. Near the edge, something small catches your eye. Near the mail carriage door lies half a torn ticket. It is folded into a tiny paper bird. Inside it says: 'Sleeping Coach, Berth 4.'",
+      "narration_parts": [
+        {
+          "text": "You kneel beside the mail carriage door. A pigeon eyes you, then flutters off. Near the edge, something small catches your eye. Near the mail carriage door lies half a torn ticket. It is folded into a tiny paper bird. Inside it says: 'Sleeping Coach, Berth 4.'",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:11.300Z"
+    },
+    {
+      "id": "edd8a8f4-2a06-494c-85b9-9f487c5e11f2",
+      "sequence": 15,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "ida",
+        "character_name": "Ida",
+        "location_id": "platform",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to ida",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 15,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 9,
+          "time_after": 8,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Mist swirls around Ida's tweed cape as she scans the treetops. Her brass binoculars bump her chest. \"Oh, you've come to help? Good. Keep your voice down, though. Those birds spook easily.\"",
+      "narration_parts": [
+        {
+          "text": "Mist swirls around Ida's tweed cape as she scans the treetops. Her brass binoculars bump her chest. \"Oh, you've come to help? Good. Keep your voice down, though. Those birds spook easily.\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:19.344Z"
+    },
+    {
+      "id": "e43012bf-0172-4e19-8554-676ccf866cec",
+      "sequence": 16,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "ida",
+        "character_name": "Ida",
+        "location_id": "platform",
+        "player_input": "ida did u sleep in berth 4?? whats in ur jurnal",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:ida",
+          "label": "Ida"
+        },
+        "revealed_clue_ids": [
+          "ida_journal_entry"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Slept in Berth 3, not Berth 4",
+          "Journal entry at 3:16 a.m. saw eleven birds burst from the mail carriage door beside a green lantern"
+        ],
+        "input": "ida did u sleep in berth 4?? whats in ur jurnal",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 16,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Berth 4? No, dear, I slept in Berth 3, right by my window. My journal is my treasure. I wrote this at 3:16 a.m.: \"Eleven bright birds burst from the mail carriage door! A green lantern glowed beside it. Mist hid who held it.\"",
+      "narration_parts": [
+        {
+          "text": "Berth 4? No, dear, I slept in Berth 3, right by my window. My journal is my treasure. I wrote this at 3:16 a.m.: \"Eleven bright birds burst from the mail carriage door! A green lantern glowed beside it. Mist hid who held it.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:ida",
+            "label": "Ida"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:29.865Z"
+    },
+    {
+      "id": "25221d1a-3d5b-4914-8e48-57feed8f6f3c",
+      "sequence": 17,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "ida",
+        "character_name": "Ida",
+        "location_id": "platform",
+        "location_name": "Cobblefield Platform",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 17,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Ida tucks her journal under her arm and gives you a small nod. \"Right, I must keep watching the trees. Off you go, dear.\" The clock above the bench ticks on. Pigeons waddle past the old gas lamp. You are still here on Cobblefield Platform, ready to look around.",
+      "narration_parts": [
+        {
+          "text": "Ida tucks her journal under her arm and gives you a small nod. \"Right, I must keep watching the trees. Off you go, dear.\" The clock above the bench ticks on. Pigeons waddle past the old gas lamp. You are still here on Cobblefield Platform, ready to look around.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:36.845Z"
+    },
+    {
+      "id": "3e8a6c33-0c51-44ff-9db0-e1eee15a54cc",
+      "sequence": 18,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "dining_car",
+        "location_id": "dining_car",
+        "location_name": "Dining Car",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to dining car",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 18,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 7,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step into the dining car. Brass lamps glow over polished tables. The air smells of toast and cocoa, and steam hisses past the windows.\n\nCoats hang on hooks by the door. A corner table waits, its white cloth crisp. At the far end, a pantry door stands open to its shelves.\n\nNeville glides over, a silver tray balanced on one hand. He straightens his black bow tie. \"Tea? Do come in! Oh, and do look at that cheerful gentleman over there.\"\n\nBarnaby, round and rosy-cheeked, folds a paper bird with quick fingers. He laughs a little too loudly. \"Hello! Lovely day for a journey, isn't it?\"",
+      "narration_parts": [
+        {
+          "text": "You step into the dining car. Brass lamps glow over polished tables. The air smells of toast and cocoa, and steam hisses past the windows.\n\nCoats hang on hooks by the door. A corner table waits, its white cloth crisp. At the far end, a pantry door stands open to its shelves.\n\nNeville glides over, a silver tray balanced on one hand. He straightens his black bow tie. \"Tea? Do come in! Oh, and do look at that cheerful gentleman over there.\"\n\nBarnaby, round and rosy-cheeked, folds a paper bird with quick fingers. He laughs a little too loudly. \"Hello! Lovely day for a journey, isn't it?\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:51.613Z"
+    },
+    {
+      "id": "83e7c1cb-2ada-4647-bdf5-6b4c2a2be653",
+      "sequence": 19,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to barnaby",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 19,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 7,
+          "time_after": 6,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby sits at a corner table under a glowing brass lamp. Steam curls from his cocoa. Little paper birds peek out of his pockets. He grins and waves. \"Good morning! Lovely morning, isn't it? Ha! Sit down, sit down. The toast is splendid.\"",
+      "narration_parts": [
+        {
+          "text": "Barnaby sits at a corner table under a glowing brass lamp. Steam curls from his cocoa. Little paper birds peek out of his pockets. He grins and waves. \"Good morning! Lovely morning, isn't it? Ha! Sit down, sit down. The toast is splendid.\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:39:59.498Z"
+    },
+    {
+      "id": "805751af-4f69-47be-b449-d848e7512663",
+      "sequence": 20,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "player_input": "barnaby did u sleep in berth 4?? why do u fold paper birds",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Did not sleep at all; Berth 4 stayed empty",
+          "Folds paper birds to keep his hands busy when thinking",
+          "Sat at dining car table all night"
+        ],
+        "input": "barnaby did u sleep in berth 4?? why do u fold paper birds",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 20,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby laughs and shakes his head. \"Sleep? Not a wink, I'm afraid! Berth 4 stayed cold and empty all night. I sat right here at my table.\" He smooths a napkin. \"My hands never stop when my head is busy. Folding birds keeps me calm.\"",
+      "narration_parts": [
+        {
+          "text": "Barnaby laughs and shakes his head. \"Sleep? Not a wink, I'm afraid! Berth 4 stayed cold and empty all night. I sat right here at my table.\" He smooths a napkin. \"My hands never stop when my head is busy. Folding birds keeps me calm.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:10.509Z"
+    },
+    {
+      "id": "d428796d-b372-4c72-afff-d4f7fd93368b",
+      "sequence": 21,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "player_input": "did u whissle at the trolley?? ur paper bird has berth 4 on it",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [
+          "barnaby_table"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Denies whistling at the parcel trolley",
+          "Says he tore his ticket and folded half into a bird, left on his dining car table",
+          "Says he never carried the paper bird outside"
+        ],
+        "input": "did u whissle at the trolley?? ur paper bird has berth 4 on it",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 21,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby nearly drops his spoon. \"Whistle at the trolley? Goodness, no! I never went near it.\" He pushes his spectacles up. \"My bird was on my table, I swear. I left it there. Someone else must have carried it off.\"",
+      "narration_parts": [
+        {
+          "text": "Barnaby nearly drops his spoon. \"Whistle at the trolley? Goodness, no! I never went near it.\" He pushes his spectacles up. \"My bird was on my table, I swear. I left it there. Someone else must have carried it off.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:26.126Z"
+    },
+    {
+      "id": "77e5385a-6a82-4849-95f4-7c20419d389b",
+      "sequence": 22,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "player_input": "do u have a green lantern?? how much is the silver bird worth",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Does not own or have a green lantern",
+          "Says a silver mimic thrush is very rare and worth a small fortune"
+        ],
+        "input": "do u have a green lantern?? how much is the silver bird worth",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 22,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby blinks behind his spectacles. \"A green lantern? No, I've only got cocoa and paper birds!\" He leans closer. \"A silver mimic thrush? Oh, those are rare. Worth a small fortune to the right buyer.\"",
+      "narration_parts": [
+        {
+          "text": "Barnaby blinks behind his spectacles. \"A green lantern? No, I've only got cocoa and paper birds!\" He leans closer. \"A silver mimic thrush? Oh, those are rare. Worth a small fortune to the right buyer.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:37.166Z"
+    },
+    {
+      "id": "f125967a-27ac-4327-9022-ccf50c605498",
+      "sequence": 23,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "player_input": "did u see neville sneak out with ur paper bird??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:barnaby",
+          "label": "Barnaby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Did not see Neville near or sneaking out with his paper bird"
+        ],
+        "input": "did u see neville sneak out with ur paper bird??",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 23,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby's spoon clinks against his cup. \"Neville? Sneak out? Not that I saw!\" He frowns at the white tablecloth. \"I was right here at my table. My bird stayed put, I'm sure of it. I didn't see Neville go near it.\"",
+      "narration_parts": [
+        {
+          "text": "Barnaby's spoon clinks against his cup. \"Neville? Sneak out? Not that I saw!\" He frowns at the white tablecloth. \"I was right here at my table. My bird stayed put, I'm sure of it. I didn't see Neville go near it.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:barnaby",
+            "label": "Barnaby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:45.711Z"
+    },
+    {
+      "id": "16eb3085-b3b8-4d35-936b-840d94098869",
+      "sequence": 24,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "barnaby",
+        "character_name": "Barnaby",
+        "location_id": "dining_car",
+        "location_name": "Dining Car",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 24,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Barnaby pats his pockets and grins. \"Off you go, then! Mind the cocoa, it's hot.\" He tips his hat and turns back to his toast. Paper birds rustle in his coat. You stand in the Dining Car, polished wood gleaming around you, ready to look around.",
+      "narration_parts": [
+        {
+          "text": "Barnaby pats his pockets and grins. \"Off you go, then! Mind the cocoa, it's hot.\" He tips his hat and turns back to his toast. Paper birds rustle in his coat. You stand in the Dining Car, polished wood gleaming around you, ready to look around.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:50.817Z"
+    },
+    {
+      "id": "a38dd24a-ec4a-4373-aaf6-e32c13208318",
+      "sequence": 25,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "dining_car",
+        "location_name": "Dining Car",
+        "search_query": "the pantry",
+        "revealed_clue_id": null,
+        "revealed_clue_text": null,
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search the pantry",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 25,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 6,
+          "time_after": 5,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You peer into the pantry. Biscuit tins gleam, teacups clink, and jam jars sit in neat rows. Everything is tidy and ordinary. Nothing here seems out of place.",
+      "narration_parts": [
+        {
+          "text": "You peer into the pantry. Biscuit tins gleam, teacups clink, and jam jars sit in neat rows. Everything is tidy and ordinary. Nothing here seems out of place.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:40:57.861Z"
+    },
+    {
+      "id": "c04def9d-da00-4d72-bf03-63762468f0c2",
+      "sequence": 26,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "neville",
+        "character_name": "Neville",
+        "location_id": "dining_car",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to neville",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 26,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 5,
+          "time_after": 4,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "The dining car gleams with white tablecloths and glowing brass lamps. Neville polishes his silver tray, smiling. \"Ah, a visitor! Sit down, friend. Would you like some cocoa? It's my specialty.\"",
+      "narration_parts": [
+        {
+          "text": "The dining car gleams with white tablecloths and glowing brass lamps. Neville polishes his silver tray, smiling. \"Ah, a visitor! Sit down, friend. Would you like some cocoa? It's my specialty.\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:04.053Z"
+    },
+    {
+      "id": "e08f9ddc-ac0a-4bf1-80ab-8b1a31a8a114",
+      "sequence": 27,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "neville",
+        "character_name": "Neville",
+        "location_id": "dining_car",
+        "player_input": "neville did u take the paper bird and the green lantern??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:neville",
+          "label": "Neville"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Denies taking the paper bird and the green lantern."
+        ],
+        "input": "neville did u take the paper bird and the green lantern??",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 27,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Neville's silver tray clinks down. He straightens a spoon, then shakes his head. \"Take them? Goodness, no! I'm a steward, not a thief. Why would I want a paper bird?\"",
+      "narration_parts": [
+        {
+          "text": "Neville's silver tray clinks down. He straightens a spoon, then shakes his head. \"Take them? Goodness, no! I'm a steward, not a thief. Why would I want a paper bird?\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:neville",
+            "label": "Neville"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:11.677Z"
+    },
+    {
+      "id": "02c21f81-10df-4acc-9490-87d0bb24c205",
+      "sequence": 28,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "neville",
+        "character_name": "Neville",
+        "location_id": "dining_car",
+        "player_input": "where were u at 3 in the nite?? why did u say look at barnaby",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:neville",
+          "label": "Neville"
+        },
+        "revealed_clue_ids": [
+          "neville_barnaby"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Says he was asleep on his cot in the pantry at 3 a.m.",
+          "Says Barnaby asked him what rare birds sell for"
+        ],
+        "input": "where were u at 3 in the nite?? why did u say look at barnaby",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 28,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Neville's cloth squeaks round and round his silver tray. \"At three? Asleep, friend, on my little cot in the pantry. Snug as a teapot.\" He glances up. \"As for Barnaby, he asked me what rare birds sell for. A pretty penny, I told him. He looked very interested indeed.\"",
+      "narration_parts": [
+        {
+          "text": "Neville's cloth squeaks round and round his silver tray. \"At three? Asleep, friend, on my little cot in the pantry. Snug as a teapot.\" He glances up. \"As for Barnaby, he asked me what rare birds sell for. A pretty penny, I told him. He looked very interested indeed.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:neville",
+            "label": "Neville"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:23.831Z"
+    },
+    {
+      "id": "2ce3f9a9-0b89-4c0a-a0c1-f879ef90305e",
+      "sequence": 29,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "neville",
+        "character_name": "Neville",
+        "location_id": "dining_car",
+        "location_name": "Dining Car",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 29,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Neville gives his tray one last polish. \"Good day, friend. Do mind the hot cocoa!\" He turns to straighten a table. You stay by the brass lamps, eyes wide, ready to look around.",
+      "narration_parts": [
+        {
+          "text": "Neville gives his tray one last polish. \"Good day, friend. Do mind the hot cocoa!\" He turns to straighten a table. You stay by the brass lamps, eyes wide, ready to look around.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:31.353Z"
+    },
+    {
+      "id": "6819db94-bf23-4b2a-930c-869ed9e91122",
+      "sequence": 30,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "Neville because he took barnabys paper bird from the dining car table to blame barnaby and he sneaked the silver bird to sell",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse Neville because he took barnabys paper bird from the dining car table to blame barnaby and he sneaked the silver bird to sell",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 30,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You have a sharp nose, investigator! Neville's sneaky hands are part of this. But the case is not proven yet. You still need to show how he got into the crate. Think about the moment the birds flew out. What light glowed beside the mail carriage door, and whose light was it?",
+      "narration_parts": [
+        {
+          "text": "You have a sharp nose, investigator! Neville's sneaky hands are part of this. But the case is not proven yet. You still need to show how he got into the crate. Think about the moment the birds flew out. What light glowed beside the mail carriage door, and whose light was it?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:45.051Z"
+    },
+    {
+      "id": "66a6b7db-5eaa-4b59-882c-e4bb68603403",
+      "sequence": 31,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "the green lantern is the guards lamp so it was dot!! she said the birds were too noisy. she let them out at 3:16 and neville helped and put barnabys paper bird there to blame him",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "the green lantern is the guards lamp so it was dot!! she said the birds were too noisy. she let them out at 3:16 and neville helped and put barnabys paper bird there to blame him",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 31,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You have a bold idea, investigator, and you have been busy! But the case is not proven yet. Think about the colour of that lamp. Is the guard's lamp really green? And whose green light could it have been, outside the mail carriage door?",
+      "narration_parts": [
+        {
+          "text": "You have a bold idea, investigator, and you have been busy! But the case is not proven yet. Think about the colour of that lamp. Is the guard's lamp really green? And whose green light could it have been, outside the mail carriage door?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:41:59.447Z"
+    },
+    {
+      "id": "90fa19a2-c360-4ee8-b067-9562df673bda",
+      "sequence": 32,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "it was mabel!! the conductors lamp is green and she had the key. the key was not bent so no breaking in. she hid her satchel under the sacks and put barnabys paper bird there to blame him. she took the silver bird to sell",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "it was mabel!! the conductors lamp is green and she had the key. the key was not bent so no breaking in. she hid her satchel under the sacks and put barnabys paper bird there to blame him. she took the silver bird to sell",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 32,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Ooh, you have a bold idea, investigator! But the case is not proven yet. Mabel's satchel was found with its key, so that part is a good clue. Still, the green glow at the crate does not fit Mabel. Only a few lamps on this train are green. Who was near the mail carriage door at 3:16, holding one?",
+      "narration_parts": [
+        {
+          "text": "Ooh, you have a bold idea, investigator! But the case is not proven yet. Mabel's satchel was found with its key, so that part is a good clue. Still, the green glow at the crate does not fit Mabel. Only a few lamps on this train are green. Who was near the mail carriage door at 3:16, holding one?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:42:14.522Z"
+    },
+    {
+      "id": "336b8027-3f75-454f-82b4-edbb2f741d65",
+      "sequence": 33,
+      "event_type": "accuse_resolved",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "it was wally!! he has the green lantern from the engine and he did the short toot at 3:16 when the birds flew out. he took the key from mabel and hid the satchel then hid the silver bird under the trolley tarpaulin and it whistled back at six. he put barnabys paper bird there to blame him",
+        "judge_result": "lose",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "it was wally!! he has the green lantern from the engine and he did the short toot at 3:16 when the birds flew out. he took the key from mabel and hid the satchel then hid the silver bird under the trolley tarpaulin and it whistled back at six. he put barnabys paper bird there to blame him",
+        "diagnostics": {
+          "session_id": "d9d1094d-ee11-4613-82a3-15c7e1d9f0e6",
+          "sequence": 33,
+          "event_type": "accuse_resolved",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_resolved",
+          "mode": "accuse",
+          "resulting_mode": "ended",
+          "time_before": 4,
+          "time_after": 4,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Wally is not the thief, investigator. He was up in his engine cab, pulling his whistle. Your ear for that echo was sharp, though! The true thief is Neville, the steward. He took Mabel's satchel from its coat hook. Then he borrowed the green dining car lantern and unlocked the crate. He hid the rare thrush under the parcel trolley. He wanted the money to open his own tea room. Well done for trying, detective. Keep your eyes sharp next time!",
+      "narration_parts": [
+        {
+          "text": "Wally is not the thief, investigator. He was up in his engine cab, pulling his whistle. Your ear for that echo was sharp, though! The true thief is Neville, the steward. He took Mabel's satchel from its coat hook. Then he borrowed the green dining car lantern and unlocked the crate. He hid the rare thrush under the parcel trolley. He wanted the money to open his own tea room. Well done for trying, detective. Keep your eyes sharp next time!",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:42:30.766Z"
+    }
+  ]
+}

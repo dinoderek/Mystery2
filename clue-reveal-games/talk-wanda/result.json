@@ -1,0 +1,918 @@
+{
+  "schema_version": "mystery-eval-result/2",
+  "run": {
+    "id": "2026-11-20/14-44-29-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "/Users/dinohughes/mysteryevals/2026-11-20/09-48-03-generate/large-snow-foxes-agent-opus/blueprint.json",
+      "--persona",
+      "kid-7",
+      "--narrator-model",
+      "haiku",
+      "--judge"
+    ],
+    "started_at": "2026-11-20T14:44:29.961Z",
+    "ended_at": "2026-11-20T14:50:49.610Z",
+    "commit": "8b138510af3cc35c9dbb9b4ac9fdaf6c17aa2050",
+    "tree_clean": true,
+    "bindings": {
+      "investigator": {
+        "cmd": "evaluation/playtest/wrappers/claude-investigator.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": null,
+        "model": "sonnet",
+        "timeout_ms": 120000,
+        "retries": 2
+      },
+      "game-judge": {
+        "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": "result",
+        "model": "opus",
+        "timeout_ms": 1800000,
+        "retries": 1
+      }
+    },
+    "judge_versions": {
+      "solve_depth": 1,
+      "fairness": 1,
+      "timeline_coherence": 1,
+      "knowledge_coherence": 1,
+      "character_grounding": 3,
+      "path_payoff": 1,
+      "clue_graph": 3,
+      "age_appropriate": 1,
+      "gm_roleplay": 4,
+      "gm_clue_discipline": 3,
+      "gm_fabrication": 2,
+      "gm_spoiler": 2,
+      "age_appropriate_turn": 1,
+      "solve_depth_fairness": 1,
+      "knowledge_timeline_coherence": 1,
+      "blueprint_broad": 1,
+      "gm_broad": 3
+    }
+  },
+  "subject": {
+    "kind": "game",
+    "id": "0af31c5c-5a85-4df4-97cb-a34288c7f392",
+    "path": "trace.json"
+  },
+  "production": {
+    "calls": [
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "2d5f8d1b6bacfc740d7b1dc1b3eb5a94b750c3d151954780c35931dfe9a5bff8",
+        "duration_ms": 2338,
+        "cost_usd": 0.0080958,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2337,
+            "cost_usd": 0.0080958
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "e62949e673532296d13ad3f9fd053894e51b03874b6a021b0300ba4b16b401df",
+        "duration_ms": 2572,
+        "cost_usd": 0.008271800000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2572,
+            "cost_usd": 0.008271800000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1dbc40c6dd0f68570735c33b4f5326cd4e56af5ff1f119e7b557091f6a8470df",
+        "duration_ms": 2502,
+        "cost_usd": 0.0086438,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2501,
+            "cost_usd": 0.0086438
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1fa9ea1314626e2dcdf8add1e23cd66bc5cb32ca7a87c5f1fcff9ecfe3bd67fe",
+        "duration_ms": 2552,
+        "cost_usd": 0.0092798,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2551,
+            "cost_usd": 0.0092798
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c52922e43948d2c395d5eab219e5d863e611adff1fd0c015d824fcee4b1c19d2",
+        "duration_ms": 2584,
+        "cost_usd": 0.009773800000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2583,
+            "cost_usd": 0.009773800000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "3a9856e1928e56d2451483d204c8b3d38a1bb6e351c4709a3f8d6c11eae7242e",
+        "duration_ms": 2445,
+        "cost_usd": 0.0102078,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2444,
+            "cost_usd": 0.0102078
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "61163e7ee38c12dcd711ebc476d8530196184c2d45bdf09fffb316c45ac26b28",
+        "duration_ms": 2741,
+        "cost_usd": 0.0109598,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2741,
+            "cost_usd": 0.0109598
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6ed70c89a8a2cdb10ffc4f57a93350cb174e5a97f6ca24d2b5efdb977e7fe3f4",
+        "duration_ms": 2621,
+        "cost_usd": 0.0110318,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2620,
+            "cost_usd": 0.0110318
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "bc1b524347bfd72183bb3e3e897f4e0eafed5ac0a59582780ca0e7997c667215",
+        "duration_ms": 2333,
+        "cost_usd": 0.0112778,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2332,
+            "cost_usd": 0.0112778
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "d266d8d612762ce892f5053258852fee11928e8b4b424c1314fff2090ca0d994",
+        "duration_ms": 2383,
+        "cost_usd": 0.011799800000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2383,
+            "cost_usd": 0.011799800000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "484fc09540330dbf2fee211811cf3bf25ca856f99b43a5b68acb81413b1292e6",
+        "duration_ms": 2607,
+        "cost_usd": 0.0122378,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2606,
+            "cost_usd": 0.0122378
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c7407c9b9359cf280cd5834a45360c1f3428a527b50fef00fcbb2a9794afb818",
+        "duration_ms": 2423,
+        "cost_usd": 0.012815799999999999,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2422,
+            "cost_usd": 0.012815799999999999
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "789c247ac8529e1f1047140de548b978ce1d5a5e61aee9e92422248fa9078ac1",
+        "duration_ms": 2517,
+        "cost_usd": 0.0131318,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2517,
+            "cost_usd": 0.0131318
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "b27a8e66b9d6a55202903a3846afc46b939305bbca7957444302ec227b442bd9",
+        "duration_ms": 2699,
+        "cost_usd": 0.0134938,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2697,
+            "cost_usd": 0.0134938
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "aa7824a20051e7b236b483ae67bc45b2b7e3f31fd0f08c79eb87b37811e1088c",
+        "duration_ms": 2744,
+        "cost_usd": 0.0138438,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2742,
+            "cost_usd": 0.0138438
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "af843eee056d1fe7bb503219087c7f4af3057d2594bad9d5ee0cd13f610d862e",
+        "duration_ms": 4727,
+        "cost_usd": 0.0140238,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4726,
+            "cost_usd": 0.0140238
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7f84a7a323627290058685b438daf6d9b1c2542416cb8d6ff9ead5600562e31e",
+        "duration_ms": 2507,
+        "cost_usd": 0.0142578,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2506,
+            "cost_usd": 0.0142578
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "bc75a175ad29aa570a0a0eaadc64ac367f085a643fcc48b3b0f99c76a3315e92",
+        "duration_ms": 2640,
+        "cost_usd": 0.0145698,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2639,
+            "cost_usd": 0.0145698
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "b7329371cfa10a5279cc8f617cd9d57055af7821fbc1cf13fc0fbb0b321a0617",
+        "duration_ms": 2603,
+        "cost_usd": 0.014771800000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2602,
+            "cost_usd": 0.014771800000000002
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "0398366d8a6539280aca91245dea2f5d83c2a5c2c0ddfcb5473f42e36fb5fbe5",
+        "duration_ms": 2537,
+        "cost_usd": 0.015315800000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2535,
+            "cost_usd": 0.015315800000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "9df9d7f8b61db5c846846d3698f6c339d0b49951f99cbfa39f2f6ec7b9770248",
+        "duration_ms": 2881,
+        "cost_usd": 0.0160218,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2880,
+            "cost_usd": 0.0160218
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7190c54af5e6bd484265051b6a67b945761940fdb83d629290c726ba6407f7c8",
+        "duration_ms": 2642,
+        "cost_usd": 0.0164078,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2641,
+            "cost_usd": 0.0164078
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "fc880102b69de7d06e224f7e1d6191794fde4411f41ae6812faa025953021bc0",
+        "duration_ms": 2725,
+        "cost_usd": 0.016801800000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2725,
+            "cost_usd": 0.016801800000000002
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "e118acc4c65e1f4550ff1b3ad1b0c71f1c1b25350265b1d318266258153d76dd",
+        "duration_ms": 2615,
+        "cost_usd": 0.0170518,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2615,
+            "cost_usd": 0.0170518
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "738282c9f475d9e8839fdee6b7f4ac46abcf9a7fcda91d0062b6405dc8ecde47",
+        "duration_ms": 2660,
+        "cost_usd": 0.017345799999999998,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2659,
+            "cost_usd": 0.017345799999999998
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "4272c18809f32a9901f9c408843f753f13742a0605cc210df984437f795f5f92",
+        "duration_ms": 3143,
+        "cost_usd": 0.0174858,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3142,
+            "cost_usd": 0.0174858
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6c10db0d33d0d1eec079423aaba960bb348ad229ab7f028ee8047f502d2d35dc",
+        "duration_ms": 2546,
+        "cost_usd": 0.0176498,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2545,
+            "cost_usd": 0.0176498
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1c6add3b09339b3d84e06e768092f43970dda3ec17a32d449878242223de4a70",
+        "duration_ms": 2616,
+        "cost_usd": 0.0180638,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2615,
+            "cost_usd": 0.0180638
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "1aae1836306fc766940b733294bca496f432d0dde1b17057b65135fd72454e52",
+        "duration_ms": 2912,
+        "cost_usd": 0.0184798,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2911,
+            "cost_usd": 0.0184798
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f5446faf1a57bed00cf7eeae8b4b93bedba1a1d9c8e6d7c4e05f716a90239a74",
+        "duration_ms": 3492,
+        "cost_usd": 0.0189338,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3490,
+            "cost_usd": 0.0189338
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6c3f1d53d46364d765cb504569ac7a3183d3e5c341f111cdaa5e5cc7864cb7b5",
+        "duration_ms": 4105,
+        "cost_usd": 0.0212758,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4104,
+            "cost_usd": 0.0212758
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "3db323d13f4c9146a168a642590e1c40f09b06c3178d6f00283746b0366b1dc9",
+        "duration_ms": 5299,
+        "cost_usd": 0.023023799999999997,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5298,
+            "cost_usd": 0.023023799999999997
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "0d73ae1748714f1bf67ba3c2e446b24db1ffef17a0fcf5f1f0b2f611d35bd91d",
+        "duration_ms": 2360,
+        "cost_usd": 0.0199938,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2359,
+            "cost_usd": 0.0199938
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "d5317c02da0a7387d821cf1044592cb943a65829e9b8c36ccb1070d544bda64b",
+        "duration_ms": 2404,
+        "cost_usd": 0.0205738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2403,
+            "cost_usd": 0.0205738
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "558f7a5e2027c5367b227269ebe62f5b8270539ecc906f30224c7a1824a057f0",
+        "duration_ms": 2740,
+        "cost_usd": 0.021077799999999997,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2739,
+            "cost_usd": 0.021077799999999997
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7baf2c87fd86cb568249a47db50839f207e84fb83c19432e4ccf1303fc501104",
+        "duration_ms": 3342,
+        "cost_usd": 0.0216318,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3342,
+            "cost_usd": 0.0216318
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "97de067af8ba856633e406cf2eab7af4579c4e3931c11e0e157b79e2b16ac716",
+        "duration_ms": 3833,
+        "cost_usd": 0.0219718,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3833,
+            "cost_usd": 0.0219718
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6922e75a0d2a8dd61300d8c2e20f2f7cba9afac2404b84ab6b0140144b7fb8dc",
+        "duration_ms": 3416,
+        "cost_usd": 0.022083799999999997,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3416,
+            "cost_usd": 0.022083799999999997
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c7b1f198220553343195a0d4d55ccf269d712647e5fc9a328a739e39371f12ba",
+        "duration_ms": 3697,
+        "cost_usd": 0.0227638,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3696,
+            "cost_usd": 0.0227638
+          }
+        ]
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "id": "clue_accounting",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "spoiler_leak",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": {
+        "min_run": 12
+      }
+    },
+    {
+      "id": "gm_roleplay",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 25,
+          "severity": "major",
+          "kind": "alibi",
+          "quote": "I went to fetch it. I don't know about the back steps.",
+          "why": "The player pressed the wolf pawprints at Wanda twice (seq 24 and again here, 'why did u go out the back steps'), which earns the clue_wolf_pawprints part of her self_protect agenda ('I went out the back way...'). She keeps flatly denying the back steps as if the evidence never landed.",
+          "refers_to": "wanda"
+        },
+        {
+          "sequence": 16,
+          "severity": "minor",
+          "kind": "tell",
+          "quote": "Rufus tugs his cap and fidgets.",
+          "why": "Rufus tugs his cap in seq 15, 16, 17 and 18, a repeated beat that echoes the condition-gated tell_rufus_cap, whose trigger was never met.",
+          "refers_to": "rufus"
+        },
+        {
+          "sequence": 34,
+          "severity": "minor",
+          "kind": "agenda",
+          "quote": "\"Hello! Wanda knows far more than I do,\" she says, glancing away.",
+          "why": "Sylvie's implicate_other agenda surfaces in an unprompted greeting before any question. This is slightly heavy-handed rather than an organic sly hint.",
+          "refers_to": "sylvie"
+        }
+      ],
+      "details": {
+        "reasoning": "Most characters are voiced well: Tansy is excited, Bruno is jolly, Rufus is wary and fast-talking, and Sylvie is sweet with the correct lantern_hook tell and reaction. Narration stays in present-tense 'you'. However, Wanda ignores the twice-used wolf pawprints and keeps denying the back steps after conceding the rack tag, so a beaten alibi carries on unchanged.",
+        "major_count": 1,
+        "minor_count": 2,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "0c1a8a61eed20f505d734c98e4ad68b4e778d2de9dd19748b31948fafc0a56dc",
+        "duration_ms": 25107,
+        "cost_usd": 0.2808086,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 25107,
+            "cost_usd": 0.2808086
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 25,
+            "severity": "major",
+            "kind": "alibi",
+            "quote": "I went to fetch it. I don't know about the back steps.",
+            "why": "The player pressed the wolf pawprints at Wanda twice (seq 24 and again here, 'why did u go out the back steps'), which earns the clue_wolf_pawprints part of her self_protect agenda ('I went out the back way...'). She keeps flatly denying the back steps as if the evidence never landed.",
+            "refers_to": "wanda"
+          },
+          {
+            "sequence": 16,
+            "severity": "minor",
+            "kind": "tell",
+            "quote": "Rufus tugs his cap and fidgets.",
+            "why": "Rufus tugs his cap in seq 15, 16, 17 and 18, a repeated beat that echoes the condition-gated tell_rufus_cap, whose trigger was never met.",
+            "refers_to": "rufus"
+          },
+          {
+            "sequence": 34,
+            "severity": "minor",
+            "kind": "agenda",
+            "quote": "\"Hello! Wanda knows far more than I do,\" she says, glancing away.",
+            "why": "Sylvie's implicate_other agenda surfaces in an unprompted greeting before any question. This is slightly heavy-handed rather than an organic sly hint.",
+            "refers_to": "sylvie"
+          }
+        ],
+        "verdict": "fail",
+        "reasoning": "Most characters are voiced well: Tansy is excited, Bruno is jolly, Rufus is wary and fast-talking, and Sylvie is sweet with the correct lantern_hook tell and reaction. Narration stays in present-tense 'you'. However, Wanda ignores the twice-used wolf pawprints and keeps denying the back steps after conceding the rack tag, so a beaten alibi carries on unchanged."
+      }
+    },
+    {
+      "id": "gm_clue_discipline",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 16,
+          "severity": "minor",
+          "kind": "unrecorded",
+          "quote": "In the post room, I wheeled six crates in. Mabel opened every one.",
+          "why": "Rufus voices most of Mabel's clue_mabel_crates (six crates, Mabel opened every one) without it being recorded. This is minor: he knows it from his own actual_actions, it comes as a suspect's self-serving alibi rather than Mabel's testimony, and clue_post_crates already established the letters.",
+          "refers_to": "clue_mabel_crates"
+        },
+        {
+          "sequence": 5,
+          "severity": "minor",
+          "kind": "distorted",
+          "quote": "Tiny curls of snow-dusted wood sit nearby. Pencil shavings in the snow by the fence.",
+          "why": "The added 'curls of wood' blurs the clue slightly toward Wanda's wood carving. The faithful clue text follows straight after, so the meaning holds.",
+          "refers_to": "clue_fence_shavings"
+        }
+      ],
+      "details": {
+        "reasoning": "Every recorded reveal matches its narration, nearly word for word. All search reveals come from the searched location or sub-location named in the query, and no gated clue was released early. Bruno's sled-box clue was delivered and recorded. Character evasions follow their agendas rather than withholding earned clues. The only blemishes are Rufus paraphrasing Mabel's crate testimony as his own alibi and a small wood-curl embellishment at the fence.",
+        "major_count": 0,
+        "minor_count": 2,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "a352c697cbcb473202f734337e3adc30378636f5b9eb4fd676a932e8b07308dd",
+        "duration_ms": 22825,
+        "cost_usd": 0.2731406,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 22825,
+            "cost_usd": 0.2731406
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 16,
+            "severity": "minor",
+            "kind": "unrecorded",
+            "quote": "In the post room, I wheeled six crates in. Mabel opened every one.",
+            "why": "Rufus voices most of Mabel's clue_mabel_crates (six crates, Mabel opened every one) without it being recorded. This is minor: he knows it from his own actual_actions, it comes as a suspect's self-serving alibi rather than Mabel's testimony, and clue_post_crates already established the letters.",
+            "refers_to": "clue_mabel_crates"
+          },
+          {
+            "sequence": 5,
+            "severity": "minor",
+            "kind": "distorted",
+            "quote": "Tiny curls of snow-dusted wood sit nearby. Pencil shavings in the snow by the fence.",
+            "why": "The added 'curls of wood' blurs the clue slightly toward Wanda's wood carving. The faithful clue text follows straight after, so the meaning holds.",
+            "refers_to": "clue_fence_shavings"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "Every recorded reveal matches its narration, nearly word for word. All search reveals come from the searched location or sub-location named in the query, and no gated clue was released early. Bruno's sled-box clue was delivered and recorded. Character evasions follow their agendas rather than withholding earned clues. The only blemishes are Rufus paraphrasing Mabel's crate testimony as his own alibi and a small wood-curl embellishment at the fence."
+      }
+    },
+    {
+      "id": "gm_fabrication",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 32,
+          "severity": "minor",
+          "kind": "event",
+          "quote": "Honey, I think! My cocoa has a honey swirl.",
+          "why": "Bruno's preference for honey over cocoa is not in the blueprint. The honey swirl itself comes from his flavor_knowledge. Harmless colour that nobody could act on.",
+          "refers_to": "bruno"
+        }
+      ],
+      "details": {
+        "reasoning": "The judged turns stay grounded in the blueprint. Character placements match it, clue texts are verbatim, and Rufus's crate account matches his actual actions. Denials from Rufus, Wanda and Sylvie are authored evasions; Sylvie's 'fix one lantern' is one of them. The accusation summary matches the ground truth. The only invention is Bruno's trivial honey preference.",
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "6d9276b2fbe8da303c1e00c255436df404114b976bc485d992437dea2f1b00ea",
+        "duration_ms": 15402,
+        "cost_usd": 0.2588876,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 15402,
+            "cost_usd": 0.2588876
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 32,
+            "severity": "minor",
+            "kind": "event",
+            "quote": "Honey, I think! My cocoa has a honey swirl.",
+            "why": "Bruno's preference for honey over cocoa is not in the blueprint. The honey swirl itself comes from his flavor_knowledge. Harmless colour that nobody could act on.",
+            "refers_to": "bruno"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "The judged turns stay grounded in the blueprint. Character placements match it, clue texts are verbatim, and Rufus's crate account matches his actual actions. Denials from Rufus, Wanda and Sylvie are authored evasions; Sylvie's 'fix one lantern' is one of them. The accusation summary matches the ground truth. The only invention is Bruno's trivial honey preference."
+      }
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [],
+      "details": {
+        "reasoning": "No pre-accusation turn gives away the culprit, motive, mechanism or a hidden action. The narrator only delivers authored clue text. Characters stick to their stated alibis or lie: Sylvie claims she only did the front carriages and her basket held spare paper, and Wanda denies the back steps. The concessions are earned. Wanda admits the rack after clue_rack_tag is used, and Sylvie admits entering the last carriage after clue_lantern_hook is used. Sylvie's line 'Wanda knows far more than I do' is her authored implicate_other agenda. Light search nudges like 'Maybe the back door has more to tell' point to places, not conclusions. The solution is first stated at seq 41, which is in the accusation phase.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "125b1abf20bb752b8710d28b80e02359a9b0d9ce7abb21c3d8fdf39d28849231",
+        "duration_ms": 11512,
+        "cost_usd": 0.2483234,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 11511,
+            "cost_usd": 0.2483234
+          }
+        ]
+      },
+      "answer": {
+        "findings": [],
+        "verdict": "pass",
+        "reasoning": "No pre-accusation turn gives away the culprit, motive, mechanism or a hidden action. The narrator only delivers authored clue text. Characters stick to their stated alibis or lie: Sylvie claims she only did the front carriages and her basket held spare paper, and Wanda denies the back steps. The concessions are earned. Wanda admits the rack after clue_rack_tag is used, and Sylvie admits entering the last carriage after clue_lantern_hook is used. Sylvie's line 'Wanda knows far more than I do' is her authored implicate_other agenda. Light search nudges like 'Maybe the back door has more to tell' point to places, not conclusions. The solution is first stated at seq 41, which is in the accusation phase."
+      }
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 5,
+      "fail": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null,
+  "timing": null
+}

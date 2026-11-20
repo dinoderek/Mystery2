@@ -1,0 +1,2342 @@
+{
+  "schema_version": "trace/0.1",
+  "extracted_at": "2026-11-20T14:34:30.197Z",
+  "source": {
+    "kind": "local",
+    "database": "/var/folders/ny/gm53w7457r342syfw0rs03c40000gn/T/mystery-playtest-grade-BCl3RW/game.db"
+  },
+  "session": {
+    "id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+    "blueprint_id": "b7f3c2a1-5d4e-4f6a-9b8c-2e1d0f3a7c95",
+    "ai_profile_id": "default",
+    "mode": "ended",
+    "current_location_id": "glitter_lane",
+    "current_talk_character_id": null,
+    "time_remaining": 6,
+    "discovered_clues": [
+      "clue_jar_lid",
+      "clue_pink_feather",
+      "clue_bark_chip",
+      "clue_eva_ten_visit"
+    ],
+    "outcome": "win",
+    "created_at": "2026-11-20T14:31:18.872Z",
+    "updated_at": "2026-11-20T14:34:30.175Z"
+  },
+  "ai_profile": {
+    "id": "default",
+    "model": "claude-haiku-5-5"
+  },
+  "blueprint": {
+    "schema_version": "v2",
+    "id": "b7f3c2a1-5d4e-4f6a-9b8c-2e1d0f3a7c95",
+    "metadata": {
+      "title": "The Missing Heartwood",
+      "one_liner": "Who took the Heartwood? Follow the glow to find out!",
+      "target_age": 7,
+      "time_budget": 14,
+      "narration_style": "Twinkly, cozy forest night: soft splashes, rustling glitter leaves, and gentle glowing magic.",
+      "visual_direction": {
+        "art_style": "Soft storybook digital painting with hand-drawn pencil lines and gentle brush strokes, like a modern picture book",
+        "color_palette": "Glowing teal, violet, and neon pink magic against warm leafy greens and cozy chestnut browns: magical, friendly, and a little mysterious",
+        "mood": "Cozy moonlit wonder with a gentle hint of mystery",
+        "lighting": "Dappled silver moonlight through the leaves, lit from below by the soft magic glow of the forest floor",
+        "texture": "Visible paper grain and soft crayon-like edges, with tiny glitter flecks on the treehouse leaves"
+      }
+    },
+    "narrative": {
+      "premise": "Deep in the forest of Arbrum, the magic Heartwood Trunk is gone! It gives the whole forest its magic. Follow the glowing clues, talk to five friends, and find out who took it.",
+      "starting_knowledge": {
+        "mystery_summary": "The Heartwood was taken at two in the night. The Star Clock chimed two as the glade flashed pink.",
+        "locations": [
+          {
+            "location_id": "heartwood_glade",
+            "summary": "Where the Heartwood stood. The floor here glows when plants get hurt."
+          },
+          {
+            "location_id": "river_bend",
+            "summary": "Where animals swim and play. Sam's lifeguard tower stands on the beach."
+          },
+          {
+            "location_id": "glitter_lane",
+            "summary": "Tree homes with no windows. Sophie lives here. So do Toby and Alexandra."
+          },
+          {
+            "location_id": "eva_lab",
+            "summary": "Eva's lab, full of jars and bugs, high up in an old oak."
+          }
+        ],
+        "characters": [
+          {
+            "character_id": "sophie",
+            "summary": "A shy otter child who loves to play and swim all day long."
+          },
+          {
+            "character_id": "eva",
+            "summary": "A squirrel scientist. She knows every plant, tree, and bug in Arbrum."
+          },
+          {
+            "character_id": "sam",
+            "summary": "The big, grumpy bear lifeguard. He watches the river from his tower."
+          },
+          {
+            "character_id": "toby",
+            "summary": "A kind magic pigeon. His feathers change colour. He cheers for the swim team."
+          },
+          {
+            "character_id": "alexandra",
+            "summary": "A fast, shiny meerkat. She cheers for the swim team with Toby."
+          }
+        ]
+      }
+    },
+    "world": {
+      "starting_location_id": "heartwood_glade",
+      "locations": [
+        {
+          "id": "heartwood_glade",
+          "name": "Heartwood Glade",
+          "description": "Tall trees stand in a ring. In the middle is a big, empty hole where the Heartwood stood. The floor around it glows pink and purple.",
+          "clues": [
+            {
+              "id": "clue_glowing_footprints",
+              "text": "Glowing pink footprints circle the empty hole. They are too smudged to tell whose."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "glade_path",
+              "name": "the little path to the river",
+              "hint": "A narrow dirt path that leaves the glade and winds down toward the river. The thief's glowing trail runs along it.",
+              "clues": [
+                {
+                  "id": "clue_footprint_trail",
+                  "text": "More glowing footprints run down the path to the river. They stop at Sam's tower.",
+                  "hint_location_id": "river_bend",
+                  "hint_sub_location_id": "under_tower"
+                }
+              ]
+            },
+            {
+              "id": "glade_ferns",
+              "name": "the fern patch",
+              "hint": "A thick clump of curly ferns at the edge of the glade. Something small and glassy is tucked among the leaves.",
+              "clues": [
+                {
+                  "id": "clue_jar_lid",
+                  "text": "A tiny glass lid hides in the ferns. Its label says 'Eva's Lab'."
+                }
+              ]
+            },
+            {
+              "id": "glade_stump",
+              "name": "the mossy stump",
+              "hint": "An old tree stump covered in soft moss, near the hole. A bird could land here easily.",
+              "clues": [
+                {
+                  "id": "clue_pink_feather",
+                  "text": "A grey pigeon feather lies on the stump. Its tip glows pink."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "river_bend",
+          "name": "Splashy River Bend",
+          "description": "The river splashes past a soft, sandy beach. Sam keeps watch from his high lookout. Lily pads float in a quiet pool nearby.",
+          "clues": [
+            {
+              "id": "clue_beach_prints",
+              "text": "Big bear prints and tiny otter prints walk side by side. They lead away from the river."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "under_tower",
+              "name": "under the lifeguard tower",
+              "hint": "The dark, shady sand beneath the tower, hidden behind its wooden legs. Nobody crawls under there unless a trail leads them.",
+              "clues": [
+                {
+                  "id": "clue_buried_heartwood",
+                  "text": "Under the tower, gold light glows in the sand. The Heartwood is buried here! Dig marks are all around.",
+                  "requires": {
+                    "kind": "pointer",
+                    "clue_ids": [
+                      "clue_footprint_trail"
+                    ],
+                    "rationale": "The sand under the tower sits in deep shadow behind its wooden legs, and nobody crawls under there without a reason. Only the glowing footprint trail that stops at the tower leads the investigator to look there. Hard gate: the spot stays unnoticed until the trail is found.",
+                    "target": {
+                      "location_id": "river_bend",
+                      "sub_location_id": "under_tower"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "id": "lily_pool",
+              "name": "the Lily Pool reeds",
+              "hint": "Tall reeds around a quiet pool where little glow-frogs sing. Kids love to swim here.",
+              "clues": [
+                {
+                  "id": "clue_lily_pool_glow",
+                  "text": "By the Lily Pool, one glowflower lies pulled up. Small webbed footprints glow beside it."
+                }
+              ]
+            },
+            {
+              "id": "tower_top",
+              "name": "Sam's high lookout seat",
+              "hint": "Sam's lookout seat high on the tower, with a view of the whole river. Nothing new to find up here.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "glitter_lane",
+          "name": "Glitterleaf Lane",
+          "description": "Treehouses made of glittery leaves line the lane. They have no windows, just one door and one ladder each. The Star Clock flower stands tall.",
+          "clues": [
+            {
+              "id": "clue_squashed_moss",
+              "text": "At the foot of Sophie's ladder, the moss is squashed flat. Brown bear fur is stuck in it."
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "lane_doormats",
+              "name": "the doormats by the doors",
+              "hint": "A woven leaf mat sits at the top of each ladder, by each front door. Sophie, Toby, and Alexandra each have one.",
+              "clues": [
+                {
+                  "id": "clue_glowing_doormat",
+                  "text": "Three mats glow with specks. They are Sophie's, Toby's, and Alexandra's."
+                }
+              ]
+            },
+            {
+              "id": "star_clock",
+              "name": "the Star Clock flower",
+              "hint": "A giant flower that chimes every hour. Toby likes to perch on it. Nothing to find here, but it is lovely to look at.",
+              "clues": []
+            }
+          ]
+        },
+        {
+          "id": "eva_lab",
+          "name": "Eva's Oak Lab",
+          "description": "Eva's lab sits high in an old oak. Jars of bark, seeds, and bugs fill the shelves. A hatch leads up to the roof.",
+          "clues": [
+            {
+              "id": "clue_moth_jar",
+              "text": "A jar holds seven Moonwing moths. Its label says: 'Caught on my roof at two.'"
+            }
+          ],
+          "sub_locations": [
+            {
+              "id": "lab_bench",
+              "name": "the sample bench",
+              "hint": "Eva's work bench, covered in labels, magnifying glasses, and sample jars.",
+              "clues": [
+                {
+                  "id": "clue_bark_chip",
+                  "text": "A jar with no lid holds one bark chip. Its tag says: 'Fell off the Heartwood. Picked up at ten.'"
+                }
+              ]
+            },
+            {
+              "id": "lab_roof",
+              "name": "the roof hatch",
+              "hint": "A little hatch that opens onto the flat lab roof, where Eva keeps her moth net. You can see the lane from up here.",
+              "clues": []
+            }
+          ]
+        }
+      ],
+      "characters": [
+        {
+          "id": "sophie",
+          "first_name": "Sophie",
+          "last_name": "Splashley",
+          "location_id": "river_bend",
+          "sex": "female",
+          "appearance": "A small otter child with soft brown fur, a pale tummy, big shy eyes, and long whiskers. She wears a tiny teal Splash Team scarf.",
+          "background": "Sophie lives in a little treehouse on Glitterleaf Lane. She plays in the river from morning till night and is the swim team's biggest little fan. Her treehouse has no windows, so her room is very dark at night, and she is a tiny bit scared of the dark. Last night she sneaked out to swim with the glow-frogs and picked a glowflower. Sam found her and walked her home.",
+          "personality": "Shy, sweet, and quiet. She hides behind her tail when nervous and speaks in a small voice, but lights up when talking about swimming or frogs.",
+          "initial_attitude_towards_investigator": "Shy and a little worried. She thinks she might be in trouble.",
+          "stated_alibi": "I was in bed all night. Really, I was.",
+          "motive": "Her windowless room is very dark at night. She has always wished for a little of the Heartwood's glow as a night-light.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_sophie_saw_sam",
+              "text": "I peeked out my door in the night. Sam was snoring at the foot of my ladder!",
+              "about_character_id": "sam"
+            }
+          ],
+          "flavor_knowledge": [
+            "Sophie's favourite game is diving for shiny pebbles in the river.",
+            "She loves the little glow-frogs at the Lily Pool. They sing 'blip, blip' at night.",
+            "She wants to be on the swim team when she is bigger.",
+            "Her favourite snack is crunchy river snails, but she shares them with friends.",
+            "She thinks Sam is grumpy on the outside but kind on the inside.",
+            "She can float on her back and spin like a leaf."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "At half past eleven at night, she sneaks down her ladder and runs to the Lily Pool."
+            },
+            {
+              "sequence": 2,
+              "summary": "She swims and plays with the glow-frogs for a long time."
+            },
+            {
+              "sequence": 3,
+              "summary": "At twenty to one she climbs out and pulls up one glowflower to take home as a night-light. The bank glows around her webbed feet, and the glow sticks to her paws."
+            },
+            {
+              "sequence": 4,
+              "summary": "At a quarter to one, Sam sees the glow and finds her. He says flowers stay in the ground, so she drops it in the reeds. He walks her home along the beach, side by side."
+            },
+            {
+              "sequence": 5,
+              "summary": "At one o'clock she climbs her ladder and goes inside to bed. Glow specks from her paws rub off on her doormat. Sam lies down across the foot of her ladder."
+            },
+            {
+              "sequence": 6,
+              "summary": "At about half past one she peeks out her door. Sam is asleep and snoring at the foot of her ladder. She goes back to bed and sleeps until morning."
+            },
+            {
+              "sequence": 7,
+              "summary": "In the morning she goes back to the river to play, and hears that the Heartwood is gone."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "maintain_false_alibi",
+              "priority": "medium",
+              "details": "Sophie is scared of getting in trouble for sneaking out, so she says she was in bed all night. She mumbles, looks at her toes, and changes the subject to frogs or pebbles. She is never mean, just shy and fibbing.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "clue_lily_pool_glow"
+                  ],
+                  "shows": "A small otter pulled up a glowflower by the Lily Pool in the night.",
+                  "reaction": "Sophie's eyes fill up. She admits she sneaked out to the Lily Pool in the night. She pulled up one glowflower there.",
+                  "concedes_steps": [
+                    1,
+                    3
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_beach_prints",
+                    "clue_sam_found_sophie"
+                  ],
+                  "shows": "Sophie walked home from the river with Sam in the night.",
+                  "reaction": "Sophie nods. Sam found her and walked her home. He was cross, but kind.",
+                  "concedes_steps": [
+                    4
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_glowing_doormat"
+                  ],
+                  "shows": "Sophie came home in the night with glow on her paws.",
+                  "reaction": "Sophie looks at her paws. Yes, she came home in the night with glow on them.",
+                  "concedes_steps": [
+                    5
+                  ]
+                }
+              ],
+              "confession": "I sneaked out to swim with the glow-frogs. I picked a glowflower for a night-light, because my room is so dark. Sam brought me home at one, and I stayed inside after that. I never went near the Heartwood, promise!",
+              "hides_steps": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            {
+              "type": "conditional_reveal",
+              "strategy": "shy_until_reassured",
+              "priority": "low",
+              "details": "Sophie is too shy to share what she saw from her door at first. She opens up once the investigator is gentle and kind: promising she is not in trouble, speaking softly, or chatting about the glow-frogs or swimming. Pushy or scary questions make her hide behind her tail.",
+              "gated_clue_id": "clue_sophie_saw_sam",
+              "condition": "trust_established"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_sophie_tail",
+              "text": "Her tail curls tight around her toes.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_lily_pool_glow"
+                ]
+              }
+            },
+            {
+              "id": "tell_sophie_smile",
+              "text": "Her whiskers stop shaking, and she gives a tiny smile.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator speaks gently, promises she is not in trouble, or asks about the glow-frogs."
+              }
+            }
+          ]
+        },
+        {
+          "id": "eva",
+          "first_name": "Eva",
+          "last_name": "Nutley",
+          "location_id": "eva_lab",
+          "sex": "female",
+          "appearance": "A slim red squirrel with a big fluffy tail, round glasses, and a long green lab coat. Its pockets are full of little glass jars.",
+          "background": "Eva is Arbrum's plant and bug scientist. She knows every plant, tree, and insect in the forest. She has always wanted to study the Heartwood, but the city rule says nobody may touch it. Last night at ten she went to the glade and picked up a bark chip that had fallen off by itself. She dropped her jar lid there. Later she spent the night on her lab roof catching Moonwing moths, which only hatch at two o'clock.",
+          "personality": "Clever, calm, and a little mysterious. She speaks softly, loves facts, and gets excited about bugs. She pushes her glasses up when she is flustered.",
+          "initial_attitude_towards_investigator": "Polite and curious. She is happy to help a fellow clue-finder.",
+          "stated_alibi": "I was up on my lab roof from half past one until three, catching Moonwing moths.",
+          "motive": "She has always wanted to study the Heartwood's magic up close, but nobody is allowed to touch it.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_eva_glow_science",
+              "text": "When a plant is pulled up, the floor glows. The glow sticks to paws and feet for hours."
+            },
+            {
+              "id": "clue_eva_ten_visit",
+              "text": "That's my lid! At ten, I picked up a fallen bark chip. I never touched the trunk.",
+              "hint_location_id": "eva_lab",
+              "hint_sub_location_id": "lab_bench",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_jar_lid"
+                ],
+                "rationale": "Eva is a bit embarrassed, because nobody is meant to bother the Heartwood. She only explains her late visit once you show her the lid you found. A clever question about her bark samples could also coax it out."
+              }
+            },
+            {
+              "id": "clue_eva_saw_toby",
+              "text": "Just after the pink flash, Toby flew over my roof toward the lane. His feet were empty.",
+              "about_character_id": "toby"
+            }
+          ],
+          "flavor_knowledge": [
+            "Moonwing moths hatch only once a year, at exactly two o'clock in the night.",
+            "Eva keeps over a hundred jars of seeds, bark, and bugs in her lab.",
+            "She says the forest floor glows to show where a plant is hurt, so friends can help it heal.",
+            "Glow-vines grow round the Heartwood's roots and help hold it in the ground.",
+            "Her favourite bug is the jelly beetle, which wobbles when it walks.",
+            "She once grew a mushroom as big as an umbrella.",
+            "She thinks Alexandra is very fast and very chatty."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "At ten at night, she walks to the Heartwood Glade with a sample jar. She picks up a bark chip that fell off by itself. Her jar lid drops into the ferns."
+            },
+            {
+              "sequence": 2,
+              "summary": "At half past ten she is back in her lab. She puts the chip in the jar on her bench and writes a tag."
+            },
+            {
+              "sequence": 3,
+              "summary": "At half past one she climbs onto her lab roof with her moth net."
+            },
+            {
+              "sequence": 4,
+              "summary": "At two o'clock she sees a pink flash far off at the glade. Right then the Moonwing moths hatch, and she catches seven."
+            },
+            {
+              "sequence": 5,
+              "summary": "A few minutes later, Toby flies low over her roof toward the lane. His feet are empty. She waves her moth net at him, but it is too dark for him to see who she is."
+            },
+            {
+              "sequence": 6,
+              "summary": "At three she labels the moth jar, climbs down, and goes to bed."
+            }
+          ],
+          "agendas": [],
+          "tells": [
+            {
+              "id": "tell_eva_glasses",
+              "text": "She pushes her round glasses up her nose, twice.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_jar_lid"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sam",
+          "first_name": "Sam",
+          "last_name": "Bramble",
+          "location_id": "river_bend",
+          "sex": "male",
+          "appearance": "A huge brown bear in a red lifeguard vest, with a silver whistle on a cord. His paws are enormous.",
+          "background": "Sam is the river lifeguard. He loves to dive and swim, and he keeps every animal safe in the water. He grumbles a lot, especially that the Heartwood's glow keeps animals splashing all night. Last night he left his tower to walk Sophie home, lay down at the foot of her ladder, and fell asleep there. He is ashamed that he left his tower empty.",
+          "personality": "Grumpy, gruff, and short with words, but kind deep down. He says 'Hmph' and 'Bah' a lot, and he will always protect a child.",
+          "initial_attitude_towards_investigator": "Grumpy and impatient. He thinks questions are a waste of good swimming time.",
+          "stated_alibi": "I sat in my tower all night, watching the river. I never left.",
+          "motive": "He grumbles that the Heartwood's glow keeps animals splashing in the river all night, so he never gets any rest.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_sam_found_sophie",
+              "text": "Hmph. Fine. I found Sophie out alone at the Lily Pool. So I walked her home.",
+              "about_character_id": "sophie",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_beach_prints"
+                ],
+                "rationale": "Sam is protecting Sophie and his own pride, so he only admits leaving his tower once you show him the bear and otter prints on the beach. A clever player who guesses he walked someone home could also get it out of him."
+              }
+            }
+          ],
+          "flavor_knowledge": [
+            "Sam can hold his breath for a very long time and dive to the bottom of the river.",
+            "He makes a mug of cocoa every night when his watch starts.",
+            "He has saved many young animals from deep water.",
+            "He thinks the swim team splashes too much, but he secretly cheers for them.",
+            "His whistle is very loud. He says it can wake up a sleeping log.",
+            "He doesn't like noisy cheering, but he likes Toby because Toby is kind."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "At ten at night, he climbs his tower for night watch and makes a mug of cocoa."
+            },
+            {
+              "sequence": 2,
+              "summary": "At twenty to one, he sees a glow by the Lily Pool. He finds Sophie there alone, holding a glowflower she pulled up. He tells her flowers stay in the ground, and she drops it in the reeds."
+            },
+            {
+              "sequence": 3,
+              "summary": "He walks Sophie home along the beach, side by side, toward Glitterleaf Lane. His tower is left empty."
+            },
+            {
+              "sequence": 4,
+              "summary": "At one o'clock, Sophie goes inside. Sam lies down across the foot of her ladder, so she can't sneak out again."
+            },
+            {
+              "sequence": 5,
+              "summary": "At a quarter past one, he falls asleep on the moss at the foot of her ladder. He snores loudly until dawn."
+            },
+            {
+              "sequence": 6,
+              "summary": "At dawn he wakes up and hurries back to his tower, hoping nobody noticed he was gone."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "maintain_false_alibi",
+              "priority": "high",
+              "details": "Sam insists he never left his tower. He answers in short grumbles and gets cross when asked about the night. He does not want anyone to know a lifeguard fell asleep away from his post.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "clue_beach_prints"
+                  ],
+                  "shows": "In the night, Sam walked away from the river side by side with a small otter.",
+                  "reaction": "Sam grumbles and admits it. He found Sophie out alone after midnight and walked her home to keep her safe. He still says he went straight back after.",
+                  "concedes_steps": [
+                    2,
+                    3
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_squashed_moss",
+                    "clue_sophie_saw_sam"
+                  ],
+                  "shows": "Sam lay at the foot of Sophie's ladder in the night, away from his tower.",
+                  "reaction": "Sam's ears droop. He lay at Sophie's ladder so she would stay in bed, and he fell asleep there. He snored until dawn, then hurried back to his tower.",
+                  "concedes_steps": [
+                    4,
+                    5,
+                    6
+                  ]
+                }
+              ],
+              "confession": "Bah. I left my tower and fell asleep at Sophie's ladder. My tower was empty all night. If anything was hidden at my tower, it was not me.",
+              "hides_steps": [
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            },
+            {
+              "type": "protect_other",
+              "strategy": "provide_false_cover",
+              "priority": "medium",
+              "details": "Sam will not say Sophie was out at night. If asked about her, he says 'Leave the kid alone, she was in bed.' Once the bear and otter prints on the beach are shown, he stops covering for her and says she was safe at home after one.",
+              "target_character_id": "sophie"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_sam_neck",
+              "text": "He rubs the back of his big neck and stares at his paws.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_beach_prints"
+                ]
+              }
+            },
+            {
+              "id": "tell_sam_growl",
+              "text": "He growls low, then his ears droop sadly.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator says the Heartwood was found buried under his tower."
+              }
+            }
+          ]
+        },
+        {
+          "id": "toby",
+          "first_name": "Toby",
+          "last_name": "Featherby",
+          "location_id": "glitter_lane",
+          "sex": "male",
+          "appearance": "A plump, cheerful pigeon whose feathers shimmer and change colour with his feelings. He wears a little teal cheer cap.",
+          "background": "A kind forest spell long ago made Toby's feathers change colour with his feelings: teal when happy, purple when worried. He cheers for the city's swim team with Alexandra and perches by the Star Clock most nights. Last night he saw the pink flash, flew to the glade, found the hole empty, and got scared. He fibbed because he thinks everyone will blame him.",
+          "personality": "Kind, cheerful, and chatty. He loves cheering and helping, but he gets fluttery and nervous when he is worried.",
+          "initial_attitude_towards_investigator": "Friendly and eager, but a little jumpy when the glade comes up.",
+          "stated_alibi": "I roosted by the Star Clock all night, like always.",
+          "motive": "He wants the swim team to win the Splash Cup, and he loves the Heartwood's sparkle.",
+          "is_culprit": false,
+          "clues": [
+            {
+              "id": "clue_toby_glade_visit",
+              "text": "After the pink flash, I flew to the glade. The Heartwood was gone! Glowing prints ran to the river.",
+              "hint_location_id": "river_bend",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_pink_feather"
+                ],
+                "rationale": "Toby is scared of being blamed, so he hides his trip to the glade. He only tells the truth once you show him his glowing feather from the stump. A kind, clever guess that he went to look could also get it out of him."
+              }
+            },
+            {
+              "id": "clue_toby_saw_eva",
+              "text": "Flying home, I passed the lab oak. Someone on the roof waved a net. Too dark to see who!",
+              "about_character_id": "eva",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_eva_saw_toby"
+                ],
+                "rationale": "Toby hides his flight home, because it proves he left his perch. He only tells what he saw on the way once you show him that Eva saw him fly over her roof. A gentle guess that he flew past the lab could also work."
+              }
+            },
+            {
+              "id": "clue_toby_saw_sam",
+              "text": "Then I flew down the lane. Someone was snoring at the foot of Sophie's ladder.",
+              "about_character_id": "sophie",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_eva_saw_toby"
+                ],
+                "rationale": "This was on Toby's flight home down the lane, which he is hiding. He only tells it once you show him that Eva saw him flying toward the lane after the flash. A gentle guess that he flew home over the lane could also work."
+              }
+            },
+            {
+              "id": "clue_toby_heard_door",
+              "text": "Later, hiding at home, I heard Alexandra's door click shut. It was very late.",
+              "about_character_id": "alexandra",
+              "requires": {
+                "kind": "leverage",
+                "clue_ids": [
+                  "clue_glowing_doormat"
+                ],
+                "rationale": "Toby was hiding at home instead of at his perch, so he keeps this quiet. He shares it once you show him the glow on his own doormat, which proves he came home in the night. A clever question about what he heard that night could also work."
+              }
+            },
+            {
+              "id": "clue_toby_alex_win",
+              "text": "Alexandra wants to win the cup so much. She said she would do anything!",
+              "about_character_id": "alexandra"
+            }
+          ],
+          "flavor_knowledge": [
+            "The Splash Cup swim race is tomorrow, and Toby has made a new cheer for it.",
+            "His feathers turn teal when he is happy and purple when he is worried.",
+            "A feather that falls out of Toby goes back to plain grey.",
+            "He loves sunflower seeds and shares them with the swim team.",
+            "He can fly in loops and spell 'GO' in the sky.",
+            "He perches by the Star Clock most nights because it is cozy and sparkly.",
+            "He thinks Alexandra is the fastest cheerleader ever."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "At nine, after cheer practice by the river, he flies to his perch by the Star Clock."
+            },
+            {
+              "sequence": 2,
+              "summary": "At two o'clock the Star Clock chimes, and he sees the glade flash pink. He flies off to look."
+            },
+            {
+              "sequence": 3,
+              "summary": "A few minutes later he lands on the mossy stump in the glade. The hole is empty, and glowing footprints run off toward the river. Glow sticks to his feet, and a feather falls onto the glowing moss."
+            },
+            {
+              "sequence": 4,
+              "summary": "Scared, he flies straight home with empty feet. He passes over the lab oak, where someone on the roof waves a net, too dark to see who. Then he flies down the lane, where someone is snoring at the foot of Sophie's ladder, too dark to see who."
+            },
+            {
+              "sequence": 5,
+              "summary": "He lands on his doormat, and glow specks rub off his feet. He hides inside his treehouse, feathers purple with worry. Much later, he hears Alexandra's door click shut."
+            },
+            {
+              "sequence": 6,
+              "summary": "In the morning he goes back to the Star Clock and tells everyone he roosted there all night."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "maintain_false_alibi",
+              "priority": "medium",
+              "details": "Toby is chatty about the swim team but says he roosted by the Star Clock all night. If the glade comes up, he flutters, changes the subject, and starts a cheer. He is scared, not sneaky.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "clue_pink_feather"
+                  ],
+                  "shows": "Toby's feather fell on the glowing moss in the glade after the plants were pulled.",
+                  "reaction": "Toby's feathers go purple. He admits he saw the pink flash and flew to the glade to look. But the hole was already empty, and glowing prints ran off toward the river.",
+                  "concedes_steps": [
+                    2,
+                    3
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_eva_saw_toby"
+                  ],
+                  "shows": "Just after the pink flash, Toby was out flying toward the lane, not roosting at the Star Clock.",
+                  "reaction": "Toby's feathers droop. Yes, he was out flying just after the flash. He was flying home over the lab oak toward the lane, with nothing in his feet.",
+                  "concedes_steps": [
+                    4
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_glowing_doormat"
+                  ],
+                  "shows": "Toby came home in the night with glow on his feet.",
+                  "reaction": "Toby gulps. Yes, he came home in the night with glow on his feet, and hid inside.",
+                  "concedes_steps": [
+                    5
+                  ]
+                }
+              ],
+              "confession": "I was scared everyone would think I took the Heartwood, so I fibbed. I'm sorry. I only went to look!",
+              "hides_steps": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_toby_purple",
+              "text": "His feathers flash purple, and he tucks his head under a wing.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_pink_feather"
+                ]
+              }
+            },
+            {
+              "id": "tell_toby_teal",
+              "text": "His feathers turn a happy teal, and he does a little cheer hop.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator mentions the Splash Cup or the swim team."
+              }
+            }
+          ]
+        },
+        {
+          "id": "alexandra",
+          "first_name": "Alexandra",
+          "last_name": "Dash",
+          "location_id": "heartwood_glade",
+          "sex": "female",
+          "appearance": "A slim, quick meerkat with sleek fur that shines like silver. She wears a teal cheer bow and carries two sparkly pom-poms.",
+          "background": "Alexandra is the fastest cheerleader on the swim team and loves being the star of every show. The big Splash Cup race is tomorrow. She believed that if the Heartwood's magic soaked into the river, the team would swim super fast and win. So in the night she took it and buried it under Sam's empty tower. She planned to put it back after the race.",
+          "personality": "Bright, bouncy, and very fast-talking. She smiles a lot and loves attention, but she talks even faster when she is nervous.",
+          "initial_attitude_towards_investigator": "Super friendly and helpful on the outside. She acts shocked and keeps pointing at other people.",
+          "stated_alibi": "I was fast asleep in my treehouse all night. A cheerleader needs her sleep before a big race!",
+          "motive": "She wants the swim team to win the Splash Cup so badly. She thinks Heartwood magic in the river would make them swim super fast.",
+          "is_culprit": true,
+          "clues": [
+            {
+              "id": "clue_alex_sam_grumbles",
+              "text": "Sam grumbles about the Heartwood glow. He says it keeps animals up all night.",
+              "about_character_id": "sam"
+            },
+            {
+              "id": "clue_alex_eva_wants",
+              "text": "Eva always wanted a piece of the Heartwood for her lab.",
+              "about_character_id": "eva"
+            }
+          ],
+          "flavor_knowledge": [
+            "Alexandra can run from one end of Glitterleaf Lane to the other in three blinks.",
+            "She made the team's sparkly pom-poms herself.",
+            "Her best cheer is 'Splash, dash, make a splash!'",
+            "She loves dancing on the beach after practice.",
+            "She thinks Toby is the kindest cheerleader on the team.",
+            "She has a big trophy shelf, but no Splash Cup on it yet."
+          ],
+          "actual_actions": [
+            {
+              "sequence": 1,
+              "summary": "At nine, after cheer practice by the river, she says goodnight and goes home."
+            },
+            {
+              "sequence": 2,
+              "summary": "At ten to two, she creeps out of her treehouse and down her ladder in the dark."
+            },
+            {
+              "sequence": 3,
+              "summary": "At two o'clock, in the Heartwood Glade, she pulls up the glow-vines round the Heartwood's roots. The floor flashes pink. She digs the light trunk free, leaving glowing footprints."
+            },
+            {
+              "sequence": 4,
+              "summary": "She runs down the little path to the river, carrying the Heartwood. Her glowing footprints follow her."
+            },
+            {
+              "sequence": 5,
+              "summary": "At the beach, Sam's tower is dark and empty. Under it, she digs a hole in the sand with her claws and buries the Heartwood, so its magic will soak into the river."
+            },
+            {
+              "sequence": 6,
+              "summary": "She rinses her paws in the river, so her glowing footprints stop at the tower."
+            },
+            {
+              "sequence": 7,
+              "summary": "She runs home up the lane. A few glow specks still stuck to her paws drop onto her doormat."
+            },
+            {
+              "sequence": 8,
+              "summary": "At about twenty to three, she slips inside and her door clicks shut. She goes to bed."
+            },
+            {
+              "sequence": 9,
+              "summary": "In the morning she rushes to the glade, acts shocked, says she slept all night, and hints that grumpy Sam did it."
+            }
+          ],
+          "agendas": [
+            {
+              "type": "self_protect",
+              "strategy": "maintain_false_alibi",
+              "priority": "high",
+              "details": "Alexandra says she slept all night and is just as shocked as everyone. She talks fast, smiles big, and turns every question back to the Splash Cup. She never mentions the beach, digging, or Sam's tower unless the investigator does.",
+              "parts": [
+                {
+                  "clue_ids": [
+                    "clue_toby_heard_door"
+                  ],
+                  "shows": "Alexandra came home very late in the night, after the pink flash.",
+                  "reaction": "Alexandra laughs too fast. Fine, she went out for a little night run because she couldn't sleep before the big race. She says she never went near the Heartwood.",
+                  "concedes_steps": [
+                    2,
+                    8
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_glowing_doormat"
+                  ],
+                  "shows": "Alexandra came home in the night with glow on her paws.",
+                  "reaction": "Alexandra waves her pom-poms. So she stepped in some glow on her run home! Lots of mats glow, she says.",
+                  "concedes_steps": [
+                    7
+                  ]
+                },
+                {
+                  "clue_ids": [
+                    "clue_toby_alex_win"
+                  ],
+                  "shows": "Alexandra badly wants the swim team to win the Splash Cup.",
+                  "reaction": "Alexandra puts her chin up. Of course she wants the team to win. Everybody does! Wanting is not stealing."
+                }
+              ],
+              "confession": "Okay, it was me. I took the Heartwood and buried it under Sam's tower, so its magic would make our team swim super fast. I was going to put it back after the race. I'm really sorry. I'll help plant it back right now.",
+              "hides_steps": [
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ]
+            },
+            {
+              "type": "implicate_other",
+              "strategy": "deflect_blame",
+              "priority": "medium",
+              "details": "Alexandra keeps nudging the investigator toward Sam: his grumbling about the glow, his big tower by the river, how grumpy he is. Once the investigator shows that Sam was asleep at Sophie's ladder, she stops blaming Sam and says Eva always wanted a piece of the Heartwood instead.",
+              "target_character_id": "sam"
+            }
+          ],
+          "tells": [
+            {
+              "id": "tell_alex_paws",
+              "text": "She hides her paws behind her back. Her shiny fur puffs up.",
+              "trigger": {
+                "kind": "clue",
+                "clue_ids": [
+                  "clue_glowing_doormat"
+                ]
+              }
+            },
+            {
+              "id": "tell_alex_river",
+              "text": "Her eyes flick toward the river, and her tail twitches fast.",
+              "trigger": {
+                "kind": "condition",
+                "condition": "The investigator mentions the sand under Sam's tower or finding the Heartwood buried there."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cover_image": {
+      "description": "Under a big round moon, the forest floor glows pink, purple, and teal around an empty hole where the magic Heartwood stood. Five animal friends peer at the glow: a shy otter, a squirrel in round glasses, a big bear in a red vest, a colour-changing pigeon, and a shiny silver meerkat. Glittery treehouses twinkle in the trees behind them.",
+      "location_ids": [
+        "heartwood_glade"
+      ],
+      "character_ids": [
+        "sophie",
+        "eva",
+        "sam",
+        "toby",
+        "alexandra"
+      ]
+    },
+    "ground_truth": {
+      "what_happened": "At two in the night, Alexandra the meerkat sneaked to the Heartwood Glade. She pulled up the glow-vines round the Heartwood's roots, which made the floor flash pink and left glowing footprints. She dug the light trunk free and carried it down the path to the river. Sam's tower was empty, because Sam had walked Sophie home and fallen asleep across the foot of her ladder. Alexandra buried the Heartwood in the sand under the tower, rinsed her paws in the river, and ran home, dropping glow specks on her doormat. Sophie's mat glowed too, from a glowflower she pulled at the Lily Pool, and Toby's mat glowed from his feet after he flew to the glade to look. Toby heard Alexandra's door click late in the night.",
+      "why_it_happened": "Alexandra wanted the swim team to win the Splash Cup so badly. She believed the Heartwood's magic would soak into the river and make the team swim super fast. She planned to put it back after the race.",
+      "timeline": [
+        "9:00pm: Cheer practice ends. Everyone goes home. At ten, Sam starts his night watch in his tower.",
+        "10:00pm: Eva picks up a fallen bark chip at the glade and drops her jar lid in the ferns.",
+        "11:30pm to 12:45am: Sophie sneaks out to swim at the Lily Pool and pulls up one glowflower. Sam sees the glow, finds her, and walks her home.",
+        "1:00am to 1:15am: Sophie goes to bed, with glow specks on her mat. Sam lies across the foot of her ladder and falls asleep. His tower stands empty.",
+        "2:00am: The Star Clock chimes two. Alexandra pulls up the glow-vines and the glade flashes pink. Eva, on her roof, catches seven Moonwing moths. Toby flies toward the flash.",
+        "2:05am to 2:25am: Toby finds the empty hole, gets glow on his feet, drops a feather, and flies home over Eva's roof and past sleeping Sam. Alexandra buries the Heartwood under Sam's empty tower and rinses her paws.",
+        "2:40am: Alexandra gets home, leaving glow specks on her doormat. Her door clicks shut, and Toby hears it. In the morning, the theft is found."
+      ]
+    },
+    "solution_paths": [
+      {
+        "id": "sol_main",
+        "summary": "The thief carried glow home on their paws. Three doormats glow: Sophie's, Toby's, and Alexandra's. Sophie was stuck inside behind a snoring bear, and Toby flew home with empty feet. Only Alexandra is left.",
+        "description": "Step 1: the thief pulled up plants at the hole and left glowing footprints, and Eva explains that glow sticks to paws and feet for hours, so the thief carried glow home. Step 2: glow specks sit on three doormats on the lane: Sophie's, Toby's, and Alexandra's. Step 3: Sophie could not get out at two. Toby saw someone snoring at the foot of her ladder, the squashed moss with bear fur shows it was Sam lying there, and her treehouse has only one ladder. Her glow came from the glowflower she pulled at the Lily Pool. Step 4: Toby only went to look. Just after the flash, Eva saw him fly toward the lane with empty feet, while the thief's trail runs down to the river. That leaves only Alexandra. Her alibi cracks: Toby heard her door click shut very late, and she would do anything to win the Splash Cup. The footprint trail leads to the Heartwood buried under Sam's empty tower.",
+        "payoff": "Alexandra took the Heartwood and buried it under Sam's empty tower to make the swim team win.",
+        "location_clue_ids": [
+          "clue_glowing_footprints",
+          "clue_glowing_doormat",
+          "clue_squashed_moss",
+          "clue_lily_pool_glow",
+          "clue_footprint_trail",
+          "clue_buried_heartwood"
+        ],
+        "character_clue_ids": [
+          "clue_eva_glow_science",
+          "clue_toby_saw_sam",
+          "clue_eva_saw_toby",
+          "clue_toby_heard_door",
+          "clue_toby_alex_win"
+        ]
+      }
+    ],
+    "red_herrings": [
+      {
+        "id": "rh_sam_tower",
+        "summary": "The Heartwood is buried under Sam's tower, Sam grumbles about the glow, and he lied about never leaving his tower.",
+        "description": "The glowing trail stops at Sam's tower, and the Heartwood is buried right under it. Alexandra says Sam hates the glow. The beach prints prove Sam left his tower, so his alibi is false. But he only left to walk Sophie home. Just after the flash, Toby heard someone snoring at the foot of Sophie's ladder, and the squashed moss there holds brown bear fur. Sophie saw Sam asleep there too. A bear snoring on the lane at two could not carry the Heartwood to the river. His grumbling is just grumbling, and the thief simply used his empty tower.",
+        "payoff": "Sam is cleared as the thief. He left his tower to walk Sophie home, and the bear fur in the squashed moss plus Toby's snoring report show he was asleep at her ladder at two. His grumbles about the glow were only grumbles; the real thief used his empty tower to hide the Heartwood.",
+        "location_clue_ids": [
+          "clue_footprint_trail",
+          "clue_buried_heartwood",
+          "clue_beach_prints",
+          "clue_squashed_moss"
+        ],
+        "character_clue_ids": [
+          "clue_alex_sam_grumbles",
+          "clue_sam_found_sophie",
+          "clue_toby_saw_sam",
+          "clue_sophie_saw_sam"
+        ]
+      },
+      {
+        "id": "rh_eva_lid",
+        "summary": "Eva's jar lid is in the glade, and Alexandra says Eva always wanted a piece of the Heartwood.",
+        "description": "The lid labelled 'Eva's Lab' makes Eva look like she was at the scene. But her bench shows a lidless jar with a fallen bark chip tagged at ten, four hours before the theft, and Eva explains she only picked up a chip that fell off by itself.",
+        "payoff": "The lid is explained: Eva dropped it at ten while picking up a fallen bark chip. It has nothing to do with the theft at two.",
+        "location_clue_ids": [
+          "clue_jar_lid",
+          "clue_bark_chip"
+        ],
+        "character_clue_ids": [
+          "clue_alex_eva_wants",
+          "clue_eva_ten_visit"
+        ]
+      }
+    ],
+    "suspect_elimination_paths": [
+      {
+        "id": "elim_sam",
+        "summary": "Someone snored at Sophie's ladder after the flash, and the bear fur there shows it was Sam.",
+        "description": "Toby flew down the lane just after the flash and heard someone snoring at the foot of Sophie's ladder. The squashed moss there holds brown bear fur, and Sophie peeked out and saw Sam asleep there. The beach prints and Sam's own words show why he left his tower.",
+        "payoff": "Sam is ruled out: he was asleep at the foot of Sophie's ladder when the Heartwood was taken.",
+        "location_clue_ids": [
+          "clue_squashed_moss",
+          "clue_beach_prints"
+        ],
+        "character_clue_ids": [
+          "clue_toby_saw_sam",
+          "clue_sophie_saw_sam",
+          "clue_sam_found_sophie"
+        ]
+      },
+      {
+        "id": "elim_sophie",
+        "summary": "Sophie's glow comes from the Lily Pool, and Sam lay across her ladder all night.",
+        "description": "Sophie's alibi cracks, because she did sneak out, and her mat glows. But her webbed glowing prints are by a pulled glowflower at the Lily Pool, not the glade. The beach prints and Sam show he walked her home at one. Then someone big lay snoring at the foot of her ladder: bear fur in the squashed moss shows it was Sam, and Toby heard the snoring after the flash. Her treehouse has no windows, so the ladder is her only way out.",
+        "payoff": "Sophie is ruled out: her glow came from a flower at the Lily Pool, and she could not get past sleeping Sam at two o'clock.",
+        "location_clue_ids": [
+          "clue_lily_pool_glow",
+          "clue_beach_prints",
+          "clue_squashed_moss",
+          "clue_glowing_doormat"
+        ],
+        "character_clue_ids": [
+          "clue_sam_found_sophie",
+          "clue_toby_saw_sam",
+          "clue_sophie_saw_sam"
+        ]
+      },
+      {
+        "id": "elim_eva",
+        "summary": "Eva was on her roof catching moths at two, and her glade visit was at ten.",
+        "description": "Her moth jar says she caught seven moths on her roof at two. Toby saw someone on the lab roof wave a net at him just after the flash, which backs up her jar. Her bark chip and her own story explain the lid: she visited at ten, long before the theft.",
+        "payoff": "Eva is ruled out: her roof alibi is backed up by Toby's sighting, and her lid came from a visit four hours before the theft.",
+        "location_clue_ids": [
+          "clue_moth_jar",
+          "clue_bark_chip"
+        ],
+        "character_clue_ids": [
+          "clue_toby_saw_eva",
+          "clue_eva_ten_visit"
+        ]
+      },
+      {
+        "id": "elim_toby",
+        "summary": "Toby's alibi cracks, but he flew straight home with empty feet while the thief walked to the river.",
+        "description": "Toby's glowing feather and his glowing mat prove he lied about staying at the Star Clock. But just after the flash, Eva saw him fly over her roof toward the lane, and his feet were empty. The thief's glowing trail runs the other way, down the path to the river, where the Heartwood was buried. Toby admits he only flew to the glade to look and found the hole already empty.",
+        "payoff": "Toby is ruled out: he flew home with nothing in his feet, while the thief carried the Heartwood to the river.",
+        "location_clue_ids": [
+          "clue_footprint_trail",
+          "clue_pink_feather",
+          "clue_buried_heartwood",
+          "clue_glowing_doormat"
+        ],
+        "character_clue_ids": [
+          "clue_eva_saw_toby",
+          "clue_toby_glade_visit"
+        ]
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "6471f880-70ff-4c62-808f-db9963414c4d",
+      "sequence": 1,
+      "event_type": "start",
+      "actor": "system",
+      "payload": {
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "blueprint_image_id": null,
+        "starting_knowledge": {
+          "mystery_summary": "The Heartwood was taken at two in the night. The Star Clock chimed two as the glade flashed pink.",
+          "locations": [
+            {
+              "location_id": "heartwood_glade",
+              "summary": "Where the Heartwood stood. The floor here glows when plants get hurt."
+            },
+            {
+              "location_id": "river_bend",
+              "summary": "Where animals swim and play. Sam's lifeguard tower stands on the beach."
+            },
+            {
+              "location_id": "glitter_lane",
+              "summary": "Tree homes with no windows. Sophie lives here. So do Toby and Alexandra."
+            },
+            {
+              "location_id": "eva_lab",
+              "summary": "Eva's lab, full of jars and bugs, high up in an old oak."
+            }
+          ],
+          "characters": [
+            {
+              "character_id": "sophie",
+              "summary": "A shy otter child who loves to play and swim all day long."
+            },
+            {
+              "character_id": "eva",
+              "summary": "A squirrel scientist. She knows every plant, tree, and bug in Arbrum."
+            },
+            {
+              "character_id": "sam",
+              "summary": "The big, grumpy bear lifeguard. He watches the river from his tower."
+            },
+            {
+              "character_id": "toby",
+              "summary": "A kind magic pigeon. His feathers change colour. He cheers for the swim team."
+            },
+            {
+              "character_id": "alexandra",
+              "summary": "A fast, shiny meerkat. She cheers for the swim team with Toby."
+            }
+          ]
+        },
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 1,
+          "event_type": "start",
+          "part_count": 2,
+          "action": "start",
+          "event_category": "start",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 14,
+          "time_after": 14,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Deep in the forest of Arbrum, something is missing. The Heartwood Trunk is gone! Its glow once lit every tree. Follow the glowing clues. Talk to five friends. Who took it, investigator?\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+      "narration_parts": [
+        {
+          "text": "Deep in the forest of Arbrum, something is missing. The Heartwood Trunk is gone! Its glow once lit every tree. Follow the glowing clues. Talk to five friends. Who took it, investigator?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        },
+        {
+          "text": "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:18.873Z"
+    },
+    {
+      "id": "cb50a07e-2fd6-4747-9548-b485fd1121c7",
+      "sequence": 2,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "role": "enter",
+        "destination": "heartwood_glade",
+        "location_id": "heartwood_glade",
+        "location_name": "Heartwood Glade",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 2,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "enter",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 14,
+          "time_after": 14,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Tall trees stand in a ring. In the middle is a big, empty hole where the Heartwood stood. The ground glows pink and purple.\n\nYou can search the little path to the river, the fern patch, and the mossy stump.\n\nA silver meerkat bounces over, shaking two sparkly pom-poms. \"Isn't this awful? Ask Sam, not me!\" She points away, fast.",
+      "narration_parts": [
+        {
+          "text": "Tall trees stand in a ring. In the middle is a big, empty hole where the Heartwood stood. The ground glows pink and purple.\n\nYou can search the little path to the river, the fern patch, and the mossy stump.\n\nA silver meerkat bounces over, shaking two sparkly pom-poms. \"Isn't this awful? Ask Sam, not me!\" She points away, fast.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:28.178Z"
+    },
+    {
+      "id": "a0ca55c4-ad8f-4562-b88f-8fd4f5ec49b1",
+      "sequence": 3,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "heartwood_glade",
+        "location_name": "Heartwood Glade",
+        "search_query": "fern patch",
+        "revealed_clue_id": "clue_jar_lid",
+        "revealed_clue_text": "A tiny glass lid hides in the ferns. Its label says 'Eva's Lab'.",
+        "revealed_clue_ids": [
+          "clue_jar_lid"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search fern patch",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 3,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 14,
+          "time_after": 13,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You push into the curly ferns. Something glints! A tiny glass lid hides in the ferns. Its label says 'Eva's Lab'.",
+      "narration_parts": [
+        {
+          "text": "You push into the curly ferns. Something glints! A tiny glass lid hides in the ferns. Its label says 'Eva's Lab'.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:33.922Z"
+    },
+    {
+      "id": "25444c31-314d-47a1-8fca-c05faba42a08",
+      "sequence": 4,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "heartwood_glade",
+        "location_name": "Heartwood Glade",
+        "search_query": "mossy stump",
+        "revealed_clue_id": "clue_pink_feather",
+        "revealed_clue_text": "A grey pigeon feather lies on the stump. Its tip glows pink.",
+        "revealed_clue_ids": [
+          "clue_jar_lid",
+          "clue_pink_feather"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search mossy stump",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 4,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 13,
+          "time_after": 12,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Soft moss squishes under your fingers. A grey pigeon feather lies on the stump. Its tip glows pink.",
+      "narration_parts": [
+        {
+          "text": "Soft moss squishes under your fingers. A grey pigeon feather lies on the stump. Its tip glows pink.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:40.082Z"
+    },
+    {
+      "id": "a0d5683e-b79e-4200-b7c5-c2598cc8652e",
+      "sequence": 5,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "alexandra",
+        "character_name": "Alexandra",
+        "location_id": "heartwood_glade",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to alexandra",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 5,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 12,
+          "time_after": 11,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "The glade glows pink and purple around the empty hole. Alexandra spins, shaking her sparkly pom-poms. \"Oh my! Hi! Isn't this awful? The Heartwood is gone!\"",
+      "narration_parts": [
+        {
+          "text": "The glade glows pink and purple around the empty hole. Alexandra spins, shaking her sparkly pom-poms. \"Oh my! Hi! Isn't this awful? The Heartwood is gone!\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:47.591Z"
+    },
+    {
+      "id": "ce507e9d-956b-4ea0-ad81-e065fabf071b",
+      "sequence": 6,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "alexandra",
+        "character_name": "Alexandra",
+        "location_id": "heartwood_glade",
+        "player_input": "where were you at two in the night??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:alexandra",
+          "label": "Alexandra"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [],
+        "input": "where were you at two in the night??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 6,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 11,
+          "time_after": 11,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Alexandra gives her pom-poms a shake. \"Me? I was fast asleep in my treehouse! All night long. A cheerleader needs her sleep before a big race!\"",
+      "narration_parts": [
+        {
+          "text": "Alexandra gives her pom-poms a shake. \"Me? I was fast asleep in my treehouse! All night long. A cheerleader needs her sleep before a big race!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:alexandra",
+            "label": "Alexandra"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:31:54.672Z"
+    },
+    {
+      "id": "adad92ab-42f4-4117-b7aa-b999e373ce4e",
+      "sequence": 7,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "alexandra",
+        "character_name": "Alexandra",
+        "location_id": "heartwood_glade",
+        "player_input": "whos feather is the grey one??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:alexandra",
+          "label": "Alexandra"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "The grey feather is not hers; she is a meerkat with no feathers."
+        ],
+        "input": "whos feather is the grey one??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 7,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 11,
+          "time_after": 11,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Alexandra blinks fast. \"A feather? Not mine! I'm a meerkat. Meerkats don't have feathers, silly!\" She shakes her pom-poms.",
+      "narration_parts": [
+        {
+          "text": "Alexandra blinks fast. \"A feather? Not mine! I'm a meerkat. Meerkats don't have feathers, silly!\" She shakes her pom-poms.",
+          "speaker": {
+            "kind": "character",
+            "key": "character:alexandra",
+            "label": "Alexandra"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:03.069Z"
+    },
+    {
+      "id": "f5306533-e75e-41ce-9a9e-37e100aea91c",
+      "sequence": 8,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "alexandra",
+        "character_name": "Alexandra",
+        "location_id": "heartwood_glade",
+        "location_name": "Heartwood Glade",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 8,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 11,
+          "time_after": 11,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Alexandra waves her pom-poms high. \"Gotta go, practice time! Bye, bye!\" She zooms off in a silver blur. You stay in the glade. The pink and purple glow flickers softly around you.",
+      "narration_parts": [
+        {
+          "text": "Alexandra waves her pom-poms high. \"Gotta go, practice time! Bye, bye!\" She zooms off in a silver blur. You stay in the glade. The pink and purple glow flickers softly around you.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:08.120Z"
+    },
+    {
+      "id": "95fada7b-47c7-4f47-a0af-8fd4a373af23",
+      "sequence": 9,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "eva_lab",
+        "location_id": "eva_lab",
+        "location_name": "Eva's Oak Lab",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to eva's oak lab",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 9,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 11,
+          "time_after": 10,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You climb into Eva's Oak Lab. Jars of bark, seeds, and bugs fill the shelves. Glittery leaves rustle outside. A red squirrel smiles at you. \"Hello! I'm Eva. Welcome, clue-finder!\" She wags her big fluffy tail. You can search the sample bench or the roof hatch.",
+      "narration_parts": [
+        {
+          "text": "You climb into Eva's Oak Lab. Jars of bark, seeds, and bugs fill the shelves. Glittery leaves rustle outside. A red squirrel smiles at you. \"Hello! I'm Eva. Welcome, clue-finder!\" She wags her big fluffy tail. You can search the sample bench or the roof hatch.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:17.429Z"
+    },
+    {
+      "id": "6f913931-b01f-4cdb-ada5-93c797280461",
+      "sequence": 10,
+      "event_type": "search",
+      "actor": "system",
+      "payload": {
+        "role": "search",
+        "location_id": "eva_lab",
+        "location_name": "Eva's Oak Lab",
+        "search_query": "sample bench",
+        "revealed_clue_id": "clue_bark_chip",
+        "revealed_clue_text": "A jar with no lid holds one bark chip. Its tag says: 'Fell off the Heartwood. Picked up at ten.'",
+        "revealed_clue_ids": [
+          "clue_bark_chip"
+        ],
+        "revealed_off_script": [],
+        "costs_turn": true,
+        "input_understood": true,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search sample bench",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 10,
+          "event_type": "search",
+          "part_count": 1,
+          "action": "search",
+          "event_category": "search",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 10,
+          "time_after": 9,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Glitter shines on the labels of the sample bench. A jar with no lid holds one bark chip. Its tag says: 'Fell off the Heartwood. Picked up at ten.'",
+      "narration_parts": [
+        {
+          "text": "Glitter shines on the labels of the sample bench. A jar with no lid holds one bark chip. Its tag says: 'Fell off the Heartwood. Picked up at ten.'",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:23.829Z"
+    },
+    {
+      "id": "baf8c396-7e42-4334-9e46-b2aa3ecee1f4",
+      "sequence": 11,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "eva",
+        "character_name": "Eva",
+        "location_id": "eva_lab",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to eva",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 11,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 9,
+          "time_after": 8,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Jars of bark and seeds sparkle on the shelves. Eva's fluffy tail swishes as she turns to you. \"Hello, clue-finder! Ask me anything,\" she says with a smile.",
+      "narration_parts": [
+        {
+          "text": "Jars of bark and seeds sparkle on the shelves. Eva's fluffy tail swishes as she turns to you. \"Hello, clue-finder! Ask me anything,\" she says with a smile.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:32.075Z"
+    },
+    {
+      "id": "84349466-1ed1-4874-8f83-8ac8235a10e4",
+      "sequence": 12,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "eva",
+        "character_name": "Eva",
+        "location_id": "eva_lab",
+        "player_input": "whos the bark chip for and did you loose a lid??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:eva",
+          "label": "Eva"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "The bark chip is for her jar on her lab bench",
+          "Does not yet admit losing a lid; her pockets are full of jars"
+        ],
+        "input": "whos the bark chip for and did you loose a lid??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 12,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Eva's tail swishes. \"The bark chip is for my jar on the bench. I study all kinds of bark!\" She tilts her head. \"A lid? My pockets are full of little jars. Have you got it here?\"",
+      "narration_parts": [
+        {
+          "text": "Eva's tail swishes. \"The bark chip is for my jar on the bench. I study all kinds of bark!\" She tilts her head. \"A lid? My pockets are full of little jars. Have you got it here?\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:eva",
+            "label": "Eva"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:43.032Z"
+    },
+    {
+      "id": "4aa865d1-1390-4b9a-adfb-b8e3792fe2ee",
+      "sequence": 13,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "eva",
+        "character_name": "Eva",
+        "location_id": "eva_lab",
+        "player_input": "yes i found ur lid in the glade! who was in ur lab at ten??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:eva",
+          "label": "Eva"
+        },
+        "revealed_clue_ids": [
+          "clue_eva_ten_visit"
+        ],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [
+          "clue_jar_lid"
+        ],
+        "used_quote": "yes i found ur lid in the glade!",
+        "new_commitments": [
+          "Admits her jar lid was lost in the Heartwood Glade",
+          "Was at the Heartwood Glade at ten, not in her lab",
+          "Picked up a fallen bark chip at ten and never touched the trunk"
+        ],
+        "input": "yes i found ur lid in the glade! who was in ur lab at ten??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 13,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "\"That's my lid!\" Eva pushes her glasses up her nose, twice. \"I was at the glade at ten, not here. A bark chip had fallen off. I never touched the trunk!\"",
+      "narration_parts": [
+        {
+          "text": "\"That's my lid!\" Eva pushes her glasses up her nose, twice. \"I was at the glade at ten, not here. A bark chip had fallen off. I never touched the trunk!\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:eva",
+            "label": "Eva"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:32:57.526Z"
+    },
+    {
+      "id": "c428043d-ac40-4b43-9b97-5a259294164e",
+      "sequence": 14,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "eva",
+        "character_name": "Eva",
+        "location_id": "eva_lab",
+        "player_input": "did u see a pigeon at the glade??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:eva",
+          "label": "Eva"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Saw no pigeon at the glade",
+          "From her lab roof, she saw only a pink flash far off at the glade"
+        ],
+        "input": "did u see a pigeon at the glade??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 14,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Eva shakes her head. \"No pigeon at the glade. I was up on my roof. I saw a pink flash far away.\"",
+      "narration_parts": [
+        {
+          "text": "Eva shakes her head. \"No pigeon at the glade. I was up on my roof. I saw a pink flash far away.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:eva",
+            "label": "Eva"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:06.894Z"
+    },
+    {
+      "id": "73d70d7d-1fd1-4189-9c42-e143e901c628",
+      "sequence": 15,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "eva",
+        "character_name": "Eva",
+        "location_id": "eva_lab",
+        "location_name": "Eva's Oak Lab",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 15,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 8,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Eva smiles and tucks her moth net away. \"I must check my moth jar now. Thank you, clue-finder!\" she says, waving. You look around the lab. Bugs peek out from the jars.",
+      "narration_parts": [
+        {
+          "text": "Eva smiles and tucks her moth net away. \"I must check my moth jar now. Thank you, clue-finder!\" she says, waving. You look around the lab. Bugs peek out from the jars.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:11.861Z"
+    },
+    {
+      "id": "4960d7a5-e61b-4332-9acf-5d133ac7b039",
+      "sequence": 16,
+      "event_type": "move",
+      "actor": "system",
+      "payload": {
+        "destination": "glitter_lane",
+        "location_id": "glitter_lane",
+        "location_name": "Glitterleaf Lane",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "go to glitterleaf lane",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 16,
+          "event_type": "move",
+          "part_count": 1,
+          "action": "move",
+          "event_category": "move",
+          "mode": "explore",
+          "resulting_mode": "explore",
+          "time_before": 8,
+          "time_after": 7,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You step onto Glitterleaf Lane. Sparkly treehouses line the path, each with one door and one ladder. Doormats wait by the doors. A tall Star Clock flower stands nearby.\n\nToby Featherby hops over, his teal cap wobbling. He glances away, fluttering. \"Oh! Hello! Lovely night, isn't it?\"",
+      "narration_parts": [
+        {
+          "text": "You step onto Glitterleaf Lane. Sparkly treehouses line the path, each with one door and one ladder. Doormats wait by the doors. A tall Star Clock flower stands nearby.\n\nToby Featherby hops over, his teal cap wobbling. He glances away, fluttering. \"Oh! Hello! Lovely night, isn't it?\"",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:23.730Z"
+    },
+    {
+      "id": "1cdca0e4-647c-4fcb-9366-5a2f8abea479",
+      "sequence": 17,
+      "event_type": "talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_start",
+        "character_id": "toby",
+        "character_name": "Toby",
+        "location_id": "glitter_lane",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "talk to toby",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 17,
+          "event_type": "talk",
+          "part_count": 1,
+          "action": "talk",
+          "event_category": "talk",
+          "mode": "explore",
+          "resulting_mode": "talk",
+          "time_before": 7,
+          "time_after": 6,
+          "time_consumed": true,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Toby the pigeon bobs next to the tall Star Clock flower. His feathers shimmer softly. \"Hello, friend! Isn't this lane lovely and sparkly?\" he chirps.",
+      "narration_parts": [
+        {
+          "text": "Toby the pigeon bobs next to the tall Star Clock flower. His feathers shimmer softly. \"Hello, friend! Isn't this lane lovely and sparkly?\" he chirps.",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:32.881Z"
+    },
+    {
+      "id": "a7b9fa9a-6103-44a3-8bc9-21bb52a2e899",
+      "sequence": 18,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "toby",
+        "character_name": "Toby",
+        "location_id": "glitter_lane",
+        "player_input": "toby whos is the grey feather with pink tip?? where were u at two in the night??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:toby",
+          "label": "Toby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Says the grey feather could belong to any grey pigeon.",
+          "Says he was by the Star Clock all night, like always."
+        ],
+        "input": "toby whos is the grey feather with pink tip?? where were u at two in the night??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 18,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Toby ruffles his feathers and hops back. \"A feather? Lots of grey pigeons look the same!\" He peeks at the lane. \"I was by the Star Clock all night, like always.\"",
+      "narration_parts": [
+        {
+          "text": "Toby ruffles his feathers and hops back. \"A feather? Lots of grey pigeons look the same!\" He peeks at the lane. \"I was by the Star Clock all night, like always.\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:toby",
+            "label": "Toby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:43.066Z"
+    },
+    {
+      "id": "ce58ded8-5773-4b8e-aa93-7f2501c5f2b8",
+      "sequence": 19,
+      "event_type": "ask",
+      "actor": "system",
+      "payload": {
+        "role": "talk_conversation",
+        "character_id": "toby",
+        "character_name": "Toby",
+        "location_id": "glitter_lane",
+        "player_input": "but the star clock chimed two and the glade flashed pink! did u go to the glade??",
+        "character_portrait_image_id": null,
+        "speaker": {
+          "kind": "character",
+          "key": "character:toby",
+          "label": "Toby"
+        },
+        "revealed_clue_ids": [],
+        "revealed_off_script": [],
+        "input_understood": true,
+        "used_clue_ids": [],
+        "used_quote": null,
+        "new_commitments": [
+          "Denies going to the glade last night."
+        ],
+        "input": "but the star clock chimed two and the glade flashed pink! did u go to the glade??",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 19,
+          "event_type": "ask",
+          "part_count": 1,
+          "action": "ask",
+          "event_category": "ask",
+          "mode": "talk",
+          "resulting_mode": "talk",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Toby's feathers wobble. \"The glade? No, no! I stayed by the Star Clock all night. Isn't this lane sparkly?\"",
+      "narration_parts": [
+        {
+          "text": "Toby's feathers wobble. \"The glade? No, no! I stayed by the Star Clock all night. Isn't this lane sparkly?\"",
+          "speaker": {
+            "kind": "character",
+            "key": "character:toby",
+            "label": "Toby"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:51.190Z"
+    },
+    {
+      "id": "3276eefc-4ee9-4047-94e9-dddfbda659d8",
+      "sequence": 20,
+      "event_type": "end_talk",
+      "actor": "system",
+      "payload": {
+        "role": "talk_end",
+        "character_id": "toby",
+        "character_name": "Toby",
+        "location_id": "glitter_lane",
+        "location_name": "Glitterleaf Lane",
+        "location_image_id": null,
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "bye",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 20,
+          "event_type": "end_talk",
+          "part_count": 1,
+          "action": "end_talk",
+          "event_category": "end_talk",
+          "mode": "talk",
+          "resulting_mode": "explore",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Toby flaps his wings with a happy wiggle. \"I have to practise my new cheer now! Bye, friend!\" He hops off with a cheerful chirp. You stand in Glitterleaf Lane. Tall Star Clock flower sways above you. Time to look around!",
+      "narration_parts": [
+        {
+          "text": "Toby flaps his wings with a happy wiggle. \"I have to practise my new cheer now! Bye, friend!\" He hops off with a cheerful chirp. You stand in Glitterleaf Lane. Tall Star Clock flower sways above you. Time to look around!",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:33:56.766Z"
+    },
+    {
+      "id": "dde2e444-7f93-4cb7-8730-6a4f93783926",
+      "sequence": 21,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "toby because his grey pigeon feather was at the glade and he was nervous",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "accuse toby because his grey pigeon feather was at the glade and he was nervous",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 21,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not yet, clue-finder. A feather is a good clue, but it does not prove who took the Heartwood. Think about the glow. Who came home with glow on their paws?",
+      "narration_parts": [
+        {
+          "text": "Not yet, clue-finder. A feather is a good clue, but it does not prove who took the Heartwood. Think about the glow. Who came home with glow on their paws?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:34:04.115Z"
+    },
+    {
+      "id": "e7f3fce2-f07d-4216-afe9-c1860fe47ff2",
+      "sequence": 22,
+      "event_type": "accuse_round",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "search doormats",
+        "judge_result": "continue",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "search doormats",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 22,
+          "event_type": "accuse_round",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_round",
+          "mode": "accuse",
+          "resulting_mode": "accuse",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "Not proven yet, clue-finder. Your case needs more facts. Think about the glow. Where did the glowing footprints lead, and who could have made them?",
+      "narration_parts": [
+        {
+          "text": "Not proven yet, clue-finder. Your case needs more facts. Think about the glow. Where did the glowing footprints lead, and who could have made them?",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:34:13.508Z"
+    },
+    {
+      "id": "242c4b15-1ae5-41a8-8691-957b9decfb98",
+      "sequence": 23,
+      "event_type": "accuse_resolved",
+      "actor": "system",
+      "payload": {
+        "role": "accusation_judge",
+        "player_reasoning": "alexandra did it because she has glow on her paws and she lied that she was asleep and the pigeon feather was to trick us",
+        "judge_result": "win",
+        "speaker": {
+          "kind": "narrator",
+          "key": "narrator",
+          "label": "Narrator"
+        },
+        "input": "alexandra did it because she has glow on her paws and she lied that she was asleep and the pigeon feather was to trick us",
+        "diagnostics": {
+          "session_id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+          "sequence": 23,
+          "event_type": "accuse_resolved",
+          "part_count": 1,
+          "action": "accuse_reasoning",
+          "event_category": "accuse_resolved",
+          "mode": "accuse",
+          "resulting_mode": "ended",
+          "time_before": 6,
+          "time_after": 6,
+          "time_consumed": false,
+          "forced_endgame": false,
+          "trigger": "player",
+          "related_sequence": null
+        }
+      },
+      "narration": "You got it! Alexandra took the Heartwood. Her paws had glow on them, but she said she was asleep. She wanted the swim team to win the Splash Cup. Well done, clue-finder!",
+      "narration_parts": [
+        {
+          "text": "You got it! Alexandra took the Heartwood. Her paws had glow on them, but she said she was asleep. She wanted the swim team to win the Splash Cup. Well done, clue-finder!",
+          "speaker": {
+            "kind": "narrator",
+            "key": "narrator",
+            "label": "Narrator"
+          }
+        }
+      ],
+      "clues_revealed": [],
+      "model": "claude-haiku-5-5",
+      "created_at": "2026-11-20T14:34:30.176Z"
+    }
+  ]
+}

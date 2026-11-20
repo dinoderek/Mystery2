@@ -1,0 +1,797 @@
+{
+  "schema_version": "mystery-eval-result/2",
+  "run": {
+    "id": "2026-11-20/14-25-26-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "/Users/dinohughes/mysteryevals/2026-11-20/13-53-06-generate/lucia-heartwood-agent-opus/rounds/2/blueprint.json",
+      "--persona",
+      "detective",
+      "--narrator-model",
+      "haiku",
+      "--judge"
+    ],
+    "started_at": "2026-11-20T14:25:26.217Z",
+    "ended_at": "2026-11-20T14:30:48.064Z",
+    "commit": "8b138510af3cc35c9dbb9b4ac9fdaf6c17aa2050",
+    "tree_clean": true,
+    "bindings": {
+      "investigator": {
+        "cmd": "evaluation/playtest/wrappers/claude-investigator.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": null,
+        "model": "sonnet",
+        "timeout_ms": 120000,
+        "retries": 2
+      },
+      "game-judge": {
+        "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": "result",
+        "model": "opus",
+        "timeout_ms": 1800000,
+        "retries": 1
+      }
+    },
+    "judge_versions": {
+      "solve_depth": 1,
+      "fairness": 1,
+      "timeline_coherence": 1,
+      "knowledge_coherence": 1,
+      "character_grounding": 3,
+      "path_payoff": 1,
+      "clue_graph": 3,
+      "age_appropriate": 1,
+      "gm_roleplay": 4,
+      "gm_clue_discipline": 3,
+      "gm_fabrication": 2,
+      "gm_spoiler": 2,
+      "age_appropriate_turn": 1,
+      "solve_depth_fairness": 1,
+      "knowledge_timeline_coherence": 1,
+      "blueprint_broad": 1,
+      "gm_broad": 3
+    }
+  },
+  "subject": {
+    "kind": "game",
+    "id": "38d0c2d2-491e-4673-854e-4829ba9a4ab3",
+    "path": "trace.json"
+  },
+  "production": {
+    "calls": [
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "962116e0478b2a32c6fa2a41372afb18e99436f7fdda93356ed772536c6e015a",
+        "duration_ms": 2273,
+        "cost_usd": 0.011715999999999999,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2272,
+            "cost_usd": 0.011715999999999999
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "de28f874da31d754723995c840216ee7e2dbfca5b1a499f92b3cb24ac1b759cf",
+        "duration_ms": 2304,
+        "cost_usd": 0.0080933,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2303,
+            "cost_usd": 0.0080933
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "a70ace8382c45a4dc1ef76e159672ceee6df605909a545dd03b39729a6485d93",
+        "duration_ms": 2695,
+        "cost_usd": 0.0085693,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2694,
+            "cost_usd": 0.0085693
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "e3f2c12631e6dd0b885301271736741fade6d26db50e0c77d6e1fdf586cf360e",
+        "duration_ms": 2328,
+        "cost_usd": 0.0090133,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2328,
+            "cost_usd": 0.0090133
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "344c0aa9ca7a29930f3f67a46aeff5b88adf918eee199788f5a8b451a20ad848",
+        "duration_ms": 2370,
+        "cost_usd": 0.0091913,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2369,
+            "cost_usd": 0.0091913
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "3ff459ee98d7515b295ff81d51b7d63bf1de62b5038475f51be6ce1ec8a9a7c8",
+        "duration_ms": 2385,
+        "cost_usd": 0.0093533,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2384,
+            "cost_usd": 0.0093533
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "57bda0da0c575d0c494604ea7a5d790ac604b66cd643813de80a82b7db582541",
+        "duration_ms": 2512,
+        "cost_usd": 0.009725300000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2511,
+            "cost_usd": 0.009725300000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "b89c16ee6d6b497761beadf0b19e82966877e2d388554e44bcac5996f89f2d6e",
+        "duration_ms": 2174,
+        "cost_usd": 0.0100973,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2173,
+            "cost_usd": 0.0100973
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f9c5dec69a40064c5ff3ba237f8dfc87d544779f33319db6b6bfc2eda0fb7a91",
+        "duration_ms": 2241,
+        "cost_usd": 0.0108573,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2240,
+            "cost_usd": 0.0108573
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "76b4a06264e130d202348731ca58010b73246c2a1a264e6be6330f56221bab06",
+        "duration_ms": 2442,
+        "cost_usd": 0.0110633,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2441,
+            "cost_usd": 0.0110633
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "24f1e3c0307583a5e53e240affe223959666787f33543c0ad88d2b17043852f7",
+        "duration_ms": 2357,
+        "cost_usd": 0.0117233,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2356,
+            "cost_usd": 0.0117233
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8fd2cacf2269749c4a956b11fa675b4e5fbbedbf55eb9daab31ada61c47a4648",
+        "duration_ms": 2719,
+        "cost_usd": 0.0124513,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2718,
+            "cost_usd": 0.0124513
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "9e33ec155b359c5e7765c4b1711e017720572aeed2a3bd6c7fb5d9a4ea9b1fdb",
+        "duration_ms": 3398,
+        "cost_usd": 0.0130813,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3397,
+            "cost_usd": 0.0130813
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "66ac89252f85676773063cf0c2704e45793c198fc5da558810d196a9515f2c75",
+        "duration_ms": 2505,
+        "cost_usd": 0.0130173,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2504,
+            "cost_usd": 0.0130173
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "685fad083acd51041020e77cfab6601d1fccda7681d0b274463c951a79b83c97",
+        "duration_ms": 2495,
+        "cost_usd": 0.013385300000000001,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2494,
+            "cost_usd": 0.013385300000000001
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8faab3490dbe9b0648da473e95c538278aa0300c506891550e6a46caf1d68480",
+        "duration_ms": 2989,
+        "cost_usd": 0.0140673,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2988,
+            "cost_usd": 0.0140673
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "6d5a9e37d162a70f3dce8cda1205f7dcdaebef6e20aa33922ed38ce3b3c8142f",
+        "duration_ms": 4117,
+        "cost_usd": 0.0165253,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4116,
+            "cost_usd": 0.0165253
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "eb132681dc4d34ba71964c91ab2fdd95bb68ac27d34ad4321c394f96cb4cce5f",
+        "duration_ms": 2923,
+        "cost_usd": 0.0150233,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2922,
+            "cost_usd": 0.0150233
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "86777ad4c0ef1148b47a69b6419684777b35e9ac61e63be6a9241279768676ba",
+        "duration_ms": 3673,
+        "cost_usd": 0.0164793,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3672,
+            "cost_usd": 0.0164793
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "a5bf36340e5b094a5cc1158c07cb8fa1157bc921f31e6ca3650abb31ffcb93f2",
+        "duration_ms": 3202,
+        "cost_usd": 0.0166193,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3201,
+            "cost_usd": 0.0166193
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "23d1c13ef16517c7fa16ac67e37b2c088b256425ed9b5b4e35e1b7c0462a3d80",
+        "duration_ms": 2877,
+        "cost_usd": 0.0161673,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2875,
+            "cost_usd": 0.0161673
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "e69c713a4d2795068d9b9f8738c62f4f2e5a748de06afcaf921b9b3dbd525ddb",
+        "duration_ms": 2610,
+        "cost_usd": 0.0168193,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2609,
+            "cost_usd": 0.0168193
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "23c008ae3aebdd41e6331d7547ab2ae5a3a5b3cc0ec53b4d1438a0f6ae2db176",
+        "duration_ms": 3075,
+        "cost_usd": 0.0174493,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3075,
+            "cost_usd": 0.0174493
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "535ecec13e12ffed4c58972ccd930e8999adb64ec3301293968a8bc292d8c050",
+        "duration_ms": 4393,
+        "cost_usd": 0.019817300000000003,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4392,
+            "cost_usd": 0.019817300000000003
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "47b3a30e1f677a67c7b172c20c0c693524530a6827a781ccfa2acff5d5f5b91e",
+        "duration_ms": 3698,
+        "cost_usd": 0.0196733,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3696,
+            "cost_usd": 0.0196733
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f5dbf811859ea369cd1b321d0521df1de20ec0fd5ce3032594eaf7737072c8af",
+        "duration_ms": 3608,
+        "cost_usd": 0.0194253,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3607,
+            "cost_usd": 0.0194253
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "65af9215ea062c75466954ebd27db95e976eb192113c9c9a09ed57849f598765",
+        "duration_ms": 5383,
+        "cost_usd": 0.022525299999999998,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5382,
+            "cost_usd": 0.022525299999999998
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8f5a1cfdc0644ba9e8e6910a364331a6c424d2d873008bb765a42b3ede4c3afd",
+        "duration_ms": 4909,
+        "cost_usd": 0.0222233,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 4908,
+            "cost_usd": 0.0222233
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "8c696949f254922312eb9b0ceb867897eaade905bdf702f553639c75df017fb7",
+        "duration_ms": 5945,
+        "cost_usd": 0.0247053,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5944,
+            "cost_usd": 0.0247053
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "49faff707de134a1cbd934df684320c8e28891906d85f5f601713b9978f1ace2",
+        "duration_ms": 9811,
+        "cost_usd": 0.0297413,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 9810,
+            "cost_usd": 0.0297413
+          }
+        ]
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "id": "clue_accounting",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "spoiler_leak",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": {
+        "min_run": 12
+      }
+    },
+    {
+      "id": "gm_roleplay",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 27,
+          "severity": "minor",
+          "kind": "tell",
+          "quote": "His feathers glow soft teal.",
+          "why": "This echoes tell_toby_teal, whose condition is a mention of the Splash Cup or swim team. Neither was mentioned. Teal-when-happy is also in flavor_knowledge, and the cheer hop is absent, so it reads as improvised colour."
+        },
+        {
+          "sequence": 29,
+          "severity": "minor",
+          "kind": "tell",
+          "quote": "pushing up her round glasses",
+          "why": "This resembles tell_eva_glasses, which should fire only when clue_jar_lid is used, and the lid was not shown. The habit is also part of Eva's authored personality and is not the 'twice' tell, so it is a blemish only.",
+          "refers_to": "eva"
+        },
+        {
+          "sequence": 2,
+          "severity": "minor",
+          "kind": "agenda",
+          "quote": "\"Oh my! Go ask Sam!\"",
+          "why": "Alexandra's implicate_other agenda toward Sam is played bluntly in the arrival line. It reads more like announcing the agenda than nudging organically.",
+          "refers_to": "alexandra"
+        }
+      ],
+      "details": {
+        "reasoning": "All characters stay true to their authored personas. Alexandra is bouncy and deflects toward Sam. Sophie is shy and concedes exactly her Lily Pool part once clue_lily_pool_glow is used, with the correct tail tell. Sam is gruff and holds his false alibi, since no beach prints were used. Toby's purple tell and his glade confession follow the use of the pink feather, as authored. Narrator turns use 'you', stay cozy, and expose no game mechanics. The only issues are small tell echoes and one heavy-handed deflection.",
+        "major_count": 0,
+        "minor_count": 3,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "7323476d7046d4d53e77874325c45fa1d9d2cfe143842c5e518add16d627602a",
+        "duration_ms": 20648,
+        "cost_usd": 0.280308,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 20648,
+            "cost_usd": 0.280308
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 27,
+            "severity": "minor",
+            "kind": "tell",
+            "quote": "His feathers glow soft teal.",
+            "why": "This echoes tell_toby_teal, whose condition is a mention of the Splash Cup or swim team. Neither was mentioned. Teal-when-happy is also in flavor_knowledge, and the cheer hop is absent, so it reads as improvised colour."
+          },
+          {
+            "sequence": 29,
+            "severity": "minor",
+            "kind": "tell",
+            "quote": "pushing up her round glasses",
+            "why": "This resembles tell_eva_glasses, which should fire only when clue_jar_lid is used, and the lid was not shown. The habit is also part of Eva's authored personality and is not the 'twice' tell, so it is a blemish only.",
+            "refers_to": "eva"
+          },
+          {
+            "sequence": 2,
+            "severity": "minor",
+            "kind": "agenda",
+            "quote": "\"Oh my! Go ask Sam!\"",
+            "why": "Alexandra's implicate_other agenda toward Sam is played bluntly in the arrival line. It reads more like announcing the agenda than nudging organically.",
+            "refers_to": "alexandra"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "All characters stay true to their authored personas. Alexandra is bouncy and deflects toward Sam. Sophie is shy and concedes exactly her Lily Pool part once clue_lily_pool_glow is used, with the correct tail tell. Sam is gruff and holds his false alibi, since no beach prints were used. Toby's purple tell and his glade confession follow the use of the pink feather, as authored. Narrator turns use 'you', stay cozy, and expose no game mechanics. The only issues are small tell echoes and one heavy-handed deflection."
+      }
+    },
+    {
+      "id": "gm_clue_discipline",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 11,
+          "severity": "major",
+          "kind": "withheld",
+          "quote": "It is dark and shady. Just cool sand and one leaf. Try the Lily Pool reeds!",
+          "why": "The player named the under_tower sub-location and already held the gate clue clue_footprint_trail (seq 9). So clue_buried_heartwood was unlocked and should have been revealed. Instead the narration said nothing was there and steered the player away from the stolen Heartwood, which misleads them.",
+          "refers_to": "clue_buried_heartwood"
+        }
+      ],
+      "details": {
+        "reasoning": "Most turns match the blueprint. Searches delivered faithful clue text with correct ids. Toby's glade-visit clue came only after the player used the pink feather. Sophie's and Toby's admissions were agenda reactions, not clue reveals. One major defect: at seq 11 the player searched under the tower with the footprint-trail gate met, but the GM narrated an empty spot. That withheld the unlocked clue_buried_heartwood and pointed the player elsewhere.",
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "d20ad3fc7696717279a196e214897be3cccbb1203a57e913ebf294fd6f5b2b9e",
+        "duration_ms": 15216,
+        "cost_usd": 0.260004,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 15216,
+            "cost_usd": 0.260004
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 11,
+            "severity": "major",
+            "kind": "withheld",
+            "quote": "It is dark and shady. Just cool sand and one leaf. Try the Lily Pool reeds!",
+            "why": "The player named the under_tower sub-location and already held the gate clue clue_footprint_trail (seq 9). So clue_buried_heartwood was unlocked and should have been revealed. Instead the narration said nothing was there and steered the player away from the stolen Heartwood, which misleads them.",
+            "refers_to": "clue_buried_heartwood"
+          }
+        ],
+        "verdict": "fail",
+        "reasoning": "Most turns match the blueprint. Searches delivered faithful clue text with correct ids. Toby's glade-visit clue came only after the player used the pink feather. Sophie's and Toby's admissions were agenda reactions, not clue reveals. One major defect: at seq 11 the player searched under the tower with the footprint-trail gate met, but the GM narrated an empty spot. That withheld the unlocked clue_buried_heartwood and pointed the player elsewhere."
+      }
+    },
+    {
+      "id": "gm_fabrication",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 11,
+          "severity": "major",
+          "kind": "contradiction",
+          "quote": "It is dark and shady. Just cool sand and one leaf. Try the Lily Pool reeds!",
+          "why": "Under the tower holds the buried Heartwood (clue_buried_heartwood), and its pointer gate (clue_footprint_trail) was already met. Saying there is only sand and a leaf denies a load-bearing fact and steers the player away from where the Heartwood is.",
+          "refers_to": "under_tower"
+        },
+        {
+          "sequence": 30,
+          "severity": "minor",
+          "kind": "object",
+          "quote": "Glowing dust sparkles on the labels.",
+          "why": "The blueprint puts no glow on Eva's bench. In this mystery glow marks the thief, so this added detail could wrongly point at Eva, though no clue relies on it.",
+          "refers_to": "lab_bench"
+        },
+        {
+          "sequence": 7,
+          "severity": "minor",
+          "kind": "event",
+          "quote": "\"Gotta go! Practice is calling!\" She zooms off",
+          "why": "The blueprint mentions no practice that morning and does not have Alexandra leave her location. This is harmless embellishment.",
+          "refers_to": "alexandra"
+        }
+      ],
+      "details": {
+        "reasoning": "Most narration stays close to the blueprint, and the characters' lies are authored. The fail comes from turn 11, where the narrator says the spot under the tower holds only sand and a leaf. The blueprint buries the Heartwood there, and the trail gate was already met. That is a load-bearing contradiction. The other two findings are minor embellishments.",
+        "major_count": 1,
+        "minor_count": 2,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "d723e45cb20f5f9caf8d4d22e46c61b29c6b9270fa3b6ae55f9ac23384ff6c0c",
+        "duration_ms": 16430,
+        "cost_usd": 0.262248,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 16430,
+            "cost_usd": 0.262248
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 11,
+            "severity": "major",
+            "kind": "contradiction",
+            "quote": "It is dark and shady. Just cool sand and one leaf. Try the Lily Pool reeds!",
+            "why": "Under the tower holds the buried Heartwood (clue_buried_heartwood), and its pointer gate (clue_footprint_trail) was already met. Saying there is only sand and a leaf denies a load-bearing fact and steers the player away from where the Heartwood is.",
+            "refers_to": "under_tower"
+          },
+          {
+            "sequence": 30,
+            "severity": "minor",
+            "kind": "object",
+            "quote": "Glowing dust sparkles on the labels.",
+            "why": "The blueprint puts no glow on Eva's bench. In this mystery glow marks the thief, so this added detail could wrongly point at Eva, though no clue relies on it.",
+            "refers_to": "lab_bench"
+          },
+          {
+            "sequence": 7,
+            "severity": "minor",
+            "kind": "event",
+            "quote": "\"Gotta go! Practice is calling!\" She zooms off",
+            "why": "The blueprint mentions no practice that morning and does not have Alexandra leave her location. This is harmless embellishment.",
+            "refers_to": "alexandra"
+          }
+        ],
+        "verdict": "fail",
+        "reasoning": "Most narration stays close to the blueprint, and the characters' lies are authored. The fail comes from turn 11, where the narrator says the spot under the tower holds only sand and a leaf. The blueprint buries the Heartwood there, and the trail gate was already met. That is a load-bearing contradiction. The other two findings are minor embellishments."
+      }
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [],
+      "details": {
+        "reasoning": "No pre-accusation turn reveals the culprit, motive, or mechanism. Alexandra's 'Go ask Sam!' fits her authored deflection agenda. Sophie's and Toby's admissions are earned concessions: the Lily Pool clue and the pink feather were shown. At seq 11 the narrator found nothing under the tower and did not reveal the buried Heartwood. The narrator never chained clues toward Alexandra. The solution is discussed only in the accusation phase (seq 31–33).",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "e158e3ecf901b24d31592ba0201874a8f9e26b1db6569e236b30b90d7f0baeb7",
+        "duration_ms": 9348,
+        "cost_usd": 0.24722,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 9347,
+            "cost_usd": 0.24722
+          }
+        ]
+      },
+      "answer": {
+        "findings": [],
+        "verdict": "pass",
+        "reasoning": "No pre-accusation turn reveals the culprit, motive, or mechanism. Alexandra's 'Go ask Sam!' fits her authored deflection agenda. Sophie's and Toby's admissions are earned concessions: the Lily Pool clue and the pink feather were shown. At seq 11 the narrator found nothing under the tower and did not reveal the buried Heartwood. The narrator never chained clues toward Alexandra. The solution is discussed only in the accusation phase (seq 31–33)."
+      }
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 4,
+      "fail": 2,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null,
+  "timing": null
+}

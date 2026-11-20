@@ -1,0 +1,632 @@
+{
+  "schema_version": "mystery-eval-result/2",
+  "run": {
+    "id": "2026-11-20/14-31-11-play",
+    "command": "play",
+    "argv": [
+      "--blueprint",
+      "/Users/dinohughes/mysteryevals/2026-11-20/13-53-06-generate/lucia-heartwood-agent-opus/rounds/2/blueprint.json",
+      "--persona",
+      "kid-7",
+      "--narrator-model",
+      "haiku",
+      "--judge"
+    ],
+    "started_at": "2026-11-20T14:31:11.000Z",
+    "ended_at": "2026-11-20T14:34:50.452Z",
+    "commit": "8b138510af3cc35c9dbb9b4ac9fdaf6c17aa2050",
+    "tree_clean": true,
+    "bindings": {
+      "investigator": {
+        "cmd": "evaluation/playtest/wrappers/claude-investigator.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": null,
+        "model": "sonnet",
+        "timeout_ms": 120000,
+        "retries": 2
+      },
+      "game-judge": {
+        "cmd": "evaluation/trace/config/wrappers/claude-trace-judge.sh",
+        "args": [
+          "{{system_prompt_file}}",
+          "{{user_message_file}}"
+        ],
+        "extract_path": "result",
+        "model": "opus",
+        "timeout_ms": 1800000,
+        "retries": 1
+      }
+    },
+    "judge_versions": {
+      "solve_depth": 1,
+      "fairness": 1,
+      "timeline_coherence": 1,
+      "knowledge_coherence": 1,
+      "character_grounding": 3,
+      "path_payoff": 1,
+      "clue_graph": 3,
+      "age_appropriate": 1,
+      "gm_roleplay": 4,
+      "gm_clue_discipline": 3,
+      "gm_fabrication": 2,
+      "gm_spoiler": 2,
+      "age_appropriate_turn": 1,
+      "solve_depth_fairness": 1,
+      "knowledge_timeline_coherence": 1,
+      "blueprint_broad": 1,
+      "gm_broad": 3
+    }
+  },
+  "subject": {
+    "kind": "game",
+    "id": "a96b683a-22b2-4f30-ae2d-2415ea73ce60",
+    "path": "trace.json"
+  },
+  "production": {
+    "calls": [
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "49e2f650412a7e19b3ec80fcaa1097fecd9f0f5b51caac8a76c5b7a0b9aa9906",
+        "duration_ms": 2639,
+        "cost_usd": 0.01168,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2638,
+            "cost_usd": 0.01168
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "48f2c14152158b84a8d0cf7b08e63b56ec6c53b846a1340592c330cb1cd4b86a",
+        "duration_ms": 2680,
+        "cost_usd": 0.0078458,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2680,
+            "cost_usd": 0.0078458
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "49436bc4163e28c15f43ba60e77b32eaa4a14d19cc4b6518078cde5c4793cc99",
+        "duration_ms": 2600,
+        "cost_usd": 0.0083558,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2599,
+            "cost_usd": 0.0083558
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "ccb92c98ba983bca8d0ec934b26aa780000e1f3a44915621be9d8d16710648b5",
+        "duration_ms": 2592,
+        "cost_usd": 0.0086198,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2592,
+            "cost_usd": 0.0086198
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "039990b110576898a7c5c8fc7414a79d44c45e2f4b7034cf63f10f77cb95caa3",
+        "duration_ms": 2671,
+        "cost_usd": 0.009009799999999998,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2671,
+            "cost_usd": 0.009009799999999998
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "c43b4f8a040f7aafdb94748290fc2c9f633df24f793b6782702b9c3f119f84c6",
+        "duration_ms": 2599,
+        "cost_usd": 0.0092738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2599,
+            "cost_usd": 0.0092738
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "3da0d9f14e6927a2c16ee93c2281105dfdb3c0970fb75ea254ad072f5a1c461c",
+        "duration_ms": 2327,
+        "cost_usd": 0.0095018,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2326,
+            "cost_usd": 0.0095018
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "442d54ed1ab0c8ec3ac205637ab79cfd160337f2a9e71dd9c4f48432dc9c6332",
+        "duration_ms": 2431,
+        "cost_usd": 0.0100698,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2430,
+            "cost_usd": 0.0100698
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "cb6d18793bb4772af2a8be8c11ff90ec6a84a3ff9b23b2af98f84057f65ee056",
+        "duration_ms": 2357,
+        "cost_usd": 0.0105638,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2356,
+            "cost_usd": 0.0105638
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "95ea350d71a8d3464b421ed30bb6ec9999aa88ee766f7411b5b8b6eb628a649a",
+        "duration_ms": 2755,
+        "cost_usd": 0.011073800000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2754,
+            "cost_usd": 0.011073800000000002
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "23907eb25334c4b965088e68e6d80108793c21b8f204980a58728dd3538044ad",
+        "duration_ms": 2977,
+        "cost_usd": 0.0115418,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2976,
+            "cost_usd": 0.0115418
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "74089dcc8a3794f7c4f56c30f7bed7b925920d9c25e4acef8e542696c9a38d98",
+        "duration_ms": 2593,
+        "cost_usd": 0.0121638,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2593,
+            "cost_usd": 0.0121638
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "d496d3321610e36e0bd4b17bcd7d56d7396c7bac4da51b14c7b59a3d507868fc",
+        "duration_ms": 2697,
+        "cost_usd": 0.0122498,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2696,
+            "cost_usd": 0.0122498
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "7a7b6073219f81fe36d815f905f4a044c24a100e96e5834625397b4679d7cb5a",
+        "duration_ms": 2457,
+        "cost_usd": 0.012537800000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2456,
+            "cost_usd": 0.012537800000000002
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f9e2660948ccaeaa24a34ac1a01d440e01270749d0692fb18ee00b06c28e10e2",
+        "duration_ms": 3470,
+        "cost_usd": 0.0129218,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3469,
+            "cost_usd": 0.0129218
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "0173fcb92bef81056a6ff306ae8bf10d2dee21d49bca5ad64293cf49dba9499d",
+        "duration_ms": 2818,
+        "cost_usd": 0.0135418,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2817,
+            "cost_usd": 0.0135418
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "b9af35b906e2007d051fcd5bb93a43028b09c56d7f9c9c6e250c4fa3d386a3b2",
+        "duration_ms": 2720,
+        "cost_usd": 0.0140278,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2719,
+            "cost_usd": 0.0140278
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "077dcdc1e932b515b9e51e883b4918d6157acce38e537b06b6ca95e7b0d7923f",
+        "duration_ms": 3186,
+        "cost_usd": 0.0141318,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3186,
+            "cost_usd": 0.0141318
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "4dc2574e910db6b171552f10b7dc3e4c381e9814bf552b725db9c9598851abf6",
+        "duration_ms": 2726,
+        "cost_usd": 0.0146398,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 2725,
+            "cost_usd": 0.0146398
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "f3f24528c7fb74355e43e87b79cc229cf249836f205c5b0ab37c6a21de677627",
+        "duration_ms": 3522,
+        "cost_usd": 0.0161098,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 3521,
+            "cost_usd": 0.0161098
+          }
+        ]
+      },
+      {
+        "binding": "investigator",
+        "model": "sonnet",
+        "prompt_sha256": "22af976f9f6e7380f3012d5d01a0cd0443013f47df3395b5cbafe01e46290f46",
+        "duration_ms": 5396,
+        "cost_usd": 0.0184738,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 5395,
+            "cost_usd": 0.0184738
+          }
+        ]
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "id": "clue_accounting",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": null
+    },
+    {
+      "id": "spoiler_leak",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": {
+        "min_run": 12
+      }
+    },
+    {
+      "id": "gm_roleplay",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 2,
+          "severity": "minor",
+          "kind": "agenda",
+          "quote": "\"Isn't this awful? Ask Sam, not me!\" She points away, fast.",
+          "why": "Alexandra's implicate_other agenda is announced as a blunt scripted deflection before anyone asks her anything. The agenda calls for organic nudging toward Sam, and \"not me!\" sounds defensively guilty.",
+          "refers_to": "alexandra"
+        }
+      ],
+      "details": {
+        "reasoning": "Characters speak in first person and stay true to their authored personas. Alexandra is bouncy, gives her stated alibi when asked, and denies the feather plausibly. Eva is polite and curious; her glasses tell fires only once the lid is used, and her concession matches clue_eva_ten_visit. Toby stays cheerful but flutters, sticks to his alibi and changes the subject when the glade comes up, as authored. He correctly holds back because the feather was only asked about, not used. Narrator turns use warm second person with no mechanics leaking. The only blemish is Alexandra's heavy-handed opening deflection toward Sam.",
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "1e1bac98e63302c8caf9ebdc7b7faeb1564045ac46b59501334b9d026385c704",
+        "duration_ms": 15013,
+        "cost_usd": 0.2042206,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 15013,
+            "cost_usd": 0.2042206
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 2,
+            "severity": "minor",
+            "kind": "agenda",
+            "quote": "\"Isn't this awful? Ask Sam, not me!\" She points away, fast.",
+            "why": "Alexandra's implicate_other agenda is announced as a blunt scripted deflection before anyone asks her anything. The agenda calls for organic nudging toward Sam, and \"not me!\" sounds defensively guilty.",
+            "refers_to": "alexandra"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "Characters speak in first person and stay true to their authored personas. Alexandra is bouncy, gives her stated alibi when asked, and denies the feather plausibly. Eva is polite and curious; her glasses tell fires only once the lid is used, and her concession matches clue_eva_ten_visit. Toby stays cheerful but flutters, sticks to his alibi and changes the subject when the glade comes up, as authored. He correctly holds back because the feather was only asked about, not used. Narrator turns use warm second person with no mechanics leaking. The only blemish is Alexandra's heavy-handed opening deflection toward Sam."
+      }
+    },
+    {
+      "id": "gm_clue_discipline",
+      "tier": "judge",
+      "status": "fail",
+      "findings": [
+        {
+          "sequence": 18,
+          "severity": "major",
+          "kind": "withheld",
+          "quote": "\"A feather? Lots of grey pigeons look the same!\"",
+          "why": "The player directly presented clue_pink_feather (\"grey feather with pink tip\"), the sole leverage gate for clue_toby_glade_visit. Toby's agenda part for clue_pink_feather says he admits flying to the glade. Instead he deflected, and recorded_use logged no use despite the player's words.",
+          "refers_to": "clue_toby_glade_visit"
+        },
+        {
+          "sequence": 19,
+          "severity": "major",
+          "kind": "withheld",
+          "quote": "\"The glade? No, no! I stayed by the Star Clock all night.\"",
+          "why": "This was a second, differently-approached ask (Star Clock chime plus pink flash, so did he go to the glade?) on top of the feather already shown. The gate was met, yet Toby stonewalled the earned clue again. Repeated stonewalling blocks his glade-visit admission.",
+          "refers_to": "clue_toby_glade_visit"
+        },
+        {
+          "sequence": 14,
+          "severity": "minor",
+          "kind": "withheld",
+          "quote": "\"No pigeon at the glade. I was up on my roof. I saw a pink flash far away.\"",
+          "why": "The player asked Eva about a pigeon. Her ungated clue_eva_saw_toby (Toby flew over her roof with empty feet) is directly relevant. She answered only literally about the glade and held it back with no fiction-supported reason.",
+          "refers_to": "clue_eva_saw_toby"
+        }
+      ],
+      "details": {
+        "reasoning": "Search reveals (jar lid, feather, bark chip) were faithful and correctly recorded. Eva's gated ten-o'clock clue was properly earned by the player showing the lid. However, Toby twice stonewalled clue_toby_glade_visit after the player explicitly presented the pink-tipped feather that gates it, and the narrator failed to record that use. Eva also sidestepped her ungated Toby sighting when asked about a pigeon.",
+        "major_count": 2,
+        "minor_count": 1,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "a06c482a6a6d9a6e9a49291d94e5feeb60549864be4f31a00ff9dec8ddd807bd",
+        "duration_ms": 20204,
+        "cost_usd": 0.2168726,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 20203,
+            "cost_usd": 0.2168726
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 18,
+            "severity": "major",
+            "kind": "withheld",
+            "quote": "\"A feather? Lots of grey pigeons look the same!\"",
+            "why": "The player directly presented clue_pink_feather (\"grey feather with pink tip\"), the sole leverage gate for clue_toby_glade_visit. Toby's agenda part for clue_pink_feather says he admits flying to the glade. Instead he deflected, and recorded_use logged no use despite the player's words.",
+            "refers_to": "clue_toby_glade_visit"
+          },
+          {
+            "sequence": 19,
+            "severity": "major",
+            "kind": "withheld",
+            "quote": "\"The glade? No, no! I stayed by the Star Clock all night.\"",
+            "why": "This was a second, differently-approached ask (Star Clock chime plus pink flash, so did he go to the glade?) on top of the feather already shown. The gate was met, yet Toby stonewalled the earned clue again. Repeated stonewalling blocks his glade-visit admission.",
+            "refers_to": "clue_toby_glade_visit"
+          },
+          {
+            "sequence": 14,
+            "severity": "minor",
+            "kind": "withheld",
+            "quote": "\"No pigeon at the glade. I was up on my roof. I saw a pink flash far away.\"",
+            "why": "The player asked Eva about a pigeon. Her ungated clue_eva_saw_toby (Toby flew over her roof with empty feet) is directly relevant. She answered only literally about the glade and held it back with no fiction-supported reason.",
+            "refers_to": "clue_eva_saw_toby"
+          }
+        ],
+        "verdict": "fail",
+        "reasoning": "Search reveals (jar lid, feather, bark chip) were faithful and correctly recorded. Eva's gated ten-o'clock clue was properly earned by the player showing the lid. However, Toby twice stonewalled clue_toby_glade_visit after the player explicitly presented the pink-tipped feather that gates it, and the narrator failed to record that use. Eva also sidestepped her ungated Toby sighting when asked about a pigeon."
+      }
+    },
+    {
+      "id": "gm_fabrication",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [
+        {
+          "sequence": 15,
+          "severity": "minor",
+          "kind": "object",
+          "quote": "Eva smiles and tucks her moth net away.",
+          "why": "The blueprint keeps Eva's moth net on the lab roof (lab_roof hint). Having it in hand in the lab is harmless embellishment that changes nothing the player could act on.",
+          "refers_to": "eva_lab"
+        }
+      ],
+      "details": {
+        "reasoning": "Every load-bearing claim traces to the blueprint: the location descriptions, the clue texts, the stated alibis, Eva's ten o'clock admission, and her roof and pink-flash account. Toby's 'lots of grey pigeons' line is authored evasion, not narrator fact. The final 'paws had glow' matches ground truth, so it is a clue-discipline concern rather than fabrication. Only small colour strays past the text.",
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "df7f56b6e129517bbecdfb1f052e4d7a6b08312653bec0bf5a54e135ee9a8d3f",
+        "duration_ms": 14267,
+        "cost_usd": 0.2020596,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 14267,
+            "cost_usd": 0.2020596
+          }
+        ]
+      },
+      "answer": {
+        "findings": [
+          {
+            "sequence": 15,
+            "severity": "minor",
+            "kind": "object",
+            "quote": "Eva smiles and tucks her moth net away.",
+            "why": "The blueprint keeps Eva's moth net on the lab roof (lab_roof hint). Having it in hand in the lab is harmless embellishment that changes nothing the player could act on.",
+            "refers_to": "eva_lab"
+          }
+        ],
+        "verdict": "pass",
+        "reasoning": "Every load-bearing claim traces to the blueprint: the location descriptions, the clue texts, the stated alibis, Eva's ten o'clock admission, and her roof and pink-flash account. Toby's 'lots of grey pigeons' line is authored evasion, not narrator fact. The final 'paws had glow' matches ground truth, so it is a clue-discipline concern rather than fabrication. Only small colour strays past the text."
+      }
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "pass",
+      "findings": [],
+      "details": {
+        "reasoning": "No pre-accusation turn names Alexandra as culprit, states her motive, retells the theft or burial, or narrates any hidden actual_actions as fact. Alexandra blaming Sam (seq 2) is her authored deflect_blame agenda. Eva's roof and pink-flash remarks (seq 14) match her stated alibi. Toby's nervousness (seq 16) is just suspicion. Toby's and Alexandra's denials are in-character lies. The glow-on-paws steer in seq 21 happens during the accusation phase, so it is excluded.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "call": {
+        "binding": "game-judge",
+        "model": "opus",
+        "prompt_sha256": "4f4371141ca5cc900639958b96a33e405802d7eb1e5ca054b0dba18e0fb59730",
+        "duration_ms": 8526,
+        "cost_usd": 0.19119540000000002,
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "ok",
+            "duration_ms": 8526,
+            "cost_usd": 0.19119540000000002
+          }
+        ]
+      },
+      "answer": {
+        "findings": [],
+        "verdict": "pass",
+        "reasoning": "No pre-accusation turn names Alexandra as culprit, states her motive, retells the theft or burial, or narrates any hidden actual_actions as fact. Alexandra blaming Sam (seq 2) is her authored deflect_blame agenda. Eva's roof and pink-flash remarks (seq 14) match her stated alibi. Toby's nervousness (seq 16) is just suspicion. Toby's and Alexandra's denials are in-character lies. The glow-on-paws steer in seq 21 happens during the accusation phase, so it is excluded."
+      }
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 5,
+      "fail": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null,
+  "timing": null
+}

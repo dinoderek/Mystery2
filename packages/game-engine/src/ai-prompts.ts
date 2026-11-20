@@ -371,6 +371,7 @@ const ARRIVAL_CHARACTER_RULES = [
   "## Characters present",
   "- Play each character in their initial_attitude_towards_investigator and personality. A guarded character stays guarded; a nervous one shows it.",
   "- manner is how their aims show before anyone speaks, first matters most: hovering, changing the subject, a glance elsewhere. Show it; never explain it.",
+  "- A character who wants attention elsewhere points it at a person their manner names, or at nothing in particular, never at a thing or spot here: you don't know what is hidden where.",
   "- A tell in tells may surface as written.",
   "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
 ].join("\n");

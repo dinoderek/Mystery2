@@ -35,6 +35,8 @@ describe("the arrival prompt, on the stored snow-foxes game", () => {
     expect(prompt).toContain(barnaby.initial_attitude_towards_investigator);
     expect(prompt).toContain("keeps attention away from himself");
     expect(prompt).toContain("would rather the investigator looked at Gus");
+    // Steering at a thing in the room can point at the culprit's own hiding place.
+    expect(prompt).toContain("never at a thing or spot here");
     for (const secret of [
       barnaby.stated_alibi!,
       barnaby.motive!,

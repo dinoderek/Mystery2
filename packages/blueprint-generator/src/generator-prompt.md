@@ -99,11 +99,14 @@ leading to the path's payoff. `kind` says why the lock exists:
   trail leads behind the woodpile). Character clues omit `target`.
 - **A locked spot stays secret.** A sub-location whose clues are all locked is
   hidden until its pointer is found, so no location `description` names or hints
-  at it: if the snowshoe hooks are the locked spot, the hut's description has no
-  snowshoes and no hooks.
+  at it: if the gap under the hut's floorboards is the locked spot, the hut's
+  description mentions no gap and no loose boards.
 - **`leverage`**: the character gives the clue up only once shown the earlier one.
-- **Specific, not hidden.** "You only spot it once you know to look" is not a
-  lock. Leave that clue ungated in a sub-location a specific search can name.
+- **A locked location clue's spot is out of sight in the story:** round the
+  back, under, behind or inside something, and its `name` and `hint` say so.
+  The `rationale` says why nobody looks there unprompted. "You only spot it once
+  you know to look" is not a lock: a thing in plain view, or beside a spot the
+  player is already searching, stays ungated.
 - **Shape, not chains.** Aim for shallow, branchy graphs (depth 2–3, several roots),
   never one long brittle chain. Every path — solution, red herring, elimination —
   needs at least one **ungated entry clue** so the thread is always startable.
@@ -226,7 +229,10 @@ Every physical fact the blueprint states agrees across fields.
 - **Lies are not inconsistencies.** A false `stated_alibi`, or a clue a
   character speaks under an agenda, may contradict the facts on purpose.
   Narrated facts — location `description`s, location clue text,
-  `appearance`, `actual_actions`, `ground_truth` — may not.
+  `appearance`, `actual_actions`, `ground_truth` — may not. Every lie has its
+  reason in an agenda: a false `stated_alibi` needs a `self_protect` agenda
+  (their own cover) or `protect_other` (someone else's). Without one, the alibi
+  is true to their `actual_actions`.
 
 ## Challenge Calibration
 

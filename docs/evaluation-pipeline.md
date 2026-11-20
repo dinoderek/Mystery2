@@ -73,9 +73,7 @@ its brief, then runs:
 2. **Dimensions**, in parallel. Within one, the analyzer runs before the judge,
    and an analyzer error skips only that dimension's judge.
 
-`./dev eval generate` makes the blueprint first, then runs the same checks;
-`--repair` feeds failing verdicts back to the generator for a bounded number
-of rounds (`docs/blueprint-generation-flows.md`).
+`./dev eval generate` makes the blueprint first, then runs the same checks.
 
 ## Workspaces
 

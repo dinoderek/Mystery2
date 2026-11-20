@@ -4,10 +4,7 @@ This is a one-shot workspace created by the evaluation pipeline to run a
 Claude agent as a blueprint generator. Each evaluation pipeline run produces
 a fresh workspace under `~/mysteryevals/<run-date>/<run-stamp>/generator-<brief>/`.
 Every run gets its own `<run-stamp>` subtree, so prior runs are never
-overwritten or deleted. A repair round (`generate --repair`) gets a fresh
-workspace of its own, `rounds/<n>/generator/` in the subject's folder, seeded
-with the blueprint to repair and `repair.json`; the agent follows the repair
-protocol in `CLAUDE.md`.
+overwritten or deleted.
 
 ## Layout
 
@@ -16,8 +13,8 @@ protocol in `CLAUDE.md`.
 ├── CLAUDE.md                       Harness instructions (read by the agent at start)
 ├── README.md                       This file
 ├── brief.json                      Written by the harness: story_brief + instructions
-├── blueprint.json                  Written by the agent: the generated blueprint (in a repair round, seeded with the blueprint to repair)
-├── repair.json                     Repair rounds only: the quoted reports the blueprint failed
+├── blueprint.json                  Written by the agent: the generated blueprint
+├── repair.json                     Repair rounds only: reports to fix
 ├── prompts/
 │   └── generator-prompt.md         Copy of the prompt the pipeline rendered: canonical creative prompt + age guidance
 ├── schema/

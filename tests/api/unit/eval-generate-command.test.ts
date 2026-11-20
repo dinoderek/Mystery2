@@ -325,7 +325,8 @@ describe("generate --repair", () => {
          if (answers.repaired === null) process.exit(1);
        }
        const cost = message.repair ? 0.5 : 1.25;
-       process.stdout.write(JSON.stringify({ total_cost_usd: cost, result: JSON.stringify(message.repair ? answers.repaired : answers.first) }));`,
+       const answer = message.repair ? answers.repaired : answers.first;
+       process.stdout.write(JSON.stringify({ total_cost_usd: cost, result: answer === "not json" ? answer : JSON.stringify(answer) }));`,
     );
     const passing = Object.fromEntries(DIMENSIONS.map((id) => [`blueprint.${id}`, { ...JUDGE_ANSWERS[`blueprint.${id}`], verdict: "pass" }]));
     const judgeAnswers = write("judge-answers.json", { ...passing, ...judges });
@@ -408,6 +409,16 @@ describe("generate --repair", () => {
     expect(result.production?.calls).toHaveLength(2);
     expect(result.production?.calls[1].attempts.map((attempt) => attempt.outcome)).toEqual(["exit"]);
     expect(out.join("\n")).toContain("final: broke during a repair round");
+  });
+
+  it("still prints what a broken repair round cost", async () => {
+    const config = repairingConfig({ title: "not a blueprint" }, "not json");
+    expect(await generate(argv(["--config", config, "--judge", "--repair", "1"]))).toBe(1);
+    const [result] = await results();
+    expect(result.production?.calls[1].cost_usd).toBe(0.5);
+    const printed = out.join("\n");
+    expect(printed).toContain("[eval] cost: round 0 $1.25, round 1 (broke) $0.50; total $1.75");
+    expect(printed).toContain("[eval] run cost: $1.75");
   });
 
   it("runs no repair round on a blueprint that passes", async () => {

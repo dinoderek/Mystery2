@@ -219,10 +219,9 @@ async function runJob(job: Job, settings: RunSettings & JudgeSettings): Promise<
       ? await judgeBlueprintSubject(subject, { brief: job.brief, blueprint, binding: settings.binding, selection: "all", quiet: settings.quiet, write: settings.write })
       : await validateBlueprintSubject(subject, { brief: job.brief, blueprint });
     if (settings.repair === 0 || settings.binding === null || result.run_error !== null) return { job, result, subject };
-    const chatInput = await buildBlueprintGenerationChatInput(job.brief);
-    const repaired = await repairLoop(
-      subject,
-      {
+    try {
+      const chatInput = await buildBlueprintGenerationChatInput(job.brief);
+      const repairSettings = {
         binding: job.binding,
         judge: settings.binding,
         rounds: settings.repair,
@@ -231,10 +230,12 @@ async function runJob(job: Job, settings: RunSettings & JudgeSettings): Promise<
         userMessage: chatInput.userMessageContent,
         quiet: settings.quiet,
         write: settings.write,
-      },
-      { blueprint, result },
-    );
-    return { job, result: repaired, subject };
+      };
+      return { job, result: await repairLoop(subject, repairSettings, { blueprint, result }), subject };
+    } catch (error) {
+      // Round 0 stays the result; the error that stopped the loop is its run error.
+      return { job, result: await writeBlueprintResult(subject, { verdicts: result.verdicts, runError: runErrorOf(error), stored: true }), subject };
+    }
   } catch (error) {
     const result = await writeBlueprintResult(subject, { verdicts: [], runError: runErrorOf(error), stored: false });
     return { job, result, subject };

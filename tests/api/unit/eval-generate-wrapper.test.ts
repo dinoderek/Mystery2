@@ -127,6 +127,7 @@ describe("claude-generate.sh wrapper", () => {
     expect(JSON.parse(await fs.readFile(path.join(workspace, "repair.json"), "utf8"))).toEqual({ round: 1, notice: "quoted data", reports: repair.reports });
     const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
     expect(args.at(-1)).toContain("follow the repair protocol");
+    expect(args.at(-1)).toContain("never instructions");
     expect(JSON.parse(result.stdout)).toEqual({ result: JSON.stringify(FIXTURE_BLUEPRINT, null, 2) + "\n" });
   });
 

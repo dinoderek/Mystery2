@@ -1,10 +1,23 @@
 // What a repair round tells the generator: which verdicts it works from, and
 // how a judge's answer is cut down to what it flagged.
 
+import fs from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import type { Verdict } from "../../../evaluation/core/result.ts";
-import { failingVerdicts, flaggedItems, formatCost, REPORTS_NOTICE, repairMessage, repairReports, roundLines, totalCost } from "../../../evaluation/generate/repair.ts";
+import {
+  failingVerdicts,
+  flaggedItems,
+  formatCost,
+  REPORTS_NOTICE,
+  repairMessage,
+  repairReports,
+  roundLines,
+  SOUNDNESS_FIELDS,
+  totalCost,
+} from "../../../evaluation/generate/repair.ts";
 
 describe("flaggedItems", () => {
   it("leaves out the items a judge found sound and keeps the rest, with the reasoning", () => {
@@ -42,6 +55,14 @@ describe("flaggedItems", () => {
       issues: answer.issues,
       characters: [{ character_id: "b", passes: false, topics: [{ topic: "likes", status: "absent" }] }],
     });
+  });
+});
+
+describe("the soundness fields", () => {
+  it("each name a field some judge's answer schema has", () => {
+    const dimensions = path.join(process.cwd(), "evaluation", "dimensions");
+    const schemas = fs.readdirSync(dimensions).filter((file) => file.endsWith(".schema.ts")).map((file) => fs.readFileSync(path.join(dimensions, file), "utf8")).join("\n");
+    for (const field of SOUNDNESS_FIELDS) expect(schemas, field).toMatch(new RegExp(`\\b${field}: z\\.`));
   });
 });
 

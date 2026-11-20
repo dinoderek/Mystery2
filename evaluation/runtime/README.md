@@ -50,7 +50,6 @@ annotated example. `history` rows have the shape the runtime stores in
 
 `evaluation/runtime/cases/all-interactions.ts` is the coverage baseline: one case
 per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts`).
-Each passes `flesch` on both fixture narrators.
 
 ## Judges
 
@@ -99,6 +98,8 @@ and marks the run INCOMPLETE.
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints the change per case and group.
 
+The talk library, `cases/talk-reveals/`, keeps Haiku and Sonnet baselines in `baselines/`. Re-run the folder with `judge turn`, then `baseline compare`.
+
 ## Running
 
 ```bash
@@ -145,8 +146,6 @@ named by event sequence, calling no narrator.
 - **A judge**: a registry entry that lists `turn` among its subjects
   (`evaluation/judges/README.md`).
 - **An action**: an `ACTIONS` entry with its `line`, `roleInput` and `speaker`.
-  Prompt assembly belongs in `packages/game-engine/src/role-request.ts`, shared
-  by the handler and this harness.
 
 ## Tests
 

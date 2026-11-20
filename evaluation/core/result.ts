@@ -11,6 +11,7 @@
  * | `summary`    | Counts by status and one `passed` flag, which must agree with `verdicts` |
  * | `run_error`  | Set only when the run itself broke |
  * | `timing`     | Stage timings, in milliseconds |
+ * | `rounds`     | Only from `generate --repair`: each round's blueprint, model call, verdicts and cost, round 0 first; the last is the result's own |
  *
  * A stored subject keeps the shape it has on its own (a blueprint is a
  * Blueprint V2, a trace or a captured turn its harness's shape), so the same
@@ -22,7 +23,10 @@ import path from "node:path";
 
 import { z } from "zod";
 
-export const RESULT_SCHEMA_VERSION = "mystery-eval-result/1";
+export const RESULT_SCHEMA_VERSION = "mystery-eval-result/2";
+/** The versions a result may carry when read: version 1 lacks only `rounds`. */
+export const READABLE_RESULT_SCHEMA_VERSIONS = ["mystery-eval-result/1", RESULT_SCHEMA_VERSION] as const;
+export const ResultSchemaVersionSchema = z.enum(READABLE_RESULT_SCHEMA_VERSIONS);
 
 export const STATUSES = ["pass", "fail", "error", "skipped"] as const;
 export const StatusSchema = z.enum(STATUSES);
@@ -146,9 +150,31 @@ export const TimingSchema = z
   })
   .strict();
 
+/**
+ * One round of `generate --repair`. Round 0 is the generation as made; each
+ * later round is the generator repairing the round before's blueprint from its
+ * failing verdicts, judged again by every check and judge.
+ */
+export const RoundSchema = z
+  .object({
+    round: z.number().int().min(0),
+    /** The blueprint this round judged, relative to the folder `result.json` is in. */
+    path: z.string().min(1),
+    /** The model call that made this round's blueprint. */
+    call: ModelCallSchema,
+    verdicts: z.array(VerdictSchema),
+    summary: SummarySchema,
+    /** The round's generator and judge calls' reported costs, summed; null when none reported one. */
+    cost_usd: z.number().min(0).nullable(),
+    /** This round's stage timings; round 0's are in the result's timing, which covers every round. */
+    timing: TimingSchema.nullable(),
+  })
+  .strict();
+export type Round = z.infer<typeof RoundSchema>;
+
 export const ResultSchema = z
   .object({
-    schema_version: z.literal(RESULT_SCHEMA_VERSION),
+    schema_version: ResultSchemaVersionSchema,
     run: RunInfoSchema,
     subject: SubjectSchema,
     production: z.object({ calls: z.array(ModelCallSchema) }).strict().nullable(),
@@ -156,9 +182,11 @@ export const ResultSchema = z
     summary: SummarySchema,
     run_error: RunErrorSchema.nullable(),
     timing: TimingSchema.nullable(),
+    rounds: z.array(RoundSchema).optional(),
   })
   .strict()
   .superRefine((result, ctx) => {
+    if (result.rounds !== undefined) checkRounds(result as Result, ctx);
     const expected = summarize(result.verdicts, result.run_error);
     if (JSON.stringify(expected) !== JSON.stringify(result.summary)) {
       ctx.addIssue({
@@ -174,6 +202,27 @@ export const ResultSchema = z
     }
   });
 export type Result = z.infer<typeof ResultSchema>;
+
+/** Rounds count up from 0, each summary matches its verdicts, and the last round is the result's blueprint and verdicts. */
+function checkRounds(result: Result, ctx: z.RefinementCtx): void {
+  const rounds = result.rounds ?? [];
+  rounds.forEach((round, index) => {
+    if (round.round !== index) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["rounds", index, "round"], message: `round ${round.round} is at position ${index}` });
+    }
+    if (JSON.stringify(summarize(round.verdicts)) !== JSON.stringify(round.summary)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["rounds", index, "summary"], message: "the round's summary does not match its verdicts" });
+    }
+  });
+  const last = rounds.at(-1);
+  if (last === undefined) return;
+  if (JSON.stringify(last.verdicts) !== JSON.stringify(result.verdicts)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["rounds"], message: "the last round's verdicts are not the result's" });
+  }
+  if (last.path !== result.subject.path) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["rounds"], message: `the last round's blueprint ${last.path} is not the subject's (${result.subject.path})` });
+  }
+}
 
 /** Counts by status; `passed` when nothing failed, nothing errored and the run did not break. */
 export function summarize(verdicts: readonly Pick<Verdict, "status">[], runError: RunError | null = null): Summary {

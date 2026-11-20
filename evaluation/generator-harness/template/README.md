@@ -14,6 +14,7 @@ overwritten or deleted.
 ├── README.md                       This file
 ├── brief.json                      Written by the harness: story_brief + instructions
 ├── blueprint.json                  Written by the agent: the generated blueprint
+├── repair.json                     Repair rounds only: reports to fix
 ├── prompts/
 │   └── generator-prompt.md         Copy of the prompt the pipeline rendered: canonical creative prompt + age guidance
 ├── schema/

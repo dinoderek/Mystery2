@@ -11,7 +11,7 @@ import path from "node:path";
 
 import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
-import type { ModelCall, Result, RunError, Verdict } from "../core/result.ts";
+import type { ModelCall, Result, Round, RunError, Verdict } from "../core/result.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import type { RunTimer, StageError } from "../core/timing.ts";
 import { judgeBlueprint, runMechanical } from "./judge.ts";
@@ -28,20 +28,26 @@ export interface BlueprintSubject {
   production?: ModelCall[] | null;
 }
 
-/** Writes this subject's `result.json`. `stored` is false when the run broke before a blueprint was kept. */
+/**
+ * Writes this subject's `result.json`. `stored` is false when the run broke
+ * before a blueprint was kept; `path` names the stored blueprint when it is not
+ * the one beside the result (a repair round's), and `rounds` are a repair
+ * loop's rounds.
+ */
 export async function writeBlueprintResult(
   subject: BlueprintSubject,
-  outcome: { verdicts: Verdict[]; runError: RunError | null; stored: boolean },
+  outcome: { verdicts: Verdict[]; runError: RunError | null; stored: boolean; path?: string; rounds?: Round[] },
 ): Promise<Result> {
   return writeResult(subject.folder.resultFile, {
     schema_version: RESULT_SCHEMA_VERSION,
     run: subject.run.info(),
-    subject: { kind: "blueprint", id: subject.id, path: outcome.stored ? STORED_BLUEPRINT : null },
+    subject: { kind: "blueprint", id: subject.id, path: outcome.stored ? (outcome.path ?? STORED_BLUEPRINT) : null },
     production: subject.production ? { calls: subject.production } : null,
     verdicts: outcome.verdicts,
     summary: summarize(outcome.verdicts, outcome.runError),
     run_error: outcome.runError,
     timing: subject.timer.summarize(),
+    ...(outcome.rounds ? { rounds: outcome.rounds } : {}),
   });
 }
 

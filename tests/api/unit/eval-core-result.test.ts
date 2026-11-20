@@ -17,7 +17,7 @@ import {
   summarize,
   writeResult,
 } from "../../../evaluation/core/result.ts";
-import type { Result, Status, Verdict } from "../../../evaluation/core/result.ts";
+import type { Result, Round, Status, Verdict } from "../../../evaluation/core/result.ts";
 import {
   createRunFolder,
   readCommit,
@@ -110,6 +110,36 @@ describe("the result schema", () => {
     delete old.judge_versions;
     fs.writeFileSync(file, JSON.stringify({ ...result(), run: old }));
     expect((await readResult(file)).run.judge_versions).toEqual({});
+  });
+
+  it("reads a version 1 result, which has no rounds", async () => {
+    const file = path.join(dir, "v1.json");
+    fs.writeFileSync(file, JSON.stringify({ ...result(), schema_version: "mystery-eval-result/1" }));
+    expect((await readResult(file)).schema_version).toBe("mystery-eval-result/1");
+  });
+
+  describe("rounds", () => {
+    function round(n: number, verdicts: Verdict[], extra: Partial<Round> = {}): Round {
+      return { round: n, path: n === 0 ? "blueprint.json" : `rounds/${n}/blueprint.json`, call, verdicts, summary: summarize(verdicts), cost_usd: 0.4, timing: null, ...extra };
+    }
+    const failed = [verdict("schema", "fail")];
+    const passed = [verdict("schema", "pass")];
+
+    it("writes and reads back rounds whose last is the result's blueprint and verdicts", async () => {
+      const file = path.join(dir, "result.json");
+      const repaired = result(passed, { subject: { kind: "blueprint", id: "x", path: "rounds/1/blueprint.json" }, rounds: [round(0, failed), round(1, passed)] });
+      await writeResult(file, repaired);
+      expect((await readResult(file)).rounds).toEqual(repaired.rounds);
+    });
+
+    it.each([
+      ["rounds out of order", { rounds: [round(1, failed), round(0, passed)] }, /round 1 is at position 0/],
+      ["a round whose summary disagrees", { rounds: [round(0, passed, { summary: summarize(failed) })] }, /round's summary does not match/],
+      ["a last round that is not the result's verdicts", { rounds: [round(0, failed)] }, /last round's verdicts are not the result's/],
+      ["a last round that is not the subject's blueprint", { rounds: [round(0, passed, { path: "rounds/3/blueprint.json" })] }, /is not the subject's/],
+    ])("refuses %s", async (_label, overrides, message) => {
+      await expect(writeResult(path.join(dir, "result.json"), result(passed, overrides as Partial<Result>))).rejects.toThrow(message);
+    });
   });
 
   it("refuses to read a malformed result, naming the file", async () => {

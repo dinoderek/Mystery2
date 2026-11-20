@@ -10,9 +10,12 @@
  * `result.json`, and put through the mechanical checks. A blueprint that fails
  * the schema after every attempt is kept and fails its mechanical check, so the
  * run exits 2; only a call that gave nothing to keep breaks the run. `--judge`
- * judges each blueprint straight after, as `judge blueprint` does. `--install`
- * copies each blueprint that passed its mechanical checks into the game's
- * library and leaves the others where they are.
+ * judges each blueprint straight after, as `judge blueprint` does, and
+ * `--repair <n>` then runs up to `n` repair rounds on a blueprint that failed
+ * (`repair.ts`; agent backend only). `--install` copies each blueprint that
+ * passed its mechanical checks into the game's library and leaves the others
+ * where they are; after repair rounds, only a final blueprint that passed
+ * everything.
  */
 
 import fs from "node:fs/promises";
@@ -20,10 +23,9 @@ import path from "node:path";
 
 import { buildBlueprintGenerationChatInput, StoryBriefSchema } from "../../packages/blueprint-generator/src/index.ts";
 import type { StoryBrief } from "../../packages/blueprint-generator/src/index.ts";
-import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
 import { getBlueprintsDir } from "../../scripts/local-config.mjs";
 import { judgeBindingFor, summaryLines } from "../blueprint/commands.ts";
-import { readJsonFile, resolveBrief, STORED_BLUEPRINT } from "../blueprint/inputs.ts";
+import { readJsonFile, resolveBrief } from "../blueprint/inputs.ts";
 import { judgeBlueprintSubject, runErrorOf, validateBlueprintSubject, writeBlueprintResult } from "../blueprint/subject.ts";
 import type { BlueprintSubject } from "../blueprint/subject.ts";
 import { formatHelp, parseCommandArgs } from "../core/args.ts";
@@ -39,7 +41,9 @@ import type { RunFolder } from "../core/run-folder.ts";
 import type { Result } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
 import { createRunTimer } from "../core/timing.ts";
+import { blueprintParser } from "./blueprint-answer.ts";
 import { OPENROUTER_KEY_VAR, readOpenRouterKey } from "./openrouter.ts";
+import { repairLoop, roundLines, runCostLine } from "./repair.ts";
 
 export const BACKENDS = ["agent", "api"] as const;
 export type Backend = (typeof BACKENDS)[number];
@@ -55,7 +59,8 @@ const HELP = formatHelp({
     ["--backend <agent|api>", "agent: the Claude agent in a workspace; api: one OpenRouter call. Repeatable (default: agent)"],
     ["--model <id>", "the model for these runs: an alias for agent, an OpenRouter id for api. Repeatable; every brief and backend runs with every model (default: each binding's own)"],
     ["--judge", "judge each blueprint straight after, as judge blueprint does"],
-    ["--install", "copy each blueprint that passes its mechanical checks into the game's library (<config root>/blueprints)"],
+    ["--repair <n>", "with --judge, on the agent backend: up to n rounds in which the generator fixes the faults its failing checks and judges report, and every check and judge runs again (default: 0)"],
+    ["--install", "copy each blueprint that passes its mechanical checks into the game's library (<config root>/blueprints); after repair rounds, only a final blueprint that passed everything"],
     ["--parallelism <n>", "how many blueprints to generate at once (default: 1)"],
     ["--quiet", "no live progress digest"],
   ],
@@ -81,6 +86,19 @@ function parseParallelism(value: OptionValue): number {
   if (value === undefined) return 1;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) throw new UsageError(`--parallelism needs a positive whole number, got "${String(value)}"`);
+  return parsed;
+}
+
+/** `--repair`: a whole number of rounds, 0 when not given; it needs `--judge` and only the agent backend can take it. */
+export function parseRepair(value: OptionValue, judge: boolean, backends: readonly Backend[]): number {
+  if (value === undefined) return 0;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) throw new UsageError(`--repair needs a whole number of rounds, got "${String(value)}"`);
+  if (parsed === 0) return 0;
+  if (!judge) throw new UsageError("--repair needs --judge: a repair round works from the judges' verdicts");
+  if (backends.includes("api")) {
+    throw new UsageError("--repair works only with the agent backend: the api backend is one OpenRouter call that writes a blueprint from a brief, and cannot edit one in place");
+  }
   return parsed;
 }
 
@@ -140,32 +158,6 @@ function bindingsUsed(jobs: readonly Job[], judge: ResolvedBinding | null): Reso
   return judge ? [...used, judge] : used;
 }
 
-/**
- * Takes the model's answer as the blueprint: it must be JSON and match the
- * schema, or the attempt is retried. The last JSON that failed the schema is
- * kept, so a blueprint that never passed is still stored and fails its check.
- */
-function blueprintParser(): { parse: (answer: string) => unknown; lastRejected: () => unknown } {
-  let rejected: unknown;
-  return {
-    parse(answer) {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(answer);
-      } catch (error) {
-        throw new Error(`the answer is not valid JSON (${(error as Error).message}). First 200 chars: ${answer.slice(0, 200)}`, { cause: error });
-      }
-      const checked = BlueprintV2Schema.safeParse(parsed);
-      if (checked.success) return parsed;
-      rejected = parsed;
-      const issues = checked.error.issues.slice(0, 5).map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`);
-      const more = checked.error.issues.length > 5 ? ` (+${checked.error.issues.length - 5} more)` : "";
-      throw new Error(`the blueprint failed BlueprintV2Schema: ${issues.join("; ")}${more}`);
-    },
-    lastRejected: () => rejected,
-  };
-}
-
 interface RunSettings {
   run: RunFolder;
   /** Names the key the `api` backend sends; undefined for a backend that needs none. */
@@ -213,6 +205,8 @@ async function produce(job: Job, subject: BlueprintSubject, settings: RunSetting
 
 interface JudgeSettings {
   binding: ResolvedBinding | null;
+  /** The most repair rounds after round 0; 0 for none. */
+  repair: number;
 }
 
 /** Generates, stores and checks one blueprint, and writes its result. A broken generation is that result's `run_error`. */
@@ -224,7 +218,24 @@ async function runJob(job: Job, settings: RunSettings & JudgeSettings): Promise<
     const result = settings.binding
       ? await judgeBlueprintSubject(subject, { brief: job.brief, blueprint, binding: settings.binding, selection: "all", quiet: settings.quiet, write: settings.write })
       : await validateBlueprintSubject(subject, { brief: job.brief, blueprint });
-    return { job, result, subject };
+    if (settings.repair === 0 || settings.binding === null || result.run_error !== null) return { job, result, subject };
+    try {
+      const chatInput = await buildBlueprintGenerationChatInput(job.brief);
+      const repairSettings = {
+        binding: job.binding,
+        judge: settings.binding,
+        rounds: settings.repair,
+        brief: job.brief,
+        systemPrompt: chatInput.systemPrompt,
+        userMessage: chatInput.userMessageContent,
+        quiet: settings.quiet,
+        write: settings.write,
+      };
+      return { job, result: await repairLoop(subject, repairSettings, { blueprint, result }), subject };
+    } catch (error) {
+      // Round 0 stays the result; the error that stopped the loop is its run error.
+      return { job, result: await writeBlueprintResult(subject, { verdicts: result.verdicts, runError: runErrorOf(error), stored: true }), subject };
+    }
   } catch (error) {
     const result = await writeBlueprintResult(subject, { verdicts: [], runError: runErrorOf(error), stored: false });
     return { job, result, subject };
@@ -252,16 +263,24 @@ async function installBlueprint(stored: string, library: string, id: string): Pr
   return destination;
 }
 
-/** Installs what may be installed and says why the rest was not. Returns whether every install that was due succeeded. */
+/**
+ * Installs what may be installed and says why the rest was not: a blueprint
+ * that passed its mechanical checks, or, after repair rounds, a final blueprint
+ * that passed everything. Returns whether every install that was due succeeded.
+ */
 async function installAll(done: ReadonlyArray<{ job: Job; result: Result; subject: BlueprintSubject }>, library: string, write: (line: string) => void): Promise<boolean> {
   let ok = true;
   for (const { job, result, subject } of done) {
+    if (result.rounds !== undefined && !result.summary.passed) {
+      write(`[eval] not installed: ${job.id}'s final blueprint did not pass every check and judge`);
+      continue;
+    }
     if (!passedMechanicalChecks(result)) {
       write(`[eval] not installed: ${job.id} did not pass its mechanical checks`);
       continue;
     }
     try {
-      write(`[eval] installed: ${await installBlueprint(path.join(subject.folder.dir, STORED_BLUEPRINT), library, path.basename(subject.folder.dir))}`);
+      write(`[eval] installed: ${await installBlueprint(path.join(subject.folder.dir, result.subject.path as string), library, path.basename(subject.folder.dir))}`);
     } catch (error) {
       ok = false;
       write(`[eval] not installed: ${(error as Error).message}`);
@@ -289,6 +308,7 @@ export const generateCommand: EvalCommand = {
         backend: { type: "string", multiple: true },
         model: { type: "string", multiple: true },
         judge: { type: "boolean" },
+        repair: { type: "string" },
         install: { type: "boolean" },
         parallelism: { type: "string" },
         quiet: { type: "boolean" },
@@ -299,6 +319,7 @@ export const generateCommand: EvalCommand = {
     const models = unique(strings(values.model));
     const parallelism = parseParallelism(values.parallelism);
     const quiet = values.quiet === true;
+    const repair = parseRepair(values.repair, values.judge === true, backends);
     const briefs = await readBriefs(positionals);
 
     const config = loadConfig({ root: context.root, configPath: common.configPath, modelOverrides: common.modelOverrides });
@@ -315,14 +336,16 @@ export const generateCommand: EvalCommand = {
       bindings: bindingsUsed(jobs, judge),
     });
     context.out(`[eval] run=${run.dir}`);
-    const settings = { run, apiKey, quiet, write: context.out, binding: judge };
+    const settings = { run, apiKey, quiet, write: context.out, binding: judge, repair };
     const done = await mapPool(jobs, parallelism, (job) => runJob(job, settings));
     const index = await run.finish();
 
     for (const { job, result, subject } of done) {
       context.out(`[eval] ${job.id}:`);
       for (const line of summaryLines(result, subject.folder.resultFile)) context.out(line);
+      for (const line of roundLines(result)) context.out(line);
     }
+    if (repair > 0) context.out(runCostLine(done.map(({ result }) => result)));
     const installed = values.install === true ? await installAll(done, getBlueprintsDir(context.root, context.env), context.out) : true;
     return installed ? index.exit_code : 1;
   },

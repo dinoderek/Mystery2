@@ -2,8 +2,8 @@
 
 Blueprint, artwork and narration inputs. Field intent:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`. “Input” means sent to the model; “attached” means paired
-with its output. Sessions store ids.
+`docs/ai-runtime.md`. “Input” is sent to the model; “attached” is paired with
+its output. Sessions store ids.
 
 ## Generating a blueprint
 
@@ -14,13 +14,19 @@ with its output. Sessions store ids.
   guidance from `renderGenerationGuidance` in `packages/shared/src/age-profile.ts`.
 - **User:** the brief, validated against
   `packages/blueprint-generator/src/story-brief.ts`, with schema instructions.
-- **API response format:** strict JSON Schema from `BlueprintV2Schema`, excluding
-  image ids. Strict-mode nulls for absent optional fields are removed.
+- **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
+  image ids; strict-mode nulls are removed.
 
-The agent backend gets the same prompt and brief in its workspace. Both
-validate the schema and mechanical checks and save `result.json`.
-Rejected blueprints are kept for inspection and never installed
-(`evaluation/README.md`).
+The agent backend gets both in its workspace. Both save
+`result.json` after the schema and mechanical checks; a rejected blueprint is
+kept, never installed (`evaluation/README.md`).
+
+### Repair rounds
+
+`--judge --repair <n>` (agent backend) runs up to `n` rounds while anything
+fails (`evaluation/generate/repair.ts`): the agent fixes, in place, the faults
+`repair.json` quotes as data, and every check and judge reruns, seeing only
+brief and blueprint. Round 0 is kept: its first pass measures the prompt.
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -77,25 +83,22 @@ ones:
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-The CLI checks a ratio only against OpenRouter's full list, and models vary:
-`openai/gpt-image-1` accepts only `1:1`, `3:2`, `2:3` and `auto`. A failed or
-cancelled generation is a 502, not billed. The run continues past a failed
-target, so re-run just those.
+The CLI checks a ratio only against OpenRouter's full list; `openai/gpt-image-1`
+accepts only `1:1`, `3:2`, `2:3` and `auto`. A failed generation is a 502, not
+billed; re-run just the failed targets.
 
 ## Generating 3D scenes
 
-`./dev eval scenes <blueprint.json> --install` generates missing location recipes
-through the `scene-generator` CLI binding and the shared model runner. Existing
-recipes are preserved. Prompts receive only
-visual direction, location names and descriptions, and searchable-area names;
-clues, hints and solutions are excluded. The run keeps prompts, attempts,
-`scenes.json` and `result.json`; failed generation never replaces installed art.
+`./dev eval scenes <blueprint.json> --install` generates missing location
+recipes through the `scene-generator` binding, keeping existing ones. Prompts get
+only visual direction, location names, descriptions and searchable-area names,
+never clues, hints or solutions. The run keeps prompts, attempts, `scenes.json`
+and `result.json`; a failure never replaces installed art.
 
-`packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations
-and rejects executable fields and unknown references. Manifests live in
-`blueprint-scenes/<blueprint-id>.json`, with config-root precedence over committed
-examples. The catalog's `blueprint-scenes` endpoint serves only these validated
-public recipes. New settings use the same renderer.
+`packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations,
+rejecting executable fields and unknown references. Manifests live in
+`blueprint-scenes/<blueprint-id>.json`, the config root's winning over committed
+examples; the `blueprint-scenes` endpoint serves only these.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->
@@ -122,5 +125,4 @@ location and character).
 
 ## Evaluation
 
-Generated blueprints are judged by the pipeline in `evaluation/`
-(`docs/evaluation-pipeline.md`).
+Judging: `docs/evaluation-pipeline.md`.

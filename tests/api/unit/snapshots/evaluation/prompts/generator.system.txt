@@ -140,13 +140,16 @@ Plan with these steps; do not output them.
    - A `self_protect` agenda lists `parts`, one per fact that breaks its cover:
      `{ clue_ids, shows, reaction }`. Any listed clue earns the part, so each
      must prove all of `shows`; `reaction` concedes exactly that, fitted into
-     their story. Evidence that misses the alibi leaves it standing: prints
+     their story. A clue that doesn't say whose a thing is, or who was there,
+     doesn't make them own it, and a motive is given up only by a clue that
+     shows it. Evidence that misses the alibi leaves it standing: prints
      clearing the wolf end the wolf-blaming, not the alibi. `confession` comes
      once every part is earned; two separate cases against one culprit are two
      agendas. Part clues come from a location or *another* character.
      `hides_steps` lists the `actual_actions` the cover hides (`[]` if only a
-     motive); a part's `concedes_steps`, those its reaction owns up to. The
-     speaker never sees a hidden step until it is conceded.
+     motive); a part's `concedes_steps`, those its reaction owns up to, and only
+     steps its clue proves. The speaker never sees a hidden step until it is
+     conceded.
    - Give non-culprits agendas that create friction where it serves the story
      (`protect_other`, `implicate_other`, `conditional_reveal`), each with a
      stated reason — including at least one narrative-condition

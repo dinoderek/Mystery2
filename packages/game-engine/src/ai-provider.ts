@@ -364,9 +364,7 @@ class MockAIProvider implements AIProvider {
                 player_can_use_prerequisites?: boolean | null;
                 known_to_player?: boolean;
               }>;
-              stated_alibi?: string | null;
               gate_clues?: Array<{ id?: string; held?: boolean }>;
-              state?: { current_story?: string[] };
             };
           }
           | undefined;
@@ -389,12 +387,6 @@ class MockAIProvider implements AIProvider {
           ...mockUseAndCommitments(playerInput, talkCtx?.active_character?.gate_clues ?? []),
           input_understood: true,
         };
-        // The character keeps to the latest line of their story once a part
-        // has been earned, so a test can see the story carried between turns.
-        const latest = talkCtx?.active_character?.state?.current_story?.at(-1);
-        const keepsTo = latest && latest !== talkCtx?.active_character?.stated_alibi
-          ? ` (Keeps to: ${latest})`
-          : "";
         // Clues the player already holds are never reported again.
         const clues = (talkCtx?.active_character?.clues ?? []).filter(
           (c) => c.known_to_player !== true,
@@ -407,7 +399,7 @@ class MockAIProvider implements AIProvider {
           const locked = clues.find((c) => c.player_can_use_prerequisites === false && c.id);
           if (locked?.id) {
             return {
-              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}${keepsTo}`,
+              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}`,
               revealed_clue_ids: [locked.id],
               revealed_off_script: [locked.id],
               ...reported,
@@ -419,14 +411,14 @@ class MockAIProvider implements AIProvider {
         const unlocked = clues.find((c) => c.player_can_use_prerequisites !== false && c.id);
         if (unlocked?.id) {
           return {
-            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}${keepsTo}`,
+            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}`,
             revealed_clue_ids: [unlocked.id],
             revealed_off_script: [],
             ...reported,
           };
         }
         return {
-          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".${keepsTo}`,
+          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".`,
           revealed_clue_ids: [],
           revealed_off_script: [],
           ...reported,

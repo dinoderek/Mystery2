@@ -7,8 +7,8 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   BlueprintV2Schema,
-  type BlueprintV2,
 } from "../../shared/src/blueprint-schema-v2.ts";
+import { buildMsfBlueprint, validateMsfCaseFile, type PlayableBlueprint } from "../../shared/src/msf-case.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -24,7 +24,7 @@ export interface LocalContentOptions {
 interface CachedBlueprint {
   /** mtime + size of the file the blueprint was parsed from. */
   stamp: string;
-  blueprint: BlueprintV2;
+  blueprint: PlayableBlueprint;
 }
 
 function stampOf(stats: fs.Stats): string {
@@ -53,7 +53,7 @@ export function createLocalContentStore(
   function readBlueprintFile(
     filePath: string,
     logger?: LogWriter,
-  ): BlueprintV2 | null {
+  ): PlayableBlueprint | null {
     let stats: fs.Stats;
     let text: string;
     try {
@@ -74,7 +74,10 @@ export function createLocalContentStore(
     }
 
     try {
-      const blueprint = BlueprintV2Schema.parse(JSON.parse(text));
+      const candidate = JSON.parse(text);
+      const blueprint = candidate?.$format === "MSF-CASE/1"
+        ? buildMsfBlueprint(validateMsfCaseFile(candidate))
+        : BlueprintV2Schema.parse(candidate);
       cache.set(filePath, { stamp: stampOf(stats), blueprint });
       return blueprint;
     } catch (parseError) {
@@ -90,7 +93,7 @@ export function createLocalContentStore(
   function blueprintFiles(): string[] {
     const files: string[] = [];
 
-    for (const dir of options.blueprintDirs) {
+    for (const dir of options.blueprintDirs.flatMap((dir) => [dir, path.join(dir, "msf")])) {
       let entries: fs.Dirent[];
       try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -115,17 +118,18 @@ export function createLocalContentStore(
   }
 
   return {
-    async loadScenes(blueprint: BlueprintV2): Promise<SceneManifest | null> {
+    async loadScenes(blueprint: PlayableBlueprint): Promise<SceneManifest | null> {
       if (!isSafeSegment(blueprint.id)) return null;
+      const assetId = blueprint.msf?.paired_blueprint_id ?? blueprint.id;
       for (const dir of options.sceneDirs) {
         let text: string;
         try {
-          text = fs.readFileSync(path.join(dir, `${blueprint.id}.json`), "utf8");
+          text = fs.readFileSync(path.join(dir, `${assetId}.json`), "utf8");
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
           throw error;
         }
-        return validateSceneManifest(JSON.parse(text), blueprint);
+        return { ...validateSceneManifest(JSON.parse(text), { ...blueprint, id: assetId }), blueprint_id: blueprint.id };
       }
       return null;
     },
@@ -143,13 +147,13 @@ export function createLocalContentStore(
         entries.push({ blueprint, source: path.basename(filePath) });
       }
 
-      return entries;
+      return entries.sort((a, b) => Number(!!a.blueprint.msf) - Number(!!b.blueprint.msf));
     },
 
     async loadBlueprint(
       blueprintId: string,
       logger: LogWriter,
-    ): Promise<BlueprintV2 | null> {
+    ): Promise<PlayableBlueprint | null> {
       if (isSafeSegment(blueprintId)) {
         for (const dir of options.blueprintDirs) {
           const blueprint = readBlueprintFile(

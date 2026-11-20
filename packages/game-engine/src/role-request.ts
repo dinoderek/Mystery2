@@ -53,6 +53,7 @@ import {
   renderPrompt,
 } from "./ai-prompts.ts";
 import { talkPromptProfile } from "./talk-prompt.ts";
+import { msfRoleGuidance } from "./msf-context.ts";
 
 /**
  * The two narrator outputs that are plain narration rather than a role-output
@@ -418,7 +419,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
 
   return {
     role: input.role,
-    prompt: renderPrompt(template, spec.vars(input as never)),
+    prompt: renderPrompt(template, spec.vars(input as never)) + (input.blueprint.msf ? `\n\n${msfRoleGuidance(input.role)}` : ""),
     context,
   };
 }

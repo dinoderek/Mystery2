@@ -103,6 +103,24 @@ function playedLines(gameDir: string): string[] {
 }
 
 describe('play on stub bindings', () => {
+	it('replays a recorded V2 lighthouse game on its paired native MSF case and grades the pinned graph', async () => {
+		const script = path.join(scratch, 'lighthouse-script.json');
+		const inputs = ['talk to Ada', 'What did you hear?', 'Why did you set your alarm?', 'bye', 'go keepers_cottage', 'search tide schedule', 'talk to Finn', 'What happened?', 'Who was in the cottage?', 'bye', 'go village_quay', 'search', 'search harbour tide board', 'search causeway steps', 'Roz took the lens', 'Roz took the lens'];
+		fs.writeFileSync(script, JSON.stringify({ blueprint_id: '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47', persona: 'comparison', inputs }));
+		const baseline = await play(['--replay', script, '--narrator', 'mock']);
+		expect(baseline.code, baseline.output).toBe(0);
+		const [baselineGame] = gameDirs(baseline.runDir as string);
+		const alternative = await play(['--replay', path.join(baselineGame, 'script.json'), '--blueprint', 'blueprints/msf/lighthouse.json', '--narrator', 'mock', '--judge']);
+		expect(alternative.code, alternative.output).toBe(0);
+		const [nativeGame] = gameDirs(alternative.runDir as string);
+		const summary = JSON.parse(fs.readFileSync(path.join(nativeGame, 'summary.json'), 'utf8'));
+		expect(summary).toMatchObject({ outcome: 'win', divergence: null, clue_drift: null, turns_used: 8, blueprint: { format: 'msf/0.1.0', revision: 1 } });
+		const trace = JSON.parse(fs.readFileSync(path.join(nativeGame, 'trace.json'), 'utf8'));
+		expect(trace.blueprint.msf.structure.solution.rule_ids).toEqual(['r_solution']);
+		expect(trace.blueprint.solution_paths).toEqual([]);
+		expect((await readResult(path.join(nativeGame, 'result.json'))).summary.passed).toBe(true);
+	}, 120_000);
+
 	it('plays a short game, writes a valid result, grades it, and replays the same lines', async () => {
 		const before = repoDatabases();
 		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge']);

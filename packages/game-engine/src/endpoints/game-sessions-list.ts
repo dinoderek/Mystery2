@@ -1,5 +1,6 @@
 import type { EngineContext, GameSessionSummaryRow } from "../context.ts";
 import { internalError } from "../errors.ts";
+import { createRequestLogger } from "../logging.ts";
 
 type SessionOutcome = "win" | "lose" | null;
 
@@ -60,7 +61,7 @@ function toSummary(
   session: GameSessionSummaryRow,
   titleByBlueprintId: Map<string, string>,
 ): SessionSummary {
-  const title = titleByBlueprintId.get(session.blueprint_id);
+  const title = session.msf_title ? `${session.msf_title} — MSF experiment` : titleByBlueprintId.get(session.blueprint_id);
   const mystery_available = Boolean(title);
 
   return {
@@ -83,11 +84,13 @@ export async function handle(
   req: Request,
   ctx: EngineContext,
 ): Promise<Response> {
+  const logger = createRequestLogger(req, "game-sessions-list");
   try {
     let sessions;
     try {
       sessions = await ctx.sessions.listForPlayer();
-    } catch {
+    } catch (error) {
+      logger.logError("request.error", { reason: "session_list_failed", error: error instanceof Error ? error.message : String(error) });
       return internalError("Failed to fetch sessions");
     }
 
@@ -119,7 +122,7 @@ export async function handle(
       },
     );
   } catch (error) {
-    console.error(error);
+    logger.logError("request.unhandled_error", { error: error instanceof Error ? error.message : String(error) });
     return internalError("Internal Server Error");
   }
 }

@@ -1,8 +1,8 @@
 # Playtest harness
 
-An **AI investigator** plays whole games against the real server. Each leaves a
-transcript, a script for [replay](#replay), and every step behind it. The options are in `./dev eval play
---help`; the layout shared with other runs is in `evaluation/README.md`.
+An **AI investigator** plays against the real server, saving transcripts and
+[replay](#replay) scripts. Options: `./dev eval play --help`; output layout:
+`evaluation/README.md`. Paired MSF comparison: [runbook](../../docs/msf-gameplay.md).
 
 ## Quick start
 

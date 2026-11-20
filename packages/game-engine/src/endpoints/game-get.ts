@@ -6,6 +6,7 @@ import { readQueryRequest } from "../request.ts";
 import { readNarrationEvent } from "../narration.ts";
 import { buildDiscoveryRecords } from "../clue-discovery.ts";
 import { buildGameState } from "../game-state-view.ts";
+import { buildMsfBlueprint } from "../../../shared/src/msf-case.ts";
 
 export async function handle(
   req: Request,
@@ -36,7 +37,7 @@ export async function handle(
     // Fetch blueprint to hydrate static world details
     let blueprint;
     try {
-      blueprint = await ctx.content.loadBlueprint(session.blueprint_id, logger);
+      blueprint = session.msf_snapshot ? buildMsfBlueprint(session.msf_snapshot) : await ctx.content.loadBlueprint(session.blueprint_id, logger);
     } catch {
       logError("request.error", { reason: "storage_list_failed", game_id: gameId });
       return internalError("Failed to access blueprints");

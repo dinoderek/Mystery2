@@ -22,6 +22,7 @@ import {
   resolveDatabasePath,
 } from "../../../packages/game-engine/src/paths.ts";
 import { buildRawTrace } from "./normalize.ts";
+import { buildMsfBlueprint, validateMsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import type { RawTrace } from "./normalize.ts";
 
 const SILENT_LOGGER = { log: () => {}, logError: () => {} };
@@ -129,7 +130,8 @@ export async function extractSessionTrace(
 ): Promise<RawTrace> {
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
-  const blueprint = await source.downloadBlueprint(session.blueprint_id as string);
+  const snapshot = session.msf_snapshot == null ? null : JSON.parse(String(session.msf_snapshot));
+  const blueprint = snapshot ? buildMsfBlueprint(validateMsfCaseFile(snapshot)) : await source.downloadBlueprint(session.blueprint_id as string);
 
   return buildRawTrace({
     session,

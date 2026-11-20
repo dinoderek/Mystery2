@@ -530,6 +530,7 @@ class MockAIProvider implements AIProvider {
             round?: number;
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
+            msf_progress?: { solution_supported: boolean };
           }
           | undefined;
         const round = accusationJudgeContext?.round ??
@@ -556,9 +557,12 @@ class MockAIProvider implements AIProvider {
         // Mirrors the live judge semantics: a wrong or unsupported accusation
         // is rejected with encouragement ("continue") until round 3, when the
         // case finally resolves "lose". A correct culprit wins from round 1.
+        // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
+        const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
+          (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
-          : isCulprit
+          : isCulprit && msfSupported
           ? "win"
           : round >= 3
           ? "lose"

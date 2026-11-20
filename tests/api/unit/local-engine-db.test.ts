@@ -84,9 +84,9 @@ describe("local database client", () => {
     ]);
   });
 
-  it("creates a fresh database at version 3, holding the AI choice as one value", () => {
-    expect(SCHEMA_VERSION).toBe(3);
-    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 3 });
+  it("creates a fresh database at the current version, holding the AI choice as one value", () => {
+    expect(SCHEMA_VERSION).toBe(4);
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     expect(
       db.prepare("pragma table_info(app_settings)").all().map((column) => column.name),
     ).toEqual(["id", "ai_name"]);
@@ -105,6 +105,17 @@ describe("local database client", () => {
 
     db = openDatabase({ path: databasePath() });
     expect(createPlayerStore(db).list().map((p) => p.name)).toEqual(["Ada"]);
+  });
+
+  it("upgrades version 3 with a nullable private MSF snapshot and keeps existing sessions", async () => {
+    const player = createPlayerStore(db).create("Version three");
+    const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
+    db.exec("alter table game_sessions drop column msf_snapshot; pragma user_version = 3;");
+    db.close();
+    db = openDatabase({ path: databasePath() });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 4 });
+    expect(await createSessionStore(db, player.id).getById(sessionId)).toMatchObject({ blueprint_id: "blueprint-1" });
+    expect(db.prepare("select msf_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ msf_snapshot: null });
   });
 
   it("applies the connection pragmas the schema depends on", () => {
@@ -289,7 +300,9 @@ describe("migrating a version 2 database", () => {
     seeded.exec("pragma user_version = 2");
 
     const player = createPlayerStore(seeded).create("Ada");
-    sessionId = await createSessionStore(seeded, player.id).create(newSession(player.id));
+    sessionId = crypto.randomUUID();
+    seeded.prepare("insert into game_sessions (id, player_id, blueprint_id, ai_profile_id, mode, current_location_id, time_remaining, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(sessionId, player.id, "blueprint-1", "default", "explore", "loc_hall", 20, new Date().toISOString(), new Date().toISOString());
     await createEventStore(seeded, player.id).insert(newEvent(sessionId, 1));
     const now = new Date().toISOString();
     seeded
@@ -307,10 +320,10 @@ describe("migrating a version 2 database", () => {
     seeded.close();
   });
 
-  it("steps it to version 3", () => {
+  it("steps it to the current version", () => {
     const upgraded = openDatabase({ path: upgradedPath });
 
-    expect(upgraded.prepare("pragma user_version").get()).toEqual({ user_version: 3 });
+    expect(upgraded.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
 
     upgraded.close();
   });

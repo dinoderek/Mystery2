@@ -40,11 +40,8 @@ worktree gets its own, and `npm run prod` opens the persistent `prod` one. See
 ./dev doctor
 ```
 
-It checks the Node version, runs `npm ci` when dependencies are missing or
-stale, installs Playwright's chromium for the browser tests, and reports whether
-this checkout's port is free. For a second checkout, `./dev worktree create
-<branch>` adds one beside this clone with dependencies installed; see
-`docs/local-infrastructure.md`.
+Checks dependencies, Playwright and the port. Worktrees: `./dev worktree create
+<branch>`; see `docs/local-infrastructure.md`.
 
 There is nothing to seed. The database is created on first run, and blueprints
 are read off disk — the committed stories in `blueprints/` are enough to play.
@@ -62,8 +59,20 @@ command prints it). Mock narration, no network, no API key.
 
 Pick a profile name on the first screen — that is the whole of signing in.
 
-This checkout plays against a database of its own, thrown away whenever you
-like. `npm run prod` starts the same server against the persistent one instead.
+### Compare case formats
+
+Choose **The Missing Lighthouse Lens** for V2 (the default), or **The Missing
+Lighthouse Lens — MSF experiment** for native MSF. Keep the same narrator.
+For a recorded comparison:
+
+```bash
+./dev eval play --blueprint the-missing-lighthouse-lens --games 1 --judge
+./dev eval play --replay <baseline>/script.json --blueprint blueprints/msf/lighthouse.json --judge
+```
+
+Use a game's saved script from the first run. [Experiment details](docs/msf-gameplay.md).
+Database version 4 automatically adds private MSF snapshots; existing games are
+retained, but older checkouts cannot open the upgraded database.
 
 ### Live AI
 
@@ -139,8 +148,7 @@ Flags: `./dev eval generate --help`.
 
 ## Evaluation Pipelines
 
-Four evaluation pipelines, each for a different subject. Each is driven by npm
-scripts or `./dev eval` and documented next to its code. Pass-through flags to an npm script go after `--`.
+Evaluation pipelines and their runbooks:
 
 | Pipeline | What it evaluates | Commands |
 |----------|-------------------|----------|

@@ -1,7 +1,7 @@
 # AI Runtime
 
-How the narrator is asked for a turn, what it is allowed to see, and how its
-answer is trusted before anything is written. Profiles and providers are
+Narrator inputs, contracts and validation before saving a turn. MSF projections:
+[paired runtime](msf-gameplay.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
 

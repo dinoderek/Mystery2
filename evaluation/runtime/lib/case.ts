@@ -12,6 +12,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { UsageError } from "../../core/errors.ts";
+import { buildMsfBlueprint, validateMsfCaseFile, type MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 
 export interface Speaker {
   kind: string;
@@ -80,6 +81,7 @@ interface Named {
 }
 
 export interface BlueprintLike {
+  msf?: MsfCaseFile;
   id?: string;
   metadata?: { target_age?: number; title?: string };
   world: {
@@ -87,7 +89,7 @@ export interface BlueprintLike {
     locations: Array<
       Named & {
         name: string;
-        clues?: Array<Named & { requires?: { clue_ids?: string[] } }>;
+        clues?: Array<Named & { requires?: { clue_ids?: string[] } | null }>;
       }
     >;
   };
@@ -109,7 +111,9 @@ export async function readBlueprint(
   const absolute = path.resolve(root, blueprintPath);
   let blueprint: BlueprintLike;
   try {
-    blueprint = JSON.parse(await fs.readFile(absolute, "utf8")) as BlueprintLike;
+    const candidate = JSON.parse(await fs.readFile(absolute, "utf8"));
+    blueprint = candidate?.$format === "MSF-CASE/1" || candidate?.msf
+      ? buildMsfBlueprint(validateMsfCaseFile(candidate.msf ?? candidate)) : candidate as BlueprintLike;
   } catch (error) {
     throw new UsageError(`cannot read blueprint ${absolute}: ${(error as Error).message}`);
   }

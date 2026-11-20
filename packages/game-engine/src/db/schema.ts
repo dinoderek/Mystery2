@@ -53,7 +53,8 @@ create table game_sessions (
     discovered_clues          text not null default '[]',
     outcome                   text,
     created_at                text not null,
-    updated_at                text not null
+    updated_at                text not null,
+    msf_snapshot              text
 );
 
 create index game_sessions_player_id_idx on game_sessions(player_id);

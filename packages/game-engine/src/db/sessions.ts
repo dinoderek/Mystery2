@@ -16,9 +16,10 @@ import { SaveConflictError } from "../errors.ts";
 import { readGameMode } from "../state-machine.ts";
 import type { Db, SqlValue } from "./client.ts";
 import { insertEventRow } from "./events.ts";
+import { validateMsfCaseFile } from "../../../shared/src/msf-case.ts";
 
 const SUMMARY_COLUMNS =
-  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at";
+  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(msf_snapshot, '$.structure.metadata.title') as msf_title";
 
 /**
  * How each patchable column is written. `discovered_clues` is a JSON array in
@@ -52,7 +53,10 @@ function readJsonArray(value: unknown): string[] {
 }
 
 function toSessionRow(row: Record<string, unknown>): GameSessionRow {
+  const snapshot = typeof row.msf_snapshot === "string" ? validateMsfCaseFile(JSON.parse(row.msf_snapshot)) : undefined;
+  if (snapshot && snapshot.structure.metadata.id !== row.blueprint_id) throw new Error("Saved MSF case does not match session blueprint");
   return {
+    ...(snapshot ? { msf_snapshot: snapshot } : {}),
     id: String(row.id),
     player_id: String(row.player_id),
     blueprint_id: String(row.blueprint_id),
@@ -73,6 +77,7 @@ function toSessionRow(row: Record<string, unknown>): GameSessionRow {
 
 function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
   return {
+    ...(typeof row.msf_title === "string" ? { msf_title: row.msf_title } : {}),
     id: String(row.id),
     blueprint_id: String(row.blueprint_id),
     mode: readGameMode(row.mode),
@@ -84,13 +89,14 @@ function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
 }
 
 function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
+  if (session.msf_snapshot && session.msf_snapshot.structure.metadata.id !== session.blueprint_id) throw new Error("MSF snapshot must match session blueprint");
   const now = new Date().toISOString();
 
   db.prepare(
     `insert into game_sessions (
        id, player_id, blueprint_id, ai_profile_id, mode,
-       current_location_id, time_remaining, created_at, updated_at
-     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       current_location_id, time_remaining, created_at, updated_at, msf_snapshot
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     session.player_id,
@@ -101,6 +107,7 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     session.time_remaining,
     now,
     now,
+    session.msf_snapshot ? JSON.stringify(validateMsfCaseFile(session.msf_snapshot)) : null,
   );
 }
 

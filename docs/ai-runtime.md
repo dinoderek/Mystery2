@@ -170,8 +170,8 @@ opens only on **use**.
 
 - **Use, defined once** here and in the prompt's "Using a clue": the player
   shows this character the clue, or makes its point at them. Could the
-  character react as if just shown it? Saying a word, or holding the clue, is
-  not enough; a specific, plausible bluff or deduction stating its substance
+  character react as if shown it? A word, or holding the clue, is not
+  enough; a specific, plausible bluff or deduction stating its substance
   is. "Do you have snowshoes?" does not use the prints; "Why are there
   snowshoe prints by the luggage car?" does.
 - **Some things never earn a part:** naming the character as culprit,
@@ -179,10 +179,10 @@ opens only on **use**.
   parts.
 - **The character yields in proportion, that turn.** A used part earns its
   `reaction`, conceding what its clues show, even against the alibi; a used
-  `requires` gate gives its clue; every part earns the `confession`. The alibi
-  comes up only when asked where or when. After questions in three visits
-  (`fallback_open`), it may give up a partial truth or gated clue,
-  never a confession.
+  `requires` gate gives its clue unless held back; every part earns the
+  `confession`. The alibi comes up only when asked where or when. After
+  questions in three visits (`fallback_open`), it may give up a partial truth
+  or gated clue, never a confession.
 - **Use is recorded.** `talk_conversation` reports the clues used
   (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The
   backend keeps a used gate clue the player holds, or bluffs in quoted words,

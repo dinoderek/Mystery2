@@ -205,6 +205,61 @@ describe("clue-graph sessions and turns", () => {
     expect((await ctx.sessions.getById(opened.game_id))?.discovered_clues).toContain("clue_thorne_measured");
   });
 
+  it("marks a lead new on its turn only and a statement taken back, live and on resume", async () => {
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    const keys = (leads: Array<{ key: string }> | undefined) => (leads ?? []).map((lead) => lead.key);
+    // Before anything is played every lead is new, and the case file's wording stays out of them.
+    expect(keys(opened.state.leads)).toContain("meet:thorne");
+    expect(opened.state.leads?.every((lead) => lead.new)).toBe(true);
+
+    const searched = await play(opened.game_id, "search");
+    expect(searched.leads?.every((lead) => !lead.new)).toBe(true);
+    const moved = await play(opened.game_id, "go to the garden");
+    expect(moved.leads?.find((lead) => lead.key === "meet:thorne")?.new).toBe(false);
+    const greeting = await play(opened.game_id, "talk to Mr. Thorne");
+    expect(greeting.leads).toContainEqual({ key: "talk:thorne", text: "Mr. Thorne may know more.", new: true });
+    expect(greeting.leads?.find((lead) => lead.key === "meet:thorne")).toBeUndefined();
+    expect(greeting.taken_back).toEqual([]);
+    expect(greeting.revealed_clues.map((clue) => [clue.id, clue.kind, clue.taken_back])).toContainEqual([
+      "thorne_never_set_foot",
+      "statement",
+      false,
+    ]);
+
+    // The retraction turn: the statement is marked, and the lead that was new is not new any more.
+    const line = await play(opened.game_id, "These are your boot prints: clue_boot_prints");
+    expect(line.taken_back).toEqual(["thorne_never_set_foot"]);
+    expect(keys(line.leads)).not.toContain("talk:thorne");
+    expect(line.leads?.some((lead) => lead.new)).toBe(false);
+
+    const resumed = GameGetResponseSchema.parse(
+      await (await getGame(new Request(`http://test/api/game-get?game_id=${opened.game_id}`), ctx)).json(),
+    );
+    expect(resumed.state.leads).toEqual(line.leads);
+    const notebook = resumed.state.discovered_clues ?? [];
+    expect(notebook.find((clue) => clue.id === "thorne_never_set_foot")).toMatchObject({ kind: "statement", taken_back: true });
+    expect(notebook.find((clue) => clue.id === "clue_thorne_measured")).toMatchObject({ taken_back: false });
+
+    // A turn that plays no graph event leaves nothing new.
+    const accusing = await play(opened.game_id, "accuse");
+    expect(accusing.leads?.some((lead) => lead.new)).toBe(false);
+  });
+
+  it("marks a hidden spot's lead new the turn its pointer is found", async () => {
+    installed(fixture());
+    const opened = await start(clueGraphCaseId("greenhouse-fixture"));
+    await play(opened.game_id, "go to the potting shed");
+    await play(opened.game_id, "talk to Toby");
+    const asked = await play(opened.game_id, "What about the missing key?");
+    expect(asked.leads).toContainEqual({
+      key: expect.stringMatching(/^spot:/),
+      text: "Something new to search at The Greenhouse: the water butt by the door.",
+      new: true,
+    });
+    const seen = JSON.stringify(asked);
+    expect(seen).not.toMatch(/"truth"|"rule"|toby_confession/);
+  });
+
   it("records an answer and a subject tell the state offered, keeping pure tells out of the notebook", async () => {
     const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
     await play(opened.game_id, "go to the potting shed");

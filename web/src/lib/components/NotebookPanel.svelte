@@ -7,6 +7,7 @@
     NOTEBOOK_SECTIONS,
     buildPeopleView,
     buildPlacesView,
+    clueMark,
     groupCluesByOrigin,
     nextSection,
     sectionAtIndex,
@@ -26,6 +27,7 @@
   const places = $derived(buildPlacesView(gameState));
   const people = $derived(buildPeopleView(gameState));
   const clues = $derived(gameState?.discovered_clues ?? []);
+  const leads = $derived(gameState?.leads ?? []);
   const clueBuckets = $derived(groupCluesByOrigin(clues));
 
   let bodyEl = $state<HTMLElement | null>(null);
@@ -220,8 +222,20 @@
             {:else}
               <p class="italic text-t-muted/60">No people recorded yet.</p>
             {/if}
-          {:else if clues.length > 0}
+          {:else if clues.length > 0 || leads.length > 0}
             <div class="space-y-5">
+              {#if leads.length > 0}
+                <div data-testid="notebook-leads">
+                  <h3 class="text-t-primary font-bold text-xs uppercase mb-2">WHAT TO DO NEXT</h3>
+                  <ul class="list-disc list-inside pl-1 space-y-1">
+                    {#each leads as lead (lead.key)}
+                      <li class="text-t-muted/90">
+                        {lead.text}{#if lead.new}<span class="text-t-primary font-bold"> [ NEW ]</span>{/if}
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
               {#each clueBuckets as bucket (bucket.bucket)}
                 <div>
                   <h3 class="text-t-primary font-bold text-xs uppercase mb-2">{bucket.label}</h3>
@@ -234,7 +248,10 @@
                         <ul class="list-disc list-inside pl-1 space-y-1">
                           {#each group.clues as clue (clue.id)}
                             <li class="text-t-muted/90">
-                              {clue.text}{#if clue.off_script}<span class="text-t-muted/60"
+                              <span class:line-through={clue.taken_back}>{clue.text}</span
+                              >{#if clueMark(clue)}<span class="text-t-muted/60"
+                                  >&nbsp;({clueMark(clue)})</span
+                                >{/if}{#if clue.off_script}<span class="text-t-muted/60"
                                   >&nbsp;(a lucky break!)</span
                                 >{/if}
                             </li>

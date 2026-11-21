@@ -32,7 +32,7 @@ A gate has up to three parts:
 With `after` alone, the clue comes when asked once those are out (a confession).
 With `use` and `line`, either opens it. `physical: true` cannot be bluffed. A
 gated statement may `takes_back` the character's earlier false statements.
-Using a clue means showing it or making its point; holding it is not.
+Using a clue means showing it or making its point, not holding it.
 
 ## The case file
 
@@ -95,11 +95,12 @@ folds those and derives the rest on every call.
   pointer is held. Before, it wins the words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
 - **Retraction** marks a statement taken back; a conclusion holds only on
-  clues held and not taken back.
+  clues held, not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
-  hidden spot newly visible; each is marked new when it appears.
-- **Notebook**: held clues, without tells no clue depends on; never a
-  conclusion. No truth, rule or gate wording reaches the browser, and a
-  farewell narrator sees only clues already found.
+  hidden spot newly visible; each new when it appears.
+- **Notebook**: held clues, each with its kind and whether taken back, then the
+  leads. Never a conclusion or a tell nothing depends on; no truth, rule or
+  gate wording reaches the browser. A farewell narrator sees only clues
+  found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).

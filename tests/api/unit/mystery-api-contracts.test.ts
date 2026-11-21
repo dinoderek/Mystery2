@@ -25,6 +25,8 @@ import {
   createBlueprintSummary,
   createGameEnterResponse,
   createNarrationEvent,
+  createNotebookLead,
+  createRevealedClue,
   createTurnPlayedResponse,
   createTurnRefusedResponse,
   createTurnViewResponse,
@@ -71,6 +73,45 @@ describe("the game-turn contract", () => {
 
   it("refuses a played turn with no events", () => {
     expect(GameTurnResponseSchema.safeParse({ ...createTurnPlayedResponse(), events: [] }).success).toBe(false);
+  });
+});
+
+describe("the notebook of a clue-graph case", () => {
+  it("carries leads with a new mark, taken-back clues and clue kinds, and no truth, rule or gate field", () => {
+    const answer = GameTurnResponseSchema.parse({
+      ...createTurnPlayedResponse(),
+      revealed_clues: [{ ...createRevealedClue({ kind: "statement", taken_back: false }), truth: false, rule: "any", gate: { line: "ask" } }],
+      leads: [{ ...createNotebookLead({ new: true }), truth: true, rule: "all", gate: "x" }],
+      taken_back: ["thorne_never_set_foot"],
+      conclusions: ["toby_cleared"],
+    });
+    if (answer.kind !== "turn") throw new Error("Expected a turn");
+    expect(answer.leads).toEqual([{ key: "talk:thorne", text: "Mr. Thorne may know more.", new: true }]);
+    expect(answer.taken_back).toEqual(["thorne_never_set_foot"]);
+    expect(answer.revealed_clues[0]).toMatchObject({ kind: "statement", taken_back: false });
+    expect(JSON.stringify(answer)).not.toMatch(/truth|rule|gate|conclusions/);
+  });
+
+  it("carries leads on the game state, and leaves a case without them as it was", () => {
+    expect(GameStateSchema.parse(createGameState({ leads: [createNotebookLead()] })).leads).toHaveLength(1);
+    expect(GameStateSchema.parse(createGameState())).not.toHaveProperty("leads");
+    const turn = createTurnPlayedResponse();
+    expect(turn).not.toHaveProperty("leads");
+    expect(turn).not.toHaveProperty("taken_back");
+  });
+
+  it("accepts an arrival where someone has one name, as a clue-graph case writes them", () => {
+    const entered = createGameEnterResponse({
+      visible_characters: [{ first_name: "Mr. Thorne", last_name: "", sex: "male" }],
+    });
+    expect(GameEnterResponseSchema.parse(entered).visible_characters).toEqual([
+      { first_name: "Mr. Thorne", last_name: "", sex: "male" },
+    ]);
+  });
+
+  it("refuses an unknown clue kind and a lead with no new mark", () => {
+    expect(() => createRevealedClue({ kind: "conclusion" as never })).toThrow();
+    expect(() => createNotebookLead({ new: undefined as never })).toThrow();
   });
 });
 

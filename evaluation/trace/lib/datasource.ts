@@ -130,6 +130,10 @@ export async function extractSessionTrace(
 ): Promise<RawTrace> {
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
+  // A clue-graph game's turns are not V2 roles, and nothing here rebuilds them
+  // yet: refuse rather than judge them as V2.
+  if (session.clue_graph_snapshot != null)
+    throw new Error(`Session ${sessionId} plays a clue-graph case, which trace extraction does not read yet`);
   const snapshot = session.msf_snapshot == null ? null : JSON.parse(String(session.msf_snapshot));
   const blueprint = snapshot ? buildMsfBlueprint(validateMsfCaseFile(snapshot)) : await source.downloadBlueprint(session.blueprint_id as string);
 

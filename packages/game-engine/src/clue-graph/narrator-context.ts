@@ -51,13 +51,22 @@ export type SearchOutcome =
   | { kind: "known"; spot: string | null; finds: SearchCandidate["clue"] | null }
   | { kind: "judge"; candidates: SearchCandidate[] };
 
-/** The spot of this location a query names best, hidden ones included, or null. */
-export function namedSpot(graph: ClueGraphCase, location: string, query: string): string | null {
-  const place = graph.locations[location];
-  let best: { name: string; score: number } | null = null;
+/**
+ * The spot of this location a query names best, or null. A hidden spot not yet
+ * visible wins only when it fits strictly better than every visible one, as
+ * V2's `namedHiddenSpot` decides: "the shelf" between a visible top shelf and a
+ * hidden bottom one is about the one in view.
+ */
+export function namedSpot(graph: ClueGraphCase, play: ClueGraphPlay, query: string): string | null {
+  const place = graph.locations[play.at];
+  const visible = new Set(visibleSpots(graph, play, play.at));
+  let best: { name: string; score: number; visible: boolean } | null = null;
   for (const spot of place.spots) {
     const score = spotMatchScore(query, spot.name, place.name);
-    if (score !== null && (best === null || score > best.score)) best = { name: spot.name, score };
+    if (score === null) continue;
+    const shown = visible.has(spot.name);
+    const better = best === null || score > best.score || (score === best.score && shown && !best.visible);
+    if (better) best = { name: spot.name, score, visible: shown };
   }
   return best?.name ?? null;
 }
@@ -71,24 +80,38 @@ function unheldAt(graph: ClueGraphCase, play: ClueGraphPlay, location: string, s
   return id === undefined || held(id) ? null : { id, text: graph.clues[id].text };
 }
 
+/** What a search can find, as the narrator is told it. */
 export function searchOutcome(
   graph: ClueGraphCase,
   play: ClueGraphPlay,
   query: string | null,
 ): SearchOutcome {
+  return resolveGraphSearchWords(graph, play, query).outcome;
+}
+
+/**
+ * The search the words make: what the narrator is told, and the spot the event
+ * records when the outcome is known (null for the room itself). A hidden spot
+ * named before its pointer is held is recorded, and finds nothing; the
+ * narrator is told only that the search finds nothing, never the spot's name.
+ */
+export function resolveGraphSearchWords(
+  graph: ClueGraphCase,
+  play: ClueGraphPlay,
+  query: string | null,
+): { outcome: SearchOutcome; spot: string | null } {
   const location = play.at;
   const visible = visibleSpots(graph, play, location);
-  const named = query === null ? null : namedSpot(graph, location, query);
-  if (query === null || named !== null) {
-    // A hidden spot named before its pointer is held finds nothing.
-    const open = named === null || visible.includes(named);
-    return { kind: "known", spot: named, finds: open ? unheldAt(graph, play, location, named) : null };
-  }
+  const named = query === null ? null : namedSpot(graph, play, query);
+  if (named !== null && !visible.includes(named))
+    return { outcome: { kind: "known", spot: null, finds: null }, spot: named };
+  if (query === null || named !== null)
+    return { outcome: { kind: "known", spot: named, finds: unheldAt(graph, play, location, named) }, spot: named };
   const candidates = [null, ...visible].flatMap((spot) => {
     const clue = unheldAt(graph, play, location, spot);
     return clue ? [{ spot, clue }] : [];
   });
-  return { kind: "judge", candidates };
+  return { outcome: { kind: "judge", candidates }, spot: null };
 }
 
 export interface GraphSearchContext {

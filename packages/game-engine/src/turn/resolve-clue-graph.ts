@@ -8,7 +8,7 @@ import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts"
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
 import { parseGraphTalkOutput, parseSearchOutput } from "../ai-contracts.ts";
 import { notebookClues, playOf } from "../clue-graph/history.ts";
-import { searchOutcome } from "../clue-graph/narrator-context.ts";
+import { resolveGraphSearchWords } from "../clue-graph/narrator-context.ts";
 import { applyEvent, type ClueGraphEvent, type ClueGraphPlay } from "../clue-graph/play.ts";
 import { talkState } from "../clue-graph/talk-state.ts";
 import { RequestRejectedError } from "../errors.ts";
@@ -119,7 +119,7 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
 }
 
 /**
- * Splits the narrator's reports into what the state offered: gates opened,
+ * Files the narrator's reports by what the state offered: gates opened,
  * questions answered and subject tells shown. What the player already holds,
  * or this line's first words, is dropped; anything else fails the turn.
  */
@@ -138,12 +138,10 @@ function acceptLine(
   const event = { type: "line" as const, character: characterId, opened: [] as string[], asked: [] as string[], seen: [] as string[] };
   const unoffered: string[] = [];
   const repeated: string[] = [];
-  for (const id of output.opened) {
+  // Generous on form: an offered id counts whichever list it came in.
+  for (const id of new Set([...output.opened, ...output.answered])) {
     if (gates.has(id)) event.opened.push(id);
-    else (harmless.has(id) ? repeated : unoffered).push(id);
-  }
-  for (const id of output.answered) {
-    if (answers.has(id)) event.asked.push(id);
+    else if (answers.has(id)) event.asked.push(id);
     else if (tells.has(id)) event.seen.push(id);
     else (harmless.has(id) ? repeated : unoffered).push(id);
   }
@@ -214,23 +212,25 @@ export async function resolveGraphLine(
   };
 }
 
+/** A spot no case can name (spot names are never blank): the fold finds nothing there. */
+const NO_SPOT = "";
+
 /**
  * The search event to fold, from the narrator's report: the spot the engine
  * resolved, or for words that name no spot, the candidate the narrator chose.
- * Words that name nothing and find nothing are kept as the spot searched, which
- * the fold treats as an unknown spot: no clue, a turn spent.
+ * Words that name nothing and find nothing search `NO_SPOT`: no clue, a turn spent.
  */
 function searchEvent(
   runtime: TurnRuntime,
-  outcome: ReturnType<typeof searchOutcome>,
+  resolved: ReturnType<typeof resolveGraphSearchWords>,
   revealed: string | null,
-  query: string | null,
 ): Extract<ClueGraphEvent, { type: "search" }> {
+  const { outcome } = resolved;
   if (outcome.kind === "known") {
     if (revealed !== (outcome.finds?.id ?? null)) rejectOutput(runtime, "search", "Clue-graph search reported another clue than the spot holds");
-    return outcome.spot === null ? { type: "search" } : { type: "search", spot: outcome.spot };
+    return resolved.spot === null ? { type: "search" } : { type: "search", spot: resolved.spot };
   }
-  if (revealed === null) return { type: "search", spot: query ?? "" };
+  if (revealed === null) return { type: "search", spot: NO_SPOT };
   const candidate = outcome.candidates.find((entry) => entry.clue.id === revealed);
   if (!candidate) rejectOutput(runtime, "search", "Clue-graph search revealed a clue no visible spot holds");
   return candidate.spot === null ? { type: "search" } : { type: "search", spot: candidate.spot };
@@ -255,7 +255,7 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
   const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });
   // Gibberish searches nothing and costs nothing.
   const event = output.input_understood
-    ? searchEvent(runtime, searchOutcome(graph, play, query), output.revealed_clue_id, query)
+    ? searchEvent(runtime, resolveGraphSearchWords(graph, play, query), output.revealed_clue_id)
     : null;
   const kept = event ? fold(graph, play, event).kept : [];
   const clueId = kept[0] ?? null;

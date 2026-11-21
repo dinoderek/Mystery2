@@ -25,6 +25,7 @@ import { playTurn } from "../../../packages/game-engine/src/turn/play-turn.ts";
 import { RetriableAIError } from "../../../packages/game-engine/src/errors.ts";
 import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { deriveClueGraph } from "../../../packages/game-engine/src/clue-graph/leads.ts";
+import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 
 const ROOT = process.cwd();
 const GREENHOUSE = path.join(ROOT, "blueprints/clue-graph/greenhouse-prizewinner.json");
@@ -161,6 +162,16 @@ describe("clue-graph sessions and turns", () => {
     expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin — clue graph" });
   });
 
+  it("is refused by trace extraction, which does not read the format yet", async () => {
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    const source = createLocalTraceSource({ databasePath, repoRoot: ROOT, env: {} });
+    try {
+      await expect(extractSessionTrace(source, opened.game_id)).rejects.toThrow("clue-graph case");
+    } finally {
+      source.close?.();
+    }
+  });
+
   it("refuses a snapshot that does not match its session", async () => {
     const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
     const other = greenhouse();
@@ -250,6 +261,41 @@ describe("clue-graph sessions and turns", () => {
     // thorne_ladder_thursday is physical: naming the tape mark without it opens nothing.
     const named = await play(opened.game_id, "What about clue_ladder_tape?");
     expect(named.revealed_clues).toEqual([]);
+  });
+
+  it("files an offered id by what it is, whichever list the narrator put it in", async () => {
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    await play(opened.game_id, "search");
+    await play(opened.game_id, "go to the garden");
+    await play(opened.game_id, "talk to Mr. Thorne");
+    const line = await play(opened.game_id, "Look at these prints", reporting([], ["clue_thorne_measured"]));
+    expect(line.revealed_clues.map((clue) => clue.id)).toEqual(["clue_thorne_measured"]);
+    const { events } = await derived(opened.game_id);
+    expect(events.at(-1)).toEqual({ type: "line", character: "thorne", opened: ["clue_thorne_measured"], asked: [], seen: [] });
+  });
+
+  it("tells a farewell narrator only the clues already found", async () => {
+    const graph = greenhouse();
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    await play(opened.game_id, "go to the potting shed");
+    await play(opened.game_id, "talk to Toby");
+    let farewell = "";
+    const keeping = (profile: Profile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile);
+      return {
+        profile: inner.profile,
+        resolvedModel: inner.resolvedModel,
+        generateNarration: inner.generateNarration.bind(inner),
+        generateRoleOutput: async (request) => {
+          if (request.role === "talk_end") farewell = JSON.stringify(request.context);
+          return inner.generateRoleOutput(request);
+        },
+      };
+    };
+    await play(opened.game_id, "bye", keeping);
+    expect(farewell).toContain(graph.clues.toby_alibi.text);
+    expect(farewell).not.toContain(graph.clues.toby_confession.text);
+    expect(farewell).not.toContain(graph.clues.toby_no_key.text);
   });
 
   it("drops reports of clues already held instead of failing", async () => {

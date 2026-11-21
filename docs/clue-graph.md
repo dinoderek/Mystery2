@@ -89,15 +89,17 @@ folds those and derives the rest on every call.
   reports what the line `opened` and `answered`. Dodged evidence is read from
   the conversation. A report the state did not offer fails the turn before
   anything is saved; one already held is dropped; gibberish records nothing.
-- **Search** gives one clue. The engine names the spot from the words, hidden
-  ones included, and the narrator must report what it holds; words naming no
-  spot let the narrator pick a visible spot's clue, or none. A hidden spot
-  shows once its pointer is held; before, it finds nothing.
+- **Search** gives one clue. The engine names the spot from the words, and
+  the narrator must report what it holds; words naming no spot let the
+  narrator pick a visible spot's clue, or none. A hidden spot shows once its
+  pointer is held. Before, it wins the words only by fitting them better than
+  every visible spot, finds nothing, and is never named to the narrator.
 - **Retraction** marks a statement taken back; a conclusion holds only on
   clues held and not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
   hidden spot newly visible; each is marked new when it appears.
 - **Notebook**: held clues, without tells no clue depends on; never a
-  conclusion. No truth, rule or gate wording reaches the browser.
+  conclusion. No truth, rule or gate wording reaches the browser, and a
+  farewell narrator sees only clues already found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).

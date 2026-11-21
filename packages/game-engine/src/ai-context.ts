@@ -949,6 +949,26 @@ export function buildTalkConversationContext(input: {
   });
 }
 
+/**
+ * A clue-graph case's world view lists every clue a character holds; outside
+ * its own talk context (`clue-graph/`), a narrator sees only those already
+ * found. The rest stay with the graph.
+ */
+function foundCluesOnly(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
+  if (!blueprint.clue_graph) return blueprint;
+  const found = buildDiscoveredClueIdSet(history);
+  return {
+    ...blueprint,
+    world: {
+      ...blueprint.world,
+      characters: blueprint.world.characters.map((character) => ({
+        ...character,
+        clues: character.clues.filter((clue) => found.has(clue.id)),
+      })),
+    },
+  };
+}
+
 export function buildTalkEndContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -966,7 +986,7 @@ export function buildTalkEndContext(input: {
     character_id: input.character_id,
     conversation_history: input.conversation_history,
     talk_context: buildTalkContext(
-      input.blueprint,
+      foundCluesOnly(input.blueprint, input.conversation_history ?? []),
       input.location_id,
       input.character_id,
       input.conversation_history ?? [],

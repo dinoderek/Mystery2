@@ -12,6 +12,8 @@ import { applyEvent, replay, type ClueGraphEvent } from "../../../packages/game-
 import {
   buildGraphSearchContext,
   buildGraphTalkContext,
+  namedSpot,
+  resolveGraphSearchWords,
   searchOutcome,
 } from "../../../packages/game-engine/src/clue-graph/narrator-context.ts";
 import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
@@ -154,13 +156,32 @@ describe("the clue-graph search outcome and mock", () => {
     expect(searchOutcome(graph, searched, null)).toEqual({ kind: "known", spot: null, finds: null });
   });
 
-  it("finds nothing at a hidden spot named before its pointer", () => {
+  it("finds nothing at a hidden spot named before its pointer, and never names it to the narrator", () => {
     const hidden = greenhouse();
     hidden.locations.greenhouse.spots[3].revealed_by = "react_toby_pocket";
-    const outcome = searchOutcome(hidden, replay(hidden, []), "the water butt");
-    expect(outcome).toEqual({ kind: "known", spot: "the water butt by the door", finds: null });
-    const context = buildGraphSearchContext(hidden, replay(hidden, []), "the water butt");
+    const start = replay(hidden, []);
+    expect(resolveGraphSearchWords(hidden, start, "the water butt")).toEqual({
+      outcome: { kind: "known", spot: null, finds: null },
+      spot: "the water butt by the door",
+    });
+    const context = buildGraphSearchContext(hidden, start, "the water butt");
     expect(context.visible_spots).not.toContain("the water butt by the door");
+    expect(JSON.stringify(context)).not.toContain("by the door");
+  });
+
+  it("lets a hidden spot win the words only by fitting them strictly better than every visible one", () => {
+    const shelves = greenhouse();
+    shelves.locations.greenhouse.spots = [
+      { name: "the bottom shelf", revealed_by: "react_toby_pocket" },
+      { name: "the top shelf" },
+    ];
+    shelves.clues.clue_snapped_bench.source = { location: "greenhouse", spot: "the top shelf" };
+    shelves.clues.clue_glass_outside.source = { location: "greenhouse", spot: "the bottom shelf" };
+    for (const id of ["clue_welly_prints", "clue_key_in_water_butt"]) shelves.clues[id].source = { location: "workshop", spot: "the cluttered tool bench" };
+    const start = replay(shelves, []);
+    expect(namedSpot(shelves, start, "the shelf")).toBe("the top shelf");
+    expect(namedSpot(shelves, start, "the bottom shelf")).toBe("the bottom shelf");
+    expect(searchOutcome(shelves, start, "the shelf")).toMatchObject({ kind: "known", spot: "the top shelf" });
   });
 
   it("answers a known outcome as given, finds nothing on a judged one, and nothing for gibberish", () => {

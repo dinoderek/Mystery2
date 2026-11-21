@@ -5,6 +5,7 @@
 // mechanism. No model is called.
 
 import { describe, expect, it } from "vitest";
+import type { AIContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { GRAPH_TALK_PROMPT } from "../../../packages/game-engine/src/clue-graph/prompts.ts";
 import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import { loadCasesFrom, readBlueprint, type TurnCase } from "../../../evaluation/runtime/lib/case.ts";
@@ -18,7 +19,7 @@ const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
 interface Built {
   turnCase: TurnCase;
   prompt: string;
-  context: Record<string, any>;
+  context: AIContext;
 }
 
 async function buildAll(): Promise<Built[]> {
@@ -28,26 +29,22 @@ async function buildAll(): Promise<Built[]> {
     cases.map(async (turnCase) => {
       const input = getAction(turnCase.action.type).roleInput(turnCase.given, turnCase.action, blueprint as never, normalizeHistory(turnCase.given.history));
       const request = await buildRoleRequest(input as never);
-      return { turnCase, prompt: request.prompt, context: request.context as Record<string, any> };
+      return { turnCase, prompt: request.prompt, context: request.context };
     }),
   );
 }
 
 /** What a talk line's state offers to open or answer. */
-function offered(context: Record<string, any>): Set<string> {
-  const state = context.graph_talk_context.state;
-  return new Set<string>([
-    ...state.gates.map((gate: { id: string }) => gate.id),
-    ...state.answers_if_asked.map((entry: { id: string }) => entry.id),
-    ...state.shows_when.map((entry: { id: string }) => entry.id),
-  ]);
+function offered(context: AIContext): Set<string> {
+  const { state } = context.graph_talk_context!;
+  return new Set([...state.gates, ...state.answers_if_asked, ...state.shows_when].map((entry) => entry.id));
 }
 
 /** What a search's outcome can find. */
-function findable(context: Record<string, any>): Set<string> {
-  const outcome = context.graph_search_context.outcome;
+function findable(context: AIContext): Set<string> {
+  const { outcome } = context.graph_search_context!;
   if (outcome.kind === "known") return new Set(outcome.finds ? [outcome.finds.id] : []);
-  return new Set(outcome.candidates.map((candidate: { clue: { id: string } }) => candidate.clue.id));
+  return new Set(outcome.candidates.map((candidate) => candidate.clue.id));
 }
 
 describe("the clue-graph greenhouse case library", async () => {
@@ -114,11 +111,11 @@ describe("the clue-graph talk prompt", async () => {
 
   /** The prompt with what each case fills in taken out. */
   function template({ prompt, context, turnCase }: Built): string {
-    const { name } = context.graph_talk_context.character;
+    const talk = context.graph_talk_context!;
     return prompt
       .split(`"${turnCase.action.player_input}"`).join('"<line>"')
-      .split(context.graph_talk_context.location_name).join("<location>")
-      .split(name).join("<character>");
+      .split(talk.location_name).join("<location>")
+      .split(talk.character.name).join("<character>");
   }
 
   it("is written from the objective, in two sections", () => {

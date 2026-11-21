@@ -115,6 +115,15 @@ function nonEmptyString(field: string) {
     .min(1, message);
 }
 
+// What the player reads. A model sometimes escapes the quotes inside its
+// string twice, which would show the player a literal backslash before each.
+function narrationText() {
+  return z.preprocess(
+    (value) => (typeof value === "string" ? value.replaceAll('\\"', '"') : value),
+    nonEmptyString("narration"),
+  );
+}
+
 // Required in the schema, so the model always states it; an omitted value
 // still parses as null.
 function nullableNonEmptyString(field: string) {
@@ -162,11 +171,11 @@ function stringList(field: string) {
 }
 
 const TalkStartOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
 });
 
 const TalkConversationOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
   revealed_clue_ids: idList,
   revealed_off_script: idList,
   input_understood: flagDefaultingTo(true),
@@ -200,7 +209,7 @@ const TalkConversationOutputSchema = roleObject({
 });
 
 const GraphTalkOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
   opened: idList,
   answered: idList,
   input_understood: flagDefaultingTo(true),
@@ -212,7 +221,7 @@ const GraphTalkOutputSchema = roleObject({
 }));
 
 const TalkEndOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
 });
 
 const SearchOutputSchema = z.preprocess(
@@ -223,7 +232,7 @@ const SearchOutputSchema = z.preprocess(
       ? { ...value, revealed_clue_id: null }
       : value,
   roleObject({
-    narration: nonEmptyString("narration"),
+    narration: narrationText(),
     revealed_clue_id: nullableNonEmptyString("revealed_clue_id"),
     costs_turn: flagDefaultingTo(true),
     input_understood: flagDefaultingTo(true),
@@ -235,14 +244,14 @@ const SearchOutputSchema = z.preprocess(
 );
 
 const AccusationStartOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
 });
 
 const ACCUSATION_RESOLUTION_MESSAGE =
   `"accusation_resolution" must be win, lose, or continue`;
 
 const AccusationJudgeOutputSchema = roleObject({
-  narration: nonEmptyString("narration"),
+  narration: narrationText(),
   accusation_resolution: z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
     z.enum(["win", "lose", "continue"], {

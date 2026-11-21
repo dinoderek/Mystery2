@@ -5,8 +5,7 @@ Grades one narration against fixed state and history. Options: `evaluation/READM
 ## Determinism is the point
 
 A case evaluates **one action** against a **fully specified prior state**. The
-history is part of the case, not played, so the model input is identical on
-every run and across models.
+history is part of the case, not played, so the input is identical on every run.
 
 ## Choosing a narrator
 
@@ -22,7 +21,7 @@ To grade a model, use `narrator-claude`: the real prompt and model, no server or
 database; `--model-override narrator-claude=<model>` picks the model. `server`
 puts the game in the loop, validating clue reveals as the CLI path does not.
 
-The canned narrator proves only the plumbing; keep stub runs to `flesch`.
+The canned narrator proves only the plumbing: keep stub runs to `flesch`.
 `narrator-claude` runs with no tools, MCP servers or settings, so the model
 under test does not read this repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
 `narrator-claude` and `turn-judge` (judges held to their schema); skipping
@@ -32,8 +31,8 @@ settings skips logins set only in `settings.json`.
 
 A `server` run starts the app on a free port against a temporary config root
 (`scripts/lib/test-server.mjs`), seeds each case's history there, sends the
-action as a typed line, and removes the root afterwards, never touching your
-play database or a server you started. A case that sets
+action as a typed line, and removes the root afterwards. It never touches your
+play database. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
 it. `--ai-profile` names the AI each request asks for: `mock` needs nothing,
 `default` is mock on the fresh database, and any other name comes from the
@@ -97,6 +96,8 @@ and marks the run INCOMPLETE.
 `./dev eval baseline save <run> <file>` stores a complete run's summary (narrator,
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints the change per case and group.
+`cases/search-reveals/` has `haiku` and `sonnet` baselines: replay it as in
+Running, then `baseline compare` the run.
 
 The talk library, `cases/talk-reveals/`, keeps Haiku and Sonnet baselines in `baselines/`. Re-run the folder with `judge turn`, then `baseline compare`.
 
@@ -151,4 +152,4 @@ named by event sequence, calling no narrator.
 
 `tests/api/unit/runtime-*` and `judges-*` run on stub bindings;
 `tests/api/integration/eval-turn-server.test.ts` replays through a throwaway
-server on the mock provider. No test calls a model.
+server on the mock. No test calls a model.

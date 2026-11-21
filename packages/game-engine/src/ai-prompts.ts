@@ -162,9 +162,8 @@ Task:
 - The player is doing a general search of {{location_name}} (no specific target).
 - If search_context.next_clue is present, reveal it: set revealed_clue_id to that clue's id and weave the clue text into your narration.
 - If search_context.next_clue is null, reveal nothing new: set revealed_clue_id to null and give only flavorful feedback.
-- Never reveal again a clue in search_context.revealed_clue_ids, and never reveal the solution.
+- Never reveal again a clue in search_context.revealed_clue_ids.
 - If sub-locations with unrevealed clues exist, mention interesting areas that could be searched more specifically.
-- costs_turn is always true for general searches.
 
 Return JSON:
 {
@@ -179,16 +178,15 @@ Return JSON:
 
 Task:
 - The player is searching {{location_name}} with this description: "{{search_query}}"
-- Judge whether the description matches a sub-location with unrevealed clues. You have GM leeway: an inventive, cunning description can match even when its wording does not.
+- Judge whether the description matches a sub-location with unrevealed clues. You have GM leeway: an inventive, cunning description can match even when its wording does not. A description that names no place or thing, such as "around" or "for clues", matches none.
 - On a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
 - With no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and hint at sub-locations that still have undiscovered clues.
-- Never reveal again a clue in search_context.revealed_clue_ids, and never reveal the solution.
-- costs_turn: true for a meaningful attempt, even an unsuccessful one, and always when a clue is revealed. false when the search is completely off the mark: do not punish the player for exploring.
+- Never reveal again a clue in search_context.revealed_clue_ids.
+- costs_turn: true for a meaningful attempt, even an unsuccessful one. false when the search is completely off the mark: do not punish the player for exploring.
 - Unintelligible input: if the description is gibberish, do not invent a result.
   Give a brief in-character "huh?" beat (e.g. "You poke around, but you're not
-  sure what you're even looking for."), set revealed_clue_id to null,
-  input_understood to false, and costs_turn to false. Otherwise set
-  input_understood to true.
+  sure what you're even looking for.") and set input_understood to false.
+  Otherwise set input_understood to true.
 
 Return JSON:
 {

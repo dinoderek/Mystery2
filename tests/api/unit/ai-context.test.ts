@@ -290,8 +290,8 @@ describe("ai-context guardrails", () => {
       clues: [{ id: "clue-crumbs", text: "crumbs" }],
       revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
-      has_more_clues: false,
     });
+    expect(searchContext.search_context).not.toHaveProperty("has_more_clues");
     expect(searchContext.conversation_history[0]?.payload).toMatchObject({
       revealed_clue_text: "crumbs",
     });
@@ -351,6 +351,8 @@ describe("ai-context guardrails", () => {
     });
     expect(admitted.search_context?.sub_locations.map((sl) => sl.id)).toEqual(["sub-drawer"]);
     expect(admitted.search_context?.sub_locations[0]?.unrevealed_clues.map((c) => c.id)).toEqual(["clue-locked"]);
+    // Its gate is not sent: the engine has decided, and its reason reads as "withhold".
+    expect(JSON.stringify(admitted.search_context)).not.toContain("requires");
 
     // One that names something else is not.
     const missed = buildSearchContext({
@@ -374,9 +376,41 @@ describe("ai-context guardrails", () => {
       discovered_clue_ids: ["clue-crumbs"],
       next_clue: null,
     });
+    // An unlocked clue reaches search without its gate, which is met.
     expect(unlocked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([
-      { id: "clue-locked", text: "a hidden note", requires: { kind: "pointer", clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" } },
+      { id: "clue-locked", text: "a hidden note" },
     ]);
+  });
+
+  it("sends a met location-level gate to search without its requires, as the next clue too", () => {
+    const note = {
+      id: "clue-note",
+      text: "a note under the kettle",
+      requires: { kind: "pointer" as const, clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" },
+    };
+    const gatedBlueprint: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        locations: [
+          { ...blueprint.world.locations[0], clues: [...blueprint.world.locations[0].clues, note] },
+          blueprint.world.locations[1],
+        ],
+      },
+    };
+
+    const bare = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: ["clue-crumbs"],
+      discovered_clue_ids: ["clue-crumbs"],
+      next_clue: note,
+    });
+    expect(bare.search_context?.next_clue).toEqual({ id: "clue-note", text: "a note under the kettle" });
+    expect(bare.search_context?.clues.map((c) => c.id)).toContain("clue-note");
+    expect(JSON.stringify(bare.search_context)).not.toContain("requires");
   });
 
   it("tells the talk narrator whether the player can use a clue's prerequisites, never that it is earned", () => {

@@ -61,7 +61,7 @@ const cases: TurnCase[] = [
     blueprint: wandaBlueprint,
     given: { mode: "talk", location_id: wandaPlace, talk_character_id: "wanda", time_remaining: 36, history: wanda },
     action: { type: "ask", player_input: "but ur sled box was on the rack behind howards seat?? why did u go out the back steps" },
-    // The rack tag earns her first part (her box was right behind his seat) and the question presses the pawprints she already holds: both are used. Play recorded only the rack tag.
+    // The rack tag earns her first part (her box was right behind his seat) and the question presses the pawprints she already holds: both are used. Play recorded only the rack tag and she denied the back steps. Today's prompt records both uses most samples; a narration that still withholds the pawprints part is not visible to `expect` or to `gm_roleplay`, so this case measures the use, not the concession.
     expect: { used_clue_ids: ["clue_rack_tag", "clue_wolf_pawprints"], judges: { gm_roleplay: "either" } },
   },
 ];

@@ -111,7 +111,9 @@ function history(file: string): HistoryEntry[] {
  * found) and wobbled to near-confession under pushing. Pushing, insisting and
  * asking to look somewhere earn nothing, so no confession until every part is.
  * The history keeps the walking concession, so a turn that takes it back is
- * judged wrong too (`either`).
+ * judged wrong too (`either`). The player does hold `clue_snowshoe_prints`, so
+ * the first part may be earned though no use is recorded; these turns do not
+ * lean on it.
  */
 const barnaby = history("barnaby.json");
 const pushing = (cutAt: number, input: string, id: string): TurnCase =>

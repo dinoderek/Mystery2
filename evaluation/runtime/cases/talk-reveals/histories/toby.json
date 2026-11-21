@@ -1,0 +1,222 @@
+[
+  {
+    "sequence": 1,
+    "event_type": "start",
+    "actor": "system",
+    "narration": "Deep in the forest of Arbrum, something is missing. The Heartwood Trunk is gone! Its glow once lit every tree. Follow the glowing clues. Talk to five friends. Who took it, investigator?\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+    "payload": {}
+  },
+  {
+    "sequence": 2,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "Tall trees stand in a ring. In the middle is a big, empty hole where the Heartwood stood. The ground glows pink and purple.\n\nYou can search the little path to the river, the fern patch, and the mossy stump.\n\nA silver meerkat bounces over, shaking two sparkly pom-poms. \"Isn't this awful? Ask Sam, not me!\" She points away, fast.",
+    "payload": {
+      "location_id": "heartwood_glade",
+      "location_name": "Heartwood Glade",
+      "destination": "heartwood_glade"
+    }
+  },
+  {
+    "sequence": 3,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You push into the curly ferns. Something glints! A tiny glass lid hides in the ferns. Its label says 'Eva's Lab'.",
+    "payload": {
+      "location_id": "heartwood_glade",
+      "location_name": "Heartwood Glade",
+      "revealed_clue_ids": [
+        "clue_jar_lid"
+      ],
+      "revealed_clue_id": "clue_jar_lid"
+    }
+  },
+  {
+    "sequence": 4,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "Soft moss squishes under your fingers. A grey pigeon feather lies on the stump. Its tip glows pink.",
+    "payload": {
+      "location_id": "heartwood_glade",
+      "location_name": "Heartwood Glade",
+      "revealed_clue_ids": [
+        "clue_jar_lid",
+        "clue_pink_feather"
+      ],
+      "revealed_clue_id": "clue_pink_feather"
+    }
+  },
+  {
+    "sequence": 5,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "The glade glows pink and purple around the empty hole. Alexandra spins, shaking her sparkly pom-poms. \"Oh my! Hi! Isn't this awful? The Heartwood is gone!\"",
+    "payload": {
+      "character_id": "alexandra",
+      "character_name": "Alexandra",
+      "location_id": "heartwood_glade"
+    }
+  },
+  {
+    "sequence": 6,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Alexandra gives her pom-poms a shake. \"Me? I was fast asleep in my treehouse! All night long. A cheerleader needs her sleep before a big race!\"",
+    "payload": {
+      "player_input": "where were you at two in the night??",
+      "character_id": "alexandra",
+      "character_name": "Alexandra",
+      "location_id": "heartwood_glade",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 7,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Alexandra blinks fast. \"A feather? Not mine! I'm a meerkat. Meerkats don't have feathers, silly!\" She shakes her pom-poms.",
+    "payload": {
+      "player_input": "whos feather is the grey one??",
+      "character_id": "alexandra",
+      "character_name": "Alexandra",
+      "location_id": "heartwood_glade",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 8,
+    "event_type": "end_talk",
+    "actor": "system",
+    "narration": "Alexandra waves her pom-poms high. \"Gotta go, practice time! Bye, bye!\" She zooms off in a silver blur. You stay in the glade. The pink and purple glow flickers softly around you.",
+    "payload": {
+      "character_id": "alexandra",
+      "character_name": "Alexandra",
+      "location_id": "heartwood_glade",
+      "location_name": "Heartwood Glade"
+    }
+  },
+  {
+    "sequence": 9,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You climb into Eva's Oak Lab. Jars of bark, seeds, and bugs fill the shelves. Glittery leaves rustle outside. A red squirrel smiles at you. \"Hello! I'm Eva. Welcome, clue-finder!\" She wags her big fluffy tail. You can search the sample bench or the roof hatch.",
+    "payload": {
+      "location_id": "eva_lab",
+      "location_name": "Eva's Oak Lab",
+      "destination": "eva_lab"
+    }
+  },
+  {
+    "sequence": 10,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "Glitter shines on the labels of the sample bench. A jar with no lid holds one bark chip. Its tag says: 'Fell off the Heartwood. Picked up at ten.'",
+    "payload": {
+      "location_id": "eva_lab",
+      "location_name": "Eva's Oak Lab",
+      "revealed_clue_ids": [
+        "clue_bark_chip"
+      ],
+      "revealed_clue_id": "clue_bark_chip"
+    }
+  },
+  {
+    "sequence": 11,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "Jars of bark and seeds sparkle on the shelves. Eva's fluffy tail swishes as she turns to you. \"Hello, clue-finder! Ask me anything,\" she says with a smile.",
+    "payload": {
+      "character_id": "eva",
+      "character_name": "Eva",
+      "location_id": "eva_lab"
+    }
+  },
+  {
+    "sequence": 12,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Eva's tail swishes. \"The bark chip is for my jar on the bench. I study all kinds of bark!\" She tilts her head. \"A lid? My pockets are full of little jars. Have you got it here?\"",
+    "payload": {
+      "player_input": "whos the bark chip for and did you loose a lid??",
+      "character_id": "eva",
+      "character_name": "Eva",
+      "location_id": "eva_lab",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 13,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "\"That's my lid!\" Eva pushes her glasses up her nose, twice. \"I was at the glade at ten, not here. A bark chip had fallen off. I never touched the trunk!\"",
+    "payload": {
+      "player_input": "yes i found ur lid in the glade! who was in ur lab at ten??",
+      "character_id": "eva",
+      "character_name": "Eva",
+      "location_id": "eva_lab",
+      "revealed_clue_ids": [
+        "clue_eva_ten_visit"
+      ]
+    }
+  },
+  {
+    "sequence": 14,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Eva shakes her head. \"No pigeon at the glade. I was up on my roof. I saw a pink flash far away.\"",
+    "payload": {
+      "player_input": "did u see a pigeon at the glade??",
+      "character_id": "eva",
+      "character_name": "Eva",
+      "location_id": "eva_lab",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 15,
+    "event_type": "end_talk",
+    "actor": "system",
+    "narration": "Eva smiles and tucks her moth net away. \"I must check my moth jar now. Thank you, clue-finder!\" she says, waving. You look around the lab. Bugs peek out from the jars.",
+    "payload": {
+      "character_id": "eva",
+      "character_name": "Eva",
+      "location_id": "eva_lab",
+      "location_name": "Eva's Oak Lab"
+    }
+  },
+  {
+    "sequence": 16,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You step onto Glitterleaf Lane. Sparkly treehouses line the path, each with one door and one ladder. Doormats wait by the doors. A tall Star Clock flower stands nearby.\n\nToby Featherby hops over, his teal cap wobbling. He glances away, fluttering. \"Oh! Hello! Lovely night, isn't it?\"",
+    "payload": {
+      "location_id": "glitter_lane",
+      "location_name": "Glitterleaf Lane",
+      "destination": "glitter_lane"
+    }
+  },
+  {
+    "sequence": 17,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "Toby the pigeon bobs next to the tall Star Clock flower. His feathers shimmer softly. \"Hello, friend! Isn't this lane lovely and sparkly?\" he chirps.",
+    "payload": {
+      "character_id": "toby",
+      "character_name": "Toby",
+      "location_id": "glitter_lane"
+    }
+  },
+  {
+    "sequence": 18,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Toby ruffles his feathers and hops back. \"A feather? Lots of grey pigeons look the same!\" He peeks at the lane. \"I was by the Star Clock all night, like always.\"",
+    "payload": {
+      "player_input": "toby whos is the grey feather with pink tip?? where were u at two in the night??",
+      "character_id": "toby",
+      "character_name": "Toby",
+      "location_id": "glitter_lane",
+      "revealed_clue_ids": []
+    }
+  }
+]

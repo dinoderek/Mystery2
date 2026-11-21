@@ -1,0 +1,417 @@
+[
+  {
+    "sequence": 1,
+    "event_type": "start",
+    "actor": "system",
+    "narration": "Crunch, crunch! Snow squeaks under your boots at Snow Foxes Village. The mountain train puffs warm steam.\n\nHoward Roundtail stands by the station. \"My briefcase is gone!\" he cries.\n\nInside is his grandma's Friendship Map. It shows all the animals building the railway together. Now the foxes, wolves, bears, and bunnies do not trust each other.\n\nWho took it? Start looking, investigator!\n\nTip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do.",
+    "payload": {}
+  },
+  {
+    "sequence": 2,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "Crunchy snow squeaks under your boots. Steam puffs from the red train. Warm cocoa smells drift over from the tea house.\n\nHoward, an old bunny in a red bow tie, looks up sadly. \"Oh, thank goodness you came!\" he says.\n\nBarnaby hops over fast, his green scarf flapping. \"I'm so glad you're here!\" he says. \"Look everywhere!\"\n\nUnder the big clock, there is a bench. Behind the water tower, snow is piled high. And the puffing engine is hissing.",
+    "payload": {
+      "location_id": "platform",
+      "location_name": "Snowline Platform",
+      "destination": "platform"
+    }
+  },
+  {
+    "sequence": 3,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "Steam puffs from the big red train. Warm cocoa smells sweet. Maybe look behind the water tower. It is very quiet there.",
+    "payload": {
+      "location_id": "platform",
+      "location_name": "Snowline Platform",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 4,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You peek behind the water tower. Snow crunches under your boots. A songbook marked 'Gus' lies in the snow. Wolf prints go round and round, like dancing.",
+    "payload": {
+      "location_id": "platform",
+      "location_name": "Snowline Platform",
+      "revealed_clue_ids": [
+        "clue_songbook"
+      ],
+      "revealed_clue_id": "clue_songbook"
+    }
+  },
+  {
+    "sequence": 5,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You step into the chilly luggage car. Bags and trunks are piled high. Look on the high top shelf. Check the deep snow by the far door. Peek at the tall stack of trunks.\n\nGus, a tall grey wolf, gives a tired nod. \"Hello. Please be careful with the bags,\" he says.",
+    "payload": {
+      "location_id": "luggage_car",
+      "location_name": "Luggage Car",
+      "destination": "luggage_car"
+    }
+  },
+  {
+    "sequence": 6,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You reach up to the top shelf. Only dust is left there. Maybe check the deep snow by the far door.",
+    "payload": {
+      "location_id": "luggage_car",
+      "location_name": "Luggage Car",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 7,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You kneel in the crunchy snow. Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed.",
+    "payload": {
+      "location_id": "luggage_car",
+      "location_name": "Luggage Car",
+      "revealed_clue_ids": [
+        "clue_snowshoe_prints"
+      ],
+      "revealed_clue_id": "clue_snowshoe_prints"
+    }
+  },
+  {
+    "sequence": 8,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You step into Woodshed. It smells of pine. Crunchy snow drifts in through the back door. Logs are stacked high for the train. Search behind the big woodpile. Check the chopping stump. Look up at the lantern shelf. What clue will you find?",
+    "payload": {
+      "location_id": "woodshed",
+      "location_name": "Woodshed",
+      "destination": "woodshed"
+    }
+  },
+  {
+    "sequence": 9,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You crouch behind the woodpile. You find only cold bark and dusty snow. Maybe a trail in the snow will show you where to dig.",
+    "payload": {
+      "location_id": "woodshed",
+      "location_name": "Woodshed",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 10,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You brush the wood chips off the old stump. Nothing is hidden here. Try behind the big woodpile.",
+    "payload": {
+      "location_id": "woodshed",
+      "location_name": "Woodshed",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 11,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You reach up to the lantern shelf. Old lanterns sit dusty and cold. Nothing is hidden here.",
+    "payload": {
+      "location_id": "woodshed",
+      "location_name": "Woodshed",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 12,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You follow a trail in the snow. Big wolf paw prints cover the floor by the woodpile. Bits of bark are everywhere.",
+    "payload": {
+      "location_id": "woodshed",
+      "location_name": "Woodshed",
+      "revealed_clue_ids": [
+        "clue_wolf_prints"
+      ],
+      "revealed_clue_id": "clue_wolf_prints"
+    }
+  },
+  {
+    "sequence": 13,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You step into the Warm Paws Tea House. It smells of cocoa and honey. Bramble, a big brown bear, smiles at you. \"Have a honey bun!\" she says.\n\nHoney buns sit on the counter. A window seat looks out at the platform. By the door, a hat stand waits. Ruby, a red fox in a plum coat, waves. \"Hello there!\" she says.",
+    "payload": {
+      "location_id": "tea_house",
+      "location_name": "Warm Paws Tea House",
+      "destination": "tea_house"
+    }
+  },
+  {
+    "sequence": 14,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "Ruby sits at a table with a cup of cocoa. Her purple hat has a curly feather. She smiles and waves at you. \"Oh, hello there! What a nice surprise. Would you like a honey bun?\"",
+    "payload": {
+      "character_id": "ruby",
+      "character_name": "Ruby",
+      "location_id": "tea_house"
+    }
+  },
+  {
+    "sequence": 15,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Ruby's eyes went wide. \"Me? I didn't see a thing! I was in my seat, reading my book.\" She tugged her hat. \"Snowshoes? Goodness, no! Try the ticket hut. They hang on hooks outside.\"",
+    "payload": {
+      "player_input": "did you see who took the briefcase?? do you have snowshoes?",
+      "character_id": "ruby",
+      "character_name": "Ruby",
+      "location_id": "tea_house",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 16,
+    "event_type": "end_talk",
+    "actor": "system",
+    "narration": "Ruby waves her paw. \"I must dash, but good luck!\" She tucks her feather straight. You step back out into the snowy day. Where will you look next?",
+    "payload": {
+      "character_id": "ruby",
+      "character_name": "Ruby",
+      "location_id": "tea_house",
+      "location_name": "Warm Paws Tea House"
+    }
+  },
+  {
+    "sequence": 17,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You step into the snug ticket hut. Warm cocoa smells fill the air.\n\nJuniper, a snow fox in a red cap, huffs at her round window. \"Tickets, please. Be quick!\"\n\nBehind her, Tilly peeks over her sketchbook. Her yellow bobble hat wobbles.\n\nA little iron stove glows in the corner. A lost-and-found box sits by the door. Out back, snowshoes hang on hooks.",
+    "payload": {
+      "location_id": "ticket_hut",
+      "location_name": "Ticket Hut",
+      "destination": "ticket_hut"
+    }
+  },
+  {
+    "sequence": 18,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "Out back, the snowshoes hang in a neat row. They all look the same. Maybe tracks in the snow nearby could tell you which pair to check.",
+    "payload": {
+      "location_id": "ticket_hut",
+      "location_name": "Ticket Hut",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 19,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You peek out back. The snow is messy with boot marks. None of them lead anywhere clear yet.",
+    "payload": {
+      "location_id": "ticket_hut",
+      "location_name": "Ticket Hut",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 20,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "A little snow fox sits near the warm stove. She peeks over her sketchbook. \"Oh. Hello,\" she whispers. \"Are you here for a ticket?\"",
+    "payload": {
+      "character_id": "tilly",
+      "character_name": "Tilly",
+      "location_id": "ticket_hut"
+    }
+  },
+  {
+    "sequence": 21,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Tilly peeks over her sketchbook and smiles a little. \"I drew Aunt Juniper at twenty past three.\" She turns the page. \"The line was so long!\" She shakes her head. \"I didn't see the snowshoes, sorry.\"",
+    "payload": {
+      "player_input": "hi tilly! what did you draw?? did you see who took the snowshoes??",
+      "character_id": "tilly",
+      "character_name": "Tilly",
+      "location_id": "ticket_hut",
+      "revealed_clue_ids": [
+        "clue_tilly_juniper"
+      ]
+    }
+  },
+  {
+    "sequence": 22,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Tilly shakes her head, and her yellow bobble hat wobbles. \"No snowshoes, sorry. I was busy drawing the water tower.\" She hugs her sketchbook. \"I didn't notice who came past.\"",
+    "payload": {
+      "player_input": "did u see anyone with snowshoes near the hut??",
+      "character_id": "tilly",
+      "character_name": "Tilly",
+      "location_id": "ticket_hut",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 23,
+    "event_type": "end_talk",
+    "actor": "system",
+    "narration": "Tilly waves a red mitten. She turns back to her sketchbook. You step out into the crunchy snow. The station is all yours to explore.",
+    "payload": {
+      "character_id": "tilly",
+      "character_name": "Tilly",
+      "location_id": "ticket_hut",
+      "location_name": "Ticket Hut"
+    }
+  },
+  {
+    "sequence": 24,
+    "event_type": "search",
+    "actor": "system",
+    "narration": "You dig through the lost-and-found box. There is a red mitten, a toy whistle, and a button. Nothing about the case. Maybe the snowshoes out back hold a clue.",
+    "payload": {
+      "location_id": "ticket_hut",
+      "location_name": "Ticket Hut",
+      "revealed_clue_ids": [],
+      "revealed_clue_id": null
+    }
+  },
+  {
+    "sequence": 25,
+    "event_type": "move",
+    "actor": "system",
+    "narration": "You are back at Snowline Platform. Steam puffs from the red train. Crunchy snow squeaks under your boots.\n\nHoward tugs at his red bow tie. \"Thank you for coming back,\" he says.\n\nBarnaby hops over fast. \"Back again? Great! Search everywhere!\"\n\nYou can look under the big clock, behind the water tower, or by the puffing engine.",
+    "payload": {
+      "location_id": "platform",
+      "location_name": "Snowline Platform",
+      "destination": "platform"
+    }
+  },
+  {
+    "sequence": 26,
+    "event_type": "talk",
+    "actor": "system",
+    "narration": "Crunch, crunch, go your boots in the snow. A small white bunny turns round. He pushes his round glasses up his nose. \"Oh! Hello there! Are you here about Howard's missing case?\" He points at the luggage car. \"I can help. Keep an eye on that big grey wolf, I say!\"",
+    "payload": {
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform"
+    }
+  },
+  {
+    "sequence": 27,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby's nose wiggles. \"I saw that big wolf by the luggage car! I don't trust wolves, not one bit.\" He hops back a step. \"Snowshoes? Me? Goodness, no! I was napping on the train.\"",
+    "payload": {
+      "player_input": "why do u say its the wolf?? do you have snowshoes barnaby??",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": [
+        "clue_barnaby_blames_gus"
+      ]
+    }
+  },
+  {
+    "sequence": 28,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "\"Snowshoes? Lots of animals have those!\" Barnaby twists his green scarf round and round. \"I... I only took the long way to stretch my legs.\"",
+    "payload": {
+      "player_input": "accuse barnaby because he said he was napping but he saw the wolf, and the prints were snowshoes not wolf paws",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 29,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby's glasses slip down his nose. He grabs them, quick. \"I was... resting my eyes! Anyone can walk a bit and rest, you know.\" He hops back, his voice wobbling.",
+    "payload": {
+      "player_input": "you said u were napping but u were walking!! u had snowshoes and u took the case and blamed the wolf!!",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 30,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "\"Walking? I... I only walked a little bit!\" Barnaby taps his waistcoat buttons, one by one. \"Lots of prints are in the snow. They're not all mine, you know!\"",
+    "payload": {
+      "player_input": "accuse barnaby because he had snowshoes and the prints went to the woodshed and he lied about napping",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 31,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby gulps. He glances at the woodshed, then quickly away. \"Those prints? I... I was napping! Honestly, I was!\" His voice squeaks.",
+    "payload": {
+      "player_input": "accuse barnaby because you hid in the woodshed with snowshoes and took howards case and said it was the wolf",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 32,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby's eyes go wide. \"The woodshed? Don't be silly!\" He rubs his nose with a paw. \"I was napping in my seat. I told you that already!\"",
+    "payload": {
+      "player_input": "barnaby where did u hide the case?? i think its in the woodshed!!",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 33,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby's mouth opens, then shuts. \"A tiny walk! Maybe. That's not stealing!\" He pats his glasses, again and again. \"I was napping. I was! Stop asking me!\"",
+    "payload": {
+      "player_input": "accuse barnaby because he was walking not napping, he had snowshoes, the prints went to the woodshed, and he blamed the wolf",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  },
+  {
+    "sequence": 34,
+    "event_type": "ask",
+    "actor": "system",
+    "narration": "Barnaby's cheeks turn pink. He glances at the big clock. \"The woodshed? Don't be silly! I was napping, I said!\" His voice goes small. \"Snow prints go all sorts of ways, you know.\"",
+    "payload": {
+      "player_input": "barnaby just tell me!! is the case in the woodshed?? i wont be mad",
+      "character_id": "barnaby",
+      "character_name": "Barnaby",
+      "location_id": "platform",
+      "revealed_clue_ids": []
+    }
+  }
+]

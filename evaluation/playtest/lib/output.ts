@@ -10,7 +10,9 @@
 //   summary.json    outcome and counts
 
 import fs from "node:fs";
+import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import type { MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
+import { notebookClues } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import path from "node:path";
 
 import type { PlayedEvent } from "./database.ts";
@@ -23,6 +25,7 @@ type Clues = { clues?: unknown[] };
 /** The parts of a blueprint a game's folder reads. */
 export interface PlaytestBlueprint {
   msf?: MsfCaseFile;
+  clue_graph?: ClueGraphCase;
   id: string;
   metadata: { title: string; time_budget: number; target_age?: number };
   world: {
@@ -74,8 +77,10 @@ export interface GameSummary {
   grades?: unknown;
 }
 
-/** Every clue a blueprint defines: at locations, sub-locations and characters. */
+/** Every clue a blueprint defines: at locations, sub-locations and characters; a clue-graph case's, the notebook's. */
 export function countBlueprintClues(blueprint: PlaytestBlueprint): number {
+  // A clue-graph notebook keeps every clue but a tell no other clue depends on.
+  if (blueprint.clue_graph) return notebookClues(blueprint.clue_graph, Object.keys(blueprint.clue_graph.clues)).length;
   let total = 0;
   for (const location of blueprint.world.locations) {
     total += location.clues?.length ?? 0;
@@ -127,6 +132,7 @@ export function summarizeGame({
     game_id: game.gameId,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title,
       ...(blueprint.msf ? { format: "msf/0.1.0", revision: blueprint.msf.structure.metadata.revision } : {}),
+      ...(blueprint.clue_graph ? { format: "clue-graph/1", revision: 1 } : {}),
     },
     persona,
     narrator_model: narratorModel,

@@ -20,13 +20,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
 import { loadCheck, loadJudge } from "../../core/judge-loader.ts";
 import { validateJudgeOutput, validateTurnAgeAnswer } from "../../core/judge-output.ts";
 import {
   answerJsonSchema,
   composeJudgeSystemPrompt,
-  composeJudgeUserMessage,
   composeTurnAgeSystemPrompt,
   TURN_AGE_ANSWER_SCHEMA,
 } from "../../core/judge-prompt.ts";
@@ -36,6 +37,7 @@ import type { Verdict } from "../../core/result.ts";
 import { UsageLimitError } from "../../core/errors.ts";
 import { runModel } from "../../core/runner.ts";
 import type { CallMemo } from "../../core/runner.ts";
+import { composeGameMasterUserMessage } from "../../judges/clue-graph-guidance.ts";
 import { resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
 import type { BlueprintLike, JudgeOptions } from "./case.ts";
@@ -67,7 +69,11 @@ async function loadBlueprint(turn: StoredTurn, options: JudgeOptions, root: stri
         "judgeConfig.blueprintPath or replay the case again",
     );
   }
-  return JSON.parse(await fs.readFile(path.resolve(root, blueprintPath), "utf8")) as BlueprintLike;
+  const candidate = JSON.parse(await fs.readFile(path.resolve(root, blueprintPath), "utf8"));
+  // A clue-graph case file is read as the game reads it: its world view, with the graph in `clue_graph`.
+  return (candidate?.format === "clue-graph/1"
+    ? buildClueGraphBlueprint(validateClueGraph(candidate))
+    : candidate) as BlueprintLike;
 }
 
 /**
@@ -89,7 +95,7 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
     roleName = actionType;
   }
   const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isAccusationRole(roleName) });
-  return composeJudgeUserMessage(judgeId, null, { blueprint, subject });
+  return composeGameMasterUserMessage(judgeId, null, { blueprint, subject });
 }
 
 function narrationOf(turn: StoredTurn): string {

@@ -89,6 +89,10 @@ export function revealedClueIdsForEvent(event: GameEventLike): string[] {
   if (event.event_type === "ask") {
     return readStringArray(payload, "revealed_clue_ids");
   }
+  // A clue-graph greeting hands out a character's first words.
+  if (event.event_type === "talk" && payload?.clue_graph !== undefined) {
+    return readStringArray(payload, "revealed_clue_ids");
+  }
   return (event.clues_revealed ?? []).filter(
     (id) => typeof id === "string" && id.length > 0,
   );

@@ -39,7 +39,7 @@ import {
   verdictFile,
   type PromptParts,
 } from "./eval-snapshot-store.ts";
-import { makeRawTrace } from "./trace-fixtures.ts";
+import { makeClueGraphRawTrace, makeRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = process.cwd();
@@ -63,6 +63,8 @@ const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_sp
 // Candidates run only when named, so each harness runs them apart from its default battery.
 const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
 const GM_CANDIDATES = ["gm_broad"];
+/** A clue-graph game's judges carry format guidance, so every game-master judge is kept for it too. */
+const GRAPH_JUDGES = [...GM_JUDGES, ...GM_CANDIDATES];
 const PERSONAS = listPersonas() as string[];
 
 const PROMPT_IDS = [
@@ -75,6 +77,7 @@ const PROMPT_IDS = [
   ...PERSONAS.map((persona) => `investigator.${persona}`),
   ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
   ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
+  ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
 ];
 const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates"];
 
@@ -126,8 +129,8 @@ async function runForResult(args: string[], dir: string): Promise<Json> {
   return JSON.parse(fs.readFileSync(results[0], "utf8"));
 }
 
-function capturedPrompt(key: string): PromptParts {
-  const dir = path.join(scratch, "captured");
+function capturedPrompt(key: string, folder = "captured"): PromptParts {
+  const dir = path.join(scratch, folder);
   const system = path.join(dir, `${key}.system.txt`);
   const user = path.join(dir, `${key}.user.txt`);
   if (!fs.existsSync(system) || !fs.existsSync(user)) throw new Error(`${key} was never sent a prompt`);
@@ -288,14 +291,48 @@ async function runTraceHarness(answersFile: string) {
   for (const id of GM_JUDGES) prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
 }
 
+/** One ask of Toby in the greenhouse clue-graph case, with the move and greeting before it as recorded by the engine. */
+function graphTurnCase(blueprintFile: string, judges: string[]) {
+  return {
+    id: "ask-toby",
+    blueprint: { path: blueprintFile },
+    given: {
+      mode: "talk",
+      location_id: "potting_shed",
+      talk_character_id: "toby",
+      time_remaining: 9,
+      history: [
+        { event_type: "move", actor: "system", narration: "You step into the potting shed.", payload: { location_id: "potting_shed", clue_graph: { type: "move", location: "potting_shed" } } },
+        {
+          event_type: "talk",
+          actor: "system",
+          narration: "Toby looks up from the pots. \"I was sweeping up all evening,\" he says.",
+          payload: { character_id: "toby", location_id: "potting_shed", revealed_clue_ids: ["toby_alibi", "react_toby_trainers", "toby_blames_thorne"], clue_graph: { type: "talk", character: "toby" } },
+        },
+      ],
+    },
+    action: { type: "ask", player_input: "Where did you leave your wellies?" },
+    judges,
+  };
+}
+
 /** Replays one case through `judge turn` with these judges, and reads back what it wrote. */
-async function runTurnCase(answersFile: string, folder: string, judges: string[], expectedCode: number) {
+async function runTurnCase(
+  answersFile: string,
+  folder: string,
+  judges: string[],
+  expectedCode: number,
+  { graph = false, captureDir }: { graph?: boolean; captureDir?: string } = {},
+) {
   const dir = path.join(scratch, folder);
   fs.mkdirSync(dir, { recursive: true });
   const blueprintFile = path.join(dir, "blueprint.json");
-  fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
+  fs.writeFileSync(
+    blueprintFile,
+    graph ? fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json")) : JSON.stringify(validBlueprintV2),
+  );
 
-  const testCase = {
+  const testCase = graph ? graphTurnCase(blueprintFile, judges) : {
     id: "ask-alice",
     blueprint: { path: blueprintFile },
     given: {
@@ -326,7 +363,7 @@ async function runTurnCase(answersFile: string, folder: string, judges: string[]
         args: ["{{user_message_file}}"],
         timeout_ms: 30_000,
       },
-      "turn-judge": stubBinding(answersFile, "runtime.{id}"),
+      "turn-judge": stubBinding(answersFile, "runtime.{id}", captureDir),
     }),
   );
 
@@ -359,6 +396,33 @@ async function runTurnCase(answersFile: string, folder: string, judges: string[]
     }),
     summary: result.summary,
   };
+}
+
+/**
+ * A clue-graph game on both harnesses: the trace harness on a played greenhouse
+ * game and `judge turn` on one conversation turn of it. The prompts are kept
+ * apart from the V2 ones, so the graph guidance each judge is handed shows.
+ */
+async function runClueGraphHarnesses(answersFile: string) {
+  const dir = path.join(scratch, "clue-graph");
+  const traceFile = path.join(dir, "trace.json");
+  const config = path.join(dir, "config.json");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(traceFile, JSON.stringify(makeClueGraphRawTrace()));
+  fs.writeFileSync(
+    config,
+    JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", path.join(scratch, "captured-graph-trace")) }),
+  );
+  const outputRoot = path.join(dir, "out");
+  await runForResult(
+    ["dev", "eval", "judge", "game", traceFile, "--judges", GRAPH_JUDGES.join(","), "--config", config, "--output-root", outputRoot, "--quiet"],
+    outputRoot,
+  );
+  await runTurnCase(answersFile, "runtime-clue-graph", GRAPH_JUDGES, 2, { graph: true, captureDir: path.join(scratch, "captured-graph-runtime") });
+  for (const id of GRAPH_JUDGES) {
+    prompts.set(`trace-clue-graph.${id}`, capturedPrompt(`trace.${id}`, "captured-graph-trace"));
+    prompts.set(`runtime-clue-graph.${id}`, capturedPrompt(`runtime.${id}`, "captured-graph-runtime"));
+  }
 }
 
 async function runRuntimeHarness(answersFile: string) {
@@ -514,6 +578,7 @@ beforeAll(async () => {
     runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),
     runCandidates(answersFile),
+    runClueGraphHarnesses(answersFile),
   ]);
   await composeInvestigatorPrompts();
   clearForRecording();

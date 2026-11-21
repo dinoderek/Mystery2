@@ -1174,7 +1174,8 @@ export function buildAccusationJudgeContext(input: {
   });
 }
 
-function clueGraphProgress(graph: ClueGraphCase, history: ConversationFragment[]): ClueGraphProgress {
+/** What a clue-graph investigation has earned so far, from the events. */
+export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFragment[]): ClueGraphProgress {
   const play = playOf(graph, history);
   const supported = supportedConclusions(graph, play);
   const culprit = Object.keys(graph.characters).find((id) => graph.characters[id].role === "culprit");

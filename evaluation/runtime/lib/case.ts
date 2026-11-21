@@ -12,6 +12,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { UsageError } from "../../core/errors.ts";
+import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { buildMsfBlueprint, validateMsfCaseFile, type MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 
 export interface Speaker {
@@ -105,6 +108,7 @@ interface Named {
 
 export interface BlueprintLike {
   msf?: MsfCaseFile;
+  clue_graph?: ClueGraphCase;
   id?: string;
   metadata?: { target_age?: number; title?: string };
   world: {
@@ -135,7 +139,9 @@ export async function readBlueprint(
   let blueprint: BlueprintLike;
   try {
     const candidate = JSON.parse(await fs.readFile(absolute, "utf8"));
-    blueprint = candidate?.$format === "MSF-CASE/1" || candidate?.msf
+    blueprint = candidate?.format === "clue-graph/1"
+      ? buildClueGraphBlueprint(validateClueGraph(candidate))
+      : candidate?.$format === "MSF-CASE/1" || candidate?.msf
       ? buildMsfBlueprint(validateMsfCaseFile(candidate.msf ?? candidate)) : candidate as BlueprintLike;
   } catch (error) {
     throw new UsageError(`cannot read blueprint ${absolute}: ${(error as Error).message}`);

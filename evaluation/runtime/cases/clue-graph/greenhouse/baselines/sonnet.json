@@ -1,9 +1,9 @@
 {
   "schema_version": "mystery-expect-summary/1",
   "run": {
-    "id": "2026-11-21/20-59-00-judge-turn",
-    "started_at": "2026-11-21T20:59:00.263Z",
-    "commit": "ad518ce98651db50892b4295fe04706df783005c",
+    "id": "2026-11-21/21-12-22-judge-turn",
+    "started_at": "2026-11-21T21:12:22.314Z",
+    "commit": "bb7fc8b85842bc8e4591ca1349b642d174f6cb65",
     "tree_clean": true,
     "argv": [
       "evaluation/runtime/cases/clue-graph/greenhouse",
@@ -16,7 +16,7 @@
       "--concurrency",
       "6",
       "--output-root",
-      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-285/fee5c807-b0b1-4993-86f7-41b36bf7bd30/scratchpad/runs/sb"
+      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-285/fee5c807-b0b1-4993-86f7-41b36bf7bd30/scratchpad/runs/sc"
     ]
   },
   "complete": true,

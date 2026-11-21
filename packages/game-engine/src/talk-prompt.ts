@@ -162,7 +162,7 @@ function lockSection(profile: TalkPromptProfile): string[] {
   if (profile.lock_kinds.size === 0) return [];
   return [[
     "## Locked clues",
-    'A clue with a "requires_rationale" stays back, for that in-fiction reason, until the investigator uses what it names, or takes another way in it names; let the reason colour a hesitation. Once it is used, give the clue that turn; only a held-back clue\'s own condition still keeps it. "player_can_use_prerequisites" true means they hold it: a precondition, never permission.',
+    'A clue with a "requires_rationale" stays back, for that in-fiction reason, until the investigator uses what it names; let the reason colour a hesitation. Once it is used, give the clue that turn; only a held-back clue\'s own condition still keeps it. "player_can_use_prerequisites" true means they hold it: a precondition, never permission.',
     ...pick(LOCK_KINDS, profile.lock_kinds),
     'A bluff or deduction that uses it earns the clue even when they do not hold what it names, unless the reason is a physical gate. List such a clue in both "revealed_clue_ids" and "revealed_off_script".',
   ].join("\n")];

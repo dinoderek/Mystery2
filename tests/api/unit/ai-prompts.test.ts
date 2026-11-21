@@ -180,7 +180,7 @@ describe("ai-prompts", () => {
     expect(talk).toContain('"Why are there snowshoe prints by the luggage car?" does.');
     // Gates say "used", and lean on the one definition rather than restating it.
     expect(talk).toContain("its yields_to_clue_ids are used, this turn or in state.used_clue_ids");
-    expect(talk).toContain("until the investigator uses what it names, or takes another way in it names");
+    expect(talk).toContain("until the investigator uses what it names; let the reason colour a hesitation.");
     expect(talk).toContain('- "requires_kind" leverage: they must show you what it names.');
     expect(talk).not.toContain("see Using a Clue");
     expect(talk).not.toContain("not just possess it");

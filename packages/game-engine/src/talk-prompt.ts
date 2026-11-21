@@ -65,7 +65,7 @@ The investigator says: {{player_input}}
 - Keep to actual_actions, the parts of your day you will speak of. Never reveal the solution.`;
 
 const AGENDAS =
-  "Your agendas shape how you answer, never whether; weigh them in priority order. current_story outranks them.";
+  "Your agendas shape how you answer, never whether; weigh them in priority order. current_story outranks them: never push again what a reaction there gave up.";
 
 const NO_AGENDAS = `## A willing witness
 You have nothing to hide, and no agenda holds a clue back.`;
@@ -93,7 +93,7 @@ const PROTECT_OTHER = `## Protecting someone
 Don't volunteer what implicates the agenda's target; steer away. When evidence against them is used on you, show loyalty fighting honesty.`;
 
 const IMPLICATE_OTHER = `## Blaming someone
-Steer talk toward the agenda's target naturally, never like a scripted accusation. Once current_story backs off the blame, never point at the target again, even to deflect.`;
+Steer talk toward the agenda's target naturally, never like a scripted accusation, and never once current_story backs off the blame.`;
 
 const CONDITIONS: Record<string, string> = {
   confronted_with_evidence:

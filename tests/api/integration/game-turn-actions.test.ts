@@ -88,7 +88,7 @@ describe("game-turn actions", () => {
   });
 
   describe("searching", () => {
-    it("reveals the place's clues in order, then falls back to narration with none", async () => {
+    it("reveals the place's clue, then a spot's by name, then falls back to narration with none", async () => {
       const gameId = await startMockGame(auth);
       await play(gameId, "go to the Living Room");
 
@@ -107,7 +107,7 @@ describe("game-turn actions", () => {
       // Reasoning-path labels spoil the mystery and must not reach the client.
       expect(first.revealed_clues[0]).not.toHaveProperty("threads");
 
-      const second = await play(gameId, "search");
+      const second = await play(gameId, "search behind the bookshelf");
       expect(second.state.time_remaining).toBe(7);
       expect(second.events[0].narration_parts[0].text).toContain("A half-eaten cookie.");
 
@@ -136,25 +136,27 @@ describe("game-turn actions", () => {
 
     it("does not count a search that found nothing as having found a clue", async () => {
       const gameId = await startMockGame(auth);
-      await play(gameId, "go to the Living Room");
 
-      // The bookshelf holds no clue: the search finds nothing.
-      const empty = await play(gameId, "search behind the bookshelf");
+      const pantry = await play(gameId, "search the pantry shelf");
+      expect(pantry.revealed_clues.map((clue) => clue.id)).toEqual(["clue-jar"]);
+
+      // The pantry's clue is found and the sink holds none: the search finds nothing.
+      const empty = await play(gameId, "search the sink");
       expect(empty.revealed_clues).toEqual([]);
 
-      // So the next search reveals the room's first clue, and only that one.
+      // So the next search reveals the room's clue, and only that one.
       const next = await play(gameId, "search");
-      expect(next.revealed_clues.map((clue) => clue.id)).toEqual(["clue-wrapper"]);
+      expect(next.revealed_clues.map((clue) => clue.id)).toEqual(["clue-crumb"]);
 
       const searches = readStoredEvents(gameId).filter((event) => event.event_type === "search");
-      expect(searches[1].payload).toMatchObject({
-        revealed_clue_id: "clue-wrapper",
-        revealed_clue_ids: ["clue-wrapper"],
+      expect(searches[2].payload).toMatchObject({
+        revealed_clue_id: "clue-crumb",
+        revealed_clue_ids: ["clue-jar", "clue-crumb"],
       });
 
       const read = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
       const { state } = SessionTranscriptResponseSchema.parse(await read.json());
-      expect(state.discovered_clues?.map((clue) => clue.id)).toEqual(["clue-wrapper"]);
+      expect(state.discovered_clues?.map((clue) => clue.id)).toEqual(["clue-jar", "clue-crumb"]);
     });
 
     it("persists the forced accusation when the last turn is a search", async () => {

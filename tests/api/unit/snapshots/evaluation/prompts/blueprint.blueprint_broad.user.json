@@ -82,10 +82,19 @@
             {
               "id": "loc-crumbs",
               "text": "Cookie crumbs lead toward the hallway."
-            },
+            }
+          ],
+          "sub_locations": [
             {
-              "id": "loc-open-window",
-              "text": "The kitchen window is open even though it is cold outside."
+              "id": "kitchen-window",
+              "name": "the kitchen window",
+              "hint": "A cold draught comes from the window over the sink.",
+              "clues": [
+                {
+                  "id": "loc-open-window",
+                  "text": "The kitchen window is open even though it is cold outside."
+                }
+              ]
             }
           ]
         },

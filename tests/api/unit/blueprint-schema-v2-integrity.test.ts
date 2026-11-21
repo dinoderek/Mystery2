@@ -16,6 +16,7 @@ type Draft = {
     locations: Array<{
       id: string;
       clues: Array<{ id: string; text: string }>;
+      sub_locations: Array<{ id: string; clues: Array<{ id: string; text: string }> }>;
     }>;
     characters: Array<{
       id: string;
@@ -79,10 +80,34 @@ describe("blueprint references", () => {
 
   it("refuses a clue id repeated within one place", () => {
     const problems = problemsAfter((d) => {
-      d.world.locations[0].clues[1].id = "loc-crumbs";
+      d.world.locations[0].sub_locations[0].clues[0].id = "loc-crumbs";
     });
 
     expect(problems.join("\n")).toMatch(/loc-crumbs/);
+  });
+
+  it("refuses two clues in one spot, naming the location and the spot", () => {
+    const problems = problemsAfter((d) => {
+      d.world.locations[0].sub_locations[0].clues.push({ id: "loc-second", text: "Another find by the window." });
+    });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('Spot "kitchen-window" in location "kitchen"');
+    expect(problems[0]).toContain("loc-open-window, loc-second");
+  });
+
+  it("refuses two plain-search clues in one location, naming the location", () => {
+    const problems = problemsAfter((d) => {
+      d.world.locations[0].clues.push({ id: "loc-second", text: "A second thing on the counter." });
+    });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('Location "kitchen" has 2 plain-search clues');
+    expect(problems[0]).toContain("loc-crumbs, loc-second");
+  });
+
+  it("accepts one plain-search clue and one clue in each spot of a location", () => {
+    expect(problemsAfter(() => {})).toEqual([]);
   });
 
   it("refuses a starting location that does not exist", () => {

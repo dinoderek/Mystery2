@@ -97,12 +97,12 @@ describe('validate-blueprint', () => {
 		expect(ran.stdout).toBe('');
 		expect(ran.stderr).toContain(`TOO HARD TO READ: ${file} — 2 player-facing string(s) above FK grade 5 (age 8)`);
 		expect(ran.stderr).toContain('  - narrative.starting_knowledge.mystery_summary: grade 9.09, "');
-		expect(ran.stderr).toContain('  - world.locations[0].clues[1].text: grade 5.86, "');
+		expect(ran.stderr).toContain('  - world.locations[0].sub_locations[0].clues[0].text: grade 5.86, "');
 	});
 
 	it('exits 1, naming each failed check beside the reading grade, for one that passes the schema only', async () => {
-		const orphan = structuredClone(validBlueprintV2) as unknown as { world: { locations: Array<{ clues: object[] }> } };
-		orphan.world.locations[0].clues.push({ id: 'loc-stray', text: 'A stray button.' });
+		const orphan = structuredClone(validBlueprintV2) as unknown as { world: { locations: Array<{ sub_locations: object[] }> } };
+		orphan.world.locations[0].sub_locations.push({ id: 'kitchen-sink', name: 'the sink', hint: 'Something small glints.', clues: [{ id: 'loc-stray', text: 'A stray button.' }] });
 		const file = write('blueprint.json', orphan);
 		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
 		expect(ran.code).toBe(1);

@@ -73,10 +73,19 @@
               {
                 "id": "loc-crumbs",
                 "text": "Cookie crumbs lead toward the hallway."
-              },
+              }
+            ],
+            "sub_locations": [
               {
-                "id": "loc-open-window",
-                "text": "The kitchen window is open even though it is cold outside."
+                "id": "kitchen-window",
+                "name": "the kitchen window",
+                "hint": "A cold draught comes from the window over the sink.",
+                "clues": [
+                  {
+                    "id": "loc-open-window",
+                    "text": "The kitchen window is open even though it is cold outside."
+                  }
+                ]
               }
             ]
           },
@@ -275,7 +284,7 @@
           "tolerance": 2,
           "threshold": 5,
           "min_words": 8,
-          "strings_total": 17,
+          "strings_total": 18,
           "strings_scored": 11,
           "violations": [
             {
@@ -288,7 +297,7 @@
               "preview": "The cookies disappeared from the kitchen sometime around 10 AM, according to whoever set them out."
             },
             {
-              "path": "world.locations[0].clues[1].text",
+              "path": "world.locations[0].sub_locations[0].clues[0].text",
               "kind": "clue_text",
               "words": 11,
               "grade": 5.86,

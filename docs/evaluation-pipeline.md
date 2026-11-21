@@ -41,11 +41,11 @@ Two lessons from the single-prompt evaluator it replaced:
 
 - **A narrow judge judges better.** One prompt assessing solvability, fairness,
   coherence and grounding at once gave worse signal on each.
-- **What code can check, code checks.** LLM time is the bottleneck and LLM
-  judgement drifts. Schema validity, brief-derived counts, orphan clues and lock
-  shapes are mechanical; the judge keeps the qualitative questions.
+- **What code can check, code checks.** LLM judgement drifts. Schema validity,
+  brief-derived counts, orphan clues and lock shapes are mechanical; the judge
+  keeps the qualitative questions.
 
-One judge per dimension also buys isolation, targeted retries and, versioned,
+One judge per dimension buys isolation, targeted retries and, versioned,
 re-running only the changed judge (`evaluation/README.md`).
 
 ## Three tiers of check
@@ -57,8 +57,7 @@ re-running only the changed judge (`evaluation/README.md`).
 | Judge | One LLM call per dimension | `evaluation/dimensions/<id>.md` + `<id>.schema.ts` | Per registered dimension |
 
 A dimension's result is `skipped` if nothing ran, `error` if its analyzer or
-judge failed after retries, `fail` if any result failed, else `pass`. The run
-summary counts them.
+judge failed after retries, `fail` if any result failed, else `pass`.
 
 ## Stages
 
@@ -67,7 +66,8 @@ its brief, then runs:
 
 1. **Mechanical checks**: the clue graph is acyclic, references real clues,
    and reaches every solution clue from an ungated root; a location lock is a
-   pointer a prerequisite points to; a self-protect agenda has a confession,
+   pointer whose prerequisites point to and name the spot, by the engine's
+   matcher (`searchNamesSpot`); a self-protect agenda has a confession,
    hidden steps and parts naming real clues; no description names a locked
    spot. A failing check still lets the judges run.
 2. **Dimensions**, in parallel. Within one, the analyzer runs before the judge,

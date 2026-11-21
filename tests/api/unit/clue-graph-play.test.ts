@@ -41,8 +41,8 @@ const HALE_EVENTS: ClueGraphEvent[] = [
 ];
 
 /**
- * The prototype's `scripted_play()` (evaluation/prototypes/clue-graph/graph.py),
- * with each `use` and `ask` as the line the narrator reports. First words come
+ * The twelve-turn scripted play of the original Python prototype, kept as the
+ * golden, with each `use` and `ask` as the line the narrator reports. First words come
  * out three a line here, not all at once, so Toby's ladder story follows his
  * greeting by one line.
  */

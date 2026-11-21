@@ -31,7 +31,8 @@ played, 2 when a judge failed a game.
   only step the runner takes itself is the browser's: `game-enter` (the "press
   any key") after `game-start` narrates the premise.
 - **The investigator sees what a player sees, and no more.** Its view comes from
-  the session state the API returns to the browser, never from the blueprint.
+  the session state the API returns to the browser, never from the blueprint. A
+  clue-graph case's view has the notebook's leads and its taken-back marks.
 - **The engine reads every line.** Each line is posted as typed to `game-turn`,
   which answers `turn` (played), `refused` (its hint, no turn), `view` (help or
   the notebook, no turn) or `quit`. Failed calls are retried by the web store's

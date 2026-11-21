@@ -35,8 +35,8 @@ export interface TalkConversationOutput {
   // narration is then an in-character "what?" beat and the backend suppresses
   // any clue reveal. Defaults to true when the model omits it.
   input_understood: boolean;
-  // Gate clues the player used on the character this turn (making the clue's
-  // point and aiming it at them), and the player's words that used them. The
+  // Gate clues the player used on the character this turn (showing the clue, or
+  // making its point at them), and the player's words that used them. The
   // engine keeps only the character's gate clues that the player holds, or a
   // bluff backed by the quote (`character-state.ts`).
   used_clue_ids: string[];

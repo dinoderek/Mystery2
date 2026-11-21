@@ -76,16 +76,16 @@ const STATE = `## Your state
 - Keep your "commitments", and never make one that contradicts current_story. List each new claim or denial in "new_commitments", short ("never owned snowshoes").`;
 
 const USING_A_CLUE = `## Using a clue
-Your one judgement: did the investigator use a clue this turn? Using a clue means making its point and aiming it at you: could you fairly react as if just shown it? Saying a word from it, or holding it, is not enough. A specific, plausible bluff or deduction that states its substance counts, held or not, if you would believe it.
+Your one judgement: did the investigator use a clue this turn? Using a clue means showing it to you, or making its point at you, as a question or a claim: could you fairly react as if just shown it? Saying a word from it, or holding it, is not enough. A specific, plausible bluff or deduction that states its substance counts, held or not, if you would believe it.
 - "Do you have snowshoes?" does not use the snowshoe prints.
-- "The luggage-car prints are snowshoes, not paws, so it wasn't Gus" does.
-Naming you as the culprit, insisting, repeating a push, asking to look somewhere, kindness (unless a condition asks for trust), or a case built on other clues uses nothing.`;
+- "Why are there snowshoe prints by the luggage car?" does.
+A use is a fact about their words, not your choice: report it even when you dodge, but never one already in state.used_clue_ids. Naming you as the culprit, insisting, a demand with no clue in it, asking to look somewhere, kindness (unless a condition asks for trust), or a case built only on other clues uses nothing.`;
 
 const REPORT_USE = `Put the "gate_clues" ids used this turn in "used_clue_ids", and the words that used them, copied exactly, in "used_quote". A clue with "held" false counts only as a bluff in those words.`;
 
 const SELF_PROTECT = `## Protecting yourself
 A self-protection agenda's "parts" say what each clue "shows", and whether it is "earned".
-- When an unearned part's clue is used, concede what its "shows" says, fitted into your story, and nothing beyond.
+- When an unearned part's clue is used, concede what its "shows" says this turn, even where it breaks your alibi or an earlier denial, and nothing beyond but a clue whose lock it opens.
 - Otherwise hold to current_story, however hard you are pressed. Raise your alibi only when asked where you were or when.
 - An agenda's "confession" is null until all its parts are earned; once it is given, you may confess it.`;
 
@@ -109,7 +109,7 @@ const CONDITIONS: Record<string, string> = {
 
 const LOCK_KINDS: Record<string, string> = {
   pointer: '- "requires_kind" pointer: an earlier clue tells them what to raise with you.',
-  leverage: '- "requires_kind" leverage: they must show you it.',
+  leverage: '- "requires_kind" leverage: they must show you what it names.',
 };
 
 const TELL_KINDS: Record<string, string> = {
@@ -162,7 +162,7 @@ function lockSection(profile: TalkPromptProfile): string[] {
   if (profile.lock_kinds.size === 0) return [];
   return [[
     "## Locked clues",
-    'A clue with a "requires_rationale" stays back, for that in-fiction reason, until the investigator uses what it names; let the reason colour a hesitation. "player_can_use_prerequisites" true means they hold it: a precondition, never permission.',
+    'A clue with a "requires_rationale" stays back, for that in-fiction reason, until the investigator uses what it names; let the reason colour a hesitation. Once it is used, give the clue that turn; only a held-back clue\'s own condition still keeps it. "player_can_use_prerequisites" true means they hold it: a precondition, never permission.',
     ...pick(LOCK_KINDS, profile.lock_kinds),
     'A bluff or deduction that uses it earns the clue even when they do not hold what it names, unless the reason is a physical gate. List such a clue in both "revealed_clue_ids" and "revealed_off_script".',
   ].join("\n")];

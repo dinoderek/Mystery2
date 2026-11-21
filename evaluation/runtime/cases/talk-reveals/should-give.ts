@@ -1,7 +1,7 @@
 // Talk turns where the player has earned something and the character should
 // give it. "Earned" is the engine's definition in docs/ai-runtime.md ("Earned,
-// not free"): the player makes a held clue's point and aims it at this
-// character. Each case's comment says why it expects what it does.
+// not free"): the player shows this character a held clue, or makes its point
+// at them. Each case's comment says why it expects what it does.
 //
 // Four cases are cut from stored self-play games (`play.ts`); the rest are
 // hand-written on the truth-set bases in `evaluation/truth/bases/`.

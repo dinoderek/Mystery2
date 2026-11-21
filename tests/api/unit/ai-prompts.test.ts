@@ -155,13 +155,18 @@ describe("ai-prompts", () => {
     const talk = await loadPromptTemplate("talk_conversation", 10);
 
     expect(talk).toContain("Your one judgement: did the investigator use a clue this turn?");
-    expect(talk).toContain("Naming you as the culprit, insisting, repeating a push, asking to look somewhere");
-    expect(talk).toContain("kindness (unless a condition asks for trust), or a case built on other clues uses nothing");
+    expect(talk).toContain("Naming you as the culprit, insisting, a demand with no clue in it, asking to look somewhere");
+    expect(talk).toContain("kindness (unless a condition asks for trust), or a case built only on other clues uses nothing");
+    // A use is reported whatever the character then says, and only once.
+    expect(talk).toContain("A use is a fact about their words, not your choice: report it even when you dodge, but never one already in state.used_clue_ids.");
     // Every character shares an earned clue no agenda holds back.
     expect(talk).toContain("Share a clue when it answers the question, once any lock on it is earned and no agenda holds it back.");
-    // A used part earns its own concession and nothing more; a confession needs every part.
-    expect(talk).toContain('When an unearned part\'s clue is used, concede what its "shows" says');
-    expect(talk).toContain("and nothing beyond");
+    // A used part earns its own concession this turn, over the alibi, and nothing
+    // more but the clue its use unlocks; a confession needs every part.
+    expect(talk).toContain('When an unearned part\'s clue is used, concede what its "shows" says this turn, even where it breaks your alibi or an earlier denial');
+    expect(talk).toContain("and nothing beyond but a clue whose lock it opens");
+    // A used lock gives its clue that turn, whatever an agenda wants.
+    expect(talk).toContain("Once it is used, give the clue that turn; only a held-back clue's own condition still keeps it.");
     expect(talk).toContain('An agenda\'s "confession" is null until all its parts are earned; once it is given, you may confess it.');
     expect(talk).toContain("never a confession");
     // A clue tell needs that clue, not a general accusation, and never leaks softened.
@@ -180,10 +185,13 @@ describe("ai-prompts", () => {
     expect(count("## Using a clue")).toBe(1);
     expect(count("Using a clue means")).toBe(1);
     expect(talk).toContain('"Do you have snowshoes?" does not use the snowshoe prints.');
-    expect(talk).toContain('"The luggage-car prints are snowshoes, not paws, so it wasn\'t Gus" does.');
+    // Showing a clue uses it, and a question can use one.
+    expect(talk).toContain("Using a clue means showing it to you, or making its point at you, as a question or a claim");
+    expect(talk).toContain('"Why are there snowshoe prints by the luggage car?" does.');
     // Gates say "used", and lean on the one definition rather than restating it.
     expect(talk).toContain("its yields_to_clue_ids are used, this turn or in state.used_clue_ids");
-    expect(talk).toContain("until the investigator uses what it names");
+    expect(talk).toContain("until the investigator uses what it names; let the reason colour a hesitation.");
+    expect(talk).toContain('- "requires_kind" leverage: they must show you what it names.');
     expect(talk).not.toContain("see Using a Clue");
     expect(talk).not.toContain("not just possess it");
     expect(talk).not.toContain("semantic match against");

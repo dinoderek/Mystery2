@@ -42,6 +42,12 @@ function idMap<T extends z.ZodTypeAny>(value: T) {
     .refine((map) => Object.keys(map).length > 0, "Must not be empty");
 }
 
+/**
+ * How many first words a greeting, and each later line, hands out: a play
+ * rule the route check and the engine share.
+ */
+export const FIRST_WORDS_PER_LINE = 3;
+
 export const STANCES = [
   "open",
   "guarded",

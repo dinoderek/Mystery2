@@ -302,6 +302,15 @@ describe("the culprit route", () => {
     expect(cheapestRoute(graph, "clue_dobbs_crash_time")).toBe(2);
   });
 
+  it("gives a last-turn greeting only its first three first words", () => {
+    const graph = greenhouse();
+    graph.metadata.time_budget = 2;
+    expect(cheapestRoute(graph, "toby_blames_thorne")).toBe(2);
+    expect(cheapestRoute(graph, "clue_toby_thorne_ladder")).toBeNull();
+    graph.metadata.time_budget = 3;
+    expect(cheapestRoute(graph, "clue_toby_thorne_ladder")).toBe(2);
+  });
+
   it("stays quick on a case with every spot stocked", () => {
     // Fills every empty spot and plain search with a clue nothing needs.
     const graph = greenhouse();

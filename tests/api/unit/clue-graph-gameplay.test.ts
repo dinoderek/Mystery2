@@ -24,6 +24,8 @@ import { handle as listSessions } from "../../../packages/game-engine/src/endpoi
 import { playTurn } from "../../../packages/game-engine/src/turn/play-turn.ts";
 import { RetriableAIError } from "../../../packages/game-engine/src/errors.ts";
 import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
+import { replay } from "../../../packages/game-engine/src/clue-graph/play.ts";
+import { notebookMarks } from "../../../packages/game-engine/src/clue-graph/notebook-view.ts";
 import { deriveClueGraph } from "../../../packages/game-engine/src/clue-graph/leads.ts";
 import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 
@@ -243,6 +245,25 @@ describe("clue-graph sessions and turns", () => {
     // A turn that plays no graph event leaves nothing new.
     const accusing = await play(opened.game_id, "accuse");
     expect(accusing.leads?.some((lead) => lead.new)).toBe(false);
+  });
+
+  it("never names a statement the player has not heard as taken back", async () => {
+    // Thorne takes back something Toby said, which the player has not heard: the case file would not
+    // pass the validator, but the play still folds it, and the notebook must not name it.
+    const graph = greenhouse();
+    const measured = graph.clues.clue_thorne_measured;
+    if (measured.kind !== "statement") throw new Error("The measuring clue is a statement");
+    measured.takes_back = ["toby_alibi"];
+    const history = [
+      { payload: { clue_graph: { type: "move", location: "thorne_garden" } } },
+      { payload: { clue_graph: { type: "talk", character: "thorne" } } },
+      { payload: { clue_graph: { type: "line", character: "thorne", opened: ["clue_thorne_measured"], asked: [], seen: [] } } },
+    ];
+    const play = replay(graph, clueGraphEvents(history));
+    expect(play.held).toContain("clue_thorne_measured");
+    expect(play.retracted).toContain("toby_alibi");
+    const marks = notebookMarks(graph, history);
+    expect(marks.taken_back).toEqual([]);
   });
 
   it("marks a hidden spot's lead new the turn its pointer is found", async () => {

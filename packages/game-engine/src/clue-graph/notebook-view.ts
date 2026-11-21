@@ -15,7 +15,7 @@ interface HistoryRow {
 
 export interface NotebookMarks {
   leads: NotebookLead[];
-  /** Every clue taken back so far. */
+  /** Every clue the player holds that was taken back; a statement not yet heard is never named. */
   taken_back: string[];
 }
 
@@ -37,7 +37,7 @@ export function notebookMarks(graph: ClueGraphCase, history: HistoryRow[]): Note
   );
   return {
     leads: leads.map((lead) => ({ ...lead, new: !known.has(lead.key) })),
-    taken_back: play.retracted,
+    taken_back: play.retracted.filter((id) => play.held.includes(id)),
   };
 }
 

@@ -154,7 +154,7 @@ export const TurnPlayedResponseSchema = z.object({
   revealed_clues: z.array(RevealedClueSchema),
   /** Clue-graph cases: the leads as they stand after this turn. */
   leads: z.array(NotebookLeadSchema).optional(),
-  /** Clue-graph cases: every clue taken back so far, not only this turn's. */
+  /** Clue-graph cases: every clue in the notebook taken back so far, not only this turn's. */
   taken_back: z.array(z.string().min(1)).optional(),
   /** Set when this turn ended the case. */
   result: OutcomeSchema.nullable(),

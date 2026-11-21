@@ -194,7 +194,7 @@ async function answerAndKeep(
 function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
   // A clue-graph case adds its leads and every clue taken back; the clues the turn found say what they are.
   const graph = game.blueprint.clue_graph;
-  const marks = graph ? notebookMarks(graph, [...game.history, { payload: outcome.event.payload }]) : null;
+  const marks = graph ? notebookMarks(graph, [...game.history, ...effect.events.map(({ event }) => ({ payload: event.payload }))]) : null;
   return {
     kind: "turn",
     events: effect.events.map(({ sequence, event }) => ({

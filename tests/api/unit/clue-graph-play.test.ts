@@ -443,6 +443,7 @@ describe("gates", () => {
       ...graph.clues.clue_thorne_measured,
       reached: { by: "gated", gate: { after: ["thorne_never_set_foot"], use: { any: ["clue_boot_prints"] }, physical: true } },
     } as ClueGraphCase["clues"][string];
+    validateClueGraph(graph);
     const met = replay(graph, [GARDEN, { type: "talk", character: "thorne" }]);
     expect(availableGates(graph, met, "thorne").map((gate) => gate.id)).toEqual(["thorne_ladder_thursday"]);
     const step = applyEvent(graph, met, line("thorne", { opened: ["clue_thorne_measured"] }));
@@ -477,6 +478,7 @@ describe("gates", () => {
       ...graph.clues.toby_not_mia,
       reached: { by: "gated", gate: { use: { any: ["clue_thorne_mia_cake"] } } },
     } as ClueGraphCase["clues"][string];
+    validateClueGraph(graph);
     const met = replay(graph, [SHED, { type: "talk", character: "toby" }]);
     const cleared = applyEvent(graph, met, line("toby", { opened: ["toby_not_mia"] })).play;
     expect(cleared.retracted).toContain("toby_blames_mia");
@@ -489,6 +491,7 @@ describe("gates", () => {
       ...graph.clues.clue_toby_mia_splat,
       reached: { by: "gated", gate: { after: ["toby_no_key"], use: { any: ["clue_rota_purple_ink"] } } },
     } as ClueGraphCase["clues"][string];
+    validateClueGraph(graph);
     const events = SCRIPT.map((step) => step.event);
     const ids = (play: ReturnType<typeof replay>) => availableGates(graph, play, "toby").map((gate) => gate.id);
     expect(ids(replay(graph, events.slice(0, -1)))).not.toContain("clue_toby_mia_splat");
@@ -503,6 +506,7 @@ describe("gates", () => {
       ...graph.clues.toby_blames_mia,
       reached: { by: "gated", gate: { use: { all: ["clue_welly_prints", "clue_key_in_water_butt"] }, physical: true } },
     } as ClueGraphCase["clues"][string];
+    validateClueGraph(graph);
     const ids = (events: ClueGraphEvent[]) =>
       availableGates(graph, replay(graph, events), "toby").map((gate) => gate.id);
     const welly: ClueGraphEvent = { type: "search", spot: "the smashed pumpkin" };
@@ -551,6 +555,7 @@ describe("narrator reports", () => {
       ...changed.clues.react_dobbs_slippers,
       reached: { by: "seen", subject: "the noise last night" },
     } as ClueGraphCase["clues"][string];
+    validateClueGraph(changed);
     const events: ClueGraphEvent[] = [{ type: "move", location: "workshop" }, { type: "talk", character: "dobbs" }];
     const state = talkState(changed, replay(changed, events), "dobbs");
     expect(state.shows_when).toEqual([{ id: "react_dobbs_slippers", subject: "the noise last night", does: changed.clues.react_dobbs_slippers.text }]);
@@ -640,16 +645,20 @@ describe("what never leaks", () => {
       for (const text of forbidden) expect(lead.text).not.toContain(text.slice(0, 24));
   });
 
-  it("never puts a gated clue's text in keeps back", () => {
+  it("keeps back only what the narrator is already told, never a gated clue's text", () => {
     const texts = new Set(gated.map((clue) => clue.text));
     let kept = 0;
     for (const events of [[], [SHED], ...prefixes]) {
       const play = replay(graph, events);
-      for (const character of Object.keys(graph.characters))
-        for (const entry of talkState(graph, play, character).keeps_back) {
+      for (const character of Object.keys(graph.characters)) {
+        const state = talkState(graph, play, character);
+        const told = [...state.story_so_far.map((entry) => entry.says), ...state.says_first.map((entry) => entry.says)];
+        for (const entry of state.keeps_back) {
           kept += 1;
           expect(texts.has(entry)).toBe(false);
+          expect(told).toContain(entry);
         }
+      }
     }
     expect(kept).toBeGreaterThan(0);
   });

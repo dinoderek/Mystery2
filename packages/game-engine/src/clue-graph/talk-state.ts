@@ -147,7 +147,8 @@ function keepsBack(
   const saying = new Set([...play.held, ...nextFirstWords(graph, play, character)]);
   const out = new Set<string>();
   for (const id of cluesOf(graph, character)) {
-    if (!gateOf(graph.clues[id]) || play.held.includes(id) || available.has(id)) continue;
+    if (!gateOf(graph.clues[id]) || available.has(id)) continue;
+    if (play.held.includes(id) || play.retracted.includes(id)) continue;
     for (const target of takesBack(graph, id)) {
       const clue = graph.clues[target];
       const plain = clue.kind === "statement" && clue.reached.by !== "gated";

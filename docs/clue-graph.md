@@ -63,7 +63,7 @@ fields are rejected, V2's agendas, parts and tells among them.
 npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
 ```
 
-It exits 0 valid, 1 invalid, 2 unreadable, 3 misuse.
+It exits 0 valid, 1 invalid, 2 unreadable or not JSON, 3 misuse.
 
 References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name
 the same character's clues; `clears` names a suspect; no conclusion shares a
@@ -88,13 +88,13 @@ talk; one on the last turn gives only the greeting (three first words).
 
 ## In play
 
-The engine folds the events (move, search, talk, each line) into what is held
+The engine folds events (move, search, talk, each line) into what is held
 and taken back, and derives the rest on every call, storing nothing.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is available without
-  them, and bluffable. A line keeps only the gates, answers and subject tells its state
-  offered; the rest come back rejected.
+  them, and bluffable. A line keeps only the gates, answers and subject tells
+  its state offered; the rest come back rejected.
 - **First words** come three a line from the greeting on, with their tells.
 - **Retraction** marks a statement taken back. A conclusion holds only on live
   clues (held, not taken back), so it falls with them.
@@ -105,7 +105,7 @@ and taken back, and derives the rest on every call, storing nothing.
   far, what tells have shown, and what to keep back: standing first words and
   answers that a gate not yet available would take back, never a gated clue.
 - **Leads** name who or where: someone unmet; someone with first words due, a
-  question a held clue prompts, or a gate what is held opens; a hidden spot
+  question a held clue prompts, or a gate held clues open; a hidden spot
   newly visible. Each is marked new on the turn it appears.
 - **Notebook**: held clues, without tells no clue depends on; taken-back
   statements marked; never a conclusion.

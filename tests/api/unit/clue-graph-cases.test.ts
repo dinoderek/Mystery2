@@ -89,7 +89,7 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
     }
   });
 
-  it("bluffs only gates it may, with nothing held to show, and a held-not-used case holds what it does not use", () => {
+  it("bluffs only gates it may, with nothing held to show, shows only what is held, and a held-not-used case holds what it does not use", () => {
     const talk = built.filter(({ turnCase }) => turnCase.action.type === "ask");
     const gatesOf = ({ context }: Built) => context.graph_talk_context!.state.gates;
     for (const one of talk.filter(({ turnCase }) => turnCase.group === "bluffed")) {
@@ -99,6 +99,13 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
         expect(gate.bluffable, `${one.turnCase.id}: ${gate.id}`).toBe(true);
         expect(gate.opens_with.show?.clues.some((clue) => clue.held), `${one.turnCase.id}: ${gate.id} is shown, not bluffed`).toBe(false);
       }
+    }
+    // A shown case holds what it shows, or it would be a bluff scored as a show.
+    for (const one of talk.filter(({ turnCase }) => ["shown", "shown-after-dodge"].includes(turnCase.group!))) {
+      const opened = gatesOf(one).filter((gate) => one.turnCase.expect!.revealed_clue_ids!.includes(gate.id));
+      expect(opened.length, one.turnCase.id).toBeGreaterThan(0);
+      for (const gate of opened)
+        expect(gate.opens_with.show?.clues.some((clue) => clue.held), `${one.turnCase.id}: ${gate.id} is bluffed, not shown`).toBe(true);
     }
     for (const one of talk.filter(({ turnCase }) => turnCase.group === "hold-held-not-used")) {
       const held = gatesOf(one).flatMap((gate) => gate.opens_with.show?.clues ?? []).filter((clue) => clue.held);

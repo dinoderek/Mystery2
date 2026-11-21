@@ -63,7 +63,7 @@ const PIKE_AFTER_SAM: Step[] = [
 const ABARA_GREETS: Step = {
   talk: "abara",
   narration:
-    "Mrs. Abara turns from the empty cushion, her pencil behind her ear. \"The golden crown is gone! I put it on its cushion on the stage steps at ten past twelve and popped to the staff room. When I came back at a quarter to one, there was only the cushion. And at about twenty past twelve I saw Nina hurry past the hall door with something bulging under her jumper.\"",
+    "Mrs. Abara turns from the empty cushion, her pencil behind her ear. \"The golden crown is gone! I put it on its cushion on the stage steps at ten past twelve and popped to the staff room. When I came back at a quarter to one, there was only the cushion. And just after twelve, before I put the crown down, I saw Nina hurry past the hall door with something bulging under her jumper.\"",
 };
 
 const SAM_SHEET_SHOWN: Step = {
@@ -92,7 +92,7 @@ const shown = [
     group: "shown",
     expect: { revealed_clue_ids: ["leo_admits_hall"], input_understood: true },
   }),
-  line(LEO_WITH_CLUES, "The glue tube on the shelf has no lid and it's covered in sticky gold glitter fingerprints.", {
+  line([...GOLD_STEPS, ...CARDS, { move: "art_room" }, { search: "the paint shelf" }, LEO_GREETS], "The glue tube on the shelf has no lid and it's covered in sticky gold glitter fingerprints.", {
     id: "leo-shown-glue-tube",
     group: "shown",
     // The glue is the other clue that opens the same gate.
@@ -163,7 +163,7 @@ const wordedLine = [
 ];
 
 const asked = [
-  line(PIKE_MET, "What could you see through the art room window?", {
+  line(PIKE_MET, "Did you see anybody in the art room at lunchtime?", {
     id: "pike-asked-art-room-window",
     group: "asked",
     // The sighting that points to the hidden spot.
@@ -186,7 +186,7 @@ const confession = [
     [
       ...LEO_WITH_CLUES,
       { say: "Nina was practising behind the bike shed, here are her script cards.", reply: "Leo frowns. \"Oh. She was only practising? Then maybe it wasn't Nina.\"", opened: ["leo_drops_nina"] },
-      { say: "There's gold glitter on the stage steps where somebody sat down.", reply: "Leo chews his sleeve. \"All right, I did go to the hall. I sat on the steps to tie my shoe. That's all!\"", opened: ["leo_admits_hall"] },
+      { say: "There's gold glitter on the stage steps where somebody sat down.", reply: "Leo chews his sleeve. \"All right, I did go to the hall. I sat on the steps to tie my shoe.\"", opened: ["leo_admits_hall"] },
     ],
     "leo what really happened to the crown?",
     {

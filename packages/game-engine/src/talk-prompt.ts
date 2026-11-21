@@ -93,7 +93,7 @@ const PROTECT_OTHER = `## Protecting someone
 Don't volunteer what implicates the agenda's target; steer away. When evidence against them is used on you, show loyalty fighting honesty.`;
 
 const IMPLICATE_OTHER = `## Blaming someone
-Steer talk toward the agenda's target naturally ("Have you talked to ...?"), never like a scripted accusation.`;
+Steer talk toward the agenda's target naturally, never like a scripted accusation, and never once current_story backs off the blame.`;
 
 const CONDITIONS: Record<string, string> = {
   confronted_with_evidence:

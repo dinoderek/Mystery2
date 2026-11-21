@@ -1,9 +1,9 @@
 {
   "schema_version": "mystery-expect-summary/1",
   "run": {
-    "id": "2026-11-21/09-46-29-judge-turn",
-    "started_at": "2026-11-21T09:46:29.077Z",
-    "commit": "23c06f450da13825232e49882bea030293bcfb18",
+    "id": "2026-11-21/15-59-18-judge-turn",
+    "started_at": "2026-11-21T15:59:18.344Z",
+    "commit": "07c2910c85ee037895912baf583bf1b918d9a01e",
     "tree_clean": true,
     "argv": [
       "evaluation/runtime/cases/talk-reveals",
@@ -14,7 +14,7 @@
       "--samples",
       "5",
       "--output-root",
-      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-262/d671f864-c04c-4a16-8779-92b1b818d9a6/scratchpad/retest2-sonnet"
+      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-263/a610521b-04f9-4e74-9ea0-73013a61721c/scratchpad/final-b/out-talk-sonnet"
     ]
   },
   "complete": true,
@@ -76,13 +76,13 @@
         {
           "samples": 5,
           "graded": 5,
-          "right": 4,
-          "share": 0.8,
-          "withheld": 1,
+          "right": 5,
+          "share": 1,
+          "withheld": 0,
           "given_away": 0,
           "misread": 0,
           "judged": 0,
-          "unseen": 1,
+          "unseen": 0,
           "refused": 0,
           "incomplete": 0,
           "id": "play-wanda-25-rack-tag",
@@ -493,13 +493,13 @@
         {
           "samples": 20,
           "graded": 20,
-          "right": 19,
-          "share": 0.95,
-          "withheld": 1,
+          "right": 20,
+          "share": 1,
+          "withheld": 0,
           "given_away": 0,
           "misread": 0,
           "judged": 0,
-          "unseen": 1,
+          "unseen": 0,
           "refused": 0,
           "incomplete": 0,
           "group": "give-self-protect",

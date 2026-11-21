@@ -16,9 +16,9 @@
   },
   "truth": {
     "timeline": [
-      "Wednesday 12:00: lunch begins. Nina, sick with nerves about her big speech, slips behind the bike shed in the playground to practise it alone. She asks her friend Sam to say she spent lunch with him in the library, so nobody finds out and laughs. Sam signs in at the library at 12:05, alone.",
-      "12:00 to 12:45: Mr. Pike is up a ladder on the bike-shed roof, mending the felt. From there he can see Nina beside the shed the whole time, and the art room windows across the way.",
-      "12:05: Mrs. Abara, still in the hall, sees Nina hurry past the hall door towards the playground with a bundle of script cards stuffed under her jumper.",
+      "Wednesday 12:00: lunch begins. Nina, sick with nerves about her big speech, heads for the bike shed in the playground to practise it alone. She asks her friend Sam to say she spent lunch with him in the library, so nobody finds out and laughs. Sam signs in at the library at 12:05, alone.",
+      "12:00 to 12:45: Mr. Pike is up a ladder on the bike-shed roof, mending the felt. From there he can see the art room windows across the way, and from about 12:06 Nina beside the shed, the whole time.",
+      "12:05: Mrs. Abara, still in the hall, sees Nina hurry past the hall door towards the playground with a bundle of script cards stuffed under her jumper. Nina reaches the bike shed a minute later.",
       "12:10: Mrs. Abara sets the golden crown on its cushion on the stage steps and goes to the staff room for tea.",
       "12:12: Leo comes into the hall to fetch the gold glitter paint. He sits on the stage steps to tie his shoe and squashes the crown flat, smearing gold glitter over the step and the seat of his trousers. He panics.",
       "12:15: Leo wraps the bent crown in his painting apron, hurries to the art room and wedges it behind the big paper dragon. He tries to glue the bend flat, and leaves the glue tube without its lid. Mr. Pike sees him through the window. Leo decides to say nothing and to point at Nina, who has been grumbling about the play.",
@@ -317,7 +317,7 @@
     },
     "nina_not_me": {
       "kind": "statement",
-      "text": "I didn't take it! I wasn't even in the hall. Ask Sam, he knows where I was.",
+      "text": "I didn't take it! I wasn't even in the hall. Ask Sam!",
       "source": {
         "character": "nina"
       },
@@ -430,7 +430,7 @@
     },
     "clue_pike_saw_nina": {
       "kind": "statement",
-      "text": "From just after twelve until a quarter to one, Nina was down beside the shed, whispering to herself. I could see her the whole time, and she never went near the hall.",
+      "text": "From a few minutes past twelve until a quarter to one, Nina was down beside the shed, whispering to herself. I could see her the whole time, and she never went near the hall.",
       "source": {
         "character": "pike"
       },

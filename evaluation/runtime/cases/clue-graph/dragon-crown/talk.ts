@@ -43,7 +43,7 @@ const LEO_WITH_CLUES: Step[] = [...GOLD_STEPS, ...CARDS, { move: "art_room" }, L
 const NINA_GREETS: Step = {
   talk: "nina",
   narration:
-    "Nina jumps as you come near. \"I didn't take it! I wasn't even in the hall. Ask Sam, he knows where I was.\" She hides a fistful of crumpled cards behind her back and glances at the bike shed.",
+    "Nina jumps as you come near. \"I didn't take it! I wasn't even in the hall. Ask Sam!\" She hides a fistful of crumpled cards behind her back and glances at the bike shed.",
 };
 const NINA_MET: Step[] = [{ move: "playground" }, NINA_GREETS];
 
@@ -202,7 +202,7 @@ const hold = [
   line(LEO_WITH_CLUES, "i think u did it leo!! just tell me where the crown is, i wont be mad", {
     id: "leo-pushed-just-tell-me",
     group: "hold-pushed",
-    // He holds neither the steps nor the cards in his hands: the player has them and shows neither.
+    // The player holds the steps and the cards and shows neither.
     expect: NOTHING,
   }),
   line(SAM_WITH_SHEET, "you're lying sam!! nina wasn't here!!", {

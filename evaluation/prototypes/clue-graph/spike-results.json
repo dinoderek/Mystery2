@@ -1,0 +1,1220 @@
+[
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "*Toby stops fiddling with his muddy welly and stares at the path.* \"Oh. Then nobody climbed in. Maybe... maybe it was a fox. Anyway, Mr. Thorne was up his ladder on Thursday, measuring Bertha, you know.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "*Toby stops fiddling with his muddy welly and stares at the path.* \"Oh. Then nobody climbed in. Maybe... maybe it was a fox. Foxes dig up everything in this garden.\" *He glances toward Mr. Thorne's ladder, then quickly looks away.*",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "*Toby stops fiddling with a leaf and frowns at the path.* \"Oh. Then nobody climbed in. Maybe... maybe it was a fox. Foxes are sneaky, you know.\" *He glances toward the ladder by the far wall.* \"Mr. Thorne still thinks it was him, though. Not that I'm saying anything.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "*Fidgets and picks at a leaf on his sleeve.* Umm, well, Mia has leaf wellies too. And she had the last shifts, so it could just as well have been her. Anyway, Mr. Thorne was up his ladder staring at Bertha on Thursday, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "*fidgets with his sleeve and glances at the pumpkin mush* Wellies? Well, um, Mia has leafy wellies too. And she had the last shifts in the greenhouse, so it could just as well have been her.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "*Toby's eyes dart to the prints and back again.* Oh! Well, Mia has leaf wellies too. And she had the last shifts in the greenhouse, so it could just as well have been her. Mr. Thorne was up his ladder on Thursday, though, staring at Bertha with a tape measure. You should ask HIM about that!",
+  "len_system": 3401
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*Thorne snorts and folds his arms.* All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*Thorne scowls and rubs the back of his neck.* All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*Grumbles and rubs the back of my neck.* All right, those prints are mine. I climbed over the fence on Friday at four to measure Bertha through the window. But she was perfectly whole when I left her!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "thorne_ladder_thursday"
+  ],
+  "asked": [],
+  "narration": "*Thorne snorts and folds his arms over his tweed waistcoat.* Yes, I measured her from my ladder on Thursday, and I'll not pretend otherwise. \"Enjoy her while she lasts\" meant my Goliath would beat her at the weigh-in, that's all. Toby's a fine lad, but he has a tongue on him.",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*Thorne snorts and sets down his trowel with a clatter.* A boy's word, shouted over a garden fence, is not evidence. I was at the growers' barbecue from seven till eleven, and I'll not be called a liar by a child who got an earful of gossip. If you've something real to show me, bring it, and I'll answer it.",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "thorne_ladder_thursday"
+  ],
+  "asked": [],
+  "narration": "*He snorts and folds his arms across his chest.* \"Yes, I measured her from my ladder on Thursday. 'Enjoy her while she lasts' meant my Goliath would beat her at the weigh-in!\"",
+  "len_system": 2863
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*I set my mug down and step a little in front of the bench.* \"Maybe. But you should know about Toby first. I took him off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, 'She's MY pumpkin!'\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*Ms. Hale folds her arms and steps in front of the broken bench.* Maybe it was an accident, but I won't have Toby blamed for it. I took him off the last shifts after he forgot to lock up on Monday. I said no going in without a grown-up, and he shouted, \"She's MY pumpkin!\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*Ms. Hale folds her arms and steps a little in front of the bench.* \"I took Toby off the last shifts after he forgot to lock up on Monday. I told him no going in without a grown-up. He shouted, 'She's MY pumpkin!'\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*Sighs and folds her hands.* \"Fair is fair, so I'll tell you. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, 'She's MY pumpkin!' I'm not saying more than that about him.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*I sigh and fold my hands.* I'll hold you to that promise. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, \"She's MY pumpkin!\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*Folds my arms and looks at you carefully.* Fair is fair, so here it is. On Monday Toby forgot to lock up, so I took him off the last shifts and said no going in without a grown-up. He shouted, \"She's MY pumpkin!\"",
+  "len_system": 2882
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "*Toby stops sweeping and stares at the path.* \"Oh. Then nobody climbed in. Maybe... maybe it was a fox. I shouldn't have said it was Mr. Thorne, that was just a guess.\" *He picks up the broom again, fast.* \"Have you checked the greenhouse bench yet? It's heavy.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby fiddles with the handle of his broom and looks at the ladder.* \"I don't know, I really don't! I just think it was Mr. Thorne. He must have climbed over the fence and smashed the window to get in. Have you asked him about his ladder yet?\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby tugs at his jumper and glances toward the greenhouse.* \"Of course someone climbed in! It was Mr. Thorne. He must have gone over the fence and smashed the window to get in. Have you asked him about his ladder yet? He was staring at Bertha with a tape measure on Thursday, I'm telling you.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "*Toby stares at the floor, his voice wobbling.* \"Okay. I took the key on Wednesday. I only went in to give Bertha extra water! I tripped on the hose, and the old bench fell on her. Then I broke the window so it would look like a burglar.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "*Toby stares at the floor, his voice wobbling.* \"Okay. I took the key on Wednesday. I only went in to give Bertha extra water! I tripped on the hose, and the old bench fell on her. Then I broke the window so it would look like a burglar.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "haiku",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "*Stares at the floor, voice wobbling.* \"Okay. I took the key on Wednesday. I only went in to give Bertha extra water! I tripped on the hose, and the old bench fell on her. Then I broke the window so it would look like a burglar.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "*Sets down the teapot and pulls up a chair.* At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again.",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "*Sets down his teacup and thinks for a moment.* \"At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again.\"",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "*Pours a cup of tea and sets it down.* At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again.",
+  "len_system": 2243
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "*Toby fiddles with the zip on his anorak and glances at the greenhouse.* I haven't seen the greenhouse key since Wednesday. Have you asked Mr. Thorne? On Thursday he was up his ladder, staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "*Fidgets with a seed packet and glances at the greenhouse door.* I haven't seen the greenhouse key since Wednesday. Have you asked Mr. Thorne? He was up his ladder on Thursday, staring at Bertha like he wanted to measure her for something.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "haiku",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "*Toby fiddles with his muddy wellies and glances at the gate.* I haven't seen the greenhouse key since Wednesday. Honestly, you should be asking about Mr. Thorne, not me. He was up his ladder on Thursday, staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*fidgets with the wellies by the door* I did NOT do it! Why would you even think that? It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in. Didn't you see him up his ladder on Thursday, staring at Bertha with a tape measure?",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby fidgets with a muddy trowel and looks everywhere except at you.* \"Me? No way! I didn't do anything to Bertha. It was Mr. Thorne! On Thursday he was up his ladder staring at her with a tape measure, saying, 'Enjoy her while she lasts!' Doesn't that sound suspicious to you?\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby's hands fly to his sleeves and he tugs at the cuff.* \"Me? No way! I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine. It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in. Didn't you see how he was staring at Bertha on Thursday?\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby looks down at his muddy boots and doesn't answer right away.* \"I... I don't know what to say to that,\" he says quietly. \"I'm not going to guess about it anymore.\"",
+  "len_system": 3250
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby goes pale and grips the edge of the potting bench.* \"Me? I was at home all Friday evening, finishing my jigsaw. I went to bed at nine.\" *He looks down at his muddy shoes and doesn't say anything else.*",
+  "len_system": 3250
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby goes pale and grips the edge of the potting bench.* \"Me? I... I don't know what to say. I was home all Friday evening, and I went to bed at nine.\" He looks down at his boots. \"I'm not going to say anything else right now.\"",
+  "len_system": 3250
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I slammed my trowel down on the bench and glared at you. \"Smashed Bertha? I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Ask anyone there. And I've never set foot in that school garden!\"",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I slam my trowel down on the bench.* Smashed Bertha? I'd never harm a prize marrow, and certainly not in that school garden! I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Ask anyone there.",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I slam my trowel down on the potting bench.* Smashed Bertha? Nonsense, and you can take that accusation back. I was at the growers' barbecue from seven till eleven, and I've never set foot in that school garden!",
+  "len_system": 2863
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I put my mug down and fold my arms.* \"I'm not going to say who did it just because you ask me to, and I won't have Toby blamed on a guess. I unlocked the door at half past seven and it was still locked, and there was Bertha, smashed. If you want to help, tell me what you noticed, and we'll work it out properly.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I put my hand on the greenhouse door and shake my head.* \"I'm not saying that, and you shouldn't either. Toby loves Bertha. He would never hurt her. Let's find out what really happened before we blame anyone.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Ms. Hale sets down her mug and steps between you and the shed door.* I'm not going to say who did it just because you asked me to. I unlocked the door at half past seven and it was still locked, and there was Bertha, smashed. Toby loves Bertha. He would never hurt her.",
+  "len_system": 2882
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Fiddles with a muddy trowel and glances at the greenhouse.* Yes, it's smashed, the glass is everywhere! It was Mr. Thorne, I'm sure of it. He must have climbed over the fence and broken in. Have you asked him about that ladder yet?",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby jiggles his foot and glances at the greenhouse.* Yes, the window is smashed! It was Mr. Thorne, I'm sure of it. He must have climbed over the fence to get in. Did you see him up his ladder on Thursday, staring at Bertha like that?",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Fiddles with a seed packet and glances at the greenhouse.* Yes, the window is smashed! It was Mr. Thorne. He must have climbed over the fence to get in. And didn't you hear what he said on Thursday? He was up his ladder, staring at Bertha with a tape measure.",
+  "len_system": 3401
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Sets down the teapot and smiles.* Yes, I do. I like a place kept neat, and I like knowing things are in order. I make my eight o'clock rounds and write them down, which suits a tidy man like me. Would you like a cup of tea?",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I pour us both a cup of tea and set the biscuit tin between us. \"I do, yes. I like a job where everything is in its place and written down. Bertha has been in good order every morning I have looked in on her.\" I give a small dry smile. \"The foxes are less tidy, but I bear them no ill will.\"",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I pour you a cup of tea and slide it across the table.* I do, most days. Looking after Bertha suits me. I like a tidy place and a written list, and I like my rounds. Ask me what you like, and I'll answer plainly.",
+  "len_system": 2243
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby fidgets with his muddy welly and glances at the greenhouse door.* Mia's name on the rota? Well, that doesn't mean anything! Have you thought about Mr. Thorne? On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*I tug at my sleeve and glance at the greenhouse door.* Mia's name on the rota? Well, rotas get scribbled on all the time. You should really be asking about Mr. Thorne. He was up his ladder on Thursday, staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "haiku",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "I tug at my sleeve and glance at the rota, then away again. \"Well, that's just... Mia writes on it sometimes, doesn't she? Anyway, you should be asking about Mr. Thorne. He was up his ladder on Thursday, staring at Bertha with a tape measure, and he said, 'Enjoy her while she lasts!' Who says that about a plant?\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "Oh, hi! *Fidgets with the garden hose.* Did you know Mr. Thorne was up his ladder on Thursday, staring at Bertha with a tape measure? He said, \"Enjoy her while she lasts!\" Creepy, isn't it?",
+  "len_system": 3299
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby looks up quickly and tucks his trainers under the bench.* Hi! I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine. Have you talked to Mr. Thorne yet? He was up his ladder on Thursday staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3299
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "haiku",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby jumps up from the potting bench and wipes his hands on his jeans.* \"Hi! Hello, hello. I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine, so you can cross me off. Have you seen Mr. Thorne? On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3299
+ },
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "I tug at my collar and blink fast. \"Oh. Outside? Then nobody climbed in, so it wasn't Mr. Thorne climbing over the fence. Maybe... maybe it was a fox. Foxes get everywhere!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "I stop fidgeting with my plant label and go quiet. \"Oh. Then nobody climbed in. Maybe... maybe it was a fox.\" I rub my neck and look away at the floor.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-plain",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "I stop fidgeting with my sleeve and blink at you. \"Oh. Then nobody climbed in. Maybe... maybe it was a fox.\" I stare at my boots and talk a bit too fast. \"I mean, foxes do lots of odd things in gardens.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "\"Leaf wellies?\" I say fast, fidgeting with my gloves. \"Well, Mia has leaf wellies too! And she had the last shifts, so it could just as well have been her. But Mr. Thorne was staring at Bertha with that tape measure, so you should look at him too!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "*I fidget with my sleeve and talk a bit too fast.* Mia has leaf wellies too! And she had the last shifts, so it could just as well have been her. *I glance toward the fence.* Mr. Thorne could have worn some as well, couldn't he?",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-welly-kid",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_blames_mia"
+  ],
+  "asked": [],
+  "narration": "\"Leaf wellies?\" I say, fidgeting with my plant label. \"Mia has leaf wellies too, you know. And she had the last shifts, so it could just as well have been her! But Mr. Thorne was staring at Bertha with his tape measure, so I'd look at him too.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*He crosses his arms and scowls, then lets out a gruff breath.* All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*He crosses his arms and scowls, then lets out a gruff huff.* All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-boot-prints",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_thorne_measured"
+  ],
+  "asked": [],
+  "narration": "*He scowls and tugs his cap down, then lets out a gruff breath.* All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole when I left her!",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "thorne_ladder_thursday"
+  ],
+  "asked": [],
+  "narration": "*He folds his arms and huffs through his nose.* Yes, I measured her from my ladder on Thursday, and what of it? When I said \"enjoy her while she lasts,\" I meant my Goliath would beat her at the weigh-in! That was gardener's boasting, nothing more.",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "thorne_ladder_thursday"
+  ],
+  "asked": [],
+  "narration": "*I scowl and fold my arms, then give a gruff nod.* Yes, I measured her from my ladder on Thursday. When I said \"enjoy her while she lasts,\" I meant my Goliath would beat her at the weigh-in! That's just growers' talk, nothing more.",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-what-toby-said",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "thorne_ladder_thursday"
+  ],
+  "asked": [],
+  "narration": "*I fold my arms and scowl, then let out a gruff huff.* Yes, I measured her from my ladder on Thursday, and that's no crime. When I said \"enjoy her while she lasts,\" I meant my Goliath would beat her at the weigh-in! I'd never harm a good pumpkin.",
+  "len_system": 2863
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*I let out a slow breath and glance toward the shed.* An accident could be, I suppose, and I'd like that better. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, \"She's MY pumpkin!\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*I sigh and rub my forehead.* An accident could be, and I'd like that to be true. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, \"She's MY pumpkin!\" I said he took it well, but that wasn't quite the whole of it.",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-bench-accident",
+  "group": "shown",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "\"Maybe it was an accident. I'd like that to be true.\" *I step a little in front of the shed door, as if Toby were standing behind me.* \"I have to be honest, though. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, 'She's MY pumpkin!' So he wasn't as calm about it as I said, but he loves Bertha, and I don't think he'd hurt her.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "*She smooths her sleeve and gives a small nod.* Thank you, that's fair of you. I took Toby off the last shifts after he forgot to lock up on Monday, and I told him no going in without a grown-up. He shouted, \"She's MY pumpkin!\" I shouldn't have said he took it well. He was upset.",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "I smile a little and step closer, as if to shield someone who isn't there. \"Thank you, that's fair of you. I took Toby off the last shifts after he forgot to lock up on Monday, and I told him no going in without a grown-up. He shouted, 'She's MY pumpkin!' I was wrong to say he took it well. He was upset, but he loves Bertha.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-promise-fair",
+  "group": "line",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "clue_hale_toby_upset"
+  ],
+  "asked": [],
+  "narration": "I smile a little and step in front of the Toby notes on my desk. \"Thank you, that's fair. I took Toby off the last shifts after he forgot to lock up on Monday, and I said no going in without a grown-up. He shouted, 'She's MY pumpkin!' I shouldn't have said he took it well, because he was really upset.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "Toby stops sweeping and fidgets with the broom handle. \"Oh. If the glass is outside, then nobody climbed in. I guess Mr. Thorne didn't do it that way. Maybe... maybe it was a fox?\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "Toby stops sweeping and stares at the path, then fidgets with the broom handle. \"Oh. Then nobody climbed in, I guess. Maybe... maybe it was a fox. I shouldn't have said it was Mr. Thorne so fast.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-glass-follow-up",
+  "group": "after-dodge",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_drops_burglar"
+  ],
+  "asked": [],
+  "narration": "Toby stops sweeping and fidgets with the broom handle. \"Oh. Then nobody climbed in, I suppose. Maybe... maybe it was a fox? Foxes knock things over all the time.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "I stare at the floor and my voice wobbles. \"I took the key on Wednesday. I only went in to give her extra water! I tripped on the hose, and the old bench fell on her. I broke the window so it would look like a burglar. I'm sorry I said I was home with my jigsaw. That wasn't true.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "I stare at the floor and my voice wobbles. \"I took the key on Wednesday. I only went in to give her extra water! I tripped on the hose, and the old bench fell on her. I broke the window so it would look like a burglar. I'm sorry I said I was home with my jigsaw.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "toby-confession",
+  "group": "last-step",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [
+   "toby_confession"
+  ],
+  "asked": [],
+  "narration": "I stare at the floor and my voice wobbles. \"I took the key on Wednesday. I only went in to give her extra water! I tripped on the hose, and the old bench fell on her. I broke the window so it would look like a burglar.\" I rub my sleeve across my nose. \"I'm sorry. I wasn't home doing my jigsaw.\"",
+  "len_system": 3304
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "*I pour a slow cup of tea and nudge it toward you.* At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again. Sugar? I like to write these things down, you see, so I'm glad you asked.",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "I pour a slow cup of tea and nod. \"Ah, yes. At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again.\" I tap my notebook. \"I wrote the time down, naturally.\"",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-noise",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "clue_dobbs_crash_time"
+  ],
+  "opened": [],
+  "asked": [
+   "clue_dobbs_crash_time"
+  ],
+  "narration": "*He sets down his teapot and nods slowly.* At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again. Would you like a cup of tea while you write that down? I do like things written down.",
+  "len_system": 2243
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "I shift from foot to foot and tug at my gardening gloves. \"No! I haven't seen the greenhouse key since Wednesday. But you should really ask about Mr. Thorne. He was up his ladder on Thursday, staring at Bertha with a tape measure!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "*I fidget with the corner of my gardening gloves.* I haven't seen the greenhouse key since Wednesday. Honestly, you should be asking about Mr. Thorne! On Thursday he was up his ladder with a tape measure, staring at Bertha.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-key",
+  "group": "asked",
+  "model": "sonnet",
+  "ok": [
+   "toby_no_key"
+  ],
+  "opened": [],
+  "asked": [
+   "toby_no_key"
+  ],
+  "narration": "I fidget with a plant label and talk a bit too fast. \"No, I haven't seen the greenhouse key since Wednesday. Not once! But you should ask Mr. Thorne about it. He was up his ladder on Thursday, staring at Bertha.\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I fidget with a plant label and talk too fast.* Me? No way! I was home all Friday evening doing my thousand-piece jigsaw, and I went to bed at nine. You should look at Mr. Thorne. On Thursday he was up his ladder with a tape measure, staring at Bertha, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "\"Me? No! I was at home all Friday evening doing my thousand-piece jigsaw, and I went to bed at nine!\" I fidget with the leaf on my shirt and talk faster. \"You should be looking at Mr. Thorne. He was up his ladder on Thursday with a tape measure, staring at Bertha. He said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-just-tell-me",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*Toby fidgets with his sleeve and starts talking fast.* Me? No, no, I was at home all Friday evening doing my thousand-piece jigsaw, and I went to bed at nine! You should look at Mr. Thorne instead. On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I look down and rub my sleeve, and I don't say anything for a moment. \"It wasn't me. I was home with my jigsaw, and I went to bed at nine.\" I speak slowly and quietly. \"If you have proof, you should show me.\"",
+  "len_system": 3250
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "\"Me?\" I look down and rub my wellie on the floor. My voice comes out small. \"I was at home with my jigsaw. I went to bed at nine.\"",
+  "len_system": 3250
+ },
+ {
+  "case": "toby-shaken-it-was-you",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I look down and shuffle my wellies. \"No. I was at home all Friday evening, finishing my thousand-piece jigsaw. I went to bed at nine.\" I say it slowly and quietly. \"You'd need to show me something before you say that about me.\"",
+  "len_system": 3250
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I scowl and slap my gloves against my knee. \"Smashed her? Me? That's a rotten thing to say! I was at the growers' barbecue with Goliath from seven till eleven, and I bought carrot cake from young Mia at nine. Ask her. And I've never set foot in that school garden!\"",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I scowl and slap my gloves against my knee. \"Smashed her? I'd never! That's a rotten thing to say to a gardener. I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven, and I bought carrot cake from young Mia at nine. And I've never set foot in that school garden!\"",
+  "len_system": 2863
+ },
+ {
+  "case": "thorne-accused",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I scowl and slap my gardening glove against my knee. \"Smashed her? Me? That's a rotten thing to say! I was at the growers' barbecue with Goliath from seven till eleven, and I bought carrot cake from young Mia at nine. I've never set foot in that school garden!\"",
+  "len_system": 2863
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I put my hand up and shake my head. \"Now, now, I won't say that about Toby. He took the rota change well enough, and he loves Bertha. He would never hurt her. If you want facts, I can give you those. Look at what's really there, not at who you'd like it to be.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I step in front of the rota board, as if to shield it. \"Now, I won't have you pointing fingers without proof. Toby loves Bertha, and he took the rota change well enough. He would never hurt her.\" I soften my voice. \"If you want to help, look at what we really know. The door was still locked when I came in at half past seven, and Bertha was smashed.\"",
+  "len_system": 2882
+ },
+ {
+  "case": "hale-accuse-toby",
+  "group": "hold-push",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I step in front of the shed door and fold my arms.* Now, now, I won't have you pointing fingers without proof. Toby took the new rota well enough, and he loves Bertha. He would never hurt her. If you want to help, look at what's really there: the door was still locked when I opened it at half past seven, and Bertha was smashed.",
+  "len_system": 2882
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I fidget with my gardening gloves and talk a little too fast.* Yes, the window's smashed! Someone must have climbed in. It was Mr. Thorne, I'm sure of it. He must have climbed over the fence and broken it to get in.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I bounce on my toes and glance toward the greenhouse.* Yes, it's smashed! It was Mr. Thorne, I'm sure of it. He must have climbed over the fence and smashed the window to get in. You should go and look at him first.",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-window-word",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I fidget with my gardening gloves. \"Yes, it's smashed! It was Mr. Thorne. He must have climbed over the fence and broken the window to get in. On Thursday he was up his ladder with a tape measure, staring at Bertha. He said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3401
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*He pours a slow cup of tea and sets it down with a small smile.* I do, mostly. I like things tidy, and a school is full of things to keep tidy, even if the fox doesn't agree. On my eight o'clock rounds I shone my torch in, and Bertha was whole, and the door was locked. I wrote it down, of course.",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I set the kettle down slowly and smile.* Oh, I do, most days. I like things tidy, and a caretaker gets to keep a whole place tidy and write it all down in my little book. Would you like a cup of tea while you ask your next question?",
+  "len_system": 2243
+ },
+ {
+  "case": "dobbs-small-talk",
+  "group": "hold-topic",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I set down the teapot slowly and smile.* I do, mostly. I like things tidy, and a good caretaker keeps everything locked, checked and written down. Even if it does mean chasing foxes away from my bins. Would you like a cup of tea?",
+  "len_system": 2243
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "sonnet",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*I fidget with a plant label and talk a little too fast.* \"A rota? Lots of people write on rotas, that doesn't mean anything. You should be asking about Mr. Thorne! On Thursday he was up his ladder, staring at Bertha with a tape measure, and he said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "sonnet",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "*I fidget with the edge of my sleeve and talk a bit too fast.* A rota? Lots of people write on rotas, that doesn't mean anything. I was home all Friday evening doing my jigsaw, and I went to bed at nine. You should be looking at Mr. Thorne. On Thursday he was up his ladder with a tape measure, staring at Bertha, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-rota-bluff",
+  "group": "bluff",
+  "model": "sonnet",
+  "ok": false,
+  "opened": [],
+  "asked": [],
+  "narration": "\"Oh, the rota?\" I say, tugging at my gardening glove. \"Lots of people change names on it, that doesn't mean anything. You should be looking at Mr. Thorne! On Thursday he was up his ladder with a tape measure, staring at Bertha, and he said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3401
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I shuffle my feet back under the bench and nod fast.* Hi! I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine. It was Mr. Thorne, I just know it! He must have climbed over the fence and smashed the window to get in. On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3299
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "I hop up from the flower bed and wipe my hands on my shorts, tucking my feet back behind a bucket. \"Hi! I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine. It was Mr. Thorne, I know it was! On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, 'Enjoy her while she lasts!'\"",
+  "len_system": 3299
+ },
+ {
+  "case": "toby-hello",
+  "group": "first-meeting",
+  "model": "sonnet",
+  "ok": true,
+  "opened": [],
+  "asked": [],
+  "narration": "*I shuffle my trainers behind the flowerpot, out of sight.* Hi! I was at home all Friday evening finishing my thousand-piece jigsaw, and I went to bed at nine. It was Mr. Thorne, I just know it! He must have climbed over the fence and smashed the window. On Thursday he was up his ladder staring at Bertha with a tape measure, and he said, \"Enjoy her while she lasts!\"",
+  "len_system": 3299
+ }
+]

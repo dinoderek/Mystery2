@@ -40,8 +40,8 @@ function set(graph: ClueGraphCase, field: string, ...value: [unknown?]) {
   else Reflect.set(parent, keys.at(-1)!, value[0]);
 }
 
-// The order `reachable()` in the prototype checker (graph.py) reaches the
-// clues of pumpkin.graph.json, from which the greenhouse case was converted.
+// The order the original Python prototype checker reached the clues of the
+// graph the greenhouse case was converted from, kept as the golden.
 const PROTOTYPE_ORDER = [
   "clue_boot_prints", "clue_glass_outside", "clue_welly_prints", "clue_snapped_bench",
   "clue_key_in_water_butt", "clue_rota_purple_ink", "clue_spare_key_book", "clue_ladder_tape",

@@ -67,4 +67,40 @@ describe('playtest player view', () => {
 		});
 		expect(view).toContain('Mode: Talking with Alice Smith');
 	});
+
+	it('shows a clue-graph case its leads and marks, as the notebook does', () => {
+		const clue = (id: string, text: string, extra: Record<string, unknown>) => ({
+			id,
+			text,
+			source: 'talk',
+			origin: { kind: 'character', character_id: 'char-alice', character_name: 'Alice Smith' },
+			...extra
+		});
+		const view = buildView({
+			title: 'Mock Blueprint',
+			state: state({
+				leads: [
+					{ key: 'talk:char-bob', text: 'Bob Jones may know more.', new: true },
+					{ key: 'meet:char-alice', text: 'You have not talked to Alice Smith yet.', new: false }
+				],
+				discovered_clues: [
+					clue('alibi', 'I was baking all morning.', { kind: 'statement', taken_back: true }),
+					clue('flour', 'Alice brushes flour off her sleeve.', { kind: 'tell', taken_back: false }),
+					clue('saw', 'I saw Bob by the jar.', { kind: 'statement', taken_back: false })
+				]
+			}),
+			transcript: []
+		});
+
+		expect(view).toContain(
+			'== NOTEBOOK: WHAT TO DO NEXT ==\n- Bob Jones may know more. [NEW]\n- You have not talked to Alice Smith yet.\n\n== NOTEBOOK: CLUES =='
+		);
+		expect(view).toContain('- I was baking all morning. (taken back)');
+		expect(view).toContain('- Alice brushes flour off her sleeve. (noticed)');
+		expect(view).toContain('- I saw Bob by the jar.\n');
+	});
+
+	it('has no leads section for a case that sends none', () => {
+		expect(buildView({ title: 'Mock Blueprint', state: state(), transcript: [] })).not.toContain('WHAT TO DO NEXT');
+	});
 });

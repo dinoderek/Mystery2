@@ -1,8 +1,9 @@
 // What the investigator is shown each turn: what a player of the web game can
 // see, and nothing more.
 //
-// The status line (place, people here, turns left) and the notebook's four
-// sections, built with the web app's own notebook helpers, then the story so
+// The status line (place, people here, turns left) and the notebook's
+// sections, built with the web app's own notebook helpers (a clue-graph case
+// adds its leads, and marks a clue taken back or noticed), then the story so
 // far. The blueprint never appears here — only what the game's API hands the
 // browser in its session state and narration.
 
@@ -10,6 +11,7 @@ import type { GameState } from "../../../packages/shared/src/mystery-api-contrac
 import {
   buildPeopleView,
   buildPlacesView,
+  clueMark,
   groupCluesByOrigin,
 } from "../../../web/src/lib/domain/notebook.ts";
 
@@ -87,6 +89,7 @@ export function buildView({
   const people = buildPeopleView(normalized);
   const here = places.find((place) => place.isCurrent);
   const clueBuckets = groupCluesByOrigin(normalized.discovered_clues);
+  const leads = state.leads ?? [];
 
   const lines = [
     `CASE: ${title}`,
@@ -114,13 +117,23 @@ export function buildView({
       `${person.summary ? `: ${person.summary}` : ""}`
     ),
     "",
+    ...(leads.length === 0
+      ? []
+      : [
+        "== NOTEBOOK: WHAT TO DO NEXT ==",
+        ...leads.map((lead) => `- ${lead.text}${lead.new ? " [NEW]" : ""}`),
+        "",
+      ]),
     "== NOTEBOOK: CLUES ==",
     ...(clueBuckets.length === 0
       ? ["(none yet)"]
       : clueBuckets.flatMap((bucket) =>
         bucket.groups.flatMap((group) => [
           `${bucket.label} — ${group.label}:`,
-          ...group.clues.map((clue) => `- ${clue.text}`),
+          ...group.clues.map((clue) => {
+            const mark = clueMark(clue);
+            return `- ${clue.text}${mark ? ` (${mark})` : ""}`;
+          }),
         ])
       )),
     "",

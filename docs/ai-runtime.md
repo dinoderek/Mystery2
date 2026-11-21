@@ -108,8 +108,9 @@ the parser and of the JSON Schema a provider hands the model
 (`roleOutputJsonSchema`). Output is validated before anything is written;
 invalid output is retriable.
 
-- The parser forgives noise (a missing flag takes its default, junk ids are
-  dropped); the JSON Schema asks for the clean shape, every field required.
+- The parser forgives noise (missing flags default, junk ids drop, doubled
+  quote escapes go); the JSON Schema asks for the clean shape, all fields
+  required.
 - The backend re-checks every revealed clue id against what the role was
   allowed to reveal (the active character's clues, the location's unlocked
   clues), and a locked search reveal is rejected and logged

@@ -1,11 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseAccusationJudgeOutput,
+  parseGraphTalkOutput,
+  parseSearchOutput,
   parseTalkConversationOutput,
   parseTalkEndOutput,
   parseTalkStartOutput,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
 
 describe("talk AI output contracts", () => {
+  it("shows the player quotes a model escaped twice as plain quotes, in every role", () => {
+    const twice = 'Mr. Pike tips his cap. \\"Well spotted,\\" he says.';
+    const plain = 'Mr. Pike tips his cap. "Well spotted," he says.';
+    expect(parseTalkStartOutput({ narration: twice }).narration).toBe(plain);
+    expect(parseGraphTalkOutput({ narration: twice }).narration).toBe(plain);
+    expect(parseSearchOutput({ narration: twice }).narration).toBe(plain);
+    expect(parseAccusationJudgeOutput({ narration: twice, accusation_resolution: "win" }).narration).toBe(plain);
+    expect(parseTalkStartOutput({ narration: plain }).narration).toBe(plain);
+  });
+
   it("accepts valid talk-start output", () => {
     expect(
       parseTalkStartOutput({

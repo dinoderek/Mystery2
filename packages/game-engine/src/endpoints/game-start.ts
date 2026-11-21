@@ -17,6 +17,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
+import { notebookMarks } from "../clue-graph/notebook-view.ts";
 import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, type LogWriter } from "../logging.ts";
@@ -174,6 +175,8 @@ function startResponse(
 ): Response {
   const state = buildGameState(blueprint, {
     discovered_clues: [],
+    // Before anything is played, every lead is new.
+    ...(blueprint.clue_graph ? { leads: notebookMarks(blueprint.clue_graph, []).leads } : {}),
     time_remaining: blueprint.metadata.time_budget,
     location: blueprint.world.starting_location_id,
     mode: "explore",

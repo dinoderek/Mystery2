@@ -34,6 +34,16 @@ export interface DiscoveredClue {
   origin: DiscoveryOrigin;
   discovered_at: string | null;
   off_script: boolean;
+  /** Clue-graph cases only: what the clue is, and whether a later clue took it back. */
+  kind?: 'evidence' | 'statement' | 'tell';
+  taken_back?: boolean;
+}
+
+/** Clue-graph cases only: what to do next, new on the turn it appears. */
+export interface NotebookLead {
+  key: string;
+  text: string;
+  new: boolean;
 }
 
 export interface GameState {
@@ -49,6 +59,7 @@ export interface GameState {
     summary?: string | null;
   }[];
   discovered_clues: DiscoveredClue[];
+  leads: NotebookLead[];
   time_remaining: number;
   location: string;
   mode: 'explore' | 'talk' | 'accuse' | 'ended';

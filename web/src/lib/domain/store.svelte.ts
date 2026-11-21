@@ -458,6 +458,7 @@ export class GameSessionStore {
 
     this.applyPosition(answer.state);
     this.mergeDiscoveredClues(answer.revealed_clues);
+    this.applyNotebookMarks(answer);
     this.settleCase(answer.state.mode, answer.result);
     for (const line of linesOfTurn(answer, playedIn)) {
       this.appendEvent(line.event_type, line.narration_parts, line.payload);
@@ -523,6 +524,19 @@ export class GameSessionStore {
 
     this.state.discovered_clues.push(...fresh);
     this.recentlyDiscovered = fresh;
+  }
+
+  /** A clue-graph turn says where the leads stand and which clues are taken back; other cases say nothing. */
+  private applyNotebookMarks(answer: Pick<TurnPlayedResponse, 'leads' | 'taken_back'>) {
+    if (!this.state || !answer.leads) {
+      return;
+    }
+
+    const takenBack = new Set(answer.taken_back ?? []);
+    this.state.leads = answer.leads;
+    for (const clue of this.state.discovered_clues) {
+      clue.taken_back = takenBack.has(clue.id);
+    }
   }
 
   /**

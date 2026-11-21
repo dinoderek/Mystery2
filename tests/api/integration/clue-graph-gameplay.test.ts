@@ -48,26 +48,62 @@ describe("selectable clue-graph case", () => {
   });
 
   it("starts, resumes and plays from its snapshot after the file on disk changes", async () => {
-    writeFixture("Small club-welly prints squelch through the pumpkin mush.");
-    const auth = await setupApiTestAuth("clue-graph-snapshot");
-    const started = await start(auth, clueGraphCaseId(FIXTURE_ID));
-    expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/1" });
+    // The file is in the config root every integration file shares: it stays only as long as this test needs it.
+    try {
+      writeFixture("Small club-welly prints squelch through the pumpkin mush.");
+      const auth = await setupApiTestAuth("clue-graph-snapshot");
+      const started = await start(auth, clueGraphCaseId(FIXTURE_ID));
+      expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/1" });
 
-    writeFixture("EDITED ON DISK");
-    const turn = GameTurnResponseSchema.parse(await (await sendLine(auth, started.game_id, "search the smashed pumpkin")).json());
-    expect(turn.kind === "turn" && turn.revealed_clues.map((clue) => clue.text)).toEqual([
-      "Small club-welly prints squelch through the pumpkin mush.",
-    ]);
-    const stored = readStoredEvents(started.game_id).at(-1);
-    expect(stored?.payload?.clue_graph).toEqual({ type: "search", spot: "the smashed pumpkin" });
+      writeFixture("EDITED ON DISK");
+      const turn = GameTurnResponseSchema.parse(await (await sendLine(auth, started.game_id, "search the smashed pumpkin")).json());
+      expect(turn.kind === "turn" && turn.revealed_clues.map((clue) => clue.text)).toEqual([
+        "Small club-welly prints squelch through the pumpkin mush.",
+      ]);
+      const stored = readStoredEvents(started.game_id).at(-1);
+      expect(stored?.payload?.clue_graph).toEqual({ type: "search", spot: "the smashed pumpkin" });
+
+      const resumed = GameGetResponseSchema.parse(
+        await (await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers })).json(),
+      );
+      expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([
+        "Small club-welly prints squelch through the pumpkin mush.",
+      ]);
+      expect(JSON.stringify(resumed)).not.toMatch(/clue_graph_snapshot|"truth"|"conclusions"|EDITED ON DISK/);
+    } finally {
+      fs.rmSync(FIXTURE_FILE, { force: true });
+    }
+  });
+
+  it("marks a lead new on its turn only, and a statement taken back once it is retracted", async () => {
+    const auth = await setupApiTestAuth("clue-graph-notebook");
+    const started = await start(auth, GREENHOUSE);
+    expect(started.state.leads?.every((lead) => lead.new)).toBe(true);
+
+    const play = async (line: string) => {
+      const answer = GameTurnResponseSchema.parse(await (await sendLine(auth, started.game_id, line)).json());
+      if (answer.kind !== "turn") throw new Error(`Not a turn: ${line}`);
+      return answer;
+    };
+    await play("search");
+    await play("go to the garden");
+    const greeting = await play("talk to Mr. Thorne");
+    expect(greeting.leads?.filter((lead) => lead.new).map((lead) => lead.key)).toEqual(["talk:thorne"]);
+    expect(greeting.taken_back).toEqual([]);
+
+    const retraction = await play("These are your boot prints: clue_boot_prints");
+    expect(retraction.taken_back).toEqual(["thorne_never_set_foot"]);
+    expect(retraction.leads?.some((lead) => lead.new)).toBe(false);
 
     const resumed = GameGetResponseSchema.parse(
       await (await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers })).json(),
     );
-    expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([
-      "Small club-welly prints squelch through the pumpkin mush.",
-    ]);
-    expect(JSON.stringify(resumed)).not.toMatch(/clue_graph_snapshot|"truth"|"conclusions"|EDITED ON DISK/);
+    expect(resumed.state.leads).toEqual(retraction.leads);
+    expect(resumed.state.discovered_clues?.find((clue) => clue.id === "thorne_never_set_foot")).toMatchObject({
+      kind: "statement",
+      taken_back: true,
+    });
+    expect(JSON.stringify([greeting, retraction, resumed])).not.toMatch(/"truth"|"rule"|toby_confession|clue_graph_snapshot/);
   });
 
   it("keeps the session to its owner", async () => {

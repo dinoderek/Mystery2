@@ -33,6 +33,7 @@ export function toGameState(state: WireGameState, history: WireNarrationEvent[])
       summary: character.summary,
     })),
     discovered_clues: state.discovered_clues ?? [],
+    leads: state.leads ?? [],
     time_remaining: state.time_remaining,
     location: state.location,
     mode: state.mode,

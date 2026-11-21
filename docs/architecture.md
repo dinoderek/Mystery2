@@ -29,7 +29,7 @@ security boundary.
 A turn is in-process end to end except the model call, and one transaction
 saves the session change and its events.
 
-Case formats: [V2](../packages/shared/src/blueprint-schema-v2.ts), [MSF](mystery-structure.md), [paired experiment](msf-gameplay.md).
+Case formats: [V2](../packages/shared/src/blueprint-schema-v2.ts), [MSF](mystery-structure.md), [paired experiment](msf-gameplay.md), [clue graph](clue-graph.md).
 
 ## Identity and access
 
@@ -43,7 +43,7 @@ holding its id. Every route picks one of two behaviours:
   served to anyone, and its context holds nothing owned.
 
 **The criterion is ownership, not secrecy.** Does this touch somebody's
-sessions? If so it is per profile. The question is never how sensitive the data
+sessions? If so, per profile. The question is never how sensitive the data
 looks: shared content stays shared, and a session stays scoped even when it is
 dull. Endpoints declare which they are in
 `packages/game-engine/src/endpoints/index.ts`.

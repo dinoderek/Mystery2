@@ -11,7 +11,7 @@ runs out. This is the player-facing contract. The narrator's prompts are in
 - **The narrator** is the AI. It describes places, speaks as each character,
   judges searches and the accusation. It must never contradict the blueprint.
 - **The blueprint** is the case: what happened, who did what and why, and
-  where the clues are. Schema and intent: `packages/shared/src/blueprint-schema-v2.ts`.
+  where the clues are. Schemas: `packages/shared/src/blueprint-schema-v2.ts`, [clue graph](clue-graph.md).
 - **The turn budget** (`metadata.time_budget`) keeps the investigation finite.
 
 ## Starting a case

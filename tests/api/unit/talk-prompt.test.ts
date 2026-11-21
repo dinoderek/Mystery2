@@ -46,6 +46,7 @@ describe("the talk_conversation prompt, assembled by character", () => {
     expect(prompt).toContain("the prints were snowshoes not wolf paws");
     // An earned reaction outranks the agenda it touches: no blaming Gus again.
     expect(prompt).toContain("current_story outranks them");
+    expect(prompt).toContain("Once current_story backs off the blame, never point at the target again");
   });
 
   it("leaves out every agenda section for a character with no agendas", async () => {
@@ -110,6 +111,7 @@ const RULES = [
   "Naming you as the culprit",
   "Never take a reaction back",
   "current_story outranks them",
+  "Once current_story backs off the blame",
   "never make one that contradicts current_story",
   "Raise your alibi only when asked where you were or when",
   "concede what its \"shows\" says",
@@ -144,6 +146,8 @@ const CONFLICTS: Array<[string, string]> = [
   ["repeating a push", "a demand with no clue in it"],
   ["making its point and aiming it at you", "showing it to you, or making its point at you"],
   ["they must show you it.", "they must show you what it names."],
+  // Backing off a blame used to be stated only in the agendas line, far from the steer it stops.
+  ["never push again what a reaction there gave up", "Once current_story backs off the blame"],
 ];
 
 const count = (text: string, needle: string) => text.split(needle).length - 1;

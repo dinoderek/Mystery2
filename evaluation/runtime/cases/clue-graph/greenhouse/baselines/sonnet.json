@@ -16,7 +16,7 @@
       "--concurrency",
       "6",
       "--output-root",
-      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-285/fee5c807-b0b1-4993-86f7-41b36bf7bd30/scratchpad/runs/sc"
+      "<output root>"
     ]
   },
   "complete": true,

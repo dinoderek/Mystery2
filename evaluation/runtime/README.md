@@ -44,7 +44,8 @@ A case is a blueprint, a `given` state (mode, location, time, the full `history`
 exactly one `action`, and the judges to run. A case file is `.ts`, `.mjs` or `.json`,
 holding one case or a list; a folder runs every case file in it; `evaluation/runtime/cases/age-readability.ts` is an
 annotated example. `history` rows have the shape the runtime stores in
-`game_events`. The action types, and the mode each is valid from, are `ACTIONS` in
+`game_events`; a clue-graph case's carry `payload.clue_graph`, and a server run seeds its
+snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and modes: `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.
 
 `evaluation/runtime/cases/all-interactions.ts` is the coverage baseline: one case

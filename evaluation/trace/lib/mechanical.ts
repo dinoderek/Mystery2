@@ -19,6 +19,8 @@
 import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
 import { collectClues } from "../../checks/lib/clue-graph.ts";
 import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
+import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
+import { applyEvent, startPlay, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import { playedEvents } from "../../lib/game-events.ts";
 import type { RawEvent, RawTrace } from "./normalize.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.ts";
@@ -148,10 +150,42 @@ function accountAskReveals(
   }
 }
 
+// A clue-graph game is accounted by folding its recorded events through the
+// engine's own rules: what an event recorded must be what the fold brings out,
+// no clue comes twice, and nothing the narrator reported was refused.
+function checkClueGraphAccounting(rawTrace: RawTrace): TraceCheckResult {
+  const graph = rawTrace.blueprint.clue_graph;
+  const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
+  const violations: Violation[] = [];
+  let play: ClueGraphPlay | null = graph ? startPlay(graph) : null;
+  for (const event of events) {
+    const [recorded] = clueGraphEvents([event]);
+    if (!graph || !play || !recorded) continue;
+    let step;
+    try {
+      step = applyEvent(graph, play, recorded);
+    } catch (error) {
+      violations.push({ sequence: event.sequence, reason: "event_cannot_be_folded", message: String((error as Error).message) });
+      continue;
+    }
+    const brought = new Set(step.revealed);
+    const revealed = revealedClueIdsForEvent(event);
+    for (const clueId of revealed) {
+      if (!graph.clues[clueId]) violations.push({ sequence: event.sequence, reason: "unknown_clue", clue_id: clueId });
+      else if (play.held.includes(clueId)) violations.push({ sequence: event.sequence, reason: "clue_revealed_again", clue_id: clueId });
+      else if (!brought.has(clueId)) violations.push({ sequence: event.sequence, reason: "clue_not_available", clue_id: clueId });
+    }
+    for (const clueId of step.rejected) violations.push({ sequence: event.sequence, reason: "reported_but_not_offered", clue_id: clueId });
+    play = step.play;
+  }
+  return mkCheck("clue_accounting", violations.length === 0, violations.length === 0 ? null : { violations });
+}
+
 // clue_accounting: walks the events in order, tracking which clues have been
 // revealed, and flags any reveal that is invalid (unknown id, out of scope for
 // the action, a repeat, or a bare-search reveal that breaks the ordered prefix).
 function checkClueAccounting(rawTrace: RawTrace): TraceCheckResult {
+  if (rawTrace.blueprint?.clue_graph) return checkClueGraphAccounting(rawTrace);
   const blueprint = rawTrace.blueprint;
   const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
   const state: Accounting = { blueprint, everRevealed: new Set<string>(), violations: [] };

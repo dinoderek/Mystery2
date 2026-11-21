@@ -144,4 +144,66 @@ describe("judge turn through a throwaway server", () => {
       ["example-should-give", 1],
     ]);
   }, 60_000);
+
+  it("replays a clue-graph case with its private snapshot seeded, on the mock", async () => {
+    const config = path.join(scratch, "config-graph.json");
+    fs.writeFileSync(config, JSON.stringify({}));
+    const caseFile = path.join(scratch, "greenhouse-case.json");
+    fs.writeFileSync(
+      caseFile,
+      JSON.stringify({
+        id: "ask-toby-last-night",
+        blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" },
+        given: {
+          mode: "talk",
+          location_id: "potting_shed",
+          talk_character_id: "toby",
+          time_remaining: 9,
+          history: [
+            { event_type: "move", narration: "You step into the potting shed.", payload: { location_id: "potting_shed", clue_graph: { type: "move", location: "potting_shed" } } },
+            { event_type: "talk", narration: "Toby looks up from the pots.", payload: { character_id: "toby", location_id: "potting_shed", clue_graph: { type: "talk", character: "toby" } } },
+          ],
+        },
+        action: { type: "ask", player_input: "Where were you last night?" },
+      }),
+    );
+
+    const saved: { sessions: Array<Record<string, unknown>>; events: Array<Record<string, unknown>> } = { sessions: [], events: [] };
+    const startServer: StartServer = async (options) => {
+      const server = (await startTestServer({ ...options, build: false, env: MOCK_ONLY_ENV })) as ThrowawayServer;
+      return {
+        ...server,
+        stop: async () => {
+          const db = openDatabase({ path: server.databaseFile, readonly: true });
+          saved.sessions.push(...(db.prepare("select blueprint_id, clue_graph_snapshot from game_sessions").all() as Array<Record<string, unknown>>));
+          saved.events.push(...(db.prepare("select event_type, payload from game_events order by sequence").all() as Array<Record<string, unknown>>));
+          db.close();
+          await server.stop();
+        },
+      };
+    };
+
+    const lines: string[] = [];
+    const outputRoot = path.join(scratch, "out-graph");
+    const code = await runEval(
+      ["judge", "turn", caseFile, "--narrator", "server", "--ai-profile", "mock", "--judges", "flesch", "--config", config, "--output-root", outputRoot],
+      { root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env: process.env },
+      [createJudgeTurnCommand({ startServer })],
+    );
+    expect(code, lines.join("\n")).toBe(0);
+
+    // Seeded with the case's own graph, so the turn played the snapshot.
+    expect(saved.sessions).toHaveLength(1);
+    expect(JSON.parse(saved.sessions[0].clue_graph_snapshot as string).metadata.id).toBe("greenhouse-prizewinner");
+    expect(saved.events.map((event) => event.event_type)).toEqual(["move", "talk", "ask"]);
+    // The line the server played is a recorded clue-graph line of Toby's.
+    expect(JSON.parse(saved.events[2].payload as string).clue_graph).toMatchObject({ type: "line", character: "toby" });
+
+    const [day] = fs.readdirSync(outputRoot);
+    const [run] = fs.readdirSync(path.join(outputRoot, day));
+    const [subject] = fs.readdirSync(path.join(outputRoot, day, run)).filter((name) => name !== "run.json");
+    const turn = JSON.parse(fs.readFileSync(path.join(outputRoot, day, run, subject, "turn.json"), "utf8"));
+    expect(turn).toMatchObject({ narrator: "server", model: "mock" });
+    expect(turn.response.narration_text.length).toBeGreaterThan(0);
+  }, 60_000);
 });

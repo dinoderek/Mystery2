@@ -162,7 +162,8 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(talkLine),
     events: ["talk"],
     roleInput: (g, a, bp, history = []) => ({
-      role: "talk_start",
+      role: bp.clue_graph ? "graph_talk" : "talk_start",
+      ...(bp.clue_graph ? { player_input: null } : {}),
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
@@ -179,7 +180,7 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(askLine),
     events: ["ask"],
     roleInput: (g, a, bp, history = []) => ({
-      role: "talk_conversation",
+      role: bp.clue_graph ? "graph_talk" : "talk_conversation",
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
@@ -229,14 +230,19 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(searchLine),
     events: ["search"],
     roleInput: (g, a, bp, history = []) => ({
-      role: resolveSearchRole(a.search_query),
+      role: bp.clue_graph ? "graph_search" : resolveSearchRole(a.search_query),
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
       location_id: g.location_id,
-      revealed_clue_ids: g.revealed_clue_ids ?? [],
-      discovered_clue_ids: g.discovered_clues ?? [],
-      next_clue: a.search_query ? null : (nextUnrevealedClue(bp, g) ?? null),
+      // A clue-graph search reads what the player holds from the history.
+      ...(bp.clue_graph
+        ? {}
+        : {
+            revealed_clue_ids: g.revealed_clue_ids ?? [],
+            discovered_clue_ids: g.discovered_clues ?? [],
+            next_clue: a.search_query ? null : (nextUnrevealedClue(bp, g) ?? null),
+          }),
       search_query: a.search_query ?? null,
       conversation_history: history,
     }),
@@ -302,7 +308,9 @@ export function resolveRoleName(
   blueprint: BlueprintLike,
   history: HistoryEntry[] | undefined,
 ): string {
-  return getAction(actionType).roleInput(given, action, blueprint, normalizeHistory(history)).role;
+  const role = getAction(actionType).roleInput(given, action, blueprint, normalizeHistory(history)).role;
+  // A clue-graph search is judged as a `search`, the role the game saves it under.
+  return role === "graph_search" ? "search" : role;
 }
 
 /** Whether a role name belongs to the endgame, where the solution is discussed. */

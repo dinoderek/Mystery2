@@ -26,7 +26,7 @@ import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
 import { UsageError, UsageLimitError } from "../core/errors.ts";
 import { loadCheck, loadJudge } from "../core/judge-loader.ts";
 import { validateJudgeOutput } from "../core/judge-output.ts";
-import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
+import { composeJudgeSystemPrompt } from "../core/judge-prompt.ts";
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { checksFor, judgesFor } from "../core/registry.ts";
@@ -37,6 +37,7 @@ import { runModel } from "../core/runner.ts";
 import type { CallMemo } from "../core/runner.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { RunError, Verdict } from "../core/result.ts";
+import { composeGameMasterUserMessage } from "../judges/clue-graph-guidance.ts";
 import { majorFindingsVerdict } from "../judges/index.ts";
 import { projectTraceSubject } from "../judges/subject.ts";
 import { createLocalTraceSource, extractSessionTrace } from "./lib/datasource.ts";
@@ -232,7 +233,7 @@ export async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verd
       binding: run.binding,
       step: `judge-${entry.id}`,
       systemPrompt: composeJudgeSystemPrompt(definition, context as Record<string, unknown> | null),
-      userMessage: composeJudgeUserMessage(entry.id, context as Record<string, unknown> | null, {
+      userMessage: composeGameMasterUserMessage(entry.id, context as Record<string, unknown> | null, {
         blueprint: run.trace.blueprint,
         subject: run.judgeSubject,
       }),

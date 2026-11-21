@@ -11,7 +11,7 @@ data into one shared subject:
 | `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | registry judges for a `turn` |
 
 A failure on a played trace can be frozen into a runtime case
-(`./dev eval cases`) and re-judged by the same standard on another model or prompt.
+(`./dev eval cases`) and re-judged on another model or prompt.
 
 ## The battery
 
@@ -23,8 +23,10 @@ A failure on a played trace can be frozen into a runtime case
 | `gm_spoiler` | Did pre-accusation narration give away ground truth? | Naming the culprit; stating the motive or mechanism as fact; confirming the player's guess before the endgame |
 
 Four narrow judges, not one "blueprint adherence" judge
-(`docs/evaluation-pipeline.md`, "Three tiers of check"). Each brief states its
-boundaries with its siblings, so no defect is reported four times.
+(`docs/evaluation-pipeline.md`, "Three tiers of check"), each stating its
+boundaries so no defect is reported four times. For a clue-graph blueprint
+([`docs/clue-graph.md`](../../docs/clue-graph.md)), each message adds
+`format_guidance` (`clue-graph-guidance.ts`).
 
 ## The subject
 
@@ -68,13 +70,13 @@ hyphens in the file names (`gm_spoiler` → `gm-spoiler.md`).
 4. Its first hash in `evaluation/core/judge-versions.json`, as the gate names.
 
 Keep the common finding fields (`sequence`, `severity`, `quote`, `why`,
-`refers_to`) and vary only the `kind` enum, so consumers need no special cases.
+`refers_to`) and vary only the `kind` enum.
 
 ## Cost and offline testing
 
 Each judge is one model call per subject, run in parallel. The trace
 pipeline runs all four on every trace; the runtime harness makes them opt-in
-(`evaluation/runtime/README.md`, "What a run costs"). `judge-stub` answers with
+(`evaluation/runtime/README.md`). `judge-stub` answers with
 a canned clean verdict for wiring checks:
 
 ```bash

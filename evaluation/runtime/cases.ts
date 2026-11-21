@@ -42,6 +42,8 @@ export function historyPayload(payload: Record<string, unknown> | null | undefin
   for (const k of [
     "player_input", "character_id", "character_name", "location_id",
     "location_name", "destination", "revealed_clue_ids", "revealed_clue_id",
+    // A clue-graph game's play is folded from these (`docs/clue-graph.md`).
+    "clue_graph",
   ]) {
     if (payload?.[k] !== undefined) keep[k] = payload[k];
   }

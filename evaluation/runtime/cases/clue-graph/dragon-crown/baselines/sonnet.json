@@ -1,9 +1,9 @@
 {
   "schema_version": "mystery-expect-summary/1",
   "run": {
-    "id": "2026-11-21/21-50-28-judge-turn",
-    "started_at": "2026-11-21T21:50:28.520Z",
-    "commit": "68379e80b85362131528349e36f80d890b4a36cb",
+    "id": "2026-11-21/21-56-33-judge-turn",
+    "started_at": "2026-11-21T21:56:33.227Z",
+    "commit": "b4b309ae373e39bd70e7b84f5b147bbbdb9fe1da",
     "tree_clean": true,
     "argv": [
       "evaluation/runtime/cases/clue-graph/dragon-crown",

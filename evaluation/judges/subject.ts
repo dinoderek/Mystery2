@@ -171,6 +171,10 @@ export function revealedClueIdsFromResponse(response: InteractionLike["response"
   if (Array.isArray(raw.revealed_clue_ids)) {
     return raw.revealed_clue_ids.filter((id): id is string => typeof id === "string");
   }
+  // A clue-graph talk reply: the gates it opened and the questions it answered.
+  if (Array.isArray(raw.opened) || Array.isArray(raw.answered)) {
+    return [...readStringArray(raw, "opened"), ...readStringArray(raw, "answered")];
+  }
   if (typeof raw.revealed_clue_id === "string") return [raw.revealed_clue_id];
   return [];
 }

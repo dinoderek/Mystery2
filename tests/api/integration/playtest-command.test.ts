@@ -121,6 +121,26 @@ describe('play on stub bindings', () => {
 		expect((await readResult(path.join(nativeGame, 'result.json'))).summary.passed).toBe(true);
 	}, 120_000);
 
+	it('plays the clue-graph greenhouse by path, ID and title on the mock, and grades it', async () => {
+		const script = path.join(scratch, 'greenhouse-script.json');
+		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'Toby did it: his welly prints are in the pumpkin.'];
+		const caseId = '9afa1ef4-b543-81b5-a50f-4a366ec7e2ef';
+		fs.writeFileSync(script, JSON.stringify({ blueprint_id: caseId, persona: 'kid-7', inputs }));
+		for (const query of ['blueprints/clue-graph/greenhouse-prizewinner.json', caseId, 'The Smashed Prize Pumpkin — clue graph']) {
+			const played = await play(['--replay', script, '--blueprint', query, '--narrator', 'mock', '--judge']);
+			expect(played.code, played.output).toBe(0);
+			const [game] = gameDirs(played.runDir as string);
+			const summary = JSON.parse(fs.readFileSync(path.join(game, 'summary.json'), 'utf8'));
+			expect(summary, query).toMatchObject({ outcome: 'win', divergence: null, blueprint: { id: caseId, format: 'clue-graph/1', revision: 1 } });
+			expect(summary.clues_found).toBeGreaterThan(0);
+			expect(summary.clues_found).toBeLessThanOrEqual(summary.clues_total);
+			const trace = JSON.parse(fs.readFileSync(path.join(game, 'trace.json'), 'utf8'));
+			expect(trace.clue_graph).toMatchObject({ format: 'clue-graph/1', revision: 1, progress: { culprit_supported: true } });
+			const mechanical = (await readResult(path.join(game, 'result.json'))).verdicts.filter((verdict) => verdict.tier === 'mechanical');
+			expect(mechanical.map((verdict) => [verdict.id, verdict.status])).toEqual([['clue_accounting', 'pass'], ['spoiler_leak', 'pass']]);
+		}
+	}, 240_000);
+
 	it('plays a short game, writes a valid result, grades it, and replays the same lines', async () => {
 		const before = repoDatabases();
 		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge']);

@@ -22,7 +22,10 @@ import {
   resolveDatabasePath,
 } from "../../../packages/game-engine/src/paths.ts";
 import { buildRawTrace } from "./normalize.ts";
+import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { buildMsfBlueprint, validateMsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
+import { clueGraphProgress } from "../../../packages/game-engine/src/ai-context.ts";
 import type { RawTrace } from "./normalize.ts";
 
 const SILENT_LOGGER = { log: () => {}, logError: () => {} };
@@ -130,10 +133,31 @@ export async function extractSessionTrace(
 ): Promise<RawTrace> {
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
-  // A clue-graph game's turns are not V2 roles, and nothing here rebuilds them
-  // yet: refuse rather than judge them as V2.
-  if (session.clue_graph_snapshot != null)
-    throw new Error(`Session ${sessionId} plays a clue-graph case, which trace extraction does not read yet`);
+  // The case a clue-graph game played is the private snapshot saved at its
+  // start, never the file as it is now; its format and what the player had
+  // earned by the end go beside it.
+  if (session.clue_graph_snapshot != null) {
+    const graph = validateClueGraph(JSON.parse(String(session.clue_graph_snapshot)));
+    const history = events.map((event) => ({
+      sequence: event.sequence as number,
+      event_type: event.event_type as string,
+      actor: event.actor as string,
+      narration: typeof event.narration === "string" ? event.narration : "",
+      payload: event.payload as Record<string, unknown> | null,
+    }));
+    return buildRawTrace({
+      session,
+      events,
+      blueprint: buildClueGraphBlueprint(graph),
+      source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
+      extractedAt,
+      clueGraph: {
+        format: "clue-graph/1",
+        revision: 1,
+        progress: clueGraphProgress(graph, history),
+      },
+    });
+  }
   const snapshot = session.msf_snapshot == null ? null : JSON.parse(String(session.msf_snapshot));
   const blueprint = snapshot ? buildMsfBlueprint(validateMsfCaseFile(snapshot)) : await source.downloadBlueprint(session.blueprint_id as string);
 

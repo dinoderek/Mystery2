@@ -1,4 +1,7 @@
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
+import fs from "node:fs";
+import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
 
 // Shared fixtures for the trace-evaluation pipeline unit tests.
@@ -161,4 +164,36 @@ export function makeRawTrace(overrides: Record<string, unknown> = {}): RawTrace 
     events: makeEvents(),
     ...overrides,
   } as unknown as RawTrace;
+}
+
+/**
+ * A short clue-graph game on the greenhouse case, shaped as the engine saves it:
+ * each turn's event in `payload.clue_graph`, a greeting carrying the first
+ * words, a conversation line and a search. The case is the committed file.
+ */
+export function makeClueGraphRawTrace(): RawTrace {
+  const graph = validateClueGraph(JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8")));
+  const row = (sequence: number, event_type: string, payload: Record<string, unknown>, narration: string, model: string | null = "mock") => ({
+    id: `g${sequence}`,
+    sequence,
+    event_type,
+    actor: "system",
+    payload,
+    narration,
+    narration_parts: [],
+    clues_revealed: [],
+    model,
+    created_at: `2026-06-01T10:0${sequence}:00Z`,
+  });
+  return makeRawTrace({
+    blueprint: buildClueGraphBlueprint(graph),
+    clue_graph: { format: "clue-graph/1", revision: 1, progress: { supported_conclusions: [], culprit_supported: false, taken_back: [] } },
+    events: [
+      row(1, "start", { location_id: "greenhouse" }, "You arrive at the greenhouse.", null),
+      row(2, "search", { role: "search", location_id: "greenhouse", search_query: "the smashed pumpkin", revealed_clue_id: "clue_welly_prints", revealed_clue_ids: ["clue_welly_prints"], clue_graph: { type: "search", spot: "the smashed pumpkin" } }, "In the pulp you see the print of a welly."),
+      row(3, "move", { location_id: "workshop", clue_graph: { type: "move", location: "workshop" } }, "You walk to Mr. Dobbs's workshop."),
+      row(4, "talk", { role: "graph_talk", character_id: "dobbs", location_id: "workshop", revealed_clue_ids: ["dobbs_rounds", "react_dobbs_slippers"], clue_graph: { type: "talk", character: "dobbs" } }, "Mr. Dobbs peers over his glasses. \"I saw her whole at eight,\" he says."),
+      row(5, "ask", { role: "graph_talk", character_id: "dobbs", location_id: "workshop", player_input: "What about the noise last night?", revealed_clue_ids: ["clue_dobbs_crash_time"], clue_graph: { type: "line", character: "dobbs", opened: [], asked: ["clue_dobbs_crash_time"], seen: [] } }, "\"A crash near ten,\" says Mr. Dobbs, rubbing his slippers."),
+    ],
+  });
 }

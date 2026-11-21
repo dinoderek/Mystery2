@@ -13,7 +13,7 @@
 // the command that judges a game in ../judge-game.ts, which keeps this
 // normalization unit-testable without a database.
 
-import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
+import type { BlueprintContext, ClueGraphProgress } from "../../../packages/game-engine/src/ai-context.ts";
 import { playedEvents } from "../../lib/game-events.ts";
 
 export const TRACE_SCHEMA_VERSION = "trace/0.1";
@@ -55,6 +55,13 @@ export interface TraceProvenance {
   [key: string]: unknown;
 }
 
+/** What a clue-graph game adds to its trace: the case format and revision it played, and what the investigator had earned by its end. */
+export interface TraceClueGraph {
+  format: string;
+  revision: number;
+  progress: ClueGraphProgress;
+}
+
 /** The stored trace: what was persisted for one played session, and nothing derived. */
 export interface RawTrace {
   schema_version: string;
@@ -64,6 +71,8 @@ export interface RawTrace {
   ai_profile: Record<string, unknown> | null;
   blueprint: BlueprintContext;
   events: RawEvent[];
+  /** Set only for a clue-graph game; its case is `blueprint.clue_graph`. */
+  clue_graph?: TraceClueGraph;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -133,6 +142,8 @@ export interface BuildRawTraceInput {
   source?: TraceProvenance | null;
   /** ISO timestamp; the caller supplies it for determinism. */
   extractedAt?: string | null;
+  /** Set for a clue-graph game. */
+  clueGraph?: TraceClueGraph | null;
 }
 
 /** The canonical raw trace artifact for one session. */
@@ -142,6 +153,7 @@ export function buildRawTrace({
   blueprint,
   source = null,
   extractedAt = null,
+  clueGraph = null,
 }: BuildRawTraceInput): RawTrace {
   if (!isObject(session)) {
     throw new Error("buildRawTrace: session row is required");
@@ -166,6 +178,7 @@ export function buildRawTrace({
     ai_profile: narratorOf(normalizedSession, orderedEvents),
     blueprint: blueprint as unknown as BlueprintContext,
     events: orderedEvents,
+    ...(clueGraph ? { clue_graph: clueGraph } : {}),
   };
 }
 

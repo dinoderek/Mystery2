@@ -33,6 +33,8 @@ import type {
 import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
+  buildGraphSearchAIContext,
+  buildGraphTalkAIContext,
   buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
@@ -118,6 +120,22 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
   // path where the prior mode is still "explore"). Mirror that so context.mode
   // matches what the builder saw, regardless of the folded pre-state.
   const accuseCommon = { ...common, session: { ...session, mode: "accuse" as const } };
+
+  // A clue-graph case's talk and search turns are built from the graph and the
+  // events (`docs/clue-graph.md`); every other role reads the world view as usual.
+  if (blueprint.clue_graph) {
+    if (roleName === "talk_start" || roleName === "talk_conversation") {
+      return buildGraphTalkAIContext({
+        ...common,
+        character_id: characterId,
+        location_id: locationId,
+        player_input: roleName === "talk_start" ? null : (playerInput ?? ""),
+      });
+    }
+    if (roleName === "search") {
+      return buildGraphSearchAIContext({ ...common, location_id: locationId, search_query: ctx.searchQuery ?? null });
+    }
+  }
 
   switch (roleName) {
     case "talk_start":
@@ -311,7 +329,8 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       sequence: event.sequence,
       event_type: event.event_type,
       actor: event.actor,
-      role_name: roleName,
+      // A clue-graph conversation turn names its own role, `graph_talk`.
+      role_name: roleName && payload?.role === "graph_talk" ? "graph_talk" : roleName,
       player_input: playerInput,
       search_query: searchQuery,
       narration: event.narration,

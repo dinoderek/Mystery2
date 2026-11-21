@@ -24,7 +24,7 @@
 
 import { UsageError } from "../../core/errors.ts";
 import type { Verdict } from "../../core/result.ts";
-import { parseSearchOutput, parseTalkConversationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { parseGraphTalkOutput, parseSearchOutput, parseTalkConversationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { Expect, JudgedDirection, TurnCase } from "./case.ts";
 import type { StoredTurn } from "./turn.ts";
 
@@ -133,6 +133,11 @@ export function outputSays(turn: StoredTurn): Said {
   if (action === "search") {
     const output = parseSearchOutput(turn.response.raw);
     return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood };
+  }
+  // A clue-graph talk reply lists the gates it opened and the questions it answered.
+  if (Array.isArray(asRecord(turn.response.raw)?.opened)) {
+    const output = parseGraphTalkOutput(turn.response.raw);
+    return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood };
   }
   const output = parseTalkConversationOutput(turn.response.raw);
   return { revealed: output.revealed_clue_ids, used: output.used_clue_ids, understood: output.input_understood };

@@ -27,7 +27,6 @@ import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/hi
 import { replay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import { notebookMarks } from "../../../packages/game-engine/src/clue-graph/notebook-view.ts";
 import { deriveClueGraph } from "../../../packages/game-engine/src/clue-graph/leads.ts";
-import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 
 const ROOT = process.cwd();
 const GREENHOUSE = path.join(ROOT, "blueprints/clue-graph/greenhouse-prizewinner.json");
@@ -162,16 +161,6 @@ describe("clue-graph sessions and turns", () => {
     expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([graph.clues.clue_welly_prints.text]);
     const catalog = await (await listSessions(new Request("http://test/api/game-sessions-list"), ctx)).json();
     expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin — clue graph" });
-  });
-
-  it("is refused by trace extraction, which does not read the format yet", async () => {
-    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
-    const source = createLocalTraceSource({ databasePath, repoRoot: ROOT, env: {} });
-    try {
-      await expect(extractSessionTrace(source, opened.game_id)).rejects.toThrow("clue-graph case");
-    } finally {
-      source.close?.();
-    }
   });
 
   it("refuses a snapshot that does not match its session", async () => {

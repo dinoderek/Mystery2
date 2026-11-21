@@ -945,8 +945,10 @@ export function buildTalkEndContext(input: {
   });
 }
 
-function toSearchClue({ requires: _gate, ...clue }: BlueprintClue): SearchClue {
-  return clue;
+function toSearchClue(clue: BlueprintClue): SearchClue {
+  const shown: BlueprintClue = { ...clue };
+  delete shown.requires;
+  return shown;
 }
 
 export function buildSearchContext(input: {

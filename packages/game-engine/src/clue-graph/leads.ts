@@ -2,6 +2,7 @@
 // A lead names who or where, never what to say or which way a clue cuts, and
 // the notebook never shows a conclusion.
 
+import { gateOpens } from "../../../shared/src/clue-graph-reach.ts";
 import { OPENING_PROMPT, type ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
 import {
   askable,
@@ -12,7 +13,6 @@ import {
   replay,
   searchKey,
   supportedConclusions,
-  useHeld,
   visibleSpots,
   type ClueGraphEvent,
   type ClueGraphPlay,
@@ -92,15 +92,9 @@ function mayKnowMore(graph: ClueGraphCase, play: ClueGraphPlay, character: strin
     );
   });
   if (prompted) return true;
-  return availableGates(graph, play, character).some(({ id }) => {
-    const gate = gateOf(graph.clues[id])!;
-    const hint = gate.line?.hinted_by;
-    return (
-      useHeld(gate, held) ||
-      (hint !== undefined && held(hint)) ||
-      (!gate.use && !gate.line)
-    );
-  });
+  return availableGates(graph, play, character).some(
+    ({ id }) => gateOpens(gateOf(graph.clues[id])!, held) !== null,
+  );
 }
 
 /** The leads on this play, unmarked. */

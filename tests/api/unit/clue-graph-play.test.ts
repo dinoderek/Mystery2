@@ -26,11 +26,25 @@ function greenhouse(): ClueGraphCase {
 const line = (character: string, report: Omit<Extract<ClueGraphEvent, { type: "line" }>, "type" | "character">) =>
   ({ type: "line", character, ...report }) as const;
 
+const SHED: ClueGraphEvent = { type: "move", location: "potting_shed" };
+const GARDEN: ClueGraphEvent = { type: "move", location: "thorne_garden" };
+/** With the toppled bench hidden behind Ms. Hale's last crack: it is found once she gives it. */
+const HALE_EVENTS: ClueGraphEvent[] = [
+  SHED,
+  { type: "search", spot: "the watering rota on the door" },
+  { type: "move", location: "greenhouse" },
+  { type: "search", spot: "the toppled bench" },
+  { type: "talk", character: "hale" },
+  line("hale", { opened: ["clue_hale_borrowed_pen", "hale_toby_fine"] }),
+  line("hale", { opened: ["clue_hale_toby_upset"] }),
+  { type: "search", spot: "the toppled bench" },
+];
+
 /**
  * The prototype's `scripted_play()` (evaluation/prototypes/clue-graph/graph.py),
- * with each `use` and `ask` as the line the narrator reports. It differs where
- * the card's fixes apply: first words come out three a line, so Toby's ladder
- * story follows his greeting by one line.
+ * with each `use` and `ask` as the line the narrator reports. First words come
+ * out three a line here, not all at once, so Toby's ladder story follows his
+ * greeting by one line.
  */
 interface Step {
   event: ClueGraphEvent;
@@ -412,22 +426,11 @@ describe("the greenhouse scripted play", () => {
     expect(state.stance).toBe("guarded");
     expect(state.demeanor).toBe(graph.characters.toby.demeanor.guarded);
     expect(state.keeps_back).toEqual([graph.clues.toby_blames_thorne.text, graph.clues.toby_alibi.text]);
+    const greeted = talkState(graph, replay(graph, [SHED, { type: "talk", character: "toby" }]), "toby");
+    expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.text]);
+    expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.text, graph.clues.react_toby_trainers.text]);
   });
 });
-
-const SHED: ClueGraphEvent = { type: "move", location: "potting_shed" };
-const GARDEN: ClueGraphEvent = { type: "move", location: "thorne_garden" };
-/** With the toppled bench hidden behind Ms. Hale's last crack: it is found once she gives it. */
-const HALE_EVENTS: ClueGraphEvent[] = [
-  SHED,
-  { type: "search", spot: "the watering rota on the door" },
-  { type: "move", location: "greenhouse" },
-  { type: "search", spot: "the toppled bench" },
-  { type: "talk", character: "hale" },
-  line("hale", { opened: ["clue_hale_borrowed_pen", "hale_toby_fine"] }),
-  line("hale", { opened: ["clue_hale_toby_upset"] }),
-  { type: "search", spot: "the toppled bench" },
-];
 
 describe("gates", () => {
   it("keeps a physical gate shut without its use clue, and rejects a report that opens it", () => {
@@ -462,6 +465,18 @@ describe("gates", () => {
     const step = applyEvent(graph, met, line("thorne", { opened: ["clue_thorne_measured"] }));
     expect(step.revealed).toEqual(["clue_thorne_measured"]);
     expect(step.play.retracted).toEqual(["thorne_never_set_foot"]);
+  });
+
+  it("stops offering a gated statement taken back before it was said", () => {
+    const graph = greenhouse();
+    graph.clues.toby_not_mia = {
+      ...graph.clues.toby_not_mia,
+      reached: { by: "gated", gate: { use: { any: ["clue_thorne_mia_cake"] } } },
+    } as ClueGraphCase["clues"][string];
+    const met = replay(graph, [SHED, { type: "talk", character: "toby" }]);
+    const cleared = applyEvent(graph, met, line("toby", { opened: ["toby_not_mia"] })).play;
+    expect(cleared.retracted).toContain("toby_blames_mia");
+    expect(availableGates(graph, cleared, "toby").map((gate) => gate.id)).not.toContain("toby_blames_mia");
   });
 
   it("opens an all-of physical gate only once every clue is held", () => {

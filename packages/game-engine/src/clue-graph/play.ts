@@ -5,14 +5,12 @@
 // `docs/clue-graph.md`.
 
 import { has, ruleMet } from "../../../shared/src/clue-graph-reach.ts";
-import type {
-  ClueGraphCase,
-  ClueGraphClue,
-  ClueGraphGate,
+import {
+  FIRST_WORDS_PER_LINE,
+  type ClueGraphCase,
+  type ClueGraphClue,
+  type ClueGraphGate,
 } from "../../../shared/src/clue-graph-schema.ts";
-
-/** How many first words a greeting, and each later line, hands out. */
-export const FIRST_WORDS_PER_LINE = 3;
 
 /**
  * What the engine records of a turn. `line` is one line said in the
@@ -127,8 +125,8 @@ export function useHeld(gate: ClueGraphGate, held: (id: string) => boolean): boo
 }
 
 /**
- * A character's gated clues whose turn has come: not yet out, every `after`
- * clue out. A physical gate with `use` also needs those clues held; any other
+ * A character's gated clues whose turn has come: not yet out nor taken back,
+ * every `after` clue out. A physical gate with `use` also needs those clues held; any other
  * gate is available without them, so a bluff can open it.
  */
 export function availableGates(
@@ -140,7 +138,8 @@ export function availableGates(
   const out: AvailableGate[] = [];
   for (const id of cluesOf(graph, character)) {
     const gate = gateOf(graph.clues[id]);
-    if (!gate || held(id) || !(gate.after ?? []).every(held)) continue;
+    if (!gate || held(id) || play.retracted.includes(id)) continue;
+    if (!(gate.after ?? []).every(held)) continue;
     if (gate.physical && gate.use && !useHeld(gate, held)) continue;
     out.push({ id, bluffable: !gate.physical && gate.use !== undefined });
   }

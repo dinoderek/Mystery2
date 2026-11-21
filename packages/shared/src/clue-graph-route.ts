@@ -1,11 +1,17 @@
 import { reachReason, ruleMet, type Holds } from "./clue-graph-reach.ts";
-import { OPENING_PROMPT, type ClueGraphCase, type ClueGraphRule } from "./clue-graph-schema.ts";
+import {
+  FIRST_WORDS_PER_LINE,
+  OPENING_PROMPT,
+  type ClueGraphCase,
+  type ClueGraphRule,
+} from "./clue-graph-schema.ts";
 
 /**
  * The cheapest route to a conclusion within the turn budget, without a bluff.
  * The cost model is the game's (`docs/clue-graph.md`): a move, a search and
  * starting a talk cost one turn each; lines while talking cost none. A talk
- * started on the budget's last turn gives only the greeting.
+ * started on the budget's last turn gives only the greeting: the first
+ * `FIRST_WORDS_PER_LINE` first words, with the tells seen with them.
  */
 
 /** Held clues as bits, in file order. */
@@ -113,6 +119,8 @@ class Router {
   private readonly bit = new Map<string, bigint>();
   private readonly byLocation = new Map<string, string[]>();
   private readonly byCharacter = new Map<string, string[]>();
+  /** The first words a greeting hands out. */
+  private readonly greeting = new Set<string>();
   private readonly mandatory: string[][];
 
   constructor(graph: ClueGraphCase, rule: ClueGraphRule) {
@@ -128,6 +136,13 @@ class Router {
           ? [this.byLocation, clue.source.location]
           : [this.byCharacter, clue.source.character];
       map.set(owner, [...(map.get(owner) ?? []), id]);
+    }
+    const said = new Map<string, number>();
+    for (const [id, clue] of Object.entries(graph.clues)) {
+      if (clue.kind === "evidence" || clue.reached.by !== "first_meeting") continue;
+      const count = said.get(clue.source.character) ?? 0;
+      if (count < FIRST_WORDS_PER_LINE) this.greeting.add(id);
+      said.set(clue.source.character, count + 1);
     }
   }
 
@@ -209,7 +224,7 @@ class Router {
     if (clue.kind === "evidence") return false;
     const { reached } = clue;
     const greeting =
-      reached.by === "first_meeting" || (reached.by === "seen" && reached.with !== undefined);
+      this.greeting.has(id) || (reached.by === "seen" && reached.with !== undefined);
     return (greeting || !greetingOnly) && this.reachable(id, held);
   }
 

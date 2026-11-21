@@ -57,15 +57,17 @@ fields are rejected, V2's agendas, parts and tells among them.
 
 ## Validation
 
-`validateClueGraph(value)` returns the case or throws a ZodError:
+`validateClueGraph(value)` returns the case or throws:
 
 ```sh
 npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
 ```
 
-It exits 0 valid, 1 invalid, 2 unreadable, 3 misuse. First, references must fit: `after`, `takes_back`, `hinted_by` and `seen.with`
-name the same character's clues; `clears` names a suspect; exactly one
-character is the culprit, named by exactly one conclusion.
+It exits 0 valid, 1 invalid, 2 unreadable, 3 misuse.
+
+References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name
+the same character's clues; `clears` names a suspect; no conclusion shares a
+clue's ID; one character is the culprit, named by one conclusion.
 
 Then reachability: from the opening alone, it adds each clue whose way in is
 held until none is added, never counting a bluff. It rejects, naming the fault:
@@ -75,14 +77,14 @@ held until none is added, never counting a bluff. It rejects, naming the fault:
 - a false statement never taken back, or only by a clue reached first;
 - a conclusion never reached, or a suspect no conclusion clears;
 - a culprit with no route within the turn budget without a bluff;
-- a spot, or plain search, with more than one clue;
+- a spot or plain search with two clues;
 - a cycle of `after` links.
 
 Both count a statement taken back as held, and a subject tell as reached once
 its character is met. The route uses the game's costs (`docs/game.md`): a move,
 a search or starting a talk costs a turn; lines are free. A conversation yields
 every clue of that character it can reach; a clue found later needs another
-talk, and a talk on the last turn gives only the greeting.
+talk; one on the last turn gives only the greeting (three first words).
 
 ## In play
 

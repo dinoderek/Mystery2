@@ -89,11 +89,11 @@ talk; one on the last turn gives only the greeting (three first words).
 ## In play
 
 The engine folds the events (move, search, talk, each line) into what is held
-and taken back, and derives the rest on every call, storing none of it.
+and taken back, and derives the rest on every call, storing nothing.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
-  `use` also needs those clues held; any other is available without them, and
-  bluffable. A line keeps only the gates, answers and subject tells its state
+  `use` also needs those clues held; a non-physical one is available without
+  them, and bluffable. A line keeps only the gates, answers and subject tells its state
   offered; the rest come back rejected.
 - **First words** come three a line from the greeting on, with their tells.
 - **Retraction** marks a statement taken back. A conclusion holds only on live

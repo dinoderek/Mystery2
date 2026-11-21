@@ -126,7 +126,7 @@ export function useHeld(gate: ClueGraphGate, held: (id: string) => boolean): boo
 
 /**
  * A character's gated clues whose turn has come: not yet out nor taken back,
- * every `after` clue out. A physical gate with `use` also needs those clues held; any other
+ * every `after` clue out (held, or taken back). A physical gate with `use` also needs those clues held; any other
  * gate is available without them, so a bluff can open it.
  */
 export function availableGates(
@@ -139,7 +139,9 @@ export function availableGates(
   for (const id of cluesOf(graph, character)) {
     const gate = gateOf(graph.clues[id]);
     if (!gate || held(id) || play.retracted.includes(id)) continue;
-    if (!(gate.after ?? []).every(held)) continue;
+    // A statement taken back before it was said still counts as out.
+    if (!(gate.after ?? []).every((earlier) => held(earlier) || play.retracted.includes(earlier)))
+      continue;
     if (gate.physical && gate.use && !useHeld(gate, held)) continue;
     out.push({ id, bluffable: !gate.physical && gate.use !== undefined });
   }

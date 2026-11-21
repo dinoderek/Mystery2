@@ -93,7 +93,8 @@ function mayKnowMore(graph: ClueGraphCase, play: ClueGraphPlay, character: strin
   });
   if (prompted) return true;
   return availableGates(graph, play, character).some(
-    ({ id }) => gateOpens(gateOf(graph.clues[id])!, held) !== null,
+    // Availability has settled `after`; what is left is whether what is held opens it.
+    ({ id }) => gateOpens({ ...gateOf(graph.clues[id])!, after: undefined }, held) !== null,
   );
 }
 

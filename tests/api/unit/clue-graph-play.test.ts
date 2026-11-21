@@ -429,6 +429,10 @@ describe("the greenhouse scripted play", () => {
     const greeted = talkState(graph, replay(graph, [SHED, { type: "talk", character: "toby" }]), "toby");
     expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.text]);
     expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.text, graph.clues.react_toby_trainers.text]);
+    expect(state.says_first[0]).toEqual({ id: "toby_alibi", says: graph.clues.toby_alibi.text, with: [graph.clues.react_toby_sweeping.text] });
+    expect(greeted.answers_if_asked).toEqual([
+      { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.text, with: [graph.clues.react_toby_pocket.text] },
+    ]);
   });
 });
 
@@ -477,6 +481,20 @@ describe("gates", () => {
     const cleared = applyEvent(graph, met, line("toby", { opened: ["toby_not_mia"] })).play;
     expect(cleared.retracted).toContain("toby_blames_mia");
     expect(availableGates(graph, cleared, "toby").map((gate) => gate.id)).not.toContain("toby_blames_mia");
+  });
+
+  it("counts a statement taken back before it was said as out", () => {
+    const graph = greenhouse();
+    graph.clues.clue_toby_mia_splat = {
+      ...graph.clues.clue_toby_mia_splat,
+      reached: { by: "gated", gate: { after: ["toby_no_key"], use: { any: ["clue_rota_purple_ink"] } } },
+    } as ClueGraphCase["clues"][string];
+    const events = SCRIPT.map((step) => step.event);
+    const ids = (play: ReturnType<typeof replay>) => availableGates(graph, play, "toby").map((gate) => gate.id);
+    expect(ids(replay(graph, events.slice(0, -1)))).not.toContain("clue_toby_mia_splat");
+    const solved = replay(graph, events);
+    expect(solved.held).not.toContain("toby_no_key");
+    expect(ids(solved)).toContain("clue_toby_mia_splat");
   });
 
   it("opens an all-of physical gate only once every clue is held", () => {

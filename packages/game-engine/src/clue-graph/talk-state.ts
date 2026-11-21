@@ -48,8 +48,8 @@ export interface ClueGraphTalkState {
   stance: Stance;
   demeanor: string;
   /** First words not yet said: this line's share. */
-  says_first: Array<{ id: string; says: string }>;
-  answers_if_asked: Array<{ id: string; about: string; says: string }>;
+  says_first: Array<{ id: string; says: string; with: string[] }>;
+  answers_if_asked: Array<{ id: string; about: string; says: string; with: string[] }>;
   gates: TalkGate[];
   /** Tells shown when a subject comes up. */
   shows_when: Array<{ id: string; subject: string; does: string }>;
@@ -61,7 +61,7 @@ export interface ClueGraphTalkState {
   keeps_back: string[];
 }
 
-/** Falls back from the stance towards the others, as the prototype did. */
+/** A missing demeanor line falls back from the stance towards `open`, then wraps around. */
 const STANCE_FALLBACK: Stance[] = ["cleared", "cornered", "shaken", "guarded", "open"];
 
 /**
@@ -106,6 +106,11 @@ function demeanorFor(graph: ClueGraphCase, character: string, stance: Stance): s
 
 function text(graph: ClueGraphCase, id: string): string {
   return graph.clues[id].text;
+}
+
+/** The texts of the tells that come out with a statement. */
+function riders(graph: ClueGraphCase, id: string): string[] {
+  return ridersOf(graph, id).map((rider) => text(graph, rider));
 }
 
 function openerOf(graph: ClueGraphCase, gate: ClueGraphGate, held: (id: string) => boolean): GateOpener {
@@ -170,18 +175,19 @@ export function talkState(
     says_first: nextFirstWords(graph, play, character).map((id) => ({
       id,
       says: text(graph, id),
+      with: riders(graph, id),
     })),
     answers_if_asked: askable(graph, play, character).map((id) => {
       const clue = graph.clues[id];
       const about = clue.kind === "statement" && clue.reached.by === "asked" ? clue.reached.about : "";
-      return { id, about, says: clue.text };
+      return { id, about, says: clue.text, with: riders(graph, id) };
     }),
     gates: gates.map(({ id, bluffable }) => ({
       id,
       opens_with: openerOf(graph, gateOf(graph.clues[id])!, held),
       bluffable,
       says: text(graph, id),
-      with: ridersOf(graph, id).map((rider) => text(graph, rider)),
+      with: riders(graph, id),
       takes_back: takesBack(graph, id).map((target) => text(graph, target)),
     })),
     shows_when: subjectTells(graph, play, character).map((id) => {

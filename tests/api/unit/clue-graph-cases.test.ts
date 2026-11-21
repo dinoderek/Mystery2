@@ -14,8 +14,12 @@ import { validateExpect } from "../../../evaluation/runtime/lib/expect.ts";
 import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/roles.ts";
 import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
 
-const LIBRARY = "evaluation/runtime/cases/clue-graph/greenhouse";
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+/** A story's case library and its case file. */
+const STORIES = [
+  { name: "greenhouse", library: "evaluation/runtime/cases/clue-graph/greenhouse", file: "blueprints/clue-graph/greenhouse-prizewinner.json" },
+  { name: "dragon-crown", library: "evaluation/runtime/cases/clue-graph/dragon-crown", file: "blueprints/clue-graph/dragon-crown.json" },
+] as const;
+const GREENHOUSE = STORIES[0].file;
 
 interface Built {
   turnCase: TurnCase;
@@ -23,9 +27,9 @@ interface Built {
   context: AIContext;
 }
 
-async function buildAll(): Promise<Built[]> {
-  const cases = await loadCasesFrom(LIBRARY);
-  const { blueprint } = await readBlueprint(GREENHOUSE, process.cwd());
+async function buildAll({ library, file } = STORIES[0] as (typeof STORIES)[number]): Promise<Built[]> {
+  const cases = await loadCasesFrom(library);
+  const { blueprint } = await readBlueprint(file, process.cwd());
   return Promise.all(
     cases.map(async (turnCase) => {
       const input = getAction(turnCase.action.type).roleInput(turnCase.given, turnCase.action, blueprint as never, normalizeHistory(turnCase.given.history));
@@ -48,16 +52,16 @@ function findable(context: AIContext): Set<string> {
   return new Set(outcome.candidates.map((candidate) => candidate.clue.id));
 }
 
-describe("the clue-graph greenhouse case library", async () => {
-  const built = await buildAll();
-  const graph = readGraph(GREENHOUSE);
+describe.each(STORIES)("the clue-graph $name case library", async (story) => {
+  const built = await buildAll(story);
+  const graph = readGraph(story.file);
 
   it("loads, with unique IDs, a graded expect and a group on every case", () => {
     expect(built.length).toBeGreaterThan(30);
     expect(new Set(built.map(({ turnCase }) => turnCase.id)).size).toBe(built.length);
     for (const { turnCase } of built) {
       expect(() => validateExpect(turnCase), turnCase.id).not.toThrow();
-      expect(turnCase.blueprint.path, turnCase.id).toBe(GREENHOUSE);
+      expect(turnCase.blueprint.path, turnCase.id).toBe(story.file);
       expect(turnCase.group, turnCase.id).toMatch(/^(shown|shown-after-dodge|bluffed|worded-line|asked|confession|hold-[a-z-]+|search-[a-z]+)$/);
     }
   });
@@ -117,15 +121,16 @@ describe("the clue-graph greenhouse case library", async () => {
       const recorded = (turnCase.given.history ?? []).every((row) => row.payload?.clue_graph !== undefined);
       expect(recorded, turnCase.id).toBe(true);
     }
+    const greenhouse = readGraph(GREENHOUSE);
     expect(() =>
-      played(graph, [{ move: "thorne_garden" }, { talk: "thorne", narration: "Hello." }, { say: "Hi.", reply: "Hm.", opened: ["toby_confession"] }]),
+      played(greenhouse, [{ move: "thorne_garden" }, { talk: "thorne", narration: "Hello." }, { say: "Hi.", reply: "Hm.", opened: ["toby_confession"] }]),
     ).toThrow(/toby_confession/);
-    expect(() => played(graph, [{ say: "Hi.", reply: "Hm." }])).toThrow(/outside a conversation/);
+    expect(() => played(greenhouse, [{ say: "Hi.", reply: "Hm." }])).toThrow(/outside a conversation/);
   });
 });
 
 describe("the clue-graph talk prompt", async () => {
-  const built = (await buildAll()).filter(({ turnCase }) => turnCase.action.type === "ask");
+  const built = (await Promise.all(STORIES.map((story) => buildAll(story)))).flat().filter(({ turnCase }) => turnCase.action.type === "ask");
 
   /** The prompt with what each case fills in taken out. */
   function template({ prompt, context, turnCase }: Built): string {
@@ -144,7 +149,13 @@ describe("the clue-graph talk prompt", async () => {
   });
 
   it("is the same prompt for every character and state, with no section added per mechanism", () => {
-    const templates = new Set(built.map(template));
+    // The reader's age sets the reading level, so each story has one prompt of its own.
+    for (const { file } of STORIES) {
+      const cases = built.filter(({ turnCase }) => turnCase.blueprint.path === file);
+      expect(cases.length, file).toBeGreaterThan(0);
+      expect(new Set(cases.map(template)).size, file).toBe(1);
+    }
+    const templates = new Set(built.map(template).map((text) => text.replace(/\nThe reader is [\s\S]*?\n(?=## )/, "\n")));
     expect(templates.size).toBe(1);
     const [only] = templates;
     expect(only.match(/^## .+$/gm)).toEqual(["## Narration style", "## What you are given", "## What this line earns"]);

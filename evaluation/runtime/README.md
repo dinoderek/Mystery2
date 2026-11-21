@@ -96,10 +96,8 @@ and marks the run INCOMPLETE.
 `./dev eval baseline save <run> <file>` stores a complete run's summary (narrator,
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints the change per case and group.
-`cases/search-reveals/` has `haiku` and `sonnet` baselines: replay it as in
-Running, then `baseline compare` the run.
-
-The talk library, `cases/talk-reveals/`, keeps Haiku and Sonnet baselines in `baselines/`. Re-run the folder with `judge turn`, then `baseline compare`.
+`cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
+baselines: replay one as in Running, then `baseline compare` the run.
 
 ## Running
 

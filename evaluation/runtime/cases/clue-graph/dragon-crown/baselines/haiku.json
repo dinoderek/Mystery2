@@ -1,10 +1,10 @@
 {
   "schema_version": "mystery-expect-summary/1",
   "run": {
-    "id": "2026-11-21/21-41-53-judge-turn",
-    "started_at": "2026-11-21T21:41:53.549Z",
-    "commit": "c3bd2180e74c9055b46c07173907c90e52fcb6fb",
-    "tree_clean": false,
+    "id": "2026-11-21/21-50-28-judge-turn",
+    "started_at": "2026-11-21T21:50:28.520Z",
+    "commit": "68379e80b85362131528349e36f80d890b4a36cb",
+    "tree_clean": true,
     "argv": [
       "evaluation/runtime/cases/clue-graph/dragon-crown",
       "--narrator",
@@ -16,7 +16,7 @@
       "--concurrency",
       "6",
       "--output-root",
-      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-287/bded2847-ca36-42c9-8da0-075ad9ea9e8c/scratchpad/haiku"
+      "<output root>"
     ]
   },
   "complete": true,
@@ -526,10 +526,10 @@
         {
           "samples": 5,
           "graded": 5,
-          "right": 4,
-          "share": 0.8,
+          "right": 5,
+          "share": 1,
           "withheld": 0,
-          "given_away": 1,
+          "given_away": 0,
           "misread": 0,
           "judged": 0,
           "unseen": 0,
@@ -791,10 +791,10 @@
         {
           "samples": 15,
           "graded": 15,
-          "right": 14,
-          "share": 0.9333333333333333,
+          "right": 15,
+          "share": 1,
           "withheld": 0,
-          "given_away": 1,
+          "given_away": 0,
           "misread": 0,
           "judged": 0,
           "unseen": 0,

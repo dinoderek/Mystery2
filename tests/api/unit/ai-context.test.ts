@@ -291,6 +291,7 @@ describe("ai-context guardrails", () => {
       revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
     });
+    expect(searchContext.search_context).not.toHaveProperty("has_more_clues");
     expect(searchContext.conversation_history[0]?.payload).toMatchObject({
       revealed_clue_text: "crumbs",
     });

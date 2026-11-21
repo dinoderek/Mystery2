@@ -78,7 +78,7 @@ each `rationale`:
   clues, and the backend rejects a locked reveal. An all-locked sub-location
   stays hidden until its pointer is found, but a search naming it finds its
   clue, so name it as a child would. The search narrator never sees a
-  `rationale`: write it for talk.
+  `rationale`.
 - **Talk — earned by use.** Each character clue reaches the narrator with its
   `requires_rationale` and a precomputed `player_can_use_prerequisites` flag
   (prerequisite *ids* are not sent). Holding is not earning: the narrator

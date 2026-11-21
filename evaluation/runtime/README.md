@@ -97,8 +97,8 @@ and marks the run INCOMPLETE.
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints the change per case and group.
 `cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
-baselines, and search a `<model>-after` one since its prompt fix: replay one as
-in Running, then `baseline compare` the run against each.
+baselines, and search also `<model>-after` ones: replay one as in Running, then
+`baseline compare` the run against each.
 
 ## Running
 

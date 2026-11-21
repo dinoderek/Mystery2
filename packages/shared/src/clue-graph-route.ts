@@ -40,13 +40,13 @@ class Router {
     return (id) => ((this.bit.get(id) ?? 0n) & held) !== 0n;
   }
 
-  /** The rule holds over held clues not taken back. */
+  /**
+   * The rule holds over the clues held. A statement taken back still counts:
+   * what a retraction does to a conclusion in play is the engine's, and
+   * counting it keeps "holding more never closes a way in" true.
+   */
   done(held: Held): boolean {
-    let back = 0n;
-    for (const [id, clue] of Object.entries(this.graph.clues))
-      if (clue.kind === "statement" && this.holds(held)(id))
-        for (const target of clue.takes_back ?? []) back |= this.bit.get(target)!;
-    return ruleMet(this.graph, this.rule, this.holds(held & ~back));
+    return ruleMet(this.graph, this.rule, this.holds(held));
   }
 
   private reachable(id: string, held: Held): boolean {

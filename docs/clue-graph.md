@@ -34,16 +34,16 @@ A gate has up to three parts:
 
 - `after`: earlier clues from the same character that must be out first;
 - `use`: clues the player shows this character, `any` or `all`;
-- `line`: a line of questioning in words, with the tell that hints at it
-  (`hinted_by`).
+- `line`: a line of questioning in words, with the character's tell that hints
+  at it (`hinted_by`).
 
 With `after` alone, the clue comes when asked once those are out: a confession
 is a statement gated on every other crack. With `use` and `line`, either opens
 it. `physical: true` marks a gate a bluff cannot open. A gated statement may
 `takes_back` earlier false statements of the same character.
 
-Using a clue means showing it to the character or making its point at them.
-Holding it is not using it.
+Using a clue means showing it or making its point at the character; holding it
+is not using it.
 
 ## The case file
 
@@ -69,8 +69,8 @@ graph and the events, never authored.
 
 ## Validation
 
-`validateClueGraph(value)` returns the typed case or throws a ZodError whose
-issues carry field paths:
+`validateClueGraph(value)` returns the typed case or throws a ZodError with
+field paths:
 
 ```sh
 npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
@@ -79,7 +79,7 @@ npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
 The command exits 0 when valid, 1 for an invalid case, 2 for an unreadable file
 or invalid JSON, and 3 for usage errors.
 
-First every reference must name the right thing: a gate's `after` and a
+First, references must fit: a gate's `after` and a
 `takes_back` name clues of the same character, `hinted_by` a tell, `seen.with`
 the character's own statement, `clears` a suspect. Exactly one character is the
 culprit and exactly one conclusion names them.
@@ -99,9 +99,9 @@ naming the clue, conclusion, suspect or spot, when:
 - a spot, or a location's plain search, holds more than one clue;
 - the `after` links form a cycle.
 
-A conclusion's rule counts every reachable clue. On a route it counts only
-statements not taken back, so a conclusion can fall when its statement is
-retracted.
+Both checks count a statement taken back, so holding more never closes a way
+in; a retraction's effect in play is the engine's. A subject
+tell counts as reached once its character is met.
 
 ## Turn cost
 

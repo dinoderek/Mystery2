@@ -213,7 +213,7 @@ describe("the graph checks", () => {
       'locations.workshop.spots.0.revealed_by: Reference "missing" must name another clue',
       'locations.workshop.spots.1.name: Spot "the window over the garden" is listed twice',
       'clues.clue_ladder_tape.source.spot: Spot "the roof" must be one of "thorne_garden"\'s spots',
-      'clues.clue_hale_toby_upset.reached.gate.line.hinted_by: Reference "hale_toby_fine" must name another tell',
+      'clues.clue_hale_toby_upset.reached.gate.line.hinted_by: Reference "hale_toby_fine" must name another tell from "hale"',
       'clues.toby_no_key.reached.prompted_by.1: Reference "nothing" must name another clue',
       'clues.toby_not_mia.reached.gate.after.0: Reference "mia_alibi" must name another clue from "toby"',
       'clues.toby_not_mia.reached.gate.use.any.0: Reference "ghost" must name another clue',
@@ -239,6 +239,25 @@ describe("the graph checks", () => {
     ]);
   });
 
+  it("rejects a conclusion sharing an ID with a clue, and a hint from someone else", () => {
+    const graph = greenhouse();
+    graph.conclusions.clue_snapped_bench = { text: "Shadowed.", rule: "clue_welly_prints" };
+    set(graph, "clues.clue_hale_toby_upset.reached.gate.line.hinted_by", "react_toby_trainers");
+    expect(issues(graph)).toEqual([
+      'clues.clue_hale_toby_upset.reached.gate.line.hinted_by: Reference "react_toby_trainers" must name another tell from "hale"',
+      'conclusions.clue_snapped_bench: Conclusion "clue_snapped_bench" shares its ID with a clue',
+    ]);
+  });
+
+  it("stops at a spot listed twice", () => {
+    const graph = greenhouse();
+    graph.locations.greenhouse.spots[3].name = "the smashed pumpkin";
+    expect(issues(graph)).toEqual([
+      'locations.greenhouse.spots.3.name: Spot "the smashed pumpkin" is listed twice',
+      'clues.clue_key_in_water_butt.source.spot: Spot "the water butt by the door" must be one of "greenhouse"\'s spots',
+    ]);
+  });
+
   it("rejects a conclusion that rests on itself", () => {
     const graph = greenhouse();
     graph.conclusions.nobody_broke_in.rule = { all: ["clue_glass_outside", "prints_explained"] };
@@ -259,11 +278,19 @@ describe("the culprit route", () => {
     expect(cheapestRoute(graph, "clue_dobbs_crash_time")).toBe(2);
   });
 
-  it("counts only statements not taken back", () => {
+  it("still counts a statement once it is taken back", () => {
     const graph = greenhouse();
     expect(cheapestRoute(graph, "thorne_never_set_foot")).toBe(2);
-    expect(cheapestRoute(graph, { all: ["thorne_never_set_foot", "clue_thorne_measured"] })).toBeNull();
+    expect(cheapestRoute(graph, { all: ["thorne_never_set_foot", "clue_thorne_measured"] })).toBe(3);
   });
+
+  it("finds a route a conversation could pass by taking a clue back", () => {
+    const graph = greenhouse();
+    set(graph, "clues.clue_thorne_measured.reached.gate.use.any", ["clue_toby_thorne_ladder"]);
+    set(graph, "clues.thorne_ladder_thursday.reached.gate.use.any", ["react_toby_trainers"]);
+    expect(cheapestRoute(graph, { all: ["thorne_never_set_foot", "thorne_ladder_thursday"] })).toBe(4);
+  });
+
 });
 
 describe("the clue graph schema", () => {

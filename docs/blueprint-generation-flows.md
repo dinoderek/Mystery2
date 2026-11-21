@@ -2,8 +2,8 @@
 
 V2 generation, artwork and narration. Schema:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF runtime](msf-gameplay.md); [clue graph](clue-graph.md). “Input” is sent; “attached” is paired with
-its output. Sessions store ids.
+`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md). “Input” is sent to the model; “attached” is paired with
+its output; sessions store ids.
 
 ## Generating a blueprint
 
@@ -18,7 +18,7 @@ its output. Sessions store ids.
   image ids; strict-mode nulls are removed.
 
 The agent backend gets both in its workspace. Both save
-`result.json` after the schema and mechanical checks; a rejected blueprint is
+`result.json` after schema and mechanical checks; a rejected blueprint is
 kept, never installed (`evaluation/README.md`).
 
 ### Repair rounds

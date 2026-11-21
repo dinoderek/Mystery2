@@ -119,6 +119,7 @@ function checkClueReferences(
       refs.clue([...at, "gate", "line", "hinted_by"], gate.line.hinted_by, {
         self: id,
         kind: "tell",
+        from,
       });
   }
   if (clue.kind === "statement")
@@ -141,7 +142,7 @@ function checkReferences(graph: ClueGraphCase, report: Report): boolean {
     const names = new Set<string>();
     location.spots.forEach((spot, index) => {
       if (names.has(spot.name))
-        report(["locations", id, "spots", index, "name"], `Spot "${spot.name}" is listed twice`);
+        refs.fail(["locations", id, "spots", index, "name"], `Spot "${spot.name}" is listed twice`);
       names.add(spot.name);
       if (spot.revealed_by !== undefined)
         refs.clue(["locations", id, "spots", index, "revealed_by"], spot.revealed_by, {
@@ -152,6 +153,8 @@ function checkReferences(graph: ClueGraphCase, report: Report): boolean {
   for (const [id, clue] of Object.entries(graph.clues))
     checkClueReferences(refs, id, clue, graph);
   for (const [id, conclusion] of Object.entries(graph.conclusions)) {
+    if (id in graph.clues)
+      refs.fail(["conclusions", id], `Conclusion "${id}" shares its ID with a clue`);
     refs.rule(["conclusions", id, "rule"], conclusion.rule);
     const named = conclusion.clears ?? conclusion.culprit;
     if (named !== undefined) refs.character(["conclusions", id], named);

@@ -7,6 +7,8 @@ import { readNarrationEvent } from "../narration.ts";
 import { buildDiscoveryRecords } from "../clue-discovery.ts";
 import { buildGameState } from "../game-state-view.ts";
 import { sessionCase } from "../session-case.ts";
+import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
+import { playedEvents } from "../turn/no-turn.ts";
 
 export async function handle(
   req: Request,
@@ -75,8 +77,12 @@ export async function handle(
 
     // The notebook: discovered clues grouped by mini-mystery thread. Built from
     // event history (the source of truth) and joined against the blueprint.
+    // A clue-graph case adds its leads and what was taken back.
+    const records = buildDiscoveryRecords(blueprint, events ?? []);
+    const marks = blueprint.clue_graph ? notebookMarks(blueprint.clue_graph, playedEvents(events ?? [])) : null;
     const gameState = buildGameState(blueprint, {
-      discovered_clues: buildDiscoveryRecords(blueprint, events ?? []),
+      discovered_clues: marks ? markClues(blueprint.clue_graph!, records, marks.taken_back) : records,
+      ...(marks ? { leads: marks.leads } : {}),
       time_remaining: session.time_remaining,
       location: session.current_location_id,
       mode: session.mode,

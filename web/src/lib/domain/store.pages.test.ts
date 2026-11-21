@@ -47,6 +47,7 @@ function createStore(history: NarrationEvent[]) {
     locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }],
     characters: [],
     discovered_clues: [],
+    leads: [],
     time_remaining: 10,
     location: 'Kitchen',
     mode: 'explore',

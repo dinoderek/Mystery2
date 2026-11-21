@@ -12,6 +12,7 @@
 // 8. Answer from what was saved.
 
 import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { AIConfigError } from "../ai-config.ts";
@@ -190,7 +191,10 @@ async function answerAndKeep(
   return answer;
 }
 
-function answerFromSave(outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
+function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
+  // A clue-graph case adds its leads and every clue taken back; the clues the turn found say what they are.
+  const graph = game.blueprint.clue_graph;
+  const marks = graph ? notebookMarks(graph, [...game.history, ...effect.events.map(({ event }) => ({ payload: event.payload }))]) : null;
   return {
     kind: "turn",
     events: effect.events.map(({ sequence, event }) => ({
@@ -200,7 +204,8 @@ function answerFromSave(outcome: ActionOutcome, effect: TurnEffect): TurnPlayedR
       narration_parts: event.narration_parts,
     })),
     state: effect.state,
-    revealed_clues: outcome.revealed_clues,
+    revealed_clues: graph && marks ? markClues(graph, outcome.revealed_clues, marks.taken_back) : outcome.revealed_clues,
+    ...(marks ? { leads: marks.leads, taken_back: marks.taken_back } : {}),
     result: outcome.result,
   };
 }
@@ -261,5 +266,5 @@ export async function playTurn(
   });
   logSaved(runtime, game, outcome, effect);
 
-  return answerFromSave(outcome, effect);
+  return answerFromSave(game, outcome, effect);
 }

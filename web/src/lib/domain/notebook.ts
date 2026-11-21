@@ -113,6 +113,14 @@ export function buildPeopleView(state: GameState | null): PersonEntry[] {
   });
 }
 
+/** The word the notebook puts beside a clue, when there is one: a statement taken back, or a tell the player noticed. */
+export function clueMark(clue: DiscoveredClue): 'taken back' | 'noticed' | null {
+  if (clue.taken_back) {
+    return 'taken back';
+  }
+  return clue.kind === 'tell' ? 'noticed' : null;
+}
+
 export type ClueBucketKind = 'places' | 'people' | 'other';
 
 export interface ClueGroup {

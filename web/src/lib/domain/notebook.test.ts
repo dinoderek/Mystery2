@@ -3,6 +3,7 @@ import {
   NOTEBOOK_SECTIONS,
   buildPeopleView,
   buildPlacesView,
+  clueMark,
   groupCluesByOrigin,
   matchesLocation,
   nextSection,
@@ -37,6 +38,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       },
     ],
     discovered_clues: [],
+    leads: [],
     time_remaining: 10,
     location: 'Kitchen',
     mode: 'explore',
@@ -171,6 +173,28 @@ describe('buildPeopleView', () => {
 
   it('returns nothing without a state', () => {
     expect(buildPeopleView(null)).toEqual([]);
+  });
+});
+
+describe('clueMark', () => {
+  const clue: DiscoveredClue = {
+    id: 'c1',
+    text: 'Toby was nowhere near.',
+    source: 'talk',
+    origin: { kind: 'character', character_id: 'toby', character_name: 'Toby' },
+    discovered_at: null,
+    off_script: false,
+  };
+
+  it('marks a statement taken back, and a tell the player noticed', () => {
+    expect(clueMark({ ...clue, kind: 'statement', taken_back: true })).toBe('taken back');
+    expect(clueMark({ ...clue, kind: 'tell', taken_back: false })).toBe('noticed');
+  });
+
+  it('marks nothing on a clue of a case that sends no marks, or a statement that stands', () => {
+    expect(clueMark(clue)).toBeNull();
+    expect(clueMark({ ...clue, kind: 'statement', taken_back: false })).toBeNull();
+    expect(clueMark({ ...clue, kind: 'evidence', taken_back: false })).toBeNull();
   });
 });
 

@@ -17,6 +17,7 @@ import {
   LOCATIONS,
   NARRATOR_SPEAKER,
   characterSpeaker,
+  createNotebookLead,
   createRevealedClue,
   createTurnPlayedResponse,
   createTurnQuitResponse,
@@ -40,6 +41,7 @@ function createStore(mode: 'explore' | 'talk' | 'accuse' = 'explore') {
       sex: character.sex,
     })),
     discovered_clues: [],
+    leads: [],
     time_remaining: 10,
     location: 'loc-kitchen',
     mode,
@@ -64,6 +66,50 @@ function event(event_type: string, text: string, payload?: Record<string, unknow
 function typesOf(events: NarrationEvent[] | undefined): string[] {
   return (events ?? []).map((entry) => entry.event_type);
 }
+
+describe('a clue-graph turn', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('replaces the leads and marks the clues the turn says were taken back', async () => {
+    const store = createStore();
+    store.state!.discovered_clues = [
+      createRevealedClue({ id: 'said', kind: 'statement', taken_back: false }),
+      createRevealedClue({ id: 'seen', kind: 'evidence', taken_back: false }),
+    ];
+    store.state!.leads = [createNotebookLead({ key: 'talk:thorne', new: true })];
+    answer(
+      createTurnPlayedResponse({
+        revealed_clues: [createRevealedClue({ id: 'later', kind: 'statement', taken_back: false })],
+        leads: [createNotebookLead({ key: 'spot:butt', text: 'Something new to search at the greenhouse.', new: true })],
+        taken_back: ['said'],
+      }),
+    );
+
+    await store.submitInput('These are your boot prints');
+
+    expect(store.state?.leads).toEqual([
+      { key: 'spot:butt', text: 'Something new to search at the greenhouse.', new: true },
+    ]);
+    expect(store.state?.discovered_clues.map((clue) => [clue.id, clue.taken_back])).toEqual([
+      ['said', true],
+      ['seen', false],
+      ['later', false],
+    ]);
+  });
+
+  it('leaves the leads and clues of a case that sends no marks as they were', async () => {
+    const store = createStore();
+    store.state!.leads = [createNotebookLead()];
+    answer(createTurnPlayedResponse());
+
+    await store.submitInput('search');
+
+    expect(store.state?.leads).toEqual([createNotebookLead()]);
+  });
+});
 
 describe('playing a line', () => {
   beforeEach(() => {

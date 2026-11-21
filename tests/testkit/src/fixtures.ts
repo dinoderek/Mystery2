@@ -34,6 +34,7 @@ import {
   GameEnterResponseSchema,
   GameGetResponseSchema,
   RevealedClueSchema,
+  NotebookLeadSchema,
   type Speaker,
   type NarrationPart,
   type NarrationEvent,
@@ -50,6 +51,7 @@ import {
   type GameEnterResponse,
   type GameGetResponse,
   type RevealedClue,
+  type NotebookLead,
 } from "@my2/shared";
 
 export function createMsfCaseFile(overrides: Partial<MsfCaseFile> = {}): MsfCaseFile {
@@ -426,6 +428,17 @@ export function createRevealedClue(overrides?: Partial<RevealedClue>): RevealedC
     ...overrides,
   };
   return validate(RevealedClueSchema, clue);
+}
+
+/** A clue-graph lead, as the notebook lists it. */
+export function createNotebookLead(overrides?: Partial<NotebookLead>): NotebookLead {
+  const lead: NotebookLead = {
+    key: "talk:thorne",
+    text: "Mr. Thorne may know more.",
+    new: false,
+    ...overrides,
+  };
+  return validate(NotebookLeadSchema, lead);
 }
 
 // ---------------------------------------------------------------------------

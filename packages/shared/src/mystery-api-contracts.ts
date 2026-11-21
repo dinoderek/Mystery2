@@ -84,7 +84,7 @@ export const GameEnterResponseSchema = TurnResponseBaseSchema.extend({
   visible_characters: z.array(
     z.object({
       first_name: z.string().min(1),
-      last_name: z.string().min(1),
+      last_name: z.string(),
       sex: CharacterSexSchema,
     }),
   ),
@@ -113,12 +113,29 @@ export const ClueOriginSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-/** A clue found this turn, as the notebook records it. */
+/**
+ * A clue found this turn, as the notebook records it. A clue-graph case adds
+ * what the notebook shows of it: its `kind`, and whether a later clue took it
+ * back. Neither says whether a statement was true.
+ */
 export const RevealedClueSchema = DiscoveredClueSchema.extend({
   source: z.enum(["search", "talk"]),
   origin: ClueOriginSchema,
   discovered_at: z.string().datetime().nullable(),
   off_script: z.boolean(),
+  kind: z.enum(["evidence", "statement", "tell"]).optional(),
+  taken_back: z.boolean().optional(),
+});
+
+/**
+ * What the player needs next, in words that name who or where only. `new` is
+ * set on the turn the lead first appears. Clue-graph cases only.
+ */
+export const NotebookLeadSchema = z.object({
+  /** Stable across turns, so the browser can tell one lead from another. */
+  key: z.string().min(1),
+  text: z.string().min(1),
+  new: z.boolean(),
 });
 
 /** Where the game stands once a turn is saved. */
@@ -135,6 +152,10 @@ export const TurnPlayedResponseSchema = z.object({
   events: z.array(NarrationEventSchema).min(1),
   state: TurnStateSchema,
   revealed_clues: z.array(RevealedClueSchema),
+  /** Clue-graph cases: the leads as they stand after this turn. */
+  leads: z.array(NotebookLeadSchema).optional(),
+  /** Clue-graph cases: every clue in the notebook taken back so far, not only this turn's. */
+  taken_back: z.array(z.string().min(1)).optional(),
   /** Set when this turn ended the case. */
   result: OutcomeSchema.nullable(),
 });
@@ -215,6 +236,8 @@ export const GameStateSchema = z.object({
   characters: z.array(CharacterSummarySchema),
   // The notebook's clues, with where each was found.
   discovered_clues: z.array(RevealedClueSchema).optional(),
+  // Clue-graph cases: what to do next.
+  leads: z.array(NotebookLeadSchema).optional(),
   time_remaining: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,
@@ -331,6 +354,7 @@ export type NarrationEvent = z.infer<typeof NarrationEventSchema>;
 export type GameTurnRequest = z.infer<typeof GameTurnRequestSchema>;
 export type ClueOrigin = z.infer<typeof ClueOriginSchema>;
 export type RevealedClue = z.infer<typeof RevealedClueSchema>;
+export type NotebookLead = z.infer<typeof NotebookLeadSchema>;
 export type TurnState = z.infer<typeof TurnStateSchema>;
 export type TurnPlayedResponse = z.infer<typeof TurnPlayedResponseSchema>;
 export type NoTurnLinePayload = z.infer<typeof NoTurnLinePayloadSchema>;

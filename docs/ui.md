@@ -11,24 +11,23 @@ New interactions should be commands before widgets.
   SPA. No `+page.server.ts` or `+layout.server.ts`; the only server code in
   `web/` is `src/routes/api/`.
 - Pages talk to the engine through `callApi` in `src/lib/api/client.ts`. The
-  store parses every answer with the shared schemas; a mismatch is logged and shown, never
-  retried.
+  store parses every answer with the shared schemas; a mismatch is logged and
+  shown, never retried.
 - Logic goes in plain `.ts` beside the rune stores in `src/lib/domain/`, not in
-  components: that is what the web unit suite covers, and components are covered
-  only by browser E2E.
-- Components are all in `src/lib/components/`. Look there before adding one.
+  components, which only browser E2E covers.
+- Components are all in `src/lib/components/`.
 
 ## The profile gate
 
 `src/routes/+layout.svelte` sends every route except `PUBLIC_PATHS` (`/login`,
 `/settings`) to `/login` until a profile is chosen. It renders nothing on a
-protected route while that redirect is in flight — otherwise the page mounts and
-fires its fetches signed out, and every session endpoint answers 401.
+protected route meanwhile, or the page mounts and fires its fetches signed out,
+and session endpoints answer 401.
 
-The gate is stricter than the server on purpose: you cannot play without a
-profile, but the server asks for one only where a session is involved
-("Identity and access" in `docs/architecture.md`). A route added to
-`PUBLIC_PATHS` may therefore call only endpoints that need no profile.
+The gate is stricter than the server on purpose: the server asks for a profile
+only where a session is involved ("Identity and access" in
+`docs/architecture.md`). A route added to `PUBLIC_PATHS` may therefore call
+only endpoints that need no profile.
 
 ## The session screen
 
@@ -49,6 +48,10 @@ Two keyboard rules are easy to break:
 
 The browser sends each line to `game-turn` as typed; the engine owns the
 grammar. `HelpModal` is the player's reference.
+
+A clue-graph case (`docs/clue-graph.md`) adds to CLUES: leads first, each
+`[ NEW ]` on its turn, then clues, a statement taken back struck through, a
+noticed tell labelled.
 
 ## Styling
 

@@ -35,6 +35,7 @@ function createStore() {
       sex: 'female',
     }],
     discovered_clues: [],
+    leads: [],
     time_remaining: 10,
     location: 'Kitchen',
     mode: 'explore',

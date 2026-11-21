@@ -32,7 +32,7 @@ A gate has up to three parts:
 With `after` alone, the clue comes when asked once those are out (a confession).
 With `use` and `line`, either opens it. `physical: true` cannot be bluffed. A
 gated statement may `takes_back` the character's earlier false statements.
-Using a clue means showing it or making its point; holding it is not.
+Using a clue means showing it or making its point, not holding it.
 
 ## The case file
 
@@ -82,8 +82,8 @@ call.
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`; first words come three a line from the greeting
-  on) and reports what the line `opened` and `answered`. A report the state
+  derived state (`talkState`; first words three a line from the greeting on)
+  and reports what the line `opened` and `answered`. A report the state
   did not offer fails the turn before anything is saved; one already held is
   dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
@@ -92,19 +92,20 @@ call.
   pointer is held. Before, it wins the words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
 - **Retraction** marks a statement taken back; a conclusion holds only on
-  clues held and not taken back.
+  clues held, not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
-  hidden spot newly visible; each marked new when it appears.
-- **Notebook**: held clues, without tells no clue depends on; never a
-  conclusion. No truth, rule or gate wording reaches the browser, and a
-  farewell narrator sees only clues already found.
+  hidden spot newly visible; each new when it appears.
+- **Notebook**: held clues, each with its kind and whether taken back, then the
+  leads. Never a conclusion or a tell nothing depends on; no truth, rule or
+  gate wording reaches the browser. A farewell narrator sees only clues
+  found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
 
 ## The narrator's judgement
 
-One talk prompt serves every character, generous on how the investigator puts
-things and strict on what they do. It judges which available gates a line
-opened. The line comes with the investigator's earlier lines in this
-conversation, so a clue shown and dodged opens its gate on a follow-up. Cases
-by kind, with baselines: `evaluation/runtime/cases/clue-graph/`.
+One talk prompt serves everyone: generous on how the investigator puts things,
+strict on what they do. It judges which offered gates a line opened. Each line
+comes with what the investigator said earlier in the conversation, so a clue
+shown and dodged opens on a follow-up. Cases and baselines:
+`evaluation/runtime/cases/clue-graph/`.

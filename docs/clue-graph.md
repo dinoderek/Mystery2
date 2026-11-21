@@ -89,9 +89,9 @@ folds those and derives the rest on every call.
   reports what the line `opened` and `answered`. Dodged evidence is read from
   the conversation. A report the state did not offer fails the turn before
   anything is saved; one already held is dropped; gibberish records nothing.
-- **Search** gives one clue. The engine names the spot from the words, and
-  the narrator must report what it holds; words naming no spot let the
-  narrator pick a visible spot's clue, or none. A hidden spot shows once its
+- **Search** (`graph_search`) gives one clue. The engine names the spot from
+  the words; the narrator reports what it holds, or for words naming none,
+  picks a visible spot's clue, the room's, or none. A hidden spot shows once its
   pointer is held. Before, it wins the words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
 - **Retraction** marks a statement taken back; a conclusion holds only on

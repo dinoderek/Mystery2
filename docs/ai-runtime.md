@@ -27,7 +27,7 @@ was used this turn.
 ## Roles
 
 The roles and their output contracts are `ai-contracts.ts`. `search` is one
-contract with two prompts: `search_bare` uses the `search_find` word budget
+contract; V2 uses two prompts: `search_bare` uses the `search_find` word budget
 when the backend already knows a clue will be revealed, else `search_empty`;
 `search_targeted` carries both, because the model decides the outcome
 (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each

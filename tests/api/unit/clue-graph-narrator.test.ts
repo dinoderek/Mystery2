@@ -210,7 +210,7 @@ describe("the clue-graph prompts", () => {
     ["graph_talk.line", { role: "graph_talk", character_id: "thorne", player_input: "Whose boot prints are these?", conversation_history: met }],
     ["graph_search.known", { role: "graph_search", search_query: "the ladder", conversation_history: met }],
     ["graph_search.judge", { role: "graph_search", search_query: "the muddy bits", conversation_history: met }],
-    ["accusation_judge", { role: "accusation_judge", player_input: "It was Toby.", round: 1, conversation_history: met }],
+    ["graph.accusation_judge", { role: "accusation_judge", player_input: "It was Toby.", round: 1, conversation_history: met }],
   ] as const)("%s is as recorded", async (name, input) => {
     const request = await buildRoleRequest({
       game_id: "case",
@@ -221,7 +221,7 @@ describe("the clue-graph prompts", () => {
     } as Parameters<typeof buildRoleRequest>[0]);
     expect(request.prompt).not.toMatch(/\{\{\s*\w+\s*\}\}/);
     await expect(request.prompt).toMatchFileSnapshot(`snapshots/narrator/${name}.prompt.txt`);
-    if (name !== "accusation_judge")
+    if (name !== "graph.accusation_judge")
       await expect(JSON.stringify(request.context, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${name}.context.json`);
   });
 });

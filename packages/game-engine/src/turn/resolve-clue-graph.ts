@@ -82,8 +82,10 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
   const harmless = new Set([...step.revealed, ...play.held]);
   const unoffered = [...output.opened, ...output.answered].filter((id) => !harmless.has(id));
   if (unoffered.length > 0) {
-    runtime.logger.log("talk.graph_report_unoffered", { game_id: game.game_id, character_id: character.id, clue_ids: unoffered });
-    rejectOutput(runtime, "talk", "Clue-graph greeting reported clues it did not offer");
+    rejectOutput(runtime, "talk", "Clue-graph greeting reported clues it did not offer", {
+      character_id: character.id,
+      clue_ids: unoffered,
+    });
   }
   const portrait = character.portrait_image_id ?? null;
 
@@ -134,7 +136,7 @@ function acceptLine(
   const gates = new Set(state.gates.map((gate) => gate.id));
   const answers = new Set(state.answers_if_asked.map((answer) => answer.id));
   const tells = new Set(state.shows_when.map((tell) => tell.id));
-  const harmless = new Set([...play.held, ...state.says_first.map((entry) => entry.id)]);
+  const dueNow = new Set(state.says_first.map((entry) => entry.id));
   const event = { type: "line" as const, character: characterId, opened: [] as string[], asked: [] as string[], seen: [] as string[] };
   const unoffered: string[] = [];
   const repeated: string[] = [];
@@ -143,14 +145,17 @@ function acceptLine(
     if (gates.has(id)) event.opened.push(id);
     else if (answers.has(id)) event.asked.push(id);
     else if (tells.has(id)) event.seen.push(id);
-    else (harmless.has(id) ? repeated : unoffered).push(id);
+    // First words due come out this line regardless.
+    else if (!dueNow.has(id)) (play.held.includes(id) ? repeated : unoffered).push(id);
   }
   if (repeated.length > 0) {
     runtime.logger.log("ask.clue_already_discovered", { game_id: game.game_id, character_id: characterId, clue_ids: repeated });
   }
   if (unoffered.length > 0) {
-    runtime.logger.log("ask.graph_report_unoffered", { game_id: game.game_id, character_id: characterId, clue_ids: unoffered });
-    rejectOutput(runtime, "ask", "Clue-graph conversation reported a gate or answer its state did not offer");
+    rejectOutput(runtime, "ask", "Clue-graph conversation reported a gate or answer its state did not offer", {
+      character_id: characterId,
+      clue_ids: unoffered,
+    });
   }
   return event;
 }
@@ -227,12 +232,21 @@ function searchEvent(
 ): Extract<ClueGraphEvent, { type: "search" }> {
   const { outcome } = resolved;
   if (outcome.kind === "known") {
-    if (revealed !== (outcome.finds?.id ?? null)) rejectOutput(runtime, "search", "Clue-graph search reported another clue than the spot holds");
+    if (revealed !== (outcome.finds?.id ?? null))
+      rejectOutput(runtime, "search", "Clue-graph search reported another clue than the spot holds", {
+        spot: resolved.spot,
+        reported_clue_id: revealed,
+        expected_clue_id: outcome.finds?.id ?? null,
+      });
     return resolved.spot === null ? { type: "search" } : { type: "search", spot: resolved.spot };
   }
   if (revealed === null) return { type: "search", spot: NO_SPOT };
   const candidate = outcome.candidates.find((entry) => entry.clue.id === revealed);
-  if (!candidate) rejectOutput(runtime, "search", "Clue-graph search revealed a clue no visible spot holds");
+  if (!candidate)
+    rejectOutput(runtime, "search", "Clue-graph search revealed a clue no visible spot holds", {
+      reported_clue_id: revealed,
+      candidate_clue_ids: outcome.candidates.map((entry) => entry.clue.id),
+    });
   return candidate.spot === null ? { type: "search" } : { type: "search", spot: candidate.spot };
 }
 

@@ -1,7 +1,7 @@
 # AI Runtime
 
-Narrator inputs, contracts and validation before saving a turn. MSF projections:
-[paired runtime](msf-gameplay.md). Profiles and providers are
+Narrator inputs, contracts and validation before saving a turn. Other formats:
+[MSF](msf-gameplay.md), [clue graph](clue-graph.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
 
@@ -106,7 +106,7 @@ Which blueprint fields reach which role is the "Narration at play" table in
 Each role's output contract is a Zod schema in `ai-contracts.ts`, the source of
 the parser and of the JSON Schema a provider hands the model
 (`roleOutputJsonSchema`). Output is validated before anything is written;
-invalid output is a retriable error.
+invalid output is retriable.
 
 - The parser forgives noise (a missing flag takes its default, junk ids are
   dropped); the JSON Schema asks for the clean shape, every field required.

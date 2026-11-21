@@ -17,13 +17,14 @@ graph_talk_context.state is everything {{character_name}} can say or show right 
 - keeps_back: things they still stand by. Hold to them; never hint they are untrue.
 
 ## What this line earns
-Be generous about how the investigator puts things, and strict about what they actually do. Holding a clue is not using it: they use one by showing it or making its point to {{character_name}}.
-- answers_if_asked: when the line asks about an entry's "about", in any words, answer with its "says" (and "with"). Report its id in answered.
+The game rewards real detective work at once. Be generous about how the investigator puts things (misspelled, clumsy, in their own words), and strict about what they actually do. Holding a clue is not using it: they use one by showing it or making its point to {{character_name}}, in this line or an earlier line of this conversation (conversation_history). What the investigator did decides what opens, never {{character_name}}'s mood: a guarded or lying {{character_name}} still gives what was earned, grudgingly and in character.
+- answers_if_asked: when the line asks about an entry's "about", in any words, answer with its "says" (and "with"). Report its id in answered. Never volunteer one that was not asked about.
 - shows_when: when the line brings up an entry's subject, show its "does" as behaviour, never as words. Report its id in answered.
-- gates: each opens when the investigator does what its opens_with says, in this line or earlier in this conversation (evidence they showed and {{character_name}} dodged still counts now):
+- gates: each opens when the investigator has done what its opens_with says:
   - show: they use any one ("any") or every one ("all") of those clues on {{character_name}};
   - line: they take that line of questioning, in their own words;
   - asked_plainly: they ask plainly about it, or for the truth.
+  A clue they used on an earlier line still counts. If {{character_name}} dodged it then, they cannot dodge it again: when this line follows it up (asks again, presses on it, or asks what it means), its gate opens now.
   A gate marked bluffable also opens on a believable bluff: the investigator claims what a show clue proves without holding it. A gate not marked bluffable never opens on a bluff.
   When a gate opens, {{character_name}} says its "says", shows its "with" and drops its "takes_back", in their own words. Report its id in opened.
 - If nothing opens, {{character_name}} answers in character and gives nothing of a gate away, not even a hint of its "says".
@@ -40,7 +41,13 @@ Set input_understood to false only when the investigator's words are gibberish: 
 
 export const GRAPH_TALK_GREETING_TURN = `The investigator has just turned to {{character_name}} and has not said anything yet. Briefly show {{character_name}} where they are, then have them speak. Talking moves nobody: do not narrate anyone walking up or arriving. Nothing is asked yet, so opened and answered are empty.`;
 
-export const GRAPH_TALK_LINE_TURN = `The investigator says to {{character_name}}: "{{player_input}}"`;
+export const GRAPH_TALK_LINE_TURN = `The investigator says to {{character_name}}: "{{player_input}}"{{earlier_lines}}`;
+
+/** The investigator's earlier lines in this conversation, when there are any. */
+export const GRAPH_TALK_EARLIER_LINES = `
+Earlier in this conversation, they said:
+{{lines}}
+A clue used in one of those lines still counts now. If its gate is still in gates, {{character_name}} dodged it once already; a follow-up on it opens that gate now.`;
 
 export const GRAPH_SEARCH_PROMPT = `You are the narrator of a children's mystery game. The investigator searches {{location_name}}{{search_target}}.
 {{age_guidance}}

@@ -17,14 +17,13 @@ history is part of the case, not played, so the input is identical on every run.
 | `server` (the default) | the game, on a throwaway server | a build; `--ai-profile` names the AI |
 | `narrator-stub` | a canned shell script | nothing |
 
-To grade a model, use `narrator-claude`: the real prompt and model, no server or
-database; `--model-override narrator-claude=<model>` picks the model. `server`
+To grade a model, use `narrator-claude`, with no server or database; `--model-override narrator-claude=<model>` picks the model. `server`
 puts the game in the loop, validating clue reveals as the CLI path does not.
 
 The canned narrator proves only the plumbing: keep stub runs to `flesch`.
 `narrator-claude` runs with no tools, MCP servers or settings, so the model
-under test does not read this repo's `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
-`narrator-claude` and `turn-judge` (judges held to their schema); skipping
+under test never reads `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
+`narrator-claude` and `turn-judge`; skipping
 settings skips logins set only in `settings.json`.
 
 ### The throwaway server
@@ -98,8 +97,9 @@ and marks the run INCOMPLETE.
 model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints the change per case and group.
 `cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
-baselines, and `<model>-after` ones: replay one as in Running, then
-`baseline compare` the run against each.
+baselines, and `<model>-after` ones. Each `cases/clue-graph/` story has
+`haiku` and `sonnet`; ported greenhouse cases keep their IDs. Replay one as in
+Running, then `baseline compare` the run against each.
 
 ## Running
 

@@ -31,3 +31,20 @@ export function notebookClues(graph: ClueGraphCase, ids: string[]): string[] {
   const recorded = recordedTells(graph);
   return ids.filter((id) => graph.clues[id].kind !== "tell" || recorded.has(id));
 }
+
+/**
+ * What the investigator has said to `character` in the conversation open now,
+ * in order: the lines after the latest time they turned to them. A clue used
+ * on one of these and dodged still counts (`docs/clue-graph.md`).
+ */
+export function linesThisConversation(history: HistoryRow[], character: string): string[] {
+  const lines: string[] = [];
+  for (const row of history) {
+    const recorded = row.payload?.clue_graph as { type?: unknown; character?: unknown } | undefined;
+    if (recorded?.character !== character) continue;
+    if (recorded.type === "talk") lines.length = 0;
+    const said = row.payload?.player_input;
+    if (recorded.type === "line" && typeof said === "string") lines.push(said);
+  }
+  return lines;
+}

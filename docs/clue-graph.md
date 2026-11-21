@@ -37,15 +37,13 @@ Using a clue means showing it or making its point, not holding it.
 ## The case file
 
 One JSON file, `"format": "clue-graph/1"`, maps keyed by ID; unknown fields
-(V2's agendas, parts and tells among them) are rejected.
+(V2's agendas among them) are rejected.
 
-- `metadata`: `id`, `title`, `target_age`, `time_budget`.
-- `opening`: the starting `location` and the public `text`.
-- `truth.timeline`: what really happened.
+- `metadata`; `opening` (starting `location`, public `text`); `truth.timeline`.
 - `locations`: `name`, `description` and `spots`. A spot with `revealed_by`
   is hidden until that clue is held.
 - `characters`: `name`, `location`, `role` (`culprit`, `suspect`,
-  `witness`), `sex` (for pronouns), `personality`, and `demeanor` lines by
+  `witness`), `sex`, `personality`, and `demeanor` lines by
   stance (`open`, `guarded`, `shaken`, `cornered`, `cleared`).
 - `clues`: `kind`, `text`, `source` (`location` and optional `spot`, or
   `character`), and for statements `truth`, with `why` when false.
@@ -55,10 +53,11 @@ One JSON file, `"format": "clue-graph/1"`, maps keyed by ID; unknown fields
 ## Validation
 
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
-1 invalid, 2 unreadable, 3 misuse. References must fit: `after`, `takes_back`,
-`hinted_by` and `seen.with` name the same character's clues; `clears` names a
-suspect; one culprit, named by one conclusion. Then, from the opening alone,
-it adds each clue whose way in is held, never counting a bluff, and rejects:
+1 invalid, 2 unreadable, 3 misuse. References must fit: `after`,
+`takes_back`, `hinted_by` and `seen.with` name the same character's clues;
+`clears` names a suspect; one culprit, named by one conclusion. Then, from the
+opening alone, it adds each clue whose way in is held, never counting a bluff,
+and rejects:
 
 - a clue never reached, or an asked clue with no prompt;
 - a worded gate no tell hints at;
@@ -73,22 +72,20 @@ started on the last turn gives only the greeting.
 
 ## In play
 
-The loader reads `clue-graph/` beside `msf/` and builds a rule-free world view
-for commands and arrivals; the catalog ID is a UUID derived from `metadata.id`.
-A start saves the validated case in `game_sessions.clue_graph_snapshot`
-(database version 5), which resume and every turn play. Each turn that counts
-saves its event (move, search, talk, line) in `payload.clue_graph`; the engine
-folds those and derives the rest on every call.
+The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
+view; the catalog ID is a UUID derived from `metadata.id`. A start saves the
+validated case in `game_sessions.clue_graph_snapshot`, which resume and every
+turn play. Each turn that counts saves its event (move, search, talk, line) in
+`payload.clue_graph`; the engine folds those and derives the rest on every
+call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
-- **Talk** (`graph_talk`, one call a line): the narrator gets the character
-  state (stance and demeanor, first words due, three a line from the
-  greeting on; answers; available gates, what opens each, what it gives and
-  takes back; subject tells; the story so far; statements to keep back) and
-  reports what the line `opened` and `answered`. Dodged evidence is read from
-  the conversation. A report the state did not offer fails the turn before
-  anything is saved; one already held is dropped; gibberish records nothing.
+- **Talk** (`graph_talk`, one call a line): the narrator gets the character's
+  derived state (`talkState`; first words three a line from the greeting on)
+  and reports what the line `opened` and `answered`. A report the state
+  did not offer fails the turn before anything is saved; one already held is
+  dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words; the narrator reports what it holds, or for words naming none,
   picks a visible spot's clue, the room's, or none. A hidden spot shows once its
@@ -104,3 +101,11 @@ folds those and derives the rest on every call.
   found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
+
+## The narrator's judgement
+
+One talk prompt serves everyone: generous on how the investigator puts things,
+strict on what they do. It judges which offered gates a line opened. Each line
+comes with what the investigator said earlier in the conversation, so a clue
+shown and dodged opens on a follow-up. Cases and baselines:
+`evaluation/runtime/cases/clue-graph/`.

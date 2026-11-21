@@ -181,7 +181,7 @@ opens only on **use**.
   `reaction`, conceding what its clues show, even against the alibi; a used
   `requires` gate gives its clue unless held back; every part earns the
   `confession`. The alibi comes up only when asked where or when. After
-  questions in three visits (`fallback_open`), it may give up a partial truth
+  questions in three visits (`fallback_open`), the character may yield a partial truth
   or gated clue, never a confession.
 - **Use is recorded.** `talk_conversation` reports the clues used
   (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The

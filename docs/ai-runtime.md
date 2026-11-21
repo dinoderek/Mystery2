@@ -166,10 +166,10 @@ answer.
 
 Every conversational gate (a self-protection part, earned by any of its
 `clue_ids`; a reveal's `yields_to_clue_ids`; a `requires` gate; a `clue` tell)
-opens only when the player **uses** a clue.
+opens only on **use**.
 
 - **Use, defined once** here and in the prompt's "Using a clue": the player
-  shows the clue to this character, or makes its point at them. Could the
+  shows this character the clue, or makes its point at them. Could the
   character react as if just shown it? Saying a word, or holding the clue, is
   not enough; a specific, plausible bluff or deduction stating its substance
   is. "Do you have snowshoes?" does not use the prints; "Why are there
@@ -181,7 +181,7 @@ opens only when the player **uses** a clue.
   `reaction`, conceding what its clues show, even against the alibi; a used
   `requires` gate gives its clue; every part earns the `confession`. The alibi
   comes up only when asked where or when. After questions in three visits
-  (`fallback_open`), the fallback may give up a partial truth or a gated clue,
+  (`fallback_open`), it may give up a partial truth or gated clue,
   never a confession.
 - **Use is recorded.** `talk_conversation` reports the clues used
   (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The

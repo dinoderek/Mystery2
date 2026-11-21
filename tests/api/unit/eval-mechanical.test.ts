@@ -52,9 +52,11 @@ describe("findOrphanClues", () => {
   it("flags a location clue that no reasoning path references", () => {
     const bp = cloneBlueprint();
     // Add a clue to the kitchen that no path mentions.
-    bp.world.locations[0].clues.push({
-      id: "loc-unused-mug",
-      text: "An unwashed mug sits in the sink, unrelated to the case.",
+    bp.world.locations[0].sub_locations.push({
+      id: "kitchen-sink",
+      name: "the sink",
+      hint: "A mug sits in the sink.",
+      clues: [{ id: "loc-unused-mug", text: "An unwashed mug sits in the sink, unrelated to the case." }],
     });
 
     const orphans = findOrphanClues(bp);
@@ -224,9 +226,11 @@ describe("runMechanicalChecks no_orphan_clues", () => {
 
   it("fails and surfaces the orphaned clue ids when a clue is unreferenced", () => {
     const bp = cloneBlueprint();
-    bp.world.locations[0].clues.push({
-      id: "loc-unused-mug",
-      text: "An unwashed mug sits in the sink, unrelated to the case.",
+    bp.world.locations[0].sub_locations.push({
+      id: "kitchen-sink",
+      name: "the sink",
+      hint: "A mug sits in the sink.",
+      clues: [{ id: "loc-unused-mug", text: "An unwashed mug sits in the sink, unrelated to the case." }],
     });
 
     const checks = runMechanicalChecks({

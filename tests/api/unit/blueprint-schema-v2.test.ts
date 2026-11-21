@@ -14,14 +14,20 @@ describe("Blueprint V2 schema", () => {
       world: {
         ...validBlueprintV2.world,
         locations: validBlueprintV2.world.locations.map((location, index) =>
-          index === 0
+          index === 1
             ? {
                 ...location,
-                clues: [
-                  ...location.clues,
+                sub_locations: [
                   {
-                    id: "loc-unlinked",
-                    text: "An extra clue with no path.",
+                    id: "hallway-rug",
+                    name: "under the small rug",
+                    hint: "The rug is slightly crooked.",
+                    clues: [
+                      {
+                        id: "loc-unlinked",
+                        text: "An extra clue with no path.",
+                      },
+                    ],
                   },
                 ],
               }

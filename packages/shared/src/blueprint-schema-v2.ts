@@ -204,7 +204,7 @@ export const BlueprintV2SubLocationSchema = z.object({
   clues: z
     .array(BlueprintV2LocationClueSchema)
     .describe(
-      "Clues discoverable by searching this sub-location. At most one clue per sub-location is recommended.",
+      "Clues discoverable by searching this sub-location. At most one: a search gives one clue, so the schema rejects more.",
     ),
 });
 
@@ -226,7 +226,7 @@ export const BlueprintV2LocationSchema = z.object({
     ),
   clues: z
     .array(BlueprintV2LocationClueSchema)
-    .describe("Location-level clues found by bare search. Sequential reveal."),
+    .describe("Location-level clues found by bare search. At most one: a search gives one clue, so the schema rejects more."),
   sub_locations: z
     .array(BlueprintV2SubLocationSchema)
     .default([])
@@ -819,6 +819,15 @@ export const BlueprintV2Schema = z
         new Set((location.sub_locations ?? []).map((subLoc) => subLoc.id)),
       );
 
+      if (location.clues.length > 1) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["world", "locations", locationIndex, "clues", 1],
+          message:
+            `Location "${location.id}" has ${location.clues.length} plain-search clues `
+            + `(${location.clues.map((clue) => clue.id).join(", ")}); a search gives one, so keep one.`,
+        });
+      }
       for (const [clueIndex, clue] of location.clues.entries()) {
         placedClues.push({
           clue,
@@ -850,6 +859,15 @@ export const BlueprintV2Schema = z
           );
         }
         subLocationIds.add(subLoc.id);
+        if (subLoc.clues.length > 1) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["world", "locations", locationIndex, "sub_locations", subLocIndex, "clues", 1],
+            message:
+              `Spot "${subLoc.id}" in location "${location.id}" holds ${subLoc.clues.length} clues `
+              + `(${subLoc.clues.map((clue) => clue.id).join(", ")}); a search gives one, so keep one.`,
+          });
+        }
 
         for (const [clueIndex, clue] of subLoc.clues.entries()) {
           placedClues.push({

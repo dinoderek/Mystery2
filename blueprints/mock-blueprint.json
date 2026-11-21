@@ -66,10 +66,6 @@
           {
             "id": "clue-wrapper",
             "text": "A wrapper on the sofa."
-          },
-          {
-            "id": "clue-half-eaten",
-            "text": "A half-eaten cookie."
           }
         ],
         "sub_locations": [
@@ -77,7 +73,12 @@
             "id": "subloc-bookshelf",
             "name": "behind the bookshelf",
             "hint": "Some books look like they were recently moved.",
-            "clues": []
+            "clues": [
+              {
+                "id": "clue-half-eaten",
+                "text": "A half-eaten cookie."
+              }
+            ]
           }
         ]
       }

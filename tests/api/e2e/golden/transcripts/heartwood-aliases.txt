@@ -62,7 +62,7 @@ pages
     step 13 | You (investigator): "travel to heartwood hollow"
     step 13 | Narrator (narrator): "[Mock] You arrive at Heartwood Hollow."
     step 14 | You (investigator): "inspect"
-    step 14 | Narrator (narrator): "[Mock] You search Heartwood Hollow and uncover a clue: Glowing footprints lead out of the empty pit. They go off through the ferns. Whoever took the trunk carried it away on foot."
+    step 14 | Narrator (narrator): "[Mock] You search Heartwood Hollow and uncover a clue: Glowing footprints lead out of the empty pit. They go off along a fading path through the ferns. Whoever took the trunk carried it away on foot."
   page 9 location "Eva's Leaf-Lab"
     step 15 | You (investigator): "head towards Eva's Leaf-Lab"
     step 15 | Narrator (narrator): "[Mock] You arrive at Eva's Leaf-Lab. Eva is here."

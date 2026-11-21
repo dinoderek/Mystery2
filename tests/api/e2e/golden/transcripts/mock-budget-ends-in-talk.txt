@@ -13,7 +13,7 @@ steps
   8  "see you"  mode=explore turns=5
   9  "move to living room"  mode=explore turns=4
   10  "search"  mode=explore turns=3 clues=clue-wrapper
-  11  "look"  mode=explore turns=2 clues=clue-half-eaten
+  11  "look behind the bookshelf"  mode=explore turns=2 clues=clue-half-eaten
   12  "go to the kitchen"  mode=explore turns=1
   13  "talk to Alice"  mode=accuse turns=0
   14  "help"  mode=accuse turns=0 opens=help
@@ -49,8 +49,8 @@ pages
     step 9 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
     step 10 | You (investigator): "search"
     step 10 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A wrapper on the sofa."
-    step 11 | You (investigator): "look"
-    step 11 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: A half-eaten cookie."
+    step 11 | You (investigator): "look behind the bookshelf"
+    step 11 | Narrator (narrator): "[Mock] You search behind the bookshelf in Living Room and uncover a clue: A half-eaten cookie."
   page 7 location "Kitchen"
     step 12 | You (investigator): "go to the kitchen"
     step 12 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."

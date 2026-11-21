@@ -110,7 +110,7 @@
         "clues": [
           {
             "id": "clue_footprint_trail",
-            "text": "Glowing footprints lead out of the empty pit. They go off through the ferns. Whoever took the trunk carried it away on foot.",
+            "text": "Glowing footprints lead out of the empty pit. They go off along a fading path through the ferns. Whoever took the trunk carried it away on foot.",
             "hint_location_id": "heartwood_hollow",
             "hint_sub_location_id": "sl_fern_path"
           }

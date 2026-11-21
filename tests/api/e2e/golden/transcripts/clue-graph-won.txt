@@ -1,0 +1,60 @@
+game: clue-graph-won
+blueprint: greenhouse-clue-graph
+
+steps
+  0  (start)  mode=explore turns=12
+  1  (enter)  mode=explore turns=12
+  2  "search"  mode=explore turns=11 clues=clue_boot_prints
+  3  "search the smashed pumpkin"  mode=explore turns=10 clues=clue_welly_prints
+  4  "go to the workshop"  mode=explore turns=9
+  5  "talk to Mr. Dobbs"  mode=talk turns=8 clues=dobbs_rounds,react_dobbs_slippers
+  6  "What about the noise last night?"  mode=talk turns=8 clues=clue_dobbs_crash_time
+  7  "bye"  mode=explore turns=8
+  8  "go to the garden"  mode=explore turns=7
+  9  "talk to Mr. Thorne"  mode=talk turns=6 clues=thorne_alibi,clue_thorne_mia_cake,thorne_never_set_foot
+  10  "Look at these: clue_boot_prints"  mode=talk turns=6 clues=clue_thorne_measured
+  11  "bye"  mode=explore turns=6
+  12  "notebook"  mode=explore turns=6 opens=notebook
+  13  "accuse"  mode=accuse turns=6
+  14  "It was Toby."  mode=accuse turns=6
+  15  "Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent."  mode=ended turns=6 result=win
+
+pages
+  page 0 opening "The Smashed Prize Pumpkin — clue graph"
+    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 1 location "The Greenhouse"
+    step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. Ms. Hale is here."
+    step 2 | You (investigator): "search"
+    step 2 | Narrator (narrator): "[Mock] You search The Greenhouse and uncover a clue: Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child."
+    step 3 | You (investigator): "search the smashed pumpkin"
+    step 3 | Narrator (narrator): "[Mock] You search the smashed pumpkin in The Greenhouse and uncover a clue: Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies."
+  page 2 location "Mr. Dobbs's Workshop"
+    step 4 | You (investigator): "go to the workshop"
+    step 4 | Narrator (narrator): "[Mock] You arrive at Mr. Dobbs's Workshop. Mr. Dobbs is here."
+  page 3 conversation "Mr. Dobbs"
+    step 5 | You (investigator): "talk to Mr. Dobbs"
+    step 5 | Narrator (narrator): "[Mock] Mr. Dobbs is here in Mr. Dobbs's Workshop. Mr. Dobbs says: On my eight o'clock rounds I shone my torch in. Bertha was whole, and the door was locked. He rubs the back of his neck and glances at the garden window. \"I should have gone out last night, slippers or no slippers.\""
+    step 6 | You (investigator): "What about the noise last night?"
+    step 6 | Mr. Dobbs (character): "[Mock] Mr. Dobbs says: At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again."
+  page 4 location "Mr. Dobbs's Workshop"
+    step 7 | You (investigator): "bye"
+    step 7 | Narrator (narrator): "[Mock] You say goodbye to Mr. Dobbs and look around again."
+  page 5 location "Mr. Thorne's Garden"
+    step 8 | You (investigator): "go to the garden"
+    step 8 | Narrator (narrator): "[Mock] You arrive at Mr. Thorne's Garden. Mr. Thorne is here."
+  page 6 conversation "Mr. Thorne"
+    step 9 | You (investigator): "talk to Mr. Thorne"
+    step 9 | Narrator (narrator): "[Mock] Mr. Thorne is here in Mr. Thorne's Garden. Mr. Thorne says: I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten. And I've never set foot in that school garden! His ears turn red and he scuffs one huge boot on the grass."
+    step 10 | You (investigator): "Look at these: clue_boot_prints"
+    step 10 | Mr. Thorne (character): "[Mock] Mr. Thorne says: All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!"
+  page 7 location "Mr. Thorne's Garden"
+    step 11 | You (investigator): "bye"
+    step 11 | Narrator (narrator): "[Mock] You say goodbye to Mr. Thorne and look around again."
+  page 8 accusation "The accusation"
+    step 13 | You (investigator): "accuse"
+    step 13 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 14 | You (investigator): "It was Toby."
+    step 14 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
+    step 15 | You (investigator): "Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent."
+    step 15 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"

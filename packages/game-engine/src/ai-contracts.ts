@@ -7,7 +7,8 @@ export type AIRoleName =
   | "talk_end"
   | "search"
   | "accusation_start"
-  | "accusation_judge";
+  | "accusation_judge"
+  | "graph_talk";
 
 // Prompt templates are keyed per concrete prompt. The "search" ROLE (output
 // contract) stays, but it has no template of its own: the handler always picks
@@ -15,7 +16,9 @@ export type AIRoleName =
 export type AIPromptKey =
   | Exclude<AIRoleName, "search">
   | "search_bare"
-  | "search_targeted";
+  | "search_targeted"
+  // A clue-graph search: the "search" contract, with its own prompt.
+  | "graph_search";
 
 export type AccusationResolution = "win" | "lose" | "continue";
 
@@ -44,6 +47,19 @@ export interface TalkConversationOutput {
   // Denials or claims the character newly made this turn, each short and in
   // their own terms ("never owned snowshoes").
   new_commitments: string[];
+}
+
+// One clue-graph talk line, greeting included (`docs/clue-graph.md`): the
+// narration, and the ids from the character's state the line earned. The engine
+// keeps only what the state offered and refuses the rest.
+export interface GraphTalkOutput {
+  narration: string;
+  // Gates the line opened.
+  opened: string[];
+  // Questions it answered, and subject tells it brought out.
+  answered: string[];
+  // False for gibberish: an in-character "what?", and nothing earned.
+  input_understood: boolean;
 }
 
 export interface TalkEndOutput {
@@ -183,6 +199,18 @@ const TalkConversationOutputSchema = roleObject({
   };
 });
 
+const GraphTalkOutputSchema = roleObject({
+  narration: nonEmptyString("narration"),
+  opened: idList,
+  answered: idList,
+  input_understood: flagDefaultingTo(true),
+}).transform((output): GraphTalkOutput => ({
+  ...output,
+  // An unintelligible line earns nothing, whatever the model listed.
+  opened: output.input_understood ? [...new Set(output.opened)] : [],
+  answered: output.input_understood ? [...new Set(output.answered)] : [],
+}));
+
 const TalkEndOutputSchema = roleObject({
   narration: nonEmptyString("narration"),
 });
@@ -230,6 +258,7 @@ const ROLE_OUTPUT_SCHEMAS = {
   search: SearchOutputSchema,
   accusation_start: AccusationStartOutputSchema,
   accusation_judge: AccusationJudgeOutputSchema,
+  graph_talk: GraphTalkOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
 function parseRoleOutput<S extends z.ZodTypeAny>(
@@ -272,6 +301,10 @@ export function parseTalkConversationOutput(
   value: unknown,
 ): TalkConversationOutput {
   return parseRoleOutput("talk_conversation", TalkConversationOutputSchema, value);
+}
+
+export function parseGraphTalkOutput(value: unknown): GraphTalkOutput {
+  return parseRoleOutput("graph_talk", GraphTalkOutputSchema, value);
 }
 
 export function parseTalkEndOutput(value: unknown): TalkEndOutput {

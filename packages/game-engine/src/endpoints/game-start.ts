@@ -91,6 +91,7 @@ function startDiagnostics(blueprint: PlayableBlueprint, relatedSequence?: number
 function startPayload(blueprint: PlayableBlueprint) {
   return {
     ...(blueprint.msf ? { case_format: "msf/0.1.0", case_revision: blueprint.msf.structure.metadata.revision } : {}),
+    ...(blueprint.clue_graph ? { case_format: "clue-graph/1" } : {}),
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
     starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
@@ -149,6 +150,7 @@ async function openCase(
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
         ...(blueprint.msf ? { msf_snapshot: blueprint.msf } : {}),
+        ...(blueprint.clue_graph ? { clue_graph_snapshot: blueprint.clue_graph } : {}),
       },
       events: [buildNarrationEvent(startEvent, 1)],
     });

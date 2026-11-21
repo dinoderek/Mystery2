@@ -10,6 +10,7 @@ import {
   resolveSearchRole,
   type RoleRequestName,
 } from "../../../packages/game-engine/src/role-request.ts";
+import { buildClueGraphBlueprint, validateClueGraph } from "@my2/shared";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
@@ -25,12 +26,19 @@ const NARRATION_STYLE = "salty harbor air and gull cries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let blueprint: any;
+// The clue-graph roles play the greenhouse, also for a reader of 10.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let graphBlueprint: any;
 
 beforeAll(async () => {
   blueprint = JSON.parse(
     await readFile("blueprints/mock-blueprint.json", "utf-8"),
   );
   blueprint.metadata.narration_style = NARRATION_STYLE;
+  graphBlueprint = buildClueGraphBlueprint(
+    validateClueGraph(JSON.parse(await readFile("blueprints/clue-graph/greenhouse-prizewinner.json", "utf-8"))),
+  );
+  graphBlueprint.metadata.narration_style = NARRATION_STYLE;
 });
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -92,6 +100,25 @@ function inputFor(role: RoleRequestName): any {
         next_clue: null,
         search_query: "under the bed",
       };
+    case "graph_talk":
+      return {
+        ...common,
+        role,
+        blueprint: graphBlueprint,
+        session: { ...session({ mode: "talk", current_talk_character_id: "hale" }), current_location_id: "greenhouse" },
+        character_id: "hale",
+        location_id: "greenhouse",
+        player_input: "Where is the key?",
+      };
+    case "graph_search":
+      return {
+        ...common,
+        role,
+        blueprint: graphBlueprint,
+        session: { ...session(), current_location_id: "greenhouse" },
+        location_id: "greenhouse",
+        search_query: null,
+      };
     case "accusation_start":
       return { ...common, role, session: session({ mode: "accuse" }) };
     case "accusation_judge":
@@ -122,6 +149,8 @@ describe("role coverage", () => {
       "accusation_judge",
       "accusation_start",
       "ambience",
+      "graph_search",
+      "graph_talk",
       "intro",
       "search_bare",
       "search_targeted",
@@ -143,7 +172,7 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     // Enumerated at module load so a newly registered role shows up here
     // automatically rather than silently going unasserted.
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge"] as RoleRequestName[],
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search"] as RoleRequestName[],
   )("%s renders the blueprint target_age, not a fallback", async (role) => {
     const prompt = await promptFor(role);
 
@@ -155,7 +184,7 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
 
   it.each(
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge"] as RoleRequestName[],
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search"] as RoleRequestName[],
   )("%s layers the blueprint narration_style", async (role) => {
     expect(await promptFor(role)).toContain(NARRATION_STYLE);
   });
@@ -165,7 +194,7 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     // registry but not to the lists.
     const asserted = new Set([
       "intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge",
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search",
     ]);
     for (const role of allRoleRequestNames()) {
       expect(asserted.has(role), `role "${role}" is not asserted above`).toBe(true);

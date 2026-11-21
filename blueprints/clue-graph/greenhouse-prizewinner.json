@@ -95,6 +95,7 @@
       "name": "Ms. Hale",
       "location": "greenhouse",
       "role": "witness",
+      "sex": "female",
       "personality": "Warm, sensible and fair, with a soft spot for her club.",
       "demeanor": {
         "open": "Relieved someone has come to help, and keen to get to the truth before noon.",
@@ -106,6 +107,7 @@
       "name": "Toby",
       "location": "potting_shed",
       "role": "culprit",
+      "sex": "male",
       "personality": "Bright, serious and a little bossy about plants. Normally honest, so lying makes him fidgety and fast-talking.",
       "demeanor": {
         "guarded": "Jumpy and over-eager to help. He keeps bringing the talk back to Mr. Thorne.",
@@ -118,6 +120,7 @@
       "name": "Mia",
       "location": "potting_shed",
       "role": "suspect",
+      "sex": "female",
       "personality": "Bubbly, chatty and quick to giggle, but she goes quiet when she is embarrassed. Loyal to her friends; she sticks up for Toby.",
       "demeanor": {
         "open": "Friendly and chatty.",
@@ -129,6 +132,7 @@
       "name": "Mr. Dobbs",
       "location": "workshop",
       "role": "witness",
+      "sex": "male",
       "personality": "Calm, slow-talking and kind, with a dry sense of humour. He likes everything tidy and written down.",
       "demeanor": {
         "open": "Friendly and helpful. He offers a cup of tea and answers plainly."
@@ -138,6 +142,7 @@
       "name": "Mr. Thorne",
       "location": "thorne_garden",
       "role": "suspect",
+      "sex": "male",
       "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener.",
       "demeanor": {
         "guarded": "Prickly and defensive. He has heard he is being blamed and is cross about it.",

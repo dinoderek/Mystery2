@@ -9,6 +9,8 @@ import {
   BlueprintV2Schema,
 } from "../../shared/src/blueprint-schema-v2.ts";
 import { buildMsfBlueprint, validateMsfCaseFile, type PlayableBlueprint } from "../../shared/src/msf-case.ts";
+import { buildClueGraphBlueprint } from "../../shared/src/clue-graph-case.ts";
+import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -77,6 +79,8 @@ export function createLocalContentStore(
       const candidate = JSON.parse(text);
       const blueprint = candidate?.$format === "MSF-CASE/1"
         ? buildMsfBlueprint(validateMsfCaseFile(candidate))
+        : candidate?.format === "clue-graph/1"
+        ? buildClueGraphBlueprint(validateClueGraph(candidate))
         : BlueprintV2Schema.parse(candidate);
       cache.set(filePath, { stamp: stampOf(stats), blueprint });
       return blueprint;
@@ -93,7 +97,7 @@ export function createLocalContentStore(
   function blueprintFiles(): string[] {
     const files: string[] = [];
 
-    for (const dir of options.blueprintDirs.flatMap((dir) => [dir, path.join(dir, "msf")])) {
+    for (const dir of options.blueprintDirs.flatMap((dir) => [dir, path.join(dir, "msf"), path.join(dir, "clue-graph")])) {
       let entries: fs.Dirent[];
       try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -147,7 +151,9 @@ export function createLocalContentStore(
         entries.push({ blueprint, source: path.basename(filePath) });
       }
 
-      return entries.sort((a, b) => Number(!!a.blueprint.msf) - Number(!!b.blueprint.msf));
+      // V2 cases first, then the other formats of a story.
+      const alternative = (entry: BlueprintSummaryEntry) => Number(entry.blueprint.schema_version !== "v2");
+      return entries.sort((a, b) => alternative(a) - alternative(b));
     },
 
     async loadBlueprint(

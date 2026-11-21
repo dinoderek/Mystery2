@@ -7,6 +7,7 @@ import {
   renderOutcomeLengthGuidance,
 } from "../../shared/src/age-profile.ts";
 import { buildTalkConversationTemplate, FULL_TALK_PROFILE, type TalkPromptProfile } from "./talk-prompt.ts";
+import { GRAPH_SEARCH_PROMPT, GRAPH_TALK_PROMPT } from "./clue-graph/prompts.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
 // `search_bare` defaults to the lean "nothing found" budget; the search handler
@@ -21,6 +22,10 @@ const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   search_targeted: "search_find",
   accusation_start: "accusation_open",
   accusation_judge: "accusation_verdict",
+  // A clue-graph greeting asks for `talk_greeting`, and a search whose outcome
+  // is known picks its budget (role-request.ts).
+  graph_talk: "talk_round",
+  graph_search: "search_find",
 };
 
 // Roles whose word budget depends on an outcome the model itself decides, so
@@ -32,6 +37,10 @@ const OUTCOME_LENGTH_BY_ROLE: Partial<
   Record<AIPromptKey, readonly { id: InteractionId; when: string }[]>
 > = {
   search_targeted: [
+    { id: "search_find", when: "if you reveal a clue" },
+    { id: "search_empty", when: "if you reveal nothing" },
+  ],
+  graph_search: [
     { id: "search_find", when: "if you reveal a clue" },
     { id: "search_empty", when: "if you reveal nothing" },
   ],
@@ -284,6 +293,8 @@ Return JSON:
   "narration": "...",
   "accusation_resolution": "continue | win | lose"
 }`,
+  graph_talk: GRAPH_TALK_PROMPT,
+  graph_search: GRAPH_SEARCH_PROMPT,
 };
 
 export interface LoadPromptOptions {

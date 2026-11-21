@@ -1,4 +1,5 @@
 import type { EngineContext, GameSessionSummaryRow } from "../context.ts";
+import { CLUE_GRAPH_TITLE_SUFFIX } from "../../../shared/src/clue-graph-case.ts";
 import { internalError } from "../errors.ts";
 import { createRequestLogger } from "../logging.ts";
 
@@ -61,7 +62,11 @@ function toSummary(
   session: GameSessionSummaryRow,
   titleByBlueprintId: Map<string, string>,
 ): SessionSummary {
-  const title = session.msf_title ? `${session.msf_title} — MSF experiment` : titleByBlueprintId.get(session.blueprint_id);
+  const title = session.msf_title
+    ? `${session.msf_title} — MSF experiment`
+    : session.clue_graph_title
+    ? `${session.clue_graph_title}${CLUE_GRAPH_TITLE_SUFFIX}`
+    : titleByBlueprintId.get(session.blueprint_id);
   const mystery_available = Boolean(title);
 
   return {

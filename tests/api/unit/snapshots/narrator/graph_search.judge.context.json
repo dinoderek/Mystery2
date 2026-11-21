@@ -1,0 +1,40 @@
+{
+  "game_id": "case",
+  "role_name": "search",
+  "mode": "talk",
+  "forced_by_timeout": false,
+  "location_id": "thorne_garden",
+  "character_id": "thorne",
+  "player_input": null,
+  "conversation_history": [],
+  "shared_mystery_context": {
+    "target_age": 10
+  },
+  "move_context": null,
+  "search_context": null,
+  "talk_context": null,
+  "accusation_start_context": null,
+  "accusation_judge_context": null,
+  "graph_search_context": {
+    "location_name": "Mr. Thorne's Garden",
+    "location_description": "A neat garden with rows of leeks and a shed covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden.",
+    "search_query": "the muddy bits",
+    "visible_spots": [
+      "the ladder by the fence",
+      "the prize-ribbon shed",
+      "Goliath's empty patch"
+    ],
+    "outcome": {
+      "kind": "judge",
+      "candidates": [
+        {
+          "spot": "the ladder by the fence",
+          "clue": {
+            "id": "clue_ladder_tape",
+            "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung."
+          }
+        }
+      ]
+    }
+  }
+}

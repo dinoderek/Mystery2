@@ -3,6 +3,7 @@ import {
   type AIRoleName,
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
+  parseGraphTalkOutput,
   parseSearchOutput,
   parseTalkConversationOutput,
   parseTalkEndOutput,
@@ -66,6 +67,11 @@ const MINIMAL_OUTPUTS: Record<
     fields: ["narration", "accusation_resolution"],
     sample: { narration: "Yes.", accusation_resolution: "win" },
     parse: parseAccusationJudgeOutput,
+  },
+  graph_talk: {
+    fields: ["narration", "opened", "answered", "input_understood"],
+    sample: { narration: "Hello.", opened: [], answered: [], input_understood: true },
+    parse: parseGraphTalkOutput,
   },
 };
 

@@ -36,7 +36,7 @@ import {
 } from "../narration.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import { nextSequenceAfter, playedEvents } from "../turn/no-turn.ts";
-import { buildMsfBlueprint } from "../../../shared/src/msf-case.ts";
+import { sessionCase } from "../session-case.ts";
 
 export async function handle(
   req: Request,
@@ -101,7 +101,7 @@ export async function handle(
       openrouterApiKey: aiProfile.openrouter_api_key,
     });
 
-    const blueprint = session.msf_snapshot ? buildMsfBlueprint(session.msf_snapshot) : await ctx.content.loadBlueprint(session.blueprint_id, narrationLogger);
+    const blueprint = await sessionCase(ctx.content, session, narrationLogger);
     if (!blueprint) {
       return internalError("Blueprint missing");
     }

@@ -13,6 +13,7 @@
 // throws, and "the thing does not exist" is a `null`/empty return. Handlers
 // therefore map a thrown error to 500 and a null to 404/400.
 
+import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
 import type { PlayableBlueprint, MsfCaseFile } from "../../shared/src/msf-case.ts";
 import type { SceneManifest } from "../../shared/src/scene-schema.ts";
 import type { LogWriter } from "./logging.ts";
@@ -28,6 +29,8 @@ export interface EnginePlayer {
 /** A row of `game_sessions`, as every handler expects to read it. */
 export interface GameSessionRow {
   msf_snapshot?: MsfCaseFile;
+  /** The validated clue-graph case the game started with: resume and every turn play this, not today's file. */
+  clue_graph_snapshot?: ClueGraphCase;
   id: string;
   player_id: string;
   blueprint_id: string;
@@ -45,6 +48,7 @@ export interface GameSessionRow {
 /** The subset of session columns the catalog endpoint reads. */
 export interface GameSessionSummaryRow {
   msf_title?: string;
+  clue_graph_title?: string;
   id: string;
   blueprint_id: string;
   mode: GameMode;
@@ -56,6 +60,7 @@ export interface GameSessionSummaryRow {
 
 export interface NewGameSession {
   msf_snapshot?: MsfCaseFile;
+  clue_graph_snapshot?: ClueGraphCase;
   player_id: string;
   blueprint_id: string;
   ai_profile_id: string;

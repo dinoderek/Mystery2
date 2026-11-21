@@ -66,13 +66,19 @@ export async function askRole<T>(
   }
 }
 
-/** Refuses a narrator answer the turn cannot use, as a retriable failure. */
-export function rejectOutput(runtime: TurnRuntime, action: string, reason: string): never {
+/** Refuses a narrator answer the turn cannot use, as a retriable failure, logged once with `details`. */
+export function rejectOutput(
+  runtime: TurnRuntime,
+  action: string,
+  reason: string,
+  details: Record<string, unknown> = {},
+): never {
   runtime.logger.log("request.ai_retriable", {
     game_id: runtime.game_id,
     action,
     code: "AI_INVALID_OUTPUT",
     error: reason,
+    ...details,
   });
   throw new RetriableAIError("AI output validation failed", { code: "AI_INVALID_OUTPUT" });
 }

@@ -5,6 +5,7 @@ export { validateMysteryStructure } from "./mystery-structure-validator.ts";
 export { MsfCaseFileSchema, validateMsfCaseFile, buildMsfBlueprint, type MsfCaseFile, type PlayableBlueprint } from "./msf-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
 export { validateClueGraph } from "./clue-graph-validator.ts";
+export { buildClueGraphBlueprint, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX } from "./clue-graph-case.ts";
 export { reachClues, type ReachedClue } from "./clue-graph-reach.ts";
 export { cheapestRoute } from "./clue-graph-route.ts";
 export { evaluateMysteryStructure } from "./mystery-structure-progress.ts";

@@ -41,7 +41,13 @@ Set input_understood to false only when the investigator's words are gibberish: 
 
 export const GRAPH_TALK_GREETING_TURN = `The investigator has just turned to {{character_name}} and has not said anything yet. Briefly show {{character_name}} where they are, then have them speak. Talking moves nobody: do not narrate anyone walking up or arriving. Nothing is asked yet, so opened and answered are empty.`;
 
-export const GRAPH_TALK_LINE_TURN = `The investigator says to {{character_name}}: "{{player_input}}"`;
+export const GRAPH_TALK_LINE_TURN = `The investigator says to {{character_name}}: "{{player_input}}"{{earlier_lines}}`;
+
+/** The investigator's earlier lines in this conversation, when there are any. */
+export const GRAPH_TALK_EARLIER_LINES = `
+Earlier in this conversation, they said:
+{{lines}}
+A clue used in one of those lines still counts now. If its gate is still in gates, {{character_name}} dodged it once already; a follow-up on it opens that gate now.`;
 
 export const GRAPH_SEARCH_PROMPT = `You are the narrator of a children's mystery game. The investigator searches {{location_name}}{{search_target}}.
 {{age_guidance}}

@@ -52,10 +52,12 @@ One JSON file, `"format": "clue-graph/1"`, maps keyed by ID; unknown fields
 
 ## Validation
 
-`npm run validate:clue-graph -- <file>` runs `validateClueGraph`. References must fit: `after`, `takes_back`,
-`hinted_by` and `seen.with` name the same character's clues; `clears` names a
-suspect; one culprit, named by one conclusion. Then, from the opening alone,
-it adds each clue whose way in is held, never counting a bluff, and rejects:
+`npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
+1 invalid, 2 unreadable, 3 misuse. References must fit: `after`,
+`takes_back`, `hinted_by` and `seen.with` name the same character's clues;
+`clears` names a suspect; one culprit, named by one conclusion. Then, from the
+opening alone, it adds each clue whose way in is held, never counting a bluff,
+and rejects:
 
 - a clue never reached, or an asked clue with no prompt;
 - a worded gate no tell hints at;
@@ -70,20 +72,20 @@ started on the last turn gives only the greeting.
 
 ## In play
 
-The loader reads `clue-graph/` beside `msf/` and builds a rule-free world view; the catalog ID is a UUID derived from `metadata.id`.
-A start saves the validated case in `game_sessions.clue_graph_snapshot`,
-which resume and every turn play. Each turn that counts
-saves its event (move, search, talk, line) in `payload.clue_graph`; the engine
-folds those and derives the rest on every call.
+The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
+view; the catalog ID is a UUID derived from `metadata.id`. A start saves the
+validated case in `game_sessions.clue_graph_snapshot`, which resume and every
+turn play. Each turn that counts saves its event (move, search, talk, line) in
+`payload.clue_graph`; the engine folds those and derives the rest on every
+call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`: stance, first words due three a line from the
-  greeting on, answers, available gates, the story so far, what tells
-  established, what to keep back) and reports what the line `opened` and
-  `answered`. A report the state did not offer fails the turn before anything
-  is saved; one already held is dropped; gibberish records nothing.
+  derived state (`talkState`; first words come three a line from the greeting
+  on) and reports what the line `opened` and `answered`. A report the state
+  did not offer fails the turn before anything is saved; one already held is
+  dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words; the narrator reports what it holds, or for words naming none,
   picks a visible spot's clue, the room's, or none. A hidden spot shows once its
@@ -102,6 +104,7 @@ folds those and derives the rest on every call.
 ## The narrator's judgement
 
 One talk prompt serves every character, generous on how the investigator puts
-things and strict on what they do. Its one judgement is which available gates
-a line opened; evidence shown and dodged still counts on a follow-up. Cases by kind, with Haiku and Sonnet
-baselines: `evaluation/runtime/cases/clue-graph/`.
+things and strict on what they do. It judges which available gates a line
+opened. The line comes with the investigator's earlier lines in this
+conversation, so a clue shown and dodged opens its gate on a follow-up. Cases
+by kind, with baselines: `evaluation/runtime/cases/clue-graph/`.

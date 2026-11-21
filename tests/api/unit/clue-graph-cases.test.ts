@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { AIContext } from "../../../packages/game-engine/src/ai-context.ts";
+import { linesThisConversation } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { GRAPH_TALK_PROMPT } from "../../../packages/game-engine/src/clue-graph/prompts.ts";
 import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import { loadCasesFrom, readBlueprint, type TurnCase } from "../../../evaluation/runtime/lib/case.ts";
@@ -84,6 +85,23 @@ describe("the clue-graph greenhouse case library", async () => {
     }
   });
 
+  it("bluffs only gates it may, with nothing held to show, and a held-not-used case holds what it does not use", () => {
+    const talk = built.filter(({ turnCase }) => turnCase.action.type === "ask");
+    const gatesOf = ({ context }: Built) => context.graph_talk_context!.state.gates;
+    for (const one of talk.filter(({ turnCase }) => turnCase.group === "bluffed")) {
+      const opened = gatesOf(one).filter((gate) => one.turnCase.expect!.revealed_clue_ids!.includes(gate.id));
+      expect(opened.length, one.turnCase.id).toBeGreaterThan(0);
+      for (const gate of opened) {
+        expect(gate.bluffable, `${one.turnCase.id}: ${gate.id}`).toBe(true);
+        expect(gate.opens_with.show?.clues.some((clue) => clue.held), `${one.turnCase.id}: ${gate.id} is shown, not bluffed`).toBe(false);
+      }
+    }
+    for (const one of talk.filter(({ turnCase }) => turnCase.group === "hold-held-not-used")) {
+      const held = gatesOf(one).flatMap((gate) => gate.opens_with.show?.clues ?? []).filter((clue) => clue.held);
+      expect(held.length, `${one.turnCase.id} holds nothing it could use`).toBeGreaterThan(0);
+    }
+  });
+
   it("expects of each search a clue its outcome can find, or none", () => {
     for (const { turnCase, context } of built.filter(({ turnCase }) => turnCase.action.type === "search")) {
       const id = turnCase.expect!.revealed_clue_id;
@@ -113,6 +131,7 @@ describe("the clue-graph talk prompt", async () => {
   function template({ prompt, context, turnCase }: Built): string {
     const talk = context.graph_talk_context!;
     return prompt
+      .replace(/\nEarlier in this conversation, they said:\n(- ".*"\n)+A clue used .*/, "")
       .split(`"${turnCase.action.player_input}"`).join('"<line>"')
       .split(talk.location_name).join("<location>")
       .split(talk.character.name).join("<character>");
@@ -130,5 +149,19 @@ describe("the clue-graph talk prompt", async () => {
     const [only] = templates;
     expect(only.match(/^## .+$/gm)).toEqual(["## Narration style", "## What you are given", "## What this line earns"]);
     expect(only).not.toMatch(/agenda|self.protect|commitment|fallback|## (Locked|Reactions|Held-back)/i);
+  });
+
+  it("restates the investigator's earlier lines in this conversation beside the line, and only those", () => {
+    const followUp = built.find(({ turnCase }) => turnCase.id === "toby-glass-follow-up")!;
+    expect(followUp.prompt).toContain('Earlier in this conversation, they said:\n- "Why do you think it was Mr. Thorne?"\n- "toby the glass from the window was OUTSIDE on the path not inside"\nA clue used in one of those lines still counts now. If its gate is still in gates, Toby dodged it once already');
+    const first = built.find(({ turnCase }) => turnCase.id === "thorne-boots-by-implication")!;
+    expect(first.prompt).not.toContain("Earlier in this conversation");
+
+    const line = (character: string, said: string) => ({ payload: { player_input: said, clue_graph: { type: "line", character } } });
+    const talk = (character: string) => ({ payload: { clue_graph: { type: "talk", character } } });
+    const history = [talk("toby"), line("toby", "first visit"), talk("mia"), line("mia", "to Mia"), talk("toby"), line("toby", "again"), { payload: { player_input: "gibberish" } }, line("toby", "then")];
+    expect(linesThisConversation(history, "toby")).toEqual(["again", "then"]);
+    expect(linesThisConversation(history, "mia")).toEqual(["to Mia"]);
+    expect(linesThisConversation([], "toby")).toEqual([]);
   });
 });

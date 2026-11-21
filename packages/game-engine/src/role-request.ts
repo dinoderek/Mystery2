@@ -57,8 +57,8 @@ import {
 import { talkPromptProfile } from "./talk-prompt.ts";
 import { msfRoleGuidance } from "./msf-context.ts";
 import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
-import { GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
-import { playOf } from "./clue-graph/history.ts";
+import { GRAPH_TALK_EARLIER_LINES, GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
+import { linesThisConversation, playOf } from "./clue-graph/history.ts";
 import { visibleSpots } from "./clue-graph/play.ts";
 
 /**
@@ -333,9 +333,16 @@ const REGISTRY: Record<RoleRequestName, any> = {
         conversation_history: input.conversation_history,
       }),
     vars: (input: InputFor<"graph_talk">) => {
+      const characterName = characterNameFor(input.blueprint, input.character_id);
+      // The player's earlier lines in this conversation, beside this one, so a dodged clue's follow-up reads as one.
+      const earlier = linesThisConversation(input.conversation_history ?? [], input.character_id);
       const names = {
-        character_name: characterNameFor(input.blueprint, input.character_id),
+        character_name: characterName,
         player_input: input.player_input ?? "",
+        earlier_lines:
+          earlier.length === 0
+            ? ""
+            : renderPrompt(GRAPH_TALK_EARLIER_LINES, { character_name: characterName, lines: earlier.map((line) => `- "${line}"`).join("\n") }),
       };
       return {
         ...names,

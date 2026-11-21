@@ -206,7 +206,7 @@ describe("blueprint generator", () => {
     const answer = structuredClone(validBlueprint) as unknown as {
       world: { locations: Record<string, unknown>[]; characters: Record<string, unknown>[] };
     };
-    answer.world.locations[0].sub_locations = null;
+    answer.world.locations[1].sub_locations = null;
     const generate = (content: unknown) =>
       generateBlueprint({
         storyBrief: { brief: "A child-friendly cookie mystery.", targetAge: 8 },
@@ -216,7 +216,7 @@ describe("blueprint generator", () => {
       });
 
     const blueprint = await generate(answer);
-    expect(blueprint.world.locations[0].sub_locations).toEqual([]);
+    expect(blueprint.world.locations[1].sub_locations).toEqual([]);
 
     answer.world.characters[0].agendas = [null];
     await expect(generate(answer)).rejects.toMatchObject({ code: "SCHEMA_VALIDATION_FAILED" });

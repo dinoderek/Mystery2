@@ -561,7 +561,7 @@
           },
           {
             "id": "wally_echo",
-            "text": "At six I gave two short toots to rest the engine. Two short toots whistled right back, from the parcel trolley at the end of the platform! That wasn't my engine.",
+            "text": "At six I gave two short toots to rest the engine. Two short toots whistled right back, from under the tarpaulin on the parcel trolley at the end of the platform! That wasn't my engine.",
             "hint_location_id": "platform",
             "hint_sub_location_id": "trolley_under"
           }

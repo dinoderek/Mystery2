@@ -25,7 +25,11 @@ const LOCK_CHECKS = [
 function soundBlueprint(): BlueprintV2 {
   const bp = structuredClone(validBlueprintV2) as unknown as BlueprintV2;
   const [kitchen, hallway] = bp.world.locations;
-  Object.assign(kitchen.clues[0], { hint_location_id: "hallway", hint_sub_location_id: "under-mat" });
+  Object.assign(kitchen.clues[0], {
+    text: "Cookie crumbs lead toward the hallway, to the mat under the door.",
+    hint_location_id: "hallway",
+    hint_sub_location_id: "under-mat",
+  });
   hallway.sub_locations = [
     {
       id: "under-mat",
@@ -118,10 +122,43 @@ describe("lock, reaction and hidden-spot checks", () => {
     expect(analyzeLocks(noTarget).pointers_off_target).toMatchObject([{ clue_id: "loc-mat-note", problem: "no_target" }]);
 
     const elsewhere = soundBlueprint();
-    elsewhere.world.locations[0].sub_locations = [{ id: "pantry", name: "the pantry", hint: "Shelves.", clues: [] }];
+    elsewhere.world.locations[0].sub_locations.push({ id: "pantry", name: "the pantry", hint: "Shelves.", clues: [] });
     matNoteLock(elsewhere).target = { location_id: "kitchen", sub_location_id: "pantry" };
     expect(analyzeLocks(elsewhere).pointers_off_target).toMatchObject([{ clue_id: "loc-mat-note", problem: "target_is_not_its_spot" }]);
     expect(failing(elsewhere)).toEqual(["pointers_point_to_target"]);
+  });
+
+  it("fail a pointer clue whose text does not name the spot it opens, naming the clue and the spot", () => {
+    const bp = soundBlueprint();
+    bp.world.locations[0].clues[0].text = "Cookie crumbs lead toward the hallway.";
+    expect(failing(bp)).toEqual(["pointers_point_to_target"]);
+    expect(analyzeLocks(bp).pointers_off_target).toEqual([
+      {
+        clue_id: "loc-mat-note",
+        target: { location_id: "hallway", sub_location_id: "under-mat" },
+        problem: "pointer_does_not_name_spot",
+        pointer_clue_id: "loc-crumbs",
+      },
+    ]);
+  });
+
+  it("pass a pointer clue that names its spot by the engine's matcher, plural or singular", () => {
+    const bp = soundBlueprint();
+    bp.world.locations[0].clues[0].text = "Crumbs trail toward the hallway and a door mats.";
+    expect(failing(bp)).toEqual([]);
+  });
+
+  it("judge every prerequisite that points at the spot, not only one", () => {
+    const bp = soundBlueprint();
+    Object.assign(bp.world.characters[1].clues[0], {
+      text: "Bob saw someone heading for the hallway.",
+      hint_location_id: "hallway",
+      hint_sub_location_id: "under-mat",
+    });
+    matNoteLock(bp).clue_ids.push(bp.world.characters[1].clues[0].id);
+    expect(analyzeLocks(bp).pointers_off_target).toMatchObject([
+      { clue_id: "loc-mat-note", problem: "pointer_does_not_name_spot", pointer_clue_id: bp.world.characters[1].clues[0].id },
+    ]);
   });
 
   it("leave a character clue's pointer, which leads to the character, unchecked", () => {

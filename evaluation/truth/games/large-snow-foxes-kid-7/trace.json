@@ -163,7 +163,7 @@
               "clues": [
                 {
                   "id": "clue_snowshoe_prints",
-                  "text": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed.",
+                  "text": "Big round prints with a criss-cross pattern. Snowshoe prints, not paws! They lead toward the woodshed, right to the big woodpile.",
                   "hint_location_id": "woodshed",
                   "hint_sub_location_id": "behind_woodpile"
                 }

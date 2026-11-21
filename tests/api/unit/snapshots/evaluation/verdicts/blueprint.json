@@ -364,7 +364,7 @@
           "tolerance": 2,
           "threshold": 5,
           "min_words": 8,
-          "strings_total": 17,
+          "strings_total": 18,
           "strings_scored": 11,
           "violations": [
             {
@@ -377,7 +377,7 @@
               "preview": "The cookies disappeared from the kitchen sometime around 10 AM, according to whoever set them out."
             },
             {
-              "path": "world.locations[0].clues[1].text",
+              "path": "world.locations[0].sub_locations[0].clues[0].text",
               "kind": "clue_text",
               "words": 11,
               "grade": 5.86,

@@ -11,10 +11,17 @@
 // run only on a blueprint that parses, so `parts_name_real_clues` is a backstop
 // that never fails there: no plant should expect it to. The other rules are
 // checks, not schema, so a blueprint that breaks one still parses and is caught.
+// A pointer clue also has to name the spot it opens, by the same matcher a
+// targeted search uses (`searchNamesSpot`): the engine admits a hidden spot's
+// clue only when the player's words name the spot, so a pointer that never
+// names it leaves the player nothing to say.
 // These helpers read a candidate that need not be well formed.
+
+import { searchNamesSpot } from "../../../packages/game-engine/src/search-target.ts";
 
 interface LockClue {
   id: string;
+  text?: string;
   hint_location_id?: string;
   hint_sub_location_id?: string;
   requires?: {
@@ -36,8 +43,9 @@ export interface LocksBlueprint {
   world?: {
     locations?: Array<{
       id: string;
+      name?: string;
       clues?: LockClue[];
-      sub_locations?: Array<{ id: string; clues?: LockClue[] }>;
+      sub_locations?: Array<{ id: string; name?: string; clues?: LockClue[] }>;
     }>;
     characters?: Array<{ id: string; clues?: LockClue[]; agendas?: LockAgenda[] }>;
   };
@@ -52,11 +60,16 @@ export interface LocationLockFault {
   problem: "not_a_pointer" | "not_in_a_sub_location";
 }
 
-/** A pointer that names no target, the wrong target, or one no prerequisite points to. */
+/**
+ * A pointer that names no target, the wrong target, one no prerequisite points
+ * to, or a prerequisite pointing there whose text does not name the spot
+ * (`pointer_clue_id` is that prerequisite).
+ */
 export interface PointerFault {
   clue_id: string;
   target: { location_id: string; sub_location_id: string } | null;
-  problem: "no_target" | "target_is_not_its_spot" | "no_prerequisite_points_there";
+  problem: "no_target" | "target_is_not_its_spot" | "no_prerequisite_points_there" | "pointer_does_not_name_spot";
+  pointer_clue_id?: string;
 }
 
 export interface SelfProtectFault {
@@ -105,31 +118,55 @@ function pointsAt(clue: LockClue | undefined, locationId: string, subLocationId:
   return clue?.hint_location_id === locationId && clue?.hint_sub_location_id === subLocationId;
 }
 
+/** The spot's and its location's names, keyed by "location/sub-location" ids. */
+function spotNames(blueprint: LocksBlueprint | null | undefined): Map<string, { spot: string; location: string }> {
+  const names = new Map<string, { spot: string; location: string }>();
+  for (const location of blueprint?.world?.locations ?? []) {
+    for (const sub of location.sub_locations ?? []) {
+      names.set(`${location.id}/${sub.id}`, { spot: sub.name ?? "", location: location.name ?? "" });
+    }
+  }
+  return names;
+}
+
 /** What is wrong with one clue's lock, if anything. */
 function lockFault(
   { clue, spot }: PlacedClue,
   byId: ReadonlyMap<string, LockClue>,
-): { location?: LocationLockFault; pointer?: PointerFault } {
+  names: ReadonlyMap<string, { spot: string; location: string }>,
+): { location?: LocationLockFault; pointers: PointerFault[] } {
   const lock = clue.requires;
-  if (!lock) return {};
+  if (!lock) return { pointers: [] };
   const kind = lock.kind ?? null;
   if (spot && spot.sub_location_id === null) {
-    return { location: { clue_id: clue.id, ...spot, kind, problem: "not_in_a_sub_location" } };
+    return { location: { clue_id: clue.id, ...spot, kind, problem: "not_in_a_sub_location" }, pointers: [] };
   }
   if (spot && kind !== "pointer") {
-    return { location: { clue_id: clue.id, ...spot, kind, problem: "not_a_pointer" } };
+    return { location: { clue_id: clue.id, ...spot, kind, problem: "not_a_pointer" }, pointers: [] };
   }
   // A character clue's pointer leads to the character, so only a target it names is checked.
-  if (kind !== "pointer" || (!spot && !lock.target)) return {};
+  if (kind !== "pointer" || (!spot && !lock.target)) return { pointers: [] };
   const target = lock.target?.location_id && lock.target.sub_location_id
     ? { location_id: lock.target.location_id, sub_location_id: lock.target.sub_location_id }
     : null;
-  if (!target) return { pointer: { clue_id: clue.id, target: null, problem: "no_target" } };
+  if (!target) return { pointers: [{ clue_id: clue.id, target: null, problem: "no_target" }] };
   if (spot && (spot.location_id !== target.location_id || spot.sub_location_id !== target.sub_location_id)) {
-    return { pointer: { clue_id: clue.id, target, problem: "target_is_not_its_spot" } };
+    return { pointers: [{ clue_id: clue.id, target, problem: "target_is_not_its_spot" }] };
   }
-  const pointed = (lock.clue_ids ?? []).some((id) => pointsAt(byId.get(id), target.location_id, target.sub_location_id));
-  return pointed ? {} : { pointer: { clue_id: clue.id, target, problem: "no_prerequisite_points_there" } };
+  const pointing = (lock.clue_ids ?? []).flatMap((id) => {
+    const prerequisite = byId.get(id);
+    return pointsAt(prerequisite, target.location_id, target.sub_location_id) ? [{ id, text: prerequisite?.text ?? "" }] : [];
+  });
+  if (pointing.length === 0) {
+    return { pointers: [{ clue_id: clue.id, target, problem: "no_prerequisite_points_there" }] };
+  }
+  const named = names.get(`${target.location_id}/${target.sub_location_id}`);
+  if (!named) return { pointers: [] };
+  return {
+    pointers: pointing
+      .filter(({ text }) => !searchNamesSpot(text, named.spot, named.location))
+      .map(({ id }) => ({ clue_id: clue.id, target, problem: "pointer_does_not_name_spot" as const, pointer_clue_id: id })),
+  };
 }
 
 /** The part clue ids that name no clue; a part with no clue at all names "". */
@@ -166,10 +203,11 @@ function agendaFaults(
 export function analyzeLocks(blueprint: LocksBlueprint | null | undefined): LocksAnalysis {
   const placed = placedClues(blueprint);
   const byId = new Map(placed.map(({ clue }) => [clue.id, clue]));
-  const faults = placed.map((entry) => lockFault(entry, byId));
+  const names = spotNames(blueprint);
+  const faults = placed.map((entry) => lockFault(entry, byId, names));
   return {
     location_locks_not_pointers: faults.flatMap((fault) => (fault.location ? [fault.location] : [])),
-    pointers_off_target: faults.flatMap((fault) => (fault.pointer ? [fault.pointer] : [])),
+    pointers_off_target: faults.flatMap((fault) => fault.pointers),
     ...agendaFaults(blueprint, new Set(byId.keys())),
   };
 }

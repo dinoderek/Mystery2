@@ -4,7 +4,9 @@ export { MysteryStructureSchema, MysteryStructureNodeSchema, type MysteryStructu
 export { validateMysteryStructure } from "./mystery-structure-validator.ts";
 export { MsfCaseFileSchema, validateMsfCaseFile, buildMsfBlueprint, type MsfCaseFile, type PlayableBlueprint } from "./msf-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
-export { validateClueGraph, reachClues } from "./clue-graph-validator.ts";
+export { validateClueGraph } from "./clue-graph-validator.ts";
+export { reachClues, type ReachedClue } from "./clue-graph-reach.ts";
+export { cheapestRoute } from "./clue-graph-route.ts";
 export { evaluateMysteryStructure } from "./mystery-structure-progress.ts";
 export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
 

@@ -5,12 +5,12 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  cheapestRoute,
   ClueGraphCaseSchema,
   reachClues,
   validateClueGraph,
   type ClueGraphCase,
 } from "@my2/shared";
-import { cheapestRoute } from "../../../packages/shared/src/clue-graph-route.ts";
 
 const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
 const committed = validateClueGraph(JSON.parse(fs.readFileSync(GREENHOUSE, "utf8")));
@@ -246,6 +246,30 @@ describe("the graph checks", () => {
     expect(issues(graph)).toEqual([
       'clues.clue_hale_toby_upset.reached.gate.line.hinted_by: Reference "react_toby_trainers" must name another tell from "hale"',
       'conclusions.clue_snapped_bench: Conclusion "clue_snapped_bench" shares its ID with a clue',
+    ]);
+  });
+
+  it("never takes an inherited name for a reference", () => {
+    const graph = greenhouse();
+    graph.opening.location = "constructor";
+    set(graph, "clues.clue_ladder_tape.source.location", "toString");
+    graph.conclusions.how.rule = "toString";
+    graph.conclusions.thorne_cleared.clears = "valueOf";
+    set(graph, "clues.toby_no_key.reached.prompted_by", ["hasOwnProperty"]);
+    expect(issues(graph)).toEqual([
+      'opening.location: Reference "constructor" must name a location',
+      'clues.clue_ladder_tape.source.location: Reference "toString" must name a location',
+      'clues.toby_no_key.reached.prompted_by.0: Reference "hasOwnProperty" must name another clue',
+      'conclusions.thorne_cleared: Reference "valueOf" must name a character',
+      'conclusions.how.rule: Reference "toString" must name a clue or conclusion',
+    ]);
+  });
+
+  it("rejects taking back a statement only reached after it", () => {
+    const graph = greenhouse();
+    set(graph, "clues.toby_no_key.reached.prompted_by", ["toby_confession"]);
+    expect(issues(graph)).toEqual([
+      'clues.toby_confession.takes_back: Clue "toby_confession" takes back "toby_no_key", which is only reached after it',
     ]);
   });
 

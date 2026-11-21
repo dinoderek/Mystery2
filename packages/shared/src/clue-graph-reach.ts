@@ -6,6 +6,11 @@ import {
   type ClueGraphRule,
 } from "./clue-graph-schema.ts";
 
+/** Whether a map of the case has its own entry at `key`, never an inherited name. */
+export function has(map: object, key: string): boolean {
+  return Object.hasOwn(map, key);
+}
+
 /** What a reach test asks of the clues held so far. */
 export type Holds = (id: string) => boolean;
 
@@ -16,8 +21,8 @@ function hiddenBy(
   spot: string | undefined,
 ): string | undefined {
   if (spot === undefined) return undefined;
-  return graph.locations[location]?.spots.find((entry) => entry.name === spot)
-    ?.revealed_by;
+  if (!has(graph.locations, location)) return undefined;
+  return graph.locations[location].spots.find((entry) => entry.name === spot)?.revealed_by;
 }
 
 /** Why a gate opens on what is held, without a bluff, or null while it stays shut. */
@@ -84,9 +89,9 @@ export interface ReachedClue {
 /**
  * Starting from the opening alone, adds every clue whose way of being reached
  * is already held, sweeping the clues in file order until nothing more is
- * added. A bluff never counts.
+ * added. A bluff never counts. `without` leaves one clue out, as if never held.
  */
-export function reachClues(graph: ClueGraphCase): ReachedClue[] {
+export function reachClues(graph: ClueGraphCase, without?: string): ReachedClue[] {
   const held = new Set<string>();
   const order: ReachedClue[] = [];
   const holds: Holds = (id) => held.has(id);
@@ -94,7 +99,7 @@ export function reachClues(graph: ClueGraphCase): ReachedClue[] {
   while (grew) {
     grew = false;
     for (const [id, clue] of Object.entries(graph.clues)) {
-      if (held.has(id)) continue;
+      if (held.has(id) || id === without) continue;
       const by = reachReason(graph, clue, holds);
       if (by === null) continue;
       held.add(id);
@@ -112,8 +117,9 @@ export function ruleMet(
   holds: Holds,
 ): boolean {
   if (typeof rule === "string") {
-    const conclusion = graph.conclusions[rule];
-    return conclusion ? ruleMet(graph, conclusion.rule, holds) : holds(rule);
+    return has(graph.conclusions, rule)
+      ? ruleMet(graph, graph.conclusions[rule].rule, holds)
+      : holds(rule);
   }
   if ("all" in rule) return rule.all.every((part) => ruleMet(graph, part, holds));
   return rule.any.some((part) => ruleMet(graph, part, holds));

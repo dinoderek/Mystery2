@@ -76,23 +76,24 @@ field paths:
 npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
 ```
 
-The command exits 0 when valid, 1 for an invalid case, 2 for an unreadable file
-or invalid JSON, and 3 for usage errors.
+It exits 0 when valid, 1 for an invalid case, 2 for an unreadable file or
+invalid JSON, 3 for misuse.
 
-First, references must fit: a gate's `after` and a
-`takes_back` name clues of the same character, `hinted_by` a tell, `seen.with`
-the character's own statement, `clears` a suspect. Exactly one character is the
-culprit and exactly one conclusion names them.
+First, references must fit: a gate's `after`, `takes_back`, `hinted_by` and
+`seen.with` name the same character's clues; `clears` names a suspect; no
+conclusion shares a clue's ID. Exactly one character is the culprit and exactly
+one conclusion names them.
 
 Then reachability: from the opening alone, the validator sweeps the clues in
 file order, adding each whose way of being reached is held, until none is
-added. A bluff never counts. The case is rejected,
-naming the clue, conclusion, suspect or spot, when:
+added. A bluff never counts. The case is rejected, naming
+what is at fault, when:
 
 - a clue is never reached;
 - an asked clue has no prompt;
 - a worded gate has no tell that hints at it;
-- a false statement has no reachable clue that takes it back;
+- a false statement has no reachable clue that takes it back, or is reached
+  only after one;
 - a conclusion cannot be reached;
 - a suspect has no clearing conclusion;
 - the culprit conclusion has no route within the turn budget without a bluff;

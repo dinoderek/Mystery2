@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { reachClues, ruleMet, type ReachedClue } from "./clue-graph-reach.ts";
+import { has, reachClues, ruleMet } from "./clue-graph-reach.ts";
 import { cheapestRoute } from "./clue-graph-route.ts";
 import {
   ClueGraphCaseSchema,
@@ -34,12 +34,12 @@ class References {
   }
 
   location(path: IssuePath, value: string) {
-    if (!(value in this.graph.locations))
+    if (!has(this.graph.locations, value))
       this.fail(path, `Reference "${value}" must name a location`);
   }
 
   character(path: IssuePath, value: string) {
-    if (!(value in this.graph.characters))
+    if (!has(this.graph.characters, value))
       this.fail(path, `Reference "${value}" must name a character`);
   }
 
@@ -49,7 +49,7 @@ class References {
     value: string,
     want: { self: string; kind?: ClueGraphClue["kind"]; from?: string; false?: true },
   ) {
-    const target = this.graph.clues[value];
+    const target = has(this.graph.clues, value) ? this.graph.clues[value] : undefined;
     const needs = [
       want.false ? "false" : "",
       want.kind ?? "clue",
@@ -68,7 +68,7 @@ class References {
 
   rule(path: IssuePath, rule: ClueGraphRule) {
     if (typeof rule === "string") {
-      if (!(rule in this.graph.clues) && !(rule in this.graph.conclusions))
+      if (!has(this.graph.clues, rule) && !has(this.graph.conclusions, rule))
         this.fail(path, `Reference "${rule}" must name a clue or conclusion`);
       return;
     }
@@ -88,8 +88,8 @@ function checkClueReferences(
   if (clue.kind === "evidence") {
     const { location, spot } = clue.source;
     refs.location([...path, "source", "location"], location);
-    const spots = graph.locations[location]?.spots ?? [];
-    if (spot !== undefined && !spots.some((entry) => entry.name === spot))
+    const known = has(graph.locations, location);
+    if (known && spot !== undefined && !graph.locations[location].spots.some((entry) => entry.name === spot))
       refs.fail([...path, "source", "spot"], `Spot "${spot}" must be one of "${location}"'s spots`);
     return;
   }
@@ -153,7 +153,7 @@ function checkReferences(graph: ClueGraphCase, report: Report): boolean {
   for (const [id, clue] of Object.entries(graph.clues))
     checkClueReferences(refs, id, clue, graph);
   for (const [id, conclusion] of Object.entries(graph.conclusions)) {
-    if (id in graph.clues)
+    if (has(graph.clues, id))
       refs.fail(["conclusions", id], `Conclusion "${id}" shares its ID with a clue`);
     refs.rule(["conclusions", id, "rule"], conclusion.rule);
     const named = conclusion.clears ?? conclusion.culprit;
@@ -183,7 +183,10 @@ function checkRoles(graph: ClueGraphCase, report: Report): boolean {
       ok = false;
       report(["conclusions", id, "culprit"], `Conclusion "${id}" must name the culprit`);
     }
-    const cleared = conclusion.clears && graph.characters[conclusion.clears];
+    const cleared =
+      conclusion.clears !== undefined && has(graph.characters, conclusion.clears)
+        ? graph.characters[conclusion.clears]
+        : undefined;
     if (cleared && cleared.role !== "suspect") {
       ok = false;
       report(["conclusions", id, "clears"], `Conclusion "${id}" must clear a suspect`);
@@ -217,7 +220,7 @@ function checkConclusionCycles(graph: ClueGraphCase, report: Report): boolean {
   let ok = true;
   for (const id of Object.keys(graph.conclusions)) {
     const ring = findCycle(id, (node) =>
-      node in graph.conclusions ? directParts(graph.conclusions[node].rule) : [],
+      has(graph.conclusions, node) ? directParts(graph.conclusions[node].rule) : [],
     );
     if (ring) {
       ok = false;
@@ -256,6 +259,17 @@ function checkShape(graph: ClueGraphCase, report: Report) {
   }
 }
 
+/** A statement taken back must be reachable without the clue that takes it back. */
+function checkRetractionOrder(graph: ClueGraphCase, reached: Set<string>, report: Report) {
+  for (const [id, clue] of Object.entries(graph.clues)) {
+    if (clue.kind !== "statement" || !clue.takes_back || !reached.has(id)) continue;
+    const before = new Set(reachClues(graph, id).map((entry) => entry.id));
+    for (const target of clue.takes_back)
+      if (reached.has(target) && !before.has(target))
+        report(["clues", id, "takes_back"], `Clue "${id}" takes back "${target}", which is only reached after it`);
+  }
+}
+
 function checkGraph(graph: ClueGraphCase, report: Report) {
   checkShape(graph, report);
   const reached = new Set(reachClues(graph).map((entry) => entry.id));
@@ -269,6 +283,7 @@ function checkGraph(graph: ClueGraphCase, report: Report) {
     if (!backed)
       report(["clues", id], `False statement "${id}" has no reachable clue that takes it back`);
   }
+  checkRetractionOrder(graph, reached, report);
   for (const [id, conclusion] of Object.entries(graph.conclusions))
     if (!ruleMet(graph, conclusion.rule, holds))
       report(["conclusions", id], `Conclusion "${id}" cannot be reached`);
@@ -298,4 +313,3 @@ export function validateClueGraph(value: unknown): ClueGraphCase {
   return graph;
 }
 
-export { reachClues, type ReachedClue };

@@ -17,7 +17,7 @@ Everything a player can learn is a clue; whatever holds one back is a gate.
 | Opening | What is public at the start, and where | Yes |
 | Evidence | A finding at a location or spot. Always true. | Yes |
 | Statement | Something a character says: true, or false with why | Yes, never marked true or false |
-| Tell | Something a character does that hints at what can be unlocked | In prose; recorded only when another clue depends on it |
+| Tell | Something a character does that hints at what can be unlocked | In prose; in play, noted only when a clue depends on it |
 | Conclusion | An all-of or any-of rule over clues and conclusions | No |
 
 Evidence is reached by searching its source. A statement or tell comes from a
@@ -55,7 +55,7 @@ are V2's agendas, parts, conditional reveals and character tells.
 - `opening`: the starting `location` and the public `text`.
 - `truth.timeline`: what really happened.
 - `locations`: `name`, `description` and `spots`. A spot with `revealed_by`
-  is hidden: unmentioned, and unsearchable until that clue is held.
+  is hidden: unmentioned and unsearchable until that clue is held, unlike V2.
 - `characters`: `name`, `location`, `role` (`culprit`, `suspect` or
   `witness`), `personality`, and one `demeanor` line per stance (`open`,
   `guarded`, `shaken`, `cornered`, `cleared`; at least one).
@@ -115,8 +115,8 @@ The route check uses the game's costs (`docs/game.md`):
 | Start talking to a character at the current location | 1 |
 | Each line while talking | 0 |
 
-A conversation yields every clue of that character whose way of being reached
-is held; to use a clue found later, talk again. A talk started on the budget's
+A conversation yields every clue of that character it can reach; to use a clue
+found later, talk again. A talk started on the budget's
 last turn gives only the greeting (first words and tells seen with them),
 because the accusation follows at once. The check fails when the fewest turns
 exceed `time_budget`.

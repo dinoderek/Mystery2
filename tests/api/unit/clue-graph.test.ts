@@ -302,6 +302,42 @@ describe("the culprit route", () => {
     expect(cheapestRoute(graph, "clue_dobbs_crash_time")).toBe(2);
   });
 
+  it("stays quick on a case with every spot stocked", () => {
+    // Fills every empty spot and plain search with a clue nothing needs.
+    const graph = greenhouse();
+    const taken = new Set(
+      Object.values(graph.clues).flatMap((entry) =>
+        entry.kind === "evidence" ? [`${entry.source.location}|${entry.source.spot ?? ""}`] : [],
+      ),
+    );
+    for (const [location, place] of Object.entries(graph.locations))
+      for (const spot of [undefined, ...place.spots.map((entry) => entry.name)])
+        if (!taken.has(`${location}|${spot ?? ""}`))
+          graph.clues[`filler_${location}_${spot ?? "plain"}`] = {
+            kind: "evidence",
+            text: "Nothing much.",
+            source: spot === undefined ? { location } : { location, spot },
+          };
+    const story = { all: ["toby_confession", "thorne_cleared", "motive", "how"] };
+    graph.metadata.time_budget = 9;
+    expect(cheapestRoute(graph, story)).toBeNull();
+    graph.metadata.time_budget = 30;
+    expect(cheapestRoute(graph, { all: Object.keys(graph.clues) })).toBe(26);
+    graph.metadata.time_budget = 4;
+    expect(issues(graph)).toEqual([
+      'metadata.time_budget: Conclusion "culprit_toby" has no route within 4 turns without a bluff',
+    ]);
+  });
+
+  it("keeps its bound sound past the alternatives it tracks", () => {
+    const graph = greenhouse();
+    expect(cheapestRoute(graph, { any: Object.keys(graph.clues).reverse() })).toBe(1);
+    const pairs = ["clue_welly_prints", "clue_rota_purple_ink", "clue_spare_key_book", "clue_ladder_tape"].map(
+      (far) => ({ any: [far, "clue_boot_prints", "clue_glass_outside"] }),
+    );
+    expect(cheapestRoute(graph, { all: [...pairs, ...pairs.map((pair) => ({ any: pair.any.slice(1) }))] })).toBe(1);
+  });
+
   it("still counts a statement once it is taken back", () => {
     const graph = greenhouse();
     expect(cheapestRoute(graph, "thorne_never_set_foot")).toBe(2);

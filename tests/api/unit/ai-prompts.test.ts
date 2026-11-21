@@ -56,12 +56,12 @@ describe("ai-prompts", () => {
     );
   });
 
-  it("keeps the two search prompts no longer than before the reveal fix", async () => {
+  it("keeps the two search prompts' own rules within 2,256 characters", async () => {
     // The roles' own rules, without the shared age and style guidance they load.
     const ownLength = async (role: "search_bare" | "search_targeted") =>
       (await loadPromptTemplate(role, 10)).length - buildAgeGuidance(role, 10).length - buildStyleGuidance().length;
     const total = (await ownLength("search_bare")) + (await ownLength("search_targeted"));
-    // 2,256 characters before the reveal fix: a rule added here pays for itself.
+    // A rule added here pays for itself with a trim elsewhere.
     expect(total).toBeLessThanOrEqual(2256);
   });
 

@@ -1,7 +1,8 @@
 // The two reveals withheld in play, cut from stored self-play games with
 // `./dev eval cases --types search` and given the search they were asked, and the
-// clues the player held, which a cut does not carry. Both fail on Haiku with
-// today's prompt: if one passes, the case is wrong, not the prompt.
+// clues the player held, which a cut does not carry. Both failed 5 of 5 on Haiku
+// and Sonnet while search showed a met gate's reason (`baselines/<model>.json`),
+// which is how the cases were checked against play.
 //
 // The history is the game's own, verbatim; the blueprint is a copy of the one it
 // was played on, so the case depends on nothing outside the repo.

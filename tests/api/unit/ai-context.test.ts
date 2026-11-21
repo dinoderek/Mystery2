@@ -382,6 +382,37 @@ describe("ai-context guardrails", () => {
     ]);
   });
 
+  it("sends a met location-level gate to search without its requires, as the next clue too", () => {
+    const note = {
+      id: "clue-note",
+      text: "a note under the kettle",
+      requires: { kind: "pointer" as const, clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" },
+    };
+    const gatedBlueprint: BlueprintContext = {
+      ...blueprint,
+      world: {
+        ...blueprint.world,
+        locations: [
+          { ...blueprint.world.locations[0], clues: [...blueprint.world.locations[0].clues, note] },
+          blueprint.world.locations[1],
+        ],
+      },
+    };
+
+    const bare = buildSearchContext({
+      game_id: "game-1",
+      session,
+      blueprint: gatedBlueprint,
+      location_id: "loc-kitchen",
+      revealed_clue_ids: ["clue-crumbs"],
+      discovered_clue_ids: ["clue-crumbs"],
+      next_clue: note,
+    });
+    expect(bare.search_context?.next_clue).toEqual({ id: "clue-note", text: "a note under the kettle" });
+    expect(bare.search_context?.clues.map((c) => c.id)).toContain("clue-note");
+    expect(JSON.stringify(bare.search_context)).not.toContain("requires");
+  });
+
   it("tells the talk narrator whether the player can use a clue's prerequisites, never that it is earned", () => {
     const gatedBlueprint: BlueprintContext = {
       ...blueprint,

@@ -1,11 +1,9 @@
 # Clue Graph
 
 A third case format beside [V2](../packages/shared/src/blueprint-schema-v2.ts)
-and [MSF](mystery-structure.md), not yet loaded by the game. Schema and checks:
-`packages/shared/src/clue-graph-schema.ts` and its validator; play:
-`packages/game-engine/src/clue-graph/`. The greenhouse story,
-`blueprints/clue-graph/greenhouse-prizewinner.json`, is outside the game's
-folders.
+and [MSF](mystery-structure.md). Schema and checks:
+`packages/shared/src/clue-graph-schema.ts`; play:
+`packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`.
 
 ## The model
 
@@ -31,25 +29,24 @@ A gate has up to three parts:
 - `use`: clues the player shows this character, `any` or `all`;
 - `line`: a line of questioning, with the tell that hints at it (`hinted_by`).
 
-With `after` alone, the clue comes when asked once those are out: a confession
-is gated on every other crack. With `use` and `line`, either opens it.
-`physical: true` marks a gate a bluff cannot open. A gated statement may
-`takes_back` the character's earlier false statements. Using a clue means
-showing it or making its point; holding it is not using it.
+With `after` alone, the clue comes when asked once those are out (a confession).
+With `use` and `line`, either opens it. `physical: true` cannot be bluffed. A
+gated statement may `takes_back` the character's earlier false statements.
+Using a clue means showing it or making its point; holding it is not.
 
 ## The case file
 
-One JSON file, `"format": "clue-graph/1"`. Maps are keyed by ID; unknown
-fields are rejected, V2's agendas, parts and tells among them.
+One JSON file, `"format": "clue-graph/1"`, maps keyed by ID; unknown fields
+(V2's agendas, parts and tells among them) are rejected.
 
 - `metadata`: `id`, `title`, `target_age`, `time_budget`.
 - `opening`: the starting `location` and the public `text`.
 - `truth.timeline`: what really happened.
 - `locations`: `name`, `description` and `spots`. A spot with `revealed_by`
   is hidden until that clue is held.
-- `characters`: `name`, `location`, `role` (`culprit`, `suspect` or
-  `witness`), `personality`, and a `demeanor` line for at least one stance
-  (`open`, `guarded`, `shaken`, `cornered`, `cleared`).
+- `characters`: `name`, `location`, `role` (`culprit`, `suspect`,
+  `witness`), `sex` (for pronouns), `personality`, and `demeanor` lines by
+  stance (`open`, `guarded`, `shaken`, `cornered`, `cleared`).
 - `clues`: `kind`, `text`, `source` (`location` and optional `spot`, or
   `character`), and for statements `truth`, with `why` when false.
 - `conclusions`: `text` and `rule`, plus at most one of `clears` (a suspect),
@@ -57,55 +54,50 @@ fields are rejected, V2's agendas, parts and tells among them.
 
 ## Validation
 
-`validateClueGraph(value)` returns the case or throws:
-
-```sh
-npm run validate:clue-graph -- blueprints/clue-graph/greenhouse-prizewinner.json
-```
-
-It exits 0 valid, 1 invalid, 2 unreadable or not JSON, 3 misuse.
-
-References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name
-the same character's clues; `clears` names a suspect; no conclusion shares a
-clue's ID; one character is the culprit, named by one conclusion.
-
-Then reachability: from the opening alone, it adds each clue whose way in is
-held until none is added, never counting a bluff. It rejects, naming the fault:
+`npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
+1 invalid, 2 unreadable, 3 misuse. References must fit: `after`, `takes_back`,
+`hinted_by` and `seen.with` name the same character's clues; `clears` names a
+suspect; one culprit, named by one conclusion. Then, from the opening alone,
+it adds each clue whose way in is held, never counting a bluff, and rejects:
 
 - a clue never reached, or an asked clue with no prompt;
 - a worded gate no tell hints at;
 - a false statement never taken back, or only by a clue reached first;
 - a conclusion never reached, or a suspect no conclusion clears;
 - a culprit with no route within the turn budget without a bluff;
-- a spot or plain search with two clues;
-- a cycle of `after` links.
+- a spot or plain search with two clues; a cycle of `after` links.
 
-Both count a statement taken back as held, and a subject tell as reached once
-its character is met. The route uses the game's costs (`docs/game.md`): a move,
-a search or starting a talk costs a turn; lines are free. A conversation yields
-every clue of that character it can reach; a clue found later needs another
-talk; one on the last turn gives only the greeting (three first words).
+A statement taken back counts as held. The route uses the game's costs
+(`docs/game.md`); a conversation yields every clue it can reach, but one
+started on the last turn gives only the greeting.
 
 ## In play
 
-The engine folds events (move, search, talk, each line) into what is held
-and taken back, and derives the rest on every call, storing nothing.
+The loader reads `clue-graph/` beside `msf/` and builds a rule-free world view
+for commands and arrivals; the catalog ID is a UUID derived from `metadata.id`.
+A start saves the validated case in `game_sessions.clue_graph_snapshot`
+(database version 5), which resume and every turn play. Each turn that counts
+saves its event (move, search, talk, line) in `payload.clue_graph`; the engine
+folds those and derives the rest on every call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
-  `use` also needs those clues held; a non-physical one is available without
-  them, and bluffable. A line keeps only the gates, answers and subject tells
-  its state offered; the rest come back rejected.
-- **First words** come three a line from the greeting on, with their tells.
-- **Retraction** marks a statement taken back. A conclusion holds only on live
-  clues (held, not taken back), so it falls with them.
-- **Hidden spots** show once their pointer is held; before, they find nothing.
-- **Character state**, the narrator's input for a line: stance and demeanor,
-  first words due, answers if asked, each available gate (what opens it, what
-  it gives with its tells, what it takes back), subject tells, the story so
-  far, what tells have shown, and what to keep back: standing first words and
-  answers that a gate not yet available would take back, never a gated clue.
-- **Leads** name who or where: someone unmet; someone with first words due, a
-  question a held clue prompts, or a gate held clues open; a hidden spot
-  newly visible. Each is marked new on the turn it appears.
-- **Notebook**: held clues, without tells no clue depends on; taken-back
-  statements marked; never a conclusion.
+  `use` also needs those clues held; a non-physical one is bluffable.
+- **Talk** (`graph_talk`, one call a line): the narrator gets the character
+  state (stance and demeanor, first words due, three a line from the
+  greeting on; answers; available gates, what opens each, what it gives and
+  takes back; subject tells; the story so far; statements to keep back) and
+  reports what the line `opened` and `answered`. Dodged evidence is read from
+  the conversation. A report the state did not offer fails the turn before
+  anything is saved; one already held is dropped; gibberish records nothing.
+- **Search** gives one clue. The engine names the spot from the words, hidden
+  ones included, and the narrator must report what it holds; words naming no
+  spot let the narrator pick a visible spot's clue, or none. A hidden spot
+  shows once its pointer is held; before, it finds nothing.
+- **Retraction** marks a statement taken back; a conclusion holds only on
+  clues held and not taken back.
+- **Leads** name who or where: someone unmet, someone with more to give, a
+  hidden spot newly visible; each is marked new when it appears.
+- **Notebook**: held clues, without tells no clue depends on; never a
+  conclusion. No truth, rule or gate wording reaches the browser.
+- **Accusation**: the judge gets the graph and `clue_graph_progress`
+  (supported conclusions, whether one names the culprit, what was taken back).

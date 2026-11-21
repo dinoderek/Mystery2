@@ -2,13 +2,16 @@
 //
 // Together they play every command in docs/game.md under every alias, every
 // refusal, `help`, the turn budget running out by each kind of last turn, and a
-// won and a lost accusation, on the two fixture blueprints.
+// won and a lost accusation, on the two fixture blueprints; and the greenhouse
+// clue-graph case played to a win and to a loss.
 
 import type { ScriptStep } from "../../../testkit/src/golden/screen";
 
 export const BLUEPRINT_IDS = {
   "mock-blueprint": "123e4567-e89b-12d3-a456-426614174000",
   "the-missing-heartwood": "a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34",
+  // `clueGraphCaseId("greenhouse-prizewinner")`
+  "greenhouse-clue-graph": "9afa1ef4-b543-81b5-a50f-4a366ec7e2ef",
 } as const;
 
 export interface GoldenGame {
@@ -178,5 +181,34 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "talk to alexandra",
       "exit",
     ],
+  },
+  {
+    // First words, an answer, a gate opened that takes a statement back, and a
+    // win on a supported culprit.
+    name: "clue-graph-won",
+    blueprint: "greenhouse-clue-graph",
+    script: [
+      ENTER,
+      "search",
+      "search the smashed pumpkin",
+      "go to the workshop",
+      "talk to Mr. Dobbs",
+      "What about the noise last night?",
+      "bye",
+      "go to the garden",
+      "talk to Mr. Thorne",
+      "Look at these: clue_boot_prints",
+      "bye",
+      "notebook",
+      "accuse",
+      "It was Toby.",
+      "Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent.",
+    ],
+  },
+  {
+    // The culprit named with nothing to support it, then the wrong suspect, into a loss.
+    name: "clue-graph-lost",
+    blueprint: "greenhouse-clue-graph",
+    script: [ENTER, "talk to Ms. Hale", "What about the missing key?", "bye", "accuse", "It was Toby", "Toby, because I say so", "Then it was Mr. Thorne", "Mr. Thorne, I am sure"],
   },
 ];

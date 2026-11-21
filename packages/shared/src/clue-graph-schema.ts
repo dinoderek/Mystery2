@@ -90,6 +90,8 @@ const CharacterSchema = z
     name: text,
     location: id,
     role: z.enum(["culprit", "suspect", "witness"]),
+    /** Picks the narrator's pronouns, which are never guessed from a name. */
+    sex: z.enum(["male", "female"]),
     personality: text,
     demeanor: DemeanorSchema,
   })

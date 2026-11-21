@@ -84,7 +84,7 @@ describe("extraction from a database the test made", () => {
     const db = openDatabase({ path: game.databasePath });
     // What a version-2 database held: the labelled key and model tables.
     db.exec(
-      "alter table game_sessions drop column msf_snapshot; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;",
+      "alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;",
     );
     db.close();
     const before = { bytes: sha256(game.databasePath), ...inspect(game.databasePath) };

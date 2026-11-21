@@ -17,9 +17,11 @@ import { readGameMode } from "../state-machine.ts";
 import type { Db, SqlValue } from "./client.ts";
 import { insertEventRow } from "./events.ts";
 import { validateMsfCaseFile } from "../../../shared/src/msf-case.ts";
+import { validateClueGraph } from "../../../shared/src/clue-graph-validator.ts";
+import { clueGraphCaseId } from "../../../shared/src/clue-graph-case.ts";
 
 const SUMMARY_COLUMNS =
-  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(msf_snapshot, '$.structure.metadata.title') as msf_title";
+  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(msf_snapshot, '$.structure.metadata.title') as msf_title, json_extract(clue_graph_snapshot, '$.metadata.title') as clue_graph_title";
 
 /**
  * How each patchable column is written. `discovered_clues` is a JSON array in
@@ -55,8 +57,11 @@ function readJsonArray(value: unknown): string[] {
 function toSessionRow(row: Record<string, unknown>): GameSessionRow {
   const snapshot = typeof row.msf_snapshot === "string" ? validateMsfCaseFile(JSON.parse(row.msf_snapshot)) : undefined;
   if (snapshot && snapshot.structure.metadata.id !== row.blueprint_id) throw new Error("Saved MSF case does not match session blueprint");
+  const graph = typeof row.clue_graph_snapshot === "string" ? validateClueGraph(JSON.parse(row.clue_graph_snapshot)) : undefined;
+  if (graph && clueGraphCaseId(graph.metadata.id) !== row.blueprint_id) throw new Error("Saved clue-graph case does not match session blueprint");
   return {
     ...(snapshot ? { msf_snapshot: snapshot } : {}),
+    ...(graph ? { clue_graph_snapshot: graph } : {}),
     id: String(row.id),
     player_id: String(row.player_id),
     blueprint_id: String(row.blueprint_id),
@@ -78,6 +83,7 @@ function toSessionRow(row: Record<string, unknown>): GameSessionRow {
 function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
   return {
     ...(typeof row.msf_title === "string" ? { msf_title: row.msf_title } : {}),
+    ...(typeof row.clue_graph_title === "string" ? { clue_graph_title: row.clue_graph_title } : {}),
     id: String(row.id),
     blueprint_id: String(row.blueprint_id),
     mode: readGameMode(row.mode),
@@ -90,13 +96,15 @@ function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
 
 function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
   if (session.msf_snapshot && session.msf_snapshot.structure.metadata.id !== session.blueprint_id) throw new Error("MSF snapshot must match session blueprint");
+  if (session.clue_graph_snapshot && clueGraphCaseId(session.clue_graph_snapshot.metadata.id) !== session.blueprint_id) throw new Error("Clue-graph snapshot must match session blueprint");
   const now = new Date().toISOString();
 
   db.prepare(
     `insert into game_sessions (
        id, player_id, blueprint_id, ai_profile_id, mode,
-       current_location_id, time_remaining, created_at, updated_at, msf_snapshot
-     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       current_location_id, time_remaining, created_at, updated_at, msf_snapshot,
+       clue_graph_snapshot
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     session.player_id,
@@ -108,6 +116,7 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     now,
     now,
     session.msf_snapshot ? JSON.stringify(validateMsfCaseFile(session.msf_snapshot)) : null,
+    session.clue_graph_snapshot ? JSON.stringify(validateClueGraph(session.clue_graph_snapshot)) : null,
   );
 }
 

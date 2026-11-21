@@ -50,10 +50,11 @@ function readString(
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-// The clue ids a single search/ask event recorded as revealed. Reads the v2
-// `revealed_clue_ids` array plus the legacy single `revealed_clue_id`.
+// The clue ids a single search, ask or talk event recorded as revealed (a
+// clue-graph greeting gives first words). Reads the v2 `revealed_clue_ids`
+// array plus the legacy single `revealed_clue_id`.
 export function eventRevealedClueIds(event: DiscoveryHistoryRow): string[] {
-  if (event.event_type !== "search" && event.event_type !== "ask") return [];
+  if (!["search", "ask", "talk"].includes(event.event_type)) return [];
   const ids = new Set(readStringArray(event.payload, "revealed_clue_ids"));
   const single = readString(event.payload, "revealed_clue_id");
   if (single) ids.add(single);
@@ -239,7 +240,7 @@ export function buildDiscoveryRecords(
       records.push({
         id,
         text: entry.text,
-        source: event.event_type === "ask" ? "talk" : "search",
+        source: event.event_type === "search" ? "search" : "talk",
         origin: entry.origin,
         discovered_at: event.created_at ?? null,
         off_script: offScript.has(id),

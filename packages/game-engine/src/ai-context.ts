@@ -15,6 +15,15 @@ import {
 import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned, safeSteps } from "./character-state.ts";
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
+import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
+import { playOf } from "./clue-graph/history.ts";
+import { supportedConclusions } from "./clue-graph/play.ts";
+import {
+  buildGraphSearchContext,
+  buildGraphTalkContext,
+  type GraphSearchContext,
+  type GraphTalkContext,
+} from "./clue-graph/narrator-context.ts";
 
 export interface BlueprintClue {
   id: string;
@@ -77,6 +86,7 @@ export interface BlueprintReasoningPath {
 
 export interface BlueprintContext {
   msf?: MsfCaseFile;
+  clue_graph?: ClueGraphCase;
   metadata: {
     title: string;
     one_liner: string;
@@ -332,8 +342,19 @@ export interface AccusationStartContext {
 // The judge receives the whole blueprint, so it knows every clue that EXISTS.
 // What it cannot infer reliably from a long transcript is which of those the
 // investigator actually earned — that is what these two fields carry.
+/** What a clue-graph investigation has earned, derived from the events. */
+export interface ClueGraphProgress {
+  /** Conclusions whose rule holds over the clues held and not taken back. */
+  supported_conclusions: Array<{ id: string; text: string }>;
+  /** Whether a supported conclusion names the culprit. Alone it never wins. */
+  culprit_supported: boolean;
+  /** Statements the investigator has had taken back. */
+  taken_back: string[];
+}
+
 export interface AccusationJudgeContext {
   msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
+  clue_graph_progress?: ClueGraphProgress;
   round: number;
   full_blueprint: BlueprintContext;
   // Every clue discovered this session, in discovery order. The only thing
@@ -362,6 +383,9 @@ export type AIContext = {
   talk_context: TalkContext | null;
   accusation_start_context: AccusationStartContext | null;
   accusation_judge_context: AccusationJudgeContext | null;
+  // Present only for a clue-graph case's talk and search (`clue-graph/`).
+  graph_talk_context?: GraphTalkContext;
+  graph_search_context?: GraphSearchContext;
 };
 
 interface BuildContextInput {
@@ -380,6 +404,8 @@ interface BuildContextInput {
   talk_context?: TalkContext | null;
   accusation_start_context?: AccusationStartContext | null;
   accusation_judge_context?: AccusationJudgeContext | null;
+  graph_talk_context?: GraphTalkContext;
+  graph_search_context?: GraphSearchContext;
 }
 
 export function findLocationById(
@@ -805,7 +831,8 @@ function selectConversationHistoryForRole(
   if (
     input.role_name === "talk_start" ||
     input.role_name === "talk_conversation" ||
-    input.role_name === "talk_end"
+    input.role_name === "talk_end" ||
+    input.role_name === "graph_talk"
   ) {
     const characterId =
       input.character_id ?? input.session.current_talk_character_id;
@@ -861,6 +888,8 @@ function buildContext(input: BuildContextInput): AIContext {
     talk_context: input.talk_context ?? null,
     accusation_start_context: input.accusation_start_context ?? null,
     accusation_judge_context: input.accusation_judge_context ?? null,
+    ...(input.graph_talk_context ? { graph_talk_context: input.graph_talk_context } : {}),
+    ...(input.graph_search_context ? { graph_search_context: input.graph_search_context } : {}),
   };
 
   assertRoleContextSafety(input.role_name, context);
@@ -1118,7 +1147,73 @@ export function buildAccusationJudgeContext(input: {
       player_known_clues: buildKnownCluesWithOrigin(input.blueprint, discovered),
       path_coverage: buildPathCoverage(input.blueprint, discovered),
       ...(input.blueprint.msf ? { msf_progress: evaluateMysteryStructure(input.blueprint.msf.structure, discovered) } : {}),
+      ...(input.blueprint.clue_graph
+        ? { clue_graph_progress: clueGraphProgress(input.blueprint.clue_graph, input.conversation_history ?? []) }
+        : {}),
     },
+  });
+}
+
+function clueGraphProgress(graph: ClueGraphCase, history: ConversationFragment[]): ClueGraphProgress {
+  const play = playOf(graph, history);
+  const supported = supportedConclusions(graph, play);
+  const culprit = Object.keys(graph.characters).find((id) => graph.characters[id].role === "culprit");
+  return {
+    supported_conclusions: supported.map((id) => ({ id, text: graph.conclusions[id].text })),
+    culprit_supported: supported.some((id) => graph.conclusions[id].culprit === culprit),
+    taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => graph.clues[id].text),
+  };
+}
+
+function graphOf(blueprint: BlueprintContext): ClueGraphCase {
+  if (!blueprint.clue_graph) throw new Error("Not a clue-graph case");
+  return blueprint.clue_graph;
+}
+
+/** A clue-graph talk line, or its greeting when `player_input` is null. */
+export function buildGraphTalkAIContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  character_id: string;
+  location_id: string;
+  player_input: string | null;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const graph = graphOf(input.blueprint);
+  const history = input.conversation_history ?? [];
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "graph_talk",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    character_id: input.character_id,
+    player_input: input.player_input,
+    conversation_history: history,
+    graph_talk_context: buildGraphTalkContext(graph, playOf(graph, history), input.character_id, input.player_input === null),
+  });
+}
+
+/** A clue-graph search, plain when `search_query` is null. */
+export function buildGraphSearchAIContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  location_id: string;
+  search_query: string | null;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const graph = graphOf(input.blueprint);
+  const history = input.conversation_history ?? [];
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "search",
+    session: input.session,
+    blueprint: input.blueprint,
+    location_id: input.location_id,
+    conversation_history: history,
+    graph_search_context: buildGraphSearchContext(graph, playOf(graph, history), input.search_query),
   });
 }
 

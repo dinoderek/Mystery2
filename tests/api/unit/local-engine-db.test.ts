@@ -85,7 +85,7 @@ describe("local database client", () => {
   });
 
   it("creates a fresh database at the current version, holding the AI choice as one value", () => {
-    expect(SCHEMA_VERSION).toBe(4);
+    expect(SCHEMA_VERSION).toBe(5);
     expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     expect(
       db.prepare("pragma table_info(app_settings)").all().map((column) => column.name),
@@ -110,12 +110,25 @@ describe("local database client", () => {
   it("upgrades version 3 with a nullable private MSF snapshot and keeps existing sessions", async () => {
     const player = createPlayerStore(db).create("Version three");
     const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
-    db.exec("alter table game_sessions drop column msf_snapshot; pragma user_version = 3;");
+    db.exec("alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; pragma user_version = 3;");
     db.close();
     db = openDatabase({ path: databasePath() });
-    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 4 });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 5 });
     expect(await createSessionStore(db, player.id).getById(sessionId)).toMatchObject({ blueprint_id: "blueprint-1" });
     expect(db.prepare("select msf_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ msf_snapshot: null });
+  });
+
+  it("upgrades version 4 with a nullable private clue-graph snapshot and keeps existing sessions", async () => {
+    const player = createPlayerStore(db).create("Version four");
+    const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
+    db.exec("alter table game_sessions drop column clue_graph_snapshot; pragma user_version = 4;");
+    db.close();
+    db = openDatabase({ path: databasePath() });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 5 });
+    const session = await createSessionStore(db, player.id).getById(sessionId);
+    expect(session).toMatchObject({ blueprint_id: "blueprint-1" });
+    expect(session).not.toHaveProperty("clue_graph_snapshot");
+    expect(db.prepare("select clue_graph_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ clue_graph_snapshot: null });
   });
 
   it("applies the connection pragmas the schema depends on", () => {

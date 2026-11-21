@@ -34,6 +34,8 @@ import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
   buildArrivalCharacterContexts,
+  buildGraphSearchAIContext,
+  buildGraphTalkAIContext,
   buildSearchContext,
   buildTalkConversationContext,
   buildTalkEndContext,
@@ -54,6 +56,10 @@ import {
 } from "./ai-prompts.ts";
 import { talkPromptProfile } from "./talk-prompt.ts";
 import { msfRoleGuidance } from "./msf-context.ts";
+import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
+import { GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
+import { playOf } from "./clue-graph/history.ts";
+import { visibleSpots } from "./clue-graph/play.ts";
 
 /**
  * The two narrator outputs that are plain narration rather than a role-output
@@ -119,6 +125,15 @@ export type RoleRequestInput =
   | ({ role: "talk_end"; character_id: string; location_id: string } & SessionInput)
   | ({ role: "search_bare" } & SearchInputFields)
   | ({ role: "search_targeted" } & SearchInputFields)
+  // A clue-graph case's turns: the state comes from the history.
+  | ({
+    role: "graph_talk";
+    character_id: string;
+    location_id: string;
+    /** Null for the greeting. */
+    player_input: string | null;
+  } & SessionInput)
+  | ({ role: "graph_search"; location_id: string; search_query: string | null } & SessionInput)
   | ({
     role: "accusation_start";
     forced_by_timeout?: boolean;
@@ -209,10 +224,13 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }
       const history = input.conversation_history ?? [];
       const lastArrival = selectLastArrivalNarration(history, destination.id);
-      // A spot nothing has pointed to yet is not advertised (`isSpotHidden`).
+      // A spot nothing has pointed to yet is not advertised (`isSpotHidden`);
+      // a clue-graph case shows a hidden spot once its pointer is held.
       const discovered = buildDiscoveredClueIdSet(history);
+      const graph = input.blueprint.clue_graph;
+      const shown = graph ? new Set(visibleSpots(graph, playOf(graph, history), destination.id)) : null;
       const subLocations = (destination.sub_locations ?? [])
-        .filter((sl) => !isSpotHidden(sl, discovered))
+        .filter((sl) => (shown ? shown.has(sl.name) : !isSpotHidden(sl, discovered)))
         .map((sl) => ({ name: sl.name }));
       return buildGameMovePrompt({
         target_age: input.blueprint.metadata.target_age,
@@ -302,6 +320,56 @@ const REGISTRY: Record<RoleRequestName, any> = {
     vars: (input: InputFor<"search_targeted">) => searchVars(input),
   } satisfies TemplateRoleSpec<"search_targeted">,
 
+  graph_talk: {
+    kind: "template",
+    context: (input: InputFor<"graph_talk">) =>
+      buildGraphTalkAIContext({
+        game_id: input.game_id,
+        session: input.session,
+        blueprint: input.blueprint,
+        character_id: input.character_id,
+        location_id: input.location_id,
+        player_input: input.player_input,
+        conversation_history: input.conversation_history,
+      }),
+    vars: (input: InputFor<"graph_talk">) => {
+      const names = {
+        character_name: characterNameFor(input.blueprint, input.character_id),
+        player_input: input.player_input ?? "",
+      };
+      return {
+        ...names,
+        location_name: locationNameFor(input.blueprint, input.location_id),
+        turn: renderPrompt(input.player_input === null ? GRAPH_TALK_GREETING_TURN : GRAPH_TALK_LINE_TURN, names),
+      };
+    },
+    interaction: (input: InputFor<"graph_talk">) =>
+      input.player_input === null ? "talk_greeting" : undefined,
+  } satisfies TemplateRoleSpec<"graph_talk">,
+
+  graph_search: {
+    kind: "template",
+    context: (input: InputFor<"graph_search">) =>
+      buildGraphSearchAIContext({
+        game_id: input.game_id,
+        session: input.session,
+        blueprint: input.blueprint,
+        location_id: input.location_id,
+        search_query: input.search_query,
+        conversation_history: input.conversation_history,
+      }),
+    vars: (input: InputFor<"graph_search">) => ({
+      location_name: locationNameFor(input.blueprint, input.location_id),
+      search_target: input.search_query ? `: "${input.search_query}"` : "",
+    }),
+    // A known outcome has one budget; a judged one states both.
+    interaction: (input: InputFor<"graph_search">) => {
+      const outcome = buildGraphSearchAIContext(input).graph_search_context?.outcome;
+      if (outcome?.kind !== "known") return undefined;
+      return outcome.finds ? "search_find" : "search_empty";
+    },
+  } satisfies TemplateRoleSpec<"graph_search">,
+
   accusation_start: {
     kind: "template",
     context: (input: InputFor<"accusation_start">) =>
@@ -362,6 +430,13 @@ function searchVars(input: SearchInput) {
   };
 }
 
+/** The extra guidance a case format adds to a shared role's prompt. */
+function roleGuidance(blueprint: BlueprintContext, role: AIPromptKey): string {
+  if (blueprint.msf) return `\n\n${msfRoleGuidance(role)}`;
+  const guidance = blueprint.clue_graph ? clueGraphRoleGuidance(role) : "";
+  return guidance ? `\n\n${guidance}` : "";
+}
+
 export type NarrationRoleInput = Extract<RoleRequestInput, { role: NarrationRoleName }>;
 export type TemplateRoleInput = Extract<RoleRequestInput, { role: AIPromptKey }>;
 
@@ -419,7 +494,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
 
   return {
     role: input.role,
-    prompt: renderPrompt(template, spec.vars(input as never)) + (input.blueprint.msf ? `\n\n${msfRoleGuidance(input.role)}` : ""),
+    prompt: renderPrompt(template, spec.vars(input as never)) + roleGuidance(input.blueprint, input.role),
     context,
   };
 }

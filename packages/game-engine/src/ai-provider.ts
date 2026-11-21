@@ -7,6 +7,7 @@ import {
 } from "./ai-provider-claude-cli.ts";
 import { RetriableAIError } from "./errors.ts";
 import { searchNamesSpot } from "./search-target.ts";
+import type { GraphSearchContext, GraphTalkContext } from "./clue-graph/narrator-context.ts";
 
 export type AIProviderName = "mock" | "openrouter" | "claude-cli";
 
@@ -158,6 +159,81 @@ function mockUseAndCommitments(
  * like "asdfgh") reads as nonsense; anything with a vowel is treated as
  * understood. The live provider judges this via the prompt instead.
  */
+/**
+ * The mock's clue-graph talk line, as the live narrator is asked to judge it
+ * (`clue-graph/prompts.ts`), from the words alone: a question about an answer's
+ * "about" answers it; naming a subject shows its tell; a gate opens when the
+ * line names its show clues (held, or any clue for a bluffable gate), names the
+ * gate's own id for a worded line, or asks for "the truth" when it is asked
+ * plainly.
+ */
+export function mockGraphTalk(context: GraphTalkContext, playerInput: string | null): Record<string, unknown> {
+  const { character, state } = context;
+  const firstWords = state.says_first.map((entry) => [entry.says, ...entry.with].join(" "));
+  if (playerInput === null) {
+    const greeting = firstWords.length > 0 ? ` ${character.name} says: ${firstWords.join(" ")}` : "";
+    return {
+      narration: `[Mock] ${character.name} is here in ${context.location_name}.${greeting}`,
+      opened: [],
+      answered: [],
+      input_understood: true,
+    };
+  }
+  if (looksUnintelligible(playerInput)) {
+    return { narration: `[Mock] ${character.name} blinked. "Sorry — what?"`, opened: [], answered: [], input_understood: false };
+  }
+  const line = playerInput.toLowerCase();
+  const names = (text: string) => line.includes(text.toLowerCase());
+  const answers = state.answers_if_asked.filter((entry) => names(entry.about));
+  const tells = state.shows_when.filter((entry) => names(entry.subject));
+  const gates = state.gates.filter((gate) => {
+    const { show, line: worded, asked_plainly } = gate.opens_with;
+    if (asked_plainly) return /\btruth\b/.test(line);
+    if (worded && names(gate.id)) return true;
+    if (!show) return false;
+    const usable = show.clues.filter((clue) => names(clue.id) && (clue.held || gate.bluffable));
+    return show.match === "all" ? usable.length === show.clues.length : usable.length > 0;
+  });
+  const said = [
+    ...firstWords,
+    ...answers.map((entry) => [entry.says, ...entry.with].join(" ")),
+    ...tells.map((entry) => `(${entry.does})`),
+    ...gates.map((gate) => [gate.says, ...gate.with].join(" ")),
+  ];
+  return {
+    narration: said.length > 0
+      ? `[Mock] ${character.name} says: ${said.join(" ")}`
+      : `[Mock] ${character.name} thinks about your question: "${playerInput}".`,
+    opened: gates.map((gate) => gate.id),
+    answered: [...answers, ...tells].map((entry) => entry.id),
+    input_understood: true,
+  };
+}
+
+/** The mock's clue-graph search: a known outcome as given; a judged one finds nothing. */
+export function mockGraphSearch(context: GraphSearchContext): Record<string, unknown> {
+  const place = context.location_name;
+  if (context.search_query && looksUnintelligible(context.search_query)) {
+    return {
+      narration: `[Mock] You poke around ${place}, but you're not sure what you're even looking for.`,
+      revealed_clue_id: null,
+      costs_turn: false,
+      input_understood: false,
+    };
+  }
+  const { outcome } = context;
+  const where = outcome.kind === "known" && outcome.spot ? `${outcome.spot} in ${place}` : place;
+  const found = outcome.kind === "known" ? outcome.finds : null;
+  return {
+    narration: found
+      ? `[Mock] You search ${where} and uncover a clue: ${found.text}`
+      : `[Mock] You search ${where}, but find nothing new.`,
+    revealed_clue_id: found?.id ?? null,
+    costs_turn: true,
+    input_understood: true,
+  };
+}
+
 function looksUnintelligible(text: string): boolean {
   const letters = text.toLowerCase().replace(/[^a-z]/g, "");
   if (letters.length < 2) {
@@ -450,7 +526,14 @@ class MockAIProvider implements AIProvider {
             `[Mock] You say goodbye to ${characterName} and look around again.`,
         };
       }
+      case "graph_talk": {
+        const graphTalk = context.graph_talk_context as GraphTalkContext | undefined;
+        if (!graphTalk) throw new Error("Mock AI graph_talk requires graph_talk_context");
+        return mockGraphTalk(graphTalk, readOptionalContextString(context, "player_input"));
+      }
       case "search": {
+        const graphSearch = context.graph_search_context as GraphSearchContext | undefined;
+        if (graphSearch) return mockGraphSearch(graphSearch);
         const searchContext = context.search_context as
           | {
             location_name?: string | null;
@@ -537,6 +620,7 @@ class MockAIProvider implements AIProvider {
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
             msf_progress?: { solution_supported: boolean };
+            clue_graph_progress?: { culprit_supported: boolean };
           }
           | undefined;
         const round = accusationJudgeContext?.round ??
@@ -566,9 +650,11 @@ class MockAIProvider implements AIProvider {
         // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
         const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
           (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
+        // A clue-graph accusation needs the culprit conclusion supported.
+        const graphSupported = accusationJudgeContext?.clue_graph_progress?.culprit_supported ?? true;
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
-          : isCulprit && msfSupported
+          : isCulprit && msfSupported && graphSupported
           ? "win"
           : round >= 3
           ? "lose"

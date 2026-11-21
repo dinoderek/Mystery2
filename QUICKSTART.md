@@ -71,8 +71,9 @@ For a recorded comparison:
 ```
 
 Use a game's saved script from the first run. [Experiment details](docs/msf-gameplay.md).
-Database version 4 automatically adds private MSF snapshots; existing games are
-retained, but older checkouts cannot open the upgraded database.
+**The Smashed Prize Pumpkin — clue graph** plays the [clue graph](docs/clue-graph.md).
+Database version 5 adds private MSF and clue-graph snapshots; existing games are
+kept, but older checkouts cannot open the upgraded database.
 
 ### Live AI
 

@@ -1,0 +1,60 @@
+{
+  "game_id": "case",
+  "role_name": "graph_talk",
+  "mode": "talk",
+  "forced_by_timeout": false,
+  "location_id": "thorne_garden",
+  "character_id": "thorne",
+  "player_input": null,
+  "conversation_history": [],
+  "shared_mystery_context": {
+    "target_age": 10
+  },
+  "move_context": null,
+  "search_context": null,
+  "talk_context": null,
+  "accusation_start_context": null,
+  "accusation_judge_context": null,
+  "graph_talk_context": {
+    "character": {
+      "id": "thorne",
+      "name": "Mr. Thorne",
+      "sex": "male",
+      "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener."
+    },
+    "location_name": "Mr. Thorne's Garden",
+    "greeting": true,
+    "state": {
+      "character": "thorne",
+      "stance": "guarded",
+      "demeanor": "Prickly and defensive. He has heard he is being blamed and is cross about it.",
+      "says_first": [
+        {
+          "id": "thorne_alibi",
+          "says": "I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+          "with": []
+        },
+        {
+          "id": "clue_thorne_mia_cake",
+          "says": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+          "with": []
+        },
+        {
+          "id": "thorne_never_set_foot",
+          "says": "And I've never set foot in that school garden!",
+          "with": [
+            "His ears turn red and he scuffs one huge boot on the grass."
+          ]
+        }
+      ],
+      "answers_if_asked": [],
+      "gates": [],
+      "shows_when": [],
+      "story_so_far": [],
+      "established": [],
+      "keeps_back": [
+        "And I've never set foot in that school garden!"
+      ]
+    }
+  }
+}

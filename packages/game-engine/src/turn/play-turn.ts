@@ -11,7 +11,8 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import { buildMsfBlueprint, type PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
@@ -28,6 +29,7 @@ import { planAction } from "./plan.ts";
 import { resolveAccuseRound, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
 import { resolveSearch } from "./resolve-search.ts";
+import { resolveGraphLine, resolveGraphSearch, resolveGraphTalk } from "./resolve-clue-graph.ts";
 import { resolveAsk, resolveEndTalk, resolveTalk } from "./resolve-talk.ts";
 import type { ActionOutcome, PlannedAction, TurnGame, TurnRuntime } from "./types.ts";
 
@@ -93,7 +95,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
   const history = await ctx.events.listBySession(gameId);
   const session = await ctx.sessions.getById(gameId);
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
-  const blueprint = session.msf_snapshot ? buildMsfBlueprint(session.msf_snapshot) : await ctx.content.loadBlueprint(session.blueprint_id, logger);
+  const blueprint = await sessionCase(ctx.content, session, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
   return {
     game_id: gameId,
@@ -118,15 +120,17 @@ async function loadProvider(ctx: EngineContext, session: GameSessionRow, options
 }
 
 function resolveAction(game: TurnGame, runtime: TurnRuntime, action: PlannedAction): Promise<ActionOutcome> {
+  // A clue-graph case plays talk and search from its graph (`resolve-clue-graph.ts`).
+  const graph = game.blueprint.clue_graph !== undefined;
   switch (action.kind) {
     case "move":
       return resolveMove(game, runtime, action.destination);
     case "search":
-      return resolveSearch(game, runtime, action.query);
+      return graph ? resolveGraphSearch(game, runtime, action.query) : resolveSearch(game, runtime, action.query);
     case "talk":
-      return resolveTalk(game, runtime, action.character_id);
+      return graph ? resolveGraphTalk(game, runtime, action.character_id) : resolveTalk(game, runtime, action.character_id);
     case "ask":
-      return resolveAsk(game, runtime, action);
+      return graph ? resolveGraphLine(game, runtime, action) : resolveAsk(game, runtime, action);
     case "end_talk":
       return resolveEndTalk(game, runtime, action.character_id);
     case "accuse_start":

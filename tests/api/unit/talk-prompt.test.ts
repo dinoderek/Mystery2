@@ -113,6 +113,8 @@ const RULES = [
   "never make one that contradicts current_story",
   "Raise your alibi only when asked where you were or when",
   "concede what its \"shows\" says",
+  "A use is a fact about their words",
+  "Once it is used, give the clue that turn",
   "is null until all its parts are earned",
   "a precondition, never permission",
   "unless the reason is a physical gate",
@@ -137,6 +139,11 @@ const CONFLICTS: Array<[string, string]> = [
   ["3+ times", "fallback_open"],
   ["No part earned: stay in control", "hold to current_story"],
   ["Use actual_actions (ordered timeline) to stay consistent", "Keep to actual_actions, the parts of your day you will speak of"],
+  // An earned part used to be bent to fit the alibi, and a re-pressed clue read as a repeated push.
+  ["fitted into your story", "even where it breaks your alibi"],
+  ["repeating a push", "a demand with no clue in it"],
+  ["making its point and aiming it at you", "showing it to you, or making its point at you"],
+  ["they must show you it.", "they must show you what it names."],
 ];
 
 const count = (text: string, needle: string) => text.split(needle).length - 1;

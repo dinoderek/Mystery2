@@ -137,11 +137,13 @@ function pronounForSex(sex: "male" | "female" | null): string {
 function mockUseAndCommitments(
   playerInput: string,
   gateClues: Array<{ id?: string }>,
+  alreadyUsed: readonly string[],
 ): { used_clue_ids: string[]; used_quote: string | null; new_commitments: string[] } {
   const line = playerInput.toLowerCase();
+  // A use already in the character's state is never reported again.
   const used = gateClues
     .map((clue) => clue.id)
-    .filter((id): id is string => typeof id === "string" && line.includes(id.toLowerCase()));
+    .filter((id): id is string => typeof id === "string" && line.includes(id.toLowerCase()) && !alreadyUsed.includes(id));
   const denial = /^\s*did you ([^?.!]+)/i.exec(playerInput)?.[1]?.trim();
   return {
     used_clue_ids: used,
@@ -366,7 +368,7 @@ class MockAIProvider implements AIProvider {
               }>;
               stated_alibi?: string | null;
               gate_clues?: Array<{ id?: string; held?: boolean }>;
-              state?: { current_story?: string[] };
+              state?: { current_story?: string[]; used_clue_ids?: string[] };
             };
           }
           | undefined;
@@ -386,7 +388,11 @@ class MockAIProvider implements AIProvider {
           };
         }
         const reported = {
-          ...mockUseAndCommitments(playerInput, talkCtx?.active_character?.gate_clues ?? []),
+          ...mockUseAndCommitments(
+            playerInput,
+            talkCtx?.active_character?.gate_clues ?? [],
+            talkCtx?.active_character?.state?.used_clue_ids ?? [],
+          ),
           input_understood: true,
         };
         // The character keeps to the latest line of their story once a part

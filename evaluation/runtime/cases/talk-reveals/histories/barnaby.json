@@ -333,7 +333,11 @@
       "character_id": "barnaby",
       "character_name": "Barnaby",
       "location_id": "platform",
-      "revealed_clue_ids": []
+      "revealed_clue_ids": [],
+      "used_clue_ids": [
+        "clue_snowshoe_prints"
+      ],
+      "used_quote": "the prints were snowshoes not wolf paws"
     }
   },
   {

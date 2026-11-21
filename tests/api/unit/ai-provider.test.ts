@@ -503,6 +503,15 @@ describe("mock talk_conversation use and commitments", () => {
     expect(out.used_quote).toBe("This clue-crumb says you were snacking.");
   });
 
+  it("never reports again a use already in the character's state", async () => {
+    const out = await askWith(
+      { gate_clues: [{ id: "clue-crumb", held: true }], state: { used_clue_ids: ["clue-crumb"] } },
+      "This clue-crumb says you were snacking.",
+    );
+    expect(out.used_clue_ids).toEqual([]);
+    expect(out.used_quote).toBeNull();
+  });
+
   it("reports no use when the line names no gate clue", async () => {
     const out = await askWith({ gate_clues: [{ id: "clue-crumb", held: true }] }, "Were you snacking?");
     expect(out.used_clue_ids).toEqual([]);

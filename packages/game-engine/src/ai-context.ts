@@ -190,12 +190,17 @@ export interface ArrivalCharacterContext {
   tells: string[];
 }
 
+// A clue as search shows it: without its gate. Every clue search sees is one
+// the engine has already let through (unlocked, or admitted by a search that
+// names its spot), so the gate's reason would only read as a reason to withhold.
+export type SearchClue = Omit<BlueprintClue, "requires">;
+
 export interface SubLocationContext {
   id: string;
   name: string;
   hint: string;
-  clues: BlueprintClue[];
-  unrevealed_clues: BlueprintClue[];
+  clues: SearchClue[];
+  unrevealed_clues: SearchClue[];
   has_unrevealed_clues: boolean;
 }
 
@@ -203,10 +208,9 @@ export interface SearchContext {
   location_id: string;
   location_name: string;
   location_description: string;
-  clues: BlueprintClue[];
+  clues: SearchClue[];
   revealed_clue_ids: string[];
-  next_clue: BlueprintClue | null;
-  has_more_clues: boolean;
+  next_clue: SearchClue | null;
   sub_locations: SubLocationContext[];
   search_query: string | null;
 }
@@ -941,6 +945,10 @@ export function buildTalkEndContext(input: {
   });
 }
 
+function toSearchClue({ requires: _gate, ...clue }: BlueprintClue): SearchClue {
+  return clue;
+}
+
 export function buildSearchContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -978,7 +986,7 @@ export function buildSearchContext(input: {
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {
       // A named hidden spot shows only the clue the search can admit.
-      const visibleClues = sl.id === admitted ? sl.clues.slice(0, 1) : sl.clues.filter(isVisible);
+      const visibleClues = (sl.id === admitted ? sl.clues.slice(0, 1) : sl.clues.filter(isVisible)).map(toSearchClue);
       const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
       return {
         id: sl.id,
@@ -1001,10 +1009,9 @@ export function buildSearchContext(input: {
       location_id: location.id,
       location_name: location.name,
       location_description: location.description,
-      clues: location.clues.filter(isVisible),
+      clues: location.clues.filter(isVisible).map(toSearchClue),
       revealed_clue_ids: input.revealed_clue_ids,
-      next_clue: input.next_clue,
-      has_more_clues: input.next_clue !== null,
+      next_clue: input.next_clue && toSearchClue(input.next_clue),
       sub_locations: subLocations,
       search_query: input.search_query ?? null,
     },

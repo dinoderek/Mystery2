@@ -3,6 +3,7 @@ import {
   buildAgeGuidance,
   buildGameMovePrompt,
   buildGameStartPrompt,
+  buildStyleGuidance,
   loadPromptTemplate,
   renderPrompt,
 } from "../../../packages/game-engine/src/ai-prompts.ts";
@@ -53,6 +54,15 @@ describe("ai-prompts", () => {
     expect(styled).toContain(
       "This mystery's own voice (follow it within the rules above): salty harbor air and gull cries",
     );
+  });
+
+  it("keeps the two search prompts no longer than before the reveal fix", async () => {
+    // The roles' own rules, without the shared age and style guidance they load.
+    const ownLength = async (role: "search_bare" | "search_targeted") =>
+      (await loadPromptTemplate(role, 10)).length - buildAgeGuidance(role, 10).length - buildStyleGuidance().length;
+    const total = (await ownLength("search_bare")) + (await ownLength("search_targeted"));
+    // 2,256 characters before the reveal fix: a rule added here pays for itself.
+    expect(total).toBeLessThanOrEqual(2256);
   });
 
   it("bare search can borrow the clue-reveal word budget when a clue will surface", async () => {

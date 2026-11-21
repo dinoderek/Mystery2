@@ -3,7 +3,7 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
-> - `docs/ai-runtime.md#context-boundaries` — `da0a5bc87e3ba7fe9317b60d8bcb7d3494bf2185`
+> - `docs/ai-runtime.md#context-boundaries` — `8dd0e325f0a079c7c445e5de59cd3fac8c4c8d56`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
 > - `docs/blueprint-generation-flows.md#gameplay-narration` — `8117b3394386cc4cc73a8dd80e8a075a7c9ad952`
@@ -73,12 +73,12 @@ Each clue's optional `requires` (`{ kind, clue_ids, rationale, target }`) is con
 differently by search and by talk, and the difference should shape how you write
 each `rationale`:
 
-- **Search — hard gate.** Bare search reveals the first clue that is both
-  unrevealed and unlocked, skipping locked ones so the player is never
-  dead-ended. Targeted search filters locked clues out of the narrator's context
-  entirely, and a backend backstop rejects a locked reveal. An all-locked
-  sub-location stays hidden until its pointer is found, but a search naming it
-  finds its clue, so name it as a child would.
+- **Search — hard gate.** Bare search reveals the first unrevealed, unlocked
+  clue, so the player is never dead-ended. Targeted search never sees locked
+  clues, and the backend rejects a locked reveal. An all-locked sub-location
+  stays hidden until its pointer is found, but a search naming it finds its
+  clue, so name it as a child would. The search narrator never sees a
+  `rationale`: write it for talk.
 - **Talk — earned by use.** Each character clue reaches the narrator with its
   `requires_rationale` and a precomputed `player_can_use_prerequisites` flag
   (prerequisite *ids* are not sent). Holding is not earning: the narrator

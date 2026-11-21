@@ -290,7 +290,6 @@ describe("ai-context guardrails", () => {
       clues: [{ id: "clue-crumbs", text: "crumbs" }],
       revealed_clue_ids: ["clue-crumbs"],
       next_clue: null,
-      has_more_clues: false,
     });
     expect(searchContext.conversation_history[0]?.payload).toMatchObject({
       revealed_clue_text: "crumbs",
@@ -351,6 +350,8 @@ describe("ai-context guardrails", () => {
     });
     expect(admitted.search_context?.sub_locations.map((sl) => sl.id)).toEqual(["sub-drawer"]);
     expect(admitted.search_context?.sub_locations[0]?.unrevealed_clues.map((c) => c.id)).toEqual(["clue-locked"]);
+    // Its gate is not sent: the engine has decided, and its reason reads as "withhold".
+    expect(JSON.stringify(admitted.search_context)).not.toContain("requires");
 
     // One that names something else is not.
     const missed = buildSearchContext({
@@ -374,8 +375,9 @@ describe("ai-context guardrails", () => {
       discovered_clue_ids: ["clue-crumbs"],
       next_clue: null,
     });
+    // An unlocked clue reaches search without its gate, which is met.
     expect(unlocked.search_context?.sub_locations[0]?.unrevealed_clues).toEqual([
-      { id: "clue-locked", text: "a hidden note", requires: { kind: "pointer", clue_ids: ["clue-crumbs"], rationale: "found only after the crumbs" } },
+      { id: "clue-locked", text: "a hidden note" },
     ]);
   });
 

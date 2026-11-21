@@ -86,11 +86,12 @@ Which blueprint fields reach which role is the "Narration at play" table in
   be a hiding place. A return gets the last arrival's narration.
   `role-request.ts` derives it from history
   (`tests/api/unit/arrival-prompt.test.ts`).
-- **Search never sees a locked clue**, so its text is never woven in, nor a
-  spot whose clues are all locked, so no search or arrival advertises it or
-  narrates "nothing here" there. A targeted search whose words name that spot
-  (`search-target.ts`) shows it and admits its clue, logged as
-  `search.clue_admitted_by_target`: specificity, not possession.
+- **Search never sees a locked clue**, nor a spot whose clues are all locked,
+  so no search or arrival weaves in, advertises or narrates "nothing here" for
+  either. A targeted search naming that spot (`search-target.ts`) shows it and
+  admits its clue (`search.clue_admitted_by_target`): specificity, not
+  possession. No search clue carries its `requires`: the engine has decided, and
+  a gate's reason reads as "withhold".
 - **The judge gets what the investigator earned**: `player_known_clues` (in
   order, each with an `origin_label`) and `path_coverage` (per reasoning path,
   found and missing clue ids). Without them it cannot tell an earned case from

@@ -118,7 +118,7 @@ invalid output is retriable.
   (`search.clue_locked`).
 - When the model reports `input_understood: false` (gibberish), the parser
   empties the reveals, uses and commitments, and a search costs no turn.
-- The parser alone applies rules that span fields.
+- Rules that span fields are the parser's, never asked of the model.
 
 ## Clue discovery and gating
 <!-- extract:clue-gating -->

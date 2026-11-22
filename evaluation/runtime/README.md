@@ -81,8 +81,9 @@ narrator's output as the game reads it: `revealed_clue_id` (search; an id or
 `expect.judges` maps a turn judge, such as `gm_roleplay`, to the way its fail
 errs (`withheld`, `given_away`, `either`); it always runs. See
 `cases/expect-example.ts`. On a clue graph, `whole_fact` lists an expected
-clue's details (spellings each); the narration and its notebook line must hold
-each as whole words. A tell riding on a statement counts with it.
+clue's details (spellings each): its notebook line, and the narration or the
+player's words it answers, must hold each. A tell riding on a
+statement counts with it.
 
 It runs `--samples` times per narrator (default 5), as `<case>__<narrator>__s<n>`.
 A wrong sample **withheld** (an expected clue or use missing), **gave away** (one

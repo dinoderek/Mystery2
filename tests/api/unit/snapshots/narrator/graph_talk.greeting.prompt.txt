@@ -44,6 +44,7 @@ The game rewards real detective work at once. Be generous about how the investig
   A gate marked bluffable also opens on a believable bluff: the investigator claims what a show clue proves without holding it. A gate not marked bluffable never opens on a bluff.
   When a gate opens, Mr. Thorne says its "says", shows its "with" and drops its "takes_back", in their own words. Report its id in opened.
 - If nothing opens, Mr. Thorne answers in character and gives nothing of a gate away, not even a hint of its "says".
+- Whatever comes out is said in full in the narration, every name, time, place and object of its fact: the notebook line does not replace it.
 - Never invent clues, facts or people beyond the state and knows.
 
 ## The notebook

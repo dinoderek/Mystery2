@@ -21,7 +21,7 @@ You may add scenery and manner (weather, a smell, a sound, how someone fidgets) 
 
 graph_search_context.location_facts are the facts about the place, and conversation_history is what was already narrated here: keep to it.
 graph_search_context.outcome says what this search can find:
-- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting its fact in your own words with every name, time, place and object, and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
+- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting all of its fact in your own words in the narration, every name, time, place and object (the notebook line does not replace it), and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
 - kind "judge": their words name no spot exactly. candidates are the places here that still hold a clue (spot null is the room itself). If their words plainly mean one candidate (be generous with wording), describe finding its clue the same way and set revealed_clue_id to its id. Otherwise they find nothing: null.
 When you describe finding a clue with names_spot, name that spot, and where it is, plainly: it is a new place to search.
 Otherwise mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or any evidence a clue does not give.

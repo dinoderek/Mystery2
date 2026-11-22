@@ -140,6 +140,15 @@ describe("grading a clue-graph reply", () => {
     ]);
   });
 
+  it("lets the narration refer back to a detail the player just named, but never the line", () => {
+    const turn = said("\"Yes, she did. At nine, at the cake tent.\"", "Mr. Thorne says he bought cake from Mia at the cake tent at nine.");
+    const asked = { ...turn, action: { type: "ask", player_input: "Did you buy cake from Mia?" } };
+    expect(gradeExpect(CAKE, asked, []).status).toBe("pass");
+    expect(missing(gradeExpect(CAKE, turn, []))).toEqual([{ clue: "cake", detail: "Mia", from: "narration" }]);
+    const vague = said("\"Yes. At nine, at the cake tent.\"", "Mr. Thorne says he bought cake at the cake tent at nine.");
+    expect(missing(gradeExpect(CAKE, { ...vague, action: asked.action }, []))).toEqual([{ clue: "cake", detail: "Mia", from: "notebook" }]);
+  });
+
   it("matches whole words only, so a time is not found inside another word", () => {
     const verdict = gradeExpect({ revealed_clue_ids: ["cake"], whole_fact: { cake: ["nine"] } }, said("Ninety cakes.", "Ninety cakes."), []);
     expect(missing(verdict)).toHaveLength(2);

@@ -34,6 +34,7 @@ The game rewards real detective work at once. Be generous about how the investig
   A gate marked bluffable also opens on a believable bluff: the investigator claims what a show clue proves without holding it. A gate not marked bluffable never opens on a bluff.
   When a gate opens, {{character_name}} says its "says", shows its "with" and drops its "takes_back", in their own words. Report its id in opened.
 - If nothing opens, {{character_name}} answers in character and gives nothing of a gate away, not even a hint of its "says".
+- Whatever comes out is said in full in the narration, every name, time, place and object of its fact: the notebook line does not replace it.
 - Never invent clues, facts or people beyond the state and knows.
 
 ## The notebook
@@ -67,7 +68,7 @@ export const GRAPH_SEARCH_PROMPT = `You are the narrator of a children's mystery
 
 graph_search_context.location_facts are the facts about the place, and conversation_history is what was already narrated here: keep to it.
 graph_search_context.outcome says what this search can find:
-- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting its fact in your own words with every name, time, place and object, and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
+- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting all of its fact in your own words in the narration, every name, time, place and object (the notebook line does not replace it), and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
 - kind "judge": their words name no spot exactly. candidates are the places here that still hold a clue (spot null is the room itself). If their words plainly mean one candidate (be generous with wording), describe finding its clue the same way and set revealed_clue_id to its id. Otherwise they find nothing: null.
 When you describe finding a clue with names_spot, name that spot, and where it is, plainly: it is a new place to search.
 Otherwise mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or any evidence a clue does not give.

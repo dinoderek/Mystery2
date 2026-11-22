@@ -12,8 +12,8 @@
  * - `judged`: a judge failed and the case does not say which way that errs.
  *
  * A clue-graph case may name, per clue, the details its fact holds
- * (`whole_fact`): each must be in the turn's narration and in that clue's
- * notebook line, or the sample `withheld` it.
+ * (`whole_fact`): each must be in that clue's notebook line, and in the
+ * narration or the player's words it answers, or the sample `withheld` it.
  *
  * A talk sample that withheld, on a case naming the uses it expects, says
  * whether the use went `unseen` (one is missing from `used_clue_ids`) or was
@@ -205,7 +205,9 @@ function carries(text: string, detail: Detail): boolean {
 
 /**
  * Each detail of each whole-fact clue the turn revealed that its narration or
- * its notebook line leaves out. A clue not revealed is the id check's to grade.
+ * its notebook line leaves out. The narration answers the player's words, so a
+ * detail they just named may be referred back to ("they're mine"); the line
+ * stands alone and names every one. A clue not revealed is the id check's to grade.
  */
 function missingDetails(expect: Expect, said: Said, narration: string): MissingDetail[] {
   const missing: MissingDetail[] = [];
@@ -304,7 +306,8 @@ export function gradeExpect(expect: Expect, turn: StoredTurn, verdicts: readonly
   const { statuses, ungradable } = judgeStatuses(expect, verdicts);
   if (ungradable) return { id: EXPECT_VERDICT, tier: "mechanical", status: "error", reason: ungradable };
   const checks = idChecks(expect, said, comesWith);
-  const missing = missingDetails(expect, said, turn.response.narration_text ?? "");
+  const exchange = [turn.action.player_input, turn.action.search_query, turn.response.narration_text].filter(Boolean).join("\n");
+  const missing = missingDetails(expect, said, exchange);
   const erred = erredWays(expect, checks, said, statuses, missing);
   return {
     id: EXPECT_VERDICT,

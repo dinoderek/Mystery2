@@ -716,7 +716,7 @@
         },
         "clue_thorne_mia_cake": {
           "kind": "statement",
-          "fact": "Mr. Thorne says that at nine o'clock he bought carrot cake from Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+          "fact": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
           "source": {
             "character": "thorne"
           },
@@ -1256,7 +1256,7 @@
             },
             {
               "id": "clue_thorne_mia_cake",
-              "text": "Mr. Thorne says that at nine o'clock he bought carrot cake from Mia at the fair's cake tent, across town. She was serving there from six till ten."
+              "text": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten."
             },
             {
               "id": "thorne_never_set_foot",

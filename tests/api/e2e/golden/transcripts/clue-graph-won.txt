@@ -45,7 +45,7 @@ pages
     step 8 | Narrator (narrator): "[Mock] You arrive at Mr. Thorne's Garden. Mr. Thorne is here."
   page 6 conversation "Mr. Thorne"
     step 9 | You (investigator): "talk to Mr. Thorne"
-    step 9 | Narrator (narrator): "[Mock] Mr. Thorne is here in Mr. Thorne's Garden. Mr. Thorne says: Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Mr. Thorne says that at nine o'clock he bought carrot cake from Mia at the fair's cake tent, across town. She was serving there from six till ten. Mr. Thorne says he has never set foot in the school garden. Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
+    step 9 | Narrator (narrator): "[Mock] Mr. Thorne is here in Mr. Thorne's Garden. Mr. Thorne says: Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten. Mr. Thorne says he has never set foot in the school garden. Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
     step 10 | You (investigator): "Look at these: clue_boot_prints"
     step 10 | Mr. Thorne (character): "[Mock] Mr. Thorne says: Mr. Thorne admits he climbed over on Friday at four to measure Bertha through the window, and that the boot prints are his. He says Bertha was perfectly whole."
   page 7 location "Mr. Thorne's Garden"

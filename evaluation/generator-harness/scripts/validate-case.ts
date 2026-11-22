@@ -3,7 +3,8 @@
 // check exactly as `./dev generate` runs it (`runClueGraphChecks`), with its
 // brief, so the agent sees every fault the harness will quote back to it. The
 // brief is the brief.json beside the case, else the one in the current
-// directory, so an example can be checked too.
+// directory, so a case elsewhere in the workspace is checked against the
+// workspace's brief.
 //
 // Usage: node scripts/validate-case.ts ./case.json
 //

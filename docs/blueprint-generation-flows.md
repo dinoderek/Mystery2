@@ -7,8 +7,9 @@ store ids.
 
 ## Generating a clue-graph case
 
-By default `./dev generate` writes a `clue-graph/2` case (agent only) from a brief, `packages/blueprint-generator/src/clue-graph-brief.ts`, whose
-age and size the case carries.
+By default `./dev generate` writes a `clue-graph/2` case (agent only) from a
+brief, `packages/blueprint-generator/src/clue-graph-brief.ts`, whose age and
+size the case carries.
 
 - **System:** `packages/blueprint-generator/src/clue-graph-prompt.md` alone:
   no age guidance or validator rule.

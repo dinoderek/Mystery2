@@ -2,12 +2,13 @@
 # Wrapper invoked by the evaluation pipeline for the "generate" step.
 #
 # Contract with the pipeline:
-#   $1 — path to the rendered generator system prompt: the canonical prompt
-#        plus the age-specific guidance for the brief's targetAge. It is copied
+#   $1 — path to the rendered generator system prompt: for V2, the canonical
+#        prompt plus the age-specific guidance for the brief's targetAge; for a
+#        clue graph, the clue-graph prompt alone, which has no age section. It is copied
 #        into the workspace as prompts/generator-prompt.md, so the agent reads
 #        exactly what the standalone generator would send. Without it (a hand
-#        run) the workspace keeps the link to the canonical prompt, which has no
-#        age section, and the wrapper warns on stderr.
+#        run) the workspace keeps the link to the canonical prompt, which for V2
+#        lacks the age section, and the wrapper warns on stderr.
 #   $2 — path to the user message JSON ({ story_brief, instructions }). A
 #        repair round's message also holds `repair`: { round, blueprint,
 #        notice, reports }. The wrapper then seeds the workspace with that
@@ -33,7 +34,8 @@
 #   EVAL_WORKSPACE_BASE_ID — brief name used in the fallback run dir name.
 #
 # This wrapper creates a one-shot generator workspace, invokes the claude CLI
-# inside it as an agent, and reads the resulting ./blueprint.json back out.
+# inside it as an agent, and reads its output file ($OUTPUT: ./blueprint.json,
+# or ./case.json for a clue graph) back out.
 # Nothing is ever deleted: a workspace collision branches to a -retry sibling,
 # so prior attempts (and their claude.stderr.log diagnostics) are preserved.
 
@@ -121,7 +123,7 @@ cd "$WORKSPACE"
 # just the kickoff. We run with stream-json so the pipeline can tail the live
 # event stream from $STREAM_FILE (the pipeline sets EVAL_STREAM_FILE to a
 # tailable logs/<step>.stream.jsonl). The blueprint itself is read back from
-# disk (./blueprint.json), so the output format does NOT affect the result
+# disk ($OUTPUT), so the output format does NOT affect the result
 # contract the pipeline extracts below.
 STREAM_FILE="${EVAL_STREAM_FILE:-$WORKSPACE/claude.stream.jsonl}"
 mkdir -p "$(dirname "$STREAM_FILE")"

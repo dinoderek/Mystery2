@@ -21,7 +21,7 @@
   },
   "truth": {
     "timeline": [
-      "Friday 7:30pm: on the museum tour, Mr. Dunmore winds up the Silver Lark in the Railway Room and says, 'Have a good look, because on Monday the little train is going away.' He means it is going to Mr. Penhallow the clock-mender to be cleaned and will be back in two weeks, but the children rush off to the dinosaurs before he can finish. Oscar, whose great-grandad Bert drove the real Silver Lark, thinks the train is going away for ever.",
+      "Friday 7:30pm: on the museum tour, Mr. Dunmore winds up the Silver Lark in the Railway Room and says, 'Have a good look, because on Monday the little train is going away.' He means it is going to Mr. Penhallow the clock-mender to be cleaned and will be back in two weeks, but the children rush off to the dinosaurs before he can finish. Oscar looks back over his shoulder at the train, very worried, as he goes. Oscar, whose great-grandad Bert drove the real Silver Lark, thinks the train is going away for ever.",
       "Friday 7:40pm: Maisie drops her grey toy rabbit, Button, under the bench by the window in the Railway Room during the tour, and does not notice.",
       "Friday 9:00pm: lights out. The children are in their sleeping bags under the T. rex skeleton in the Dinosaur Hall. Oscar's sleeping bag is next to Jack's. Ms. Okafor sleeps on a camp bed in the corner of the Dinosaur Hall and does not wake until 6:30am.",
       "Midnight: on his night round, Mr. Dunmore sees the Silver Lark still in its glass case.",
@@ -532,7 +532,7 @@
     },
     "dunmore_monday": {
       "kind": "statement",
-      "fact": "Mr. Dunmore says that on last night's tour he told the children the Silver Lark was going away on Monday, but they all ran off to see the dinosaurs before he could say why. Oscar stayed behind and asked, very worried, whether the train was going away for ever.",
+      "fact": "Mr. Dunmore says that on last night's tour he told the children the Silver Lark was going away on Monday, but they all ran off to see the dinosaurs before he could say why. As they ran, he saw Oscar look back over his shoulder at the train, very worried.",
       "source": {
         "character": "dunmore"
       },

@@ -201,6 +201,21 @@ describe('validate-judge-output', () => {
 	it('exits 3 with no verdict argument', async () => {
 		expect(await runScript(VALIDATE_JUDGE, [])).toMatchObject({ code: 3, stderr: expect.stringContaining('usage:') });
 	});
+
+	it('reads a clue-graph case from case.json, and checks the ids cited against it', async () => {
+		write('dimension-id', 'cg_truth_agreement\n');
+		write('case.json', JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'blueprints/clue-graph/dragon-crown.json'), 'utf8')));
+		const answer = (ids: string[]) => ({
+			findings: [{ severity: 'minor', kind: 'detail_mismatch', ids, explanation: 'A small slip.' }],
+			verdict: 'pass',
+			reasoning: 'r'
+		});
+		const file = write('verdict.json', answer(['pike_roof', 'pike']));
+		expect(await runScript(VALIDATE_JUDGE, [file])).toMatchObject({ code: 0, stdout: `OK: ${file} (cg_truth_agreement) [shape + refs]\n` });
+		const ran = await runScript(VALIDATE_JUDGE, [write('verdict.json', answer(['no_such_clue']))]);
+		expect(ran.code).toBe(1);
+		expect(ran.stderr).toContain('no_such_clue');
+	});
 });
 
 describe('the api generation wrapper', () => {

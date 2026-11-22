@@ -1,0 +1,199 @@
+# Clue-graph case evaluator — single dimension
+
+You are evaluating one quality of a clue-graph mystery case, a detective game
+played by a child. You are given:
+
+- The dimension definition: what to judge, how, and the output.
+- `case`: the case file. The step judge also gets `player_view`, derived from
+  the case by code.
+
+## The case
+
+A case holds facts, never the words a child reads: in play a narrator words
+each fact for the child's age. Judge what the facts say, not their style.
+
+- `truth.timeline` and `truth.motive`: what really happened. Authoritative.
+- `opening.facts`: what is public at the start.
+- `locations`: facts about each place, and its `spots`. A spot with
+  `revealed_by` is hidden until that clue is held.
+- `characters`: `role` (`culprit`, `suspect` or `witness`), `location`,
+  `personality`, `demeanor` lines by stance, `knows` (plain true facts they
+  share when asked, never clues) and `appearance`.
+- `clues`, by `kind`. Evidence is found by searching its source, and is
+  always true. A statement is what a character claims: `truth: false`, with
+  its `why`, is a lie the case means them to tell. A tell is what is observed
+  of a character. `reached` says how a character's clue comes out:
+  `first_meeting`; `seen` (a tell, with one of their statements or when a
+  subject comes up); `asked` about a subject once one of `prompted_by` is
+  held (`opening` stands for the opening); or `gated`. A gate opens once its
+  `after` clues are out, when the player shows a `use` clue (any or all of
+  them), or takes its `line` of questioning, which its `hinted_by` tell hints
+  at. A gated statement may `takes_back` the character's earlier false ones.
+- `conclusions`: what the player can work out, never shown to them. A `rule`
+  names clues and conclusions under `all` and `any`; `text` says what follows.
+  A conclusion may `clears` a suspect, name the `culprit`, or `resolves` a
+  red herring.
+
+## Already checked by code
+
+The case passed `validateClueGraph`, or its failures are reported apart from
+yours. It checks the shape and every reference; that every clue is reached
+from the opening without a bluff; that an asked clue has a prompt and a
+worded gate a hinting tell; that every false statement is taken back, by a
+clue not reached before it; that every conclusion is reached and every suspect
+cleared by one; that the culprit has a route within the turn budget; that no
+spot or plain search holds two clues; and that `after` links have no cycle.
+Do not re-judge any of these: judge what the facts mean.
+
+## Your job
+
+1. Follow the dimension's procedure.
+2. Ground every finding in the case's ids, and quote the fact at fault.
+3. A finding is `major` when a child playing would be misled, stuck or told
+   something untrue, `minor` when it is worth fixing but play still works.
+   The dimension fails on any major finding: set `verdict` to match.
+4. Return only the JSON object the schema asks for.
+5. If the case is unusable, say so in `reasoning` with a major finding.
+
+Be terse. Long explanations dilute the signal.
+
+
+---
+
+---
+id: cg_truth_agreement
+label: Truth agreement
+tier: 1
+---
+
+# Truth agreement
+
+## What this dimension asks
+
+Do the facts the player hears agree with what really happened, in
+`truth.timeline` and `truth.motive`?
+
+1. Every evidence fact, and every statement with `truth: true`, agrees with
+   the timeline on who, what, where and when.
+2. Every statement with `truth: false` disagrees with it, in the way its `why`
+   explains, and is not secretly true.
+3. Where a false statement is taken back, the gated statement that
+   `takes_back` it, or the clues the player shows to open that gate (`use`),
+   contradict it, so the player can see why the first claim was false.
+4. No `knows` fact, which a character shares freely whenever asked, gives away
+   what a gated clue says, or the point of a conclusion, before that gate
+   opens.
+
+## How to judge
+
+Read the timeline first: who was where when, and what happened to each
+object. Then go through the clues, and every character's `knows`.
+
+Not a fault:
+
+- A fact the timeline does not mention, when it contradicts nothing: an
+  opinion, a habit, scenery.
+- A time a person would round ("about a quarter past twelve" for 12:12), or a
+  witness telling only the part they saw.
+- A true statement of a belief, such as "he thought it was the fox", when the
+  character believed it.
+- A false statement mixing true detail with its lie.
+- Anything but clues and `knows`. A conclusion may rest on a false statement
+  while it stands: soundness judges conclusions. Appearance, personality and
+  demeanor, and whether a character could know a fact, are character
+  grounding's.
+
+## Findings
+
+- `contradicts_timeline` (major): evidence or a true statement disagrees with
+  the timeline on who, what, where or when.
+- `false_is_true` (major): a false statement agrees with the timeline, or its
+  `why` does not fit what the character did.
+- `retraction_does_not_contradict` (major): neither the taking-back statement
+  nor its shown clues contradict the false statement.
+- `knows_gives_away` (major): a `knows` fact states what a gated clue, or a
+  conclusion, reveals.
+- `detail_mismatch` (minor): a small difference from the timeline that changes
+  nothing about who, what, where or when.
+
+Each finding's `ids` name the clues, characters or conclusions involved.
+
+## Output
+
+The findings, the verdict (`fail` iff a finding is major) and one short
+paragraph of reasoning.
+
+
+---
+
+## Output JSON Schema (authoritative)
+
+Your response MUST be a single JSON object matching this schema. If the prose contract above and this schema disagree, the schema wins.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "major",
+              "minor"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "contradicts_timeline",
+              "false_is_true",
+              "retraction_does_not_contradict",
+              "knows_gives_away",
+              "detail_mismatch"
+            ]
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "severity",
+          "kind",
+          "ids",
+          "explanation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "findings",
+    "verdict",
+    "reasoning"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+```

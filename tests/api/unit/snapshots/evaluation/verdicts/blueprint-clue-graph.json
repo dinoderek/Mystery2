@@ -1,0 +1,92 @@
+{
+  "verdicts": [
+    {
+      "id": "clue_graph_valid",
+      "tier": "mechanical",
+      "status": "pass",
+      "details": null,
+      "findings": null
+    },
+    {
+      "id": "cg_soundness",
+      "tier": "judge",
+      "status": "pass",
+      "details": {
+        "reasoning": "Every branch establishes its conclusion's point.",
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "findings": [
+        {
+          "severity": "minor",
+          "kind": "says_more",
+          "ids": [
+            "nobody_broke_in",
+            "clue_glass_outside"
+          ],
+          "explanation": "The text adds that whoever did it used a key, which clue_glass_outside does not state."
+        }
+      ]
+    },
+    {
+      "id": "cg_truth_agreement",
+      "tier": "judge",
+      "status": "fail",
+      "details": {
+        "reasoning": "One true statement disagrees with the timeline.",
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "fail",
+        "verdict_disagreement": false
+      },
+      "findings": [
+        {
+          "severity": "major",
+          "kind": "contradicts_timeline",
+          "ids": [
+            "clue_dobbs_crash_time"
+          ],
+          "explanation": "Stub: a planted disagreement, so the snapshot shows a fail reached from a major finding."
+        }
+      ]
+    },
+    {
+      "id": "cg_character_grounding",
+      "tier": "judge",
+      "status": "pass",
+      "details": {
+        "reasoning": "Every character fits who they are and what they did.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "findings": []
+    },
+    {
+      "id": "cg_step_sense",
+      "tier": "judge",
+      "status": "pass",
+      "details": {
+        "reasoning": "Every step is led to by what the player holds.",
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false
+      },
+      "findings": []
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 4,
+      "fail": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  },
+  "run_error": null
+}

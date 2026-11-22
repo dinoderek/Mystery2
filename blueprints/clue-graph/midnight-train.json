@@ -1,0 +1,689 @@
+{
+  "format": "clue-graph/2",
+  "metadata": {
+    "id": "midnight-train",
+    "title": "The Midnight Train",
+    "target_age": 7,
+    "time_budget": 12,
+    "size": "medium"
+  },
+  "opening": {
+    "location": "railway_room",
+    "facts": [
+      "It is breakfast time on Saturday morning, at the end of Class 2's sleepover at Millbrook Town Museum.",
+      "The Silver Lark, a little clockwork model of the town's old steam train, has gone missing from its glass case in the Railway Room.",
+      "Last night, on the museum tour, Mr. Dunmore the night guard wound up the Silver Lark and the children watched it chuff round its little track inside the case.",
+      "The children slept in a row of sleeping bags in the Dinosaur Hall, and every child was given a museum torch for the night.",
+      "Mr. Dunmore found the glass case empty at seven o'clock this morning.",
+      "Mr. Dunmore says he saw Maisie by the train case in the night, so everyone is whispering that Maisie took it.",
+      "At dinner last night, Jack told everyone he wished he could take the Silver Lark home."
+    ]
+  },
+  "truth": {
+    "timeline": [
+      "Friday 7:30pm: on the museum tour, Mr. Dunmore winds up the Silver Lark in the Railway Room and says, 'Have a good look, because on Monday the little train is going away.' He means it is going to Mr. Penhallow the clock-mender to be cleaned and will be back in two weeks, but the children rush off to the dinosaurs before he can finish. Oscar, whose great-grandad Bert drove the real Silver Lark, thinks the train is going away for ever.",
+      "Friday 7:40pm: Maisie drops her grey toy rabbit, Button, under the bench by the window in the Railway Room during the tour, and does not notice.",
+      "Friday 9:00pm: lights out. The children are in their sleeping bags under the T. rex skeleton in the Dinosaur Hall. Oscar's sleeping bag is next to Jack's. Ms. Okafor sleeps on a camp bed in the corner of the Dinosaur Hall and does not wake until 6:30am.",
+      "Midnight: on his night round, Mr. Dunmore sees the Silver Lark still in its glass case.",
+      "12:55am: Oscar creeps out of his sleeping bag with his torch and goes to the Railway Room.",
+      "12:58am: Oscar opens the brass catch on the glass case, which has no lock, and lifts out the Silver Lark. He pulls off one of his green football socks with a white stripe and wraps the train in it so it will not get scratched. A thread of green wool catches on the brass catch.",
+      "1:00am: Jack wakes up hungry and creeps out of the Dinosaur Hall towards the museum café. Oscar's sleeping bag is already empty. In the corridor Jack sees a small torch light, low down at child height, coming out of the Railway Room, and hears a tiny tick-tick-whirr. He thinks it is Mr. Dunmore and hides behind the big map stand. The light goes into the Dinosaur Hall.",
+      "1:02am: Oscar opens the lid of the big model dinosaur egg in the Dinosaur Hall, shines his torch inside, and hides the wrapped Silver Lark in it. He puts his torch down inside the egg, forgets it is still switched on, and closes the lid. He is back in his sleeping bag by 1:05am.",
+      "1:02am to 1:30am: Jack is in the museum café, eating chocolate biscuits from the biscuit tin on the counter. He leaves the lid off and leaves crumbs and a dusty dinosaur-slipper print under the corner table.",
+      "1:15am: Maisie wakes, misses Button, and creeps to the Railway Room with her torch.",
+      "1:20am: Maisie finds Button under the bench. She shines her torch at the glass case and sees it is empty, and thinks the grown-ups have put the train away for the night. Mr. Dunmore, on his round, finds her standing by the case with her torch in one hand and Button in the other. He does not look closely at the case in the dark. He walks her straight back to her sleeping bag.",
+      "1:30am: Jack goes back to his sleeping bag. Oscar is in his, pretending to be asleep.",
+      "6:30am: Ms. Okafor wakes and sees a faint light glowing through the crack in the lid of the big dinosaur egg. She thinks the egg lights up as part of the display.",
+      "7:00am: Mr. Dunmore opens the Railway Room curtains and finds the glass case empty. He remembers seeing Maisie by the case. Ms. Okafor asks every child to hang their torch on its named peg in the torch basket in the Front Hall. Oscar's peg stays empty.",
+      "7:10am: Oscar asks Jack to say they were together all night. Jack agrees, because he does not want anyone to find out about the biscuits.",
+      "End: the Silver Lark is found inside the big dinosaur egg, wrapped in Oscar's sock, not broken at all."
+    ],
+    "motive": "Oscar's great-grandad Bert drove the real Silver Lark steam train. When Mr. Dunmore said the little train was going away on Monday, Oscar thought it would be gone for ever, so he hid it to keep it safe in the museum. He did not know it was only going to be cleaned and would come back in two weeks."
+  },
+  "locations": {
+    "railway_room": {
+      "name": "The Railway Room",
+      "facts": [
+        "The Railway Room has old station signs, a big station clock and a long wooden bench under the window.",
+        "A glass case on a stand holds a little model railway track, now with no train on it.",
+        "The glass case closes with a brass catch. It has no lock."
+      ],
+      "spots": [
+        {
+          "name": "the glass case"
+        },
+        {
+          "name": "under the bench by the window"
+        }
+      ]
+    },
+    "dinosaur_hall": {
+      "name": "The Dinosaur Hall",
+      "facts": [
+        "A huge T. rex skeleton towers over the middle of the hall.",
+        "A row of rolled-up sleeping bags lies under the T. rex.",
+        "A big model dinosaur egg, taller than a child, stands by the wall. A sign says it opens to show a baby dinosaur."
+      ],
+      "spots": [
+        {
+          "name": "Oscar's sleeping bag"
+        },
+        {
+          "name": "under the T. rex"
+        },
+        {
+          "name": "inside the big dinosaur egg",
+          "revealed_by": "okafor_glow"
+        }
+      ]
+    },
+    "cafe": {
+      "name": "The Museum Café",
+      "facts": [
+        "The museum café is next to the Railway Room, with little round tables and a counter.",
+        "Breakfast cereal and jugs of milk are set out on the tables.",
+        "A big biscuit tin sits on the counter."
+      ],
+      "spots": [
+        {
+          "name": "the biscuit tin on the counter"
+        },
+        {
+          "name": "under the corner table"
+        }
+      ]
+    },
+    "front_hall": {
+      "name": "The Front Hall",
+      "facts": [
+        "The Front Hall has the big front doors, a coat rack and the night guard's desk.",
+        "A torch basket hangs on the wall by the desk, with a row of pegs, each with a child's name on it."
+      ],
+      "spots": [
+        {
+          "name": "the torch basket"
+        },
+        {
+          "name": "the guard's desk"
+        }
+      ]
+    }
+  },
+  "characters": {
+    "maisie": {
+      "name": "Maisie",
+      "location": "railway_room",
+      "role": "suspect",
+      "sex": "female",
+      "personality": "Shy, gentle and easily embarrassed. She loves her toy rabbit but is afraid the others will laugh at her for still having one.",
+      "demeanor": {
+        "guarded": "Small and quiet on the bench, hugging her pyjama pocket. She is upset that everyone thinks she is a thief.",
+        "cleared": "Pink-cheeked but much happier, holding her rabbit openly now."
+      },
+      "knows": [
+        {
+          "fact": "Maisie likes the Railway Room best because of the big station clock."
+        },
+        {
+          "fact": "Maisie's sleeping bag was at the end of the row in the Dinosaur Hall.",
+          "points_at": {
+            "location": "dinosaur_hall"
+          }
+        }
+      ],
+      "appearance": [
+        "Maisie is a small girl with curly red hair and freckles.",
+        "She wears spotty pyjamas with a big front pocket."
+      ]
+    },
+    "jack": {
+      "name": "Jack",
+      "location": "cafe",
+      "role": "suspect",
+      "sex": "male",
+      "personality": "Loud, funny and always hungry. He is a loyal friend who does not like saying no, and a poor liar.",
+      "demeanor": {
+        "guarded": "Too cheerful and too quick to answer, munching cereal and not meeting anyone's eye.",
+        "shaken": "Red in the face and mumbling, sorry about the biscuits.",
+        "cleared": "Relieved and back to joking, but sorry he fibbed for Oscar."
+      },
+      "knows": [
+        {
+          "fact": "Jack loves clockwork toys and has a wind-up robot at home."
+        },
+        {
+          "fact": "Jack's sleeping bag was next to Oscar's under the T. rex.",
+          "points_at": {
+            "character": "oscar"
+          }
+        }
+      ],
+      "appearance": [
+        "Jack is a tall boy with spiky brown hair.",
+        "He wears green dinosaur slippers with little claws on the toes."
+      ]
+    },
+    "oscar": {
+      "name": "Oscar",
+      "location": "dinosaur_hall",
+      "role": "culprit",
+      "sex": "male",
+      "personality": "Thoughtful and train-mad, quiet until you get him talking about engines. When he is worried he goes very still and answers in as few words as he can.",
+      "demeanor": {
+        "guarded": "Polite and very still, sitting on his rolled-up sleeping bag with one foot tucked under him.",
+        "shaken": "Fidgety. His eyes keep sliding across the hall and he picks at his sleeping bag.",
+        "cornered": "His lip wobbles. He is close to tears and worried the train will be taken away.",
+        "cleared": "Teary but relieved, and very glad the Silver Lark is coming back."
+      },
+      "knows": [
+        {
+          "fact": "Oscar knows the name of every engine on the old station signs in the Railway Room.",
+          "points_at": {
+            "location": "railway_room"
+          }
+        }
+      ],
+      "appearance": [
+        "Oscar is a small boy with neat black hair and round glasses.",
+        "He wears striped pyjamas with a steam-engine badge pinned on."
+      ]
+    },
+    "dunmore": {
+      "name": "Mr. Dunmore",
+      "location": "front_hall",
+      "role": "witness",
+      "sex": "male",
+      "personality": "A big, kind, slow-speaking man who loves the museum. He feels terrible that the train went missing on his watch.",
+      "demeanor": {
+        "open": "Worried and a bit gruff, but glad of help and honest about what he did and did not see."
+      },
+      "knows": [
+        {
+          "fact": "Mr. Dunmore has been the night guard at Millbrook Town Museum for twenty years."
+        },
+        {
+          "fact": "The museum café is right next door to the Railway Room.",
+          "points_at": {
+            "location": "cafe"
+          }
+        }
+      ],
+      "appearance": [
+        "Mr. Dunmore is a large man with a grey beard.",
+        "He wears a dark blue guard's jacket and carries a big silver torch."
+      ]
+    },
+    "okafor": {
+      "name": "Ms. Okafor",
+      "location": "dinosaur_hall",
+      "role": "witness",
+      "sex": "female",
+      "personality": "Calm, cheerful and organised. She is Class 2's teacher and wants the morning sorted out kindly.",
+      "demeanor": {
+        "open": "Busy folding sleeping bags, but happy to stop and help."
+      },
+      "knows": [
+        {
+          "fact": "Ms. Okafor is Class 2's teacher and brought the class to the sleepover."
+        },
+        {
+          "fact": "Breakfast is being served in the museum café.",
+          "points_at": {
+            "location": "cafe"
+          }
+        }
+      ],
+      "appearance": [
+        "Ms. Okafor is a tall woman with her hair wrapped in a bright yellow scarf.",
+        "She wears a cosy purple dressing gown and carries a clipboard."
+      ]
+    }
+  },
+  "clues": {
+    "ev_case_wool": {
+      "kind": "evidence",
+      "fact": "The brass catch on the Silver Lark's glass case in the Railway Room is undone. A thread of green wool with a little white stripe is caught on the catch, as if something woolly brushed against it.",
+      "source": {
+        "location": "railway_room",
+        "spot": "the glass case"
+      }
+    },
+    "ev_bench_fluff": {
+      "kind": "evidence",
+      "fact": "Under the bench by the window in the Railway Room, the dusty floor has one clean patch where something soft lay, with tufts of grey fluff like fur from a cuddly toy.",
+      "source": {
+        "location": "railway_room",
+        "spot": "under the bench by the window"
+      }
+    },
+    "ev_oscar_drawing": {
+      "kind": "evidence",
+      "fact": "Tucked inside Oscar's sleeping bag in the Dinosaur Hall is a crayon drawing of a steam train labelled 'The Silver Lark: my great-grandad Bert's train', with 'DON'T GO AWAY' written underneath.",
+      "source": {
+        "location": "dinosaur_hall",
+        "spot": "Oscar's sleeping bag"
+      }
+    },
+    "ev_egg": {
+      "kind": "evidence",
+      "fact": "Inside the big dinosaur egg in the Dinosaur Hall is the Silver Lark, not broken at all, wrapped in a green football sock with a white stripe. Beside it lies a museum torch, still switched on, its light gone faint and yellow.",
+      "source": {
+        "location": "dinosaur_hall",
+        "spot": "inside the big dinosaur egg"
+      }
+    },
+    "ev_cafe_tin": {
+      "kind": "evidence",
+      "fact": "The lid is off the biscuit tin on the café counter, and half the chocolate biscuits are gone. Someone had a midnight feast.",
+      "source": {
+        "location": "cafe",
+        "spot": "the biscuit tin on the counter"
+      }
+    },
+    "ev_cafe_slipper": {
+      "kind": "evidence",
+      "fact": "Under the corner table in the museum café are chocolate biscuit crumbs and a dusty footprint with three claw marks at the toe, like a dinosaur slipper.",
+      "source": {
+        "location": "cafe",
+        "spot": "under the corner table"
+      }
+    },
+    "ev_torch_basket": {
+      "kind": "evidence",
+      "fact": "In the torch basket in the Front Hall, every named peg has its museum torch hanging on it except one: the peg marked OSCAR is empty. Maisie's and Jack's torches are on their pegs.",
+      "source": {
+        "location": "front_hall",
+        "spot": "the torch basket"
+      }
+    },
+    "ev_clock_letter": {
+      "kind": "evidence",
+      "fact": "On the guard's desk in the Front Hall is a letter from Mr. Penhallow the clock-mender. It says he will collect the Silver Lark on Monday to clean its clockwork, and bring it back to the museum in two weeks.",
+      "source": {
+        "location": "front_hall",
+        "spot": "the guard's desk"
+      }
+    },
+    "maisie_not_me": {
+      "kind": "statement",
+      "fact": "Maisie says she did not take the Silver Lark. She did go to the Railway Room in the night, but only to look for something of hers.",
+      "source": {
+        "character": "maisie"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "tell_maisie_ear": {
+      "kind": "tell",
+      "fact": "Maisie keeps one hand pressed over her pyjama pocket, and a floppy grey fluffy ear pokes out of the top.",
+      "source": {
+        "character": "maisie"
+      },
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "maisie_rabbit": {
+      "kind": "statement",
+      "fact": "Maisie says she dropped her toy rabbit, Button, under the bench by the window in the Railway Room on the tour. At about twenty past one in the night she crept back with her torch to find him. She found Button, then shone her torch at the glass case, and it was already empty. She thought the grown-ups had put the train away for the night.",
+      "source": {
+        "character": "maisie"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "use": {
+            "any": [
+              "ev_bench_fluff"
+            ]
+          },
+          "line": {
+            "text": "They tell Maisie lots of people have cuddly toys, or promise nobody will laugh.",
+            "hinted_by": "tell_maisie_ear"
+          }
+        }
+      }
+    },
+    "jack_together": {
+      "kind": "statement",
+      "fact": "Jack says he and Oscar were together in their sleeping bags under the T. rex all night, telling jokes, and neither of them got up once.",
+      "source": {
+        "character": "jack"
+      },
+      "truth": false,
+      "why": "Oscar asked him at breakfast to say they were together, and Jack agreed because he does not want anyone to find out he sneaked off to eat biscuits.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "tell_jack_crumbs": {
+      "kind": "tell",
+      "fact": "Jack quickly brushes chocolate crumbs off his pyjama top and tucks his dinosaur slippers under his chair.",
+      "source": {
+        "character": "jack"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "jack_together"
+      }
+    },
+    "jack_admits": {
+      "kind": "statement",
+      "fact": "Jack admits he was not with Oscar all night. At about one o'clock he crept to the museum café and ate chocolate biscuits from the tin until half past one. Oscar's sleeping bag was already empty when Jack got up. At breakfast Oscar asked Jack to say they had been together, and Jack agreed so nobody would find out about the biscuits.",
+      "source": {
+        "character": "jack"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "use": {
+            "any": [
+              "ev_cafe_tin",
+              "ev_cafe_slipper"
+            ]
+          },
+          "line": {
+            "text": "They promise Jack nobody will be cross about a few biscuits.",
+            "hinted_by": "tell_jack_crumbs"
+          }
+        }
+      },
+      "takes_back": [
+        "jack_together"
+      ]
+    },
+    "jack_corridor": {
+      "kind": "statement",
+      "fact": "Jack says that at about one o'clock, on his way to the café, he saw a small torch light, low down like a child's, come out of the Railway Room and go into the Dinosaur Hall, and he heard a tiny tick-tick-whirr like a clockwork toy. He hid behind the big map stand because he thought it was Mr. Dunmore.",
+      "source": {
+        "character": "jack"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "what Jack saw in the corridor on his way to the café",
+        "prompted_by": [
+          "jack_admits"
+        ]
+      }
+    },
+    "oscar_with_jack": {
+      "kind": "statement",
+      "fact": "Oscar says he and Jack were together in their sleeping bags all night, so it was not Jack who took the train, and it was not him either.",
+      "source": {
+        "character": "oscar"
+      },
+      "truth": false,
+      "why": "Oscar is hiding that he got up in the night and took the Silver Lark.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "oscar_lost_torch": {
+      "kind": "statement",
+      "fact": "Oscar says he lost his museum torch at bedtime, somewhere in the Dinosaur Hall, before lights out, and never used it all night.",
+      "source": {
+        "character": "oscar"
+      },
+      "truth": false,
+      "why": "His torch is inside the big dinosaur egg with the Silver Lark, where he left it switched on.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "tell_oscar_sock": {
+      "kind": "tell",
+      "fact": "Oscar has a green football sock with a white stripe on one foot. His other foot is bare, and he keeps tucking it under him.",
+      "source": {
+        "character": "oscar"
+      },
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "oscar_up": {
+      "kind": "statement",
+      "fact": "Oscar admits Jack was not with him all night. He says he did get out of his sleeping bag in the night, but he will not say why.",
+      "source": {
+        "character": "oscar"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "use": {
+            "any": [
+              "jack_admits"
+            ]
+          }
+        }
+      },
+      "takes_back": [
+        "oscar_with_jack"
+      ]
+    },
+    "oscar_confession": {
+      "kind": "statement",
+      "fact": "Oscar says he took the Silver Lark at about one o'clock in the night. Mr. Dunmore said the train was going away on Monday, and Oscar thought it would be gone for ever, and it was his great-grandad Bert's train. He wrapped it in his sock so it would not get scratched, hid it inside the big dinosaur egg, and left his torch in there by mistake.",
+      "source": {
+        "character": "oscar"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "oscar_up"
+          ],
+          "use": {
+            "any": [
+              "ev_egg",
+              "ev_case_wool"
+            ]
+          }
+        }
+      },
+      "takes_back": [
+        "oscar_lost_torch"
+      ]
+    },
+    "dunmore_found_empty": {
+      "kind": "statement",
+      "fact": "Mr. Dunmore says that on his midnight round the Silver Lark was still in its glass case. At seven o'clock this morning, when he opened the Railway Room curtains, the case was empty.",
+      "source": {
+        "character": "dunmore"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      },
+      "colour": true
+    },
+    "dunmore_saw_maisie": {
+      "kind": "statement",
+      "fact": "Mr. Dunmore says that at twenty past one in the night, on his round, he saw a torch shining in the Railway Room and found Maisie standing by the train case.",
+      "source": {
+        "character": "dunmore"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "dunmore_maisie_hands": {
+      "kind": "statement",
+      "fact": "Mr. Dunmore says that when he found Maisie at twenty past one, she had her torch in one hand and a grey toy rabbit in the other, and nothing else: no train and no bag. He did not look closely at the case in the dark. He walked her straight back to her sleeping bag.",
+      "source": {
+        "character": "dunmore"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "what Maisie was holding when he found her",
+        "prompted_by": [
+          "dunmore_saw_maisie",
+          "maisie_not_me"
+        ]
+      }
+    },
+    "dunmore_monday": {
+      "kind": "statement",
+      "fact": "Mr. Dunmore says that on last night's tour he told the children the Silver Lark was going away on Monday, but they all ran off to see the dinosaurs before he could say why. Oscar stayed behind and asked, very worried, whether the train was going away for ever.",
+      "source": {
+        "character": "dunmore"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "what he told the children about the Silver Lark on the tour",
+        "prompted_by": [
+          "opening",
+          "ev_clock_letter"
+        ]
+      }
+    },
+    "okafor_torches": {
+      "kind": "statement",
+      "fact": "Ms. Okafor says that before breakfast she asked every child to hang their torch back on its named peg in the torch basket in the Front Hall.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      },
+      "colour": true
+    },
+    "okafor_slept": {
+      "kind": "statement",
+      "fact": "Ms. Okafor says she slept on a camp bed in the corner of the Dinosaur Hall and did not wake up until half past six.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      },
+      "colour": true
+    },
+    "okafor_glow": {
+      "kind": "statement",
+      "fact": "Ms. Okafor says that when she woke at half past six, she saw a faint little light glowing through the crack in the lid of the big dinosaur egg in the Dinosaur Hall. She thought the egg lit up as part of the display.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "use": {
+            "any": [
+              "ev_torch_basket",
+              "oscar_lost_torch"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "conclusions": {
+    "jack_alibi_oscar": {
+      "text": "Jack was with Oscar in their sleeping bags all night, so Jack cannot have taken the train.",
+      "clears": "jack",
+      "rule": {
+        "any": [
+          "oscar_with_jack",
+          "jack_together"
+        ]
+      }
+    },
+    "jack_cleared": {
+      "text": "Jack is cleared: he was out of bed only to eat biscuits in the café, and the torch left with the Silver Lark in the dinosaur egg cannot be his, because his torch is hanging on its peg and only Oscar's peg is empty.",
+      "clears": "jack",
+      "rule": {
+        "all": [
+          "jack_admits",
+          "ev_cafe_slipper",
+          "ev_torch_basket",
+          "ev_egg"
+        ]
+      }
+    },
+    "maisie_cleared": {
+      "text": "Maisie is cleared: she went to the Railway Room for her toy rabbit, the case was already empty when she got there, and Mr. Dunmore saw she had only her torch and her rabbit.",
+      "clears": "maisie",
+      "rule": {
+        "all": [
+          "maisie_rabbit",
+          "dunmore_maisie_hands"
+        ]
+      }
+    },
+    "maisie_seen_explained": {
+      "text": "Maisie was by the train case in the night because she was fetching the rabbit she dropped under the bench.",
+      "resolves": "red herring: Maisie seen by the train case",
+      "rule": {
+        "all": [
+          "dunmore_saw_maisie",
+          "ev_bench_fluff",
+          {
+            "any": [
+              "maisie_rabbit",
+              "dunmore_maisie_hands"
+            ]
+          }
+        ]
+      }
+    },
+    "monday_mixup": {
+      "text": "The Silver Lark was only going away on Monday to be cleaned, but Oscar, whose great-grandad drove the real train, thought it was going for ever.",
+      "resolves": "why the Silver Lark was taken",
+      "rule": {
+        "all": [
+          "dunmore_monday",
+          "ev_clock_letter",
+          "ev_oscar_drawing"
+        ]
+      }
+    },
+    "culprit_oscar": {
+      "text": "Oscar is the one who took the Silver Lark from the Railway Room in the night, and his own green football sock with a white stripe, missing from his bare foot, gives him away.",
+      "culprit": "oscar",
+      "rule": {
+        "any": [
+          {
+            "all": [
+              "ev_egg",
+              "tell_oscar_sock",
+              "okafor_glow",
+              {
+                "any": [
+                  "ev_torch_basket",
+                  "oscar_lost_torch"
+                ]
+              }
+            ]
+          },
+          {
+            "all": [
+              "oscar_with_jack",
+              "jack_admits",
+              "jack_corridor",
+              "ev_case_wool",
+              "tell_oscar_sock"
+            ]
+          },
+          {
+            "all": [
+              "oscar_confession"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

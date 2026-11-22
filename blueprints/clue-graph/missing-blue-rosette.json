@@ -10,315 +10,261 @@
   "opening": {
     "location": "marquee",
     "facts": [
-      "Today is the village dog show on the village green.",
-      "The big blue Best in Show rosette has vanished from the judges' table in the marquee.",
-      "Mr. Bramble, the judge, found it gone at twenty past eleven.",
-      "The prizes are given out at twelve o'clock.",
-      "Priya, whose poodle Duchess is in the Best in Show final, said loudly this morning that the blue rosette was as good as Duchess's already.",
-      "Everyone at the show is whispering about Priya."
+      "It is the morning of the Hollyfield village dog show on the village green.",
+      "Mrs. Finch, the judge, put the big blue Best in Show rosette on the judges' table in the marquee at half past nine.",
+      "At ten to eleven Mrs. Finch came back to the judges' table and the blue rosette was gone.",
+      "The prizes are meant to be given out at eleven o'clock.",
+      "It is a dry, sunny morning, and the grass on the green is dry.",
+      "Mrs. Dove from the tea stall carried the judges their tea this morning.",
+      "Oliver's spaniel Pepper won the blue rosette last year, and Oliver was heard saying he wished Pepper could have it again.",
+      "People at the show are whispering about Oliver."
     ]
   },
   "truth": {
     "timeline": [
-      "Saturday 10:00: the village dog show opens on the village green, with the marquee, the dog-washing tent and the tea stall.",
-      "10:30: Mr. Bramble lays the big blue Best in Show rosette on the white cloth of the judges' table in the marquee, then goes out onto the green to judge the Waggiest Tail class.",
-      "10:35: Priya slips into the empty marquee on her own, just to look at the rosette up close and imagine Duchess wearing it. She does not touch it.",
-      "10:40: Priya leaves the marquee, looking all around in case anyone saw her. Toby, walking past with his old dog Biscuit, sees her come out. Priya goes straight to the dog-washing tent with Duchess.",
-      "10:40 to 11:30: Priya and Duchess are in the dog-washing tent with Mrs. Suds for a full wash, fluff and dry; Duchess's thick poodle curls take a long time to dry. Priya never leaves the tent.",
-      "10:50: Mr. Bramble pops back into the marquee to drop off his scorecards. The blue rosette is still on the judges' table.",
-      "10:55: Toby walks Biscuit round the duck pond, and Biscuit splashes into the dark pond mud up to her elbows.",
-      "11:00: Toby slips into the empty marquee with Biscuit. Biscuit puts her front paws up on the judges' table and leaves a muddy paw print on the white cloth. Biscuit's front left paw has only three toes, so the print has only three toe marks. Toby takes the blue rosette and pushes it into his jacket pocket.",
-      "11:10: Toby rushes Biscuit into the dog-washing tent and begs Mrs. Suds to rinse the mud off her legs quickly. The blue ribbon of the rosette pokes out of his jacket pocket, and Priya sees it before he pushes it down.",
-      "11:15: Toby takes Biscuit back to the tea stall and hides the rosette under the tartan blanket in Biscuit's basket. He means to pin it on Biscuit for a photo and then put it back.",
-      "11:20: Mr. Bramble comes back to the marquee to get ready for the prizes and finds the rosette gone. People start saying a thief took it and whispering about Priya, and Toby is too scared to put it back."
+      "9:00: Mr. Okafor opens the dog-washing tent and starts washing the dogs for the show, one after another. The wash tubs overflow onto the grass by the tent door and make a mud puddle, the only mud on the dry green.",
+      "9:30: Mrs. Finch puts the big blue Best in Show rosette on the white tablecloth of the judges' table in the marquee, beside a plate of six currant buns for the judges, and goes off to look at the dogs.",
+      "10:10: Oliver slips into the empty marquee, takes one of the judges' currant buns from the plate and eats it behind the prize table. The blue rosette is still on the judges' table.",
+      "10:15: Oliver comes out of the marquee licking his fingers. Mrs. Dove sees him from the tea stall. She gives him the job of stacking paper cups, and he stays at the tea stall until ten to eleven.",
+      "10:20: Tilly's old dog Biscuit, waiting for his bath at the dog-washing tent, rolls in the mud puddle by the tent door and gets muddy from nose to tail. Every other dog in the show has already been washed clean.",
+      "10:25: Mrs. Dove carries the judges' pot of tea to the marquee and sees the blue rosette still on the judges' table. Oliver minds the tea stall while she is gone. She is back at the tea stall by 10:28.",
+      "10:25 to 10:40: Mr. Okafor scrubs a big sheepdog in the far tub with his back to the tent door.",
+      "10:30: Tilly takes muddy Biscuit into the empty marquee. Biscuit puts a muddy front paw up on the judges' table and leaves a muddy paw print on the white tablecloth beside the rosette. Tilly takes the blue rosette and hurries back to the dog-washing tent.",
+      "10:35: Behind the towel rack in the dog-washing tent, Tilly pins the blue rosette on Biscuit's collar and tells him he is a winner.",
+      "10:42: Mr. Okafor calls Biscuit for his bath. He sees Tilly unpin something blue and frilly from Biscuit's collar and push it into Biscuit's red dog bag under a towel, so it will stay dry. A little mud from Biscuit's collar smudges the rosette's ribbons.",
+      "10:45: Mr. Okafor washes Biscuit.",
+      "10:50: Mrs. Finch finds the judges' table empty and cries out that the rosette is gone. Tilly hears and is too frightened to take it back.",
+      "The blue rosette is safe and dry, wrapped in a towel in Biscuit's red dog bag in the dog-washing tent."
     ],
-    "motive": "Toby's old dog Biscuit won Best in Show three times when she was young, but she is fourteen now and too stiff to go in the ring, so she could not be entered this year. Toby thinks Biscuit is still the best dog in the world and wanted her to wear the big blue rosette just once. He meant to put it back, but when everyone started talking about a thief he got scared and said nothing."
+    "motive": "Biscuit is fourteen, this is his very last dog show, and in all his shows he has never won a single rosette. Tilly knew he would not win today either, so she took the Best in Show rosette to let him wear it just once and feel like a winner. She meant no harm, and then she was too frightened to give it back."
   },
   "locations": {
     "marquee": {
       "name": "The Marquee",
       "facts": [
-        "The marquee is a big white tent on the village green, with flags along the top.",
-        "A long judges' table with a white cloth stands at the far end.",
-        "Rows of folding chairs face the table, ready for the prize-giving."
+        "The marquee is a big white tent in the middle of the village green.",
+        "The judges' table stands at the far end, covered with a white tablecloth.",
+        "A plate of currant buns for the judges sits on the judges' table.",
+        "A prize table with red, yellow and green rosettes stands beside it."
       ],
       "spots": [
         {
           "name": "the judges' table"
         },
         {
-          "name": "the rows of folding chairs"
+          "name": "the judges' bun plate"
+        },
+        {
+          "name": "the prize table"
         }
       ]
     },
     "washing_tent": {
       "name": "The Dog-Washing Tent",
       "facts": [
-        "The dog-washing tent is warm and steamy and smells of doggy shampoo.",
-        "There are two big tin tubs, a pile of fluffy towels and a humming hair dryer.",
-        "A chalkboard by the door lists the dogs washed today."
+        "The dog-washing tent is a striped tent with three big wash tubs inside.",
+        "It smells of soap and wet dog.",
+        "A towel rack full of fluffy towels stands at the back.",
+        "Water from the tubs has spilled out onto the grass by the tent door."
       ],
       "spots": [
         {
-          "name": "the chalkboard by the door"
+          "name": "the mud puddle by the tent door"
         },
         {
-          "name": "the tin tubs"
+          "name": "the towel rack"
+        },
+        {
+          "name": "Biscuit's red dog bag",
+          "revealed_by": "okafor_saw_blue"
         }
       ]
     },
     "tea_stall": {
       "name": "The Tea Stall",
       "facts": [
-        "The tea stall is a striped stand at the edge of the green, beside the duck pond.",
-        "A big silver tea urn bubbles on the counter next to plates of cake.",
-        "A long queue waits for tea, and the tea ladies are far too busy to chat.",
-        "A dog basket sits on the grass beside the stall."
+        "The tea stall is a table under a little awning, with a steaming tea urn.",
+        "Towers of paper cups and a big cake tin sit on the counter.",
+        "From the tea stall you can see the door of the marquee."
       ],
       "spots": [
         {
-          "name": "the patch of grass where Biscuit is lying"
+          "name": "the order book"
         },
         {
-          "name": "the cake plates on the counter"
-        },
-        {
-          "name": "under the tartan blanket in Biscuit's basket",
-          "revealed_by": "toby_tell_blanket"
+          "name": "the cake tin"
         }
       ]
     }
   },
   "characters": {
-    "bramble": {
-      "name": "Mr. Bramble",
+    "oliver": {
+      "name": "Oliver",
       "location": "marquee",
-      "role": "witness",
-      "sex": "male",
-      "personality": "A jolly, round village judge who has judged the dog show for thirty years. He knows every dog in the village by name and gets a bit pink and puffed when things go wrong.",
-      "demeanor": {
-        "open": "Flustered about the twelve o'clock prizes, but kind and glad of a helper."
-      },
-      "knows": [
-        {
-          "fact": "Mr. Bramble has judged the village dog show for thirty years."
-        },
-        {
-          "fact": "The dog-washing tent is where owners take their dogs to be cleaned and fluffed before the final.",
-          "points_at": {
-            "location": "washing_tent"
-          }
-        },
-        {
-          "fact": "Mrs. Suds runs the dog-washing tent.",
-          "points_at": {
-            "character": "suds"
-          }
-        }
-      ],
-      "appearance": [
-        "Mr. Bramble is a round man with a bushy white moustache.",
-        "He wears a tweed jacket with a judge's badge pinned to it and carries a clipboard."
-      ]
-    },
-    "suds": {
-      "name": "Mrs. Suds",
-      "location": "washing_tent",
-      "role": "witness",
-      "sex": "female",
-      "personality": "Busy, cheerful and practical, with her sleeves always rolled up. She notices every paw and whisker of every dog she washes.",
-      "demeanor": {
-        "open": "Chatty and friendly while she towels a dog dry."
-      },
-      "knows": [
-        {
-          "fact": "Mrs. Suds runs the dog-washing tent at the show every year."
-        },
-        {
-          "fact": "Mrs. Suds writes every dog she washes on the chalkboard by the door.",
-          "points_at": {
-            "location": "washing_tent"
-          }
-        }
-      ],
-      "appearance": [
-        "Mrs. Suds is a woman in a big yellow apron covered in soap bubbles.",
-        "Her sleeves are rolled up to her elbows and she has a towel over one shoulder."
-      ]
-    },
-    "priya": {
-      "name": "Priya",
-      "location": "washing_tent",
       "role": "suspect",
-      "sex": "female",
-      "personality": "Proud, quick and a little bossy, and she loves her poodle Duchess more than anything. She boasts when she is excited and goes red and prickly when she feels blamed.",
+      "sex": "male",
+      "personality": "Bouncy, proud of his spaniel Pepper and very fond of cake. When he is worried about being told off he talks fast and changes the subject.",
       "demeanor": {
-        "guarded": "Prickly and red in the face. She knows everyone is whispering about her.",
-        "cleared": "Relieved and a bit sheepish about all her boasting."
+        "guarded": "Cheerful on the outside but jumpy, brushing at his jumper and talking about Pepper instead of the morning.",
+        "shaken": "Red in the face and sorry, mumbling about the bun.",
+        "cleared": "Relieved and keen to help find the rosette for whoever wins it."
       },
       "knows": [
         {
-          "fact": "Priya's poodle Duchess is in the Best in Show final."
+          "fact": "Oliver's dog is a brown and white spaniel called Pepper."
         },
         {
-          "fact": "Duchess came second at last year's dog show."
+          "fact": "Mrs. Dove runs the tea stall and makes the best cakes in the village.",
+          "points_at": {
+            "character": "dove"
+          }
         }
       ],
       "appearance": [
-        "Priya is a girl with a long black ponytail tied with a red bow.",
-        "She holds a fluffy white poodle on a sparkly lead."
+        "Oliver is a boy of nine with sticking-up hair.",
+        "He wears a striped jumper and holds Pepper's lead."
       ]
     },
-    "toby": {
-      "name": "Toby",
+    "dove": {
+      "name": "Mrs. Dove",
       "location": "tea_stall",
-      "role": "culprit",
-      "sex": "male",
-      "personality": "A gentle, dreamy boy who adores his old dog Biscuit. He is bad at lying: when he is worried he talks too fast and keeps fussing over Biscuit.",
+      "role": "witness",
+      "sex": "female",
+      "personality": "Warm, chatty and busy, always pouring tea. She notices who comes and goes from the marquee door, but she is fair and does not like gossip.",
       "demeanor": {
-        "guarded": "Too quick to answer, and he keeps pointing away from the tea stall towards Priya.",
-        "shaken": "Quieter. He strokes Biscuit's ears and will not look up.",
-        "cornered": "His lip wobbles and he hugs Biscuit tight.",
-        "cleared": "Tearful but relieved. He wants to say sorry to Mr. Bramble and Priya."
+        "open": "Friendly and talkative, wiping her hands on her apron as she answers."
       },
       "knows": [
         {
-          "fact": "Biscuit is Toby's dog, and she is fourteen years old."
+          "fact": "Mrs. Dove has run the tea stall at the dog show for twenty years."
         },
         {
-          "fact": "Toby's gran helps out at the tea stall."
+          "fact": "Mr. Okafor washes the dogs in the dog-washing tent before the show.",
+          "points_at": {
+            "location": "washing_tent"
+          }
         }
       ],
       "appearance": [
-        "Toby is a small boy with sticky-up ginger hair and a green jacket.",
-        "An old golden dog with a grey muzzle lies at his feet."
+        "Mrs. Dove is a round, rosy-cheeked lady with silver hair in a bun.",
+        "She wears a flowery apron with a tea towel over her shoulder."
+      ]
+    },
+    "okafor": {
+      "name": "Mr. Okafor",
+      "location": "washing_tent",
+      "role": "witness",
+      "sex": "male",
+      "personality": "Calm, kind and patient with every dog. He answers carefully and only says what he saw himself.",
+      "demeanor": {
+        "open": "Easygoing and soapy, happy to chat while he rinses a tub."
+      },
+      "knows": [
+        {
+          "fact": "Mr. Okafor washes the dogs for the show every year."
+        },
+        {
+          "fact": "Dogs must be clean and dry before they go into the marquee to be judged."
+        }
+      ],
+      "appearance": [
+        "Mr. Okafor is a tall man with a short grey beard.",
+        "He wears a long rubber apron and green wellies, both splashed with soapy water."
+      ]
+    },
+    "tilly": {
+      "name": "Tilly",
+      "location": "washing_tent",
+      "role": "culprit",
+      "sex": "female",
+      "personality": "Gentle and shy, and she loves her old dog Biscuit more than anything. She is a poor liar: when she is scared she goes quiet and stares at her wellies.",
+      "demeanor": {
+        "guarded": "Quiet and polite, but she keeps standing in front of Biscuit's bag.",
+        "shaken": "Her lip wobbles and she hugs Biscuit tight.",
+        "cornered": "Tearful, with nothing left to hide behind.",
+        "cleared": "Sorry and relieved, wanting to give the rosette back straight away."
+      },
+      "knows": [
+        {
+          "fact": "Biscuit is a scruffy little terrier with one ear that flops down."
+        }
+      ],
+      "appearance": [
+        "Tilly is a small girl of seven with freckles and two plaits.",
+        "She wears a green raincoat and red wellies, and holds a damp, scruffy little terrier called Biscuit."
       ]
     }
   },
   "clues": {
-    "ev_paw_print": {
+    "clue_paw_print": {
       "kind": "evidence",
-      "fact": "On the white cloth of the judges' table, right beside the empty space where the blue rosette lay, there is a muddy dog's paw print. It has only three toe marks instead of four, and the mud is dark pond mud.",
+      "fact": "On the white tablecloth of the judges' table, right beside the empty place where the blue rosette lay, there is one small muddy dog's paw print. The mud is brown and still a little damp. Somebody's dog put its muddy paw up on the table.",
       "source": {
         "location": "marquee",
         "spot": "the judges' table"
       }
     },
-    "ev_chairs": {
+    "clue_bun_crumbs": {
       "kind": "evidence",
-      "fact": "The folding chairs in the marquee are set out in neat rows for the prize-giving, with a programme on every seat.",
+      "fact": "The judges' bun plate has room for six currant buns but only five are left. A trail of currant crumbs leads from the plate to behind the prize table.",
       "source": {
         "location": "marquee",
-        "spot": "the rows of folding chairs"
+        "spot": "the judges' bun plate"
+      }
+    },
+    "clue_puddle": {
+      "kind": "evidence",
+      "fact": "Water from the wash tubs has made a big mud puddle on the grass by the door of the dog-washing tent. It is the only mud on the whole dry green. In the middle is a squashed patch where a small dog has rolled.",
+      "source": {
+        "location": "washing_tent",
+        "spot": "the mud puddle by the tent door"
+      }
+    },
+    "clue_rosette_in_bag": {
+      "kind": "evidence",
+      "fact": "Inside Biscuit's red dog bag, wrapped in a towel, is the big blue Best in Show rosette, safe and dry. Its blue ribbons have little smudges of brown mud on them.",
+      "source": {
+        "location": "washing_tent",
+        "spot": "Biscuit's red dog bag"
+      }
+    },
+    "clue_order_book": {
+      "kind": "evidence",
+      "fact": "Mrs. Dove's order book at the tea stall says: 'Judges' pot of tea, to the marquee, 10:25.'",
+      "source": {
+        "location": "tea_stall",
+        "spot": "the order book"
       },
       "colour": true
     },
-    "ev_chalkboard": {
-      "kind": "evidence",
-      "fact": "Mrs. Suds' chalkboard by the door of the dog-washing tent says: '10:40 Duchess (poodle), full wash, fluff and dry, done 11:30' and '11:10 Biscuit, muddy legs, quick rinse'.",
-      "source": {
-        "location": "washing_tent",
-        "spot": "the chalkboard by the door"
-      }
-    },
-    "ev_biscuit_paw": {
-      "kind": "evidence",
-      "fact": "Biscuit, Toby's old golden dog, is lying on the grass beside the tea stall. Her front left paw has only three toes. Her legs are still damp and smell of doggy shampoo, as if they were washed a little while ago.",
-      "source": {
-        "location": "tea_stall",
-        "spot": "the patch of grass where Biscuit is lying"
-      }
-    },
-    "ev_rosette_found": {
-      "kind": "evidence",
-      "fact": "Under the tartan blanket in Biscuit's basket at the tea stall lies the big blue Best in Show rosette. It is safe and not torn, with a smudge of dark pond mud on one ribbon.",
-      "source": {
-        "location": "tea_stall",
-        "spot": "under the tartan blanket in Biscuit's basket"
-      }
-    },
-    "bramble_last_seen": {
+    "oliver_never_inside": {
       "kind": "statement",
-      "fact": "Mr. Bramble says he put the blue rosette on the judges' table at half past ten and went out to judge the Waggiest Tail class. He popped back at ten to eleven to drop off his scorecards, and the rosette was still there. At twenty past eleven it was gone.",
+      "fact": "Oliver says he had not been inside the marquee at all this morning until just now, and that he would never take the rosette.",
       "source": {
-        "character": "bramble"
-      },
-      "truth": true,
-      "reached": {
-        "by": "first_meeting"
-      }
-    },
-    "bramble_biscuit_old": {
-      "kind": "statement",
-      "fact": "Mr. Bramble says Toby's dog Biscuit won Best in Show three times when she was young. She is fourteen now and too stiff to go in the ring, so she could not be entered this year, and Toby cried when he heard.",
-      "source": {
-        "character": "bramble"
-      },
-      "truth": true,
-      "reached": {
-        "by": "asked",
-        "about": "Toby and his dog Biscuit",
-        "prompted_by": [
-          "toby_alibi",
-          "ev_biscuit_paw"
-        ]
-      }
-    },
-    "suds_priya": {
-      "kind": "statement",
-      "fact": "Mrs. Suds says Priya and Duchess came into the dog-washing tent at twenty to eleven for a full wash, fluff and dry, and stayed until half past eleven, because Duchess's thick curls took ages to dry. Priya never left the tent the whole time.",
-      "source": {
-        "character": "suds"
-      },
-      "truth": true,
-      "reached": {
-        "by": "first_meeting"
-      }
-    },
-    "suds_biscuit": {
-      "kind": "statement",
-      "fact": "Mrs. Suds says that at ten past eleven Toby rushed in with his old dog Biscuit, whose legs were covered in dark pond mud. He begged her to rinse it off quickly and not tell anyone. She noticed Biscuit has only three toes on her front left paw.",
-      "source": {
-        "character": "suds"
-      },
-      "truth": true,
-      "reached": {
-        "by": "asked",
-        "about": "muddy dogs washed this morning",
-        "prompted_by": [
-          "ev_paw_print",
-          "ev_chalkboard"
-        ]
-      }
-    },
-    "priya_not_in": {
-      "kind": "statement",
-      "fact": "Priya says she never went into the marquee today, not once.",
-      "source": {
-        "character": "priya"
+        "character": "oliver"
       },
       "truth": false,
-      "why": "She did go in to look at the rosette, and she is scared everyone will think she took it because of her boasting.",
+      "why": "Oliver did go into the marquee at ten past ten to eat one of the judges' currant buns, and he does not want to be told off for it.",
       "reached": {
         "by": "first_meeting"
       }
     },
-    "priya_tell": {
+    "tell_oliver_crumbs": {
       "kind": "tell",
-      "fact": "Priya twists Duchess's sparkly lead round and round her fingers and keeps glancing over at the marquee.",
+      "fact": "Oliver has currant crumbs down the front of his striped jumper, and he keeps brushing them off when he thinks nobody is looking.",
       "source": {
-        "character": "priya"
+        "character": "oliver"
       },
       "reached": {
         "by": "seen",
-        "with": "priya_not_in"
+        "with": "oliver_never_inside"
       }
     },
-    "priya_admits": {
+    "oliver_admits_bun": {
       "kind": "statement",
-      "fact": "Priya admits she went into the empty marquee at about twenty-five to eleven, just to look at the blue rosette up close and imagine Duchess wearing it. She did not touch it. It was still on the judges' table when she left at twenty to eleven, and she went straight to the dog-washing tent.",
+      "fact": "Oliver admits he slipped into the empty marquee at ten past ten and ate one of the judges' currant buns behind the prize table. The blue rosette was still on the judges' table when he came out at quarter past ten, and after that he went to the tea stall to help Mrs. Dove.",
       "source": {
-        "character": "priya"
+        "character": "oliver"
       },
       "truth": true,
       "reached": {
@@ -326,75 +272,146 @@
         "gate": {
           "use": {
             "any": [
-              "toby_saw_priya"
+              "clue_bun_crumbs",
+              "dove_saw_oliver"
             ]
           },
           "line": {
-            "text": "They tell Priya that nobody is cross with her for loving Duchess, and ask kindly if she went to look at the rosette.",
-            "hinted_by": "priya_tell"
+            "text": "Ask Oliver kindly whether he ate something he should not have, and say a bun is not the end of the world.",
+            "hinted_by": "tell_oliver_crumbs"
           }
         }
       },
       "takes_back": [
-        "priya_not_in"
+        "oliver_never_inside"
       ]
     },
-    "priya_saw_toby": {
+    "dove_saw_oliver": {
       "kind": "statement",
-      "fact": "Priya says that at ten past eleven, while Duchess was being dried, Toby rushed into the dog-washing tent with muddy Biscuit. A shiny blue ribbon was poking out of his jacket pocket, and he pushed it down quickly when he saw her looking.",
+      "fact": "Mrs. Dove says that at quarter past ten she saw Oliver come out of the marquee licking his fingers and looking very pleased with himself.",
       "source": {
-        "character": "priya"
+        "character": "dove"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "dove_rosette_at_tea": {
+      "kind": "statement",
+      "fact": "Mrs. Dove says she carried the judges' pot of tea into the marquee at twenty-five past ten, and the blue rosette was still on the judges' table then. Nobody else was in the marquee.",
+      "source": {
+        "character": "dove"
       },
       "truth": true,
       "reached": {
         "by": "asked",
-        "about": "who else came into the dog-washing tent",
+        "about": "the judges' tea and the rosette",
         "prompted_by": [
-          "suds_biscuit",
-          "ev_chalkboard",
-          "priya_admits"
+          "opening",
+          "dove_saw_oliver"
         ]
       }
     },
-    "toby_alibi": {
+    "dove_oliver_helped": {
       "kind": "statement",
-      "fact": "Toby says he and Biscuit have been at the tea stall all morning, and Biscuit has not left the tea stall once.",
+      "fact": "Mrs. Dove says that from quarter past ten until ten to eleven Oliver stayed at the tea stall stacking paper cups. He minded the stall while she took the judges' tea at twenty-five past ten, and he was still there when she came back. He never went back to the marquee.",
       "source": {
-        "character": "toby"
+        "character": "dove"
       },
-      "truth": false,
-      "why": "He took Biscuit to the marquee and took the rosette, and he is scared of being in trouble.",
+      "truth": true,
       "reached": {
-        "by": "first_meeting"
+        "by": "asked",
+        "about": "where Oliver was after quarter past ten",
+        "prompted_by": [
+          "dove_saw_oliver",
+          "oliver_admits_bun"
+        ]
       }
     },
-    "toby_saw_priya": {
+    "okafor_washed_dogs": {
       "kind": "statement",
-      "fact": "Toby says he saw Priya come out of the marquee at about twenty to eleven, and she was looking all around as if she did not want to be seen.",
+      "fact": "Mr. Okafor says he has washed every dog in the show this morning, one after another since nine o'clock. Old Biscuit was the last dog, and he washed him at quarter to eleven.",
       "source": {
-        "character": "toby"
+        "character": "okafor"
       },
       "truth": true,
       "reached": {
         "by": "first_meeting"
       }
     },
-    "toby_tell_blanket": {
-      "kind": "tell",
-      "fact": "Toby keeps reaching into Biscuit's basket to tuck the tartan blanket down tight, as if something is hidden under it.",
+    "okafor_biscuit_mud": {
+      "kind": "statement",
+      "fact": "Mr. Okafor says that at twenty past ten, while he waited for his bath, Biscuit rolled in the mud puddle by the tent door and got muddy from nose to tail. Every other dog had already been washed clean, so from twenty past ten until his bath at quarter to eleven Biscuit was the only dog on the green with muddy paws.",
       "source": {
-        "character": "toby"
+        "character": "okafor"
       },
+      "truth": true,
       "reached": {
-        "by": "seen",
-        "with": "toby_alibi"
+        "by": "asked",
+        "about": "muddy dogs and the mud puddle",
+        "prompted_by": [
+          "clue_paw_print",
+          "clue_puddle",
+          "okafor_washed_dogs"
+        ]
       }
     },
-    "toby_admits_walk": {
+    "okafor_saw_blue": {
       "kind": "statement",
-      "fact": "Toby admits Biscuit did leave the tea stall. He took her for a walk round the duck pond, she splashed into the mud, and at ten past eleven he took her to Mrs. Suds to be rinsed.",
+      "fact": "Mr. Okafor says that at about twenty to eleven, when he called Biscuit for his bath, he saw Tilly unpin something blue and frilly from Biscuit's collar and push it into Biscuit's red dog bag under a towel.",
       "source": {
-        "character": "toby"
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "Tilly and Biscuit's red dog bag",
+        "prompted_by": [
+          "tell_tilly_bag",
+          "tilly_admits_marquee"
+        ]
+      }
+    },
+    "tilly_alibi": {
+      "kind": "statement",
+      "fact": "Tilly says she and Biscuit stayed in the dog-washing tent all morning and never went near the marquee.",
+      "source": {
+        "character": "tilly"
+      },
+      "truth": false,
+      "why": "Tilly took Biscuit into the marquee at half past ten and took the rosette, and she is frightened of getting into trouble.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "tell_tilly_bag": {
+      "kind": "tell",
+      "fact": "Tilly keeps standing in front of Biscuit's red dog bag and glancing down at it, as if to check it is still shut.",
+      "source": {
+        "character": "tilly"
+      },
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "tilly_last_show": {
+      "kind": "statement",
+      "fact": "Tilly says Biscuit is fourteen, today is his very last dog show, and he has never won a single rosette in his whole life.",
+      "source": {
+        "character": "tilly"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      },
+      "colour": true
+    },
+    "tilly_admits_marquee": {
+      "kind": "statement",
+      "fact": "Tilly admits that she and Biscuit did go into the marquee at half past ten, when nobody was there, and muddy Biscuit put his front paw up on the judges' table.",
+      "source": {
+        "character": "tilly"
       },
       "truth": true,
       "reached": {
@@ -402,103 +419,82 @@
         "gate": {
           "use": {
             "any": [
-              "suds_biscuit",
-              "ev_chalkboard",
-              "ev_biscuit_paw"
+              "okafor_biscuit_mud",
+              "clue_rosette_in_bag"
             ]
           }
         }
       },
       "takes_back": [
-        "toby_alibi"
+        "tilly_alibi"
       ]
     },
-    "toby_confession": {
+    "tilly_confession": {
       "kind": "statement",
-      "fact": "Toby says he took muddy Biscuit into the empty marquee at eleven o'clock, and she put her paws up on the judges' table. He took the blue rosette and hid it under the blanket in Biscuit's basket. Biscuit is too old to be in the show any more, and he only wanted her to wear the Best in Show rosette once. He meant to put it back, but then everyone started talking about a thief and he got scared.",
+      "fact": "Tilly says she took the blue rosette from the judges' table at half past ten. Biscuit has never won anything and this is his last show, so she wanted him to wear it just once. She pinned it on his collar behind the towel rack, then hid it in his red dog bag before his bath to keep it dry. When she heard Mrs. Finch cry out, she was too frightened to give it back.",
       "source": {
-        "character": "toby"
+        "character": "tilly"
       },
       "truth": true,
       "reached": {
         "by": "gated",
         "gate": {
           "after": [
-            "toby_admits_walk"
-          ],
-          "use": {
-            "any": [
-              "ev_paw_print",
-              "priya_saw_toby",
-              "ev_rosette_found"
-            ]
-          }
+            "tilly_admits_marquee"
+          ]
         }
       }
     }
   },
   "conclusions": {
-    "priya_cleared": {
-      "text": "Priya is cleared: the rosette was still on the judges' table at ten to eleven, and Priya was in the dog-washing tent with Mrs. Suds from twenty to eleven until half past eleven, the whole time from ten to eleven until the rosette was found gone at twenty past eleven.",
-      "clears": "priya",
+    "oliver_cleared": {
+      "text": "Oliver is cleared: the rosette was still on the judges' table at twenty-five past ten, and from quarter past ten until it was found gone Oliver was at the tea stall with Mrs. Dove.",
+      "clears": "oliver",
       "rule": {
         "all": [
-          "bramble_last_seen",
+          "dove_rosette_at_tea",
+          "dove_oliver_helped"
+        ]
+      }
+    },
+    "bun_explained": {
+      "text": "Oliver sneaked into the marquee for one of the judges' currant buns, not for the rosette. That is why he came out licking his fingers.",
+      "resolves": "red herring: Oliver coming out of the marquee licking his fingers",
+      "rule": {
+        "all": [
+          "dove_saw_oliver",
           {
             "any": [
-              "suds_priya",
-              "ev_chalkboard"
+              "clue_bun_crumbs",
+              "oliver_admits_bun"
             ]
           }
         ]
       }
     },
-    "priya_visit_explained": {
-      "text": "Priya was seen leaving the marquee because she went in to look at the rosette, but it was still there after she left.",
-      "resolves": "red herring: Priya coming out of the marquee",
-      "rule": {
-        "all": [
-          "priya_admits",
-          "bramble_last_seen"
-        ]
-      }
-    },
-    "culprit_toby": {
-      "text": "Toby took the blue rosette from the judges' table. Either the three-toed muddy paw print beside the empty space matches his dog Biscuit, who was rinsed of pond mud at ten past eleven, or the blue ribbon seen in Toby's pocket at ten past eleven and the rosette hidden in Biscuit's basket give him away.",
-      "culprit": "toby",
+    "culprit_tilly": {
+      "text": "Tilly took the blue rosette: muddy Biscuit's paw print was left on the judges' table, and the rosette was hidden in Biscuit's red dog bag.",
+      "culprit": "tilly",
       "rule": {
         "any": [
           {
             "all": [
-              "ev_paw_print",
-              "ev_biscuit_paw",
-              "suds_biscuit"
+              "clue_paw_print",
+              "okafor_saw_blue",
+              "clue_rosette_in_bag"
             ]
           },
           {
             "all": [
-              "ev_paw_print",
-              "ev_rosette_found",
-              "priya_saw_toby"
+              "clue_paw_print",
+              "clue_puddle",
+              "okafor_biscuit_mud",
+              "oliver_cleared"
             ]
           },
           {
             "all": [
-              "toby_confession"
-            ]
-          }
-        ]
-      }
-    },
-    "why_toby": {
-      "text": "Toby took the rosette for his old dog Biscuit, who used to win but is now too old to be in the show.",
-      "rule": {
-        "any": [
-          "toby_confession",
-          {
-            "all": [
-              "bramble_biscuit_old",
-              "ev_rosette_found"
+              "tilly_confession"
             ]
           }
         ]

@@ -95,6 +95,17 @@ holds the numbers.
   would, holding only what they hold at that step. Would they think to search
   there, ask that, or show that? If not, add the prompt, the tell or the
   pointer that would lead them.
+- **A child's game.** Play the case through as a careful child would, from
+  the opening: searching where they stand, talking to whoever is there, and
+  following the plainest lead, with a wrong turn or two. A child names the
+  culprit as soon as they feel sure, and cannot go back to look for more, so:
+  - The shortest route to the culprit should take no more than about half the
+    turn budget, so a child who wastes turns still finishes.
+  - Evidence that would convince a child on its own, such as the missing
+    thing found in someone's bag, should complete a route with little else
+    held, or the facts should show why it is not enough.
+  - No clue makes the point another clue on a route is there to make. If a
+    statement already says what a finding shows, the child skips the finding.
 - **The timeline.** Read every true fact against `truth.timeline` and every
   false one against it too. Check that each place, time and object agrees
   everywhere it appears, and that no `knows` fact, appearance or opening fact

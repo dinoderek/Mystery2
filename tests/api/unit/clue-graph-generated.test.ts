@@ -30,8 +30,8 @@ const silent = { log: () => {}, logError: () => {} };
 /** Each generated story and the brief it was generated from. */
 const STORIES = [
   { file: "blueprints/clue-graph/missing-blue-rosette.json", brief: "blueprints/clue-graph/briefs/dog-show-rosette.brief.json" },
-  { file: "blueprints/clue-graph/midnight-train-museum-sleepover.json", brief: "blueprints/clue-graph/briefs/museum-sleepover-train.brief.json" },
-  { file: "blueprints/clue-graph/brackenford-stopped-clock.json", brief: "blueprints/clue-graph/briefs/clock-tower-key.brief.json" },
+  { file: "blueprints/clue-graph/midnight-train.json", brief: "blueprints/clue-graph/briefs/museum-sleepover-train.brief.json" },
+  { file: "blueprints/clue-graph/the-stopped-clock.json", brief: "blueprints/clue-graph/briefs/clock-tower-key.brief.json" },
 ];
 
 const load = (file: string): ClueGraphCase => validateClueGraph(JSON.parse(fs.readFileSync(path.join(ROOT, file), "utf8")));

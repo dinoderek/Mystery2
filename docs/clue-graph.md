@@ -37,10 +37,10 @@ Using a clue means showing it or making its point, not holding it.
 ## The case file
 
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
-and any other format are rejected, by name. A case holds facts, never the words a child reads: the narrator writes those.
-A fact states what it establishes plainly and completely, keeping every name,
-time, place and object. Names (people, places, spots, the title) are as
-authored.
+and any other format are rejected, by name. A case holds facts, never the
+words a child reads: the narrator writes those. A fact states what it
+establishes plainly and completely, keeping every name, time, place and
+object. Names (people, places, spots, the title) are as authored.
 
 - `metadata`: `id`, `title`, `time_budget`, and `target_age`, the default
   reading age and the age the plot is sized for.
@@ -71,9 +71,10 @@ logged once.
 1 invalid, 2 unreadable, 3 misuse.
 
 Trails: `node scripts/print-clue-graph-trails.mjs <file>` (or
-`npm run trails:clue-graph`) prints the case as Markdown trails, with the same
-reach code and exit codes and no model: each conclusion's routes from the
-opening, each step with how it is reached and what takes it back.
+`npm run trails:clue-graph`) prints the case as Markdown trails, by the same
+reach code and exit codes, with no model: each conclusion's routes from the
+opening, each step after every way into it, with how it is reached and what
+takes it back.
 
 References must fit: `after`,
 `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
@@ -99,7 +100,7 @@ The loader reads `clue-graph/` and builds a rule-free world view, its catalog
 ID a UUID from `metadata.id`. A start saves the validated case in
 `game_sessions.clue_graph_snapshot`, which resume and every turn play. Each
 turn that counts saves its event (move, search, talk, line) as
-`payload.clue_graph`; the engine folds those, deriving the rest.
+`payload.clue_graph`, which the engine folds.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
@@ -114,14 +115,14 @@ turn that counts saves its event (move, search, talk, line) as
   Before, it wins only words fitting it better than every visible spot, finds
   nothing, and is never named to the narrator.
 - **Notebook lines.** Each clue a turn brings out gets a line, saved in the
-  event's `notebook`; a missing, extra or blank line fails the turn; one for a
-  clue already held is dropped. Every reader then uses that line: notebook,
-  later turns, farewell (clues found only), accusation. A pointer's line names
+  event's `notebook`; a missing, extra, blank or repeated line fails the turn;
+  one for a held clue is dropped. Every reader then uses that line: notebook,
+  later turns, farewell (found clues only), accusation. A pointer's line names
   its spot.
 - **Retraction** marks a statement taken back; a conclusion holds only on
   clues held and standing.
 - **Leads** name someone unmet, someone with more to give, or a hidden spot
-  newly visible, each new on its turn.
+  newly shown, new on its turn.
 - **Notebook**: every held clue, with its kind and whether taken back, then
   the leads. No conclusion, truth, rule or gate wording reaches the browser.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`:

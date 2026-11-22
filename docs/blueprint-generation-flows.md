@@ -18,7 +18,7 @@ Both backends of `./dev generate` use `buildBlueprintGenerationChatInput`:
   image ids and strict-mode nulls.
 
 The agent backend gets both in its workspace. Each saves `result.json` after
-schema and mechanical checks; a rejected blueprint is never installed
+schema and mechanical checks; a rejected blueprint is kept, never installed
 (`evaluation/README.md`).
 
 ### Repair rounds
@@ -96,7 +96,7 @@ searchable areas. The run keeps prompts, attempts, `scenes.json` and
 
 `packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations,
 rejecting executable fields and unknown references. Manifests live in
-`blueprint-scenes/<blueprint-id>.json`, the config root's over committed
+`blueprint-scenes/<blueprint-id>.json`, the config root's winning over committed
 examples, and are all the `blueprint-scenes` endpoint serves.
 
 ## Narration at play

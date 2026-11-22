@@ -161,6 +161,7 @@ async function resolveGraphAccuseRound(game: TurnGame, runtime: TurnRuntime, rea
     blueprint: game.blueprint,
     player_input: reasoning,
     verdict: saved.verdict,
+    cited,
     conversation_history: game.history,
   });
   const output = await askRole(runtime, "accuse_reasoning", {

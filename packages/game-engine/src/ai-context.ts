@@ -1272,6 +1272,8 @@ export function buildGraphVerdictAIContext(input: {
   blueprint: BlueprintContext;
   player_input: string;
   verdict: AccusationVerdict;
+  /** The held clues the judge found cited this round. */
+  cited?: string[];
   conversation_history?: ConversationFragment[];
 }): AIContext {
   const graph = graphOf(input.blueprint);
@@ -1285,7 +1287,7 @@ export function buildGraphVerdictAIContext(input: {
     player_input: input.player_input,
     conversation_history: history,
     graph_accusation_context: {
-      ...verdictContext(graph, playOf(graph, history), input.verdict),
+      ...verdictContext(graph, playOf(graph, history), input.verdict, input.cited ?? []),
       earlier_reasoning: earlierReasoning(history),
     },
   });
@@ -1360,5 +1362,9 @@ export function assertRoleContextSafety(
     throw new Error(
       `Invalid context: ${role} is not allowed to include accusation_judge_context`,
     );
+  }
+  // Only the closing scene of a clue-graph case is told the truth.
+  if (role !== "graph_ending" && context.graph_accusation_context && "ending" in context.graph_accusation_context) {
+    throw new Error(`Invalid context: ${role} is not allowed to include the ending`);
   }
 }

@@ -162,6 +162,8 @@ export interface GraphEnding {
   what_happened: string;
   timeline: string[];
   motive: string;
+  /** On a win, the held clues that showed it: the confession, or the supporting clues cited. */
+  showed_it: string[];
 }
 
 /**
@@ -188,11 +190,15 @@ export function verdictContext(
   graph: ClueGraphCase,
   play: ClueGraphPlay,
   verdict: AccusationVerdict,
+  cited: string[] = [],
 ): GraphVerdictContext {
   const base = accusationContext(graph, play);
   if (!resolves(verdict))
     return { ...base, lead: supportingClues(graph, play).length > 0 ? null : questionLead(graph, play) };
   const { conclusion, character } = culpritOf(graph);
+  const confession = confessionClues(graph).filter((id) => isLive(play, id));
+  const support = new Set(supportingClues(graph, play));
+  const showed = confession.length > 0 ? confession : cited.filter((id) => support.has(id));
   return {
     ...base,
     ending: {
@@ -201,6 +207,7 @@ export function verdictContext(
       what_happened: graph.conclusions[conclusion].text,
       timeline: graph.truth.timeline,
       motive: graph.truth.motive,
+      showed_it: verdict === "win" ? showed : [],
     },
   };
 }

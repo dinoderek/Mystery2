@@ -114,6 +114,7 @@ interface ReconstructInput {
   round: number;
   /** A clue-graph accusation round's saved decision. */
   verdict: AccusationVerdict | null;
+  cited: string[];
 }
 
 function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext | null {
@@ -144,7 +145,7 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
     // engine decided was judged on the full blueprint, which is not rebuilt.
     if (roleName === "accusation_judge") {
       if (!ctx.verdict) return null;
-      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict });
+      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict, cited: ctx.cited });
     }
   }
 
@@ -340,6 +341,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
           forcedByTimeout,
           round: accusationRound,
           verdict: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict ?? null,
+          cited: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.cited ?? [],
         });
       } catch (err) {
         contextError = String((err as Error)?.message ?? err);

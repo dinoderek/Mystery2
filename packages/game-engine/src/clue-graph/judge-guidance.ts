@@ -48,7 +48,7 @@ export const GRAPH_ENDING_PROMPT = `You are the narrator closing a children's my
 The investigator's last words: "{{player_input}}"
 
 graph_accusation_context.ending is the whole truth, and now you tell all of it:
-- outcome "win": celebrate that they solved it, and which of their clues (held) showed it. Outcome "lose": say kindly that this time the answer got away, never blaming them.
+- outcome "win": celebrate that they solved it, and the clues in showed_it (ids from held) that showed it. Outcome "lose": say kindly that this time the answer got away, never blaming them.
 - Then tell the whole account, simply and in order: who did it (culprit), what happened (what_happened), every step of timeline, and why (motive). Keep every name, time, place and object. Add nothing, and contradict none of it.
 The whole account may run past the length above: tell every step, simply. The case is over: do not end with a question.
 

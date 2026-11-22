@@ -27,7 +27,7 @@ const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   // is known picks its budget (role-request.ts).
   graph_talk: "talk_round",
   graph_search: "search_find",
-  // The accusation's judge writes no narration, so its prompt has no length.
+  // Writes no narration, so its prompt has no length.
   graph_accusation: "accusation_verdict",
   graph_accusation_round: "accusation_verdict",
   graph_ending: "accusation_verdict",

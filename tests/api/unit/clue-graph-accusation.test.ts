@@ -10,10 +10,12 @@ import {
   decideAccusation,
   questionLead,
   supportingClues,
+  verdictContext,
   type AccusationVerdict,
 } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { startPlay, type ClueGraphEvent, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
+import { assertRoleContextSafety } from "../../../packages/game-engine/src/ai-context.ts";
 
 function greenhouse(): ClueGraphCase {
   return validateClueGraph(JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8")));
@@ -155,6 +157,19 @@ describe("what the clue-graph accusation narrator is given", () => {
     expect(question.context).toEqual(notYet.context);
     // Nothing held supports the culprit yet, so the round points at a lead.
     expect(question.context.graph_accusation_context).toMatchObject({ lead: expect.stringMatching(/^You have not talked to /) });
+  });
+
+  it("tells the closing scene of a win which clues showed it, and of a loss none", () => {
+    const play = holding([...WELLY_ROUTE, "react_toby_trainers"]);
+    // The trainers are held and cited but support nothing; only the welly prints showed it.
+    expect(verdictContext(graph, play, "win", ["clue_welly_prints", "react_toby_trainers"]).ending?.showed_it).toEqual(["clue_welly_prints"]);
+    expect(verdictContext(graph, holding(["toby_confession"]), "win", []).ending?.showed_it).toEqual(["toby_confession"]);
+    expect(verdictContext(graph, play, "lose", ["clue_welly_prints"]).ending?.showed_it).toEqual([]);
+  });
+
+  it("refuses an ending in any context but the closing scene's", async () => {
+    const { context } = await request("graph_ending", "lose");
+    expect(() => assertRoleContextSafety("graph_accusation_round", { ...context, role_name: "graph_accusation_round" })).toThrow(/ending/);
   });
 
   it.each(["win", "lose"] as const)("gives the closing scene of a %s the timeline, the culprit conclusion and the motive", async (verdict) => {

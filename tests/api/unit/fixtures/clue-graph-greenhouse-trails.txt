@@ -1,0 +1,177 @@
+# The Smashed Prize Pumpkin: trails
+
+Opening at The Greenhouse (reading age 10, 12 turns): Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed.
+
+## `nobody_broke_in`: a stepping stone
+
+Nobody broke in through the window. Whoever did it came through the locked door with a key.
+
+Rule: all of (clue_glass_outside)
+
+### Trail 1 of 1
+
+- `clue_glass_outside` (evidence; the broken side window, The Greenhouse): The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.
+  - reached: search the broken side window
+
+## `thorne_cleared`: clears Mr. Thorne
+
+Mr. Thorne is cleared: he was across town at the time of the crash.
+
+Rule: all of (clue_dobbs_crash_time, clue_mia_thorne_barbecue)
+
+### Trail 1 of 1
+
+- `toby_blames_thorne` (statement, false; Toby, The Potting Shed): Toby says it was Mr. Thorne, who must have climbed over the fence and smashed the window to get in.
+  - reached: said on first meeting
+  - why it is said: A burglar keeps eyes off him.
+  - taken back by: `toby_drops_burglar`
+- `clue_mia_thorne_barbecue` (statement, true; Mia, The Potting Shed): Mia says Mr. Thorne was at the growers' barbecue, right by her cake tent, all evening. At nine o'clock he bought carrot cake from her.
+  - reached: ask about Mr. Thorne on Friday evening (prompted by toby_blames_thorne)
+- `react_dobbs_slippers` (tell; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.
+  - reached: said on first meeting
+- `clue_dobbs_crash_time` (statement, true; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.
+  - reached: ask about the noise last night (prompted by react_dobbs_slippers)
+
+## `prints_explained`: resolves: red herring: the jealous rival
+
+The boot prints and ladder come from Mr. Thorne's measuring, not a break-in.
+
+Rule: all of (clue_thorne_measured, nobody_broke_in)
+
+### Trail 1 of 1
+
+- `clue_boot_prints` (evidence; The Greenhouse): Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.
+  - reached: plain search
+- `clue_glass_outside` (evidence; the broken side window, The Greenhouse): The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.
+  - reached: search the broken side window
+- `thorne_never_set_foot` (statement, false; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne says he has never set foot in the school garden.
+  - reached: said on first meeting
+  - why it is said: He is embarrassed to have spied on a children's pumpkin.
+  - taken back by: `clue_thorne_measured`
+- `clue_thorne_measured` (statement, true; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne admits he climbed over on Friday at four to measure Bertha through the window, and that the boot prints are his. He says Bertha was perfectly whole.
+  - reached: show clue_boot_prints
+  - takes back: `thorne_never_set_foot`
+
+## `mia_cleared`: clears Mia
+
+Mia is cleared: she was serving cake across town at ten to nine.
+
+Rule: all of (clue_dobbs_crash_time, clue_thorne_mia_cake)
+
+### Trail 1 of 1
+
+- `react_dobbs_slippers` (tell; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.
+  - reached: said on first meeting
+- `clue_dobbs_crash_time` (statement, true; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.
+  - reached: ask about the noise last night (prompted by react_dobbs_slippers)
+- `clue_thorne_mia_cake` (statement, true; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.
+  - reached: said on first meeting
+
+## `rota_explained`: resolves: red herring: the rota grab
+
+The purple ink was Ms. Hale's doing. Mia never schemed for the shifts.
+
+Rule: all of (clue_hale_borrowed_pen)
+
+### Trail 1 of 1
+
+- `clue_rota_purple_ink` (evidence; the watering rota on the door, The Potting Shed): On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday, and 'MIA' is written over it in sparkly purple pen.
+  - reached: search the watering rota on the door
+- `clue_hale_borrowed_pen` (statement, true; Ms. Hale, The Greenhouse): Ms. Hale says she changed the rota herself on Wednesday. Her pen ran dry, so she borrowed Mia's sparkly purple one.
+  - reached: show clue_rota_purple_ink
+
+## `culprit_toby`: names the culprit, Toby
+
+Toby smashed Bertha by accident and faked the break-in.
+
+Rule: any of (all of (clue_welly_prints, mia_cleared), all of (nobody_broke_in, clue_key_in_water_butt, clue_spare_key_book, clue_hale_key_last_seen, mia_cleared), all of (toby_confession))
+
+### Trail 1 of 3
+
+- `clue_welly_prints` (evidence; the smashed pumpkin, The Greenhouse): Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.
+  - reached: search the smashed pumpkin
+- `react_dobbs_slippers` (tell; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.
+  - reached: said on first meeting
+- `clue_dobbs_crash_time` (statement, true; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.
+  - reached: ask about the noise last night (prompted by react_dobbs_slippers)
+- `clue_thorne_mia_cake` (statement, true; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.
+  - reached: said on first meeting
+
+### Trail 2 of 3
+
+- `clue_glass_outside` (evidence; the broken side window, The Greenhouse): The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.
+  - reached: search the broken side window
+- `clue_key_in_water_butt` (evidence; the water butt by the door, The Greenhouse): A key with a green tag reading GREENHOUSE lies at the bottom of the murky water butt by the door. It is the missing greenhouse key.
+  - reached: search the water butt by the door
+- `clue_spare_key_book` (evidence; Mr. Dobbs's Workshop): Mr. Dobbs's key book says: 'Greenhouse spare. Thursday: Mia, 5:05 to 5:20. Friday: Mia, 5:00 to 5:20. Saturday: Ms. Hale, 7:25.'
+  - reached: plain search
+- `clue_hale_key_last_seen` (statement, true; Ms. Hale, The Greenhouse): Ms. Hale says that on Wednesday at half past three the greenhouse key was on its hook. After that, only Toby and Mia were in the shed until she locked it. The next day, the key was gone.
+  - reached: ask about the missing key (prompted by opening)
+- `react_dobbs_slippers` (tell; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.
+  - reached: said on first meeting
+- `clue_dobbs_crash_time` (statement, true; Mr. Dobbs, Mr. Dobbs's Workshop): Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.
+  - reached: ask about the noise last night (prompted by react_dobbs_slippers)
+- `clue_thorne_mia_cake` (statement, true; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.
+  - reached: said on first meeting
+
+### Trail 3 of 3
+
+- `clue_glass_outside` (evidence; the broken side window, The Greenhouse): The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.
+  - reached: search the broken side window
+- `clue_welly_prints` (evidence; the smashed pumpkin, The Greenhouse): Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.
+  - reached: search the smashed pumpkin
+- `clue_key_in_water_butt` (evidence; the water butt by the door, The Greenhouse): A key with a green tag reading GREENHOUSE lies at the bottom of the murky water butt by the door. It is the missing greenhouse key.
+  - reached: search the water butt by the door
+- `toby_blames_thorne` (statement, false; Toby, The Potting Shed): Toby says it was Mr. Thorne, who must have climbed over the fence and smashed the window to get in.
+  - reached: said on first meeting
+  - why it is said: A burglar keeps eyes off him.
+  - taken back by: `toby_drops_burglar`
+- `toby_drops_burglar` (statement, true; Toby, The Potting Shed): Toby admits that then nobody climbed in, and says maybe it was a fox.
+  - reached: show clue_glass_outside
+  - takes back: `toby_blames_thorne`
+- `toby_blames_mia` (statement, false; Toby, The Potting Shed): Toby says Mia has leaf wellies too, and she had the last shifts, so it could just as well have been her.
+  - reached: show clue_welly_prints or clue_key_in_water_butt
+  - why it is said: The evidence points at the club, and there are only two of them.
+  - taken back by: `toby_not_mia`
+- `clue_thorne_mia_cake` (statement, true; Mr. Thorne, Mr. Thorne's Garden): Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.
+  - reached: said on first meeting
+- `toby_not_mia` (statement, true; Toby, The Potting Shed): Toby admits that then it was not Mia.
+  - reached: show clue_thorne_mia_cake
+  - takes back: `toby_blames_mia`
+- `toby_confession` (statement, true; Toby, The Potting Shed): Toby says he took the greenhouse key on Wednesday. He only went in to give Bertha extra water. He tripped on the hose, and the old bench fell on her. He broke the window so it would look like a burglar.
+  - reached: asked once toby_drops_burglar and toby_not_mia are out
+  - takes back: `toby_alibi`, `toby_no_key`
+
+## `motive`: a stepping stone
+
+Bertha was Toby's pumpkin, and he was told to stay away from her.
+
+Rule: all of (clue_hale_toby_upset)
+
+### Trail 1 of 1
+
+- `clue_snapped_bench` (evidence; the toppled bench, The Greenhouse): The old bench had a rotten leg, and the leg has snapped clean through. When the bench fell, its heavy clay pots crashed down onto Bertha.
+  - reached: search the toppled bench
+- `clue_rota_purple_ink` (evidence; the watering rota on the door, The Potting Shed): On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday, and 'MIA' is written over it in sparkly purple pen.
+  - reached: search the watering rota on the door
+- `hale_toby_fine` (statement, false; Ms. Hale, The Greenhouse): Ms. Hale says Toby took losing his watering shifts well enough. He loves Bertha, and he would never hurt her.
+  - reached: show clue_rota_purple_ink
+  - why it is said: She is fond of Toby and feels guilty for being tough on him.
+  - taken back by: `clue_hale_toby_upset`
+- `react_hale_gloves` (tell; Ms. Hale, The Greenhouse): Ms. Hale twists the gardening gloves in her apron pocket, sighs, and says she won't have Toby made into a villain.
+  - reached: seen with hale_toby_fine
+- `clue_hale_toby_upset` (statement, true; Ms. Hale, The Greenhouse): Ms. Hale says she took Toby off the last watering shifts after he forgot to lock up on Monday, and told him no going in without a grown-up. Toby shouted, 'She's MY pumpkin!'
+  - reached: show clue_snapped_bench
+  - line of questioning: They promise to be fair to Toby, say something kind about him, or suggest it was an accident.
+  - takes back: `hale_toby_fine`
+
+## `how`: a stepping stone
+
+The rotten bench collapsed onto Bertha. It was an accident.
+
+Rule: all of (clue_snapped_bench)
+
+### Trail 1 of 1
+
+- `clue_snapped_bench` (evidence; the toppled bench, The Greenhouse): The old bench had a rotten leg, and the leg has snapped clean through. When the bench fell, its heavy clay pots crashed down onto Bertha.
+  - reached: search the toppled bench

@@ -115,8 +115,8 @@ describe("the clue-graph talk contract and mock", () => {
     const context = buildGraphTalkContext(graph, replay(graph, atThorne), "thorne", false);
     expect(parseGraphTalkOutput(mockGraphTalk(context, "xzqv"))).toMatchObject({ input_understood: false, opened: [] });
     expect(
-      parseGraphTalkOutput({ narration: "What?", opened: ["a"], answered: ["b"], input_understood: false }),
-    ).toEqual({ narration: "What?", opened: [], answered: [], input_understood: false });
+      parseGraphTalkOutput({ narration: "What?", opened: ["a"], answered: ["b"], notebook: [{ id: "b", line: "B." }], input_understood: false }),
+    ).toEqual({ narration: "What?", opened: [], answered: [], notebook: [], input_understood: false });
     expect(parseGraphTalkOutput({ narration: "Hi.", opened: ["a", "a", 3] }).opened).toEqual(["a"]);
   });
 

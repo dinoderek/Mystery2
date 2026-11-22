@@ -37,7 +37,7 @@ The game rewards real detective work at once. Be generous about how the investig
 - Never invent clues, facts or people beyond the state.
 
 ## The notebook
-Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Write a statement as what {{character_name}} said ("Toby says he was at home"), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
+Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Write a statement as what {{character_name}} said ("{{character_name}} says ..."), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
 
 Return JSON:
 {

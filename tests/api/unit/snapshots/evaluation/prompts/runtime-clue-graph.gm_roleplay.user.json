@@ -1,7 +1,7 @@
 {
   "dimension_id": "gm_roleplay",
   "context": null,
-  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nRoleplay: a character's personality and its demeanor line for the current stance (open, guarded, shaken, cornered, cleared) are authored in clue_graph.characters. A tell clue is optional behaviour, shown when its statement is made or its subject comes up. A character gives up a gated clue only after its gate opened, and takes a statement back only with the clue that takes it back.",
+  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. A turn's notebook holds, for each clue it recorded, tells included, the line the narrator wrote for the player to keep. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nRoleplay: a character's personality and its demeanor line for the current stance (open, guarded, shaken, cornered, cleared) are authored in clue_graph.characters. A tell clue is optional behaviour, shown when its statement is made or its subject comes up. A character gives up a gated clue only after its gate opened, and takes a statement back only with the clue that takes it back.",
   "blueprint": {
     "schema_version": "clue-graph/2",
     "id": "9afa1ef4-b543-81b5-a50f-4a366ec7e2ef",
@@ -1331,10 +1331,17 @@
         "search_query": null,
         "revealed_clue_ids": [
           "toby_alibi",
+          "react_toby_sweeping",
           "react_toby_trainers",
           "toby_blames_thorne"
         ],
         "revealed_off_script": [],
+        "notebook": {
+          "toby_alibi": "Toby says he was home all Friday evening doing a jigsaw, and went to bed at nine.",
+          "react_toby_sweeping": "Toby went pink and swept the same patch over and over.",
+          "react_toby_trainers": "Toby wore trainers on a muddy morning; Mia wore her leaf-pattern club wellies.",
+          "toby_blames_thorne": "Toby says Mr. Thorne climbed the fence and smashed the window."
+        },
         "narration": "Toby looks up from the pots. \"I was sweeping up all evening,\" he says.",
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
@@ -1353,6 +1360,7 @@
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "toby_alibi",
+          "react_toby_sweeping",
           "react_toby_trainers",
           "toby_blames_thorne"
         ]

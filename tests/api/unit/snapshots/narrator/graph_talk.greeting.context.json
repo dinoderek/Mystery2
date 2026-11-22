@@ -20,7 +20,20 @@
       "id": "thorne",
       "name": "Mr. Thorne",
       "sex": "male",
-      "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener."
+      "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener.",
+      "appearance": [
+        "Mr. Thorne is a big man with a bushy grey beard.",
+        "He wears huge muddy boots."
+      ],
+      "knows": [
+        {
+          "fact": "Mr. Thorne grows a giant pumpkin called Goliath."
+        },
+        {
+          "fact": "Mr. Thorne has won many blue prize ribbons for his vegetables.",
+          "about": "Mr. Thorne's Garden"
+        }
+      ]
     },
     "location_name": "Mr. Thorne's Garden",
     "greeting": true,
@@ -43,7 +56,10 @@
           "id": "thorne_never_set_foot",
           "says": "Mr. Thorne says he has never set foot in the school garden.",
           "with": [
-            "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
+            {
+              "id": "react_thorne_boot",
+              "does": "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
+            }
           ]
         }
       ],

@@ -19,6 +19,7 @@ import {
   EVENT_ROLE,
   offScriptClueIdsForEvent,
   playedEvents,
+  notebookLinesForEvent,
   readField,
   type RecordedUse,
   recordedUseForEvent,
@@ -227,11 +228,18 @@ export interface TurnRecord {
   // What an ask turn recorded about the character: clues used, the player's
   // words, new commitments. Null elsewhere, and in games saved before it.
   recorded_use: RecordedUse | null;
+  // A clue-graph turn's saved notebook lines, by clue id; absent elsewhere.
+  notebook?: Record<string, string>;
   location_id: string | null;
   character_id: string | null;
   pre_state: SessionState;
   reconstructed_context: AIContext | null;
   context_error: string | null;
+}
+
+function notebookOf(event: RawEvent): { notebook?: Record<string, string> } {
+  const lines = notebookLinesForEvent(event);
+  return lines ? { notebook: lines } : {};
 }
 
 export interface ReconstructionIssue {
@@ -340,6 +348,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       // apart from an unearned reveal.
       revealed_off_script: offScriptClueIdsForEvent(event),
       recorded_use: recordedUseForEvent(event),
+      ...notebookOf(event),
       location_id: locationId,
       character_id: roleName && roleName.startsWith("talk") ? characterId : null,
       pre_state: preState,

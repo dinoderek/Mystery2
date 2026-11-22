@@ -98,6 +98,16 @@ export function revealedClueIdsForEvent(event: GameEventLike): string[] {
   );
 }
 
+// The notebook lines a clue-graph turn saved, by clue id: what the player keeps
+// for each clue it brought out. Null for any other turn.
+export function notebookLinesForEvent(event: GameEventLike): Record<string, string> | null {
+  const recorded = event.payload?.clue_graph;
+  const notebook = typeof recorded === "object" && recorded !== null ? (recorded as { notebook?: unknown }).notebook : undefined;
+  if (typeof notebook !== "object" || notebook === null || Array.isArray(notebook)) return null;
+  const lines = Object.entries(notebook).filter((entry): entry is [string, string] => typeof entry[1] === "string");
+  return lines.length > 0 ? Object.fromEntries(lines) : null;
+}
+
 // Clue ids the narrator granted outside the discovery graph (a brilliance
 // bypass), which the runtime records alongside the reveal itself.
 export function offScriptClueIdsForEvent(event: GameEventLike): string[] {

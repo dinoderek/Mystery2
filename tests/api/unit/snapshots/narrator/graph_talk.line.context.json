@@ -30,7 +30,16 @@
       "id": "thorne",
       "name": "Mr. Thorne",
       "sex": "male",
-      "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener."
+      "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener.",
+      "knows": [
+        {
+          "fact": "Mr. Thorne grows a giant pumpkin called Goliath."
+        },
+        {
+          "fact": "Mr. Thorne has won many blue prize ribbons for his vegetables.",
+          "about": "Mr. Thorne's Garden"
+        }
+      ]
     },
     "location_name": "Mr. Thorne's Garden",
     "greeting": false,

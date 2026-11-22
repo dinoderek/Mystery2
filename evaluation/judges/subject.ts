@@ -11,7 +11,7 @@
 //     turns: [ { sequence, judged, role_name, location_id, character_id,
 //                player_input, search_query, revealed_clue_ids,
 //                revealed_off_script, prior_revealed_clue_ids, recorded_use?,
-//                narration } ],
+//                notebook?, narration } ],
 //     judged_sequences: number[],
 //   }
 //
@@ -30,6 +30,7 @@ import {
   EVENT_ROLE,
   type GameEventLike,
   offScriptClueIdsForEvent,
+  notebookLinesForEvent,
   readField,
   readStringArray,
   type RecordedUse,
@@ -60,6 +61,8 @@ export interface JudgeTurn {
    * "recorded nothing used" and "not recorded" differ.
    */
   recorded_use?: RecordedUse;
+  /** A clue-graph turn's notebook lines, by clue id: what the player keeps for each clue it brought out. */
+  notebook?: Record<string, string>;
 }
 
 type TurnBeforePriors = Omit<JudgeTurn, "prior_revealed_clue_ids">;
@@ -82,6 +85,7 @@ export interface TraceTurnLike {
   revealed_clue_ids?: string[];
   revealed_off_script?: string[];
   recorded_use?: RecordedUse | null;
+  notebook?: Record<string, string> | null;
   narration: string;
 }
 
@@ -111,6 +115,10 @@ function priorRevealedClueIds(turns: readonly TurnBeforePriors[], index: number)
 
 function recordedUseField(use: RecordedUse | null): { recorded_use?: RecordedUse } {
   return use ? { recorded_use: use } : {};
+}
+
+function notebookField(lines: Record<string, string> | null): { notebook?: Record<string, string> } {
+  return lines ? { notebook: lines } : {};
 }
 
 function finalizeSubject(subjectKind: JudgeSubject["subject_kind"], turns: TurnBeforePriors[]): JudgeSubject {
@@ -144,6 +152,7 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       revealed_clue_ids: t.revealed_clue_ids ?? [],
       revealed_off_script: t.revealed_off_script ?? [],
       ...recordedUseField(t.recorded_use ?? null),
+      ...notebookField(t.notebook ?? null),
       narration: t.narration,
       is_accusation_phase: ACCUSATION_EVENT_TYPES.has(t.event_type),
     }));
@@ -191,6 +200,21 @@ function recordedUseFromResponse(response: InteractionLike["response"]): Recorde
   };
 }
 
+// A clue-graph reply's notebook lines: the cli narrator's raw `notebook`, or
+// the saved event's on a server replay.
+function notebookFromResponse(response: InteractionLike["response"]): Record<string, string> | null {
+  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
+  if (!raw || typeof raw !== "object") return null;
+  if (Array.isArray(raw.notebook)) {
+    const lines = raw.notebook.flatMap((entry: { id?: unknown; line?: unknown } | null) =>
+      typeof entry?.id === "string" && typeof entry.line === "string" ? [[entry.id, entry.line] as const] : [],
+    );
+    return lines.length > 0 ? Object.fromEntries(lines) : null;
+  }
+  const saved = Array.isArray(raw.events) ? (raw.events[0] as GameEventLike | undefined) : undefined;
+  return saved ? notebookLinesForEvent(saved) : null;
+}
+
 function offScriptClueIdsFromResponse(response: InteractionLike["response"]): string[] {
   const raw = (response?.raw ?? null) as Record<string, unknown> | null;
   if (!raw || typeof raw !== "object") return [];
@@ -215,6 +239,7 @@ function historyTurns(history: readonly GameEventLike[] | undefined): TurnBefore
     search_query: readField(event.payload, "search_query"),
     revealed_clue_ids: revealedClueIdsForEvent(event),
     revealed_off_script: offScriptClueIdsForEvent(event),
+    ...notebookField(notebookLinesForEvent(event)),
     narration: event.narration ?? "",
     is_accusation_phase: ACCUSATION_EVENT_TYPES.has(event.event_type),
   }));
@@ -248,6 +273,7 @@ export function projectInteractionSubject(
     revealed_clue_ids: revealedClueIdsFromResponse(response),
     revealed_off_script: offScriptClueIdsFromResponse(response),
     ...recordedUseField(recordedUseFromResponse(response)),
+    ...notebookField(notebookFromResponse(response)),
     narration: response.narration_text ?? "",
     is_accusation_phase: isAccusationPhase,
   };

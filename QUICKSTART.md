@@ -135,8 +135,8 @@ Create a brief JSON:
 ### Generate blueprints
 
 ```bash
-./dev eval generate path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
-./dev eval generate path/to/story-brief.json --backend agent --judge
+./dev generate path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
+./dev generate path/to/story-brief.json --backend agent --judge
 ```
 
 `api` makes one OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or in
@@ -145,7 +145,7 @@ login. Each blueprint gets the mechanical checks; `--judge` adds the judges.
 `--install` copies each blueprint that passed into `blueprints/` in the config root. Backends and `--model` repeat for side-by-side runs; `model` on
 `generator-api` in `evaluation/config.json` is the default.
 
-Flags: `./dev eval generate --help`.
+Flags: `./dev generate --help`.
 
 ## Evaluation Pipelines
 
@@ -153,7 +153,7 @@ Evaluation pipelines and their runbooks:
 
 | Pipeline | What it evaluates | Commands |
 |----------|-------------------|----------|
-| Blueprint | Generated mystery blueprints | `./dev eval generate`, `./dev eval judge blueprint` |
+| Blueprint | Generated mystery blueprints | `./dev generate`, `./dev eval judge blueprint` |
 | Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `./dev eval play` |
@@ -166,7 +166,7 @@ shared design, then the per-pipeline runbooks:
 [`evaluation/playtest/README.md`](evaluation/playtest/README.md) (playtest).
 
 ```bash
-./dev eval generate <brief> --judge             # generate and judge a blueprint
+./dev generate <brief> --judge             # generate and judge a blueprint
 ./dev eval judge game <session-id|trace.json>   # judge a played game
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
@@ -184,12 +184,12 @@ Labelling the truth set, also from a phone over Tailscale:
 Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.
 
 ```bash
-npm run generate:images -- --blueprint-path spring-treats-6yo.json --all
-npm run generate:images -- --blueprint-path spring-treats-6yo.json --characters <character-id>
-npm run generate:images -- --blueprint-path spring-treats-6yo.json --all --chat-packets  # no key needed
+./dev gen-images --blueprint-path spring-treats-6yo.json --all
+./dev gen-images --blueprint-path spring-treats-6yo.json --characters <character-id>
+./dev gen-images --blueprint-path spring-treats-6yo.json --all --chat-packets  # no key needed
 ```
 
-Every flag, default and file location: `node scripts/generate-blueprint-images.mjs --help`.
+Every flag, default and file location: `./dev gen-images --help`.
 Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## 3D scene recipes

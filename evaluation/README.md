@@ -39,7 +39,8 @@ the gate until its new hash is appended; append one by hand otherwise.
 
 ## Generation
 
-A blueprint that never passes the schema is kept and fails its check.
+`./dev generate` creates blueprints; use `./dev eval`.
+Schema failures are kept.
 `--install` copies a blueprint that passed its mechanical checks into
 `blueprints/` in the config root; it never replaces a file there, and a failed
 install exits 1.

@@ -12,7 +12,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { COMMANDS } from "../../../evaluation/commands.ts";
+import { generateCommand } from "../../../evaluation/generate/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import { describeFailure, generateViaOpenRouter, readOpenRouterKey } from "../../../evaluation/generate/openrouter.ts";
@@ -216,7 +216,7 @@ describe("generate --backend api through the real wrapper", () => {
       const code = await runEval(
         ["generate", brief, "--backend", "api", "--config", config, "--output-root", path.join(dir, "out"), "--quiet"],
         { root: process.cwd(), out: (t) => out.push(t), err: (t) => out.push(t), env: { OPENROUTER_API_KEY: KEY } },
-        COMMANDS,
+        [generateCommand],
       );
       expect(out.join("\n")).not.toContain(KEY);
       expect(code).toBe(0);

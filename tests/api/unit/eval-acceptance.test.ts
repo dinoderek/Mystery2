@@ -41,13 +41,13 @@ describe("the entry point", () => {
   it("lists the evaluation commands from ./dev eval --help and exits 0", () => {
     const ran = spawnSync(process.execPath, [path.join(ROOT, "dev"), "eval", "--help"], { cwd: ROOT, encoding: "utf8" });
     expect(ran.status).toBe(0);
-    for (const command of ["generate", "validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score", "compare", "suite"]) {
+    for (const command of ["validate", "judge blueprint", "judge game", "judge turn", "cases", "play", "report", "label", "score", "compare", "suite"]) {
       expect(ran.stdout).toContain(command);
     }
   });
 
   it("refuses the generator's old --chat-packet mode as an unknown option, exiting 1", () => {
-    const ran = spawnSync(process.execPath, [path.join(ROOT, "dev"), "eval", "generate", "brief.json", "--chat-packet"], {
+    const ran = spawnSync(process.execPath, [path.join(ROOT, "dev"), "generate", "brief.json", "--chat-packet"], {
       cwd: ROOT,
       encoding: "utf8",
     });

@@ -1,14 +1,24 @@
 # Blueprint Generation Flows
 
-Generation, artwork and narration. V2 schema:
-`packages/shared/src/blueprint-schema-v2.ts`; narrator context:
+V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
 `docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
 “Input” goes to the model; “attached” is paired with its output; sessions
 store ids.
 
+## Generating a clue-graph case
+
+`./dev generate` writes a `clue-graph/2` case by default (agent only) from a
+brief (`packages/blueprint-generator/src/clue-graph-brief.ts`). Prompt:
+`packages/blueprint-generator/src/clue-graph-prompt.md`, no age guidance or
+validator rule; workspace validator: the mechanical check
+(`evaluation/generator-harness/template/README.md`). Repair needs no
+`--judge` (two by default, five at most); `--install` copies a passing final
+case to `blueprints/clue-graph/`.
+
 ## Generating a blueprint
 
-Both backends of `./dev generate` use `buildBlueprintGenerationChatInput`:
+Both backends of `./dev generate --format v2` use
+`buildBlueprintGenerationChatInput`:
 
 - **System:** `packages/blueprint-generator/src/generator-prompt.md` plus
   `renderGenerationGuidance` (`packages/shared/src/age-profile.ts`).
@@ -17,16 +27,12 @@ Both backends of `./dev generate` use `buildBlueprintGenerationChatInput`:
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
   image ids and strict-mode nulls.
 
-The agent backend gets both in its workspace. Each saves `result.json` after
-schema and mechanical checks; a rejected blueprint is kept, never installed
-(`evaluation/README.md`).
-
 ### Repair rounds
 
-`--judge --repair <n>` (agent backend) runs up to `n` rounds while anything
-fails (`evaluation/generate/repair.ts`): the agent fixes the faults
-`repair.json` quotes as data, and every check and judge reruns on brief and
-blueprint alone. Round 0 is kept: it measures the prompt.
+`--judge --repair <n>` (agent) runs up to `n` rounds while anything fails
+(`evaluation/generate/repair.ts`): the agent fixes the faults `repair.json`
+quotes as data, and every check and judge reruns on brief and blueprint
+alone. Round 0 is kept: it measures the prompt.
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -80,24 +86,22 @@ Three phases keep images consistent:
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-For `clue-graph/2`, portraits use appearance facts, locations use public facts,
-and covers use optional cover facts and visual direction. Without cover facts,
-the title supplies direction. Optional image IDs are saved; artwork is never required.
+For `clue-graph/2`, portraits use appearance facts, locations public facts,
+covers cover facts (else the title) and visual direction; artwork is optional.
 
 Ratios are checked against OpenRouter’s list, but support varies by model.
 
 ## Generating 3D scenes
 
 `./dev eval scenes <blueprint.json> --install` generates missing location
-recipes through the `scene-generator` binding. Prompts get
-only visual direction and the names and descriptions of locations and
-searchable areas. The run keeps prompts, attempts, `scenes.json` and
-`result.json`; a failure keeps installed art.
+recipes through the `scene-generator` binding, keeping existing ones. Prompts
+get only visual direction and location names, descriptions and searchable
+areas. A failure never replaces installed art.
 
-`packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations,
-rejecting executable fields and unknown references. Manifests live in
-`blueprint-scenes/<blueprint-id>.json`, the config root's winning over committed
-examples, and are all the `blueprint-scenes` endpoint serves.
+`packages/shared/src/scene-schema.ts` bounds shapes, transforms and
+animations, rejecting executable fields and unknown references. Manifests live
+in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
+committed examples; the endpoint serves only these.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->

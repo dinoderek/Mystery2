@@ -121,29 +121,25 @@ from another's, not anyone out.
 
 ## Blueprint Generation
 
-Create a brief JSON:
+A brief names the story, reading age and size (`small`, `medium` or `large`):
 
 ```json
-{
-  "brief": "A child-friendly mystery in a school library.",
-  "targetAge": 8,
-  "timeBudget": 14,
-  "mustInclude": ["at least three suspects", "one red herring motive"]
-}
+{ "brief": "A missing cake at a village fete.", "targetAge": 8, "size": "small" }
 ```
-
-### Generate blueprints
 
 ```bash
-./dev generate path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
-./dev generate path/to/story-brief.json --backend agent --judge
+./dev generate path/to/brief.json --judge --install
+./dev generate --format v2 path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
 ```
 
-`api` makes one OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or in
-`.env.local` in the config root; `agent` runs the Claude agent on your Claude
-login. Each blueprint gets the mechanical checks; `--judge` adds the judges.
-`--install` copies each blueprint that passed into `blueprints/` in the config root. Backends and `--model` repeat for side-by-side runs; `model` on
-`generator-api` in `evaluation/config.json` is the default.
+A clue-graph case, the default, is written by the Claude agent on your Claude
+login. Up to two repair rounds fix what the validator and, with `--judge`, the
+judges report; `--install` copies a case that passed into
+`blueprints/clue-graph/` in the config root. `--format v2` writes a Blueprint V2
+from a story brief (`targetAge`, `timeBudget`, `mustInclude`): `api` makes one
+OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or the config root's
+`.env.local`, and `model` on `generator-api` in `evaluation/config.json` is
+its default.
 
 Flags: `./dev generate --help`.
 
@@ -166,7 +162,7 @@ shared design, then the per-pipeline runbooks:
 [`evaluation/playtest/README.md`](evaluation/playtest/README.md) (playtest).
 
 ```bash
-./dev generate <brief> --judge             # generate and judge a blueprint
+./dev generate <brief> --judge             # generate and judge a case
 ./dev eval judge game <session-id|trace.json>   # judge a played game
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again

@@ -58,7 +58,7 @@ measures no variation.
 On temporary roots, from `evaluation/specs/` briefs and Haiku self-play:
 
 ```bash
-./dev eval generate evaluation/specs/<brief> --judge
+./dev generate evaluation/specs/<brief> --judge
 node evaluation/lib/truth/store.ts base <base> <result.json>
 ./dev eval play --blueprint <file> --persona <detective|kid-7> --narrator-model haiku
 ./dev eval judge game <session> --database <run>/game.db --no-judges

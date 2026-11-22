@@ -39,10 +39,10 @@ the gate until its new hash is appended; append one by hand otherwise.
 
 ## Generation
 
-`./dev generate` creates blueprints; use `./dev eval`.
-Schema failures are kept.
+`./dev generate` creates blueprints; `./dev eval judge blueprint` judges saved ones.
+Schema failures remain.
 `--install` copies a blueprint that passed its mechanical checks into
-`blueprints/` in the config root; it never replaces a file there, and a failed
+`blueprints/` in the config root; it never replaces files; a failed
 install exits 1.
 
 **Repair.** With `--repair <n>` (`docs/blueprint-generation-flows.md`), round

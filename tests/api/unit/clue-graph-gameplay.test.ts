@@ -598,6 +598,22 @@ describe("clue-graph sessions and turns", () => {
       expect(await ctx.sessions.getById(opened.game_id)).toEqual(session);
     });
 
+    it("keeps a greeting's first words and lines even when the narrator calls it not understood", async () => {
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      await play(opened.game_id, "go to the potting shed");
+      const confused = answering((request) => ({
+        narration: "Toby looks up.",
+        opened: [],
+        answered: [],
+        notebook: owedNotebook(request, []),
+        input_understood: false,
+      }));
+      const greeting = await play(opened.game_id, "talk to Toby", confused);
+      expect(greeting.revealed_clues.map((clue) => [clue.id, clue.text])).toEqual(
+        ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne"].map((id) => [id, noted(id)]),
+      );
+    });
+
     it("fails a search that finds a clue but writes no line for it", async () => {
       const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
       const events = await ctx.events.listBySession(opened.game_id);

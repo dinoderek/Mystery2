@@ -111,6 +111,16 @@ describe("the clue-graph talk contract and mock", () => {
     expect(parseGraphTalkOutput(mockGraphTalk(state, "Tell me the truth")).opened).toEqual([plain.id]);
   });
 
+  it("shares what the character knows when asked, and says plainly it does not know otherwise", () => {
+    const context = buildGraphTalkContext(graph, replay(graph, [...atThorne, { type: "talk", character: "thorne" }]), "thorne", false);
+    const knows = parseGraphTalkOutput(mockGraphTalk(context, "What do you know about prizes?"));
+    for (const known of graph.characters.thorne.knows) expect(knows.narration).toContain(known.fact);
+    expect(knows).toMatchObject({ opened: [], answered: [], notebook: [] });
+    const unknown = parseGraphTalkOutput(mockGraphTalk(context, "Where were the swings?"));
+    expect(unknown.narration).toContain("I don't know.");
+    expect(unknown).toMatchObject({ opened: [], answered: [], notebook: [] });
+  });
+
   it("earns nothing from gibberish, whatever was listed", () => {
     const context = buildGraphTalkContext(graph, replay(graph, atThorne), "thorne", false);
     expect(parseGraphTalkOutput(mockGraphTalk(context, "xzqv"))).toMatchObject({ input_understood: false, opened: [] });

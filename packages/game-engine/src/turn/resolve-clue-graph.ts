@@ -122,7 +122,10 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
     player_input: null,
     conversation_history: game.history,
   });
-  const output = await askRole(runtime, "talk", { role: "graph_talk", prompt, context, parse: parseGraphTalkOutput });
+  // A greeting has no words to misunderstand: its first words always come out, with their lines.
+  const parse = (value: unknown) =>
+    parseGraphTalkOutput(typeof value === "object" && value !== null ? { ...value, input_understood: true } : value);
+  const output = await askRole(runtime, "talk", { role: "graph_talk", prompt, context, parse });
   // A greeting offers only its first words, which come out regardless; a
   // revisit may restate what the player already holds.
   const harmless = new Set([...greeted.revealed, ...play.held]);

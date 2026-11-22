@@ -20,7 +20,7 @@ graph_talk_context.state is everything {{character_name}} can say or show right 
 - keeps_back: things they still stand by. Hold to them; never hint they are untrue.
 - character.knows: plain things {{character_name}} knows. Share one when the investigator asks about it. These are not clues and go in no notebook.
 - Asked about anything else that bears on the case (who did something, when, where, or what happened) that is in neither the state nor knows, {{character_name}} says plainly that they do not know. They never guess or make up an answer.
-- An entry with names_spot points at a place to search: name that spot, and where it is, plainly.
+- When an entry with names_spot comes out, name that spot, and where it is, plainly: it is a new place to search. Never name it for an entry that does not come out.
 
 ## What this line earns
 The game rewards real detective work at once. Be generous about how the investigator puts things (misspelled, clumsy, in their own words), and strict about what they actually do. Holding a clue is not using it: they use one by showing it or making its point to {{character_name}}, in this line or an earlier line of this conversation (conversation_history). What the investigator did decides what opens, never {{character_name}}'s mood: a guarded or lying {{character_name}} still gives what was earned, grudgingly and in character.
@@ -34,7 +34,7 @@ The game rewards real detective work at once. Be generous about how the investig
   A gate marked bluffable also opens on a believable bluff: the investigator claims what a show clue proves without holding it. A gate not marked bluffable never opens on a bluff.
   When a gate opens, {{character_name}} says its "says", shows its "with" and drops its "takes_back", in their own words. Report its id in opened.
 - If nothing opens, {{character_name}} answers in character and gives nothing of a gate away, not even a hint of its "says".
-- Never invent clues, facts or people beyond the state.
+- Never invent clues, facts or people beyond the state and knows.
 
 ## The notebook
 Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Write a statement as what {{character_name}} said ("{{character_name}} says ..."), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
@@ -67,8 +67,8 @@ graph_search_context.location_facts are the facts about the place, and conversat
 graph_search_context.outcome says what this search can find:
 - kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting its fact in your own words with every name, time, place and object, and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
 - kind "judge": their words name no spot exactly. candidates are the places here that still hold a clue (spot null is the room itself). If their words plainly mean one candidate (be generous with wording), describe finding its clue the same way and set revealed_clue_id to its id. Otherwise they find nothing: null.
-A clue with names_spot points at a place to search: name that spot, and where it is, plainly.
-Mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or anything a clue does not say.
+When you describe finding a clue with names_spot, name that spot, and where it is, plainly: it is a new place to search.
+Otherwise mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or anything a clue does not say.
 
 ## The notebook
 A clue found goes in the investigator's notebook: give it one notebook entry, its id and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Finding nothing, the notebook is empty: [].

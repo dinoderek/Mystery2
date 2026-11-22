@@ -5,14 +5,15 @@
 // Two stages, both from the judge's registry entry (evaluation/core/registry.ts)
 // through the core's output validator (evaluation/core/judge-output.ts):
 //   1. Shape — the verdict satisfies the dimension's schema.
-//   2. Ids — every id, path and topic it cites exists in ./blueprint.json, it
-//      covers what the entry says it must, and it repeats nothing it must not.
-//      The registry entry declares these checks per dimension.
+//   2. Ids — every id, path and topic it cites exists in ./blueprint.json (or
+//      ./case.json, for a clue-graph case), it covers what the entry says it
+//      must, and it repeats nothing it must not. The registry entry declares
+//      these checks per dimension.
 //
 // Usage: node validate-judge-output.ts <path-to-verdict.json>
 //
-// Reads ./dimension-id, ./blueprint.json and (optionally) ./context.json from
-// the working directory, which is the judge workspace.
+// Reads ./dimension-id, ./blueprint.json or ./case.json, and (optionally)
+// ./context.json from the working directory, which is the judge workspace.
 //
 // Exit codes:
 //   0 — both stages passed
@@ -20,6 +21,7 @@
 //   2 — file missing or unparseable, unknown dimension, or workspace misconfigured
 //   3 — usage error
 
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -70,7 +72,8 @@ async function main() {
   }
 
   const verdict = await readOrExit(verdictPath, verdictPath);
-  const blueprint = await readOrExit("blueprint.json", "./blueprint.json");
+  const subject = existsSync(path.resolve("case.json")) ? "case.json" : "blueprint.json";
+  const blueprint = await readOrExit(subject, `./${subject}`);
   const context = (await readJson(path.resolve("context.json")).catch(() => ({}))) as Record<string, unknown>;
 
   const result = validateJudgeAnswer(definition, verdict, blueprint, context);

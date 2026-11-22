@@ -6,7 +6,8 @@
  * each of its versions in order: version 1 is the first hash, version N the
  * Nth. A judge's hash covers what its registry entry names: the brief, schema
  * and preamble (or the file its prompt is built in), the analyzer, the
- * context, the id checks and the verdict rule.
+ * context, the id checks and the verdict rule, and for a clue-graph judge its
+ * format and, when it is sent the player's view, the code that derives it.
  *
  * A change to any of those is a new version: append the judge's new hash. The
  * gate fails while a judge's files hash to anything but its latest version.
@@ -29,6 +30,9 @@ const REPO_ROOT = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..")
 
 /** The versions file, relative to the repository root. */
 export const JUDGE_VERSIONS_FILE = "evaluation/core/judge-versions.json";
+
+/** The code that derives the player's view a clue-graph judge may be sent, which its hash covers: the view, and the reach rules its waves follow. */
+const PLAYER_VIEW_SOURCES = ["evaluation/blueprint/player-view.ts", "packages/shared/src/clue-graph-reach.ts"];
 
 /** How many hex digits of SHA-256 a version's hash keeps. */
 const HASH_LENGTH = 16;
@@ -53,6 +57,9 @@ export function judgeHash(entry: JudgeEntry): string {
     context: entry.context ?? null,
     id_checks: entry.idChecks ?? null,
     verdict: entry.verdict,
+    // Only a clue-graph judge carries these, so no other judge's hash moves.
+    ...(entry.format ? { format: entry.format } : {}),
+    ...(entry.playerView ? { player_view: PLAYER_VIEW_SOURCES.map(read) } : {}),
   };
   return createHash("sha256").update(JSON.stringify(identity)).digest("hex").slice(0, HASH_LENGTH);
 }

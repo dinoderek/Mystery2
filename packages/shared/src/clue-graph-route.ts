@@ -23,7 +23,7 @@ interface State {
 }
 
 /** The clues that can open the way to `id`: what its way of being reached names. */
-function prerequisites(graph: ClueGraphCase, id: string): string[] {
+export function prerequisites(graph: ClueGraphCase, id: string): string[] {
   const clue = graph.clues[id];
   if (clue.kind === "evidence") {
     const { location, spot } = clue.source;

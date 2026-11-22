@@ -22,6 +22,7 @@
         "typecheck": "tsc --noEmit",
     "validate:mystery-structure": "node scripts/validate-mystery-structure.mjs",
     "validate:clue-graph": "node scripts/validate-clue-graph.mjs",
+    "trails:clue-graph": "node scripts/print-clue-graph-trails.mjs",
         "check:curated-docs": "node scripts/check-curated-docs.mjs",
         "check:doc-refs": "node scripts/check-doc-refs.mjs",
         "check:word-budgets": "node scripts/check-word-budgets.mjs",

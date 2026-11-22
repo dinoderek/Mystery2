@@ -21,6 +21,7 @@ export {
   type SizeCount,
   type SizeOverrides,
 } from "./clue-graph-sizes.ts";
+export { clueGraphTrails } from "./clue-graph-trails.ts";
 export { evaluateMysteryStructure } from "./mystery-structure-progress.ts";
 export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
 

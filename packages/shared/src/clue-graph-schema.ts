@@ -86,6 +86,7 @@ const LocationSchema = z
     /** What is true of the place, for the narrator to describe. */
     facts: facts(),
     spots: z.array(SpotSchema),
+    location_image_id: text.optional(),
   })
   .strict();
 
@@ -127,6 +128,7 @@ const CharacterSchema = z
     knows: z.array(KnowsSchema),
     /** What the character looks like, for the narrator and the artwork. */
     appearance: facts(2),
+    portrait_image_id: text.optional(),
   })
   .strict();
 
@@ -297,6 +299,7 @@ export const ClueGraphCaseSchema = z
       .object({
         id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
         title: text,
+        image_id: text.optional(),
         target_age: z.number().int().min(MIN_TARGET_AGE).max(MAX_TARGET_AGE),
         time_budget: z.number().int().positive().safe(),
         /** The story size the case is held to; none, no size checks. */

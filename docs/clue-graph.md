@@ -37,24 +37,25 @@ Using a clue means showing it or making its point, not holding it.
 ## The case file
 
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
-and any other format are rejected, by name. A case
+and other formats are rejected, by name. A case
 holds facts, never the words a child reads: the narrator writes those. A fact
 states what it establishes plainly and completely, keeping every name, time,
 place and object; names are as authored. Beyond the schema:
 
 - `metadata.target_age`: the default reading age, and the age the plot is
   sized for.
-- `truth` (`timeline`, the culprit's `motive`) is what the ending tells.
+- `truth` (`timeline`, `motive`) is what the ending tells.
 - A spot with `revealed_by` is hidden until that clue is held.
-- A character's `personality` and `demeanor` (by stance) direct the
-  narrator, not text for the child; `knows` holds true facts shared when
-  asked, never clues; their secret is the fact of their gated clues.
+- `personality` and `demeanor` (by stance) direct the narrator; `knows` holds
+  true facts shared when asked, never clues; a character's secret is the fact
+  of their gated clues.
 - A clue's `fact` is what evidence establishes, what a statement claims (with
   `truth`, and `why` when false) or what a tell shows. `colour: true` marks a
   clue nothing depends on, by design.
 - A conclusion has a `rule` and at most one of `clears`, `culprit` and
   `resolves` (a red herring).
-- Artwork, never needed to play: `visual_direction` and `cover`.
+- Artwork, never needed to play: `visual_direction`, `cover`, and the
+  image IDs `./dev gen-images` saves ([generation flows](blueprint-generation-flows.md)).
 
 An earlier-format game stays listed, marked unable to open;
 opening it answers `410`, logged once.
@@ -62,9 +63,14 @@ opening it answers `410`, logged once.
 ## Validation
 
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
-1 invalid, 2 unreadable, 3 misuse; each fault names its field. References
-must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same
-character's clues; `points_at` and the cover name what the case holds;
+1 invalid, 2 unreadable, 3 misuse; each fault names its field.
+
+Trails: `node scripts/print-clue-graph-trails.mjs <file>` prints each
+conclusion's routes as Markdown trails, step by step, with the same reach code
+and exit codes and no model.
+
+References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
+`points_at` and the cover name what the case holds;
 `clears` names a suspect; one culprit, named by one conclusion. Then, from the
 opening alone, adding each clue whose way in is held (never a bluff), it
 rejects:
@@ -103,34 +109,32 @@ exact, clues a range, the rest floors.
 | Turns, locations, suspects, witnesses | 8, 3, 1, 2 | 12, 4, 2, 2 | 16, 6, 3, 3 |
 | Clues | 15–20 | 25–35 | 40–55 |
 | Gated, false, hidden spots, routes | 3, 1, 0, 2 | 5, 2, 1, 2 | 8, 4, 2, 3 |
-| Without the confession: shortest route, false alibis, always cleared | 3, 0, 0 | 4, 1, 0 | 5, 1, 1 |
+| Without the confession: shortest route, false alibis, suspects always cleared | 3, 0, 0 | 4, 1, 0 | 5, 1, 1 |
 
 The shortest counts its rule's clues. A false alibi clears someone else and
-is false; such a route draws on it or its retraction. Always cleared: suspects
-every such route clears.
+is false; such a route draws on it or its retraction.
 
 ## In play
 
 The loader reads `clue-graph/` beside `msf/` into a rule-free world view. A
 start saves the case in `game_sessions.clue_graph_snapshot`, which resume and
 every turn play, checked without the story checks. Each turn that counts saves
-its event in `payload.clue_graph`; the engine derives the rest from those on
-every call.
+its event in `payload.clue_graph`; the rest is derived from those on every
+call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`)
+  state (`talkState`)
   and reports what the line `opened` and `answered`. A report the state
   did not offer fails the turn before anything is saved; one already held is
   dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
-  the words; the narrator reports what it holds, or for words naming none,
-  picks a visible spot's clue, the room's, or none. A hidden spot shows once its
-  pointer is held; before, it wins words only by fitting them better than
-  every visible spot, finds nothing, and is never named to the narrator.
-- **Retraction** marks a statement taken back; a conclusion holds only on
-  clues not taken back.
+  the words; for words naming none, the narrator picks a visible spot's clue,
+  the room's, or none. A hidden spot shows once its pointer is held; before,
+  it wins words only by fitting them better than any visible spot, finds
+  nothing, and is never named to the narrator.
+- **Retraction**: a conclusion holds only on clues not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
   hidden spot newly visible; each new when it appears.
 - **Notebook**: held clues, with kind and whether taken back, then the
@@ -142,8 +146,7 @@ every call.
 
 ## The narrator's judgement
 
-One talk prompt serves everyone: generous on how the investigator puts things,
-strict on what they do. It judges which offered gates a line opened, given
-their earlier lines in the conversation, so a clue shown and dodged opens on a
-follow-up. Cases and baselines:
+One talk prompt, generous on how the investigator puts things and strict on
+what they do, judges which offered gates a line opened, given their earlier
+lines, so a clue shown and dodged opens on a follow-up. Cases and baselines:
 `evaluation/runtime/cases/clue-graph/`.

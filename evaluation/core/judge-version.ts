@@ -31,8 +31,8 @@ const REPO_ROOT = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..")
 /** The versions file, relative to the repository root. */
 export const JUDGE_VERSIONS_FILE = "evaluation/core/judge-versions.json";
 
-/** Where the player's view a clue-graph judge may be sent is derived, which its hash covers. */
-const PLAYER_VIEW_SOURCE = "evaluation/blueprint/player-view.ts";
+/** The code that derives the player's view a clue-graph judge may be sent, which its hash covers: the view, and the reach rules its waves follow. */
+const PLAYER_VIEW_SOURCES = ["evaluation/blueprint/player-view.ts", "packages/shared/src/clue-graph-reach.ts"];
 
 /** How many hex digits of SHA-256 a version's hash keeps. */
 const HASH_LENGTH = 16;
@@ -59,7 +59,7 @@ export function judgeHash(entry: JudgeEntry): string {
     verdict: entry.verdict,
     // Only a clue-graph judge carries these, so no other judge's hash moves.
     ...(entry.format ? { format: entry.format } : {}),
-    ...(entry.playerView ? { player_view: read(PLAYER_VIEW_SOURCE) } : {}),
+    ...(entry.playerView ? { player_view: PLAYER_VIEW_SOURCES.map(read) } : {}),
   };
   return createHash("sha256").update(JSON.stringify(identity)).digest("hex").slice(0, HASH_LENGTH);
 }

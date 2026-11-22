@@ -30,8 +30,8 @@ gets its own `<run-stamp>` subtree, never overwritten.
 ```
 
 A clue-graph case's workspace holds `case.json` (and `player_view.json` for
-`cg_step_sense`) instead of the brief and blueprint, and takes its `CLAUDE.md`
-and preamble from `clue-graph/`.
+`cg_step_sense`) instead of the brief and blueprint. Its `CLAUDE.md` is
+`clue-graph/CLAUDE.md`; its preamble, `clue-graph-judge-system.md`.
 
 ## Symlinks vs copies
 

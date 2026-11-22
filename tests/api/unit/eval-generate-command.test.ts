@@ -80,8 +80,10 @@ function stubConfig({ answers, capture = "-", apiModel = "stub/model", retries =
   });
 }
 
+/** Runs `generate` on Blueprint V2, the format these tests are about; clue-graph generation has its own tests. */
 async function generate(argv: string[], env: NodeJS.ProcessEnv = {}): Promise<number> {
-  return main(["generate", ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env });
+  const format = argv.includes("--help") ? [] : ["--format", "v2"];
+  return main(["generate", ...format, ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env });
 }
 
 function resultFiles(): string[] {

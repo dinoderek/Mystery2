@@ -16,6 +16,7 @@ import type { ResolvedBinding } from "../core/config.ts";
 import type { RunTimer, StageError } from "../core/timing.ts";
 import { judgeBlueprint, runMechanical } from "./judge.ts";
 import type { JudgeSelection } from "./judge.ts";
+import type { BlueprintFormat } from "../core/registry.ts";
 import { STORED_BLUEPRINT, STORED_BRIEF } from "./inputs.ts";
 
 export interface BlueprintSubject {
@@ -74,6 +75,8 @@ export interface JudgeSubjectInput {
   selection: JudgeSelection;
   quiet: boolean;
   write: (line: string) => void;
+  /** The format to judge it as; by default, the one the file claims. */
+  format?: BlueprintFormat;
 }
 
 /** Stores the blueprint, judges it and writes the result. */
@@ -95,12 +98,12 @@ export async function judgeBlueprintSubject(subject: BlueprintSubject, input: Ju
 }
 
 /** Stores the blueprint, runs the mechanical checks only and writes the result. */
-export async function validateBlueprintSubject(subject: BlueprintSubject, input: { brief: unknown; blueprint: unknown }): Promise<Result> {
+export async function validateBlueprintSubject(subject: BlueprintSubject, input: { brief: unknown; blueprint: unknown; format?: BlueprintFormat }): Promise<Result> {
   let stored = false;
   try {
     await storeBlueprint(subject, input.blueprint, input.brief);
     stored = true;
-    const verdicts = await subject.timer.stage("mechanical", () => runMechanical(input.brief, input.blueprint), (checks) => ({ checks: checks.length }));
+    const verdicts = await subject.timer.stage("mechanical", () => runMechanical(input.brief, input.blueprint, input.format), (checks) => ({ checks: checks.length }));
     return await writeBlueprintResult(subject, { verdicts, runError: null, stored });
   } catch (error) {
     return writeBlueprintResult(subject, { verdicts: [], runError: runErrorOf(error), stored });

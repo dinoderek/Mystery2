@@ -62,12 +62,13 @@ interface MechanicalReport {
 }
 
 /**
- * Runs the mechanical checks of the blueprint's format. Without a brief, the
+ * Runs the mechanical checks of the blueprint's format: the one given, which
+ * a generator asked for, else the one the file claims. Without a brief, the
  * checks that compare a Blueprint V2 with it are not run: only the schema and
  * the structural ones.
  */
-export async function runMechanical(brief: unknown, blueprint: unknown): Promise<Verdict[]> {
-  const entries = checksFor("blueprint", blueprintFormat(blueprint));
+export async function runMechanical(brief: unknown, blueprint: unknown, format: BlueprintFormat = blueprintFormat(blueprint)): Promise<Verdict[]> {
+  const entries = checksFor("blueprint", format);
   const run = (await loadCheck(entries[0].id)) as (input: { brief: unknown; blueprintCandidate: unknown }) => MechanicalReport[];
   const known = new Set(entries.map((entry) => entry.id));
   return run({ brief, blueprintCandidate: blueprint }).map((report) => {
@@ -94,6 +95,8 @@ export interface BlueprintJudgeInput {
   write: (line: string) => void;
   /** Finished judge calls to answer from (`CallMemo` in `core/runner.ts`). */
   memo?: CallMemo;
+  /** The format to judge it as; by default, the one the file claims. */
+  format?: BlueprintFormat;
 }
 
 interface Dimension {
@@ -237,12 +240,12 @@ export async function judgeBlueprint(input: BlueprintJudgeInput): Promise<Verdic
     throw new Error("a judge binding is needed to run the judges");
   }
   input.write("[eval] running mechanical checks");
-  const mechanical = await timer.stage("mechanical", () => runMechanical(input.brief, input.blueprint), (checks) => ({ checks: checks.length }));
+  const format = input.format ?? blueprintFormat(input.blueprint);
+  const mechanical = await timer.stage("mechanical", () => runMechanical(input.brief, input.blueprint, format), (checks) => ({ checks: checks.length }));
   input.write(
     `[eval] mechanical: ${mechanical.filter((v) => v.status === "pass").length}/${mechanical.length} passed (${formatDuration(timer.lastStageMs())})`,
   );
 
-  const format = blueprintFormat(input.blueprint);
   const schema = await timer.stage("blueprint_schema_validate", async () =>
     format === "clue_graph" ? ClueGraphCaseSchema.safeParse(input.blueprint) : BlueprintV2Schema.safeParse(input.blueprint),
   );

@@ -1,13 +1,26 @@
 # Blueprint Generation Flows
 
-Generation, artwork and narration. V2 schema:
-`packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md). “Input” is sent to the model; “attached” is paired with
-its output; sessions store ids.
+V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
+`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
+“Input” is sent to the model; “attached” is paired with its output; sessions
+store ids.
+
+## Generating a clue-graph case
+
+By default `./dev generate` writes a `clue-graph/2` case (agent only) from a brief, `packages/blueprint-generator/src/clue-graph-brief.ts`, whose
+age and size the case carries.
+
+- **System:** `packages/blueprint-generator/src/clue-graph-prompt.md` alone:
+  no age guidance or validator rule.
+- **Workspace:** `setup-workspace.sh <dir> clue-graph`, whose validator is
+  `evaluation/generator-harness/scripts/validate-case.ts`: the mechanical check.
+
+Repair needs no `--judge` (two rounds by default, five at most); `--install`
+copies a passing final case to `blueprints/clue-graph/`.
 
 ## Generating a blueprint
 
-`./dev generate` uses `buildBlueprintGenerationChatInput` in
+`./dev generate --format v2` uses `buildBlueprintGenerationChatInput` in
 `packages/blueprint-generator` for both backends:
 
 - **System:** `packages/blueprint-generator/src/generator-prompt.md` plus age
@@ -17,16 +30,14 @@ its output; sessions store ids.
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
   image ids; strict-mode nulls are removed.
 
-The agent backend gets both in its workspace. Both save
-`result.json` after schema and mechanical checks; a rejected blueprint is
-kept, never installed (`evaluation/README.md`).
+The agent gets both in its workspace.
 
 ### Repair rounds
 
-`--judge --repair <n>` (agent backend) runs up to `n` rounds while anything
-fails (`evaluation/generate/repair.ts`): the agent fixes, in place, the faults
-`repair.json` quotes as data, and every check and judge reruns, seeing only
-brief and blueprint. Round 0 is kept: its first pass measures the prompt.
+`--judge --repair <n>` (agent) runs up to `n` rounds while anything fails
+(`evaluation/generate/repair.ts`): the agent fixes the faults `repair.json`
+quotes as data, and every check and judge reruns on brief and blueprint (or
+case) alone. Round 0 is kept: it measures the prompt.
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -80,24 +91,22 @@ Three phases keep images consistent:
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-For `clue-graph/2`, portraits use appearance facts, locations use public facts,
-and covers use optional cover facts and visual direction. Without cover facts,
-the title supplies direction. Optional image IDs are saved; artwork is never required.
+For `clue-graph/2`, portraits use appearance facts, locations public facts,
+covers cover facts (else the title) and visual direction; artwork is optional.
 
-Ratios are checked against OpenRouter’s list, but support varies by model.
+Ratios are checked against OpenRouter’s list; models vary.
 
 ## Generating 3D scenes
 
 `./dev eval scenes <blueprint.json> --install` generates missing location
-recipes through the `scene-generator` binding, keeping existing ones. Prompts get
-only visual direction, location names, descriptions and searchable-area names,
-never clues, hints or solutions. The run keeps prompts, attempts, `scenes.json`
-and `result.json`; a failure never replaces installed art.
+recipes through the `scene-generator` binding. Prompts get only visual
+direction and location names, descriptions and searchable areas. A failure never replaces
+installed art.
 
-`packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations,
-rejecting executable fields and unknown references. Manifests live in
-`blueprint-scenes/<blueprint-id>.json`, the config root's winning over committed
-examples; the `blueprint-scenes` endpoint serves only these.
+`packages/shared/src/scene-schema.ts` bounds shapes, transforms and
+animations, rejecting executable fields and unknown references. Manifests live
+in `blueprint-scenes/<blueprint-id>.json`, the config root's first; the
+endpoint serves only these.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->

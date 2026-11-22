@@ -140,7 +140,7 @@ ${prompt.trim()}
 ## Save Instructions
 
 Save the generated image as \`${recommendedImageFilename}\` in your blueprint-images directory.
-Then run: \`npm run generate:images -- --blueprint-path <your-blueprint> --import-images\`
+Then run: \`./dev gen-images --blueprint-path <your-blueprint> --import-images\`
 to automatically patch the blueprint with matched image IDs.
 
 ## Notes

@@ -74,7 +74,16 @@ unable to open; opening it answers `410`, logged once.
 ## Validation
 
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
-1 invalid, 2 unreadable, 3 misuse. References must fit: `after`,
+1 invalid, 2 unreadable, 3 misuse.
+
+Trails: `node scripts/print-clue-graph-trails.mjs <file>` (or
+`npm run trails:clue-graph`, with npm's banner) prints the same case as
+Markdown trails through the same reach code and exit codes, and never runs a
+model. Each conclusion lists its routes from the opening; a trail holds every
+way in held before a clue, each step with how it is reached and what takes it
+back.
+
+The validator needs references to fit: `after`,
 `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
 `points_at` and the cover name what the case holds;
 `clears` names a suspect; one culprit, named by one conclusion. Then, from the
@@ -123,6 +132,10 @@ call.
   found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
+
+Artwork is optional: `./dev gen-images` saves `metadata.image_id`,
+`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`.
+Inputs and phases: [generation flows](blueprint-generation-flows.md).
 
 ## The narrator's judgement
 

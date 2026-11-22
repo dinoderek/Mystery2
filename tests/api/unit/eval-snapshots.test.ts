@@ -236,7 +236,7 @@ async function runBlueprintPipeline(answersFile: string) {
 
   const outputRoot = path.join(scratch, "blueprint", "out");
   const result = (await runForResult(
-    ["dev", "eval", "generate", briefFile, "--judge", "--config", config, "--output-root", outputRoot, "--quiet"],
+    ["dev", "generate", briefFile, "--judge", "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   )) as Result;
   verdicts.set("blueprint", blueprintVerdicts(result));
@@ -259,7 +259,7 @@ async function runRepairRound(answersFile: string) {
   );
   const outputRoot = path.join(scratch, "repair", "out");
   const result = (await runForResult(
-    ["dev", "eval", "generate", briefFile, "--judge", "--repair", "1", "--config", config, "--output-root", outputRoot, "--quiet"],
+    ["dev", "generate", briefFile, "--judge", "--repair", "1", "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   )) as Result;
   if (result.rounds?.length !== 2) throw new Error(`the repair run made ${result.rounds?.length ?? 0} round(s), not 2`);

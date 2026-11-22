@@ -101,7 +101,7 @@ describe("./dev usage", () => {
     expect(status).toBe(0);
     expect(executed).toEqual([]);
     expect(fs.readdirSync(sandbox)).toEqual(before);
-    for (const verb of ["doctor", "run", "test", "worktree create", "worktree release"]) {
+    for (const verb of ["doctor", "run", "test", "generate", "gen-images", "worktree create", "worktree release"]) {
       expect(out.join("\n")).toContain(verb);
     }
   });
@@ -112,6 +112,19 @@ describe("./dev usage", () => {
     expect(result.stdout).toContain("worktree create");
     expect(result.stdout).toContain("worktree release");
     expect(result.stdout.trim()).toBe(USAGE.trim());
+  });
+
+  it.each(["generate", "gen-images"])("runs %s --help from the executable", (verb) => {
+    const result = spawnSync(path.join(REPO_ROOT, "dev"), [verb, "--help"], { encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(`Usage: ./dev ${verb}`);
+    expect(result.stderr).toBe("");
+  });
+
+  it("points the removed eval generate command at its new name", async () => {
+    const err: string[] = [];
+    expect(await main(["eval", "generate", "--help"], { root: clone, err: (text: string) => err.push(text) })).toBe(1);
+    expect(err.join("\n")).toContain("Use ./dev generate instead");
   });
 
   it("prints the usage and exits non-zero for an unknown verb", async () => {

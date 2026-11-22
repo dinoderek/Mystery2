@@ -101,6 +101,8 @@ export async function handle(
       blueprint_id: session.blueprint_id,
       state: gameState,
       narration_events: narrationEvents,
+      // The played case carries the game's age (`sessionCase`).
+      reading_age: blueprint.metadata.target_age,
     }), {
       headers: { "Content-Type": "application/json" },
     });

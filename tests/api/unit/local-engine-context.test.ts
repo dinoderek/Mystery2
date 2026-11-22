@@ -68,6 +68,7 @@ describe("createLocalEngine", () => {
         mode: "explore",
         current_location_id: blueprint!.world.starting_location_id,
         time_remaining: blueprint!.metadata.time_budget,
+        reading_age: blueprint!.metadata.target_age,
       });
 
       await ctx.events.insert({
@@ -112,6 +113,7 @@ describe("createLocalEngine", () => {
         mode: "explore",
         current_location_id: "loc_kitchen",
         time_remaining: 12,
+        reading_age: 8,
       });
 
       expect(await graceCtx.sessions.getById(gameId)).toBeNull();

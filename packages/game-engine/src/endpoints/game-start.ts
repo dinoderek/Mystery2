@@ -22,6 +22,7 @@ import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, type LogWriter } from "../logging.ts";
 import { readJsonRequest } from "../request.ts";
+import { atReadingAge, gameReadingAge } from "../../../shared/src/reading-age.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
@@ -150,6 +151,7 @@ async function openCase(
         mode: "explore",
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
+        reading_age: blueprint.metadata.target_age,
         ...(blueprint.msf ? { msf_snapshot: blueprint.msf } : {}),
         ...(blueprint.clue_graph ? { clue_graph_snapshot: blueprint.clue_graph } : {}),
       },
@@ -189,7 +191,12 @@ function startResponse(
     payload: { ...startPayload(blueprint), diagnostics: startDiagnostics(blueprint, 1) },
   };
   return new Response(
-    JSON.stringify({ game_id: opened.gameId, state, narration_events: [event] }),
+    JSON.stringify({
+      game_id: opened.gameId,
+      state,
+      narration_events: [event],
+      reading_age: blueprint.metadata.target_age,
+    }),
     { headers: JSON_HEADERS },
   );
 }
@@ -220,11 +227,14 @@ export async function handle(
 
     const loaded = await loadBlueprint(ctx, blueprint_id, logger);
     if (loaded.failed) return loaded.failed;
-    const { blueprint } = loaded;
-    if (!blueprint) {
+    if (!loaded.blueprint) {
       log("request.invalid", { reason: "blueprint_not_found", blueprint_id });
       return notFound("Blueprint not found");
     }
+    // The game reads at the profile's age when it has set one, else at the
+    // case's own; the session saves it, so a later change leaves this game be.
+    const readingAge = gameReadingAge(loaded.blueprint.metadata.target_age, await ctx.profile.getReadingAge());
+    const blueprint = atReadingAge(loaded.blueprint, readingAge);
 
     const opened = await openCase(req, ctx, logger, blueprint, resolved.profile);
     if (!opened) return internalError("Failed to start game");

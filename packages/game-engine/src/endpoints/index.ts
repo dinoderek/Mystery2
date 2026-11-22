@@ -22,7 +22,8 @@
 // on the player's own machine, and a profile is how one person's cases stay
 // separate from another's, not a wall against them. So the question to ask of
 // a new endpoint is only ever "does this touch somebody's sessions?" — if it
-// does not, it is `"catalog"`.
+// does not, it is `"catalog"`. A profile's own settings belong to it the same
+// way, so they are `"profile"` too.
 
 import type { CatalogContext, EngineContext } from "../context.ts";
 
@@ -33,6 +34,7 @@ import * as gameGet from "./game-get.ts";
 import * as gameSessionsList from "./game-sessions-list.ts";
 import * as gameStart from "./game-start.ts";
 import * as gameTurn from "./game-turn.ts";
+import * as profileSettings from "./profile-settings.ts";
 
 export type EndpointMethod = "GET" | "POST";
 
@@ -71,6 +73,7 @@ export const ENDPOINTS: readonly EndpointDefinition[] = [
   { name: "game-sessions-list", access: "profile", methods: GET_OR_POST, handle: gameSessionsList.handle },
   { name: "game-start", access: "profile", methods: POST_ONLY, handle: gameStart.handle },
   { name: "game-turn", access: "profile", methods: POST_ONLY, handle: gameTurn.handle },
+  { name: "profile-settings", access: "profile", methods: GET_OR_POST, handle: profileSettings.handle },
 ];
 
 const BY_NAME = new Map(ENDPOINTS.map((endpoint) => [endpoint.name, endpoint]));

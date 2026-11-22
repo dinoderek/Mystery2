@@ -1,6 +1,10 @@
 /**
  * Prompt assembly — the single place a narrator request is built.
  *
+ * A game's blueprint carries the game's reading age as its `target_age`
+ * (`atReadingAge`, applied by `sessionCase` and at game start), so the age read
+ * here is always the game's, never the case's when the two differ.
+ *
  * WHY THIS EXISTS
  *
  * Assembling a narrator request means three things: pick the role, build its

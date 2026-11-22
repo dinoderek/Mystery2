@@ -38,10 +38,11 @@ bug: a second adapter must fit beside the first.
 
 ## The database
 
-- **Ownership is the repository's job.** Every statement in `db/sessions.ts`
-  and `db/events.ts` is scoped to one player, with nothing underneath to catch a
-  query that forgets. That is why the two contexts are separate types: a handler
-  without a profile has no session store to get wrong.
+- **Ownership is the repository's job.** Every statement in `db/sessions.ts`,
+  `db/events.ts` and `db/profile.ts` (a profile's own settings) is scoped to one
+  player, with nothing underneath to catch a query that forgets. That is why the
+  two contexts are separate types: a handler without a profile has no session
+  store to get wrong.
 - **Scope is a decision, not a default.** `db/players.ts` and
   `db/ai-settings.ts` are app-global. An app-global store that should have been
   scoped is the bug above.

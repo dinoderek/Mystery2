@@ -19,6 +19,7 @@ import {
 } from "../../../packages/game-engine/src/db/client.ts";
 import { createEventStore } from "../../../packages/game-engine/src/db/events.ts";
 import { createPlayerStore } from "../../../packages/game-engine/src/db/players.ts";
+import { createProfileStore } from "../../../packages/game-engine/src/db/profile.ts";
 import { createSessionStore } from "../../../packages/game-engine/src/db/sessions.ts";
 import type {
   NewGameEvent,
@@ -27,6 +28,10 @@ import type {
 
 let tempDir: string;
 let db: Db;
+
+/** Takes a database back to before games and profiles had a reading age. */
+const DROP_READING_AGES =
+  "alter table players drop column reading_age; alter table game_sessions drop column reading_age;";
 
 function databasePath(): string {
   return path.join(tempDir, "nested", "game.db");
@@ -50,6 +55,7 @@ function newSession(playerId: string): NewGameSession {
     mode: "explore",
     current_location_id: "loc_hall",
     time_remaining: 20,
+    reading_age: 8,
   };
 }
 
@@ -85,7 +91,7 @@ describe("local database client", () => {
   });
 
   it("creates a fresh database at the current version, holding the AI choice as one value", () => {
-    expect(SCHEMA_VERSION).toBe(5);
+    expect(SCHEMA_VERSION).toBe(6);
     expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     expect(
       db.prepare("pragma table_info(app_settings)").all().map((column) => column.name),
@@ -110,10 +116,10 @@ describe("local database client", () => {
   it("upgrades version 3 with a nullable private MSF snapshot and keeps existing sessions", async () => {
     const player = createPlayerStore(db).create("Version three");
     const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
-    db.exec("alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; pragma user_version = 3;");
+    db.exec(`${DROP_READING_AGES} alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; pragma user_version = 3;`);
     db.close();
     db = openDatabase({ path: databasePath() });
-    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 5 });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     expect(await createSessionStore(db, player.id).getById(sessionId)).toMatchObject({ blueprint_id: "blueprint-1" });
     expect(db.prepare("select msf_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ msf_snapshot: null });
   });
@@ -121,14 +127,25 @@ describe("local database client", () => {
   it("upgrades version 4 with a nullable private clue-graph snapshot and keeps existing sessions", async () => {
     const player = createPlayerStore(db).create("Version four");
     const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
-    db.exec("alter table game_sessions drop column clue_graph_snapshot; pragma user_version = 4;");
+    db.exec(`${DROP_READING_AGES} alter table game_sessions drop column clue_graph_snapshot; pragma user_version = 4;`);
     db.close();
     db = openDatabase({ path: databasePath() });
-    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: 5 });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     const session = await createSessionStore(db, player.id).getById(sessionId);
     expect(session).toMatchObject({ blueprint_id: "blueprint-1" });
     expect(session).not.toHaveProperty("clue_graph_snapshot");
     expect(db.prepare("select clue_graph_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ clue_graph_snapshot: null });
+  });
+
+  it("upgrades version 5 with no reading ages: the profile has none and an older game reads at its case's", async () => {
+    const player = createPlayerStore(db).create("Version five");
+    const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
+    db.exec(`${DROP_READING_AGES} pragma user_version = 5;`);
+    db.close();
+    db = openDatabase({ path: databasePath() });
+    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
+    expect(await createProfileStore(db, player.id).getReadingAge()).toBeNull();
+    expect(await createSessionStore(db, player.id).getById(sessionId)).toMatchObject({ reading_age: null });
   });
 
   it("applies the connection pragmas the schema depends on", () => {
@@ -451,7 +468,42 @@ describe("player store", () => {
   });
 });
 
+describe("profile store", () => {
+  it("sets, reads and clears the profile's reading age, touching no other profile", async () => {
+    const players = createPlayerStore(db);
+    const ada = createProfileStore(db, players.create("Ada").id);
+    const grace = createProfileStore(db, players.create("Grace").id);
+
+    expect(await ada.getReadingAge()).toBeNull();
+    await ada.setReadingAge(9);
+    expect(await ada.getReadingAge()).toBe(9);
+    expect(await grace.getReadingAge()).toBeNull();
+
+    await ada.setReadingAge(null);
+    expect(await ada.getReadingAge()).toBeNull();
+  });
+
+  it("refuses an age the narrator cannot write for, and a profile that does not exist", async () => {
+    const ada = createProfileStore(db, createPlayerStore(db).create("Ada").id);
+
+    await expect(ada.setReadingAge(12)).rejects.toThrow();
+    await expect(ada.setReadingAge(5)).rejects.toThrow();
+    await expect(ada.setReadingAge(7.5)).rejects.toThrow();
+    expect(await ada.getReadingAge()).toBeNull();
+    await expect(createProfileStore(db, "nobody").setReadingAge(8)).rejects.toThrow(/does not exist/);
+  });
+});
+
 describe("session store", () => {
+  it("keeps the age a game started with", async () => {
+    const player = createPlayerStore(db).create("Ada");
+    const sessions = createSessionStore(db, player.id);
+    const gameId = await sessions.create({ ...newSession(player.id), reading_age: 11 });
+
+    expect(await sessions.getById(gameId)).toMatchObject({ reading_age: 11 });
+    await expect(sessions.create({ ...newSession(player.id), reading_age: 3 })).rejects.toThrow();
+  });
+
   it("round-trips a session, including the JSON-encoded clue array", async () => {
     const player = createPlayerStore(db).create("Ada");
     const sessions = createSessionStore(db, player.id);

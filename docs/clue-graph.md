@@ -4,7 +4,7 @@ A case format beside [V2](../packages/shared/src/blueprint-schema-v2.ts) and
 [MSF](mystery-structure.md). Schema and checks:
 `packages/shared/src/clue-graph-schema.ts`; play:
 `packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,
-generated ones' briefs in `briefs/`.
+generated ones' briefs in `blueprints/clue-graph/briefs/`.
 
 ## The model
 

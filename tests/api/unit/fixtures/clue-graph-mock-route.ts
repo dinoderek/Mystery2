@@ -59,9 +59,13 @@ function next(graph: ClueGraphCase, relevant: Set<string>, state: State): State[
   return states;
 }
 
-/** The fewest actions, each a turn, that hold every clue in `route`; breadth first over where the player is and what they hold. */
-export function plan(graph: ClueGraphCase, route: string[]): Action[] {
-  const relevant = relevantClues(graph, { all: route });
+/**
+ * The fewest actions, each a turn, that hold every clue in `route`; breadth
+ * first over where the player is and what they hold. Only clues on the way to
+ * the route are sought, never one in `without`.
+ */
+export function plan(graph: ClueGraphCase, route: string[], without: ReadonlySet<string> = new Set()): Action[] {
+  const relevant = relevantClues(graph, { all: route }, without);
   let frontier: State[] = [{ at: graph.opening.location, held: new Set(), actions: [] }];
   const seen = new Set(frontier.map(key));
   for (let turn = 0; turn < graph.metadata.time_budget; turn++) {

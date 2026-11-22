@@ -12,8 +12,6 @@ import {
   GameTurnResponseSchema,
   clueGraphCaseId,
   culpritRoutes,
-  measureCase,
-  sizeBounds,
   validateClueGraph,
   type ClueGraphCase,
 } from "@my2/shared";
@@ -22,6 +20,7 @@ import { createLocalEngine, type LocalEngine } from "../../../packages/game-engi
 import type { EngineContext } from "../../../packages/game-engine/src/context.ts";
 import { handle as startGame } from "../../../packages/game-engine/src/endpoints/game-start.ts";
 import { playTurn } from "../../../packages/game-engine/src/turn/play-turn.ts";
+import { confessionClues } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { linesFor, plan } from "./fixtures/clue-graph-mock-route.ts";
 
 const ROOT = process.cwd();
@@ -54,17 +53,20 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
 
   it("fits its brief and passes the validator at its size", () => {
     const asked = ClueGraphBriefSchema.parse(JSON.parse(fs.readFileSync(path.join(ROOT, brief), "utf8")));
+    // The size's own counts, none set apart: `validateClueGraph` (in `load`) has already held the case to them.
     expect(graph.metadata).toMatchObject({ size: asked.size, target_age: asked.targetAge });
-    const measured = measureCase(graph);
-    for (const [count, bounds] of Object.entries(sizeBounds(graph.metadata.size!, graph.metadata.size_overrides)))
-      expect(measured[count as keyof typeof measured], count).toSatisfy((value: number) => value >= bounds.min && value <= (bounds.max ?? Infinity));
+    expect(asked.sizeOverrides).toBeUndefined();
+    expect(graph.metadata.size_overrides).toBeUndefined();
   });
 
   it("is won on the mock by the shortest route without the confession, citing one of its clues", async () => {
     const [route] = culpritRoutes(graph)
       .flatMap((entry) => (entry.confession || entry.turns === null ? [] : [{ ...entry, turns: entry.turns }]))
       .sort((a, b) => a.turns - b.turns);
-    const lines = linesFor(graph, plan(graph, route.clues));
+    const actions = plan(graph, route.clues, new Set(confessionClues(graph)));
+    // The plan costs what the validator's route search says this route costs.
+    expect(actions).toHaveLength(route.turns);
+    const lines = linesFor(graph, actions);
 
     const started = GameStartResponseSchema.parse(
       await (await startGame(new Request("http://test/api/game-start", { method: "POST", body: JSON.stringify({ blueprint_id: clueGraphCaseId(graph.metadata.id) }) }), ctx)).json(),
@@ -79,6 +81,8 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
     const found = new Set<string>();
     for (const line of lines) for (const clue of (await play(line)).revealed_clues) found.add(clue.id);
     expect([...found]).toEqual(expect.arrayContaining(route.clues));
+    // Won on the route, not on a confession that came out along the way.
+    expect([...found].filter((id) => confessionClues(graph).includes(id))).toEqual([]);
 
     await play("accuse");
     const culprit = Object.values(graph.characters).find((person) => person.role === "culprit")!;

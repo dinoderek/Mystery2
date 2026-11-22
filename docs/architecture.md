@@ -42,8 +42,8 @@ holding its id. Every route picks one of two behaviours:
 - **No profile.** The request reads only content every profile shares. It is
   served to anyone, and its context holds nothing owned.
 
-**The criterion is ownership, not secrecy.** Does this touch somebody's
-sessions? If so, per profile. The question is never how sensitive the data
+**The criterion is ownership, not secrecy.** Does this touch what somebody
+owns? If so, per profile. The question is never how sensitive the data
 looks: shared content stays shared, and a session stays scoped even when it is
 dull. Endpoints declare which they are in
 `packages/game-engine/src/endpoints/index.ts`.

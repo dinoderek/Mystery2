@@ -6,6 +6,7 @@ import {
   GameGetResponseSchema,
   GameStartResponseSchema,
   GameTurnResponseSchema,
+  ProfileSettingsSchema,
   SessionCatalogResponseSchema,
 } from "@my2/shared";
 import { API_URL, MOCK_BLUEPRINT_ID, setupApiTestAuth, type ApiAuthContext } from "./helpers";
@@ -40,6 +41,11 @@ describe("responses the browser reads", () => {
   it("blueprints-list", async () => {
     const answer = BlueprintsListResponseSchema.parse(await get("blueprints-list"));
     expect(answer.blueprints.map((blueprint) => blueprint.id)).toContain(MOCK_BLUEPRINT_ID);
+  });
+
+  it("profile-settings, read and changed", async () => {
+    expect(ProfileSettingsSchema.parse(await get("profile-settings"))).toEqual({ reading_age: null });
+    expect(ProfileSettingsSchema.parse(await post("profile-settings", { reading_age: 8 }))).toEqual({ reading_age: 8 });
   });
 
   it("game-start, game-enter, game-turn, game-get and game-sessions-list", async () => {

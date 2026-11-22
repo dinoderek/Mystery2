@@ -1,18 +1,20 @@
 # The game
 
-A text mystery for children that makes reading and writing feel like a challenge
-worth taking: explore, ask questions, find clues, and accuse someone before time
-runs out. This is the player-facing contract. The narrator's prompts are in
-`docs/ai-runtime.md`; the screens are in `docs/ui.md`.
+A children's text mystery that makes reading and writing a challenge worth
+taking: explore, question, find clues, accuse before time runs out. Player-facing
+contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
 
 ## Who is who
 
-- **The investigator** is the child, typing commands and building a theory.
-- **The narrator** is the AI. It describes places, speaks as each character,
-  judges searches and the accusation. It must never contradict the blueprint.
+- **The investigator** is the child, typing commands and theories.
+- **The narrator** is the AI: it describes, speaks as each character,
+  judges searches and accusations, never contradicting the blueprint.
 - **The blueprint** is the case: what happened, who did what and why, and
   where the clues are. Schemas: `packages/shared/src/blueprint-schema-v2.ts`, [clue graph](clue-graph.md).
-- **The turn budget** (`metadata.time_budget`) keeps the investigation finite.
+- **The turn budget** (`metadata.time_budget`) bounds the investigation.
+- **The reading age** narration is written for is saved when a game starts:
+  the profile's (settings page), else the case's `metadata.target_age`.
+  Changing it moves new games only.
 
 ## Starting a case
 <!-- extract:starting -->
@@ -130,6 +132,6 @@ with the timeline, alibis, clue placement and motives.
 
 ## When a case ends
 
-After a win, a loss or `quit`, input is replaced by
+After a win, loss or `quit`, input becomes
 `Tab: review notebook · any other key: back to the mystery list`. Finished
-cases can be reopened read-only from the completed list.
+cases reopen read-only from the completed list.

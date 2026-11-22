@@ -41,6 +41,8 @@ export interface GameSessionRow {
   time_remaining: number;
   discovered_clues: string[];
   outcome: string | null;
+  /** The age the game is narrated for; null for a game saved before games had one. */
+  reading_age: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +69,8 @@ export interface NewGameSession {
   mode: GameMode;
   current_location_id: string;
   time_remaining: number;
+  /** The age the game is narrated for, fixed for its whole life. */
+  reading_age: number;
 }
 
 /**
@@ -136,6 +140,17 @@ export interface SessionStore {
   saveTurn(save: TurnSave): Promise<void>;
   /** Every session visible to the player, for the catalog endpoint. */
   listForPlayer(): Promise<GameSessionSummaryRow[]>;
+}
+
+/**
+ * The playing profile's own settings, bound to its id like `SessionStore`: a
+ * handler can read and change only the profile it runs as.
+ */
+export interface ProfileStore {
+  /** The age this profile's new games start at; null when each reads at its case's own. */
+  getReadingAge(): Promise<number | null>;
+  /** Sets the age, or clears it with null. Throws on an age outside the allowed range. */
+  setReadingAge(age: number | null): Promise<void>;
 }
 
 export interface EventStore {
@@ -215,6 +230,7 @@ export interface CatalogContext {
  */
 export interface EngineContext extends CatalogContext {
   player: EnginePlayer;
+  profile: ProfileStore;
   sessions: SessionStore;
   events: EventStore;
   aiProfiles: AIProfileStore;

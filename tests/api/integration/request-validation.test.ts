@@ -95,6 +95,20 @@ describe("request validation", () => {
     expect((await get(`?game_id=${gameId}`)).status).toBe(200);
   });
 
+  it("names the reading_age profile-settings refuses, and keeps the age it had", async () => {
+    expect((await post("profile-settings", { reading_age: 9 })).status).toBe(200);
+
+    await expectBadField(await post("profile-settings", {}), "reading_age");
+    await expectBadField(await post("profile-settings", { reading_age: 12 }), "reading_age");
+    await expectBadField(await post("profile-settings", { reading_age: 5 }), "reading_age");
+    await expectBadField(await post("profile-settings", { reading_age: 8.5 }), "reading_age");
+    await expectBadField(await post("profile-settings", { reading_age: "9" }), "reading_age");
+    await expectBadField(await post("profile-settings", "not json"), null);
+
+    const kept = await fetch(`${API_URL}/profile-settings`, { headers: auth.headers });
+    expect(await kept.json()).toEqual({ reading_age: 9 });
+  });
+
   it("starts a game when the profile name has spaces around it", async () => {
     const res = await post("game-start", { blueprint_id: MOCK_BLUEPRINT_ID, ai_profile: " mock " });
     expect(res.status).toBe(200);

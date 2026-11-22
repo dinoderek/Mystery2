@@ -35,6 +35,7 @@ import {
   GameGetResponseSchema,
   RevealedClueSchema,
   NotebookLeadSchema,
+  ProfileSettingsSchema,
   type Speaker,
   type NarrationPart,
   type NarrationEvent,
@@ -52,6 +53,7 @@ import {
   type GameGetResponse,
   type RevealedClue,
   type NotebookLead,
+  type ProfileSettings,
 } from "@my2/shared";
 
 export function createMsfCaseFile(overrides: Partial<MsfCaseFile> = {}): MsfCaseFile {
@@ -263,6 +265,7 @@ export function createGameStartResponse(
     narration_events: [
       createNarrationEvent({ sequence: 1, event_type: "start" }),
     ],
+    reading_age: 8,
     ...overrides,
   };
   GameStartResponseSchema.parse(response);
@@ -279,6 +282,7 @@ export function createGameGetResponse(
     narration_events: [
       createNarrationEvent({ sequence: 1, event_type: "start" }),
     ],
+    reading_age: 8,
     ...overrides,
   };
   GameGetResponseSchema.parse(response);
@@ -357,6 +361,11 @@ export function createBlueprintSummary(
 }
 
 export const MOCK_BLUEPRINT: BlueprintSummary = createBlueprintSummary();
+
+/** The answer to `profile-settings`: a profile that has set no reading age, unless overridden. */
+export function createProfileSettings(overrides?: Partial<ProfileSettings>): ProfileSettings {
+  return validate(ProfileSettingsSchema, { reading_age: null, ...overrides });
+}
 
 export function createBlueprintsListResponse(
   blueprints: BlueprintSummary[] = [MOCK_BLUEPRINT],

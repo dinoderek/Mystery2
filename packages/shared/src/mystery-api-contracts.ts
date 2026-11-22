@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { SceneManifestSchema } from "./scene-schema.ts";
+import { ReadingAgeSchema } from "./reading-age.ts";
+export { READING_AGES, ReadingAgeSchema } from "./reading-age.ts";
 export { MysteryStructureSchema, MysteryStructureNodeSchema, type MysteryStructure, type MysteryStructureNode } from "./mystery-structure-schema.ts";
 export { validateMysteryStructure } from "./mystery-structure-validator.ts";
 export { MsfCaseFileSchema, validateMsfCaseFile, buildMsfBlueprint, type MsfCaseFile, type PlayableBlueprint } from "./msf-case.ts";
@@ -247,6 +249,8 @@ export const GameStateSchema = z.object({
 export const SessionTranscriptResponseSchema = z.object({
   state: GameStateSchema,
   narration_events: z.array(NarrationEventSchema),
+  /** The age this game is narrated for, saved when it started. */
+  reading_age: ReadingAgeSchema,
 });
 
 export const GameStartResponseSchema = SessionTranscriptResponseSchema.extend({
@@ -292,6 +296,19 @@ export const SessionCatalogResponseSchema = z.object({
   completed: z.array(SessionSummarySchema),
   counts: SessionCountsSchema,
 });
+
+// --- Profile settings ---
+
+/**
+ * What the playing profile has set. A null `reading_age` means each new game
+ * reads at its case's own age; an age means every new game reads at that one.
+ */
+export const ProfileSettingsSchema = z.object({
+  reading_age: ReadingAgeSchema.nullable(),
+});
+
+/** Setting or clearing the profile's reading age: the whole settings state. */
+export const ProfileSettingsUpdateSchema = ProfileSettingsSchema;
 
 // --- AI settings ---
 //
@@ -372,3 +389,4 @@ export type BlueprintSummary = z.infer<typeof BlueprintSummarySchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionCounts = z.infer<typeof SessionCountsSchema>;
 export type SessionCatalogResponse = z.infer<typeof SessionCatalogResponseSchema>;
+export type ProfileSettings = z.infer<typeof ProfileSettingsSchema>;

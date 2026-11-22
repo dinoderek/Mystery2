@@ -19,6 +19,7 @@ import { createAISettingsStore } from "./db/ai-settings.ts";
 import { openDatabase, type Db } from "./db/client.ts";
 import { createEventStore } from "./db/events.ts";
 import { createPlayerStore, type PlayerStore } from "./db/players.ts";
+import { createProfileStore } from "./db/profile.ts";
 import { createSessionStore } from "./db/sessions.ts";
 import type { EnvRecord } from "./env-file.ts";
 import {
@@ -35,8 +36,8 @@ export interface LocalContextDeps {
 }
 
 /**
- * The context one request runs as. Both stores are bound to this player's id,
- * which is what replaces row-level security.
+ * The context one request runs as. Its owned stores are bound to this player's
+ * id, which is what replaces row-level security.
  */
 export function createLocalContext(
   player: EnginePlayer,
@@ -44,6 +45,7 @@ export function createLocalContext(
 ): EngineContext {
   return {
     player,
+    profile: createProfileStore(deps.db, player.id),
     sessions: createSessionStore(deps.db, player.id),
     events: createEventStore(deps.db, player.id),
     content: deps.content,

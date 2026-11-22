@@ -5,7 +5,9 @@
  *
  * Assembling a narrator request means three things: pick the role, build its
  * context, and render its prompt with the blueprint's `target_age` and
- * `narration_style`. That used to be inlined in every endpoint handler AND
+ * `narration_style`. A game's blueprint carries the game's reading age as its
+ * `target_age` (`atReadingAge`, applied by `sessionCase` and at game start), so
+ * the age read here is always the game's, never the case's when they differ. That used to be inlined in every endpoint handler AND
  * re-implemented by the runtime eval harness, so there were two independent
  * assembly paths. They drifted: the harness called
  * `loadPromptTemplate(role)` with no age and no style, so `clampTargetAge`

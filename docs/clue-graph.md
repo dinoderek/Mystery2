@@ -76,10 +76,12 @@ unable to open; opening it answers `410`, logged once.
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
 1 invalid, 2 unreadable, 3 misuse.
 
-Trails: `node scripts/print-clue-graph-trails.mjs <file>` (or `npm run trails:clue-graph`, with npm's banner) prints the same
-case as Markdown trails (each conclusion's routes from the opening, each step
-with how it is reached and what takes it back) through the same reach code
-and the same exit codes; it never runs a model.
+Trails: `node scripts/print-clue-graph-trails.mjs <file>` (or
+`npm run trails:clue-graph`, with npm's banner) prints the same case as
+Markdown trails through the same reach code and exit codes, and never runs a
+model. Each conclusion lists its routes from the opening; a trail holds every
+way in held before a clue, each step with how it is reached and what takes it
+back.
 
 The validator needs references to fit: `after`,
 `takes_back`, `hinted_by` and `seen.with` name the same character's clues;

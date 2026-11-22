@@ -9,7 +9,7 @@ import type { ClueGraphCase, ClueGraphClue, ClueGraphRule } from "./clue-graph-s
  * (`reachClues`) and prints facts as authored; it adds no rule of its own.
  */
 
-/** How many alternative routes a conclusion prints before the rest are counted. */
+/** The most routes a conclusion prints; one with more says so. */
 const MAX_ROUTES = 12;
 
 /** The leaf clues of each way a rule can hold, through nested conclusions; the first `MAX_ROUTES`. */
@@ -57,7 +57,10 @@ function stepLines(graph: ClueGraphCase, id: string, by: string, takenBackBy: Ma
   return lines;
 }
 
-/** Every clue a route's leaves need, in the order the validator reaches them. */
+/**
+ * Every clue a route's leaves need, in the order the validator reaches them:
+ * all the ways in that were held before a clue, not only the one it used.
+ */
 function trailOf(graph: ClueGraphCase, leaves: string[], order: Map<string, number>): string[] {
   const chain = new Set<string>();
   const visit = (id: string) => {
@@ -105,6 +108,7 @@ export function clueGraphTrails(graph: ClueGraphCase): string {
       "",
       `Rule: ${ruleWords(conclusion.rule)}`,
     );
+    if (routes.length === MAX_ROUTES) out.push("", `Only the first ${MAX_ROUTES} routes are printed.`);
     routes.forEach((leaves, index) => {
       out.push("", `### Trail ${index + 1} of ${routes.length}`, "");
       for (const step of trailOf(graph, leaves, order)) out.push(...stepLines(graph, step, by.get(step)!, takenBackBy));

@@ -13,8 +13,8 @@ for plain narration (`intro`, `ambience`). It picks the role from the action
 and state (`resolveSearchRole`, `resolveAccusationRole`), builds the role's
 context (`ai-context.ts`), and renders its prompt (`ai-prompts.ts`) with the
 blueprint's `target_age` and `narration_style`. It is the only place those two
-are applied and imports no database, so the eval harness calls it directly; a
-second copy would drift (`tests/api/unit/role-request.test.ts`).
+are applied and imports no database, so the eval harness calls it too
+(`tests/api/unit/role-request.test.ts`).
 
 **Lean prompts.** Each rule is stated once and no two conflict
 (`tests/api/unit/talk-prompt.test.ts`). Voice, reading level and grounding
@@ -33,7 +33,8 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 (`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
 round `continue`, `win` or `lose` by the rule in "The accusation" in
 `docs/game.md`. `talk_start` and `talk_end` move nobody; `gm_fabrication`
-reports invented movement.
+reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
+also return a notebook line per clue revealed (`docs/clue-graph.md`).
 
 ## Narration style
 <!-- extract:narration-style -->
@@ -116,10 +117,8 @@ invalid output is retriable.
   clues), and a locked search reveal is rejected and logged
   (`search.clue_locked`).
 - When the model reports `input_understood: false` (gibberish), the parser
-  forces the reveals, uses and commitments empty, and for a search the turn
-  cost to zero, so a confused turn never leaks a clue or costs a turn.
-- Rules that span fields are applied by the parser only, never asked of the
-  model.
+  empties the reveals, uses and commitments, and a search costs no turn.
+- The parser alone applies rules that span fields.
 
 ## Clue discovery and gating
 <!-- extract:clue-gating -->

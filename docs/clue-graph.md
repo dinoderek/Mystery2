@@ -14,7 +14,7 @@ Everything a player can learn is a clue; what holds one back is a gate.
 | Opening | What is public at the start | Yes |
 | Evidence | A finding at a location or spot, always true | Yes |
 | Statement | What a character says: true, or false with why | Yes, never marked true or false |
-| Tell | What a character does that hints at what can be unlocked | In prose |
+| Tell | What a character does that hints at what can be unlocked | Yes |
 | Conclusion | An all-of or any-of rule over clues and conclusions | No |
 
 Evidence is found by searching its source. A character's clue is reached one
@@ -54,22 +54,18 @@ authored.
   `guarded`, `shaken`, `cornered`, `cleared`), `knows` and `appearance`
   (two or more facts). Personality and demeanor are direction for the
   narrator, not text for the child. Each `knows` entry is a plain true
-  `fact` they share when asked, never a clue, and may point at a place or
-  person (`points_at`: `{location}` or `{character}`). A character's secret is
-  the fact of their gated clues.
+  `fact`, never a clue, and may point at a place or person (`points_at`). A
+  character's secret is the fact of their gated clues.
 - `clues`: `kind`, `fact`, `source` (`location` and optional `spot`, or
-  `character`). Evidence's fact is what it establishes, a statement's what the
-  character claims, with `truth` and `why` when false, a tell's what is
-  observed.
+  `character`). A statement's fact is the claim, with `truth`, and `why` when
+  false; a tell's is what is observed.
 - `conclusions`: `text` and `rule`, plus at most one of `clears` (a suspect),
   `culprit` or `resolves` (a red herring, in words).
 - Artwork, optional and never needed to play: `visual_direction` (V2's
-  shape: `art_style`, `color_palette`, `mood`, `lighting`, optional
-  `texture` and `portrait_background`) and `cover` (`facts`, optional
-  `locations` and `characters` it shows).
+  shape) and `cover` (`facts`, optional `locations` and `characters`).
 
-A game saved with an earlier format stays on the session list, marked as
-unable to open; opening it answers `410`, logged once.
+A game saved in an earlier format stays listed but cannot open: `410`,
+logged once.
 
 ## Validation
 
@@ -95,7 +91,7 @@ started on the last turn gives only the greeting.
 ## In play
 
 The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
-view; the catalog ID is a UUID derived from `metadata.id`. A start saves the
+view, its catalog ID a UUID from `metadata.id`. A start saves the
 validated case in `game_sessions.clue_graph_snapshot`, which resume and every
 turn play. Each turn that counts saves its event (move, search, talk, line) in
 `payload.clue_graph`; the engine folds those and derives the rest on every
@@ -104,27 +100,37 @@ call.
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`; first words three a line from the greeting on)
-  and reports what the line `opened` and `answered`. A report the state
-  did not offer fails the turn before anything is saved; one already held is
-  dropped; gibberish records nothing.
+  derived state (`talkState`; first words three a line from the greeting on),
+  `knows`, appearance on a first meeting, and reports what the line `opened`
+  and `answered`. A report the state did not offer fails the turn before
+  anything is saved; one already held is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words; the narrator reports what it holds, or for words naming none,
   picks a visible spot's clue, the room's, or none. A hidden spot shows once its
   pointer is held. Before, it wins the words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
+- **Notebook lines.** A turn that brings clues out, tells included, returns a
+  line for each, saved in the event's `notebook`; a missing, extra or blank
+  line fails the turn. That line is then the clue for every reader: notebook,
+  later turns, farewell, accusation. A pointer's line names its spot.
 - **Retraction** marks a statement taken back; a conclusion holds only on
   clues held, not taken back.
-- **Leads** name who or where: someone unmet, someone with more to give, a
-  hidden spot newly visible; each new when it appears.
-- **Notebook**: held clues, each with its kind and whether taken back, then the
-  leads. Never a conclusion or a tell nothing depends on; no truth, rule or
-  gate wording reaches the browser. A farewell narrator sees only clues
-  found.
+- **Leads** name someone unmet, someone with more to give, or a hidden spot
+  newly visible; each new when it appears.
+- **Notebook**: every held clue, with its kind and whether taken back, then
+  the leads. No conclusion, truth, rule or gate wording reaches the browser.
+  A farewell narrator sees only clues found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
 
 ## The narrator's judgement
+
+The narrator writes every word the child reads, from facts. It may add
+scenery and manner, never anything that looks like evidence or bears on who,
+when or where, and keeps what earlier narration established: talk carries the
+history with that person, search the history there, an arrival the last
+arrival. Asked about anything beyond their clues and `knows` that bears on
+the case, a character says plainly they do not know.
 
 One talk prompt serves everyone: generous on how the investigator puts things,
 strict on what they do. It judges which offered gates a line opened. Each line

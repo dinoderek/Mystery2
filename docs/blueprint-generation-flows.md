@@ -2,31 +2,31 @@
 
 V2 generation, artwork and narration. Schema:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md). “Input” is sent to the model; “attached” is paired with
-its output; sessions store ids.
+`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
+“Input” goes to the model; “attached” is paired with its output; sessions
+store ids.
 
 ## Generating a blueprint
 
-`./dev eval generate` uses `buildBlueprintGenerationChatInput` in
-`packages/blueprint-generator` for both backends:
+Both backends of `./dev eval generate` use `buildBlueprintGenerationChatInput`:
 
-- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus age
-  guidance from `renderGenerationGuidance` in `packages/shared/src/age-profile.ts`.
-- **User:** the brief, validated against
-  `packages/blueprint-generator/src/story-brief.ts`, with schema instructions.
+- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus
+  `renderGenerationGuidance` (`packages/shared/src/age-profile.ts`).
+- **User:** the brief (`packages/blueprint-generator/src/story-brief.ts`)
+  with schema instructions.
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
-  image ids; strict-mode nulls are removed.
+  image ids and strict-mode nulls.
 
-The agent backend gets both in its workspace. Both save
-`result.json` after schema and mechanical checks; a rejected blueprint is
-kept, never installed (`evaluation/README.md`).
+The agent backend gets both in its workspace. Each saves `result.json` after
+schema and mechanical checks; a rejected blueprint is never installed
+(`evaluation/README.md`).
 
 ### Repair rounds
 
 `--judge --repair <n>` (agent backend) runs up to `n` rounds while anything
-fails (`evaluation/generate/repair.ts`): the agent fixes, in place, the faults
-`repair.json` quotes as data, and every check and judge reruns, seeing only
-brief and blueprint. Round 0 is kept: its first pass measures the prompt.
+fails (`evaluation/generate/repair.ts`): the agent fixes the faults
+`repair.json` quotes as data, and every check and judge reruns on brief and
+blueprint alone. Round 0 is kept: it measures the prompt.
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -83,22 +83,22 @@ ones:
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-The CLI checks a ratio only against OpenRouter's full list; `openai/gpt-image-1`
-accepts only `1:1`, `3:2`, `2:3` and `auto`. A failed generation is a 502, not
-billed; re-run just the failed targets.
+Ratios are checked only against OpenRouter's full list; `openai/gpt-image-1`
+accepts `1:1`, `3:2`, `2:3` and `auto`. A failure is an unbilled 502: re-run
+those targets.
 
 ## Generating 3D scenes
 
 `./dev eval scenes <blueprint.json> --install` generates missing location
-recipes through the `scene-generator` binding, keeping existing ones. Prompts get
-only visual direction, location names, descriptions and searchable-area names,
-never clues, hints or solutions. The run keeps prompts, attempts, `scenes.json`
-and `result.json`; a failure never replaces installed art.
+recipes through the `scene-generator` binding. Prompts get
+only visual direction and the names and descriptions of locations and
+searchable areas. The run keeps prompts, attempts, `scenes.json` and
+`result.json`; a failure keeps installed art.
 
 `packages/shared/src/scene-schema.ts` bounds shapes, transforms and animations,
 rejecting executable fields and unknown references. Manifests live in
-`blueprint-scenes/<blueprint-id>.json`, the config root's winning over committed
-examples; the `blueprint-scenes` endpoint serves only these.
+`blueprint-scenes/<blueprint-id>.json`, the config root's over committed
+examples, and are all the `blueprint-scenes` endpoint serves.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->
@@ -122,6 +122,10 @@ fields reach only that character's own conversation.
 return it as the notebook's case facts (`mystery_summary`, and a `summary` per
 location and character).
 <!-- /extract:gameplay-narration -->
+
+A clue-graph case gives each row facts to word, and talk `knows` and
+first-meeting appearance; a found clue's saved notebook line then stands for
+it ([clue graph](clue-graph.md)).
 
 ## Evaluation
 

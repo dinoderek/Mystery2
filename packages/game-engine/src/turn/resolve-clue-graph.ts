@@ -62,11 +62,11 @@ function recordsFor(game: TurnGame, step: ClueGraphStep): RevealedClue[] {
 function withNotebook<E extends Exclude<ClueGraphEvent, { type: "move" }>>(
   game: TurnGame,
   runtime: TurnRuntime,
-  action: string,
   play: ClueGraphPlay,
   event: E,
-  lines: NotebookLine[],
+  reply: { action: string; lines: NotebookLine[] },
 ): { event: E; step: ClueGraphStep } {
+  const { action, lines } = reply;
   const graph = graphOf(game);
   const revealed = applyEvent(graph, play, event).revealed;
   const notebook: NotebookLines = {};
@@ -133,7 +133,7 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
       clue_ids: unoffered,
     });
   }
-  const { event, step } = withNotebook(game, runtime, "talk", play, talk, output.notebook);
+  const { event, step } = withNotebook(game, runtime, play, talk, { action: "talk", lines: output.notebook });
   const kept = step.revealed;
   const portrait = character.portrait_image_id ?? null;
 
@@ -233,7 +233,7 @@ export async function resolveGraphLine(
   const output = await askRole(runtime, "ask", { role: "graph_talk", prompt, context, parse: parseGraphTalkOutput });
   // A line not understood is no line: nothing comes out, first words included.
   const accepted = output.input_understood
-    ? withNotebook(game, runtime, "ask", play, acceptLine(game, runtime, play, character.id, output), output.notebook)
+    ? withNotebook(game, runtime, play, acceptLine(game, runtime, play, character.id, output), { action: "ask", lines: output.notebook })
     : null;
   const event = accepted?.event ?? null;
   const kept = accepted?.step.revealed ?? [];
@@ -320,7 +320,10 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
   const output = await askRole(runtime, "search", { role: "graph_search", prompt, context, parse: parseGraphSearchOutput });
   // Gibberish searches nothing and costs nothing.
   const accepted = output.input_understood
-    ? withNotebook(game, runtime, "search", play, searchEvent(runtime, resolveGraphSearchWords(graph, play, query), output.revealed_clue_id), output.notebook)
+    ? withNotebook(game, runtime, play, searchEvent(runtime, resolveGraphSearchWords(graph, play, query), output.revealed_clue_id), {
+        action: "search",
+        lines: output.notebook,
+      })
     : null;
   const event = accepted?.event ?? null;
   const kept = accepted?.step.revealed ?? [];

@@ -75,6 +75,21 @@ describe("selectable clue-graph case", () => {
     }
   });
 
+  it("opens and plays a saved game whose case a story check now refuses", async () => {
+    const auth = await setupApiTestAuth("clue-graph-story-checks");
+    const started = await start(auth, GREENHOUSE);
+    const saved = JSON.parse(fs.readFileSync(path.join(process.cwd(), "blueprints/clue-graph/greenhouse-prizewinner.json"), "utf8"));
+    // Mr. Dobbs's rounds unmarked as colour: the case file would fail, the saved game still plays.
+    delete saved.clues.dobbs_rounds.colour;
+    expect(() => validateClueGraph(saved)).toThrow(/dobbs_rounds/);
+    patchStoredSession(started.game_id, { clue_graph_snapshot: JSON.stringify(saved) });
+
+    const resumed = await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers });
+    expect(resumed.status).toBe(200);
+    const turn = await sendLine(auth, started.game_id, "search the smashed pumpkin");
+    expect(turn.status).toBe(200);
+  });
+
   it("keeps a game saved with a clue-graph/1 snapshot listed, but will not open it", async () => {
     const auth = await setupApiTestAuth("clue-graph-retired");
     const started = await start(auth, GREENHOUSE);

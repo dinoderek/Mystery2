@@ -45,7 +45,7 @@ place and object; names are as authored. Beyond the schema:
 - `metadata.target_age`: the default reading age, and the age the plot is
   sized for.
 - `truth` (`timeline`, the culprit's `motive`) is what the ending tells.
-- A location's spot with `revealed_by` is hidden until that clue is held.
+- A spot with `revealed_by` is hidden until that clue is held.
 - A character's `personality` and `demeanor` (by stance) direct the
   narrator, not text for the child; `knows` holds true facts shared when
   asked, never clues; their secret is the fact of their gated clues.
@@ -54,7 +54,7 @@ place and object; names are as authored. Beyond the schema:
   clue nothing depends on, by design.
 - A conclusion has a `rule` and at most one of `clears`, `culprit` and
   `resolves` (a red herring).
-- Artwork, never needed to play: `visual_direction` (V2's shape) and `cover`.
+- Artwork, never needed to play: `visual_direction` and `cover`.
 
 An earlier-format game stays listed, marked unable to open;
 opening it answers `410`, logged once.
@@ -66,21 +66,25 @@ opening it answers `410`, logged once.
 must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same
 character's clues; `points_at` and the cover name what the case holds;
 `clears` names a suspect; one culprit, named by one conclusion. Then, from the
-opening alone, it adds each clue whose way in is held, never counting a bluff,
-and rejects:
+opening alone, adding each clue whose way in is held (never a bluff), it
+rejects:
 
 - a clue never reached, or an asked clue with no prompt;
-- a worded gate no tell hints at, or a gate the character's own clues open,
-  lines aside;
+- a worded gate no tell hints at;
 - a false statement never taken back, or only by a clue reached first;
-- a conclusion never reached; a suspect no conclusion clears, or cleared only
-  on retracted statements;
-- a culprit with fewer than two routes in the turn budget, or none without
-  the confession (the culprit's gated true statements, never held on it);
-- a clue nothing names, unless marked `colour`, or a colour clue something names;
-- over four clues in five free (reached with nothing held);
+- a conclusion never reached, or a suspect no conclusion clears;
+- a culprit with no route in the turn budget;
+- a spot or plain search with two clues; a cycle of `after` links.
+
+Story checks, for authored cases:
+
+- a gate the character's own clues open, lines aside;
+- a suspect cleared only on retracted statements;
+- a culprit with fewer than two routes, or none without the confession (the
+  culprit's gated true statements, never held on it), or over 256 to check;
+- a clue nothing names unless marked `colour`, or a colour clue something does;
+- over four clues in five free (reached holding nothing);
 - a character with more first words than a greeting carries;
-- a spot or plain search with two clues; a cycle of `after` links;
 - a case outside its size.
 
 A statement taken back counts as held. The route uses the game's costs
@@ -107,16 +111,16 @@ every such route clears.
 
 ## In play
 
-The loader reads `clue-graph/` beside `msf/` into a rule-free world view; the
-catalog ID is a UUID from `metadata.id`. A start saves the validated case in
-`game_sessions.clue_graph_snapshot`, which resume and every turn play. Each
-turn that counts saves its event in `payload.clue_graph`; the engine derives
-the rest from those on every call.
+The loader reads `clue-graph/` beside `msf/` into a rule-free world view. A
+start saves the case in `game_sessions.clue_graph_snapshot`, which resume and
+every turn play, checked without the story checks. Each turn that counts saves
+its event in `payload.clue_graph`; the engine derives the rest from those on
+every call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`; first words three a line)
+  derived state (`talkState`)
   and reports what the line `opened` and `answered`. A report the state
   did not offer fails the turn before anything is saved; one already held is
   dropped; gibberish records nothing.
@@ -129,7 +133,7 @@ the rest from those on every call.
   clues not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
   hidden spot newly visible; each new when it appears.
-- **Notebook**: held clues, each with its kind and whether taken back, then the
+- **Notebook**: held clues, with kind and whether taken back, then the
   leads. Never a conclusion or a tell nothing depends on; no truth, rule or
   gate wording reaches the browser. A farewell narrator sees only clues
   found.
@@ -140,6 +144,6 @@ the rest from those on every call.
 
 One talk prompt serves everyone: generous on how the investigator puts things,
 strict on what they do. It judges which offered gates a line opened, given
-what the investigator said earlier in the conversation, so a clue shown and
-dodged opens on a follow-up. Cases and baselines:
+their earlier lines in the conversation, so a clue shown and dodged opens on a
+follow-up. Cases and baselines:
 `evaluation/runtime/cases/clue-graph/`.

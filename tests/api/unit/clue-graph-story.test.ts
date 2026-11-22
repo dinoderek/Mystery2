@@ -72,6 +72,14 @@ describe("the hand-written stories", () => {
     expect(measureCase(DRAGON)).toMatchObject({ false_alibis: 1, hidden_spots: 1, shortest_route: 2 });
     expect(measureCase(GREENHOUSE)).toMatchObject({ false_alibis: 0, cleared_on_every_route: 1 });
   });
+
+  it("counts a false alibi only where a route without the confession draws on it", () => {
+    const graph = dragon();
+    // Mr. Pike's sighting of Nina no longer follows from Sam taking his alibi back.
+    clue(graph, "clue_pike_saw_nina").reached = { by: "asked", about: "Nina at lunchtime", prompted_by: ["nina_admits_practising"] };
+    expect(issues(graph)).toEqual([]);
+    expect(measureCase(graph).false_alibis).toBe(0);
+  });
 });
 
 describe("the story checks", () => {
@@ -131,12 +139,12 @@ describe("the story checks", () => {
 
   it("reports a culprit rule with more routes than it checks", () => {
     const graph = greenhouse();
-    const evidence = Object.keys(graph.clues).slice(0, 14);
+    const evidence = Object.keys(graph.clues).slice(0, 18);
     graph.conclusions.culprit_toby.rule = {
-      any: ["toby_confession", { all: [0, 1, 2, 3, 4, 5, 6].map((pair) => ({ any: evidence.slice(pair * 2, pair * 2 + 2) })) }],
+      any: ["toby_confession", { all: [0, 1, 2, 3, 4, 5, 6, 7, 8].map((pair) => ({ any: evidence.slice(pair * 2, pair * 2 + 2) })) }],
     };
     expect(issues(graph)).toContain(
-      'conclusions.culprit_toby.rule: Conclusion "culprit_toby" has more than 64 routes to the culprit, too many to check',
+      'conclusions.culprit_toby.rule: Conclusion "culprit_toby" has more than 256 routes to the culprit, too many to check',
     );
   });
 

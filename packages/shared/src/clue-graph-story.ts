@@ -23,7 +23,7 @@ type Report = (path: IssuePath, message: string) => void;
 export const MAX_FREE_SHARE = 0.8;
 
 /** How many culprit routes are kept; a rule with more is reported, never cut silently. */
-export const MAX_ROUTES = 64;
+export const MAX_ROUTES = 256;
 
 /** One way the culprit conclusion's rule is met: the clues it names, through conclusions. */
 export interface CulpritRoute {

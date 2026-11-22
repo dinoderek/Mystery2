@@ -77,7 +77,7 @@ function unheldAt(graph: ClueGraphCase, play: ClueGraphPlay, location: string, s
     const clue = graph.clues[clueId];
     return clue.kind === "evidence" && clue.source.location === location && (clue.source.spot ?? null) === spot;
   });
-  return id === undefined || held(id) ? null : { id, text: graph.clues[id].text };
+  return id === undefined || held(id) ? null : { id, text: graph.clues[id].fact };
 }
 
 /** What a search can find, as the narrator is told it. */
@@ -131,7 +131,7 @@ export function buildGraphSearchContext(
   const place = graph.locations[play.at];
   return {
     location_name: place.name,
-    location_description: place.description,
+    location_description: place.facts.join(" "),
     search_query: query,
     visible_spots: visibleSpots(graph, play, play.at),
     outcome: searchOutcome(graph, play, query),

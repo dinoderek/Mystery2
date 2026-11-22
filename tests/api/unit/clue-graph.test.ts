@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  buildClueGraphBlueprint,
   cheapestRoute,
   ClueGraphCaseSchema,
   reachClues,
@@ -324,7 +325,7 @@ describe("the culprit route", () => {
         if (!taken.has(`${location}|${spot ?? ""}`))
           graph.clues[`filler_${location}_${spot ?? "plain"}`] = {
             kind: "evidence",
-            text: "Nothing much.",
+            fact: "Nothing much.",
             source: spot === undefined ? { location } : { location, spot },
           };
     const story = { all: ["toby_confession", "thorne_cleared", "motive", "how"] };
@@ -396,6 +397,93 @@ describe("the clue graph schema", () => {
   });
 });
 
+describe("the clue graph/2 case file", () => {
+  const artwork = {
+    visual_direction: {
+      art_style: "soft watercolour",
+      color_palette: "leaf green, pumpkin orange, cream",
+      mood: "cosy, with a hint of suspense",
+      lighting: "early morning sun through glass",
+    },
+    cover: { facts: ["Big Bertha lies smashed in the greenhouse."], locations: ["greenhouse"], characters: ["toby", "hale"] },
+  };
+
+  it("rejects a clue-graph/1 file, naming the format", () => {
+    const old = { ...greenhouse(), format: "clue-graph/1" };
+    expect(issues(old)).toContain('format: Format "clue-graph/1" is not read: a case file is "clue-graph/2"');
+  });
+
+  it("rejects the clue-graph/1 fields", () => {
+    const graph = greenhouse();
+    set(graph, "clues.clue_boot_prints.text", "Huge boot prints.");
+    set(graph, "locations.workshop.description", "A workshop.");
+    const paths = ClueGraphCaseSchema.safeParse(graph).error!.issues.map((issue) => issue.path.join("."));
+    expect(paths).toEqual(expect.arrayContaining(["clues.clue_boot_prints", "locations.workshop"]));
+  });
+
+  it("parses a case with knows, appearance, motive and both artwork fields", () => {
+    const graph = { ...greenhouse(), ...artwork };
+    expect(issues(graph)).toEqual([]);
+    const parsed = validateClueGraph(graph);
+    expect(parsed.characters.toby.knows[1]).toEqual({
+      fact: "Mr. Thorne grows a giant pumpkin called Goliath next door.",
+      points_at: { character: "thorne" },
+    });
+    expect(parsed.truth.motive).toMatch(/^Bertha was Toby's pumpkin/);
+    expect(parsed.cover?.characters).toEqual(["toby", "hale"]);
+  });
+
+  it("parses a case with neither artwork field", () => {
+    const graph = greenhouse();
+    expect(graph.visual_direction).toBeUndefined();
+    expect(graph.cover).toBeUndefined();
+    expect(issues(graph)).toEqual([]);
+  });
+
+  it.each([
+    ["one appearance fact", (graph: ClueGraphCase) => set(graph, "characters.dobbs.appearance", ["Old."]), "characters.dobbs.appearance"],
+    ["no motive", (graph: ClueGraphCase) => set(graph, "truth.motive"), "truth.motive"],
+    ["a pointer at two things", (graph: ClueGraphCase) => set(graph, "characters.toby.knows.0.points_at", { location: "greenhouse", character: "hale" }), "characters.toby.knows.0.points_at"],
+    ["an empty cover", (graph: ClueGraphCase) => set(graph, "cover", { facts: [] }), "cover.facts"],
+    ["unknown visual direction", (graph: ClueGraphCase) => set(graph, "visual_direction", { ...artwork.visual_direction, font: "serif" }), "visual_direction"],
+  ])("rejects %s", (_name, breakIt, at) => {
+    const graph = greenhouse();
+    breakIt(graph);
+    expect(ClueGraphCaseSchema.safeParse(graph).error?.issues.map((issue) => issue.path.join("."))).toContain(at);
+  });
+
+  it("rejects a pointer or a cover naming nothing in the case", () => {
+    const graph = { ...greenhouse(), cover: { facts: ["A pumpkin."], locations: ["moon"], characters: ["ghost"] } };
+    set(graph, "characters.toby.knows.0.points_at", { location: "attic" });
+    set(graph, "characters.toby.knows.1.points_at", { character: "nobody" });
+    expect(issues(graph)).toEqual([
+      'characters.toby.knows.0.points_at.location: Reference "attic" must name a location',
+      'characters.toby.knows.1.points_at.character: Reference "nobody" must name a character',
+      'cover.locations.0: Reference "moon" must name a location',
+      'cover.characters.0: Reference "ghost" must name a character',
+    ]);
+  });
+
+  it("gives the world view its facts, appearance, motive and artwork", () => {
+    const view = buildClueGraphBlueprint(validateClueGraph({ ...greenhouse(), ...artwork }));
+    expect(view.schema_version).toBe("clue-graph/2");
+    expect(view.world.locations.find((place) => place.id === "workshop")?.description).toBe(
+      committed.locations.workshop.facts.join(" "),
+    );
+    expect(view.world.characters.find((person) => person.id === "dobbs")?.appearance).toBe(
+      "Mr. Dobbs is an old man in brown overalls. He wears slippers indoors.",
+    );
+    expect(view.ground_truth.why_it_happened).toBe(committed.truth.motive);
+    expect(view.metadata.visual_direction).toEqual(artwork.visual_direction);
+    expect(view.cover_image).toEqual({
+      description: "Big Bertha lies smashed in the greenhouse.",
+      location_ids: ["greenhouse"],
+      character_ids: ["toby", "hale"],
+    });
+    expect(buildClueGraphBlueprint(committed).cover_image.description).toBe(committed.metadata.title);
+  });
+});
+
 describe("the clue graph command", () => {
   function run(args: string[]) {
     return spawnSync(process.execPath, ["scripts/validate-clue-graph.mjs", ...args], {
@@ -410,7 +498,7 @@ describe("the clue graph command", () => {
     try {
       expect(run([GREENHOUSE])).toMatchObject({
         status: 0,
-        stdout: `OK: ${GREENHOUSE} (clue-graph/1, 39 clues, 8 conclusions)\n`,
+        stdout: `OK: ${GREENHOUSE} (clue-graph/2, 39 clues, 8 conclusions)\n`,
       });
       const broken = greenhouse();
       broken.metadata.time_budget = 4;
@@ -419,11 +507,14 @@ describe("the clue graph command", () => {
         status: 1,
         stderr: expect.stringContaining('["metadata","time_budget"]: Conclusion "culprit_toby"'),
       });
-      fs.writeFileSync(file, JSON.stringify({ ...greenhouse(), format: "clue-graph/2" }));
-      expect(run([file])).toMatchObject({ status: 1, stderr: expect.stringContaining('["format"]') });
+      fs.writeFileSync(file, JSON.stringify({ ...greenhouse(), format: "clue-graph/1" }));
+      expect(run([file])).toMatchObject({
+        status: 1,
+        stderr: expect.stringContaining('["format"]: Format "clue-graph/1" is not read: a case file is "clue-graph/2"'),
+      });
       fs.writeFileSync(file, "{");
       expect(run([file])).toMatchObject({ status: 2, stderr: expect.stringContaining(file) });
-      fs.writeFileSync(file, '{"format": "clue-graph/1", "format": "clue-graph/1"}');
+      fs.writeFileSync(file, '{"format": "clue-graph/2", "format": "clue-graph/2"}');
       expect(run([file])).toMatchObject({ status: 2, stderr: expect.stringContaining("Duplicate JSON key") });
       expect(run([path.join(dir, "missing.json")])).toMatchObject({
         status: 2,

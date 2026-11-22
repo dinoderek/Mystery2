@@ -105,7 +105,7 @@ function demeanorFor(graph: ClueGraphCase, character: string, stance: Stance): s
 }
 
 function text(graph: ClueGraphCase, id: string): string {
-  return graph.clues[id].text;
+  return graph.clues[id].fact;
 }
 
 /** The texts of the tells that come out with a statement. */
@@ -181,7 +181,7 @@ export function talkState(
     answers_if_asked: askable(graph, play, character).map((id) => {
       const clue = graph.clues[id];
       const about = clue.kind === "statement" && clue.reached.by === "asked" ? clue.reached.about : "";
-      return { id, about, says: clue.text, with: riders(graph, id) };
+      return { id, about, says: clue.fact, with: riders(graph, id) };
     }),
     gates: gates.map(({ id, bluffable }) => ({
       id,
@@ -194,7 +194,7 @@ export function talkState(
     shows_when: subjectTells(graph, play, character).map((id) => {
       const clue = graph.clues[id];
       const subject = clue.kind === "tell" && clue.reached.by === "seen" ? clue.reached.subject : "";
-      return { id, subject: subject ?? "", does: clue.text };
+      return { id, subject: subject ?? "", does: clue.fact };
     }),
     story_so_far: said
       .filter((id) => graph.clues[id].kind === "statement")

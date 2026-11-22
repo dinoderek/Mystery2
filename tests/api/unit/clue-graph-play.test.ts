@@ -367,7 +367,7 @@ const SCRIPT: Step[] = [
 function summarise(graph: ClueGraphCase, events: ClueGraphEvent[], character: string): TalkSummary {
   const play = replay(graph, events);
   const state = talkState(graph, play, character);
-  const idOf = (says: string) => Object.keys(graph.clues).find((id) => graph.clues[id].text === says)!;
+  const idOf = (says: string) => Object.keys(graph.clues).find((id) => graph.clues[id].fact === says)!;
   return {
     stance: state.stance,
     says_first: state.says_first.map((entry) => entry.id),
@@ -425,13 +425,13 @@ describe("the greenhouse scripted play", () => {
     const state = talkState(graph, replay(graph, shed), "toby");
     expect(state.stance).toBe("guarded");
     expect(state.demeanor).toBe(graph.characters.toby.demeanor.guarded);
-    expect(state.keeps_back).toEqual([graph.clues.toby_blames_thorne.text, graph.clues.toby_alibi.text]);
+    expect(state.keeps_back).toEqual([graph.clues.toby_blames_thorne.fact, graph.clues.toby_alibi.fact]);
     const greeted = talkState(graph, replay(graph, [SHED, { type: "talk", character: "toby" }]), "toby");
-    expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.text]);
-    expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.text, graph.clues.react_toby_trainers.text]);
-    expect(state.says_first[0]).toEqual({ id: "toby_alibi", says: graph.clues.toby_alibi.text, with: [graph.clues.react_toby_sweeping.text] });
+    expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.fact]);
+    expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.fact, graph.clues.react_toby_trainers.fact]);
+    expect(state.says_first[0]).toEqual({ id: "toby_alibi", says: graph.clues.toby_alibi.fact, with: [graph.clues.react_toby_sweeping.fact] });
     expect(greeted.answers_if_asked).toEqual([
-      { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.text, with: [graph.clues.react_toby_pocket.text] },
+      { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.fact, with: [graph.clues.react_toby_pocket.fact] },
     ]);
   });
 });
@@ -464,9 +464,9 @@ describe("gates", () => {
     const [gate] = talkState(graph, met, "thorne").gates;
     expect(gate.opens_with.show).toEqual({
       match: "any",
-      clues: [{ id: "clue_boot_prints", text: graph.clues.clue_boot_prints.text, held: false }],
+      clues: [{ id: "clue_boot_prints", text: graph.clues.clue_boot_prints.fact, held: false }],
     });
-    expect(gate.takes_back).toEqual([graph.clues.thorne_never_set_foot.text]);
+    expect(gate.takes_back).toEqual([graph.clues.thorne_never_set_foot.fact]);
     const step = applyEvent(graph, met, line("thorne", { opened: ["clue_thorne_measured"] }));
     expect(step.revealed).toEqual(["clue_thorne_measured"]);
     expect(step.play.retracted).toEqual(["thorne_never_set_foot"]);
@@ -558,7 +558,7 @@ describe("narrator reports", () => {
     validateClueGraph(changed);
     const events: ClueGraphEvent[] = [{ type: "move", location: "workshop" }, { type: "talk", character: "dobbs" }];
     const state = talkState(changed, replay(changed, events), "dobbs");
-    expect(state.shows_when).toEqual([{ id: "react_dobbs_slippers", subject: "the noise last night", does: changed.clues.react_dobbs_slippers.text }]);
+    expect(state.shows_when).toEqual([{ id: "react_dobbs_slippers", subject: "the noise last night", does: changed.clues.react_dobbs_slippers.fact }]);
     expect(currentLeads(changed, replay(changed, events)).map((lead) => lead.key)).not.toContain("talk:dobbs");
     events.push(line("dobbs", { seen: ["react_dobbs_slippers"] }));
     const derived = deriveClueGraph(changed, events);
@@ -635,7 +635,7 @@ describe("what never leaks", () => {
 
   it("keeps clue text, a line's wording and conclusions out of every lead", () => {
     const forbidden = [
-      ...Object.values(graph.clues).map((clue) => clue.text),
+      ...Object.values(graph.clues).map((clue) => clue.fact),
       ...gated.flatMap((clue) => (clue.kind === "statement" && clue.reached.by === "gated" && clue.reached.gate.line ? [clue.reached.gate.line.text] : [])),
       ...Object.values(graph.conclusions).map((conclusion) => conclusion.text),
     ];
@@ -646,7 +646,7 @@ describe("what never leaks", () => {
   });
 
   it("keeps back only what the narrator is already told, never a gated clue's text", () => {
-    const texts = new Set(gated.map((clue) => clue.text));
+    const texts = new Set(gated.map((clue) => clue.fact));
     let kept = 0;
     for (const events of [[], [SHED], ...prefixes]) {
       const play = replay(graph, events);

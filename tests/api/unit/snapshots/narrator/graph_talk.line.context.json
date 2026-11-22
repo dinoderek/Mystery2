@@ -56,10 +56,10 @@
             }
           },
           "bluffable": true,
-          "says": "All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+          "says": "Mr. Thorne admits he climbed over on Friday at four to measure Bertha through the window, and that the boot prints are his. He says Bertha was perfectly whole.",
           "with": [],
           "takes_back": [
-            "And I've never set foot in that school garden!"
+            "Mr. Thorne says he has never set foot in the school garden."
           ]
         },
         {
@@ -70,19 +70,19 @@
               "clues": [
                 {
                   "id": "clue_ladder_tape",
-                  "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung.",
+                  "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from its top rung.",
                   "held": false
                 },
                 {
                   "id": "clue_toby_thorne_ladder",
-                  "text": "On Thursday, Mr. Thorne was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'",
+                  "text": "Toby says that on Thursday Mr. Thorne was up his ladder, staring at Bertha with a tape measure. Mr. Thorne said, 'Enjoy her while she lasts!'",
                   "held": false
                 }
               ]
             }
           },
           "bluffable": true,
-          "says": "Yes, I measured her from my ladder on Thursday. 'Enjoy her while she lasts' meant my Goliath would beat her at the weigh-in!",
+          "says": "Mr. Thorne says he measured Bertha from his ladder on Thursday, and that 'Enjoy her while she lasts' meant his Goliath would beat her at the weigh-in.",
           "with": [],
           "takes_back": []
         }
@@ -90,20 +90,20 @@
       "shows_when": [],
       "story_so_far": [
         {
-          "says": "I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+          "says": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
           "taken_back": false
         },
         {
-          "says": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+          "says": "Mr. Thorne says that at nine o'clock he bought carrot cake from Mia at the fair's cake tent, across town. She was serving there from six till ten.",
           "taken_back": false
         },
         {
-          "says": "And I've never set foot in that school garden!",
+          "says": "Mr. Thorne says he has never set foot in the school garden.",
           "taken_back": false
         }
       ],
       "established": [
-        "His ears turn red and he scuffs one huge boot on the grass."
+        "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
       ],
       "keeps_back": []
     }

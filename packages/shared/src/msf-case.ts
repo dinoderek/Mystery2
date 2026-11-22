@@ -6,7 +6,7 @@ import {
   BlueprintV2SubLocationSchema,
   type BlueprintV2,
 } from "./blueprint-schema-v2.ts";
-import type { ClueGraphCase } from "./clue-graph-schema.ts";
+import type { CLUE_GRAPH_FORMAT, ClueGraphCase } from "./clue-graph-schema.ts";
 import { MysteryStructureSchema } from "./mystery-structure-schema.ts";
 import { validateMysteryStructure } from "./mystery-structure-validator.ts";
 
@@ -65,7 +65,7 @@ export const MsfCaseFileSchema = z
 export type MsfCaseFile = z.infer<typeof MsfCaseFileSchema>;
 /** Shared world view for commands/artwork; MSF and clue-graph rules and knowledge retain their native graph. */
 export type PlayableBlueprint = Omit<BlueprintV2, "schema_version"> & {
-  schema_version: "v2" | "msf/0.1.0" | "clue-graph/1";
+  schema_version: "v2" | "msf/0.1.0" | typeof CLUE_GRAPH_FORMAT;
   msf?: MsfCaseFile;
   clue_graph?: ClueGraphCase;
   representation_note?: string;

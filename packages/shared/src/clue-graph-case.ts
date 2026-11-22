@@ -1,4 +1,4 @@
-import type { ClueGraphCase } from "./clue-graph-schema.ts";
+import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "./clue-graph-schema.ts";
 import type { PlayableBlueprint } from "./msf-case.ts";
 
 /** What the catalog adds to a clue-graph case's title, to tell it from a V2 case of the same story. */
@@ -37,12 +37,12 @@ export function spotIdOf(name: string): string {
  */
 export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint {
   const evidence = Object.entries(graph.clues).flatMap(([id, clue]) =>
-    clue.kind === "evidence" ? [{ id, text: clue.text, source: clue.source }] : [],
+    clue.kind === "evidence" ? [{ id, text: clue.fact, source: clue.source }] : [],
   );
   const locations = Object.entries(graph.locations).map(([id, place]) => ({
     id,
     name: place.name,
-    description: place.description,
+    description: place.facts.join(" "),
     clues: evidence
       .filter((clue) => clue.source.location === id && clue.source.spot === undefined)
       .map(({ id: clueId, text }) => ({ id: clueId, text })),
@@ -74,7 +74,7 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
     last_name: "",
     location_id: person.location,
     sex: person.sex,
-    appearance: "",
+    appearance: person.appearance.join(" "),
     background: "",
     personality: person.personality,
     initial_attitude_towards_investigator: Object.values(person.demeanor).find(Boolean) ?? "",
@@ -82,40 +82,44 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
     motive: null,
     is_culprit: person.role === "culprit",
     clues: Object.entries(graph.clues).flatMap(([clueId, clue]) =>
-      clue.kind !== "evidence" && clue.source.character === id ? [{ id: clueId, text: clue.text }] : [],
+      clue.kind !== "evidence" && clue.source.character === id ? [{ id: clueId, text: clue.fact }] : [],
     ),
     flavor_knowledge: [],
     actual_actions: [],
     agendas: [],
     tells: [],
   }));
-  const culprit = Object.values(graph.conclusions).find((conclusion) => conclusion.culprit);
   const { timeline } = graph.truth;
   return {
-    schema_version: "clue-graph/1",
+    schema_version: CLUE_GRAPH_FORMAT,
     id: clueGraphCaseId(graph.metadata.id),
     clue_graph: graph,
     representation_note:
       "This case is a clue graph: clue_graph is authoritative for clues, gates, retractions and the AND/OR conclusions. The world is a projection for commands and artwork; legacy reasoning-path arrays are deliberately empty. A statement is what a character said, true or false; one taken back no longer stands.",
     metadata: {
       title: `${graph.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`,
-      one_liner: graph.opening.text[0],
+      one_liner: graph.opening.facts[0],
       target_age: graph.metadata.target_age,
       time_budget: graph.metadata.time_budget,
+      ...(graph.visual_direction ? { visual_direction: graph.visual_direction } : {}),
     },
     narrative: {
-      premise: graph.opening.text.join(" "),
+      premise: graph.opening.facts.join(" "),
       starting_knowledge: {
-        mystery_summary: graph.opening.text[0],
+        mystery_summary: graph.opening.facts[0],
         locations: [],
         characters: [],
       },
     },
     world: { starting_location_id: graph.opening.location, locations, characters },
-    cover_image: { description: graph.metadata.title, location_ids: [], character_ids: [] },
+    cover_image: {
+      description: graph.cover?.facts.join(" ") ?? graph.metadata.title,
+      location_ids: graph.cover?.locations ?? [],
+      character_ids: graph.cover?.characters ?? [],
+    },
     ground_truth: {
       what_happened: timeline.join("\n"),
-      why_it_happened: culprit?.text ?? timeline.at(-1)!,
+      why_it_happened: graph.truth.motive,
       timeline,
     },
     solution_paths: [],

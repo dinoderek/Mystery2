@@ -91,7 +91,7 @@ describe("a clue-graph game, extracted and judged", () => {
 
   it("extracts the snapshot's graph, its format revision and what the player earned", async () => {
     const trace = await extract(await playOnMock(WIN));
-    expect(trace.clue_graph).toMatchObject({ format: "clue-graph/1", revision: 1, progress: { culprit_supported: true } });
+    expect(trace.clue_graph).toMatchObject({ format: "clue-graph/2", revision: 1, progress: { culprit_supported: true } });
     expect(trace.clue_graph?.progress.supported_conclusions.length).toBeGreaterThan(0);
     expect(trace.blueprint.clue_graph?.metadata.id).toBe("greenhouse-prizewinner");
     // The case is the private snapshot: its world view carries no V2 reasoning paths.
@@ -191,7 +191,7 @@ describe("the runtime harness on a clue-graph case", () => {
   it("loads the case file as the game does, with its graph beside the world view", async () => {
     const { blueprint } = await readBlueprint(GREENHOUSE_FILE, ROOT);
     expect(blueprint.id).toBe(GREENHOUSE_ID);
-    expect(blueprint.clue_graph?.format).toBe("clue-graph/1");
+    expect(blueprint.clue_graph?.format).toBe("clue-graph/2");
     expect(blueprint.world.characters.map((character) => character.id)).toContain("toby");
   });
 

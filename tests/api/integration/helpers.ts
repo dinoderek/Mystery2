@@ -69,6 +69,7 @@ const PATCHABLE = new Set([
 	'time_remaining',
 	'current_location_id',
 	'current_talk_character_id',
+	'clue_graph_snapshot',
 	'created_at',
 	'updated_at',
 ]);

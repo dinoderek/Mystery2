@@ -92,7 +92,7 @@ function startDiagnostics(blueprint: PlayableBlueprint, relatedSequence?: number
 function startPayload(blueprint: PlayableBlueprint) {
   return {
     ...(blueprint.msf ? { case_format: "msf/0.1.0", case_revision: blueprint.msf.structure.metadata.revision } : {}),
-    ...(blueprint.clue_graph ? { case_format: "clue-graph/1" } : {}),
+    ...(blueprint.clue_graph ? { case_format: blueprint.clue_graph.format } : {}),
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
     starting_knowledge: blueprint.narrative.starting_knowledge ?? null,

@@ -36,25 +36,47 @@ Using a clue means showing it or making its point, not holding it.
 
 ## The case file
 
-One JSON file, `"format": "clue-graph/1"`, maps keyed by ID; unknown fields
-(V2's agendas among them) are rejected.
+One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
+(V2's agendas among them) are rejected, and so is any other format, by name.
+A case holds facts, never the words a child reads: the narrator writes those.
+A fact states what it establishes plainly and completely, keeping every name,
+time, place and object. Names (people, places, spots, the title) are as
+authored.
 
-- `metadata`; `opening` (starting `location`, public `text`); `truth.timeline`.
-- `locations`: `name`, `description` and `spots`. A spot with `revealed_by`
-  is hidden until that clue is held.
+- `metadata`: `id`, `title`, `time_budget`, and `target_age`, the default
+  reading age and the age the plot is sized for.
+- `opening`: the starting `location` and the public `facts`.
+- `truth`: the `timeline`, and the culprit's `motive`, which the ending tells.
+- `locations`: `name`, `facts` about the place, and `spots`. A spot with
+  `revealed_by` is hidden until that clue is held.
 - `characters`: `name`, `location`, `role` (`culprit`, `suspect`,
-  `witness`), `sex`, `personality`, and `demeanor` lines by
-  stance (`open`, `guarded`, `shaken`, `cornered`, `cleared`).
-- `clues`: `kind`, `text`, `source` (`location` and optional `spot`, or
-  `character`), and for statements `truth`, with `why` when false.
+  `witness`), `sex`, `personality`, `demeanor` lines by stance (`open`,
+  `guarded`, `shaken`, `cornered`, `cleared`), `knows` and `appearance`
+  (two or more facts). Personality and demeanor are direction for the
+  narrator, not text for the child. Each `knows` entry is a plain true
+  `fact` they share when asked, never a clue, and may point at a place or
+  person (`points_at`: `{location}` or `{character}`). A character's secret is
+  the fact of their gated clues.
+- `clues`: `kind`, `fact`, `source` (`location` and optional `spot`, or
+  `character`). Evidence's fact is what it establishes, a statement's what the
+  character claims, with `truth` and `why` when false, a tell's what is
+  observed.
 - `conclusions`: `text` and `rule`, plus at most one of `clears` (a suspect),
   `culprit` or `resolves` (a red herring, in words).
+- Artwork, optional and never needed to play: `visual_direction` (V2's
+  shape: `art_style`, `color_palette`, `mood`, `lighting`, optional
+  `texture` and `portrait_background`) and `cover` (`facts`, optional
+  `locations` and `characters` it shows).
+
+A game saved with an earlier format stays on the session list, marked as
+unable to open; opening it answers `410`, logged once.
 
 ## Validation
 
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
 1 invalid, 2 unreadable, 3 misuse. References must fit: `after`,
 `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
+`points_at` and the cover name what the case holds;
 `clears` names a suspect; one culprit, named by one conclusion. Then, from the
 opening alone, it adds each clue whose way in is held, never counting a bluff,
 and rejects:

@@ -17,7 +17,7 @@
   "accusation_judge_context": null,
   "graph_search_context": {
     "location_name": "Mr. Thorne's Garden",
-    "location_description": "A neat garden with rows of leeks and a shed covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden.",
+    "location_description": "Mr. Thorne's garden is neat, with rows of leeks. A shed in the garden is covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden.",
     "search_query": "the ladder",
     "visible_spots": [
       "the ladder by the fence",
@@ -29,7 +29,7 @@
       "spot": "the ladder by the fence",
       "finds": {
         "id": "clue_ladder_tape",
-        "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung."
+        "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from its top rung."
       }
     }
   }

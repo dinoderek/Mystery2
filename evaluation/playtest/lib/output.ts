@@ -132,7 +132,7 @@ export function summarizeGame({
     game_id: game.gameId,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title,
       ...(blueprint.msf ? { format: "msf/0.1.0", revision: blueprint.msf.structure.metadata.revision } : {}),
-      ...(blueprint.clue_graph ? { format: "clue-graph/1", revision: 1 } : {}),
+      ...(blueprint.clue_graph ? { format: blueprint.clue_graph.format, revision: 1 } : {}),
     },
     persona,
     narrator_model: narratorModel,

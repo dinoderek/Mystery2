@@ -1,6 +1,6 @@
 import { GameGetRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
 import type { EngineContext } from "../context.ts";
-import { notFound, internalError } from "../errors.ts";
+import { asRejectedResponse, notFound, internalError, RequestRejectedError } from "../errors.ts";
 import { createRequestLogger } from "../logging.ts";
 import { readQueryRequest } from "../request.ts";
 import { readNarrationEvent } from "../narration.ts";
@@ -26,8 +26,16 @@ export async function handle(
     let session;
     try {
       session = await ctx.sessions.getById(gameId);
-    } catch {
-      logError("request.error", { reason: "session_fetch_failed", game_id: gameId });
+    } catch (error) {
+      if (error instanceof RequestRejectedError) {
+        log("request.invalid", { reason: error.reason, game_id: gameId, error: error.message });
+        return asRejectedResponse(error)!;
+      }
+      logError("request.error", {
+        reason: "session_fetch_failed",
+        game_id: gameId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return internalError("Database error");
     }
 

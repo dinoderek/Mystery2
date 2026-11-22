@@ -31,19 +31,19 @@
       "says_first": [
         {
           "id": "thorne_alibi",
-          "says": "I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+          "says": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
           "with": []
         },
         {
           "id": "clue_thorne_mia_cake",
-          "says": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+          "says": "Mr. Thorne says that at nine o'clock he bought carrot cake from Mia at the fair's cake tent, across town. She was serving there from six till ten.",
           "with": []
         },
         {
           "id": "thorne_never_set_foot",
-          "says": "And I've never set foot in that school garden!",
+          "says": "Mr. Thorne says he has never set foot in the school garden.",
           "with": [
-            "His ears turn red and he scuffs one huge boot on the grass."
+            "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
           ]
         }
       ],
@@ -53,7 +53,7 @@
       "story_so_far": [],
       "established": [],
       "keeps_back": [
-        "And I've never set foot in that school garden!"
+        "Mr. Thorne says he has never set foot in the school garden."
       ]
     }
   }

@@ -94,6 +94,22 @@ describe("listBlueprints", () => {
     expect(logger.entries[0].details).toMatchObject({ object: "broken.json" });
   });
 
+  it("skips a clue-graph/1 case and logs it once, naming the format", async () => {
+    const graphDir = path.join(primaryDir, "clue-graph");
+    fs.mkdirSync(graphDir);
+    const greenhouse = JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8"));
+    fs.writeFileSync(path.join(graphDir, "old.json"), JSON.stringify({ ...greenhouse, format: "clue-graph/1" }));
+
+    const logger = recordingLogger();
+    expect(await store().listBlueprints(logger)).toEqual([]);
+    expect(logger.entries).toEqual([
+      {
+        event: "blueprint.parse_failed",
+        details: { object: "old.json", error: expect.stringContaining('Format \\"clue-graph/1\\" is not read') },
+      },
+    ]);
+  });
+
   it("lets the first directory win when a blueprint id appears twice", async () => {
     writeBlueprint(primaryDir, "authored.json", {
       metadata: { ...validBlueprintV2.metadata, title: "From the config root" },

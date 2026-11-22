@@ -131,11 +131,11 @@ describe('play on stub bindings', () => {
 			expect(played.code, played.output).toBe(0);
 			const [game] = gameDirs(played.runDir as string);
 			const summary = JSON.parse(fs.readFileSync(path.join(game, 'summary.json'), 'utf8'));
-			expect(summary, query).toMatchObject({ outcome: 'win', divergence: null, blueprint: { id: caseId, format: 'clue-graph/1', revision: 1 } });
+			expect(summary, query).toMatchObject({ outcome: 'win', divergence: null, blueprint: { id: caseId, format: 'clue-graph/2', revision: 1 } });
 			expect(summary.clues_found).toBeGreaterThan(0);
 			expect(summary.clues_found).toBeLessThanOrEqual(summary.clues_total);
 			const trace = JSON.parse(fs.readFileSync(path.join(game, 'trace.json'), 'utf8'));
-			expect(trace.clue_graph).toMatchObject({ format: 'clue-graph/1', revision: 1, progress: { culprit_supported: true } });
+			expect(trace.clue_graph).toMatchObject({ format: 'clue-graph/2', revision: 1, progress: { culprit_supported: true } });
 			const mechanical = (await readResult(path.join(game, 'result.json'))).verdicts.filter((verdict) => verdict.tier === 'mechanical');
 			expect(mechanical.map((verdict) => [verdict.id, verdict.status])).toEqual([['clue_accounting', 'pass'], ['spoiler_leak', 'pass']]);
 		}

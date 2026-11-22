@@ -49,6 +49,8 @@ export interface GameSessionRow {
 export interface GameSessionSummaryRow {
   msf_title?: string;
   clue_graph_title?: string;
+  /** The saved clue-graph snapshot's format, when there is one: an old one cannot be opened. */
+  clue_graph_format?: string;
   id: string;
   blueprint_id: string;
   mode: GameMode;

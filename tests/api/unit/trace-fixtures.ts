@@ -187,7 +187,7 @@ export function makeClueGraphRawTrace(): RawTrace {
   });
   return makeRawTrace({
     blueprint: buildClueGraphBlueprint(graph),
-    clue_graph: { format: "clue-graph/1", revision: 1, progress: { supported_conclusions: [], culprit_supported: false, taken_back: [] } },
+    clue_graph: { format: "clue-graph/2", revision: 1, progress: { supported_conclusions: [], culprit_supported: false, taken_back: [] } },
     events: [
       row(1, "start", { location_id: "greenhouse" }, "You arrive at the greenhouse.", null),
       row(2, "search", { role: "search", location_id: "greenhouse", search_query: "the smashed pumpkin", revealed_clue_id: "clue_welly_prints", revealed_clue_ids: ["clue_welly_prints"], clue_graph: { type: "search", spot: "the smashed pumpkin" } }, "In the pulp you see the print of a welly."),

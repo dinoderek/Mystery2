@@ -15,6 +15,7 @@ import {
   extractSessionTrace,
 } from "../../../evaluation/trace/lib/datasource.ts";
 import { createGameDatabase } from "./trace-database-fixture.ts";
+import { MAX_TARGET_AGE } from "../../../packages/shared/src/age-profile.ts";
 
 let scratch = "";
 
@@ -84,7 +85,7 @@ describe("extraction from a database the test made", () => {
     const db = openDatabase({ path: game.databasePath });
     // What a version-2 database held: the labelled key and model tables.
     db.exec(
-      "alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;",
+      "alter table players drop column reading_age; alter table game_sessions drop column reading_age; alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;",
     );
     db.close();
     const before = { bytes: sha256(game.databasePath), ...inspect(game.databasePath) };
@@ -112,6 +113,30 @@ describe("extraction from a database the test made", () => {
 
     expect(trace.session.ai_profile_id).toBe("default");
     expect(trace.ai_profile).toEqual({ id: "default", model: "vendor/model-x" });
+  });
+
+  it("reads a game at the age it was narrated for", async () => {
+    const game = createGameDatabase(makeScratch());
+    const caseAge = ((await extract(game)).blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age;
+    const playedAge = caseAge === 6 ? 7 : 6;
+
+    const db = openDatabase({ path: game.databasePath });
+    db.prepare("update game_sessions set reading_age = ? where id = ?").run(playedAge, game.sessionId);
+    db.close();
+
+    const trace = await extract(game);
+    expect((trace.blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age).toBe(playedAge);
+  });
+
+  it("reads an older game of a case whose own age is out of range at the age the engine played it", async () => {
+    const game = createGameDatabase(makeScratch());
+    const file = path.join(game.root, "blueprints", `${game.blueprintId}.json`);
+    const blueprint = JSON.parse(fs.readFileSync(file, "utf-8"));
+    blueprint.metadata.target_age = 14;
+    fs.writeFileSync(file, JSON.stringify(blueprint));
+
+    const trace = await extract(game);
+    expect((trace.blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age).toBe(MAX_TARGET_AGE);
   });
 
   it("names a missing database and creates nothing", () => {

@@ -4,8 +4,9 @@ import { ENDPOINTS } from "../../../packages/game-engine/src/endpoints/index.ts"
 
 // Which endpoints run as a profile, held to the rule rather than to habit.
 //
-// The criterion is ownership: an endpoint that manages or plays a game session
-// runs as somebody, and everything else does not. Nothing can check that
+// The criterion is ownership: an endpoint that manages or plays a game session,
+// or reads and changes a profile's own settings, runs as somebody, and
+// everything else does not. Nothing can check that
 // statically — a handler's access is a claim about what it touches — so the
 // claim is written down here, and a new endpoint has to come past it.
 
@@ -21,18 +22,20 @@ describe("endpoint access", () => {
       "game-sessions-list",
       "game-start",
       "game-turn",
+      "profile-settings",
     ]);
   });
 
-  it("runs as a profile for everything that manages or plays a session", () => {
+  it("runs as a profile for everything that manages or plays a session, or a profile's settings", () => {
     const profileScoped = ENDPOINTS.filter((endpoint) => endpoint.access === "profile")
       .map((endpoint) => endpoint.name)
       .sort();
 
-    // Every session endpoint is a `game-*`, and every `game-*` is one.
+    // Every session endpoint is a `game-*`, and every `game-*` is one; a
+    // profile's own settings are `profile-*`.
     expect(profileScoped).toEqual(
       ENDPOINTS.map((endpoint) => endpoint.name)
-        .filter((name) => name.startsWith("game-"))
+        .filter((name) => name.startsWith("game-") || name.startsWith("profile-"))
         .sort(),
     );
   });

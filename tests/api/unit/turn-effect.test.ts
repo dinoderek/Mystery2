@@ -23,6 +23,7 @@ function session(overrides: Partial<GameSessionRow> = {}): GameSessionRow {
     time_remaining: 5,
     discovered_clues: [],
     outcome: null,
+    reading_age: null,
     created_at: NOW,
     updated_at: NOW,
     ...overrides,

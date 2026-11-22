@@ -98,13 +98,23 @@
     <div class="mb-4">
       <div class="flex items-center justify-between mb-2">
         <h1 class="text-3xl font-bold">MYSTERY GAME TERMINAL</h1>
-        <button
-          type="button"
-          class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
-          onclick={() => playerStore.signOut()}
-        >
-          LOGOUT
-        </button>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            data-testid="settings-link"
+            class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+            onclick={() => goto('/settings')}
+          >
+            SETTINGS
+          </button>
+          <button
+            type="button"
+            class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+            onclick={() => playerStore.signOut()}
+          >
+            LOGOUT
+          </button>
+        </div>
       </div>
 
       {#if view === 'menu'}

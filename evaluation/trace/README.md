@@ -10,7 +10,7 @@ The game keeps every played session in `game_sessions` and an append-only
 
 1. **Extract** pulls a session from `game.db` (snapshot, ordered events, the
    blueprint, the model its events carry) into a **raw** trace with no derived
-   fields. A clue-graph game ([`docs/clue-graph.md`](../../docs/clue-graph.md)) reads from its saved snapshot and adds `clue_graph`: format, revision, progress. `lib/datasource.ts` is the one evaluation module that resolves the play database
+   fields. A clue-graph game ([`docs/clue-graph.md`](../../docs/clue-graph.md)) reads from its saved snapshot and adds `clue_graph`: format, revision, progress. A game keeps its reading age. `lib/datasource.ts` is the one evaluation module that resolves the play database
    path, and it opens the file read-only, with no migration run.
 2. **Judge** reconstructs what the game master saw each turn, by replaying the
    events through the real context builders (`packages/game-engine/src/ai-context.ts`),

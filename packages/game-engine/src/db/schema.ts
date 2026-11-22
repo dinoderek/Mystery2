@@ -35,7 +35,10 @@ create table players (
     id          text primary key,
     name        text not null unique,
     created_at  text not null,
-    updated_at  text not null
+    updated_at  text not null,
+    -- The reading age this profile's new games start at; null reads each case
+    -- at its own. Written only through the profile's own store.
+    reading_age integer
 );
 
 create table game_sessions (
@@ -55,7 +58,10 @@ create table game_sessions (
     created_at                text not null,
     updated_at                text not null,
     msf_snapshot              text,
-    clue_graph_snapshot       text
+    clue_graph_snapshot       text,
+    -- The age the game is narrated for, saved at its start. Null for a game
+    -- saved before games had one: it reads at its case's own age.
+    reading_age               integer
 );
 
 create index game_sessions_player_id_idx on game_sessions(player_id);

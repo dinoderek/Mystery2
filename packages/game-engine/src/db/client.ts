@@ -67,7 +67,7 @@ export interface Db {
  * always the current end state, and the steps below only exist to carry files
  * that already exist up to it.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 /** One forward step: the SQL, and the version the database is at afterwards. */
 export interface Migration {
@@ -85,6 +85,13 @@ export interface Migration {
  * rather than stamping a version nothing produced.
  */
 const MIGRATIONS: ReadonlyArray<Migration> = [
+  {
+    to: 6,
+    sql: `
+      alter table players add column reading_age integer;
+      alter table game_sessions add column reading_age integer;
+    `,
+  },
   { to: 5, sql: "alter table game_sessions add column clue_graph_snapshot text;" },
   { to: 4, sql: "alter table game_sessions add column msf_snapshot text;" },
   {

@@ -497,26 +497,42 @@ describe("clue-graph sessions and turns", () => {
     expect(found.revealed_clues.map((clue) => clue.id)).toEqual(["clue_glass_outside"]);
   });
 
-  it("sends the judge the graph and the derived progress, and wins only with the culprit supported", async () => {
+  it("asks the judge only who was named and what was cited, failing on someone the case does not hold", async () => {
     const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
-    let judged: Record<string, unknown> | null = null;
-    const spy = (profile: Profile): AIProvider => {
+    await play(opened.game_id, "accuse");
+    const events = await ctx.events.listBySession(opened.game_id);
+    const nobody = answering(() => ({ accused_character_id: "nobody_here", cited_clue_ids: [] }));
+    await expect(play(opened.game_id, "It was Toby", nobody)).rejects.toBeInstanceOf(RetriableAIError);
+    expect(await ctx.events.listBySession(opened.game_id)).toEqual(events);
+
+    const roles: string[] = [];
+    const watching = (profile: Profile): AIProvider => {
       const inner = createAIProviderFromProfile(profile);
+      return { ...inner, profile: inner.profile, resolvedModel: inner.resolvedModel, generateNarration: inner.generateNarration.bind(inner), generateRoleOutput: async (request) => {
+        roles.push(request.role);
+        return inner.generateRoleOutput(request);
+      } };
+    };
+    // A clue the player does not hold, reported as cited, is dropped.
+    const citingUnheld = (profile: Profile): AIProvider => {
+      const inner = watching(profile);
       return {
-        profile: inner.profile,
-        resolvedModel: inner.resolvedModel,
-        generateNarration: inner.generateNarration.bind(inner),
-        generateRoleOutput: async (request) => {
-          if (request.role === "accusation_judge") judged = request.context;
-          return inner.generateRoleOutput(request);
-        },
+        ...inner,
+        generateRoleOutput: async (request) =>
+          request.role === "graph_accusation"
+            ? request.parse({ accused_character_id: "toby", cited_clue_ids: ["clue_welly_prints"] })
+            : inner.generateRoleOutput(request),
       };
     };
-    await play(opened.game_id, "accuse");
-    expect((await play(opened.game_id, "It was Toby", spy)).result).toBeNull();
-    const judge = (judged as unknown as { accusation_judge_context: Record<string, unknown> }).accusation_judge_context;
-    expect((judge.full_blueprint as { clue_graph?: unknown }).clue_graph).toEqual(greenhouse());
-    expect(judge.clue_graph_progress).toEqual({ supported_conclusions: [], culprit_supported: false, taken_back: [] });
+    const asked = await play(opened.game_id, "It was Toby: the welly prints", citingUnheld);
+    expect(roles).toEqual(["graph_accusation_round"]);
+    expect(asked.result).toBeNull();
+    expect((await ctx.events.listBySession(opened.game_id)).at(-1)?.payload).toMatchObject({
+      role: "graph_accusation_round",
+      player_reasoning: "It was Toby: the welly prints",
+      judge_result: "continue",
+      clue_graph_accusation: { accused: "toby", cited: [], verdict: "question" },
+    });
   });
 
   it("never sends truth, rules, gate wording or the culprit to the browser", async () => {
@@ -666,10 +682,11 @@ describe("clue-graph sessions and turns", () => {
       await play(opened.game_id, "bye", noting);
       await play(opened.game_id, "accuse", noting);
       await play(opened.game_id, "It was Toby", noting);
-      const judge = (seen.get("accusation_judge") as { accusation_judge_context: { player_known_clues: Array<{ id: string; text: string }> } })
-        .accusation_judge_context;
-      expect(judge.player_known_clues.length).toBeGreaterThan(0);
-      for (const clue of judge.player_known_clues) expect(clue.text).toBe(noted(clue.id));
+      for (const role of ["graph_accusation", "graph_accusation_round"]) {
+        const { held } = (seen.get(role) as { graph_accusation_context: { held: Array<{ id: string; text: string }> } }).graph_accusation_context;
+        expect(held.length, role).toBeGreaterThan(0);
+        for (const clue of held) expect(clue.text).toBe(noted(clue.id));
+      }
     });
 
     it("tells a farewell narrator the saved lines", async () => {

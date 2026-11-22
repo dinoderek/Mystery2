@@ -34,7 +34,8 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 round `continue`, `win` or `lose` by the rule in "The accusation" in
 `docs/game.md`. `talk_start` and `talk_end` move nobody; `gm_fabrication`
 reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
-also return a notebook line per clue revealed (`docs/clue-graph.md`).
+also return a notebook line per clue revealed, and its accusation has three
+roles of its own (`docs/clue-graph.md`).
 
 ## Narration style
 <!-- extract:narration-style -->

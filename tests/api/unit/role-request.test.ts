@@ -119,6 +119,18 @@ function inputFor(role: RoleRequestName): any {
         location_id: "greenhouse",
         search_query: null,
       };
+    case "graph_accusation":
+      return { ...common, role, blueprint: graphBlueprint, session: { ...session({ mode: "accuse" }), current_location_id: "greenhouse" }, player_input: "It was Toby." };
+    case "graph_accusation_round":
+    case "graph_ending":
+      return {
+        ...common,
+        role,
+        blueprint: graphBlueprint,
+        session: { ...session({ mode: "accuse" }), current_location_id: "greenhouse" },
+        player_input: "It was Toby.",
+        verdict: role === "graph_ending" ? "lose" : "not_yet",
+      };
     case "accusation_start":
       return { ...common, role, session: session({ mode: "accuse" }) };
     case "accusation_judge":
@@ -149,6 +161,9 @@ describe("role coverage", () => {
       "accusation_judge",
       "accusation_start",
       "ambience",
+      "graph_accusation",
+      "graph_accusation_round",
+      "graph_ending",
       "graph_search",
       "graph_talk",
       "intro",
@@ -172,7 +187,8 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     // Enumerated at module load so a newly registered role shows up here
     // automatically rather than silently going unasserted.
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search"] as RoleRequestName[],
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search",
+      "graph_accusation_round", "graph_ending"] as RoleRequestName[],
   )("%s renders the blueprint target_age, not a fallback", async (role) => {
     const prompt = await promptFor(role);
 
@@ -184,7 +200,8 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
 
   it.each(
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search"] as RoleRequestName[],
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search",
+      "graph_accusation_round", "graph_ending"] as RoleRequestName[],
   )("%s layers the blueprint narration_style", async (role) => {
     expect(await promptFor(role)).toContain(NARRATION_STYLE);
   });
@@ -195,10 +212,23 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     const asserted = new Set([
       "intro", "ambience", "talk_start", "talk_conversation", "talk_end",
       "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search",
+      "graph_accusation_round", "graph_ending", "graph_accusation",
     ]);
     for (const role of allRoleRequestNames()) {
       expect(asserted.has(role), `role "${role}" is not asserted above`).toBe(true);
     }
+  });
+});
+
+describe("the clue-graph accusation's judge", () => {
+  it("writes nothing the player reads, so its prompt carries no reading age or voice", async () => {
+    const prompt = await promptFor("graph_accusation");
+    expect(prompt).not.toMatch(/years old|Length \(guidance/);
+    expect(prompt).not.toContain(NARRATION_STYLE);
+  });
+
+  it("is the only judge of a clue-graph accusation", async () => {
+    await expect(buildRoleRequest({ ...inputFor("accusation_judge"), blueprint: graphBlueprint })).rejects.toThrow(/graph_accusation/);
   });
 });
 

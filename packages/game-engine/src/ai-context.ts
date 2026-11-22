@@ -19,6 +19,13 @@ import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
 import { playOf } from "./clue-graph/history.ts";
 import { lineOf, supportedConclusions } from "./clue-graph/play.ts";
 import {
+  accusationContext,
+  verdictContext,
+  type AccusationVerdict,
+  type GraphAccusationContext,
+  type GraphVerdictContext,
+} from "./clue-graph/accusation.ts";
+import {
   buildGraphSearchContext,
   buildGraphTalkContext,
   type GraphSearchContext,
@@ -354,7 +361,6 @@ export interface ClueGraphProgress {
 
 export interface AccusationJudgeContext {
   msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
-  clue_graph_progress?: ClueGraphProgress;
   round: number;
   full_blueprint: BlueprintContext;
   // Every clue discovered this session, in discovery order. The only thing
@@ -386,6 +392,8 @@ export type AIContext = {
   // Present only for a clue-graph case's talk and search (`clue-graph/`).
   graph_talk_context?: GraphTalkContext;
   graph_search_context?: GraphSearchContext;
+  // Present only for a clue-graph accusation round (`clue-graph/accusation.ts`).
+  graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 };
 
 interface BuildContextInput {
@@ -406,6 +414,7 @@ interface BuildContextInput {
   accusation_judge_context?: AccusationJudgeContext | null;
   graph_talk_context?: GraphTalkContext;
   graph_search_context?: GraphSearchContext;
+  graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 }
 
 export function findLocationById(
@@ -820,6 +829,8 @@ export function selectLocationConversationHistory(
   );
 }
 
+const ACCUSATION_HISTORY = new Set(["accuse_start", "forced_endgame", "accuse_round"]);
+
 function selectConversationHistoryForRole(
   input: BuildContextInput,
 ): ConversationFragment[] {
@@ -851,6 +862,16 @@ function selectConversationHistoryForRole(
     }
 
     return selectLocationConversationHistory(conversationHistory, locationId);
+  }
+
+  // A clue-graph accusation reads only the accusation so far: what it may
+  // tell is in its own context (`clue-graph/accusation.ts`).
+  if (
+    input.role_name === "graph_accusation" ||
+    input.role_name === "graph_accusation_round" ||
+    input.role_name === "graph_ending"
+  ) {
+    return sanitizeConversationHistory(conversationHistory.filter((entry) => ACCUSATION_HISTORY.has(entry.event_type)));
   }
 
   if (
@@ -890,6 +911,7 @@ function buildContext(input: BuildContextInput): AIContext {
     accusation_judge_context: input.accusation_judge_context ?? null,
     ...(input.graph_talk_context ? { graph_talk_context: input.graph_talk_context } : {}),
     ...(input.graph_search_context ? { graph_search_context: input.graph_search_context } : {}),
+    ...(input.graph_accusation_context ? { graph_accusation_context: input.graph_accusation_context } : {}),
   };
 
   assertRoleContextSafety(input.role_name, context);
@@ -1194,9 +1216,6 @@ export function buildAccusationJudgeContext(input: {
       player_known_clues: buildKnownCluesWithOrigin(withSavedLines(input.blueprint, input.conversation_history ?? []), discovered),
       path_coverage: buildPathCoverage(input.blueprint, discovered),
       ...(input.blueprint.msf ? { msf_progress: evaluateMysteryStructure(input.blueprint.msf.structure, discovered) } : {}),
-      ...(input.blueprint.clue_graph
-        ? { clue_graph_progress: clueGraphProgress(input.blueprint.clue_graph, input.conversation_history ?? []) }
-        : {}),
     },
   });
 }
@@ -1211,6 +1230,67 @@ export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFra
     culprit_supported: supported.some((id) => graph.conclusions[id].culprit === culprit),
     taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => lineOf(graph, play, id)),
   };
+}
+
+/** What the investigator said in this accusation's earlier rounds, in order. */
+function earlierReasoning(history: ConversationFragment[]): string[] {
+  return history.flatMap((entry) => {
+    const said = entry.event_type === "accuse_round" ? entry.payload?.player_reasoning : undefined;
+    return typeof said === "string" ? [said] : [];
+  });
+}
+
+/** A clue-graph accusation round as the narrator reads it: who was named, and what was cited. */
+export function buildGraphAccusationAIContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  player_input: string;
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const graph = graphOf(input.blueprint);
+  const history = input.conversation_history ?? [];
+  return buildContext({
+    game_id: input.game_id,
+    role_name: "graph_accusation",
+    session: input.session,
+    blueprint: input.blueprint,
+    player_input: input.player_input,
+    conversation_history: history,
+    graph_accusation_context: { ...accusationContext(graph, playOf(graph, history)), earlier_reasoning: earlierReasoning(history) },
+  });
+}
+
+/**
+ * The narration of what the engine decided: a round before the case is
+ * resolved, given only what the investigator holds, or the closing scene,
+ * given the whole truth.
+ */
+export function buildGraphVerdictAIContext(input: {
+  game_id: string;
+  session: SessionSnapshot;
+  blueprint: BlueprintContext;
+  player_input: string;
+  verdict: AccusationVerdict;
+  /** The held clues the judge found cited this round. */
+  cited?: string[];
+  conversation_history?: ConversationFragment[];
+}): AIContext {
+  const graph = graphOf(input.blueprint);
+  const history = input.conversation_history ?? [];
+  const resolved = input.verdict === "win" || input.verdict === "lose";
+  return buildContext({
+    game_id: input.game_id,
+    role_name: resolved ? "graph_ending" : "graph_accusation_round",
+    session: input.session,
+    blueprint: input.blueprint,
+    player_input: input.player_input,
+    conversation_history: history,
+    graph_accusation_context: {
+      ...verdictContext(graph, playOf(graph, history), input.verdict, input.cited ?? []),
+      earlier_reasoning: earlierReasoning(history),
+    },
+  });
 }
 
 function graphOf(blueprint: BlueprintContext): ClueGraphCase {
@@ -1282,5 +1362,9 @@ export function assertRoleContextSafety(
     throw new Error(
       `Invalid context: ${role} is not allowed to include accusation_judge_context`,
     );
+  }
+  // Only the closing scene of a clue-graph case is told the truth.
+  if (role !== "graph_ending" && context.graph_accusation_context && "ending" in context.graph_accusation_context) {
+    throw new Error(`Invalid context: ${role} is not allowed to include the ending`);
   }
 }

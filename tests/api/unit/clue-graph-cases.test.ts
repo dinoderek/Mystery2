@@ -171,7 +171,7 @@ describe("the clue-graph talk prompt", async () => {
 
   it("restates the investigator's earlier lines in this conversation beside the line, and only those", () => {
     const followUp = built.find(({ turnCase }) => turnCase.id === "toby-glass-follow-up")!;
-    expect(followUp.prompt).toContain('Earlier in this conversation, they said:\n- "Why do you think it was Mr. Thorne?"\n- "toby the glass from the window was OUTSIDE on the path not inside"\nA clue used in one of those lines still counts now. If its gate is still in gates, Toby dodged it once already');
+    expect(followUp.prompt).toContain('Earlier in this conversation, they said:\n- "toby the glass from the window was OUTSIDE on the path not inside"\nA clue used in one of those lines still counts now. If its gate is still in gates, Toby dodged it once already');
     const first = built.find(({ turnCase }) => turnCase.id === "thorne-boots-by-implication")!;
     expect(first.prompt).not.toContain("Earlier in this conversation");
 

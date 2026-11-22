@@ -39,13 +39,13 @@ Using a clue means showing it or making its point, not holding it.
 
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
 and formats are rejected by name. It holds facts, never the words a child
-reads. A fact states what it establishes completely, with every name, time, place
+reads. A fact states what it establishes completely: every name, time, place
 and object. Beyond the schema:
 
 - `metadata.target_age`: the default reading age, and the age the plot is
   sized for.
 - A spot with `revealed_by` is hidden until that clue is held, and that
-  clue's line names the spot.
+  clue's line names it.
 - `personality` and `demeanor` (by stance) direct the narrator; `knows` holds
   true facts shared when asked, never clues.
 - `colour: true` marks a clue nothing depends on.
@@ -110,19 +110,18 @@ is false; such a route draws on it or its retraction.
 ## In play
 
 A start saves the case in `game_sessions.clue_graph_snapshot`, which resume
-and every turn play through a rule-free world view, without the story checks. Each turn that counts saves its event in
+and every turn play, without the story checks. Each turn that counts saves its event in
 `payload.clue_graph`; all else derives from it.
 
 - **Talk** (`graph_talk`): the narrator gets `talkState`, `knows` and
   first-meeting appearance, and reports what the line `opened` and
-  `answered`. A report not offered fails the turn; one already held,
+  `answered`. A report not offered fails the turn, unsaved; one already held,
   or a tell seen with what came out, is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words, else the narrator picks a visible spot's clue, the room's, or
   none. A hidden spot shows once its pointer is held; before, words fitting
   it best find nothing, and the narrator never hears of it.
-- **Notebook lines**, one per clue a turn brings out, each with its fact's
-  every detail, are saved in the event's
+- **Notebook lines**, one per clue a turn brings out, are saved in the event's
   `notebook`; a missing, extra, blank or repeated line fails the turn, one for
   a held clue is dropped. Every reader uses it.
 - **Notebook**: every held clue, with kind and whether taken back, then the
@@ -147,10 +146,11 @@ lose, tells `truth.timeline`, the culprit conclusion and `truth.motive`.
 ## The narrator's judgement
 
 The narrator may add scenery and manner, never what looks like evidence or
-bears on who, when or where, keeping what was established. Asked
+bears on who, when or where, keeping what earlier narration established. Asked
 anything beyond their clues and `knows` that bears on the case, a character
-says plainly they do not know.
+says plainly they do not know. A clue that comes out is told whole in
+narration and line; an empty search adds nothing.
 
-A line opens the gates its words earn, generous on wording, strict on deeds;
-a clue shown and dodged opens on a follow-up. Cases:
+Talk is generous on wording, strict on deeds; a clue shown and dodged opens
+on a follow-up. Cases:
 `evaluation/runtime/cases/clue-graph/` ([grading](../evaluation/runtime/README.md)).

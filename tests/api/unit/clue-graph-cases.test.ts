@@ -4,7 +4,14 @@
 // prompt is one prompt for every character and state, with no section per
 // mechanism. No model is called.
 
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { afterAll, describe, expect, it } from "vitest";
+import { COMMANDS } from "../../../evaluation/commands.ts";
+import { runEval } from "../../../evaluation/core/dispatch.ts";
+import { readSummary } from "../../../evaluation/runtime/lib/expect-summary.ts";
 import type { AIContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { linesThisConversation } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { GRAPH_TALK_PROMPT } from "../../../packages/game-engine/src/clue-graph/prompts.ts";
@@ -62,13 +69,13 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
     for (const { turnCase } of built) {
       expect(() => validateExpect(turnCase), turnCase.id).not.toThrow();
       expect(turnCase.blueprint.path, turnCase.id).toBe(story.file);
-      expect(turnCase.group, turnCase.id).toMatch(/^(shown|shown-after-dodge|bluffed|worded-line|asked|confession|hold-[a-z-]+|search-[a-z]+)$/);
+      expect(turnCase.group, turnCase.id).toMatch(/^(shown|shown-after-dodge|bluffed|worded-line|asked|confession|hold-[a-z-]+|search-[a-z]+|whole-fact|plain-unknown|invention)$/);
     }
   });
 
   it("covers every kind the narrator is measured on", () => {
     const groups = new Set(built.map(({ turnCase }) => turnCase.group));
-    for (const kind of ["shown", "asked", "worded-line", "bluffed", "shown-after-dodge", "hold-pushed", "hold-small-talk", "search-spot", "search-plain", "search-nothing"])
+    for (const kind of ["shown", "asked", "worded-line", "bluffed", "shown-after-dodge", "hold-pushed", "hold-small-talk", "search-spot", "search-plain", "search-nothing", "whole-fact", "plain-unknown", "invention"])
       expect(groups, kind).toContain(kind);
   });
 
@@ -80,7 +87,7 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
         expect(graph.clues[id], `${turnCase.id}: ${id}`).toBeDefined();
         expect(offers.has(id), `${turnCase.id}: ${id} is not on offer`).toBe(true);
       }
-      if (turnCase.group!.startsWith("hold-")) {
+      if (turnCase.group!.startsWith("hold-") || ["plain-unknown", "invention"].includes(turnCase.group!)) {
         expect(expected, turnCase.id).toEqual([]);
         expect(offers.size, `${turnCase.id} offers nothing to hold back`).toBeGreaterThan(0);
       } else {
@@ -113,6 +120,43 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
     }
   });
 
+  it("names, for each whole-fact clue, details its fact holds, and judges each new group", () => {
+    const groups = { "whole-fact": "gm_clue_discipline", "plain-unknown": "gm_fabrication", invention: "gm_fabrication" } as const;
+    for (const { turnCase } of built) {
+      const judge = groups[turnCase.group as keyof typeof groups];
+      if (!judge) continue;
+      expect(Object.keys(turnCase.expect!.judges ?? {}), turnCase.id).toEqual([judge]);
+      if (turnCase.group !== "whole-fact") continue;
+      const entries = Object.entries(turnCase.expect!.whole_fact ?? {});
+      expect(entries.length, turnCase.id).toBeGreaterThan(0);
+      for (const [id, details] of entries) {
+        const fact = graph.clues[id].fact.toLowerCase();
+        for (const detail of details) {
+          const spellings = typeof detail === "string" ? [detail] : detail;
+          expect(spellings.some((spelling) => fact.includes(spelling.toLowerCase())), `${turnCase.id}: ${spellings[0]} is not in ${id}'s fact`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("hands the narrator the made-up detail an invention case keeps to", () => {
+    const KEPT: Record<string, string> = {
+      "invent-kept-dobbs-cat": "Biscuit",
+      "invent-kept-greenhouse-revisit": "Rain drums on the glass roof",
+      "invent-kept-sam-comic": "Captain Comet",
+      "invent-kept-library-revisit": "Rain streaks the library windows",
+    };
+    const kept = built.filter(({ turnCase }) => turnCase.id.startsWith("invent-kept-"));
+    expect(kept.length).toBe(2);
+    for (const { turnCase, context } of kept) {
+      const detail = KEPT[turnCase.id];
+      expect(detail, turnCase.id).toBeDefined();
+      // Made up on an earlier turn, and in what this turn's narrator reads.
+      expect((turnCase.given.history ?? []).some((row) => row.narration?.includes(detail)), turnCase.id).toBe(true);
+      expect(JSON.stringify(context), turnCase.id).toContain(detail);
+    }
+  });
+
   it("expects of each search a clue its outcome can find, or none", () => {
     for (const { turnCase, context } of built.filter(({ turnCase }) => turnCase.action.type === "search")) {
       const id = turnCase.expect!.revealed_clue_id;
@@ -134,6 +178,28 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
     ).toThrow(/toby_confession/);
     expect(() => played(greenhouse, [{ say: "Hi.", reply: "Hm." }])).toThrow(/outside a conversation/);
   });
+});
+
+describe.each(STORIES)("the clue-graph $name case library, offline", (story) => {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), `mystery-clue-graph-${story.name}-`));
+  afterAll(() => fs.rmSync(scratch, { recursive: true, force: true }));
+
+  it("runs every case on the stub narrator and judge, each graded without a model", async () => {
+    const lines: string[] = [];
+    const code = await runEval(
+      ["judge", "turn", story.library, "--narrator", "narrator-stub", "--judge-binding", "judge-stub", "--samples", "1", "--output-root", scratch],
+      { root: process.cwd(), out: (text) => lines.push(text), err: (text) => lines.push(text), env: process.env },
+      COMMANDS,
+    );
+    // The canned narrator reveals nothing, so cases expecting a clue fail (exit 2), but none errs (exit 1).
+    expect(code, lines.join("\n")).toBe(2);
+    const [day] = fs.readdirSync(scratch);
+    const summary = readSummary(path.join(scratch, day, fs.readdirSync(path.join(scratch, day))[0]));
+    expect(summary.complete).toBe(true);
+    const groups = summary.narrators[0].groups;
+    expect(groups.every((group) => group.incomplete === 0)).toBe(true);
+    expect(groups.map((group) => group.group)).toEqual(expect.arrayContaining(["whole-fact", "plain-unknown", "invention"]));
+  }, 120_000);
 });
 
 describe("the clue-graph talk prompt", async () => {

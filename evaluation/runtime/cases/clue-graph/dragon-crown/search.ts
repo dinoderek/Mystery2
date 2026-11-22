@@ -17,7 +17,7 @@ const CROWN = "blueprints/clue-graph/dragon-crown.json";
 const search = (steps: Step[], query: string | null, labels: Parameters<typeof searchCase>[3]) => searchCase(CROWN, steps, query, labels);
 
 /** Mr. Pike's sighting, which points at the hidden spot, then the art room. */
-const POINTED: Step[] = [
+export const POINTED: Step[] = [
   { move: "playground" },
   {
     talk: "pike",

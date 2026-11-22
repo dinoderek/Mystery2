@@ -68,11 +68,16 @@ export interface JudgeOptions {
 /** Which way a failing judge in `expect.judges` means the narrator erred. */
 export type JudgedDirection = "withheld" | "given_away" | "either";
 
+/** A detail of a clue's fact (a name, time or place): one spelling, or a list of accepted spellings. */
+export type Detail = string | string[];
+
 /**
  * What the narrator's structured output must say, graded by code over every
  * sample (`expect.ts`). A key left out is not graded. `revealed_clue_id` is a
  * search's; `revealed_clue_ids` and `used_clue_ids` are a talk turn's (`ask`).
  * `judges` names turn judges whose fail makes a sample wrong, and which way.
+ * `whole_fact` lists, per clue the case expects revealed, the details of its
+ * fact that the narration and its notebook line must both carry.
  */
 export interface Expect {
   revealed_clue_id?: string | null;
@@ -80,6 +85,7 @@ export interface Expect {
   used_clue_ids?: string[];
   input_understood?: boolean;
   judges?: Record<string, JudgedDirection>;
+  whole_fact?: Record<string, Detail[]>;
 }
 
 export interface TurnCase {

@@ -112,6 +112,84 @@ describe("grading a talk turn", () => {
   });
 });
 
+describe("grading a clue-graph reply", () => {
+  /** A clue-graph talk reply, its narration as the game shows it. */
+  function graphTalk(narration: string, reply: Record<string, unknown>): StoredTurn {
+    const turn = makeTurn();
+    return {
+      ...turn,
+      response: { ...turn.response, narration_text: narration, raw: { narration, opened: [], answered: [], notebook: [], input_understood: true, ...reply } },
+    };
+  }
+  const CAKE = { revealed_clue_ids: ["cake"], whole_fact: { cake: ["Mia", ["nine", "9:00"], "cake tent"] } };
+  const said = (narration: string, line: string) => graphTalk(narration, { answered: ["cake"], notebook: [{ id: "cake", line }] });
+  const missing = (verdict: Verdict) => (verdict.details as { missing_details: unknown[] }).missing_details;
+
+  it("is right when the narration and the clue's line both carry every detail, in any accepted spelling", () => {
+    const verdict = gradeExpect(CAKE, said("At 9:00 he bought cake from Mia at the cake tent.", "Mr. Thorne says he bought cake from Mia at the Cake Tent at nine."), []);
+    expect(verdict.status).toBe("pass");
+    expect(missing(verdict)).toEqual([]);
+  });
+
+  it("withholds a detail left out of the narration or the line, and says which and where", () => {
+    const verdict = gradeExpect(CAKE, said("He bought cake from Mia at nine.", "Mr. Thorne says he bought cake at the cake tent at nine."), []);
+    expect(details(verdict).erred).toEqual(["withheld"]);
+    expect(missing(verdict)).toEqual([
+      { clue: "cake", detail: "Mia", from: "notebook" },
+      { clue: "cake", detail: "cake tent", from: "narration" },
+    ]);
+  });
+
+  it("lets the narration refer back to a detail the player just named, but never the line", () => {
+    const turn = said("\"Yes, she did. At nine, at the cake tent.\"", "Mr. Thorne says he bought cake from Mia at the cake tent at nine.");
+    const asked = { ...turn, action: { type: "ask", player_input: "Did you buy cake from Mia?" } };
+    expect(gradeExpect(CAKE, asked, []).status).toBe("pass");
+    expect(missing(gradeExpect(CAKE, turn, []))).toEqual([{ clue: "cake", detail: "Mia", from: "narration" }]);
+    const vague = said("\"Yes. At nine, at the cake tent.\"", "Mr. Thorne says he bought cake at the cake tent at nine.");
+    expect(missing(gradeExpect(CAKE, { ...vague, action: asked.action }, []))).toEqual([{ clue: "cake", detail: "Mia", from: "notebook" }]);
+  });
+
+  it("matches whole words only, so a time is not found inside another word", () => {
+    const verdict = gradeExpect({ revealed_clue_ids: ["cake"], whole_fact: { cake: ["nine"] } }, said("Ninety cakes.", "Ninety cakes."), []);
+    expect(missing(verdict)).toHaveLength(2);
+  });
+
+  it("leaves a clue that never came out to the id check", () => {
+    const verdict = gradeExpect(CAKE, graphTalk("Mr. Thorne grunts.", {}), []);
+    expect(details(verdict).erred).toEqual(["withheld"]);
+    expect(missing(verdict)).toEqual([]);
+  });
+
+  it("reads the line a server saved, keyed by clue", () => {
+    const turn = said("At nine he bought cake from Mia at the cake tent.", "");
+    const served = {
+      ...turn,
+      response: {
+        ...turn.response,
+        raw: { kind: "turn", events: [{ payload: { revealed_clue_ids: ["cake"], clue_graph: { notebook: { cake: "Mia sold him cake at the cake tent at nine." } } } }] },
+      },
+    };
+    expect(gradeExpect(CAKE, served, []).status).toBe("pass");
+  });
+
+  it("counts a tell that comes out with its statement whether or not the reply listed it", () => {
+    const comesWith = (id: string) => (id === "no_key" ? ["pats_pocket"] : []);
+    const listed = graphTalk("He pats his pocket.", { answered: ["no_key", "pats_pocket"] });
+    const unlisted = graphTalk("He pats his pocket.", { answered: ["no_key"] });
+    expect(gradeExpect({ revealed_clue_ids: ["no_key"] }, listed, [], comesWith).status).toBe("pass");
+    expect(gradeExpect({ revealed_clue_ids: ["no_key"] }, unlisted, [], comesWith).status).toBe("pass");
+    expect(gradeExpect({ revealed_clue_ids: ["no_key"] }, listed, []).status).toBe("fail");
+  });
+
+  it("refuses a whole_fact for a clue the case does not expect, or with no details", () => {
+    const base = { id: "c", blueprint: { path: "b.json" }, given: {}, action: { type: "ask" } } as TurnCase;
+    expect(() => validateExpect({ ...base, expect: CAKE })).not.toThrow();
+    expect(() => validateExpect({ ...base, expect: { revealed_clue_ids: [], whole_fact: { cake: ["Mia"] } } })).toThrow(/not a clue the case expects/);
+    expect(() => validateExpect({ ...base, expect: { revealed_clue_ids: ["cake"], whole_fact: { cake: [] } } })).toThrow(/must list details/);
+    expect(() => validateExpect({ ...base, expect: { revealed_clue_ids: ["cake"], whole_fact: { cake: [[""]] } } })).toThrow(/must list details/);
+  });
+});
+
 describe("a judge-graded case", () => {
   const roleplay = (status: Verdict["status"]): Verdict => ({ id: "gm_roleplay", tier: "judge", status });
 

@@ -45,7 +45,7 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import { loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
-import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect } from "./lib/expect.ts";
+import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
 import { judgeTurn } from "./lib/judges.ts";
@@ -54,6 +54,7 @@ import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
 import { playedEvents } from "../lib/game-events.ts";
+import { ridersOf } from "../../packages/game-engine/src/clue-graph/play.ts";
 import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn, turnFromEvent } from "./lib/turn.ts";
 import type { StoredEvent } from "./lib/turn.ts";
 import type { StoredTurn } from "./lib/turn.ts";
@@ -301,6 +302,12 @@ function gradedSamples(items: readonly WorkItem[], results: readonly Result[], r
   });
 }
 
+/** What comes out with a clue in the case's blueprint: a clue graph's riders, else nothing. */
+async function ridersFor(testCase: TurnCase, runtime: Runtime): Promise<ComesWith> {
+  const graph = (await readBlueprint(testCase.blueprint.path, runtime.context.root)).blueprint.clue_graph;
+  return graph ? (id) => ridersOf(graph, id) : () => [];
+}
+
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
   const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   if (narrator === SERVER_NARRATOR) {
@@ -372,8 +379,9 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
       logDir: folder.logDir,
       options: judgeOptions(item.input),
     });
-    const expected = item.input.kind === "case" ? item.input.testCase.expect : undefined;
-    if (expected) verdicts.push(gradeExpect(expected, turn, verdicts));
+    if (item.input.kind === "case" && item.input.testCase.expect) {
+      verdicts.push(gradeExpect(item.input.testCase.expect, turn, verdicts, await ridersFor(item.input.testCase, runtime)));
+    }
     stages.push({ name: "judge", duration_ms: Math.round(performance.now() - judgeStart) });
   } catch (error) {
     runError = { stage: turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };

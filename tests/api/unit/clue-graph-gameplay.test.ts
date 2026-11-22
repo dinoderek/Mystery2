@@ -318,6 +318,17 @@ describe("clue-graph sessions and turns", () => {
     });
   });
 
+  it("keeps a turn whose narrator also reported the tell riding on its answer", async () => {
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    await play(opened.game_id, "go to the potting shed");
+    await play(opened.game_id, "talk to Toby");
+    // The tell comes out with the answer anyway, so reporting it is harmless.
+    const asked = await play(opened.game_id, "What about the missing key?", reporting([], ["toby_no_key", "react_toby_pocket"]));
+    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["toby_no_key", "react_toby_pocket"]);
+    const { events } = await derived(opened.game_id);
+    expect(events.at(-1)).toMatchObject({ type: "line", asked: ["toby_no_key"], seen: [] });
+  });
+
   it("records a subject tell when the line brings its subject up, and a pointer tell in the notebook", async () => {
     installed(fixture());
     const opened = await start(clueGraphCaseId("greenhouse-fixture"));

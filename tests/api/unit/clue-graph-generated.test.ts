@@ -1,5 +1,6 @@
-// The generated stories in `blueprints/clue-graph/`: each fits the brief it was
-// written from, passes the validator at its size, and is won on the mock
+// The generated stories in `blueprints/clue-graph/`: each has the size and
+// reading age of the brief it was written from, passes the validator at that
+// size, and is won on the mock
 // narrator through the real turn, by the shortest route to the culprit without
 // the confession and an accusation that cites one of its clues.
 
@@ -51,7 +52,7 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
     fs.rmSync(scratch, { recursive: true, force: true });
   });
 
-  it("fits its brief and passes the validator at its size", () => {
+  it("has its brief's size and reading age, and passes the validator at that size", () => {
     const asked = ClueGraphBriefSchema.parse(JSON.parse(fs.readFileSync(path.join(ROOT, brief), "utf8")));
     // The size's own counts, none set apart: `validateClueGraph` (in `load`) has already held the case to them.
     expect(graph.metadata).toMatchObject({ size: asked.size, target_age: asked.targetAge });
@@ -63,6 +64,9 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
     const [route] = culpritRoutes(graph)
       .flatMap((entry) => (entry.confession || entry.turns === null ? [] : [{ ...entry, turns: entry.turns }]))
       .sort((a, b) => a.turns - b.turns);
+    // The engine's confession (what wins outright) is left out. The validator
+    // costs this route leaving out more (`clue-graph-story.ts`), so a cheaper
+    // plan can only fail the length check below, never pass falsely.
     const actions = plan(graph, route.clues, new Set(confessionClues(graph)));
     // The plan costs what the validator's route search says this route costs.
     expect(actions).toHaveLength(route.turns);
@@ -79,7 +83,14 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
       return turn;
     };
     const found = new Set<string>();
-    for (const line of lines) for (const clue of (await play(line)).revealed_clues) found.add(clue.id);
+    let last = started.state.time_remaining;
+    for (const line of lines) {
+      const turn = await play(line);
+      for (const clue of turn.revealed_clues) found.add(clue.id);
+      last = turn.state.time_remaining;
+    }
+    // The engine charged the turns the plan says, and no more.
+    expect(last).toBe(graph.metadata.time_budget - route.turns);
     expect([...found]).toEqual(expect.arrayContaining(route.clues));
     // Won on the route, not on a confession that came out along the way.
     expect([...found].filter((id) => confessionClues(graph).includes(id))).toEqual([]);

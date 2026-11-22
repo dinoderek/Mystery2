@@ -13,20 +13,28 @@ import {
 } from "../../../shared/src/clue-graph-schema.ts";
 
 /**
+ * The narrator's notebook line for each clue a turn brought out, by clue ID:
+ * saved with the event, and what every later reader shows for that clue.
+ */
+export type NotebookLines = Record<string, string>;
+
+/**
  * What the engine records of a turn. `line` is one line said in the
  * conversation `talk` started: the gated clues the narrator says it opened, the
- * asked clues it answered, and the subject tells it showed.
+ * asked clues it answered, and the subject tells it showed. A turn that brings
+ * clues out carries their `notebook` lines.
  */
 export type ClueGraphEvent =
   | { type: "move"; location: string }
-  | { type: "search"; spot?: string }
-  | { type: "talk"; character: string }
+  | { type: "search"; spot?: string; notebook?: NotebookLines }
+  | { type: "talk"; character: string; notebook?: NotebookLines }
   | {
       type: "line";
       character: string;
       opened?: string[];
       asked?: string[];
       seen?: string[];
+      notebook?: NotebookLines;
     };
 
 export interface ClueGraphPlay {
@@ -44,6 +52,8 @@ export interface ClueGraphPlay {
   retracted: string[];
   /** Spots searched, as `searchKey` values, the plain search included. */
   searched: string[];
+  /** The saved notebook line of each held clue that has one. */
+  lines: NotebookLines;
 }
 
 /** A play's outcome for one event. */
@@ -71,6 +81,7 @@ export function startPlay(graph: ClueGraphCase): ClueGraphPlay {
     held: [],
     retracted: [],
     searched: [],
+    lines: {},
   };
 }
 
@@ -111,6 +122,14 @@ export function ridersOf(graph: ClueGraphCase, statement: string): string[] {
 export function holds(play: ClueGraphPlay): (id: string) => boolean {
   const held = new Set(play.held);
   return (id) => held.has(id);
+}
+
+/**
+ * How a held clue reads everywhere after it came out: its saved notebook line.
+ * A clue with none (saved before lines were, or not yet out) reads as its fact.
+ */
+export function lineOf(graph: ClueGraphCase, play: ClueGraphPlay, id: string): string {
+  return Object.hasOwn(play.lines, id) ? play.lines[id] : graph.clues[id].fact;
 }
 
 /** Held and not taken back. */
@@ -247,9 +266,12 @@ class Fold {
 
   private readonly graph: ClueGraphCase;
 
-  constructor(graph: ClueGraphCase, play: ClueGraphPlay) {
+  private readonly notebook: NotebookLines;
+
+  constructor(graph: ClueGraphCase, play: ClueGraphPlay, notebook: NotebookLines = {}) {
     this.graph = graph;
     this.play = structuredClone(play);
+    this.notebook = notebook;
   }
 
   give(ids: string[]) {
@@ -258,6 +280,7 @@ class Fold {
         if (this.play.held.includes(clue)) continue;
         this.play.held.push(clue);
         this.revealed.push(clue);
+        if (Object.hasOwn(this.notebook, clue)) this.play.lines[clue] = this.notebook[clue];
         const found = this.graph.clues[clue];
         const takes = found.kind === "statement" ? (found.takes_back ?? []) : [];
         for (const target of takes)
@@ -307,7 +330,7 @@ export function applyEvent(
   before: ClueGraphPlay,
   event: ClueGraphEvent,
 ): ClueGraphStep {
-  const fold = new Fold(graph, before);
+  const fold = new Fold(graph, before, event.type === "move" ? {} : event.notebook);
   const { play } = fold;
   switch (event.type) {
     case "move":

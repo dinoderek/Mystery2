@@ -3,7 +3,6 @@
 // those, in sequence order (`play.ts`).
 
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
-import { recordedTells } from "./leads.ts";
 import { replay, type ClueGraphEvent, type ClueGraphPlay } from "./play.ts";
 
 const EVENT_TYPES = new Set(["move", "search", "talk", "line"]);
@@ -24,12 +23,6 @@ export function clueGraphEvents(history: HistoryRow[]): ClueGraphEvent[] {
 /** The play a history has reached. */
 export function playOf(graph: ClueGraphCase, history: HistoryRow[]): ClueGraphPlay {
   return replay(graph, clueGraphEvents(history));
-}
-
-/** The clues the notebook keeps, in order: every one but a tell no other clue depends on. */
-export function notebookClues(graph: ClueGraphCase, ids: string[]): string[] {
-  const recorded = recordedTells(graph);
-  return ids.filter((id) => graph.clues[id].kind !== "tell" || recorded.has(id));
 }
 
 /**

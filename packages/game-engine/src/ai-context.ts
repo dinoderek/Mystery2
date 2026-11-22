@@ -17,7 +17,7 @@ import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
 import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
 import { playOf } from "./clue-graph/history.ts";
-import { supportedConclusions } from "./clue-graph/play.ts";
+import { lineOf, supportedConclusions } from "./clue-graph/play.ts";
 import {
   buildGraphSearchContext,
   buildGraphTalkContext,
@@ -950,18 +950,44 @@ export function buildTalkConversationContext(input: {
 }
 
 /**
- * A clue-graph case's world view lists every clue a character holds; outside
- * its own talk context (`clue-graph/`), a narrator sees only those already
- * found. The rest stay with the graph.
+ * A clue-graph case's world view with every clue the player holds reading as
+ * its saved notebook line, as the notebook shows it, so later narration and the
+ * accusation never word it afresh. Any other case is returned as it is.
  */
-function foundCluesOnly(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
-  if (!blueprint.clue_graph) return blueprint;
-  const found = buildDiscoveredClueIdSet(history);
+function withSavedLines(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
+  const graph = blueprint.clue_graph;
+  if (!graph) return blueprint;
+  const play = playOf(graph, history);
+  const reword = <C extends { id: string; text: string }>(clues: C[]): C[] =>
+    clues.map((clue) => (play.held.includes(clue.id) ? { ...clue, text: lineOf(graph, play, clue.id) } : clue));
   return {
     ...blueprint,
     world: {
       ...blueprint.world,
-      characters: blueprint.world.characters.map((character) => ({
+      locations: blueprint.world.locations.map((location) => ({
+        ...location,
+        clues: reword(location.clues),
+        sub_locations: location.sub_locations?.map((spot) => ({ ...spot, clues: reword(spot.clues) })),
+      })),
+      characters: blueprint.world.characters.map((character) => ({ ...character, clues: reword(character.clues) })),
+    },
+  };
+}
+
+/**
+ * A clue-graph case's world view lists every clue a character holds; outside
+ * its own talk context (`clue-graph/`), a narrator sees only those already
+ * found, as their notebook lines. The rest stay with the graph.
+ */
+function foundCluesOnly(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
+  if (!blueprint.clue_graph) return blueprint;
+  const found = buildDiscoveredClueIdSet(history);
+  const worded = withSavedLines(blueprint, history);
+  return {
+    ...worded,
+    world: {
+      ...worded.world,
+      characters: worded.world.characters.map((character) => ({
         ...character,
         clues: character.clues.filter((clue) => found.has(clue.id)),
       })),
@@ -1164,7 +1190,8 @@ export function buildAccusationJudgeContext(input: {
     accusation_judge_context: {
       round: input.round,
       full_blueprint: input.blueprint,
-      player_known_clues: buildKnownCluesWithOrigin(input.blueprint, discovered),
+      // A clue-graph clue reads as its saved notebook line.
+      player_known_clues: buildKnownCluesWithOrigin(withSavedLines(input.blueprint, input.conversation_history ?? []), discovered),
       path_coverage: buildPathCoverage(input.blueprint, discovered),
       ...(input.blueprint.msf ? { msf_progress: evaluateMysteryStructure(input.blueprint.msf.structure, discovered) } : {}),
       ...(input.blueprint.clue_graph
@@ -1182,7 +1209,7 @@ export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFra
   return {
     supported_conclusions: supported.map((id) => ({ id, text: graph.conclusions[id].text })),
     culprit_supported: supported.some((id) => graph.conclusions[id].culprit === culprit),
-    taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => graph.clues[id].fact),
+    taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => lineOf(graph, play, id)),
   };
 }
 

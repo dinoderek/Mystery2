@@ -1,15 +1,24 @@
 // A clue-graph case's talk and search turns (`docs/clue-graph.md`). The engine
 // derives what can come out from the graph and the events; the narrator plays
-// it and reports what a line earned. A report the state did not offer fails
-// the turn before anything is saved. Each turn that counts saves its
-// `ClueGraphEvent` in `payload.clue_graph`, the record the play is folded from.
+// it, reports what a line earned, and writes a notebook line for every clue
+// that comes out. A report the state did not offer, or lines that are not
+// exactly the clues that come out, fail the turn before anything is saved.
+// Each turn that counts saves its `ClueGraphEvent`, lines included, in
+// `payload.clue_graph`, the record the play is folded from.
 
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
-import { parseGraphTalkOutput, parseSearchOutput } from "../ai-contracts.ts";
-import { notebookClues, playOf } from "../clue-graph/history.ts";
+import { parseGraphSearchOutput, parseGraphTalkOutput, type NotebookLine } from "../ai-contracts.ts";
+import { playOf } from "../clue-graph/history.ts";
 import { resolveGraphSearchWords } from "../clue-graph/narrator-context.ts";
-import { applyEvent, type ClueGraphEvent, type ClueGraphPlay } from "../clue-graph/play.ts";
+import {
+  applyEvent,
+  lineOf,
+  type ClueGraphEvent,
+  type ClueGraphPlay,
+  type ClueGraphStep,
+  type NotebookLines,
+} from "../clue-graph/play.ts";
 import { talkState } from "../clue-graph/talk-state.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
@@ -23,10 +32,11 @@ function graphOf(game: TurnGame): ClueGraphCase {
   return game.blueprint.clue_graph;
 }
 
-function recordsFor(game: TurnGame, ids: string[]): RevealedClue[] {
+/** The notebook records of the clues a turn brought out, each as its saved line. */
+function recordsFor(game: TurnGame, step: ClueGraphStep): RevealedClue[] {
   const graph = graphOf(game);
   const at = new Date().toISOString();
-  return ids.map((id) => {
+  return step.revealed.map((id) => {
     const clue = graph.clues[id];
     const origin =
       clue.kind === "evidence"
@@ -34,7 +44,7 @@ function recordsFor(game: TurnGame, ids: string[]): RevealedClue[] {
         : { kind: "character" as const, character_id: clue.source.character, character_name: graph.characters[clue.source.character].name };
     return {
       id,
-      text: clue.fact,
+      text: lineOf(graph, step.play, id),
       source: clue.kind === "evidence" ? ("search" as const) : ("talk" as const),
       origin,
       discovered_at: at,
@@ -43,10 +53,46 @@ function recordsFor(game: TurnGame, ids: string[]): RevealedClue[] {
   });
 }
 
-/** The fold of one event, and the clues it brought out that the notebook keeps. */
-function fold(graph: ClueGraphCase, play: ClueGraphPlay, event: ClueGraphEvent) {
-  const step = applyEvent(graph, play, event);
-  return { step, kept: notebookClues(graph, step.revealed) };
+/**
+ * The event with the narrator's notebook lines, and its fold. The lines must be
+ * exactly the clues the event brings out, each once: a missing or extra line
+ * fails the turn. A line for a clue the player already holds, which the
+ * narrator restated, is dropped, as a repeated report is.
+ */
+function withNotebook<E extends Exclude<ClueGraphEvent, { type: "move" }>>(
+  game: TurnGame,
+  runtime: TurnRuntime,
+  action: string,
+  play: ClueGraphPlay,
+  event: E,
+  lines: NotebookLine[],
+): { event: E; step: ClueGraphStep } {
+  const graph = graphOf(game);
+  const revealed = applyEvent(graph, play, event).revealed;
+  const notebook: NotebookLines = {};
+  const extra: string[] = [];
+  const twice: string[] = [];
+  const restated: string[] = [];
+  for (const { id, line } of lines) {
+    if (Object.hasOwn(notebook, id)) twice.push(id);
+    else if (revealed.includes(id)) notebook[id] = line;
+    else if (play.held.includes(id)) restated.push(id);
+    else extra.push(id);
+  }
+  const missing = revealed.filter((id) => !Object.hasOwn(notebook, id));
+  if (missing.length > 0 || extra.length > 0 || twice.length > 0) {
+    rejectOutput(runtime, action, "Clue-graph notebook lines are not the clues the turn brings out", {
+      expected_clue_ids: revealed,
+      missing_clue_ids: missing,
+      extra_clue_ids: extra,
+      repeated_clue_ids: twice,
+    });
+  }
+  if (restated.length > 0) {
+    runtime.logger.log("notebook.line_for_held_clue", { game_id: game.game_id, action, clue_ids: restated });
+  }
+  const recorded = revealed.length > 0 ? { ...event, notebook } : event;
+  return { event: recorded, step: applyEvent(graph, play, recorded) };
 }
 
 function discoveredAfter(game: TurnGame, kept: string[]): string[] {
@@ -63,8 +109,8 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
     throw new RequestRejectedError(400, `Character ${characterId} not found in current location`, "character_not_found_in_location");
   }
   const play = playOf(graph, game.history);
-  const event: ClueGraphEvent = { type: "talk", character: character.id };
-  const { step, kept } = fold(graph, play, event);
+  const talk = { type: "talk" as const, character: character.id };
+  const greeted = applyEvent(graph, play, talk);
 
   const { prompt, context } = await buildRoleRequest({
     role: "graph_talk",
@@ -79,7 +125,7 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
   const output = await askRole(runtime, "talk", { role: "graph_talk", prompt, context, parse: parseGraphTalkOutput });
   // A greeting offers only its first words, which come out regardless; a
   // revisit may restate what the player already holds.
-  const harmless = new Set([...step.revealed, ...play.held]);
+  const harmless = new Set([...greeted.revealed, ...play.held]);
   const unoffered = [...output.opened, ...output.answered].filter((id) => !harmless.has(id));
   if (unoffered.length > 0) {
     rejectOutput(runtime, "talk", "Clue-graph greeting reported clues it did not offer", {
@@ -87,6 +133,8 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
       clue_ids: unoffered,
     });
   }
+  const { event, step } = withNotebook(game, runtime, "talk", play, talk, output.notebook);
+  const kept = step.revealed;
   const portrait = character.portrait_image_id ?? null;
 
   return {
@@ -111,7 +159,7 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
     costs_turn: true,
     resulting_mode: "talk",
     patch: { current_talk_character_id: character.id, discovered_clues: discoveredAfter(game, kept) },
-    revealed_clues: recordsFor(game, kept),
+    revealed_clues: recordsFor(game, step),
     result: null,
     endgame: {
       scene_summary: `The investigator approached ${character.first_name} to talk, and that last moment used up all remaining time.`,
@@ -184,8 +232,11 @@ export async function resolveGraphLine(
   });
   const output = await askRole(runtime, "ask", { role: "graph_talk", prompt, context, parse: parseGraphTalkOutput });
   // A line not understood is no line: nothing comes out, first words included.
-  const event = output.input_understood ? acceptLine(game, runtime, play, character.id, output) : null;
-  const kept = event ? fold(graph, play, event).kept : [];
+  const accepted = output.input_understood
+    ? withNotebook(game, runtime, "ask", play, acceptLine(game, runtime, play, character.id, output), output.notebook)
+    : null;
+  const event = accepted?.event ?? null;
+  const kept = accepted?.step.revealed ?? [];
 
   return {
     event: {
@@ -211,7 +262,7 @@ export async function resolveGraphLine(
     costs_turn: false,
     resulting_mode: "talk",
     patch: { discovered_clues: discoveredAfter(game, kept) },
-    revealed_clues: recordsFor(game, kept),
+    revealed_clues: accepted ? recordsFor(game, accepted.step) : [],
     result: null,
     endgame: null,
   };
@@ -266,12 +317,13 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
     search_query: query,
     conversation_history: game.history,
   });
-  const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });
+  const output = await askRole(runtime, "search", { role: "graph_search", prompt, context, parse: parseGraphSearchOutput });
   // Gibberish searches nothing and costs nothing.
-  const event = output.input_understood
-    ? searchEvent(runtime, resolveGraphSearchWords(graph, play, query), output.revealed_clue_id)
+  const accepted = output.input_understood
+    ? withNotebook(game, runtime, "search", play, searchEvent(runtime, resolveGraphSearchWords(graph, play, query), output.revealed_clue_id), output.notebook)
     : null;
-  const kept = event ? fold(graph, play, event).kept : [];
+  const event = accepted?.event ?? null;
+  const kept = accepted?.step.revealed ?? [];
   const clueId = kept[0] ?? null;
 
   return {
@@ -284,7 +336,7 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
         location_name: place.name,
         search_query: query,
         revealed_clue_id: clueId,
-        revealed_clue_text: clueId ? graph.clues[clueId].fact : null,
+        revealed_clue_text: clueId ? lineOf(graph, accepted!.step.play, clueId) : null,
         revealed_clue_ids: kept,
         revealed_off_script: [],
         costs_turn: event !== null,
@@ -300,7 +352,7 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
     costs_turn: event !== null,
     resulting_mode: session.mode,
     patch: { current_talk_character_id: null, discovered_clues: discoveredAfter(game, kept) },
-    revealed_clues: recordsFor(game, kept),
+    revealed_clues: accepted ? recordsFor(game, accepted.step) : [],
     result: null,
     endgame: {
       scene_summary: `The investigator just searched ${place.name}, and this action exhausted the remaining time.`,

@@ -17,7 +17,13 @@ import {
 } from "@my2/shared";
 import { createLocalEngine, type LocalEngine } from "../../../packages/game-engine/src/context-local.ts";
 import type { EngineContext } from "../../../packages/game-engine/src/context.ts";
-import { createAIProviderFromProfile, type AIProvider, type AIRoleOutputRequest } from "../../../packages/game-engine/src/ai-provider.ts";
+import {
+  createAIProviderFromProfile,
+  mockNotebookLine,
+  type AIProvider,
+  type AIRoleOutputRequest,
+} from "../../../packages/game-engine/src/ai-provider.ts";
+import type { GraphTalkContext } from "../../../packages/game-engine/src/clue-graph/narrator-context.ts";
 import { handle as startGame } from "../../../packages/game-engine/src/endpoints/game-start.ts";
 import { handle as getGame } from "../../../packages/game-engine/src/endpoints/game-get.ts";
 import { handle as listSessions } from "../../../packages/game-engine/src/endpoints/game-sessions-list.ts";
@@ -71,8 +77,29 @@ function answering(answer: (request: AIRoleOutputRequest<unknown>) => Record<str
   };
 }
 
+/** A test narrator's notebook line: plainly not the fact, so a test can see which one a reader shows. */
+const noted = (id: string) => `Noted: ${id}`;
+
+/**
+ * The notebook a narrator owes for a talk line: every first word due, and each
+ * reported id the state offers, with the tells that ride on them.
+ */
+function owedNotebook(request: AIRoleOutputRequest<unknown>, reported: string[]) {
+  const { state } = request.context.graph_talk_context as GraphTalkContext;
+  const offered = [...state.answers_if_asked, ...state.gates].filter((entry) => reported.includes(entry.id));
+  const tells = state.shows_when.filter((entry) => reported.includes(entry.id)).map((entry) => entry.id);
+  const ids = [...state.says_first, ...offered].flatMap((entry) => [entry.id, ...entry.with.map((rider) => rider.id)]);
+  return [...ids, ...tells].map((id) => ({ id, line: noted(id) }));
+}
+
 function reporting(opened: string[], answered: string[] = []) {
-  return answering(() => ({ narration: "A line.", opened, answered, input_understood: true }));
+  return answering((request) => ({
+    narration: "A line.",
+    opened,
+    answered,
+    notebook: owedNotebook(request, [...opened, ...answered]),
+    input_understood: true,
+  }));
 }
 
 describe("clue-graph sessions and turns", () => {
@@ -152,13 +179,12 @@ describe("clue-graph sessions and turns", () => {
     fs.writeFileSync(file, JSON.stringify(edited));
 
     const found = await play(opened.game_id, "search the smashed pumpkin");
-    expect(found.revealed_clues.map((clue) => [clue.id, clue.text])).toEqual([
-      ["clue_welly_prints", graph.clues.clue_welly_prints.fact],
-    ]);
+    const line = mockNotebookLine(graph.clues.clue_welly_prints.fact);
+    expect(found.revealed_clues.map((clue) => [clue.id, clue.text])).toEqual([["clue_welly_prints", line]]);
     const response = await getGame(new Request(`http://test/api/game-get?game_id=${opened.game_id}`), ctx);
     const resumed = GameGetResponseSchema.parse(await response.json());
     expect(resumed.state.locations.find((place) => place.id === "greenhouse")?.name).toBe("The Greenhouse");
-    expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([graph.clues.clue_welly_prints.fact]);
+    expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([line]);
     const catalog = await (await listSessions(new Request("http://test/api/game-sessions-list"), ctx)).json();
     expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin — clue graph" });
   });
@@ -180,6 +206,7 @@ describe("clue-graph sessions and turns", () => {
       "thorne_alibi",
       "clue_thorne_mia_cake",
       "thorne_never_set_foot",
+      "react_thorne_boot",
     ]);
     expect(greeting.events[0].narration_parts[0].text).toContain("never set foot");
 
@@ -270,15 +297,24 @@ describe("clue-graph sessions and turns", () => {
     expect(seen).not.toMatch(/"truth"|"rule"|toby_confession/);
   });
 
-  it("records an answer and a subject tell the state offered, keeping pure tells out of the notebook", async () => {
+  it("records an answer and the tell riding on it, each with its notebook line", async () => {
     const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
     await play(opened.game_id, "go to the potting shed");
     await play(opened.game_id, "talk to Toby");
     const asked = await play(opened.game_id, "What about the missing key?");
-    // The next first word, then the answer; the tell riding on it is a pure tell, so only the play holds it.
-    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["clue_toby_thorne_ladder", "toby_no_key"]);
+    // The next first word, then the answer and the tell that rides on it: every tell is recorded.
+    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["clue_toby_thorne_ladder", "toby_no_key", "react_toby_pocket"]);
     const { graph, events } = await derived(opened.game_id);
-    expect(deriveClueGraph(graph, events).play.held).toContain("react_toby_pocket");
+    const line = events.at(-1);
+    expect(line?.type === "line" && line.notebook).toEqual({
+      clue_toby_thorne_ladder: mockNotebookLine(graph.clues.clue_toby_thorne_ladder.fact),
+      toby_no_key: mockNotebookLine(graph.clues.toby_no_key.fact),
+      react_toby_pocket: mockNotebookLine(graph.clues.react_toby_pocket.fact),
+    });
+    expect(asked.revealed_clues.find((clue) => clue.id === "react_toby_pocket")).toMatchObject({
+      kind: "tell",
+      text: mockNotebookLine(graph.clues.react_toby_pocket.fact),
+    });
   });
 
   it("records a subject tell when the line brings its subject up, and a pointer tell in the notebook", async () => {
@@ -288,10 +324,24 @@ describe("clue-graph sessions and turns", () => {
     await play(opened.game_id, "talk to Toby");
     await play(opened.game_id, "Nice wellies");
     const asked = await play(opened.game_id, "What about the missing key?");
-    // In the fixture the pocket tell points at the water butt, so the notebook keeps it.
     expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["toby_no_key", "react_toby_pocket"]);
     const { graph, events } = await derived(opened.game_id);
-    expect(events.at(-2)).toEqual({ type: "line", character: "toby", opened: [], asked: [], seen: ["react_toby_wellies"] });
+    expect(events.at(-2)).toEqual({
+      type: "line",
+      character: "toby",
+      opened: [],
+      asked: [],
+      seen: ["react_toby_wellies"],
+      notebook: {
+        clue_toby_thorne_ladder: mockNotebookLine(graph.clues.clue_toby_thorne_ladder.fact),
+        react_toby_wellies: mockNotebookLine(graph.clues.react_toby_wellies.fact),
+      },
+    });
+    // The pocket tell points at the hidden water butt: its words and its line name the spot.
+    const pointer = mockNotebookLine(graph.clues.react_toby_pocket.fact, { spot: "the water butt by the door", location: "The Greenhouse" });
+    expect(pointer).toContain("the water butt by the door");
+    expect(asked.revealed_clues.find((clue) => clue.id === "react_toby_pocket")?.text).toBe(pointer);
+    expect(asked.events[0].narration_parts[0].text).toContain("the water butt by the door");
     expect(deriveClueGraph(graph, events).play.held).toContain("react_toby_wellies");
     // Another character's tell was never offered.
     await expect(play(opened.game_id, "Hm", reporting([], ["react_mia_pen"]))).rejects.toBeInstanceOf(RetriableAIError);
@@ -336,7 +386,14 @@ describe("clue-graph sessions and turns", () => {
     const line = await play(opened.game_id, "Look at these prints", reporting([], ["clue_thorne_measured"]));
     expect(line.revealed_clues.map((clue) => clue.id)).toEqual(["clue_thorne_measured"]);
     const { events } = await derived(opened.game_id);
-    expect(events.at(-1)).toEqual({ type: "line", character: "thorne", opened: ["clue_thorne_measured"], asked: [], seen: [] });
+    expect(events.at(-1)).toEqual({
+      type: "line",
+      character: "thorne",
+      opened: ["clue_thorne_measured"],
+      asked: [],
+      seen: [],
+      notebook: { clue_thorne_measured: noted("clue_thorne_measured") },
+    });
   });
 
   it("tells a farewell narrator only the clues already found", async () => {
@@ -433,7 +490,7 @@ describe("clue-graph sessions and turns", () => {
     installed(graph);
     const opened = await start(clueGraphCaseId(graph.metadata.id));
     const choosing = (id: string) =>
-      answering(() => ({ narration: "Found!", revealed_clue_id: id, costs_turn: true, input_understood: true }));
+      answering(() => ({ narration: "Found!", revealed_clue_id: id, costs_turn: true, input_understood: true, notebook: [{ id, line: noted(id) }] }));
     // "the busted glass" names no spot; the window is visible, the water butt hidden.
     await expect(play(opened.game_id, "search the busted glass", choosing("clue_key_in_water_butt"))).rejects.toBeInstanceOf(
       RetriableAIError,

@@ -12,11 +12,25 @@ import {
   cluesOf,
   gateOf,
   holds,
+  lineOf,
   nextFirstWords,
   ridersOf,
   subjectTells,
   type ClueGraphPlay,
 } from "./play.ts";
+
+/** A tell that comes out with a statement: its ID, for the notebook, and what is seen. */
+export interface Rider {
+  id: string;
+  does: string;
+  names_spot?: NamedSpot;
+}
+
+/** The hidden spot a pointer clue shows: the narrator names it when it words the clue. */
+export interface NamedSpot {
+  spot: string;
+  location: string;
+}
 
 /** What opens an available gate. */
 export interface GateOpener {
@@ -37,8 +51,9 @@ export interface TalkGate {
   /** A believable bluff opens it, even without the clues held. */
   bluffable: boolean;
   says: string;
+  names_spot?: NamedSpot;
   /** Tells shown with it. */
-  with: string[];
+  with: Rider[];
   /** Earlier statements it takes back. */
   takes_back: string[];
 }
@@ -48,12 +63,12 @@ export interface ClueGraphTalkState {
   stance: Stance;
   demeanor: string;
   /** First words not yet said: this line's share. */
-  says_first: Array<{ id: string; says: string; with: string[] }>;
-  answers_if_asked: Array<{ id: string; about: string; says: string; with: string[] }>;
+  says_first: Array<{ id: string; says: string; names_spot?: NamedSpot; with: Rider[] }>;
+  answers_if_asked: Array<{ id: string; about: string; says: string; names_spot?: NamedSpot; with: Rider[] }>;
   gates: TalkGate[];
   /** Tells shown when a subject comes up. */
-  shows_when: Array<{ id: string; subject: string; does: string }>;
-  /** The character's statements so far, in the order said. */
+  shows_when: Array<{ id: string; subject: string; does: string; names_spot?: NamedSpot }>;
+  /** The character's statements so far, in the order said, as their notebook lines read. */
   story_so_far: Array<{ says: string; taken_back: boolean }>;
   /** What the character's tells have already shown. */
   established: string[];
@@ -104,23 +119,43 @@ function demeanorFor(graph: ClueGraphCase, character: string, stance: Stance): s
   return lines[found]!;
 }
 
-function text(graph: ClueGraphCase, id: string): string {
-  return graph.clues[id].fact;
+/**
+ * How the narrator is handed a clue: a held one as its saved notebook line, so
+ * wording does not drift; one not yet out as its fact, to word.
+ */
+function text(graph: ClueGraphCase, play: ClueGraphPlay, id: string): string {
+  return lineOf(graph, play, id);
 }
 
-/** The texts of the tells that come out with a statement. */
-function riders(graph: ClueGraphCase, id: string): string[] {
-  return ridersOf(graph, id).map((rider) => text(graph, rider));
+/** The hidden spot a clue points at, when it is a spot's `revealed_by`. */
+export function namedSpotOf(graph: ClueGraphCase, id: string): NamedSpot | undefined {
+  for (const place of Object.values(graph.locations)) {
+    const spot = place.spots.find((entry) => entry.revealed_by === id);
+    if (spot) return { spot: spot.name, location: place.name };
+  }
+  return undefined;
 }
 
-function openerOf(graph: ClueGraphCase, gate: ClueGraphGate, held: (id: string) => boolean): GateOpener {
+/** A pointer's spot, as an entry's optional field. */
+function spotField(graph: ClueGraphCase, id: string): { names_spot?: NamedSpot } {
+  const named = namedSpotOf(graph, id);
+  return named ? { names_spot: named } : {};
+}
+
+/** The tells that come out with a statement. */
+function riders(graph: ClueGraphCase, play: ClueGraphPlay, id: string): Rider[] {
+  return ridersOf(graph, id).map((rider) => ({ id: rider, does: text(graph, play, rider), ...spotField(graph, rider) }));
+}
+
+function openerOf(graph: ClueGraphCase, play: ClueGraphPlay, gate: ClueGraphGate): GateOpener {
+  const held = holds(play);
   const opener: GateOpener = {};
   if (gate.use) {
     const match = "any" in gate.use ? "any" : "all";
     const ids = "any" in gate.use ? gate.use.any : gate.use.all;
     opener.show = {
       match,
-      clues: ids.map((id) => ({ id, text: text(graph, id), held: held(id) })),
+      clues: ids.map((id) => ({ id, text: text(graph, play, id), held: held(id) })),
     };
   }
   if (gate.line) opener.line = gate.line.text;
@@ -155,7 +190,7 @@ function keepsBack(
       if (plain && saying.has(target) && !play.retracted.includes(target)) out.add(target);
     }
   }
-  return [...out].map((id) => text(graph, id));
+  return [...out].map((id) => text(graph, play, id));
 }
 
 /** The whole talk input for one character on this line, besides personality and reading level. */
@@ -164,7 +199,6 @@ export function talkState(
   play: ClueGraphPlay,
   character: string,
 ): ClueGraphTalkState {
-  const held = holds(play);
   const mine = new Set(cluesOf(graph, character));
   const gates = availableGates(graph, play, character);
   const stance = stanceOf(graph, play, character);
@@ -175,33 +209,35 @@ export function talkState(
     demeanor: demeanorFor(graph, character, stance),
     says_first: nextFirstWords(graph, play, character).map((id) => ({
       id,
-      says: text(graph, id),
-      with: riders(graph, id),
+      says: text(graph, play, id),
+      ...spotField(graph, id),
+      with: riders(graph, play, id),
     })),
     answers_if_asked: askable(graph, play, character).map((id) => {
       const clue = graph.clues[id];
       const about = clue.kind === "statement" && clue.reached.by === "asked" ? clue.reached.about : "";
-      return { id, about, says: clue.fact, with: riders(graph, id) };
+      return { id, about, says: clue.fact, ...spotField(graph, id), with: riders(graph, play, id) };
     }),
     gates: gates.map(({ id, bluffable }) => ({
       id,
-      opens_with: openerOf(graph, gateOf(graph.clues[id])!, held),
+      opens_with: openerOf(graph, play, gateOf(graph.clues[id])!),
       bluffable,
-      says: text(graph, id),
-      with: riders(graph, id),
-      takes_back: takesBack(graph, id).map((target) => text(graph, target)),
+      says: text(graph, play, id),
+      ...spotField(graph, id),
+      with: riders(graph, play, id),
+      takes_back: takesBack(graph, id).map((target) => text(graph, play, target)),
     })),
     shows_when: subjectTells(graph, play, character).map((id) => {
       const clue = graph.clues[id];
       const subject = clue.kind === "tell" && clue.reached.by === "seen" ? clue.reached.subject : "";
-      return { id, subject: subject ?? "", does: clue.fact };
+      return { id, subject: subject ?? "", does: clue.fact, ...spotField(graph, id) };
     }),
     story_so_far: said
       .filter((id) => graph.clues[id].kind === "statement")
-      .map((id) => ({ says: text(graph, id), taken_back: play.retracted.includes(id) })),
+      .map((id) => ({ says: text(graph, play, id), taken_back: play.retracted.includes(id) })),
     established: said
       .filter((id) => graph.clues[id].kind === "tell")
-      .map((id) => text(graph, id)),
+      .map((id) => text(graph, play, id)),
     keeps_back: keepsBack(graph, play, character, new Set(gates.map((gate) => gate.id))),
   };
 }

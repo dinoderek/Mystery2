@@ -204,7 +204,7 @@ function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffe
       narration_parts: event.narration_parts,
     })),
     state: effect.state,
-    revealed_clues: graph && marks ? markClues(graph, outcome.revealed_clues, marks.taken_back) : outcome.revealed_clues,
+    revealed_clues: graph && marks ? markClues(graph, outcome.revealed_clues, marks) : outcome.revealed_clues,
     ...(marks ? { leads: marks.leads, taken_back: marks.taken_back } : {}),
     result: outcome.result,
   };

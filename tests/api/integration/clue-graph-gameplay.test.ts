@@ -12,6 +12,10 @@ import {
   validateClueGraph,
 } from "@my2/shared";
 import { API_URL, TEST_CONFIG_ROOT, patchStoredSession, readStoredEvents, sendLine, setupApiTestAuth } from "./helpers.ts";
+import { mockNotebookLine } from "../../../packages/game-engine/src/ai-provider.ts";
+import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
+import { notebook } from "../../../packages/game-engine/src/clue-graph/leads.ts";
+import { replay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 
 const GREENHOUSE = clueGraphCaseId("greenhouse-prizewinner");
 const FIXTURE_ID = "greenhouse-on-disk";
@@ -62,18 +66,19 @@ describe("selectable clue-graph case", () => {
 
       writeFixture("EDITED ON DISK");
       const turn = GameTurnResponseSchema.parse(await (await sendLine(auth, started.game_id, "search the smashed pumpkin")).json());
-      expect(turn.kind === "turn" && turn.revealed_clues.map((clue) => clue.text)).toEqual([
-        "Small club-welly prints squelch through the pumpkin mush.",
-      ]);
+      const line = mockNotebookLine("Small club-welly prints squelch through the pumpkin mush.");
+      expect(turn.kind === "turn" && turn.revealed_clues.map((clue) => clue.text)).toEqual([line]);
       const stored = readStoredEvents(started.game_id).at(-1);
-      expect(stored?.payload?.clue_graph).toEqual({ type: "search", spot: "the smashed pumpkin" });
+      expect(stored?.payload?.clue_graph).toEqual({
+        type: "search",
+        spot: "the smashed pumpkin",
+        notebook: { clue_welly_prints: line },
+      });
 
       const resumed = GameGetResponseSchema.parse(
         await (await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers })).json(),
       );
-      expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([
-        "Small club-welly prints squelch through the pumpkin mush.",
-      ]);
+      expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([line]);
       expect(JSON.stringify(resumed)).not.toMatch(/clue_graph_snapshot|"truth"|"conclusions"|EDITED ON DISK/);
     } finally {
       fs.rmSync(FIXTURE_FILE, { force: true });
@@ -156,6 +161,56 @@ describe("selectable clue-graph case", () => {
       taken_back: true,
     });
     expect(JSON.stringify([greeting, retraction, resumed])).not.toMatch(/"truth"|"rule"|toby_confession|clue_graph_snapshot/);
+  });
+
+  it("reads the same notebook live, on resume and replayed from the saved events", async () => {
+    const graph = validateClueGraph(
+      JSON.parse(fs.readFileSync(path.join(process.cwd(), "blueprints/clue-graph/greenhouse-prizewinner.json"), "utf8")),
+    );
+    const lines = [
+      "search",
+      "search the smashed pumpkin",
+      "go to the workshop",
+      "talk to Mr. Dobbs",
+      "What about the noise last night?",
+      "bye",
+      "go to the potting shed",
+      "talk to Toby",
+      "What about the missing key?",
+      "bye",
+      "go to the garden",
+      "talk to Mr. Thorne",
+      "Look at these: clue_boot_prints",
+    ];
+    const playGame = async (name: string) => {
+      const auth = await setupApiTestAuth(name);
+      const started = await start(auth, GREENHOUSE);
+      const live: Array<[string, string]> = [];
+      for (const line of lines) {
+        const answer = GameTurnResponseSchema.parse(await (await sendLine(auth, started.game_id, line)).json());
+        if (answer.kind !== "turn") throw new Error(`Not a turn: ${line}`);
+        live.push(...answer.revealed_clues.map((clue): [string, string] => [clue.id, clue.text]));
+      }
+      const resumed = GameGetResponseSchema.parse(
+        await (await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers })).json(),
+      );
+      const folded = notebook(graph, replay(graph, clueGraphEvents(readStoredEvents(started.game_id))));
+      return {
+        live,
+        resumed: (resumed.state.discovered_clues ?? []).map((clue): [string, string] => [clue.id, clue.text]),
+        replayed: folded.map((entry): [string, string] => [entry.id, entry.text]),
+      };
+    };
+
+    const first = await playGame("clue-graph-replay-a");
+    // Tells are in it, and every entry is the narrator's line, not the fact.
+    expect(first.live.map(([id]) => id)).toContain("react_dobbs_slippers");
+    expect(first.live.length).toBeGreaterThan(8);
+    for (const [id, text] of first.live) expect(text).toBe(mockNotebookLine(graph.clues[id].fact));
+    expect(first.resumed).toEqual(first.live);
+    expect(first.replayed).toEqual(first.live);
+    // The same lines played again give the same notebook.
+    expect((await playGame("clue-graph-replay-b")).resumed).toEqual(first.resumed);
   });
 
   it("keeps the session to its owner", async () => {

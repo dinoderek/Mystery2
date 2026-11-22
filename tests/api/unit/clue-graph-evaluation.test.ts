@@ -272,12 +272,11 @@ describe("self-play's case lookup", () => {
     expect(path.basename(found.file)).toBe("greenhouse-prizewinner.json");
   });
 
-  it("counts the notebook's clues, not the tells no clue depends on", async () => {
+  it("counts every clue the notebook can record, tells included", async () => {
     const { blueprint } = await readBlueprint(GREENHOUSE_FILE, ROOT);
     const graph = blueprint.clue_graph!;
     const total = countBlueprintClues({ ...blueprint, clue_graph: graph } as never);
-    expect(total).toBeGreaterThan(0);
-    expect(total).toBeLessThan(Object.keys(graph.clues).length);
+    expect(total).toBe(Object.keys(graph.clues).length);
   });
 });
 

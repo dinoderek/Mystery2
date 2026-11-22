@@ -50,7 +50,6 @@ interface Step {
   event: ClueGraphEvent;
   turns: number;
   revealed: string[];
-  notebook: string[];
   /** Leads by key; a `*` marks one new this turn. */
   leads: string[];
   retracted: string[];
@@ -70,12 +69,7 @@ interface TalkSummary {
 }
 
 const ALL_MEET = ["meet:hale", "meet:toby", "meet:mia", "meet:dobbs", "meet:thorne"];
-const SEARCHED = ["clue_glass_outside", "clue_welly_prints", "clue_boot_prints"];
-const TOBY_GREETING = ["toby_alibi", "toby_blames_thorne", "clue_toby_thorne_ladder"];
-const TOBY_LINES = [...TOBY_GREETING, "toby_drops_burglar", "toby_blames_mia"];
 const THORNE = ["thorne_alibi", "clue_thorne_mia_cake", "thorne_never_set_foot"];
-const BEFORE_DOBBS = [...SEARCHED, ...TOBY_LINES, "mia_alibi", ...THORNE, "clue_thorne_measured"];
-const AFTER_DOBBS = [...BEFORE_DOBBS, "dobbs_rounds", "react_dobbs_slippers", "clue_dobbs_crash_time"];
 const SOLVED = ["nobody_broke_in", "prints_explained", "mia_cleared", "culprit_toby"];
 
 const SCRIPT: Step[] = [
@@ -83,7 +77,6 @@ const SCRIPT: Step[] = [
     event: { type: "search", spot: "the broken side window" },
     turns: 1,
     revealed: ["clue_glass_outside"],
-    notebook: ["clue_glass_outside"],
     leads: ALL_MEET,
     retracted: [],
     conclusions: ["nobody_broke_in"],
@@ -92,7 +85,6 @@ const SCRIPT: Step[] = [
     event: { type: "search", spot: "the smashed pumpkin" },
     turns: 2,
     revealed: ["clue_welly_prints"],
-    notebook: SEARCHED.slice(0, 2),
     leads: ALL_MEET,
     retracted: [],
     conclusions: ["nobody_broke_in"],
@@ -101,7 +93,6 @@ const SCRIPT: Step[] = [
     event: { type: "search" },
     turns: 3,
     revealed: ["clue_boot_prints"],
-    notebook: SEARCHED,
     leads: ALL_MEET,
     retracted: [],
     conclusions: ["nobody_broke_in"],
@@ -110,7 +101,6 @@ const SCRIPT: Step[] = [
     event: { type: "move", location: "potting_shed" },
     turns: 4,
     revealed: [],
-    notebook: SEARCHED,
     leads: ALL_MEET,
     retracted: [],
     conclusions: ["nobody_broke_in"],
@@ -119,7 +109,6 @@ const SCRIPT: Step[] = [
     event: { type: "talk", character: "toby" },
     turns: 5,
     revealed: ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne", "clue_toby_thorne_ladder"],
-    notebook: [...SEARCHED, ...TOBY_GREETING],
     leads: ["meet:hale", "*talk:toby", "meet:mia", "meet:dobbs", "meet:thorne"],
     retracted: [],
     conclusions: ["nobody_broke_in"],
@@ -137,7 +126,6 @@ const SCRIPT: Step[] = [
     event: line("toby", { opened: ["toby_drops_burglar"] }),
     turns: 5,
     revealed: ["toby_drops_burglar"],
-    notebook: [...SEARCHED, ...TOBY_LINES.slice(0, 4)],
     leads: ["meet:hale", "talk:toby", "meet:mia", "meet:dobbs", "meet:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -155,7 +143,6 @@ const SCRIPT: Step[] = [
     event: line("toby", { opened: ["toby_blames_mia"] }),
     turns: 5,
     revealed: ["toby_blames_mia"],
-    notebook: [...SEARCHED, ...TOBY_LINES],
     leads: ["meet:hale", "meet:mia", "meet:dobbs", "meet:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -173,7 +160,6 @@ const SCRIPT: Step[] = [
     event: { type: "talk", character: "mia" },
     turns: 6,
     revealed: ["mia_alibi", "react_mia_pen"],
-    notebook: [...SEARCHED, ...TOBY_LINES, "mia_alibi"],
     leads: ["meet:hale", "*talk:mia", "meet:dobbs", "meet:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -191,7 +177,6 @@ const SCRIPT: Step[] = [
     event: { type: "move", location: "thorne_garden" },
     turns: 7,
     revealed: [],
-    notebook: [...SEARCHED, ...TOBY_LINES, "mia_alibi"],
     leads: ["meet:hale", "talk:mia", "meet:dobbs", "meet:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -200,7 +185,6 @@ const SCRIPT: Step[] = [
     event: { type: "talk", character: "thorne" },
     turns: 8,
     revealed: ["thorne_alibi", "clue_thorne_mia_cake", "thorne_never_set_foot", "react_thorne_boot"],
-    notebook: [...SEARCHED, ...TOBY_LINES, "mia_alibi", ...THORNE],
     leads: ["meet:hale", "*talk:toby", "talk:mia", "meet:dobbs", "*talk:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -218,7 +202,6 @@ const SCRIPT: Step[] = [
     event: line("thorne", { opened: ["clue_thorne_measured"] }),
     turns: 8,
     revealed: ["clue_thorne_measured"],
-    notebook: BEFORE_DOBBS,
     leads: ["meet:hale", "talk:toby", "talk:mia", "meet:dobbs", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: ["nobody_broke_in", "prints_explained"],
@@ -236,7 +219,6 @@ const SCRIPT: Step[] = [
     event: { type: "move", location: "workshop" },
     turns: 9,
     revealed: [],
-    notebook: BEFORE_DOBBS,
     leads: ["meet:hale", "talk:toby", "talk:mia", "meet:dobbs", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: ["nobody_broke_in", "prints_explained"],
@@ -245,7 +227,6 @@ const SCRIPT: Step[] = [
     event: { type: "talk", character: "dobbs" },
     turns: 10,
     revealed: ["dobbs_rounds", "react_dobbs_slippers"],
-    notebook: [...BEFORE_DOBBS, "dobbs_rounds", "react_dobbs_slippers"],
     leads: ["meet:hale", "talk:toby", "talk:mia", "*talk:dobbs", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: ["nobody_broke_in", "prints_explained"],
@@ -263,7 +244,6 @@ const SCRIPT: Step[] = [
     event: line("dobbs", { asked: ["clue_dobbs_crash_time"] }),
     turns: 10,
     revealed: ["clue_dobbs_crash_time"],
-    notebook: AFTER_DOBBS,
     leads: ["meet:hale", "talk:toby", "talk:mia", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: SOLVED,
@@ -281,7 +261,6 @@ const SCRIPT: Step[] = [
     event: { type: "move", location: "potting_shed" },
     turns: 11,
     revealed: [],
-    notebook: AFTER_DOBBS,
     leads: ["meet:hale", "talk:toby", "talk:mia", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: SOLVED,
@@ -290,7 +269,6 @@ const SCRIPT: Step[] = [
     event: { type: "talk", character: "toby" },
     turns: 12,
     revealed: [],
-    notebook: AFTER_DOBBS,
     leads: ["meet:hale", "talk:toby", "talk:mia", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot"],
     conclusions: SOLVED,
@@ -308,7 +286,6 @@ const SCRIPT: Step[] = [
     event: line("toby", { opened: ["toby_not_mia"] }),
     turns: 12,
     revealed: ["toby_not_mia"],
-    notebook: [...AFTER_DOBBS, "toby_not_mia"],
     leads: ["meet:hale", "talk:toby", "talk:mia", "talk:thorne"],
     retracted: ["toby_blames_thorne", "thorne_never_set_foot", "toby_blames_mia"],
     conclusions: SOLVED,
@@ -333,7 +310,6 @@ const SCRIPT: Step[] = [
     event: line("toby", { opened: ["toby_confession"] }),
     turns: 12,
     revealed: ["toby_confession"],
-    notebook: [...AFTER_DOBBS, "toby_not_mia", "toby_confession"],
     leads: ["meet:hale", "talk:mia", "talk:thorne"],
     retracted: [
       "toby_blames_thorne",
@@ -400,7 +376,8 @@ describe("the greenhouse scripted play", () => {
       expect(revealed).toEqual(step.revealed);
       expect(rejected).toEqual([]);
       expect(derived.play.turns).toBe(step.turns);
-      expect(derived.notebook.map((entry) => entry.id)).toEqual(step.notebook);
+      // The notebook records every clue that came out, tells included, in order.
+      expect(derived.notebook.map((entry) => entry.id)).toEqual(SCRIPT.slice(0, index + 1).flatMap((entry) => entry.revealed));
       expect(derived.leads.map((lead) => (lead.new ? "*" : "") + lead.key)).toEqual(step.leads);
       expect(derived.play.retracted).toEqual(step.retracted);
       expect(derived.conclusions).toEqual(step.conclusions);
@@ -429,9 +406,16 @@ describe("the greenhouse scripted play", () => {
     const greeted = talkState(graph, replay(graph, [SHED, { type: "talk", character: "toby" }]), "toby");
     expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.fact]);
     expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.fact, graph.clues.react_toby_trainers.fact]);
-    expect(state.says_first[0]).toEqual({ id: "toby_alibi", says: graph.clues.toby_alibi.fact, with: [graph.clues.react_toby_sweeping.fact, graph.clues.react_toby_trainers.fact] });
+    expect(state.says_first[0]).toEqual({
+      id: "toby_alibi",
+      says: graph.clues.toby_alibi.fact,
+      with: [
+        { id: "react_toby_sweeping", does: graph.clues.react_toby_sweeping.fact },
+        { id: "react_toby_trainers", does: graph.clues.react_toby_trainers.fact },
+      ],
+    });
     expect(greeted.answers_if_asked).toEqual([
-      { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.fact, with: [graph.clues.react_toby_pocket.fact] },
+      { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.fact, with: [{ id: "react_toby_pocket", does: graph.clues.react_toby_pocket.fact }] },
     ]);
   });
 });

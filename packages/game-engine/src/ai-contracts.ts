@@ -8,7 +8,9 @@ export type AIRoleName =
   | "search"
   | "accusation_start"
   | "accusation_judge"
-  | "graph_talk";
+  | "graph_talk"
+  // A clue-graph search: the "search" contract, plus a notebook line.
+  | "graph_search";
 
 // Prompt templates are keyed per concrete prompt. The "search" ROLE (output
 // contract) stays, but it has no template of its own: the handler always picks
@@ -16,9 +18,7 @@ export type AIRoleName =
 export type AIPromptKey =
   | Exclude<AIRoleName, "search">
   | "search_bare"
-  | "search_targeted"
-  // A clue-graph search: the "search" contract, with its own prompt.
-  | "graph_search";
+  | "search_targeted";
 
 export type AccusationResolution = "win" | "lose" | "continue";
 
@@ -49,15 +49,25 @@ export interface TalkConversationOutput {
   new_commitments: string[];
 }
 
+// The narrator's notebook line for one clue a clue-graph turn brings out. The
+// engine saves it with the event; a turn whose lines are not exactly its clues
+// fails before anything is saved (`turn/resolve-clue-graph.ts`).
+export interface NotebookLine {
+  id: string;
+  line: string;
+}
+
 // One clue-graph talk line, greeting included (`docs/clue-graph.md`): the
-// narration, and the ids from the character's state the line earned. The engine
-// keeps only what the state offered and refuses the rest.
+// narration, the ids from the character's state the line earned, and a
+// notebook line for every clue that comes out. The engine keeps only what the
+// state offered and refuses the rest.
 export interface GraphTalkOutput {
   narration: string;
   // Gates the line opened.
   opened: string[];
   // Questions it answered, and subject tells it brought out.
   answered: string[];
+  notebook: NotebookLine[];
   // False for gibberish: an in-character "what?", and nothing earned.
   input_understood: boolean;
 }
@@ -74,6 +84,11 @@ export interface SearchOutput {
   // narration is then an in-character "what?" beat; the backend reveals no clue
   // and charges no turn. Defaults to true when the model omits it.
   input_understood: boolean;
+}
+
+// A clue-graph search: the search contract, with the found clue's notebook line.
+export interface GraphSearchOutput extends SearchOutput {
+  notebook: NotebookLine[];
 }
 
 export interface AccusationStartOutput {
@@ -208,21 +223,41 @@ const TalkConversationOutputSchema = roleObject({
   };
 });
 
+// Notebook lines the model should always state: a missing list is empty, but
+// an entry without an id or a line breaks the turn, so a blank line is never
+// saved.
+const notebookLines = z.preprocess(
+  (value) => (value === undefined || value === null ? [] : value),
+  z.array(
+    z.object({ id: nonEmptyString("notebook id"), line: nonEmptyString("notebook line") }),
+    { invalid_type_error: `"notebook" must be a list of { id, line }` },
+  ),
+);
+
 const GraphTalkOutputSchema = roleObject({
   narration: narrationText(),
   opened: idList,
   answered: idList,
+  notebook: notebookLines,
   input_understood: flagDefaultingTo(true),
 }).transform((output): GraphTalkOutput => ({
   ...output,
   // An unintelligible line earns nothing, whatever the model listed.
   opened: output.input_understood ? [...new Set(output.opened)] : [],
   answered: output.input_understood ? [...new Set(output.answered)] : [],
+  notebook: output.input_understood ? output.notebook : [],
 }));
 
 const TalkEndOutputSchema = roleObject({
   narration: narrationText(),
 });
+
+const searchFields = {
+  narration: narrationText(),
+  revealed_clue_id: nullableNonEmptyString("revealed_clue_id"),
+  costs_turn: flagDefaultingTo(true),
+  input_understood: flagDefaultingTo(true),
+};
 
 const SearchOutputSchema = z.preprocess(
   // An unintelligible search reveals nothing, so whatever the model put in
@@ -231,14 +266,21 @@ const SearchOutputSchema = z.preprocess(
     isRecord(value) && value.input_understood === false
       ? { ...value, revealed_clue_id: null }
       : value,
-  roleObject({
-    narration: narrationText(),
-    revealed_clue_id: nullableNonEmptyString("revealed_clue_id"),
-    costs_turn: flagDefaultingTo(true),
-    input_understood: flagDefaultingTo(true),
-  }).transform((output): SearchOutput => ({
+  roleObject(searchFields).transform((output): SearchOutput => ({
     ...output,
     // An unintelligible search never charges a turn.
+    costs_turn: output.input_understood ? output.costs_turn : false,
+  })),
+);
+
+const GraphSearchOutputSchema = z.preprocess(
+  // An unintelligible search reveals nothing and writes nothing down.
+  (value) =>
+    isRecord(value) && value.input_understood === false
+      ? { ...value, revealed_clue_id: null, notebook: [] }
+      : value,
+  roleObject({ ...searchFields, notebook: notebookLines }).transform((output): GraphSearchOutput => ({
+    ...output,
     costs_turn: output.input_understood ? output.costs_turn : false,
   })),
 );
@@ -268,6 +310,7 @@ const ROLE_OUTPUT_SCHEMAS = {
   accusation_start: AccusationStartOutputSchema,
   accusation_judge: AccusationJudgeOutputSchema,
   graph_talk: GraphTalkOutputSchema,
+  graph_search: GraphSearchOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
 function parseRoleOutput<S extends z.ZodTypeAny>(
@@ -322,6 +365,10 @@ export function parseTalkEndOutput(value: unknown): TalkEndOutput {
 
 export function parseSearchOutput(value: unknown): SearchOutput {
   return parseRoleOutput("search", SearchOutputSchema, value);
+}
+
+export function parseGraphSearchOutput(value: unknown): GraphSearchOutput {
+  return parseRoleOutput("graph_search", GraphSearchOutputSchema, value);
 }
 
 export function parseAccusationStartOutput(

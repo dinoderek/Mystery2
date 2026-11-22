@@ -1,7 +1,7 @@
 {
   "dimension_id": "gm_clue_discipline",
   "context": null,
-  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nClue discipline: check a gated clue against its gate, not against \"requires\": its \"after\" clues are in prior_revealed_clue_ids, and its \"use\" clues were shown (a physical gate needs them held). A bluffable gate released on a believable bluff is earned. A clue delivered in the narration but not in revealed_clue_ids is unrecorded; a tell no other clue depends on is shown in prose and never recorded, so its absence from revealed_clue_ids is not a finding.",
+  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. A turn's notebook holds, for each clue it recorded, tells included, the line the narrator wrote for the player to keep. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nClue discipline: check a gated clue against its gate, not against \"requires\": its \"after\" clues are in prior_revealed_clue_ids, and its \"use\" clues were shown (a physical gate needs them held). A bluffable gate released on a believable bluff is earned. A clue delivered in the narration but not in revealed_clue_ids is unrecorded. A notebook line that drops or changes a name, time, place or object of its clue's fact is a finding.",
   "blueprint": {
     "schema_version": "clue-graph/2",
     "id": "9afa1ef4-b543-81b5-a50f-4a366ec7e2ef",
@@ -1329,6 +1329,9 @@
           "clue_welly_prints"
         ],
         "revealed_off_script": [],
+        "notebook": {
+          "clue_welly_prints": "Small leaf-pattern welly prints in the pumpkin mush. Only Toby and Mia have leaf wellies."
+        },
         "narration": "In the pulp you see the print of a welly.",
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
@@ -1362,6 +1365,10 @@
           "react_dobbs_slippers"
         ],
         "revealed_off_script": [],
+        "notebook": {
+          "dobbs_rounds": "Mr. Dobbs says Bertha was whole on his 8pm rounds.",
+          "react_dobbs_slippers": "Mr. Dobbs rubbed his neck and glanced at the garden window."
+        },
         "narration": "Mr. Dobbs peers over his glasses. \"I saw her whole at eight,\" he says.",
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
@@ -1380,6 +1387,9 @@
           "clue_dobbs_crash_time"
         ],
         "revealed_off_script": [],
+        "notebook": {
+          "clue_dobbs_crash_time": "Mr. Dobbs says he heard a big thud from the garden at about ten to nine."
+        },
         "narration": "\"A crash near ten,\" says Mr. Dobbs, rubbing his slippers.",
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [

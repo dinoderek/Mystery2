@@ -1,6 +1,6 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
 import { withCallLog } from "./ai-call-log.ts";
-import { readArrivalPrompt } from "./ai-prompts.ts";
+import { readArrivalPrompt, readOpeningFacts } from "./ai-prompts.ts";
 import {
   ClaudeCliProvider,
   type ClaudeCliRuntimeConfig,
@@ -8,6 +8,7 @@ import {
 import { RetriableAIError } from "./errors.ts";
 import { searchNamesSpot } from "./search-target.ts";
 import type { GraphSearchContext, GraphTalkContext } from "./clue-graph/narrator-context.ts";
+import type { NamedSpot, Rider } from "./clue-graph/talk-state.ts";
 
 export type AIProviderName = "mock" | "openrouter" | "claude-cli";
 
@@ -159,28 +160,68 @@ function mockUseAndCommitments(
  * like "asdfgh") reads as nonsense; anything with a vowel is treated as
  * understood. The live provider judges this via the prompt instead.
  */
+/** A clue as the mock words it: the fact as given, and a pointer's spot named. */
+function mockWording(text: string, spot?: NamedSpot): string {
+  return spot ? `${text} (That points to ${spot.spot} in ${spot.location}.)` : text;
+}
+
+/** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */
+export function mockNotebookLine(text: string, spot?: NamedSpot): string {
+  return `[Mock] ${mockWording(text, spot)}`;
+}
+
+/** A clue that comes out on a mock line: said, or (for a tell) seen, which the narration puts in brackets. */
+interface MockEntry {
+  id: string;
+  text: string;
+  seen?: true;
+  names_spot?: NamedSpot;
+}
+
+function entryAndRiders(id: string, text: string, spot: NamedSpot | undefined, riders: Rider[]): MockEntry[] {
+  return [
+    { id, text, ...(spot ? { names_spot: spot } : {}) },
+    ...riders.map((rider): MockEntry => ({ id: rider.id, text: rider.does, seen: true, ...(rider.names_spot ? { names_spot: rider.names_spot } : {}) })),
+  ];
+}
+
+function mockSaid(entries: MockEntry[]): { said: string[]; notebook: Array<{ id: string; line: string }> } {
+  return {
+    said: entries.map((entry) => {
+      const worded = mockWording(entry.text, entry.names_spot);
+      return entry.seen ? `(${worded})` : worded;
+    }),
+    notebook: entries.map((entry) => ({ id: entry.id, line: mockNotebookLine(entry.text, entry.names_spot) })),
+  };
+}
+
 /**
  * The mock's clue-graph talk line, as the live narrator is asked to judge it
  * (`clue-graph/prompts.ts`), from the words alone: a question about an answer's
  * "about" answers it; naming a subject shows its tell; a gate opens when the
  * line names its show clues (held, or any clue for a bluffable gate), names the
  * gate's own id for a worded line, or asks for "the truth" when it is asked
- * plainly.
+ * plainly. A line with "know" in it shares what the character knows; a line
+ * that earns and shares nothing gets a plain "I don't know". Every clue that
+ * comes out gets its notebook line; a first meeting shows how they look.
  */
 export function mockGraphTalk(context: GraphTalkContext, playerInput: string | null): Record<string, unknown> {
   const { character, state } = context;
-  const firstWords = state.says_first.map((entry) => [entry.says, ...entry.with].join(" "));
+  const firstWords = state.says_first.flatMap((entry) => entryAndRiders(entry.id, entry.says, entry.names_spot, entry.with));
   if (playerInput === null) {
-    const greeting = firstWords.length > 0 ? ` ${character.name} says: ${firstWords.join(" ")}` : "";
+    const { said, notebook } = mockSaid(firstWords);
+    const looks = character.appearance ? ` ${character.appearance.join(" ")}` : "";
+    const greeting = said.length > 0 ? ` ${character.name} says: ${said.join(" ")}` : "";
     return {
-      narration: `[Mock] ${character.name} is here in ${context.location_name}.${greeting}`,
+      narration: `[Mock] ${character.name} is here in ${context.location_name}.${looks}${greeting}`,
       opened: [],
       answered: [],
+      notebook,
       input_understood: true,
     };
   }
   if (looksUnintelligible(playerInput)) {
-    return { narration: `[Mock] ${character.name} blinked. "Sorry — what?"`, opened: [], answered: [], input_understood: false };
+    return { narration: `[Mock] ${character.name} blinked. "Sorry — what?"`, opened: [], answered: [], notebook: [], input_understood: false };
   }
   const line = playerInput.toLowerCase();
   const names = (text: string) => line.includes(text.toLowerCase());
@@ -194,18 +235,21 @@ export function mockGraphTalk(context: GraphTalkContext, playerInput: string | n
     const usable = show.clues.filter((clue) => names(clue.id) && (clue.held || gate.bluffable));
     return show.match === "all" ? usable.length === show.clues.length : usable.length > 0;
   });
-  const said = [
+  const { said, notebook } = mockSaid([
     ...firstWords,
-    ...answers.map((entry) => [entry.says, ...entry.with].join(" ")),
-    ...tells.map((entry) => `(${entry.does})`),
-    ...gates.map((gate) => [gate.says, ...gate.with].join(" ")),
-  ];
+    ...answers.flatMap((entry) => entryAndRiders(entry.id, entry.says, entry.names_spot, entry.with)),
+    ...tells.map((entry): MockEntry => ({ id: entry.id, text: entry.does, seen: true, ...(entry.names_spot ? { names_spot: entry.names_spot } : {}) })),
+    ...gates.flatMap((gate) => entryAndRiders(gate.id, gate.says, gate.names_spot, gate.with)),
+  ]);
+  const shared = /\bknow\b/.test(line) ? character.knows.map((known) => known.fact) : [];
+  const spoken = [...said, ...shared];
   return {
-    narration: said.length > 0
-      ? `[Mock] ${character.name} says: ${said.join(" ")}`
-      : `[Mock] ${character.name} thinks about your question: "${playerInput}".`,
+    narration: spoken.length > 0
+      ? `[Mock] ${character.name} says: ${spoken.join(" ")}`
+      : `[Mock] ${character.name} says: "I don't know."`,
     opened: gates.map((gate) => gate.id),
     answered: [...answers, ...tells].map((entry) => entry.id),
+    notebook,
     input_understood: true,
   };
 }
@@ -219,6 +263,7 @@ export function mockGraphSearch(context: GraphSearchContext): Record<string, unk
       revealed_clue_id: null,
       costs_turn: false,
       input_understood: false,
+      notebook: [],
     };
   }
   const { outcome } = context;
@@ -226,11 +271,12 @@ export function mockGraphSearch(context: GraphSearchContext): Record<string, unk
   const found = outcome.kind === "known" ? outcome.finds : null;
   return {
     narration: found
-      ? `[Mock] You search ${where} and uncover a clue: ${found.text}`
+      ? `[Mock] You search ${where} and uncover a clue: ${mockWording(found.text, found.names_spot)}`
       : `[Mock] You search ${where}, but find nothing new.`,
     revealed_clue_id: found?.id ?? null,
     costs_turn: true,
     input_understood: true,
+    notebook: found ? [{ id: found.id, line: mockNotebookLine(found.text, found.names_spot) }] : [],
   };
 }
 
@@ -379,11 +425,16 @@ class MockAIProvider implements AIProvider {
   async generateNarration(prompt: string): Promise<string> {
     // An arrival names the place and who is there — names only, so nothing
     // from a present character's manner or tells ever reaches the transcript.
+    // A clue-graph arrival also states the place's facts, as given.
     const arrival = readArrivalPrompt(prompt);
     if (arrival) {
+      const facts = arrival.facts ? ` ${arrival.facts.join(" ")}` : "";
       const present = arrival.character_names.map((name) => ` ${name} is here.`).join("");
-      return `[Mock] You arrive at ${arrival.destination_name}.${present}`;
+      return `[Mock] You arrive at ${arrival.destination_name}.${facts}${present}`;
     }
+    // A clue-graph opening states its facts, as given.
+    const opening = readOpeningFacts(prompt);
+    if (opening) return `[Mock] ${opening.join(" ")}`;
     return `[Mock] Narration for: ${prompt.slice(0, 70)}...`;
   }
 
@@ -531,9 +582,12 @@ class MockAIProvider implements AIProvider {
         if (!graphTalk) throw new Error("Mock AI graph_talk requires graph_talk_context");
         return mockGraphTalk(graphTalk, readOptionalContextString(context, "player_input"));
       }
-      case "search": {
+      case "graph_search": {
         const graphSearch = context.graph_search_context as GraphSearchContext | undefined;
-        if (graphSearch) return mockGraphSearch(graphSearch);
+        if (!graphSearch) throw new Error("Mock AI graph_search requires graph_search_context");
+        return mockGraphSearch(graphSearch);
+      }
+      case "search": {
         const searchContext = context.search_context as
           | {
             location_name?: string | null;

@@ -9,6 +9,7 @@ import {
   availableGates,
   gateOf,
   holds,
+  lineOf,
   nextFirstWords,
   replay,
   searchKey,
@@ -35,25 +36,6 @@ export interface NotebookEntry {
   taken_back: boolean;
 }
 
-/** Tells another clue depends on: they hint at a gate, prompt a question, open a spot or a gate. */
-export function recordedTells(graph: ClueGraphCase): Set<string> {
-  const named = new Set<string>();
-  for (const clue of Object.values(graph.clues)) {
-    if (clue.kind !== "statement") continue;
-    const { reached } = clue;
-    if (reached.by === "asked") reached.prompted_by.forEach((id) => named.add(id));
-    if (reached.by !== "gated") continue;
-    const { gate } = reached;
-    if (gate.line?.hinted_by) named.add(gate.line.hinted_by);
-    if (gate.use) ("any" in gate.use ? gate.use.any : gate.use.all).forEach((id) => named.add(id));
-  }
-  for (const location of Object.values(graph.locations))
-    location.spots.forEach((spot) => spot.revealed_by && named.add(spot.revealed_by));
-  return new Set(
-    Object.keys(graph.clues).filter((id) => graph.clues[id].kind === "tell" && named.has(id)),
-  );
-}
-
 function fromLabel(graph: ClueGraphCase, id: string): string {
   const clue = graph.clues[id];
   if (clue.kind !== "evidence") return graph.characters[clue.source.character].name;
@@ -61,15 +43,13 @@ function fromLabel(graph: ClueGraphCase, id: string): string {
   return clue.source.spot ? `${place}: ${clue.source.spot}` : place;
 }
 
-/** Held clues in the order found, without pure tells; a statement taken back says so. */
+/** Held clues in the order found, each as its saved line; a statement taken back says so. */
 export function notebook(graph: ClueGraphCase, play: ClueGraphPlay): NotebookEntry[] {
-  const recorded = recordedTells(graph);
   return play.held
-    .filter((id) => graph.clues[id].kind !== "tell" || recorded.has(id))
     .map((id) => ({
       id,
       kind: graph.clues[id].kind,
-      text: graph.clues[id].fact,
+      text: lineOf(graph, play, id),
       from: fromLabel(graph, id),
       taken_back: play.retracted.includes(id),
     }));

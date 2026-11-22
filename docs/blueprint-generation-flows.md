@@ -7,38 +7,35 @@ store ids.
 
 ## Generating a clue-graph case
 
-By default `./dev generate` writes a `clue-graph/2` case (agent only) from a
-brief, `packages/blueprint-generator/src/clue-graph-brief.ts`, whose age and
-size the case carries.
+`./dev generate` writes a `clue-graph/2` case by default (agent only) from a
+brief (`packages/blueprint-generator/src/clue-graph-brief.ts`).
 
-- **System:** `packages/blueprint-generator/src/clue-graph-prompt.md` alone:
-  no age guidance or validator rule.
-- **Workspace:** `setup-workspace.sh <dir> clue-graph`, whose validator is
-  `evaluation/generator-harness/scripts/validate-case.ts`: the mechanical check.
+- **System:** `packages/blueprint-generator/src/clue-graph-prompt.md`: no age
+  guidance or validator rule.
+- **Workspace:** `setup-workspace.sh <dir> clue-graph`; its validator is the
+  case's mechanical check (`evaluation/generator-harness/template/README.md`).
 
-Repair needs no `--judge` (two rounds by default, five at most); `--install`
-copies a passing final case to `blueprints/clue-graph/`.
+Repair needs no `--judge` (two rounds by default, five at most); a passing
+final case installs to `blueprints/clue-graph/`.
 
 ## Generating a blueprint
 
-`./dev generate --format v2` uses `buildBlueprintGenerationChatInput` for both
-backends:
+Both backends of `./dev generate --format v2` use
+`buildBlueprintGenerationChatInput`:
 
-- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus age
-  guidance from `renderGenerationGuidance` in `packages/shared/src/age-profile.ts`.
-- **User:** the brief, validated against
-  `packages/blueprint-generator/src/story-brief.ts`, with schema instructions.
+- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus
+  `renderGenerationGuidance` (`packages/shared/src/age-profile.ts`).
+- **User:** the brief (`packages/blueprint-generator/src/story-brief.ts`)
+  with schema instructions.
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
-  image ids; strict-mode nulls are removed.
-
-The agent's workspace holds both.
+  image ids and strict-mode nulls.
 
 ### Repair rounds
 
 `--judge --repair <n>` (agent) runs up to `n` rounds while anything fails
 (`evaluation/generate/repair.ts`): the agent fixes the faults `repair.json`
-quotes as data, and every check and judge reruns on brief and blueprint (or
-case) alone. Round 0 is kept: it measures the prompt.
+quotes as data, and every check and judge reruns on brief and blueprint
+alone. Round 0 is kept: it measures the prompt.
 
 <!-- extract:generator-prompt -->
 What the generator prompt asks for, in short:
@@ -95,7 +92,7 @@ Three phases keep images consistent:
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the title) and visual direction; artwork is optional.
 
-Ratios are checked against OpenRouter’s list; models vary.
+Ratios are checked against OpenRouter’s list.
 
 ## Generating 3D scenes
 
@@ -104,8 +101,8 @@ recipes through the `scene-generator` binding, keeping existing ones. Prompts
 get only visual direction and location names, descriptions and searchable
 areas. A failure never replaces installed art.
 
-`packages/shared/src/scene-schema.ts` bounds shapes, transforms and
-animations, rejecting executable fields and unknown references. Manifests live
+`packages/shared/src/scene-schema.ts` bounds shapes and rejects executable
+fields and unknown references. Manifests live
 in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
 committed examples; the endpoint serves only these.
 
@@ -131,6 +128,10 @@ fields reach only that character's own conversation.
 return it as the notebook's case facts (`mystery_summary`, and a `summary` per
 location and character).
 <!-- /extract:gameplay-narration -->
+
+A clue-graph case gives each row facts to word, and talk `knows` and
+first-meeting appearance; a found clue's saved notebook line then stands for
+it ([clue graph](clue-graph.md)).
 
 ## Evaluation
 

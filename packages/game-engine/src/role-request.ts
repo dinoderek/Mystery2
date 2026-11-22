@@ -30,7 +30,7 @@
  */
 
 import type { AIPromptKey } from "./ai-contracts.ts";
-import type { InteractionId } from "../../shared/src/age-profile.ts";
+import { authoredFieldBudget, type InteractionId } from "../../shared/src/age-profile.ts";
 import {
   type AIContext,
   type BlueprintClue,
@@ -174,6 +174,11 @@ export function resolveAccusationRole(
     : "accusation_start";
 }
 
+/** How long a notebook line runs at the game's age: the age's length for a clue. */
+function notebookWords(blueprint: BlueprintContext): number {
+  return authoredFieldBudget("clue_text", blueprint.metadata.target_age);
+}
+
 function locationNameFor(blueprint: BlueprintContext, locationId: string | null | undefined): string {
   if (!locationId) return "";
   return findLocationById(blueprint, locationId)?.name ?? locationId;
@@ -216,6 +221,8 @@ const REGISTRY: Record<RoleRequestName, any> = {
         target_age: input.blueprint.metadata.target_age,
         premise: input.blueprint.narrative.premise,
         narration_style: input.blueprint.metadata.narration_style ?? null,
+        // A clue-graph opening words the case's public facts.
+        ...(input.blueprint.clue_graph ? { facts: input.blueprint.clue_graph.opening.facts } : {}),
       }),
   } satisfies NarrationRoleSpec<"intro">,
 
@@ -248,6 +255,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         destination_sub_locations_json:
           subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
         narration_style: input.blueprint.metadata.narration_style ?? null,
+        ...(graph ? { destination_facts: graph.locations[destination.id].facts } : {}),
       });
     },
   } satisfies NarrationRoleSpec<"ambience">,
@@ -352,6 +360,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         ...names,
         location_name: locationNameFor(input.blueprint, input.location_id),
         turn: renderPrompt(input.player_input === null ? GRAPH_TALK_GREETING_TURN : GRAPH_TALK_LINE_TURN, names),
+        notebook_words: notebookWords(input.blueprint),
       };
     },
     interaction: (input: InputFor<"graph_talk">) =>
@@ -372,6 +381,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
     vars: (input: InputFor<"graph_search">) => ({
       location_name: locationNameFor(input.blueprint, input.location_id),
       search_target: input.search_query ? `: "${input.search_query}"` : "",
+      notebook_words: notebookWords(input.blueprint),
     }),
     // A known outcome has one budget; a judged one states both.
     interaction: (input: InputFor<"graph_search">) => {
@@ -500,6 +510,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
       interaction: spec.interaction?.(input as never),
       narrationStyle: input.blueprint.metadata.narration_style ?? null,
       talkProfile: character ? talkPromptProfile(character) : undefined,
+      clueGraph: input.blueprint.clue_graph !== undefined,
     },
   );
 

@@ -49,8 +49,7 @@ authored.
 - `locations`: `name`, `facts` about the place, and `spots`. A spot with
   `revealed_by` is hidden until that clue is held.
 - `characters`: `name`, `location`, `role` (`culprit`, `suspect`,
-  `witness`), `sex`, `personality`, `demeanor` lines by stance (`open`,
-  `guarded`, `shaken`, `cornered`, `cleared`), `knows` and `appearance`
+  `witness`), `sex`, `personality`, `demeanor` lines by stance, `knows` and `appearance`
   (two or more facts). Personality and demeanor are direction for the
   narrator, not text for the child. Each `knows` entry is a plain true
   `fact`, never a clue, and may point at a place or person (`points_at`). A
@@ -72,13 +71,11 @@ logged once.
 1 invalid, 2 unreadable, 3 misuse.
 
 Trails: `node scripts/print-clue-graph-trails.mjs <file>` (or
-`npm run trails:clue-graph`, with npm's banner) prints the same case as
-Markdown trails through the same reach code and exit codes, and never runs a
-model. Each conclusion lists its routes from the opening; a trail holds every
-way in held before a clue, each step with how it is reached and what takes it
-back.
+`npm run trails:clue-graph`) prints the case as Markdown trails, with the same
+reach code and exit codes and no model: each conclusion's routes from the
+opening, each step with how it is reached and what takes it back.
 
-The validator needs references to fit: `after`,
+References must fit: `after`,
 `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
 `points_at` and the cover name what the case holds;
 `clears` names a suspect; one culprit, named by one conclusion. Then, from the
@@ -98,11 +95,11 @@ started on the last turn gives only the greeting.
 
 ## In play
 
-The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
-view, its catalog ID a UUID from `metadata.id`. A start saves the
-validated case in `game_sessions.clue_graph_snapshot`, which resume and every
-turn play. Each turn that counts saves its event (move, search, talk, line) as
-`payload.clue_graph`; the engine folds those, deriving the rest each call.
+The loader reads `clue-graph/` and builds a rule-free world view, its catalog
+ID a UUID from `metadata.id`. A start saves the validated case in
+`game_sessions.clue_graph_snapshot`, which resume and every turn play. Each
+turn that counts saves its event (move, search, talk, line) as
+`payload.clue_graph`; the engine folds those, deriving the rest.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
@@ -112,40 +109,36 @@ turn play. Each turn that counts saves its event (move, search, talk, line) as
   and `answered`. A report the state did not offer fails the turn before
   anything is saved; one already held is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
-  the words; the narrator reports what it holds, or for words naming none,
-  picks a visible spot's clue, the room's, or none. A hidden spot shows once its
-  pointer is held. Before, it wins only words fitting it better than every
-  visible spot, finds nothing, and is never named to the narrator.
-- **Notebook lines.** Each clue a turn brings out, tells included, gets a
-  line, saved in the event's `notebook`; a missing, extra or blank line fails
-  the turn; one for a clue already held is dropped. Every reader then uses
-  that line: notebook, later turns, farewell, accusation. A pointer's line
-  names its spot.
+  the words, or for words naming none the narrator picks a visible spot's
+  clue, the room's, or none. A hidden spot shows once its pointer is held.
+  Before, it wins only words fitting it better than every visible spot, finds
+  nothing, and is never named to the narrator.
+- **Notebook lines.** Each clue a turn brings out gets a line, saved in the
+  event's `notebook`; a missing, extra or blank line fails the turn; one for a
+  clue already held is dropped. Every reader then uses that line: notebook,
+  later turns, farewell (clues found only), accusation. A pointer's line names
+  its spot.
 - **Retraction** marks a statement taken back; a conclusion holds only on
   clues held and standing.
 - **Leads** name someone unmet, someone with more to give, or a hidden spot
   newly visible, each new on its turn.
 - **Notebook**: every held clue, with its kind and whether taken back, then
   the leads. No conclusion, truth, rule or gate wording reaches the browser.
-  A farewell narrator sees only clues found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`:
-  conclusions supported, whether one names the culprit, what was taken back.
+  conclusions supported, whether one names the culprit, what is taken back.
 
-Artwork is optional: `./dev gen-images` saves `metadata.image_id`,
-`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`
+Artwork is optional: `./dev gen-images` saves image IDs
 ([generation flows](blueprint-generation-flows.md)).
 
 ## The narrator's judgement
 
 The narrator writes every word the child reads, from facts. It may add
-scenery and manner, never what looks like evidence or bears on who,
-when or where, and keeps what earlier narration established: talk carries the
-history with that person, search the history there, an arrival the last
-arrival. Asked about anything beyond their clues and `knows` that bears on
-the case, a character says plainly they do not know.
+scenery and manner, never what looks like evidence or bears on who, when or
+where, and keeps what the narration it is handed established. Asked about
+anything beyond their clues and `knows` that bears on the case, a character
+says plainly they do not know.
 
-One talk prompt serves everyone: generous on how the investigator puts things,
-strict on what they do. It judges which offered gates a line opened. Each line
-comes with what the investigator said earlier in the conversation, so a clue
-shown and dodged opens on a follow-up. Cases and baselines:
-`evaluation/runtime/cases/clue-graph/`.
+One talk prompt serves everyone, generous on how the investigator puts things
+and strict on what they do. Each line carries their earlier lines in the
+conversation, so a clue shown and dodged opens on a follow-up. Cases and
+baselines: `evaluation/runtime/cases/clue-graph/`.

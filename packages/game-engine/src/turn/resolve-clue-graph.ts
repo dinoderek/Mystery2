@@ -204,7 +204,10 @@ function acceptLine(
   }
   // A tell seen with a statement this line brings out comes out with it.
   const riding = new Set([...event.opened, ...event.asked, ...dueNow].flatMap((id) => ridersOf(graphOf(game), id)));
-  for (const id of others) if (!riding.has(id)) (play.held.includes(id) ? repeated : unoffered).push(id);
+  for (const id of others) {
+    if (play.held.includes(id)) repeated.push(id);
+    else if (!riding.has(id)) unoffered.push(id);
+  }
   if (repeated.length > 0) {
     runtime.logger.log("ask.clue_already_discovered", { game_id: game.game_id, character_id: characterId, clue_ids: repeated });
   }

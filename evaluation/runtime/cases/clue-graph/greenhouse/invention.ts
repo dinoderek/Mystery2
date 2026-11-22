@@ -64,7 +64,7 @@ export default [
   search(BACK_IN_THE_RAIN, null, {
     id: "invent-kept-greenhouse-revisit",
     group: "invention",
-    // Back in the greenhouse, everything found: the rain and the robin stay, and nothing new turns up.
+    // Back in the greenhouse, the room's own clue already found: the rain and the robin stay, and nothing new turns up.
     expect: { revealed_clue_id: null, input_understood: true, judges: JUDGED },
   }),
 ];

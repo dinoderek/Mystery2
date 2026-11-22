@@ -19,14 +19,14 @@ export default [
   search([...SEARCHED, { move: "workshop" }], null, {
     id: "whole-key-book",
     group: "whole-fact",
-    // Three days, two people and five times, in one entry of the key book.
+    // Three days, two people and five times, in one entry of the key book; 5:20 stands for both its showings.
     expect: {
       revealed_clue_id: "clue_spare_key_book",
       input_understood: true,
       whole_fact: {
         clue_spare_key_book: [
           "Mia",
-          "Ms. Hale",
+          ["Ms. Hale", "Ms Hale"],
           "Thursday",
           "Friday",
           "Saturday",

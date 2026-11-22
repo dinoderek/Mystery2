@@ -34,6 +34,7 @@ evaluation/dimensions/solve-depth.md	800
 evaluation/dimensions/timeline-coherence.md	500
 evaluation/generator-harness/template/CLAUDE.md	800
 evaluation/generator-harness/template/README.md	500
+evaluation/generator-harness/template/clue-graph/CLAUDE.md	350
 evaluation/generator-harness/template/docs/briefs.md	950
 evaluation/generator-harness/template/docs/game-overview.md	1700
 evaluation/generator-harness/template/docs/runtime-consumption.md	2050
@@ -58,5 +59,6 @@ evaluation/runtime/README.md	1050
 evaluation/trace/README.md	600
 evaluation/truth/README.md	450
 evaluation/truth/guide.md	450
+packages/blueprint-generator/src/clue-graph-prompt.md	1500
 packages/blueprint-generator/src/generator-prompt.md	3100
 packages/game-engine/AGENTS.md	150

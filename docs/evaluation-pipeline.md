@@ -1,9 +1,8 @@
 # Evaluation
 
-Four harnesses judge the game's AI from different angles. They share one core,
-`evaluation/core/`: model runner, config, judge registry, result format and
-exit-code rule. This doc is the map and design; the runbook is
-`evaluation/README.md`.
+Four harnesses judge the game's AI. They share one core, `evaluation/core/`:
+model runner, config, judge registry, result format and exit-code rule. This
+doc is the map and design; the table names each runbook.
 
 | Harness | Subject | Question | Runbook |
 |---|---|---|---|
@@ -26,7 +25,7 @@ How they connect:
 - **The truth set** holds subjects with known faults to score judges against
   (`evaluation/truth/README.md`).
 
-Readers of a played game skip `no_turn_line` events through `playedEvents` in `evaluation/lib/game-events.ts`.
+Played-game readers skip `no_turn_line` events (`playedEvents`, `evaluation/lib/game-events.ts`).
 
 ## Why the blueprint pipeline is shaped this way
 
@@ -75,9 +74,9 @@ its brief, then runs:
 ## Clue-graph cases
 
 A clue-graph case (`docs/clue-graph.md`) needs no brief. Its check,
-`clue_graph_valid`, is `validateClueGraph`. Its judges, `cg_soundness`,
-`cg_truth_agreement`, `cg_character_grounding` and `cg_step_sense`, fail on a
-major finding and are told what the validator checks, so they judge only what
+`clue_graph_valid`, is `validateClueGraph`, and under `./dev generate` also its
+fit to the brief. Its judges, `cg_soundness`, `cg_truth_agreement`,
+`cg_character_grounding` and `cg_step_sense`, fail on a major finding and are told what the validator checks, so they judge only what
 the facts mean. Step sense also reads the player's view
 (`evaluation/blueprint/player-view.ts`): what can be held when, and what leads
 to each step. A judge is trusted once it passes both hand-written stories and
@@ -87,8 +86,8 @@ fails a broken copy of each, which breaks one thing per judge
 ## Workspaces
 
 Generation and judging each run an agent in a one-shot **workspace**: its
-inputs, reference docs, a validator it must pass and fix its mistakes against,
-and an output path. The workspace records everything the agent saw. The generator's workspace
+inputs, reference docs, a validator it must pass, and an output path. The
+workspace records everything the agent saw. The generator's workspace
 (`evaluation/generator-harness/template/`) gets curated extracts of the repo docs,
 pinned to the sections they summarise and checked by the gate
 (`evaluation/generator-harness/template/README.md`). The judge's is

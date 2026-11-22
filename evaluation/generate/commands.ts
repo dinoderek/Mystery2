@@ -2,6 +2,13 @@
  * `./dev generate <brief>...`: briefs in, blueprints out, in one run with
  * one subject per brief, backend and model.
  *
+ * `--format` picks what is written: a clue-graph case (the default) or a
+ * Blueprint V2. A clue-graph case is written only by the agent backend, in a
+ * clue-graph workspace, and checked by the case validator; it may be repaired
+ * from the validator's faults alone, and is installed into the library's
+ * `clue-graph/` only when its final round passed every check and judge it ran.
+ * What follows describes Blueprint V2.
+ *
  * `--backend agent` runs the Claude agent in its workspace (the `generator-agent`
  * binding); `--backend api` makes one OpenRouter call (`generator-api`). Both
  * are model calls through the core runner, sent the prompt that
@@ -21,8 +28,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { buildBlueprintGenerationChatInput, StoryBriefSchema } from "../../packages/blueprint-generator/src/index.ts";
-import type { StoryBrief } from "../../packages/blueprint-generator/src/index.ts";
+import {
+  buildBlueprintGenerationChatInput,
+  buildClueGraphGenerationChatInput,
+  ClueGraphBriefSchema,
+  StoryBriefSchema,
+} from "../../packages/blueprint-generator/src/index.ts";
+import type { ClueGraphBrief, StoryBrief } from "../../packages/blueprint-generator/src/index.ts";
 import { getBlueprintsDir } from "../../scripts/local-config.mjs";
 import { judgeBindingFor, summaryLines } from "../blueprint/commands.ts";
 import { readJsonFile, resolveBrief } from "../blueprint/inputs.ts";
@@ -33,6 +45,7 @@ import type { OptionValue } from "../core/args.ts";
 import { loadConfig, resolveBinding } from "../core/config.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
+import type { BlueprintFormat } from "../core/registry.ts";
 import { ConfigError, InputError, UsageError } from "../core/errors.ts";
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
@@ -41,9 +54,18 @@ import type { RunFolder } from "../core/run-folder.ts";
 import type { Result } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
 import { createRunTimer } from "../core/timing.ts";
-import { blueprintParser } from "./blueprint-answer.ts";
+import { blueprintParser, caseParser } from "./blueprint-answer.ts";
 import { OPENROUTER_KEY_VAR, readOpenRouterKey } from "./openrouter.ts";
 import { repairLoop, roundLines, runCostLine } from "./repair.ts";
+
+export const FORMATS = ["clue-graph", "v2"] as const;
+export type Format = (typeof FORMATS)[number];
+
+/** How the checks and judges name each format. */
+const BLUEPRINT_FORMAT: Record<Format, BlueprintFormat> = { "clue-graph": "clue_graph", v2: "v2" };
+
+/** A clue-graph case's repair rounds when `--repair` is not given, and the most it may ask for. */
+export const CLUE_GRAPH_REPAIR = { default: 2, max: 5 } as const;
 
 export const BACKENDS = ["agent", "api"] as const;
 export type Backend = (typeof BACKENDS)[number];
@@ -54,13 +76,14 @@ export const GENERATOR_BINDINGS: Record<Backend, string> = { agent: "generator-a
 const HELP = formatHelp({
   usage: "generate <brief>...",
   summary:
-    "Turns each brief (a brief file or a spec directory holding input.brief.json) into a Blueprint V2, checks it against the schema and the mechanical checks, and writes one result.json per brief, backend and model. Exits 0 when all pass, 2 when a blueprint fails a check or a judge, 1 when the run breaks.",
+    "Turns each brief (a brief file or a spec directory holding input.brief.json) into a clue-graph case or a Blueprint V2, checks it, and writes one result.json per brief, backend and model. Exits 0 when all pass, 2 when a case or blueprint fails a check or a judge, 1 when the run breaks.",
   options: [
-    ["--backend <agent|api>", "agent: the Claude agent in a workspace; api: one OpenRouter call. Repeatable (default: agent)"],
+    ["--format <clue-graph|v2>", "what to write: a clue-graph case from a clue-graph brief, or a Blueprint V2 from a story brief (default: clue-graph)"],
+    ["--backend <agent|api>", "agent: the Claude agent in a workspace; api: one OpenRouter call, Blueprint V2 only. Repeatable (default: agent)"],
     ["--model <id>", "the model for these runs: an alias for agent, an OpenRouter id for api. Repeatable; every brief and backend runs with every model (default: each binding's own)"],
     ["--judge", "judge each blueprint straight after, as judge blueprint does"],
-    ["--repair <n>", "with --judge, on the agent backend: up to n rounds in which the generator fixes the faults its failing checks and judges report, and every check and judge runs again (default: 0)"],
-    ["--install", "copy each blueprint that passes its mechanical checks into the game's library (<config root>/blueprints); after repair rounds, only a final blueprint that passed everything"],
+    ["--repair <n>", `on the agent backend: up to n rounds in which the generator fixes the faults its failing checks and judges report, and every check and judge runs again. A Blueprint V2 needs --judge (default: 0); a clue-graph case does not (default: ${CLUE_GRAPH_REPAIR.default}, at most ${CLUE_GRAPH_REPAIR.max})`],
+    ["--install", "copy each blueprint that passes its mechanical checks into the game's library (<config root>/blueprints); after repair rounds, only a final blueprint that passed everything. A clue-graph case goes to blueprints/clue-graph/<metadata.id>.json once its final round passed every check and judge it ran"],
     ["--parallelism <n>", "how many blueprints to generate at once (default: 1)"],
     ["--quiet", "no live progress digest"],
   ],
@@ -74,11 +97,23 @@ function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
 }
 
-/** `--backend`, validated; `agent` when none is given. */
-export function parseBackends(value: OptionValue): Backend[] {
+/** `--format`, validated; `clue-graph` when not given. */
+export function parseFormat(value: OptionValue): Format {
+  if (value === undefined) return "clue-graph";
+  if (typeof value !== "string" || !(FORMATS as readonly string[]).includes(value)) {
+    throw new UsageError(`--format must be one of ${FORMATS.join(", ")} (got ${String(value)})`);
+  }
+  return value as Format;
+}
+
+/** `--backend`, validated; `agent` when none is given. Only the agent backend writes a clue-graph case. */
+export function parseBackends(value: OptionValue, format: Format = "v2"): Backend[] {
   const given = unique(strings(value));
   const unknown = given.filter((name) => !(BACKENDS as readonly string[]).includes(name));
   if (unknown.length > 0) throw new UsageError(`--backend must be one of ${BACKENDS.join(", ")} (got ${unknown.join(", ")})`);
+  if (format === "clue-graph" && given.includes("api")) {
+    throw new UsageError("the api backend writes only Blueprint V2: a clue-graph case is written by the agent backend, which runs the validator on its own case. Use --backend agent, or --format v2");
+  }
   return given.length === 0 ? ["agent"] : (given as Backend[]);
 }
 
@@ -89,11 +124,20 @@ function parseParallelism(value: OptionValue): number {
   return parsed;
 }
 
-/** `--repair`: a whole number of rounds, 0 when not given; it needs `--judge` and only the agent backend can take it. */
-export function parseRepair(value: OptionValue, judge: boolean, backends: readonly Backend[]): number {
-  if (value === undefined) return 0;
+/**
+ * `--repair`: a whole number of rounds. For a Blueprint V2, 0 when not given;
+ * it needs `--judge` and only the agent backend can take it. For a clue-graph
+ * case, which only the agent backend writes, `CLUE_GRAPH_REPAIR` bounds it
+ * and the validator's faults are enough to repair from.
+ */
+export function parseRepair(value: OptionValue, judge: boolean, backends: readonly Backend[], format: Format = "v2"): number {
+  if (value === undefined) return format === "clue-graph" ? CLUE_GRAPH_REPAIR.default : 0;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) throw new UsageError(`--repair needs a whole number of rounds, got "${String(value)}"`);
+  if (format === "clue-graph") {
+    if (parsed > CLUE_GRAPH_REPAIR.max) throw new UsageError(`--repair runs at most ${CLUE_GRAPH_REPAIR.max} rounds on a clue-graph case, got ${parsed}`);
+    return parsed;
+  }
   if (parsed === 0) return 0;
   if (!judge) throw new UsageError("--repair needs --judge: a repair round works from the judges' verdicts");
   if (backends.includes("api")) {
@@ -105,17 +149,22 @@ export function parseRepair(value: OptionValue, judge: boolean, backends: readon
 interface BriefInput {
   /** Names the subject: the spec directory's name, or the brief file's. */
   slug: string;
-  brief: StoryBrief;
+  brief: StoryBrief | ClueGraphBrief;
 }
 
-async function readBriefs(inputs: readonly string[]): Promise<BriefInput[]> {
+/** Reads each brief as the format's brief; one of the other format's says which `--format` it needs. */
+async function readBriefs(inputs: readonly string[], format: Format): Promise<BriefInput[]> {
+  const [schema, other] = format === "clue-graph" ? [ClueGraphBriefSchema, StoryBriefSchema] : [StoryBriefSchema, ClueGraphBriefSchema];
   const briefs: BriefInput[] = [];
   for (const input of inputs) {
     const source = await resolveBrief(input);
-    const parsed = StoryBriefSchema.safeParse(await readJsonFile(source.file, "brief"));
+    const raw = await readJsonFile(source.file, "brief");
+    const parsed = schema.safeParse(raw);
     if (!parsed.success) {
       const issues = parsed.error.issues.map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`).join("; ");
-      throw new InputError(`brief ${source.file} is not a story brief: ${issues}`);
+      const what = format === "clue-graph" ? "a clue-graph brief" : "a story brief";
+      const hint = other.safeParse(raw).success ? ` It is ${format === "clue-graph" ? "a Blueprint V2 story brief: pass --format v2" : "a clue-graph brief: drop --format v2"}.` : "";
+      throw new InputError(`brief ${source.file} is not ${what}: ${issues}.${hint}`);
     }
     briefs.push({ slug: source.slug, brief: parsed.data });
   }
@@ -124,14 +173,15 @@ async function readBriefs(inputs: readonly string[]): Promise<BriefInput[]> {
 
 interface Job {
   id: string;
+  format: Format;
   backend: Backend;
-  brief: StoryBrief;
+  brief: StoryBrief | ClueGraphBrief;
   /** The generator binding with this job's model. */
   binding: ResolvedBinding;
 }
 
 /** One job for every brief, backend and model; a job with no model uses its binding's. */
-function planJobs(briefs: readonly BriefInput[], bindings: Record<Backend, ResolvedBinding>, backends: readonly Backend[], models: readonly string[]): Job[] {
+function planJobs(format: Format, briefs: readonly BriefInput[], bindings: Record<Backend, ResolvedBinding>, backends: readonly Backend[], models: readonly string[]): Job[] {
   const jobs: Job[] = [];
   for (const { slug, brief } of briefs) {
     for (const backend of backends) {
@@ -140,7 +190,7 @@ function planJobs(briefs: readonly BriefInput[], bindings: Record<Backend, Resol
         if (backend === "api" && !binding.model) {
           throw new ConfigError(`binding "${binding.name}" has no model: pass --model <OpenRouter model id> or set one in the config`);
         }
-        jobs.push({ id: slugify([slug, backend, binding.model].filter(Boolean).join(" ")), backend, brief, binding });
+        jobs.push({ id: slugify([slug, backend, binding.model].filter(Boolean).join(" ")), format, backend, brief, binding });
       }
     }
   }
@@ -166,6 +216,18 @@ interface RunSettings {
   write: (line: string) => void;
 }
 
+/** The job's prompt: its format's system prompt and user message. */
+function generationInput(job: Job): Promise<{ systemPrompt: string; userMessageContent: string }> {
+  return job.format === "clue-graph"
+    ? buildClueGraphGenerationChatInput(job.brief as ClueGraphBrief)
+    : buildBlueprintGenerationChatInput(job.brief as StoryBrief);
+}
+
+/** What the job's generator wrapper is started with: its format, and the api backend's key. */
+function generatorEnv(job: Job, apiKey: string | undefined): Record<string, string> {
+  return { EVAL_GENERATE_FORMAT: job.format, ...(job.backend === "api" && apiKey ? { [OPENROUTER_KEY_VAR]: apiKey } : {}) };
+}
+
 /**
  * Sends the generation prompt through the job's binding and returns the
  * blueprint to keep. Throws, with the stage tagged, when the call gave nothing
@@ -173,10 +235,10 @@ interface RunSettings {
  */
 async function produce(job: Job, subject: BlueprintSubject, settings: RunSettings): Promise<unknown> {
   const { timer, folder } = subject;
-  const chatInput = await timer.stage("build_generation_input", () => buildBlueprintGenerationChatInput(job.brief));
+  const chatInput = await timer.stage("build_generation_input", () => generationInput(job));
   settings.write(`[eval] ${job.id}: generating via ${job.binding.name}${job.binding.model ? ` (${job.binding.model})` : ""}`);
   const digest = startDigest(`generate ${job.id}`, ["generate"], { logDir: folder.logDir, quiet: settings.quiet, write: settings.write });
-  const parser = blueprintParser();
+  const parser = job.format === "clue-graph" ? caseParser() : blueprintParser();
   try {
     const outcome = await timer.stage(
       "generate",
@@ -187,7 +249,7 @@ async function produce(job: Job, subject: BlueprintSubject, settings: RunSetting
           systemPrompt: chatInput.systemPrompt,
           userMessage: chatInput.userMessageContent,
           logDir: folder.logDir,
-          env: { EVAL_RUN_DIR: folder.dir, ...(job.backend === "api" && settings.apiKey ? { [OPENROUTER_KEY_VAR]: settings.apiKey } : {}) },
+          env: { ...generatorEnv(job, settings.apiKey), EVAL_RUN_DIR: folder.dir },
           parse: parser.parse,
         }),
       (result) => ({ attempts: result.call.attempts.length }),
@@ -215,15 +277,21 @@ async function runJob(job: Job, settings: RunSettings & JudgeSettings): Promise<
   const subject: BlueprintSubject = { run: settings.run, folder, id: job.id, timer: createRunTimer(), production: null };
   try {
     const blueprint = await produce(job, subject, settings);
+    const format = BLUEPRINT_FORMAT[job.format];
     const result = settings.binding
-      ? await judgeBlueprintSubject(subject, { brief: job.brief, blueprint, binding: settings.binding, selection: "all", quiet: settings.quiet, write: settings.write })
-      : await validateBlueprintSubject(subject, { brief: job.brief, blueprint });
-    if (settings.repair === 0 || settings.binding === null || result.run_error !== null) return { job, result, subject };
+      ? await judgeBlueprintSubject(subject, { brief: job.brief, blueprint, binding: settings.binding, selection: "all", quiet: settings.quiet, write: settings.write, format })
+      : await validateBlueprintSubject(subject, { brief: job.brief, blueprint, format });
+    // A Blueprint V2 is repaired only from its judges' verdicts; a clue-graph case also from its validator's faults.
+    const canRepair = settings.binding !== null || job.format === "clue-graph";
+    if (settings.repair === 0 || !canRepair || result.run_error !== null) return { job, result, subject };
     try {
-      const chatInput = await buildBlueprintGenerationChatInput(job.brief);
+      const chatInput = await generationInput(job);
       const repairSettings = {
         binding: job.binding,
         judge: settings.binding,
+        parser: job.format === "clue-graph" ? caseParser : blueprintParser,
+        format,
+        env: generatorEnv(job, settings.apiKey),
         rounds: settings.repair,
         brief: job.brief,
         systemPrompt: chatInput.systemPrompt,
@@ -248,7 +316,7 @@ export function passedMechanicalChecks(result: Result): boolean {
   return result.run_error === null && result.subject.path !== null && checks.length > 0 && checks.every((check) => check.status === "pass");
 }
 
-/** Copies the stored blueprint into the library under its subject folder's name, which is unique within a run; never replaces a file already there. */
+/** Copies the stored blueprint into the library as `<id>.json`; never replaces a file already there. */
 async function installBlueprint(stored: string, library: string, id: string): Promise<string> {
   await fs.mkdir(library, { recursive: true });
   const destination = path.join(library, `${id}.json`);
@@ -263,14 +331,37 @@ async function installBlueprint(stored: string, library: string, id: string): Pr
   return destination;
 }
 
+/** A case's `metadata.id`, which its validator has checked is kebab-case, so it is a safe file name. */
+async function caseId(stored: string): Promise<string> {
+  const parsed = JSON.parse(await fs.readFile(stored, "utf8")) as { metadata: { id: string } };
+  return parsed.metadata.id;
+}
+
 /**
  * Installs what may be installed and says why the rest was not: a blueprint
  * that passed its mechanical checks, or, after repair rounds, a final blueprint
- * that passed everything. Returns whether every install that was due succeeded.
+ * that passed everything. A clue-graph case goes to the library's
+ * `clue-graph/`, named by its `metadata.id`, only when its final round passed
+ * every check and judge it ran. Returns whether every install that was due
+ * succeeded.
  */
 async function installAll(done: ReadonlyArray<{ job: Job; result: Result; subject: BlueprintSubject }>, library: string, write: (line: string) => void): Promise<boolean> {
   let ok = true;
   for (const { job, result, subject } of done) {
+    if (job.format === "clue-graph") {
+      if (!result.summary.passed || result.subject.path === null) {
+        write(`[eval] not installed: ${job.id}'s final case did not pass ${result.verdicts.some((verdict) => verdict.tier === "judge") ? "every check and judge" : "the validator"}`);
+        continue;
+      }
+      try {
+        const stored = path.join(subject.folder.dir, result.subject.path);
+        write(`[eval] installed: ${await installBlueprint(stored, path.join(library, "clue-graph"), await caseId(stored))}`);
+      } catch (error) {
+        ok = false;
+        write(`[eval] not installed: ${(error as Error).message}`);
+      }
+      continue;
+    }
     if (result.rounds !== undefined && !result.summary.passed) {
       write(`[eval] not installed: ${job.id}'s final blueprint did not pass every check and judge`);
       continue;
@@ -305,6 +396,7 @@ export const generateCommand: EvalCommand = {
   async run(argv, context) {
     const { common, values, positionals } = parseCommandArgs(argv, {
       options: {
+        format: { type: "string" },
         backend: { type: "string", multiple: true },
         model: { type: "string", multiple: true },
         judge: { type: "boolean" },
@@ -315,16 +407,17 @@ export const generateCommand: EvalCommand = {
       },
       positionals: { min: 1, max: 1000 },
     });
-    const backends = parseBackends(values.backend);
+    const format = parseFormat(values.format);
+    const backends = parseBackends(values.backend, format);
     const models = unique(strings(values.model));
     const parallelism = parseParallelism(values.parallelism);
     const quiet = values.quiet === true;
-    const repair = parseRepair(values.repair, values.judge === true, backends);
-    const briefs = await readBriefs(positionals);
+    const repair = parseRepair(values.repair, values.judge === true, backends, format);
+    const briefs = await readBriefs(positionals, format);
 
     const config = loadConfig({ root: context.root, configPath: common.configPath, modelOverrides: common.modelOverrides });
     const bindings = Object.fromEntries(backends.map((backend) => [backend, resolveBinding(config, GENERATOR_BINDINGS[backend], { root: context.root })])) as Record<Backend, ResolvedBinding>;
-    const jobs = planJobs(briefs, bindings, backends, models);
+    const jobs = planJobs(format, briefs, bindings, backends, models);
     const judge = values.judge === true ? judgeBindingFor("all", context, common) : null;
     const apiKey = backends.includes("api") ? requireApiKey(context) : undefined;
 

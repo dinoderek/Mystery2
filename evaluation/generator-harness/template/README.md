@@ -1,10 +1,9 @@
 # Generator workspace
 
-This is a one-shot workspace created by the evaluation pipeline to run a
-Claude agent as a blueprint generator. Each evaluation pipeline run produces
-a fresh workspace under `~/mysteryevals/<run-date>/<run-stamp>/generator-<brief>/`.
-Every run gets its own `<run-stamp>` subtree, so prior runs are never
-overwritten or deleted.
+A one-shot workspace in which a Claude agent generates a blueprint or a
+clue-graph case. Each run gets a fresh one under
+`~/mysteryevals/<run-date>/<run-stamp>/generator-<brief>/`, never overwriting
+an earlier run.
 
 ## Layout
 
@@ -27,11 +26,16 @@ overwritten or deleted.
     └── validate-blueprint.ts      Symlink to repo: schema, mechanical-check and reading-grade validator
 ```
 
+A clue-graph workspace (`setup-workspace.sh <dir> clue-graph`) holds
+`clue-graph/CLAUDE.md`, `brief.json`, the agent's `case.json`, `repair.json`,
+the rendered prompt and a copy of `docs/clue-graph.md`, with links to the case
+schema and sizes, the hand-written cases (`examples/`), `validate-case.ts` (the
+case's mechanical check, brief included) and `print-clue-graph-trails.mjs`.
+
 ## What lives here vs in the repo
 
-- **Symlinked from the repo:** schema, validator. These are the
-  authoritative artifacts. Edits to them in the repo flow into all subsequent
-  workspaces.
+- **Symlinked from the repo:** schema, validator, so repo edits reach the
+  next workspace.
 - **Written per run:** `prompts/generator-prompt.md` is a copy of the prompt the
   pipeline rendered for the brief's `targetAge`, so it holds the age section.
   Run by hand without a rendered prompt, the wrapper leaves a symlink to the
@@ -68,11 +72,6 @@ pin to the extract's header.
 
 ## Pruning
 
-Workspaces accumulate. Prune with:
-
-```
-rm -rf ~/mysteryevals/<run-date>/<run-stamp>/generator-<brief>   # one generator
-rm -rf ~/mysteryevals/<run-date>/<run-stamp>/                     # one run (generators + evaluators)
-rm -rf ~/mysteryevals/<run-date>/                                 # one day
-rm -rf ~/mysteryevals/                                            # all runs
-```
+Prune with `rm -rf` on one
+`~/mysteryevals/<run-date>/<run-stamp>/generator-<brief>`, a run stamp, a day
+or `~/mysteryevals/` itself.

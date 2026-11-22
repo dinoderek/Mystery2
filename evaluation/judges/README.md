@@ -35,7 +35,8 @@ input, narration and revealed clues. Three fields carry the design:
 
 - `judged`. A runtime case's prior history is a **fixture**, not the model's
   output, so those turns are context the judge reads but never faults. A trace
-  has no fixture, so every turn is judged.
+  has no fixture, so every turn is judged. Without it, a case is faulted for
+  its own setup.
 - `prior_revealed_clue_ids`. A search gate is judged against what the player
   demonstrably had, from either subject, without the runtime's internal flags.
 - `recorded_use`. What the narrator reported for a character turn: gate clues

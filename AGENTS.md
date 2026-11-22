@@ -45,8 +45,7 @@ schemas both sides import, `evaluation/` the judges and pipelines. Detail:
 
 ## Workflow
 
-- Any workflow ending in a green gate and PR works. Operator sessions use
-  `engine:build` by default: hands-off, merge on green gate and CI.
+- Any workflow ending in a green gate and PR works.
 - Worktrees: `./dev worktree create <branch>`, `./dev worktree release <branch>`.
 - PRs use `.github/pull_request_template.md` and merge by squash.
 

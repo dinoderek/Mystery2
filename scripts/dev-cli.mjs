@@ -18,10 +18,7 @@ import path from "node:path";
 import { runDoctor } from "./lib/dev-doctor.mjs";
 import { DevError, createWorktree, releaseWorktree } from "./lib/dev-worktree.mjs";
 
-/**
- * Engine reads this text to learn that the repo can provision worktrees: it
- * looks for `worktree create` and `worktree release`.
- */
+/** The help text `./dev` prints with no verb, or after a usage error. */
 export const USAGE = `Usage: ./dev <verb> [args]
 
   doctor                           check this host; install what is missing

@@ -162,5 +162,190 @@
     ],
     "verdict": "pass",
     "reasoning": "Readable and in character."
+  },
+  "blueprint.cg_soundness": {
+    "conclusions": [
+      {
+        "conclusion_id": "nobody_broke_in",
+        "follows": "partly",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "thorne_cleared",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "prints_explained",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "mia_cleared",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "rota_explained",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "culprit_toby",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "motive",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      },
+      {
+        "conclusion_id": "how",
+        "follows": "yes",
+        "note": "Follows from the named facts."
+      }
+    ],
+    "findings": [
+      {
+        "severity": "minor",
+        "kind": "says_more",
+        "ids": [
+          "nobody_broke_in",
+          "clue_glass_outside"
+        ],
+        "explanation": "The text adds that whoever did it used a key, which clue_glass_outside does not state."
+      }
+    ],
+    "verdict": "pass",
+    "reasoning": "Every branch establishes its conclusion's point."
+  },
+  "blueprint.cg_truth_agreement": {
+    "findings": [
+      {
+        "severity": "major",
+        "kind": "contradicts_timeline",
+        "ids": [
+          "clue_dobbs_crash_time"
+        ],
+        "explanation": "Stub: a planted disagreement, so the snapshot shows a fail reached from a major finding."
+      }
+    ],
+    "verdict": "fail",
+    "reasoning": "One true statement disagrees with the timeline."
+  },
+  "blueprint.cg_character_grounding": {
+    "characters": [
+      {
+        "character_id": "hale",
+        "fits": true,
+        "note": "Fits the timeline."
+      },
+      {
+        "character_id": "toby",
+        "fits": true,
+        "note": "Fits the timeline."
+      },
+      {
+        "character_id": "mia",
+        "fits": true,
+        "note": "Fits the timeline."
+      },
+      {
+        "character_id": "dobbs",
+        "fits": true,
+        "note": "Fits the timeline."
+      },
+      {
+        "character_id": "thorne",
+        "fits": true,
+        "note": "Fits the timeline."
+      }
+    ],
+    "findings": [],
+    "verdict": "pass",
+    "reasoning": "Every character fits who they are and what they did."
+  },
+  "blueprint.cg_step_sense": {
+    "steps": [
+      {
+        "clue_id": "clue_hale_key_last_seen",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "toby_no_key",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_hale_borrowed_pen",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "hale_toby_fine",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_toby_mia_splat",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "toby_drops_burglar",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "toby_blames_mia",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_mia_thorne_barbecue",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_dobbs_crash_time",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_thorne_measured",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "thorne_ladder_thursday",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "clue_hale_toby_upset",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "toby_not_mia",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "mia_admits_splat",
+        "leads": "yes",
+        "note": "A lead points the way."
+      },
+      {
+        "clue_id": "toby_confession",
+        "leads": "yes",
+        "note": "A lead points the way."
+      }
+    ],
+    "findings": [],
+    "verdict": "pass",
+    "reasoning": "Every step is led to by what the player holds."
   }
 }

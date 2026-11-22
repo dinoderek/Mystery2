@@ -11,9 +11,15 @@
  * (`--no-judges`, or `--judges` left it out); a judge that could not run, or
  * whose answer never passed the schema, is `error`. A candidate judge runs
  * only when `--judges` names it, and is absent from the result otherwise.
+ *
+ * A clue-graph case (`docs/clue-graph.md`) runs its own check and judges, the
+ * registry's `format: "clue_graph"` entries, and needs no brief: each judge is
+ * sent the `case`, and the step judge also the `player_view`
+ * (`./player-view.ts`).
  */
 
 import { BlueprintV2Schema } from "../../packages/shared/src/blueprint-schema-v2.ts";
+import { ClueGraphCaseSchema, isClueGraphFile, type ClueGraphCase } from "../../packages/shared/src/clue-graph-schema.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import { UsageLimitError } from "../core/errors.ts";
 import { validateJudgeOutput } from "../core/judge-output.ts";
@@ -22,13 +28,14 @@ import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { checksFor, getJudgeEntry, judgesFor } from "../core/registry.ts";
-import type { JudgeEntry } from "../core/registry.ts";
+import type { BlueprintFormat, JudgeEntry } from "../core/registry.ts";
 import type { Status, Verdict } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
 import { majorFindingsVerdict } from "../judges/index.ts";
 import type { CallMemo } from "../core/runner.ts";
 import { createRunTimer } from "../core/timing.ts";
 import type { DimensionTimer, RunTimer } from "../core/timing.ts";
+import { playerView } from "./player-view.ts";
 
 /** Which judges run: all, none (`--no-judges`), or the named ones (`--judges a,b`). */
 export type JudgeSelection = "all" | "none" | readonly string[];
@@ -43,6 +50,11 @@ function skipReason(selection: JudgeSelection): string {
   return selection === "none" ? "left out by --no-judges" : "left out by --judges";
 }
 
+/** The format a blueprint file is in: a clue-graph case claims one by its `format`, anything else is read as Blueprint V2. */
+export function blueprintFormat(blueprint: unknown): BlueprintFormat {
+  return isClueGraphFile(blueprint) ? "clue_graph" : "v2";
+}
+
 interface MechanicalReport {
   id: string;
   status: Status;
@@ -50,11 +62,12 @@ interface MechanicalReport {
 }
 
 /**
- * Runs the mechanical checks. Without a brief, the checks that compare the
- * blueprint with it are not run: only the schema and the structural ones.
+ * Runs the mechanical checks of the blueprint's format. Without a brief, the
+ * checks that compare a Blueprint V2 with it are not run: only the schema and
+ * the structural ones.
  */
 export async function runMechanical(brief: unknown, blueprint: unknown): Promise<Verdict[]> {
-  const entries = checksFor("blueprint");
+  const entries = checksFor("blueprint", blueprintFormat(blueprint));
   const run = (await loadCheck(entries[0].id)) as (input: { brief: unknown; blueprintCandidate: unknown }) => MechanicalReport[];
   const known = new Set(entries.map((entry) => entry.id));
   return run({ brief, blueprintCandidate: blueprint }).map((report) => {
@@ -86,8 +99,18 @@ export interface BlueprintJudgeInput {
 interface Dimension {
   entry: JudgeEntry;
   context: Record<string, unknown> | null;
-  /** The blueprint after schema validation; null when it failed. */
+  /** The blueprint, or the clue-graph case, after schema validation; null when it failed. */
   parsed: unknown;
+}
+
+/** What a judge is sent besides its id and context: a V2 blueprint's brief and blueprint, or a case and, when its entry asks, the player's view. */
+function subjectParts(dimension: Dimension, input: BlueprintJudgeInput): Record<string, unknown> {
+  const { entry } = dimension;
+  if (entry.format !== "clue_graph") return { story_brief: input.brief, blueprint: input.blueprint };
+  return {
+    case: input.blueprint,
+    ...(entry.playerView ? { player_view: playerView(dimension.parsed as ClueGraphCase) } : {}),
+  };
 }
 
 function errorVerdict(id: string, tier: Verdict["tier"], reason: string): Verdict {
@@ -136,7 +159,7 @@ async function judge(dimension: Dimension, input: BlueprintJudgeInput, timer: Di
   try {
     const definition = await timer.step("load_definition", () => loadJudge(entry));
     const systemPrompt = await timer.step("compose_prompt", async () => composeJudgeSystemPrompt(definition, context));
-    const userMessage = composeJudgeUserMessage(entry.id, context, { story_brief: input.brief, blueprint: input.blueprint });
+    const userMessage = composeJudgeUserMessage(entry.id, context, subjectParts(dimension, input));
     const outcome = await timer.step(
       "judge",
       () =>
@@ -185,7 +208,8 @@ async function evaluateDimension(dimension: Dimension, input: BlueprintJudgeInpu
       return skippedVerdicts(entry, skipReason(input.selection));
     }
     if (dimension.parsed === null) {
-      return [errorVerdict(entry.id, "judge", "Blueprint failed schema validation; analyzers and judge skipped.")];
+      const what = entry.format === "clue_graph" ? "Case" : "Blueprint";
+      return [errorVerdict(entry.id, "judge", `${what} failed schema validation; analyzers and judge skipped.`)];
     }
     const verdicts: Verdict[] = [];
     const analysis = await analyze(dimension, input, timer);
@@ -218,9 +242,12 @@ export async function judgeBlueprint(input: BlueprintJudgeInput): Promise<Verdic
     `[eval] mechanical: ${mechanical.filter((v) => v.status === "pass").length}/${mechanical.length} passed (${formatDuration(timer.lastStageMs())})`,
   );
 
-  const schema = await timer.stage("blueprint_schema_validate", async () => BlueprintV2Schema.safeParse(input.blueprint));
+  const format = blueprintFormat(input.blueprint);
+  const schema = await timer.stage("blueprint_schema_validate", async () =>
+    format === "clue_graph" ? ClueGraphCaseSchema.safeParse(input.blueprint) : BlueprintV2Schema.safeParse(input.blueprint),
+  );
   // A candidate runs only when named, and is otherwise left out of the result.
-  const entries = judgesFor("blueprint", { candidates: true }).filter(
+  const entries = judgesFor("blueprint", { candidates: true, format }).filter(
     (entry) => entry.candidate !== true || (typeof input.selection !== "string" && input.selection.includes(entry.id)),
   );
   const dimensions: Dimension[] = entries.map((entry) => ({

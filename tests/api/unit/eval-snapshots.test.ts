@@ -59,6 +59,8 @@ const BLUEPRINT_DIMENSIONS = [
   "clue_graph",
   "age_appropriate",
 ];
+/** The judges of a clue-graph case, run on the greenhouse story by `judge blueprint`. */
+const CASE_JUDGES = ["cg_soundness", "cg_truth_agreement", "cg_character_grounding", "cg_step_sense"];
 const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"];
 // Candidates run only when named, so each harness runs them apart from its default battery.
 const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
@@ -78,8 +80,9 @@ const PROMPT_IDS = [
   ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
   ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
+  ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
-const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates"];
+const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -439,6 +442,36 @@ async function runClueGraphHarnesses(answersFile: string) {
   }
 }
 
+/** `judge blueprint` on the greenhouse case: its check, and the four judges a clue-graph case gets. */
+async function runClueGraphBlueprint(answersFile: string) {
+  const dir = path.join(scratch, "blueprint-clue-graph");
+  const caseFile = path.join(dir, "greenhouse-prizewinner.json");
+  const config = path.join(dir, "config.json");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json"), caseFile);
+  fs.writeFileSync(
+    config,
+    JSON.stringify({ "blueprint-judge": stubBinding(answersFile, "blueprint.{id}", path.join(scratch, "captured-case")) }),
+  );
+  const outputRoot = path.join(dir, "out");
+  const result = (await runForResult(
+    ["dev", "eval", "judge", "blueprint", caseFile, "--config", config, "--output-root", outputRoot, "--quiet"],
+    outputRoot,
+  )) as Result;
+  verdicts.set("blueprint-clue-graph", {
+    verdicts: result.verdicts.map((verdict) => ({
+      id: verdict.id,
+      tier: verdict.tier,
+      status: verdict.status,
+      details: verdict.details ?? null,
+      findings: verdict.findings ?? null,
+    })),
+    summary: result.summary,
+    run_error: result.run_error,
+  });
+  for (const id of CASE_JUDGES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`, "captured-case"));
+}
+
 async function runRuntimeHarness(answersFile: string) {
   // Two failing judges is a verdict (2); anything else means the run broke.
   verdicts.set("runtime", await runTurnCase(answersFile, "runtime", ["flesch", "age_appropriate_turn", ...GM_JUDGES], 2));
@@ -593,6 +626,7 @@ beforeAll(async () => {
     runPlaytestJudging(answersFile),
     runCandidates(answersFile),
     runClueGraphHarnesses(answersFile),
+    runClueGraphBlueprint(answersFile),
   ]);
   await composeInvestigatorPrompts();
   clearForRecording();

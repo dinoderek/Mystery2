@@ -1,5 +1,5 @@
 /**
- * `./dev eval generate <brief>...`: briefs in, blueprints out, in one run with
+ * `./dev generate <brief>...`: briefs in, blueprints out, in one run with
  * one subject per brief, backend and model.
  *
  * `--backend agent` runs the Claude agent in its workspace (the `generator-agent`
@@ -301,7 +301,7 @@ function requireApiKey(context: EvalContext): string {
 export const generateCommand: EvalCommand = {
   name: "generate",
   summary: "Turn briefs into blueprints with the agent or api backend, then check them",
-  help: HELP,
+  help: HELP.replace("./dev eval generate", "./dev generate"),
   async run(argv, context) {
     const { common, values, positionals } = parseCommandArgs(argv, {
       options: {

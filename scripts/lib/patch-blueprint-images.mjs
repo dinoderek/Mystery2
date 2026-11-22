@@ -19,7 +19,7 @@ export function applyImageGenerationResults(blueprint, results) {
     }
 
     if (result.target_type === "character" && result.target_key) {
-      const character = next.world?.characters?.find(
+      const character = next.format === "clue-graph/2" ? next.characters[result.target_key] : next.world?.characters?.find(
         (entry) => entry.id === result.target_key,
       );
       if (character) {
@@ -29,7 +29,7 @@ export function applyImageGenerationResults(blueprint, results) {
     }
 
     if (result.target_type === "location" && result.target_key) {
-      const location = next.world?.locations?.find(
+      const location = next.format === "clue-graph/2" ? next.locations[result.target_key] : next.world?.locations?.find(
         (entry) => entry.id === result.target_key,
       );
       if (location) {

@@ -37,8 +37,7 @@ Using a clue means showing it or making its point, not holding it.
 ## The case file
 
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
-(V2's agendas among them) are rejected, and so is any other format, by name.
-A case holds facts, never the words a child reads: the narrator writes those.
+and any other format are rejected, by name. A case holds facts, never the words a child reads: the narrator writes those.
 A fact states what it establishes plainly and completely, keeping every name,
 time, place and object. Names (people, places, spots, the title) are as
 authored.
@@ -94,8 +93,7 @@ The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
 view, its catalog ID a UUID from `metadata.id`. A start saves the
 validated case in `game_sessions.clue_graph_snapshot`, which resume and every
 turn play. Each turn that counts saves its event (move, search, talk, line) in
-`payload.clue_graph`; the engine folds those and derives the rest on every
-call.
+`payload.clue_graph`; the engine folds those, deriving the rest each call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
@@ -109,10 +107,10 @@ call.
   picks a visible spot's clue, the room's, or none. A hidden spot shows once its
   pointer is held. Before, it wins the words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
-- **Notebook lines.** A turn that brings clues out, tells included, returns a
-  line for each, saved in the event's `notebook`; a missing, extra or blank
-  line fails the turn. That line is then the clue for every reader: notebook,
-  later turns, farewell, accusation. A pointer's line names its spot.
+- **Notebook lines.** Each clue a turn brings out, tells included, gets a
+  line, saved in the event's `notebook`; a missing, extra or blank line fails
+  the turn. Every reader then uses that line: notebook, later turns, farewell,
+  accusation. A pointer's line names its spot.
 - **Retraction** marks a statement taken back; a conclusion holds only on
   clues held, not taken back.
 - **Leads** name someone unmet, someone with more to give, or a hidden spot
@@ -122,6 +120,10 @@ call.
   A farewell narrator sees only clues found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
+
+Artwork is optional: `./dev gen-images` saves `metadata.image_id`,
+`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`.
+Inputs and phases: [generation flows](blueprint-generation-flows.md).
 
 ## The narrator's judgement
 

@@ -26,6 +26,11 @@ function writeFixture(welly: string) {
     JSON.parse(fs.readFileSync(path.join(process.cwd(), "blueprints/clue-graph/greenhouse-prizewinner.json"), "utf8")),
   );
   graph.metadata.id = FIXTURE_ID;
+  delete graph.cover;
+  delete graph.visual_direction;
+  delete graph.metadata.image_id;
+  for (const person of Object.values(graph.characters)) delete person.portrait_image_id;
+  for (const place of Object.values(graph.locations)) delete place.location_image_id;
   graph.clues.clue_welly_prints.fact = welly;
   fs.mkdirSync(path.dirname(FIXTURE_FILE), { recursive: true });
   fs.writeFileSync(FIXTURE_FILE, JSON.stringify(graph));
@@ -51,7 +56,7 @@ describe("selectable clue-graph case", () => {
     expect(entries[listed].title).toBe("The Smashed Prize Pumpkin — clue graph");
   });
 
-  it("starts, resumes and plays from its snapshot after the file on disk changes", async () => {
+  it("starts, resumes and plays without artwork, from its snapshot after the file on disk changes", async () => {
     // The file is in the config root every integration file shares: it stays only as long as this test needs it.
     try {
       writeFixture("Small club-welly prints squelch through the pumpkin mush.");

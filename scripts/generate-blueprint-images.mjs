@@ -18,6 +18,7 @@ import {
   getImagesEnvPath,
 } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
+import { projectClueGraphArtwork } from "./lib/clue-graph-artwork.mjs";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./lib/env-file.mjs";
 
@@ -95,7 +96,7 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
   }
 }
 
-export const IMAGE_USAGE = `Usage: npm run generate:images -- --blueprint-path <path> [targets] [options]
+export const IMAGE_USAGE = `Usage: ./dev gen-images --blueprint-path <path> [targets] [options]
 
 Generates a blueprint's artwork through OpenRouter's Images API and patches the
 new image ids into the blueprint. Portraits come first, then locations (given
@@ -865,7 +866,11 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   );
 
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
-  const blueprint = JSON.parse(blueprintRaw);
+  let blueprint = JSON.parse(blueprintRaw);
+  if (blueprint.format === "clue-graph/2") {
+    const { ClueGraphCaseSchema } = await import("../packages/shared/src/clue-graph-schema.ts");
+    blueprint = projectClueGraphArtwork(ClueGraphCaseSchema.parse(blueprint));
+  }
 
   if (blueprint.schema_version !== "v2") {
     throw new Error(
@@ -1041,21 +1046,25 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   };
 }
 
-async function main() {
-  const argv = process.argv.slice(2);
-  if (argv.includes("--help") || argv.includes("-h")) {
-    process.stdout.write(IMAGE_USAGE);
-    return;
+export async function runImageCommand(argv, dependencies = {}) {
+  const out = dependencies.out ?? console.log;
+  const err = dependencies.err ?? console.error;
+  try {
+    if (argv.includes("--help") || argv.includes("-h")) {
+      out(IMAGE_USAGE);
+      return 0;
+    }
+    const env = await loadImageGenerationEnv(process.cwd(), dependencies.env ?? process.env);
+    const options = parseGenerateImageArgs(argv, env);
+    const output = await runImageGeneration(options, { ...dependencies, env });
+    out(JSON.stringify(output, null, 2));
+    return 0;
+  } catch (error) {
+    err(formatGenerationError(error));
+    return 1;
   }
-  const env = await loadImageGenerationEnv();
-  const options = parseGenerateImageArgs(argv, env);
-  const output = await runImageGeneration(options, { env });
-  console.log(JSON.stringify(output, null, 2));
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((error) => {
-    console.error(formatGenerationError(error));
-    process.exit(1);
-  });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = await runImageCommand(process.argv.slice(2));
 }

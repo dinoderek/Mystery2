@@ -1,4 +1,4 @@
-// `./dev eval generate`, run in-process on stub bindings: briefs go through the
+// `./dev generate`, run in-process on stub bindings: briefs go through the
 // real command, runner, registry and result schema, and the generator and the
 // judges are eval-snapshot-stub.mjs answering from a table. No model is called,
 // and `--install` only ever writes into a temporary config root.
@@ -10,8 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { COMMANDS } from "../../../evaluation/commands.ts";
-import { runEval } from "../../../evaluation/core/dispatch.ts";
+import { main } from "../../../scripts/dev-cli.mjs";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { parseBackends, parseRepair, passedMechanicalChecks } from "../../../evaluation/generate/commands.ts";
@@ -82,7 +81,7 @@ function stubConfig({ answers, capture = "-", apiModel = "stub/model", retries =
 }
 
 async function generate(argv: string[], env: NodeJS.ProcessEnv = {}): Promise<number> {
-  return runEval(["generate", ...argv], { root: process.cwd(), out: (t) => out.push(t), err: (t) => err.push(t), env }, COMMANDS);
+  return main(["generate", ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env });
 }
 
 function resultFiles(): string[] {

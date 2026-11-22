@@ -1,6 +1,6 @@
 # Blueprint Generation Flows
 
-V2 generation, artwork and narration. Schema:
+Generation, artwork and narration. V2 schema:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
 `docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
 “Input” goes to the model; “attached” is paired with its output; sessions
@@ -8,7 +8,7 @@ store ids.
 
 ## Generating a blueprint
 
-Both backends of `./dev eval generate` use `buildBlueprintGenerationChatInput`:
+Both backends of `./dev generate` use `buildBlueprintGenerationChatInput`:
 
 - **System:** `packages/blueprint-generator/src/generator-prompt.md` plus
   `renderGenerationGuidance` (`packages/shared/src/age-profile.ts`).
@@ -61,12 +61,11 @@ What the generator prompt asks for, in short:
 ## Generating images
 
 <!-- extract:image-generation -->
-`scripts/generate-blueprint-images.mjs` calls OpenRouter's Images API
+`./dev gen-images` (`scripts/generate-blueprint-images.mjs`) calls OpenRouter's Images API
 (`POST /api/v1/images`) and writes each image to `<image_id>.png`. The aspect
 ratio is sent as a parameter and written into the prompt, so the two agree.
 
-It runs in three phases so later images can be drawn consistent with earlier
-ones:
+Three phases keep images consistent:
 
 | Phase | Image | Blueprint input | References | Patched into |
 |---|---|---|---|---|
@@ -76,16 +75,16 @@ ones:
 
 - A portrait's backdrop is `visual_direction.portrait_background` when set,
   otherwise a built-in bokeh wash, and never depicts a mystery location.
-- References are sent as `input_references[]` in the order the prompt's legend
-  numbers them ("Image 1: Portrait of …"), because the model identifies them by
-  position. At most 16 are sent; beyond that the first 16, with a warning.
+- References use `input_references[]` in the prompt legend’s order. At most 16 are sent; beyond that the first 16, with a warning.
 - `--chat-packets` writes the same prompts, with the references to upload in
   the same order, for pasting into a chat.
 <!-- /extract:image-generation -->
 
-Ratios are checked only against OpenRouter's full list; `openai/gpt-image-1`
-accepts `1:1`, `3:2`, `2:3` and `auto`. A failure is an unbilled 502: re-run
-those targets.
+For `clue-graph/2`, portraits use appearance facts, locations use public facts,
+and covers use optional cover facts and visual direction. Without cover facts,
+the title supplies direction. Optional image IDs are saved; artwork is never required.
+
+Ratios are checked against OpenRouter’s list, but support varies by model.
 
 ## Generating 3D scenes
 

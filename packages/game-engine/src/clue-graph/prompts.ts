@@ -40,7 +40,7 @@ The game rewards real detective work at once. Be generous about how the investig
 ## The notebook
 Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read. The line is all the investigator keeps of the clue, so it carries every name, time, place and object of its fact, and the spot named in names_spot: make it longer rather than drop one. Before you answer, check each line against its fact, detail by detail. Write a statement as what {{character_name}} said ("{{character_name}} says ..."), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
 
-Copy every id exactly as it is given. Report only an entry's own id in opened or answered, never one from its "with".
+Copy every id exactly as it is given, letter for letter: some begin with clue_ and some do not, and none may be shortened. Report only an entry's own id in opened or answered, never one from its "with".
 
 Return JSON:
 {
@@ -68,7 +68,7 @@ export const GRAPH_SEARCH_PROMPT = `You are the narrator of a children's mystery
 
 graph_search_context.location_facts are the facts about the place, and conversation_history is what was already narrated here: keep to it.
 graph_search_context.outcome says what this search can find:
-- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting all of its fact in your own words in the narration, every name, time, place and object (the notebook line does not replace it), and set revealed_clue_id to its id. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
+- kind "known": the game has worked out where they searched (spot, or null for a look around the room) and what it finds (finds). If finds is a clue, describe them finding it, putting all of its fact in your own words in the narration, every name, time, place and object (the notebook line does not replace it; a written record or list is read out entry by entry), and set revealed_clue_id to its id, letter for letter. If finds is null, they find nothing new: set revealed_clue_id to null and hint at nothing.
 - kind "judge": their words name no spot exactly. candidates are the places here that still hold a clue (spot null is the room itself). If their words plainly mean one candidate (be generous with wording), describe finding its clue the same way and set revealed_clue_id to its id. Otherwise they find nothing: null.
 When you describe finding a clue with names_spot, name that spot, and where it is, plainly: it is a new place to search.
 Otherwise mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or any evidence a clue does not give.

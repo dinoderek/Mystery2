@@ -13,7 +13,7 @@ Everything a player can learn is a clue; what holds one back is a gate.
 |---|---|---|
 | Opening | What is public at the start | Yes |
 | Evidence | A finding at a location or spot, always true | Yes |
-| Statement | What a character says: true, or false with why | Yes, never marked true or false |
+| Statement | What a character says: true, or false with why | Yes, unmarked |
 | Tell | What a character does, hinting at what can be unlocked | In prose |
 | Conclusion | An all-of or any-of rule over clues and conclusions | No |
 
@@ -56,15 +56,16 @@ place and object; names are as authored. Beyond the schema:
   `resolves` (a red herring).
 - Artwork, never needed to play: `visual_direction` (V2's shape) and `cover`.
 
-A game saved in an earlier format stays listed, marked unable to open;
+An earlier-format game stays listed, marked unable to open;
 opening it answers `410`, logged once.
 
 ## Validation
 
 `npm run validate:clue-graph -- <file>` (`validateClueGraph`) exits 0 valid,
 1 invalid, 2 unreadable, 3 misuse; each fault names its field. References
-must fit (`after`, `takes_back`, `hinted_by` and `seen.with` name the same
-character's clues). Then, from the
+must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same
+character's clues; `points_at` and the cover name what the case holds;
+`clears` names a suspect; one culprit, named by one conclusion. Then, from the
 opening alone, it adds each clue whose way in is held, never counting a bluff,
 and rejects:
 
@@ -73,9 +74,9 @@ and rejects:
   lines aside;
 - a false statement never taken back, or only by a clue reached first;
 - a conclusion never reached; a suspect no conclusion clears, or cleared only
-  on statements taken back;
+  on retracted statements;
 - a culprit with fewer than two routes in the turn budget, or none without
-  the confession (their gated true statements, then never held on the way);
+  the confession (the culprit's gated true statements, never held on it);
 - a clue nothing names, unless marked `colour`, or a colour clue something names;
 - over four clues in five free (reached with nothing held);
 - a character with more first words than a greeting carries;
@@ -108,13 +109,14 @@ every such route clears.
 
 The loader reads `clue-graph/` beside `msf/` into a rule-free world view; the
 catalog ID is a UUID from `metadata.id`. A start saves the validated case in
-`game_sessions.clue_graph_snapshot`, which resume and every turn play. Each turn that counts saves its event (move, search, talk, line) in
-`payload.clue_graph`; the engine derives the rest from those on every call.
+`game_sessions.clue_graph_snapshot`, which resume and every turn play. Each
+turn that counts saves its event in `payload.clue_graph`; the engine derives
+the rest from those on every call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`; first words three a line from the greeting on)
+  derived state (`talkState`; first words three a line)
   and reports what the line `opened` and `answered`. A report the state
   did not offer fails the turn before anything is saved; one already held is
   dropped; gibberish records nothing.
@@ -124,7 +126,7 @@ catalog ID is a UUID from `metadata.id`. A start saves the validated case in
   pointer is held; before, it wins words only by fitting them better than
   every visible spot, finds nothing, and is never named to the narrator.
 - **Retraction** marks a statement taken back; a conclusion holds only on
-  clues held, not taken back.
+  clues not taken back.
 - **Leads** name who or where: someone unmet, someone with more to give, a
   hidden spot newly visible; each new when it appears.
 - **Notebook**: held clues, each with its kind and whether taken back, then the
@@ -132,7 +134,7 @@ catalog ID is a UUID from `metadata.id`. A start saves the validated case in
   gate wording reaches the browser. A farewell narrator sees only clues
   found.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
-  (supported conclusions, the culprit's among them, and retractions).
+  (supported conclusions, the culprit's among them; retractions).
 
 ## The narrator's judgement
 

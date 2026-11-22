@@ -103,6 +103,43 @@ describe("the story checks", () => {
     ]);
   });
 
+  it("counts a route that needs the confession on the way as needing it", () => {
+    const graph = greenhouse();
+    // A hammer under the bench, which only Toby's confession points to.
+    graph.locations.greenhouse.spots.push({ name: "under the potting bench", revealed_by: "toby_confession" });
+    graph.clues.clue_hammer = {
+      kind: "evidence",
+      fact: "A hammer with Toby's name taped to the handle lies under the potting bench.",
+      source: { location: "greenhouse", spot: "under the potting bench" },
+    };
+    const hammerRoutes = [{ all: ["clue_hammer", "clue_welly_prints"] }, { all: ["clue_hammer", "mia_cleared"] }];
+    graph.conclusions.culprit_toby.rule = { any: hammerRoutes };
+    clue(graph, "clue_spare_key_book").colour = true;
+    expect(culpritRoutes(graph).map((route) => route.confession)).toEqual([true, true]);
+    expect(issues(graph)).toEqual([
+      'conclusions.culprit_toby.rule: Conclusion "culprit_toby" has no route within the turn budget without the confession',
+    ]);
+    // With the welly prints alone as a third way, one route is free of it.
+    graph.conclusions.culprit_toby.rule = { any: [...hammerRoutes, { all: ["clue_welly_prints", "mia_cleared"] }] };
+    expect(culpritRoutes(graph).map(({ clues, confession }) => [clues.length, confession])).toEqual([
+      [2, true],
+      [3, true],
+      [3, false],
+    ]);
+    expect(issues(graph)).toEqual([]);
+  });
+
+  it("reports a culprit rule with more routes than it checks", () => {
+    const graph = greenhouse();
+    const evidence = Object.keys(graph.clues).slice(0, 14);
+    graph.conclusions.culprit_toby.rule = {
+      any: ["toby_confession", { all: [0, 1, 2, 3, 4, 5, 6].map((pair) => ({ any: evidence.slice(pair * 2, pair * 2 + 2) })) }],
+    };
+    expect(issues(graph)).toContain(
+      'conclusions.culprit_toby.rule: Conclusion "culprit_toby" has more than 64 routes to the culprit, too many to check',
+    );
+  });
+
   it("rejects a story where more than four clues in five are free", () => {
     const shape = { ...floors("small"), clues: 16 };
     const graph = sizedCase(shape);

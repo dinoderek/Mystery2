@@ -22,8 +22,8 @@ type Report = (path: IssuePath, message: string) => void;
 /** More than this share of clues free from the opening is a thin story. */
 export const MAX_FREE_SHARE = 0.8;
 
-/** How many culprit routes are expanded and costed before the rest are left out. */
-const MAX_ROUTES = 64;
+/** How many culprit routes are kept; a rule with more is reported, never cut silently. */
+export const MAX_ROUTES = 64;
 
 /** One way the culprit conclusion's rule is met: the clues it names, through conclusions. */
 export interface CulpritRoute {
@@ -38,21 +38,35 @@ function parts(rule: ClueGraphRule): ClueGraphRule[] {
   return typeof rule === "string" ? [] : "all" in rule ? rule.all : rule.any;
 }
 
-/** Each set of clues that meets `rule` on its own, smallest first, supersets dropped. */
-function ruleTerms(graph: ClueGraphCase, rule: ClueGraphRule): Set<string>[] {
+/** The sets smallest first, without duplicates or supersets of another. */
+function minimal(sets: Set<string>[]): Set<string>[] {
+  const sorted = [...sets].sort((a, b) => a.size - b.size);
+  return sorted.filter(
+    (set, index) => !sorted.slice(0, index).some((smaller) => [...smaller].every((id) => set.has(id))),
+  );
+}
+
+/**
+ * Each set of clues that meets `rule` on its own, smallest first, supersets
+ * dropped, and whether there were more than MAX_ROUTES, past which the rest
+ * are left out.
+ */
+function ruleTerms(graph: ClueGraphCase, rule: ClueGraphRule): { terms: Set<string>[]; cut: boolean } {
+  let cut = false;
+  const keep = (sets: Set<string>[]) => {
+    const kept = minimal(sets);
+    if (kept.length > MAX_ROUTES) cut = true;
+    return kept.slice(0, MAX_ROUTES);
+  };
   const expand = (part: ClueGraphRule): Set<string>[] => {
     if (typeof part === "string")
       return has(graph.conclusions, part) ? expand(graph.conclusions[part].rule) : [new Set([part])];
     const each = parts(part).map(expand);
-    if ("any" in part) return each.flat().slice(0, MAX_ROUTES);
-    return each.reduce((left, right) =>
-      left.flatMap((a) => right.map((b) => new Set([...a, ...b]))).slice(0, MAX_ROUTES),
-    );
+    if ("any" in part) return keep(each.flat());
+    return each.reduce((left, right) => keep(left.flatMap((a) => right.map((b) => new Set([...a, ...b])))));
   };
-  const terms = expand(rule).sort((a, b) => a.size - b.size);
-  return terms.filter(
-    (term, index) => !terms.slice(0, index).some((smaller) => [...smaller].every((id) => term.has(id))),
-  );
+  const terms = expand(rule);
+  return { terms, cut };
 }
 
 /** Every clue a conclusion's rule names, through the conclusions it names. */
@@ -71,14 +85,14 @@ function culpritOf(graph: ClueGraphCase): [string, string] {
 }
 
 /**
- * The culprit's confession: a true statement the culprit gives through a
- * gate, which a route to them names.
+ * The culprit's confession: the true statements the culprit gives through a
+ * gate that a route to them can draw on, named or on the way.
  */
 function confessions(graph: ClueGraphCase, terms: Set<string>[]): Set<string> {
   const [, culprit] = culpritOf(graph);
-  const named = new Set(terms.flatMap((term) => [...term]));
+  const near = new Set(terms.flatMap((term) => [...term, ...relevantClues(graph, { all: [...term] })]));
   return new Set(
-    [...named].filter((id) => {
+    [...near].filter((id) => {
       const clue = graph.clues[id];
       return (
         clue?.kind === "statement" &&
@@ -90,22 +104,24 @@ function confessions(graph: ClueGraphCase, terms: Set<string>[]): Set<string> {
   );
 }
 
+function culpritTerms(graph: ClueGraphCase) {
+  const [conclusion] = culpritOf(graph);
+  return ruleTerms(graph, graph.conclusions[conclusion].rule);
+}
+
 /**
- * The routes to the culprit, each costed with the game's costs. A route
- * without the confession may not hold it on the way either.
+ * The routes to the culprit, each costed with the game's costs. A route is
+ * without the confession when it fits never holding it, named or on the way;
+ * one that fits only by holding it needs the confession.
  */
 export function culpritRoutes(graph: ClueGraphCase): CulpritRoute[] {
-  const [conclusion] = culpritOf(graph);
-  const terms = ruleTerms(graph, graph.conclusions[conclusion].rule);
+  const { terms } = culpritTerms(graph);
   const confession = confessions(graph, terms);
   return terms.map((term) => {
     const clues = [...term];
-    const needs = clues.some((id) => confession.has(id));
-    return {
-      clues,
-      confession: needs,
-      turns: cheapestRoute(graph, { all: clues }, needs ? new Set() : confession),
-    };
+    const plain = clues.some((id) => confession.has(id)) ? null : cheapestRoute(graph, { all: clues }, confession);
+    if (plain !== null) return { clues, confession: false, turns: plain };
+    return { clues, confession: true, turns: cheapestRoute(graph, { all: clues }) };
   });
 }
 
@@ -299,9 +315,11 @@ function checkSize(graph: ClueGraphCase, routes: CulpritRoute[], report: Report)
 function checkRoutes(graph: ClueGraphCase, routes: CulpritRoute[], report: Report) {
   const [conclusion] = culpritOf(graph);
   const fitting = routes.filter((route) => route.turns !== null);
+  const at = ["conclusions", conclusion, "rule"];
+  if (culpritTerms(graph).cut)
+    report(at, `Conclusion "${conclusion}" has more than ${MAX_ROUTES} routes to the culprit, too many to check`);
   // No route at all is the turn-budget check's to report.
   if (fitting.length === 0) return;
-  const at = ["conclusions", conclusion, "rule"];
   if (fitting.length < 2)
     report(at, `Conclusion "${conclusion}" has one route to the culprit within the turn budget; it needs two`);
   if (fitting.every((route) => route.confession))

@@ -436,6 +436,24 @@ describe("the greenhouse scripted play", () => {
   });
 });
 
+describe("first words past a greeting's worth", () => {
+  it("hands the rest out a line's worth at a time, for a case the validator would refuse", () => {
+    // Four first words for Toby: the validator rejects it, the engine still plays it.
+    const graph = greenhouse();
+    graph.clues.react_toby_trainers = { ...graph.clues.react_toby_trainers, reached: { by: "first_meeting" } } as typeof graph.clues.react_toby_trainers;
+    const shed = replay(graph, [SHED]);
+    expect(talkState(graph, shed, "toby").says_first.map((entry) => entry.id)).toEqual([
+      "toby_alibi",
+      "react_toby_trainers",
+      "toby_blames_thorne",
+    ]);
+    const greeted = applyEvent(graph, shed, { type: "talk", character: "toby" });
+    expect(greeted.revealed).not.toContain("clue_toby_thorne_ladder");
+    expect(talkState(graph, greeted.play, "toby").says_first.map((entry) => entry.id)).toEqual(["clue_toby_thorne_ladder"]);
+    expect(applyEvent(graph, greeted.play, line("toby", {})).revealed).toEqual(["clue_toby_thorne_ladder"]);
+  });
+});
+
 describe("gates", () => {
   it("keeps a physical gate shut without its use clue, and rejects a report that opens it", () => {
     const graph = greenhouse();

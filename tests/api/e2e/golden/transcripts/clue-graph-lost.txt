@@ -15,13 +15,13 @@ steps
 
 pages
   page 0 opening "The Smashed Prize Pumpkin — clue graph"
-    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "[Mock] Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed."
     step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
   page 1 location "The Greenhouse"
-    step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. Ms. Hale is here."
+    step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. The greenhouse air is warm and damp, and it smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze. Ms. Hale is here."
   page 2 conversation "Ms. Hale"
     step 2 | You (investigator): "talk to Ms. Hale"
-    step 2 | Narrator (narrator): "[Mock] Ms. Hale is here in The Greenhouse. Ms. Hale says: Ms. Hale says she unlocked the greenhouse door at half past seven. It was still locked, and Bertha was smashed inside."
+    step 2 | Narrator (narrator): "[Mock] Ms. Hale is here in The Greenhouse. Ms. Hale has short grey hair and muddy knees. She wears a green apron with gardening gloves in the pocket. Ms. Hale says: Ms. Hale says she unlocked the greenhouse door at half past seven. It was still locked, and Bertha was smashed inside."
     step 3 | You (investigator): "What about the missing key?"
     step 3 | Ms. Hale (character): "[Mock] Ms. Hale says: Ms. Hale says that on Wednesday at half past three the greenhouse key was on its hook. After that, only Toby and Mia were in the shed until she locked it. The next day, the key was gone."
   page 3 location "The Greenhouse"

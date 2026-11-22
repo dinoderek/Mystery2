@@ -149,8 +149,8 @@ describe("the clue-graph talk prompt", async () => {
       .split(talk.character.name).join("<character>");
   }
 
-  it("is written from the objective, in two sections", () => {
-    expect(GRAPH_TALK_PROMPT.match(/^## .+$/gm)).toEqual(["## What you are given", "## What this line earns"]);
+  it("is written from the objective, in three sections", () => {
+    expect(GRAPH_TALK_PROMPT.match(/^## .+$/gm)).toEqual(["## What you are given", "## What this line earns", "## The notebook"]);
     expect(GRAPH_TALK_PROMPT).toContain("The game rewards real detective work at once. Be generous about how the investigator puts things");
     expect(GRAPH_TALK_PROMPT).toContain("and strict about what they actually do.");
   });
@@ -162,10 +162,19 @@ describe("the clue-graph talk prompt", async () => {
       expect(cases.length, file).toBeGreaterThan(0);
       expect(new Set(cases.map(template)).size, file).toBe(1);
     }
-    const templates = new Set(built.map(template).map((text) => text.replace(/\nThe reader is [\s\S]*?\n(?=## )/, "\n")));
+    // The reader's age also sets a notebook line's length.
+    const templates = new Set(
+      built.map(template).map((text) => text.replace(/\nThe reader is [\s\S]*?\n(?=## )/, "\n").replace(/about \d+ words/, "about <n> words")),
+    );
     expect(templates.size).toBe(1);
     const [only] = templates;
-    expect(only.match(/^## .+$/gm)).toEqual(["## Narration style", "## What you are given", "## What this line earns"]);
+    expect(only.match(/^## .+$/gm)).toEqual([
+      "## Narration style",
+      "## What you may make up",
+      "## What you are given",
+      "## What this line earns",
+      "## The notebook",
+    ]);
     expect(only).not.toMatch(/agenda|self.protect|commitment|fallback|## (Locked|Reactions|Held-back)/i);
   });
 

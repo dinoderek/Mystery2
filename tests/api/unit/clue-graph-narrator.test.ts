@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { buildClueGraphBlueprint, clueGraphCaseId, validateClueGraph, type ClueGraphCase } from "@my2/shared";
 import { parseGraphTalkOutput, parseSearchOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import { createAIProviderFromProfile, mockGraphSearch, mockGraphTalk } from "../../../packages/game-engine/src/ai-provider.ts";
-import { applyEvent, replay, type ClueGraphEvent } from "../../../packages/game-engine/src/clue-graph/play.ts";
+import { applyEvent, availableGates, replay, type ClueGraphEvent } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import {
   buildGraphSearchContext,
   buildGraphTalkContext,
@@ -111,12 +111,22 @@ describe("the clue-graph talk contract and mock", () => {
     expect(parseGraphTalkOutput(mockGraphTalk(state, "Tell me the truth")).opened).toEqual([plain.id]);
   });
 
+  it("shares what the character knows when asked, and says plainly it does not know otherwise", () => {
+    const context = buildGraphTalkContext(graph, replay(graph, [...atThorne, { type: "talk", character: "thorne" }]), "thorne", false);
+    const knows = parseGraphTalkOutput(mockGraphTalk(context, "What do you know about prizes?"));
+    for (const known of graph.characters.thorne.knows) expect(knows.narration).toContain(known.fact);
+    expect(knows).toMatchObject({ opened: [], answered: [], notebook: [] });
+    const unknown = parseGraphTalkOutput(mockGraphTalk(context, "Where were the swings?"));
+    expect(unknown.narration).toContain("I don't know.");
+    expect(unknown).toMatchObject({ opened: [], answered: [], notebook: [] });
+  });
+
   it("earns nothing from gibberish, whatever was listed", () => {
     const context = buildGraphTalkContext(graph, replay(graph, atThorne), "thorne", false);
     expect(parseGraphTalkOutput(mockGraphTalk(context, "xzqv"))).toMatchObject({ input_understood: false, opened: [] });
     expect(
-      parseGraphTalkOutput({ narration: "What?", opened: ["a"], answered: ["b"], input_understood: false }),
-    ).toEqual({ narration: "What?", opened: [], answered: [], input_understood: false });
+      parseGraphTalkOutput({ narration: "What?", opened: ["a"], answered: ["b"], notebook: [{ id: "b", line: "B." }], input_understood: false }),
+    ).toEqual({ narration: "What?", opened: [], answered: [], notebook: [], input_understood: false });
     expect(parseGraphTalkOutput({ narration: "Hi.", opened: ["a", "a", 3] }).opened).toEqual(["a"]);
   });
 
@@ -223,5 +233,80 @@ describe("the clue-graph prompts", () => {
     await expect(request.prompt).toMatchFileSnapshot(`snapshots/narrator/${name}.prompt.txt`);
     if (name !== "graph.accusation_judge")
       await expect(JSON.stringify(request.context, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${name}.context.json`);
+  });
+});
+
+describe("what a clue-graph narrator is handed", () => {
+  const graph = greenhouse();
+  const atThorne: ClueGraphEvent[] = [{ type: "move", location: "thorne_garden" }];
+  const metThorne: ClueGraphEvent[] = [...atThorne, { type: "talk", character: "thorne" }];
+
+  it("carries what a character knows on every talk, with what each fact points at", () => {
+    const knows = [
+      { fact: graph.characters.thorne.knows[0].fact },
+      { fact: graph.characters.thorne.knows[1].fact, about: "Mr. Thorne's Garden" },
+    ];
+    expect(buildGraphTalkContext(graph, replay(graph, atThorne), "thorne", true).character.knows).toEqual(knows);
+    expect(buildGraphTalkContext(graph, replay(graph, metThorne), "thorne", false).character.knows).toEqual(knows);
+  });
+
+  it("carries how a character looks on the first meeting only", () => {
+    expect(buildGraphTalkContext(graph, replay(graph, atThorne), "thorne", true).character.appearance).toEqual(
+      graph.characters.thorne.appearance,
+    );
+    expect(buildGraphTalkContext(graph, replay(graph, metThorne), "thorne", false).character.appearance).toBeUndefined();
+    const again = replay(graph, [...metThorne, { type: "move", location: "greenhouse" }, { type: "move", location: "thorne_garden" }]);
+    expect(buildGraphTalkContext(graph, again, "thorne", true).character.appearance).toBeUndefined();
+  });
+
+  it("names the hidden spot a pointer clue shows, in talk and in search", () => {
+    const pointing = structuredClone(graph);
+    pointing.locations.greenhouse.spots[3].revealed_by = "react_toby_pocket";
+    pointing.locations.potting_shed.spots[1].revealed_by = "clue_welly_prints";
+    const spot = { spot: "the water butt by the door", location: "The Greenhouse" };
+    const met = replay(pointing, [{ type: "move", location: "potting_shed" }, { type: "talk", character: "toby" }]);
+    const answer = buildGraphTalkContext(pointing, met, "toby", false).state.answers_if_asked.find((entry) => entry.id === "toby_no_key")!;
+    expect(answer.with).toEqual([{ id: "react_toby_pocket", does: pointing.clues.react_toby_pocket.fact, names_spot: spot }]);
+    const search = buildGraphSearchContext(pointing, replay(pointing, []), "the smashed pumpkin");
+    expect(search.outcome).toMatchObject({
+      kind: "known",
+      finds: { id: "clue_welly_prints", names_spot: { spot: "the row of key hooks", location: "The Potting Shed" } },
+    });
+    // A clue that points at nothing names no spot.
+    expect(buildGraphSearchContext(graph, replay(graph, []), "the smashed pumpkin").outcome).not.toMatchObject({
+      finds: { names_spot: expect.anything() },
+    });
+  });
+
+  it("never carries a gated clue's fact before its gate is open to it", () => {
+    // A gate is open to its clue once it is available: then the narrator holds its fact, to say when it opens,
+    // and a bluffable gate elsewhere may name it as a clue to show.
+    const gated = Object.keys(graph.clues).filter((id) => {
+      const clue = graph.clues[id];
+      return clue.kind === "statement" && clue.reached.by === "gated";
+    });
+    const plays: ClueGraphEvent[][] = [[]];
+    for (const [character, person] of Object.entries(graph.characters))
+      plays.push([...plays.at(-1)!, { type: "move", location: person.location }, { type: "talk", character }]);
+    for (const events of plays) {
+      const play = replay(graph, events);
+      const available = new Set(Object.keys(graph.characters).flatMap((character) => availableGates(graph, play, character).map((gate) => gate.id)));
+      const contexts = [
+        ...Object.keys(graph.characters).flatMap((character) => [
+          buildGraphTalkContext(graph, play, character, true),
+          buildGraphTalkContext(graph, play, character, false),
+        ]),
+        ...Object.keys(graph.locations).map((location) => buildGraphSearchContext(graph, { ...play, at: location }, null)),
+      ].map((context) => JSON.stringify(context));
+      for (const id of gated) {
+        if (available.has(id) || play.held.includes(id)) continue;
+        for (const context of contexts) expect(context, `${events.length} events: ${id}`).not.toContain(graph.clues[id].fact);
+      }
+    }
+    // A greeting carries no gate at all.
+    for (const character of Object.keys(graph.characters)) {
+      const greeting = JSON.stringify(buildGraphTalkContext(graph, replay(graph, []), character, true).state);
+      for (const id of gated) expect(greeting).not.toContain(graph.clues[id].fact);
+    }
   });
 });

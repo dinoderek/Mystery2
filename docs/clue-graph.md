@@ -14,7 +14,7 @@ Everything a player can learn is a clue; what holds one back is a gate.
 | Opening | What is public at the start | Yes |
 | Evidence | A finding at a location or spot, always true | Yes |
 | Statement | What a character says: true, or false with why | Yes, unmarked |
-| Tell | What a character does, hinting at what can be unlocked | In prose |
+| Tell | What a character does, hinting at what can be unlocked | Yes |
 | Conclusion | An all-of or any-of rule over clues and conclusions | No |
 
 A character's clue is reached one
@@ -30,7 +30,8 @@ A gate has up to three parts:
 - `line`: a line of questioning, with the tell that hints at it (`hinted_by`).
 
 With `after` alone, it comes when asked once those are out (a confession).
-With `use` and `line`, either opens it. `physical: true` cannot be bluffed. A
+With `use` and `line`, either opens it. `physical: true` cannot be bluffed:
+its `use` clues must be held. A
 gated statement may `takes_back` the character's earlier false statements.
 Using a clue means showing it or making its point, not holding it.
 
@@ -39,26 +40,26 @@ Using a clue means showing it or making its point, not holding it.
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
 and other formats are rejected, by name. A case
 holds facts, never the words a child reads: the narrator writes those. A fact
-states what it establishes plainly and completely, keeping every name, time,
+states what it establishes completely, keeping every name, time,
 place and object; names are as authored. Beyond the schema:
 
 - `metadata.target_age`: the default reading age, and the age the plot is
   sized for.
 - `truth` (`timeline`, `motive`) is what the ending tells.
-- A spot with `revealed_by` is hidden until that clue is held.
+- A spot with `revealed_by` is hidden until that clue is held, and that
+  clue's line names the spot.
 - `personality` and `demeanor` (by stance) direct the narrator; `knows` holds
   true facts shared when asked, never clues; a character's secret is the fact
   of their gated clues.
 - A clue's `fact` is what evidence establishes, what a statement claims (with
   `truth`, and `why` when false) or what a tell shows. `colour: true` marks a
-  clue nothing depends on, by design.
+  clue nothing depends on.
 - A conclusion has a `rule` and at most one of `clears`, `culprit` and
   `resolves` (a red herring).
-- Artwork, never needed to play: `visual_direction`, `cover`, and the
-  image IDs `./dev gen-images` saves ([generation flows](blueprint-generation-flows.md)).
+- Artwork, never needed: `visual_direction`, `cover` and image IDs
+  ([generation flows](blueprint-generation-flows.md)).
 
-An earlier-format game stays listed, marked unable to open;
-opening it answers `410`, logged once.
+An earlier-format game stays listed; opening it answers `410`, logged once.
 
 ## Validation
 
@@ -66,8 +67,7 @@ opening it answers `410`, logged once.
 1 invalid, 2 unreadable, 3 misuse; each fault names its field.
 
 Trails: `node scripts/print-clue-graph-trails.mjs <file>` prints each
-conclusion's routes as Markdown trails, step by step, with the same reach code
-and exit codes and no model.
+conclusion's routes as Markdown trails.
 
 References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
 `points_at` and the cover name what the case holds;
@@ -93,9 +93,9 @@ Story checks, for authored cases:
 - a character with more first words than a greeting carries;
 - a case outside its size.
 
-A statement taken back counts as held. The route uses the game's costs
-(`docs/game.md`); a conversation yields every clue it can reach, but one
-started on the last turn gives only the greeting.
+A statement taken back counts as held. Routes use the game's costs
+(`docs/game.md`): a conversation yields all it can reach, but one started on
+the last turn only the greeting.
 
 ## Sizes
 
@@ -116,37 +116,39 @@ is false; such a route draws on it or its retraction.
 
 ## In play
 
-The loader reads `clue-graph/` beside `msf/` into a rule-free world view. A
-start saves the case in `game_sessions.clue_graph_snapshot`, which resume and
-every turn play, checked without the story checks. Each turn that counts saves
-its event in `payload.clue_graph`; the rest is derived from those on every
-call.
+The loader builds a rule-free world view. A start saves the
+case in `game_sessions.clue_graph_snapshot`, which resume and every turn play,
+checked without the story checks. Each turn that counts saves its event in
+`payload.clue_graph`, from which the rest is derived.
 
-- **Gates.** Available once every `after` clue is out. A physical gate with
-  `use` also needs those clues held; a non-physical one is bluffable.
-- **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  state (`talkState`)
-  and reports what the line `opened` and `answered`. A report the state
-  did not offer fails the turn before anything is saved; one already held is
-  dropped; gibberish records nothing.
+- **Talk** (`graph_talk`): the narrator gets `talkState`, `knows` and
+  first-meeting appearance, and reports what the line `opened` and
+  `answered`. A report not offered fails the turn, unsaved; one already held
+  is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
-  the words; for words naming none, the narrator picks a visible spot's clue,
-  the room's, or none. A hidden spot shows once its pointer is held; before,
-  it wins words only by fitting them better than any visible spot, finds
-  nothing, and is never named to the narrator.
-- **Retraction**: a conclusion holds only on clues not taken back.
-- **Leads** name who or where: someone unmet, someone with more to give, a
-  hidden spot newly visible; each new when it appears.
-- **Notebook**: held clues, with kind and whether taken back, then the
-  leads. Never a conclusion or a tell nothing depends on; no truth, rule or
-  gate wording reaches the browser. A farewell narrator sees only clues
-  found.
-- **Accusation**: the judge gets the graph and `clue_graph_progress`
-  (supported conclusions, the culprit's among them; retractions).
+  the words, else the narrator picks a visible spot's clue, the room's, or
+  none. A hidden spot shows once its pointer is held; before, it wins only
+  words it fits better than any visible spot, finds nothing, and is never
+  named to the narrator.
+- **Notebook lines**, one per clue a turn brings out, are saved in the event's
+  `notebook`; a missing, extra, blank or repeated line fails the turn, one for
+  a held clue is dropped. Every reader (notebook, later turns, farewell,
+  accusation) uses that line.
+- **Notebook**: every held clue, with kind and whether taken back, then the
+  leads: someone unmet, someone with more to give, a hidden spot newly shown,
+  each new on its turn. No conclusion, truth, rule or gate wording reaches
+  the browser; a farewell sees only found clues.
+- **Accusation**: the judge gets the graph and `clue_graph_progress`. A
+  conclusion holds only on clues not taken back.
 
 ## The narrator's judgement
 
-One talk prompt, generous on how the investigator puts things and strict on
-what they do, judges which offered gates a line opened, given their earlier
+The narrator may add scenery and manner, never what looks like evidence or
+bears on who, when or where, keeping what earlier narration established. Asked
+anything beyond their clues and `knows` that bears on the case, a character
+says plainly they do not know.
+
+One talk prompt, generous on how the investigator puts things, strict on what
+they do, judges which offered gates a line opened, given their earlier
 lines, so a clue shown and dodged opens on a follow-up. Cases and baselines:
 `evaluation/runtime/cases/clue-graph/`.

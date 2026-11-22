@@ -5,20 +5,47 @@
 import { spotMatchScore } from "../search-target.ts";
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
 import { holds, visibleSpots, type ClueGraphPlay } from "./play.ts";
-import { talkState, type ClueGraphTalkState } from "./talk-state.ts";
+import { namedSpotOf, talkState, type ClueGraphTalkState, type NamedSpot } from "./talk-state.ts";
+
+/** A plain true thing a character knows and shares when asked; never a clue. */
+export interface KnownFact {
+  fact: string;
+  /** The place or person it is about, by name. */
+  about?: string;
+}
 
 export interface GraphTalkContext {
-  character: { id: string; name: string; sex: "male" | "female"; personality: string };
+  character: {
+    id: string;
+    name: string;
+    sex: "male" | "female";
+    personality: string;
+    /** On the first meeting only: how they look. Later turns keep to what was said. */
+    appearance?: string[];
+    knows: KnownFact[];
+  };
   location_name: string;
   /** True when the investigator has just turned to them and said nothing yet. */
   greeting: boolean;
   state: ClueGraphTalkState;
 }
 
+function knownFacts(graph: ClueGraphCase, characterId: string): KnownFact[] {
+  return graph.characters[characterId].knows.map(({ fact, points_at }) => {
+    if (!points_at) return { fact };
+    const about = "location" in points_at
+      ? graph.locations[points_at.location].name
+      : graph.characters[points_at.character].name;
+    return { fact, about };
+  });
+}
+
 /**
  * The talk context for one line, or for the greeting when `greeting` is set. A
  * greeting carries only what a greeting can hold: first words, the story so
- * far and what to keep back. Nothing is asked yet, so nothing can open.
+ * far and what to keep back. Nothing is asked yet, so nothing can open. What the
+ * character knows comes on every talk; how they look, only when they are first
+ * met.
  */
 export function buildGraphTalkContext(
   graph: ClueGraphCase,
@@ -28,8 +55,16 @@ export function buildGraphTalkContext(
 ): GraphTalkContext {
   const person = graph.characters[characterId];
   const state = talkState(graph, play, characterId);
+  const firstMeeting = greeting && !play.met.includes(characterId);
   return {
-    character: { id: characterId, name: person.name, sex: person.sex, personality: person.personality },
+    character: {
+      id: characterId,
+      name: person.name,
+      sex: person.sex,
+      personality: person.personality,
+      ...(firstMeeting ? { appearance: person.appearance } : {}),
+      knows: knownFacts(graph, characterId),
+    },
     location_name: graph.locations[person.location].name,
     greeting,
     state: greeting ? { ...state, answers_if_asked: [], gates: [], shows_when: [] } : state,
@@ -39,7 +74,7 @@ export function buildGraphTalkContext(
 /** A clue a search can find, and where: a spot, or null for the room itself. */
 export interface SearchCandidate {
   spot: string | null;
-  clue: { id: string; text: string };
+  clue: { id: string; text: string; names_spot?: NamedSpot };
 }
 
 /**
@@ -77,7 +112,9 @@ function unheldAt(graph: ClueGraphCase, play: ClueGraphPlay, location: string, s
     const clue = graph.clues[clueId];
     return clue.kind === "evidence" && clue.source.location === location && (clue.source.spot ?? null) === spot;
   });
-  return id === undefined || held(id) ? null : { id, text: graph.clues[id].fact };
+  if (id === undefined || held(id)) return null;
+  const named = namedSpotOf(graph, id);
+  return { id, text: graph.clues[id].fact, ...(named ? { names_spot: named } : {}) };
 }
 
 /** What a search can find, as the narrator is told it. */
@@ -116,7 +153,8 @@ export function resolveGraphSearchWords(
 
 export interface GraphSearchContext {
   location_name: string;
-  location_description: string;
+  /** The facts about the place, to word. */
+  location_facts: string[];
   search_query: string | null;
   /** The only spots the narrator may mention. */
   visible_spots: string[];
@@ -131,7 +169,7 @@ export function buildGraphSearchContext(
   const place = graph.locations[play.at];
   return {
     location_name: place.name,
-    location_description: place.facts.join(" "),
+    location_facts: place.facts,
     search_query: query,
     visible_spots: visibleSpots(graph, play, play.at),
     outcome: searchOutcome(graph, play, query),

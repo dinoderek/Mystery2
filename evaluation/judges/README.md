@@ -35,8 +35,8 @@ input, narration and revealed clues. Three fields carry the design:
 
 - `judged`. A runtime case's prior history is a **fixture**, not the model's
   output, so those turns are context the judge reads but never faults. A trace
-  has no fixture, so every turn is judged. Without the flag, every runtime case
-  would be marked down for its own setup.
+  has no fixture, so every turn is judged. Without it, a case is faulted for
+  its own setup.
 - `prior_revealed_clue_ids`. A search gate is judged against what the player
   demonstrably had, from either subject, without the runtime's internal flags.
 - `recorded_use`. What the narrator reported for a character turn: gate clues
@@ -44,6 +44,8 @@ input, narration and revealed clues. Three fields carry the design:
   the engine). Absent where not recorded, so "used nothing" and "not recorded" differ. A talk gate
   opens on use, not possession ([`docs/ai-runtime.md`](../../docs/ai-runtime.md),
   "Earned, not free").
+
+A clue-graph turn also carries `notebook`, the line saved for each clue.
 
 ## The verdict rule
 

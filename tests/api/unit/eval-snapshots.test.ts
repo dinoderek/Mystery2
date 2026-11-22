@@ -310,7 +310,21 @@ function graphTurnCase(blueprintFile: string, judges: string[]) {
           event_type: "talk",
           actor: "system",
           narration: "Toby looks up from the pots. \"I was sweeping up all evening,\" he says.",
-          payload: { character_id: "toby", location_id: "potting_shed", revealed_clue_ids: ["toby_alibi", "react_toby_trainers", "toby_blames_thorne"], clue_graph: { type: "talk", character: "toby" } },
+          payload: {
+            character_id: "toby",
+            location_id: "potting_shed",
+            revealed_clue_ids: ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne"],
+            clue_graph: {
+              type: "talk",
+              character: "toby",
+              notebook: {
+                toby_alibi: "Toby says he was home all Friday evening doing a jigsaw, and went to bed at nine.",
+                react_toby_sweeping: "Toby went pink and swept the same patch over and over.",
+                react_toby_trainers: "Toby wore trainers on a muddy morning; Mia wore her leaf-pattern club wellies.",
+                toby_blames_thorne: "Toby says Mr. Thorne climbed the fence and smashed the window.",
+              },
+            },
+          },
         },
       ],
     },

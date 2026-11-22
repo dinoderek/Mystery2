@@ -89,7 +89,7 @@ export async function handle(
     const records = buildDiscoveryRecords(blueprint, events ?? []);
     const marks = blueprint.clue_graph ? notebookMarks(blueprint.clue_graph, playedEvents(events ?? [])) : null;
     const gameState = buildGameState(blueprint, {
-      discovered_clues: marks ? markClues(blueprint.clue_graph!, records, marks.taken_back) : records,
+      discovered_clues: marks ? markClues(blueprint.clue_graph!, records, marks) : records,
       ...(marks ? { leads: marks.leads } : {}),
       time_remaining: session.time_remaining,
       location: session.current_location_id,

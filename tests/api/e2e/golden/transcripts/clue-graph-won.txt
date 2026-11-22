@@ -11,7 +11,7 @@ steps
   6  "What about the noise last night?"  mode=talk turns=8 clues=clue_dobbs_crash_time
   7  "bye"  mode=explore turns=8
   8  "go to the garden"  mode=explore turns=7
-  9  "talk to Mr. Thorne"  mode=talk turns=6 clues=thorne_alibi,clue_thorne_mia_cake,thorne_never_set_foot
+  9  "talk to Mr. Thorne"  mode=talk turns=6 clues=thorne_alibi,clue_thorne_mia_cake,thorne_never_set_foot,react_thorne_boot
   10  "Look at these: clue_boot_prints"  mode=talk turns=6 clues=clue_thorne_measured
   11  "bye"  mode=explore turns=6
   12  "notebook"  mode=explore turns=6 opens=notebook
@@ -21,20 +21,20 @@ steps
 
 pages
   page 0 opening "The Smashed Prize Pumpkin — clue graph"
-    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
+    step 0 | Narrator (narrator): "[Mock] Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed."
     step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
   page 1 location "The Greenhouse"
-    step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. Ms. Hale is here."
+    step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. The greenhouse air is warm and damp, and it smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze. Ms. Hale is here."
     step 2 | You (investigator): "search"
     step 2 | Narrator (narrator): "[Mock] You search The Greenhouse and uncover a clue: Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child."
     step 3 | You (investigator): "search the smashed pumpkin"
     step 3 | Narrator (narrator): "[Mock] You search the smashed pumpkin in The Greenhouse and uncover a clue: Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies."
   page 2 location "Mr. Dobbs's Workshop"
     step 4 | You (investigator): "go to the workshop"
-    step 4 | Narrator (narrator): "[Mock] You arrive at Mr. Dobbs's Workshop. Mr. Dobbs is here."
+    step 4 | Narrator (narrator): "[Mock] You arrive at Mr. Dobbs's Workshop. Mr. Dobbs's workshop is cluttered and smells of oil and sawdust. Tools hang on every wall. A kettle steams in the corner. A window looks out over the school garden. Mr. Dobbs is here."
   page 3 conversation "Mr. Dobbs"
     step 5 | You (investigator): "talk to Mr. Dobbs"
-    step 5 | Narrator (narrator): "[Mock] Mr. Dobbs is here in Mr. Dobbs's Workshop. Mr. Dobbs says: Mr. Dobbs says that on his eight o'clock rounds he shone his torch into the greenhouse. Bertha was whole, and the door was locked. Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers."
+    step 5 | Narrator (narrator): "[Mock] Mr. Dobbs is here in Mr. Dobbs's Workshop. Mr. Dobbs is an old man in brown overalls. He wears slippers indoors. Mr. Dobbs says: Mr. Dobbs says that on his eight o'clock rounds he shone his torch into the greenhouse. Bertha was whole, and the door was locked. Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers."
     step 6 | You (investigator): "What about the noise last night?"
     step 6 | Mr. Dobbs (character): "[Mock] Mr. Dobbs says: Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again."
   page 4 location "Mr. Dobbs's Workshop"
@@ -42,10 +42,10 @@ pages
     step 7 | Narrator (narrator): "[Mock] You say goodbye to Mr. Dobbs and look around again."
   page 5 location "Mr. Thorne's Garden"
     step 8 | You (investigator): "go to the garden"
-    step 8 | Narrator (narrator): "[Mock] You arrive at Mr. Thorne's Garden. Mr. Thorne is here."
+    step 8 | Narrator (narrator): "[Mock] You arrive at Mr. Thorne's Garden. Mr. Thorne's garden is neat, with rows of leeks. A shed in the garden is covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden. Mr. Thorne is here."
   page 6 conversation "Mr. Thorne"
     step 9 | You (investigator): "talk to Mr. Thorne"
-    step 9 | Narrator (narrator): "[Mock] Mr. Thorne is here in Mr. Thorne's Garden. Mr. Thorne says: Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten. Mr. Thorne says he has never set foot in the school garden. Mr. Thorne's ears turn red and he scuffs one huge boot on the grass."
+    step 9 | Narrator (narrator): "[Mock] Mr. Thorne is here in Mr. Thorne's Garden. Mr. Thorne is a big man with a bushy grey beard. He wears huge muddy boots. Mr. Thorne says: Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten. Mr. Thorne says he has never set foot in the school garden. (Mr. Thorne's ears turn red and he scuffs one huge boot on the grass.)"
     step 10 | You (investigator): "Look at these: clue_boot_prints"
     step 10 | Mr. Thorne (character): "[Mock] Mr. Thorne says: Mr. Thorne admits he climbed over on Friday at four to measure Bertha through the window, and that the boot prints are his. He says Bertha was perfectly whole."
   page 7 location "Mr. Thorne's Garden"

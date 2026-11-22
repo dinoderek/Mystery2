@@ -78,6 +78,8 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
 // the grounding rules, stated here once rather than in each role's prompt. A
 // blueprint may extend the voice via metadata.narration_style (see
 // buildStyleGuidance); the reading level above it always wins.
+const PRONOUNS = "Choose pronouns from each character's sex, never by guessing.";
+const NEVER_INVENT = `- Use only the characters, places and facts you are given; never invent more. ${PRONOUNS}`;
 const STANDARD_NARRATION_STYLE = [
   "## Narration style",
   '- Address the player as "you", the investigator, in the present tense.',
@@ -85,24 +87,39 @@ const STANDARD_NARRATION_STYLE = [
   "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
   "- Characters always speak in direct first-person dialogue with brief action beats.",
   "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
-  "- Use only the characters, places and facts you are given; never invent more. Choose pronouns from each character's sex, never by guessing.",
+  NEVER_INVENT,
+].join("\n");
+
+// A clue-graph case hands the narrator facts to word, and lets it add mood
+// under two rules (`docs/clue-graph.md`, "The narrator's judgement"): this
+// replaces the standard style's last line, NEVER_INVENT, and follows the style.
+const CLUE_GRAPH_FACTS = `- Use only the characters, places and facts you are given. Each is a fact to put in your own words, keeping every name, time, place and object. ${PRONOUNS}`;
+const CLUE_GRAPH_INVENTION = [
+  "",
+  "## What you may make up",
+  "You may add scenery and manner (weather, a smell, a sound, how someone fidgets) to bring the scene to life, under two rules:",
+  "- Nothing you add looks like evidence or bears on who, when or where: no marks, objects to examine, times, sightings, people or places to search beyond what you are given.",
+  "- What earlier narration established stays: keep the place, the weather and how people look as they were already described, on this turn and every later visit.",
 ].join("\n");
 
 /**
  * Style guidance for a runtime prompt: the standard narrator style, plus the
  * blueprint's own optional voice (`metadata.narration_style`) layered on top.
+ * A clue-graph case's narration may invent mood, never evidence.
  */
-export function buildStyleGuidance(narrationStyle?: string | null): string {
+export function buildStyleGuidance(narrationStyle?: string | null, options: { clueGraph?: boolean } = {}): string {
+  const standard = options.clueGraph
+    ? STANDARD_NARRATION_STYLE.replace(NEVER_INVENT, CLUE_GRAPH_FACTS)
+    : STANDARD_NARRATION_STYLE;
   const custom = narrationStyle?.trim();
-  if (!custom) {
-    return STANDARD_NARRATION_STYLE;
-  }
-
-  return [
-    STANDARD_NARRATION_STYLE,
-    `- This mystery's own voice (follow it within the rules above): ${custom}`,
-    "- That voice flavors tone and imagery only, never harder words or longer sentences: where it and the reading level pull apart, the reading level wins.",
-  ].join("\n");
+  const style = !custom
+    ? standard
+    : [
+        standard,
+        `- This mystery's own voice (follow it within the rules above): ${custom}`,
+        "- That voice flavors tone and imagery only, never harder words or longer sentences: where it and the reading level pull apart, the reading level wins.",
+      ].join("\n");
+  return options.clueGraph ? `${style}\n${CLUE_GRAPH_INVENTION}` : style;
 }
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
@@ -315,6 +332,8 @@ export interface LoadPromptOptions {
    * sections (`talk-prompt.ts`). Without one, every section is included.
    */
   talkProfile?: TalkPromptProfile;
+  /** A clue-graph case: the narrator words facts and may invent mood, never evidence. */
+  clueGraph?: boolean;
 }
 
 /**
@@ -339,7 +358,7 @@ export async function loadPromptTemplate(
       "{{age_guidance}}",
       renderRoleGuidance(role, targetAge, options.interaction),
     )
-    .replace("{{style_guidance}}", buildStyleGuidance(options.narrationStyle));
+    .replace("{{style_guidance}}", buildStyleGuidance(options.narrationStyle, { clueGraph: options.clueGraph }));
 }
 
 export function renderPrompt(
@@ -359,19 +378,55 @@ export function renderPrompt(
   );
 }
 
+const OPENING_FACTS_HEADER = "Opening facts:";
+const PLACE_FACTS_HEADER = "Facts about the place:";
+
+/** Facts as a prompt lists them, one to a line, under a header a reader can find. */
+function factLines(header: string, facts: string[]): string[] {
+  return [header, ...facts.map((fact) => `- ${fact}`)];
+}
+
+/** The facts listed under `header`, read back out of a prompt; null when it has none. */
+function readFactLines(prompt: string, header: string): string[] | null {
+  const lines = prompt.split("\n");
+  const start = lines.indexOf(header);
+  if (start < 0) return null;
+  const facts: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!line.startsWith("- ")) break;
+    facts.push(line.slice(2));
+  }
+  return facts;
+}
+
+/**
+ * The opening. A V2 case gives a premise; a clue-graph case gives its public
+ * facts, every one of which the opening words.
+ */
 export function buildGameStartPrompt(input: {
   target_age: number;
   premise: string;
   narration_style?: string | null;
+  facts?: string[];
 }): string {
+  const clueGraph = input.facts !== undefined;
   return [
     "You are the narrator for a children's mystery game.",
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("intro", input.target_age),
-    buildStyleGuidance(input.narration_style),
-    "Open the case with the given premise and invite investigation.",
-    `Premise: ${input.premise}`,
+    buildStyleGuidance(input.narration_style, { clueGraph }),
+    ...(input.facts
+      ? [
+          "Open the case and invite investigation. Tell every fact below in your own words; leave none out.",
+          ...factLines(OPENING_FACTS_HEADER, input.facts),
+        ]
+      : ["Open the case with the given premise and invite investigation.", `Premise: ${input.premise}`]),
   ].join("\n");
+}
+
+/** A clue-graph opening's facts, read back out of its prompt, or null for any other prompt: how the mock recognises one. */
+export function readOpeningFacts(prompt: string): string[] | null {
+  return readFactLines(prompt, OPENING_FACTS_HEADER);
 }
 
 // Arrival is not a conversation: nobody has asked anything, so each present
@@ -382,6 +437,14 @@ const ARRIVAL_CHARACTER_RULES = [
   "- manner is how their aims show before anyone speaks, first matters most: hovering, changing the subject, a glance elsewhere. Show it; never explain it.",
   "- A character who wants attention elsewhere points it at a person their manner names, or at nothing in particular, never at a thing or spot here: you don't know what is hidden where.",
   "- A tell in tells may surface as written.",
+  "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
+].join("\n");
+
+// A clue-graph character arrives with their personality, a demeanor line and
+// how they look; nothing they know or hold.
+const GRAPH_ARRIVAL_CHARACTER_RULES = [
+  "## Characters present",
+  "- Show each character from their appearance, personality and initial_attitude_towards_investigator.",
   "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
 ].join("\n");
 
@@ -397,7 +460,10 @@ export function buildGameMovePrompt(input: {
   destination_characters_json: string;
   destination_sub_locations_json?: string;
   narration_style?: string | null;
+  /** A clue-graph case: the place's facts, which the arrival words in place of a description. */
+  destination_facts?: string[];
 }): string {
+  const clueGraph = input.destination_facts !== undefined;
   const revisitInstruction = input.has_visited_before
     ? "The player has been here before. Explicitly acknowledge the return visit and keep the place, not the people's moods, as the last arrival described it."
     : "The player is arriving here for the first time in this session.";
@@ -408,17 +474,21 @@ export function buildGameMovePrompt(input: {
     `Describe the player arriving at ${input.destination_name}.`,
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("ambience", input.target_age),
-    buildStyleGuidance(input.narration_style),
+    buildStyleGuidance(input.narration_style, { clueGraph }),
     revisitInstruction,
-    "Describe the place from the destination description, and who is visibly here from their names and appearances.",
-    ...(hasCharacters ? [ARRIVAL_CHARACTER_RULES] : []),
+    clueGraph
+      ? "Describe the place from its facts, every one, and who is visibly here from their names and appearances."
+      : "Describe the place from the destination description, and who is visibly here from their names and appearances.",
+    ...(hasCharacters ? [clueGraph ? GRAPH_ARRIVAL_CHARACTER_RULES : ARRIVAL_CHARACTER_RULES] : []),
     ...(input.destination_sub_locations_json
       ? [
           "When describing the location, prominently mention the searchable areas so the player knows what they can investigate. Weave them naturally into the description.",
           `Searchable areas at this location: ${input.destination_sub_locations_json}`,
         ]
       : []),
-    `Destination description: ${input.destination_description}`,
+    ...(input.destination_facts
+      ? factLines(PLACE_FACTS_HEADER, input.destination_facts)
+      : [`Destination description: ${input.destination_description}`]),
     `${ARRIVAL_CHARACTERS_PREFIX}${input.destination_characters_json}`,
     ...(input.has_visited_before && input.last_arrival_narration
       ? [`Last arrival here: ${JSON.stringify(input.last_arrival_narration)}`]
@@ -434,7 +504,7 @@ export function buildGameMovePrompt(input: {
  */
 export function readArrivalPrompt(
   prompt: string,
-): { destination_name: string; character_names: string[] } | null {
+): { destination_name: string; character_names: string[]; facts: string[] | null } | null {
   const headline = ARRIVAL_HEADLINE.exec(prompt);
   if (!headline) return null;
   const charactersLine = prompt
@@ -451,5 +521,6 @@ export function readArrivalPrompt(
     character_names: characters
       .map((c) => c.first_name)
       .filter((name): name is string => typeof name === "string"),
+    facts: readFactLines(prompt, PLACE_FACTS_HEADER),
   };
 }

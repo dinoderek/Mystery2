@@ -2,18 +2,18 @@
 
 V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
 `docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
-“Input” goes to the model; “attached” is paired with its output; sessions
+“Input” goes to the model; “attached” pairs with its output; sessions
 store ids.
 
 ## Generating a clue-graph case
 
 `./dev generate` writes a `clue-graph/2` case by default (agent only) from a
 brief (`packages/blueprint-generator/src/clue-graph-brief.ts`). Prompt:
-`packages/blueprint-generator/src/clue-graph-prompt.md`, no age guidance or
-validator rule; workspace validator: the mechanical check
-(`evaluation/generator-harness/template/README.md`). Repair needs no
-`--judge` (two by default, five at most); `--install` copies a passing final
-case to `blueprints/clue-graph/`.
+`packages/blueprint-generator/src/clue-graph-prompt.md`: a child's-game check,
+no age guidance or validator rule; workspace validator: the mechanical check
+(`evaluation/generator-harness/template/README.md`). Repair needs no `--judge`
+(two by default, five at most); `--install` copies a passing final case to
+`blueprints/clue-graph/`.
 
 ## Generating a blueprint
 
@@ -89,7 +89,7 @@ Three phases keep images consistent:
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the title) and visual direction; artwork is optional.
 
-Ratios are checked against OpenRouter’s list, but support varies by model.
+Ratios are checked against OpenRouter’s list; support varies by model.
 
 ## Generating 3D scenes
 
@@ -128,7 +128,7 @@ location and character).
 
 A clue-graph case gives rows facts to word, talk `knows` and
 first-meeting appearance; a found clue's saved line stands for it; the engine
-decides its accusation ([clue graph](clue-graph.md)).
+decides accusations ([clue graph](clue-graph.md)).
 
 ## Evaluation
 

@@ -143,12 +143,12 @@ checked without the story checks. Each turn that counts saves its event in
 
 ## The narrator's judgement
 
-The narrator may add scenery and manner, never evidence or anything bearing on
-who, when or where, and keeps what earlier narration established. Asked
+The narrator may add scenery and manner, never what looks like evidence or
+bears on who, when or where, keeping what earlier narration established. Asked
 anything beyond their clues and `knows` that bears on the case, a character
 says plainly they do not know.
 
-One talk prompt, generous on how the investigator puts things and strict on
-what they do, judges which offered gates a line opened, given their earlier
+One talk prompt, generous on how the investigator puts things, strict on what
+they do, judges which offered gates a line opened, given their earlier
 lines, so a clue shown and dodged opens on a follow-up. Cases and baselines:
 `evaluation/runtime/cases/clue-graph/`.

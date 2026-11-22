@@ -3,7 +3,8 @@
 A case format beside [V2](../packages/shared/src/blueprint-schema-v2.ts) and
 [MSF](mystery-structure.md). Schema and checks:
 `packages/shared/src/clue-graph-schema.ts`; play:
-`packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`.
+`packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,
+generated ones' briefs in `briefs/`.
 
 ## The model
 
@@ -42,14 +43,13 @@ and formats are rejected by name. It holds facts, never the words a child
 reads. A fact states what it establishes completely: every name, time, place
 and object. Beyond the schema:
 
-- `metadata.target_age`: the default reading age, and the age the plot is
-  sized for.
-- A spot with `revealed_by` is hidden until that clue is held, and that
-  clue's line names it.
-- `personality` and `demeanor` (by stance) direct the narrator; `knows` holds
+- `metadata.target_age`: the default reading age; the plot is sized to it.
+- A spot with `revealed_by` is hidden until that clue, whose line names it,
+  is held.
+- `personality` and `demeanor` (by stance) direct the narrator; `knows`:
   true facts shared when asked, never clues.
-- `colour: true` marks a clue nothing depends on.
-- Artwork, never needed: `visual_direction`, `cover` and image IDs
+- `colour: true`: a clue nothing depends on.
+- Artwork, optional: `visual_direction`, `cover` and image IDs
   ([generation flows](blueprint-generation-flows.md)).
 
 An earlier-format game stays listed; opening it answers `410`, logged once.

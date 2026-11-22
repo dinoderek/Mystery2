@@ -1,0 +1,230 @@
+# Clue-graph case evaluator — single dimension
+
+You are evaluating one quality of a clue-graph mystery case, a detective game
+played by a child. You are given:
+
+- The dimension definition: what to judge, how, and the output.
+- `case`: the case file. The step judge also gets `player_view`, derived from
+  the case by code.
+
+## The case
+
+A case holds facts, never the words a child reads: in play a narrator words
+each fact for the child's age. Judge what the facts say, not their style.
+
+- `truth.timeline` and `truth.motive`: what really happened. Authoritative.
+- `opening.facts`: what is public at the start.
+- `locations`: facts about each place, and its `spots`. A spot with
+  `revealed_by` is hidden until that clue is held.
+- `characters`: `role` (`culprit`, `suspect` or `witness`), `location`,
+  `personality`, `demeanor` lines by stance, `knows` (plain true facts they
+  share when asked, never clues) and `appearance`.
+- `clues`, by `kind`. Evidence is found by searching its source, and is
+  always true. A statement is what a character claims: `truth: false`, with
+  its `why`, is a lie the case means them to tell. A tell is what is observed
+  of a character. `reached` says how a character's clue comes out:
+  `first_meeting`; `seen` (a tell, with one of their statements or when a
+  subject comes up); `asked` about a subject once one of `prompted_by` is
+  held (`opening` stands for the opening); or `gated`. A gate opens once its
+  `after` clues are out, when the player shows a `use` clue (any or all of
+  them), or takes its `line` of questioning, which its `hinted_by` tell hints
+  at. A gated statement may `takes_back` the character's earlier false ones.
+- `conclusions`: what the player can work out, never shown to them. A `rule`
+  names clues and conclusions under `all` and `any`; `text` says what follows.
+  A conclusion may `clears` a suspect, name the `culprit`, or `resolves` a
+  red herring.
+
+## Already checked by code
+
+The case passed `validateClueGraph`, or its failures are reported apart from
+yours. It checks the shape and every reference; that every clue is reached
+from the opening without a bluff; that an asked clue has a prompt and a
+worded gate a hinting tell; that every false statement is taken back, by a
+clue not reached before it; that every conclusion is reached and every suspect
+cleared by one; that the culprit has a route within the turn budget; that no
+spot or plain search holds two clues; and that `after` links have no cycle.
+Do not re-judge any of these: judge what the facts mean.
+
+## Your job
+
+1. Follow the dimension's procedure.
+2. Ground every finding in the case's ids, and quote the fact at fault.
+3. A finding is `major` when a child playing would be misled, stuck or told
+   something untrue, `minor` when it is worth fixing but play still works.
+   The dimension fails on any major finding: set `verdict` to match.
+4. Return only the JSON object the schema asks for.
+5. If the case is unusable, say so in `reasoning` with a major finding.
+
+Be terse. Long explanations dilute the signal.
+
+
+---
+
+---
+id: cg_step_sense
+label: Step sense
+tier: 1
+---
+
+# Step sense
+
+## What this dimension asks
+
+Would each step lead a child of the case's age (`player_view.target_age`) to
+take it, reading only what they hold at that point?
+
+`player_view` is derived from the case by code. `waves` lists the clues by the
+earliest point they can be held. `steps` lists each clue the player must do
+something to get, by its `way`:
+
+- `ask`: ask the character about `about`. The `prompt` leads should make a
+  child think to ask this person that.
+- `gate`: open the character's gate, by showing a `show` lead (making its
+  point), or by taking the `line` of questioning that a `hint` tell suggests.
+  `after` leads are the character's earlier clues, already out; with nothing
+  else, the clue comes when the child asks again.
+- `hidden_spot`: search the spot, which the `pointer` lead should name or
+  point at.
+
+A step's leads are the clues held before its wave, with their facts.
+
+## How to judge
+
+For each step, picture a child of `target_age` who holds the opening and the
+step's leads, and nothing else: no timeline, no conclusion, no `why`, no later
+clue. A narrator words each fact in play, so judge whether the facts carry the
+lead, not their wording. Ask:
+
+- ask: does a lead mention `about`, or make the child wonder about it, and
+  point at this person?
+- show: would the child see that the lead bears on what this person said or
+  did, and bring it to them?
+- line: does the hint show a feeling or worry the line answers, so a kind or
+  curious child would say something like it?
+- after: once the earlier clues are out, is asking what really happened the
+  natural next question?
+- hidden_spot: does the pointer name the spot, or say plainly where something
+  is?
+
+A step with several ways in leads when one of them does.
+
+## Findings
+
+- `does_not_lead` (major): no way into the step gives a child of this age a
+  reason to take it.
+- `needs_more_than_held` (major): the step makes sense only with something the
+  player does not yet hold.
+- `weak_way` (minor): one way in does not lead, but another does.
+- `too_hard` (minor): the step leads, but the jump is hard for this age.
+
+Each finding's `ids` name the step's clue and the leads involved.
+
+## Output
+
+`steps` holds every step of `player_view.steps` once, by its `clue_id`:
+`leads` is `no` when a major finding names it, `weak` when a minor one does,
+else `yes`. Then the findings, the verdict (`fail` iff a finding is major) and
+one short paragraph of reasoning.
+
+
+---
+
+## Output JSON Schema (authoritative)
+
+Your response MUST be a single JSON object matching this schema. If the prose contract above and this schema disagree, the schema wins.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "clue_id": {
+            "type": "string"
+          },
+          "leads": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "weak",
+              "no"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "clue_id",
+          "leads",
+          "note"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "major",
+              "minor"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "does_not_lead",
+              "needs_more_than_held",
+              "weak_way",
+              "too_hard"
+            ]
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "severity",
+          "kind",
+          "ids",
+          "explanation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "steps",
+    "findings",
+    "verdict",
+    "reasoning"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+```

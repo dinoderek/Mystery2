@@ -81,13 +81,21 @@ describe("registry entries", () => {
       "age_appropriate_turn",
     ]);
     expect(checksFor("blueprint")).toHaveLength(13);
+    expect(judgesFor("blueprint", { format: "clue_graph" }).map((j) => j.id)).toEqual([
+      "cg_soundness",
+      "cg_truth_agreement",
+      "cg_character_grounding",
+      "cg_step_sense",
+    ]);
+    expect(checksFor("blueprint", "clue_graph").map((c) => c.id)).toEqual(["clue_graph_valid"]);
     expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak", "clue_requires_violation"]);
     expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
   });
 
-  it("keeps the two verdict rules: dimensions take the stated verdict, game-master and candidate judges fail on a major finding", () => {
+  it("keeps the two verdict rules: V2 dimensions take the stated verdict, game-master, clue-graph and candidate judges fail on a major finding", () => {
     for (const judge of judges) {
-      expect(judge.verdict, judge.id).toBe(judge.id.startsWith("gm_") || judge.candidate ? "major_findings" : "stated");
+      const findings = judge.id.startsWith("gm_") || judge.candidate || judge.format === "clue_graph";
+      expect(judge.verdict, judge.id).toBe(findings ? "major_findings" : "stated");
     }
   });
 

@@ -15,5 +15,9 @@
   "solve_depth_fairness": ["4f8d8968edd944ca"],
   "knowledge_timeline_coherence": ["69d73ef3e93d8b71"],
   "blueprint_broad": ["db9aba04f7b0a621"],
-  "gm_broad": ["14bfc937a21b1536", "d87760d00b744fa2", "39cf0b3c00520aa8"]
+  "gm_broad": ["14bfc937a21b1536", "d87760d00b744fa2", "39cf0b3c00520aa8"],
+  "cg_soundness": ["7e298b0ecccdcb14"],
+  "cg_truth_agreement": ["9a6adf9de2aa966b"],
+  "cg_character_grounding": ["48fb53473b5ddba3"],
+  "cg_step_sense": ["0dbbd1826e255228"]
 }

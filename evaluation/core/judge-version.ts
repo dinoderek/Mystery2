@@ -6,7 +6,8 @@
  * each of its versions in order: version 1 is the first hash, version N the
  * Nth. A judge's hash covers what its registry entry names: the brief, schema
  * and preamble (or the file its prompt is built in), the analyzer, the
- * context, the id checks and the verdict rule.
+ * context, the id checks and the verdict rule, and for a clue-graph judge its
+ * format and whether it is sent the player's view.
  *
  * A change to any of those is a new version: append the judge's new hash. The
  * gate fails while a judge's files hash to anything but its latest version.
@@ -53,6 +54,9 @@ export function judgeHash(entry: JudgeEntry): string {
     context: entry.context ?? null,
     id_checks: entry.idChecks ?? null,
     verdict: entry.verdict,
+    // Only a clue-graph judge carries these, so no other judge's hash moves.
+    ...(entry.format ? { format: entry.format } : {}),
+    ...(entry.playerView ? { player_view: true } : {}),
   };
   return createHash("sha256").update(JSON.stringify(identity)).digest("hex").slice(0, HASH_LENGTH);
 }

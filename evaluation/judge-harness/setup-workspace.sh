@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Build a one-shot judge workspace at <target-dir> for <dimension-id>.
+# Build a one-shot judge workspace at <target-dir> for <dimension-id>, judging
+# a subject of <format>: `v2` (a Blueprint V2, the default) or `clue_graph` (a
+# clue-graph case, with its own instructions and preamble).
 #
 # Layout (after success):
 #   <target-dir>/
@@ -18,16 +20,30 @@
 
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-  echo "usage: $0 <target-dir> <dimension-id>" >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  echo "usage: $0 <target-dir> <dimension-id> [v2|clue_graph]" >&2
   exit 1
 fi
 
 TARGET="$1"
 DIM_ID="$2"
+FORMAT="${3:-v2}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/template"
+PREAMBLE="$REPO_ROOT/evaluation/prompts/judge-system.md"
+INSTRUCTIONS="$TEMPLATE_DIR/CLAUDE.md"
+case "$FORMAT" in
+  v2) ;;
+  clue_graph)
+    PREAMBLE="$REPO_ROOT/evaluation/prompts/clue-graph-judge-system.md"
+    INSTRUCTIONS="$TEMPLATE_DIR/clue-graph/CLAUDE.md"
+    ;;
+  *)
+    echo "unknown subject format: $FORMAT (v2 or clue_graph)" >&2
+    exit 1
+    ;;
+esac
 
 # Map dim-id to the on-disk filename for its definition / schema. Dimension
 # ids use underscores; their files use kebab-case (e.g. character_grounding ->
@@ -48,14 +64,14 @@ fi
 mkdir -p "$TARGET/prompts" "$TARGET/schema" "$TARGET/scripts"
 
 # Static files from the template
-cp "$TEMPLATE_DIR/CLAUDE.md" "$TARGET/CLAUDE.md"
+cp "$INSTRUCTIONS" "$TARGET/CLAUDE.md"
 cp "$TEMPLATE_DIR/README.md" "$TARGET/README.md"
 printf '%s\n' "$DIM_ID" > "$TARGET/dimension-id"
 
 # Symlinks to authoritative artifacts in the repo
 ln -s "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.md" \
       "$TARGET/dimension.md"
-ln -s "$REPO_ROOT/evaluation/prompts/judge-system.md" \
+ln -s "$PREAMBLE" \
       "$TARGET/prompts/judge-system.md"
 ln -s "$REPO_ROOT/evaluation/dimensions/${DIM_FILE_SLUG}.schema.ts" \
       "$TARGET/schema/output-schema.ts"
@@ -69,4 +85,4 @@ if [[ "$DIM_ID" == "character_grounding" || "$DIM_ID" == "blueprint_broad" ]]; t
         "$TARGET/docs/runtime-consumption.md"
 fi
 
-echo "judge workspace ready: $TARGET ($DIM_ID)"
+echo "judge workspace ready: $TARGET ($DIM_ID, $FORMAT)"

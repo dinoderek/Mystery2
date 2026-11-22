@@ -5,11 +5,17 @@
  * cannot say these things, because they depend on the blueprint.
  */
 
+import { stepIds } from "../blueprint/player-view.ts";
 import { extractPlayerFacingText } from "../checks/lib/player-text.ts";
 import type { IdCheck, IdSetName } from "./registry.ts";
 
 interface Blueprint {
   metadata?: { target_age?: unknown };
+  /** A clue-graph case's maps, keyed by id (`docs/clue-graph.md`). */
+  clues?: Record<string, unknown>;
+  conclusions?: Record<string, unknown>;
+  characters?: Record<string, unknown>;
+  locations?: Record<string, unknown>;
   solution_paths?: Array<{ id: string }>;
   suspect_elimination_paths?: Array<{ id: string }>;
   world?: {
@@ -56,6 +62,11 @@ function clueIds(blueprint: Blueprint): Set<string> {
   return ids;
 }
 
+/** The keys of one of a clue-graph case's maps. */
+function caseKeys(map: Record<string, unknown> | undefined): string[] {
+  return map && typeof map === "object" ? Object.keys(map) : [];
+}
+
 function blueprintSet(name: IdSetName, blueprint: Blueprint, context: Record<string, unknown>): Set<string> {
   const characters = blueprint.world?.characters ?? [];
   switch (name) {
@@ -73,6 +84,16 @@ function blueprintSet(name: IdSetName, blueprint: Blueprint, context: Record<str
       return new Set((extractPlayerFacingText(blueprint) as Array<{ path: string }>).map((s) => s.path));
     case "probe_topics":
       return new Set(Array.isArray(context.probe_topics) ? (context.probe_topics as string[]) : []);
+    case "case_clue_ids":
+      return new Set(caseKeys(blueprint.clues));
+    case "case_conclusion_ids":
+      return new Set(caseKeys(blueprint.conclusions));
+    case "case_character_ids":
+      return new Set(caseKeys(blueprint.characters));
+    case "case_ids":
+      return new Set([blueprint.clues, blueprint.conclusions, blueprint.characters, blueprint.locations].flatMap(caseKeys));
+    case "case_step_ids":
+      return stepIds(blueprint);
   }
 }
 

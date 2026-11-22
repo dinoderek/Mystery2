@@ -28,13 +28,11 @@ function read(relative: string): string {
   return fs.readFileSync(path.join(REPO_ROOT, relative), "utf8");
 }
 
-describe("engine wiring", () => {
-  it("tracks a settings file that enables the engine plugin from the engine marketplace", () => {
+describe("repo wiring", () => {
+  it("tracks a settings file that enables no plugins or marketplaces", () => {
     const settings = JSON.parse(read(".claude/settings.json"));
-    expect(settings.enabledPlugins).toEqual({ "engine@engine": true });
-    expect(settings.extraKnownMarketplaces.engine).toEqual({
-      source: { source: "github", repo: "dinoderek/engine" },
-    });
+    expect(settings.enabledPlugins).toBeUndefined();
+    expect(settings.extraKnownMarketplaces).toBeUndefined();
   });
 
   it("has a pull request template with the four parts", () => {
@@ -63,7 +61,7 @@ describe("engine wiring", () => {
     let dir: string;
 
     beforeEach(() => {
-      dir = fs.mkdtempSync(path.join(os.tmpdir(), "engine-wiring-"));
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), "repo-wiring-"));
       git(dir, "init", "-q");
       fs.copyFileSync(
         path.join(REPO_ROOT, ".gitignore"),

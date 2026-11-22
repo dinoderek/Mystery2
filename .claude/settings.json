@@ -1,8 +1,4 @@
 {
-  "extraKnownMarketplaces": {
-    "engine": { "source": { "source": "github", "repo": "dinoderek/engine" } }
-  },
-  "enabledPlugins": { "engine@engine": true },
   "attribution": {
     "pr": "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
   }

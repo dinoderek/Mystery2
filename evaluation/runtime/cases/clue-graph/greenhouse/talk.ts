@@ -29,14 +29,9 @@ const SEARCHED: Step[] = [{ search: "the broken side window" }, { search: "the s
 
 const TOBY_GREETS: Step = {
   talk: "toby",
-  narration: "Toby is sweeping the potting shed in trainers, while Mia's leaf-pattern club wellies stand by the door. He tucks his feet out of sight. \"I was at home all Friday evening, finishing my thousand-piece jigsaw. I went to bed at nine,\" he says, sweeping the same patch over and over. \"It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in.\"",
+  narration: "Toby is sweeping the potting shed in trainers, while Mia's leaf-pattern club wellies stand by the door. He tucks his feet out of sight. \"I was at home all Friday evening, finishing my thousand-piece jigsaw. I went to bed at nine,\" he says, sweeping the same patch over and over. \"It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in. On Thursday he was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'\"",
 };
-/** The fourth of his first words comes out on the line after the greeting. */
-const TOBY_LADDER: Step = {
-  say: "Why do you think it was Mr. Thorne?",
-  reply: "Toby leans on his broom. \"On Thursday, Mr. Thorne was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'\"",
-};
-const TOBY_MET: Step[] = [...SEARCHED, { move: "potting_shed" }, TOBY_GREETS, TOBY_LADDER];
+const TOBY_MET: Step[] = [...SEARCHED, { move: "potting_shed" }, TOBY_GREETS];
 
 const THORNE_GREETS: Step = {
   talk: "thorne",
@@ -86,7 +81,7 @@ const TOBY_SHOWN_CAKE: Step = {
   opened: ["toby_not_mia"],
 };
 /** Thorne's first words give the cake alibi; then Toby, met and talked to. */
-const TOBY_AFTER_THORNE: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS, { move: "potting_shed" }, TOBY_GREETS, TOBY_LADDER];
+const TOBY_AFTER_THORNE: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS, { move: "potting_shed" }, TOBY_GREETS];
 
 const shown = [
   line(THORNE_MET, "Someone with giant boots stood by the broken window, then walked to your fence. Whose boots do you think they were?", {
@@ -133,7 +128,6 @@ const shown = [
       { move: "potting_shed" },
       { search: "the watering rota on the door" },
       TOBY_GREETS,
-      TOBY_LADDER,
       {
         say: "Your name is crossed out on the rota, and MIA is written over it in purple pen.",
         reply: "Toby frowns. \"Mia said she wished Bertha would just go splat, so she could get back to her dance practice.\"",
@@ -179,7 +173,7 @@ const afterDodge = [
 ];
 
 const bluffed = [
-  line([...SEARCHED, { move: "potting_shed" }, TOBY_GREETS, TOBY_LADDER], "I saw the rota. Mia's name is written over yours in purple pen!", {
+  line([...SEARCHED, { move: "potting_shed" }, TOBY_GREETS], "I saw the rota. Mia's name is written over yours in purple pen!", {
     id: "toby-bluffed-rota",
     group: "bluffed",
     // The rota is not held, but what it shows is claimed plainly, and the gate is not physical.

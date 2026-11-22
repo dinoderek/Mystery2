@@ -46,6 +46,7 @@ function fixture(): ClueGraphCase {
   graph.metadata.id = "greenhouse-fixture";
   const butt = graph.locations.greenhouse.spots.find((spot) => spot.name === "the water butt by the door")!;
   butt.revealed_by = "react_toby_pocket";
+  delete graph.clues.react_toby_pocket.colour;
   const ladder = graph.clues.thorne_ladder_thursday;
   if (ladder.kind !== "statement" || ladder.reached.by !== "gated") throw new Error("The ladder clue is gated");
   ladder.reached.gate.physical = true;
@@ -54,6 +55,7 @@ function fixture(): ClueGraphCase {
     fact: "Toby tucks his feet under the bench.",
     source: { character: "toby" },
     reached: { by: "seen", subject: "wellies" },
+    colour: true,
   };
   return validateClueGraph(graph);
 }
@@ -275,8 +277,8 @@ describe("clue-graph sessions and turns", () => {
     await play(opened.game_id, "go to the potting shed");
     await play(opened.game_id, "talk to Toby");
     const asked = await play(opened.game_id, "What about the missing key?");
-    // The next first word, then the answer; the tell riding on it is a pure tell, so only the play holds it.
-    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["clue_toby_thorne_ladder", "toby_no_key"]);
+    // The answer; the tell riding on it is a pure tell, so only the play holds it.
+    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["toby_no_key"]);
     const { graph, events } = await derived(opened.game_id);
     expect(deriveClueGraph(graph, events).play.held).toContain("react_toby_pocket");
   });

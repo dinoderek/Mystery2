@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { has, reachClues, ruleMet } from "./clue-graph-reach.ts";
 import { cheapestRoute } from "./clue-graph-route.ts";
+import { checkStory } from "./clue-graph-story.ts";
 import {
   ClueGraphCaseSchema,
   OPENING_PROMPT,
@@ -308,6 +309,7 @@ function checkGraph(graph: ClueGraphCase, report: Report) {
       ["metadata", "time_budget"],
       `Conclusion "${culprit}" has no route within ${graph.metadata.time_budget} turns without a bluff`,
     );
+  checkStory(graph, reached, report);
 }
 
 /** Shape, references and graph checks; returns the typed case or throws ZodError. */

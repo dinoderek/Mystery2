@@ -279,7 +279,8 @@
       "truth": true,
       "reached": {
         "by": "first_meeting"
-      }
+      },
+      "colour": true
     },
     "abara_nina_jumper": {
       "kind": "statement",
@@ -306,7 +307,8 @@
           "abara_nina_jumper",
           "opening"
         ]
-      }
+      },
+      "colour": true
     },
     "leo_alibi": {
       "kind": "statement",
@@ -329,7 +331,8 @@
       "reached": {
         "by": "seen",
         "with": "leo_alibi"
-      }
+      },
+      "colour": true
     },
     "leo_blames_nina": {
       "kind": "statement",
@@ -413,7 +416,8 @@
       "truth": true,
       "reached": {
         "by": "first_meeting"
-      }
+      },
+      "colour": true
     },
     "react_nina_cards": {
       "kind": "tell",
@@ -468,7 +472,8 @@
       "reached": {
         "by": "seen",
         "with": "sam_alibi_nina"
-      }
+      },
+      "colour": true
     },
     "sam_retracts": {
       "kind": "statement",

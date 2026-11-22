@@ -10,6 +10,17 @@ export { validateClueGraph } from "./clue-graph-validator.ts";
 export { buildClueGraphBlueprint, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX } from "./clue-graph-case.ts";
 export { reachClues, type ReachedClue } from "./clue-graph-reach.ts";
 export { cheapestRoute } from "./clue-graph-route.ts";
+export { culpritRoutes, measureCase, type CulpritRoute } from "./clue-graph-story.ts";
+export {
+  CLUE_GRAPH_SIZES,
+  SIZE_COUNTS,
+  SIZE_TABLE,
+  sizeBounds,
+  type ClueGraphSize,
+  type CountRange,
+  type SizeCount,
+  type SizeOverrides,
+} from "./clue-graph-sizes.ts";
 export { evaluateMysteryStructure } from "./mystery-structure-progress.ts";
 export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
 

@@ -144,6 +144,11 @@ describe("the graph checks", () => {
       'metadata.time_budget: Conclusion "culprit_toby" has no route within 4 turns without a bluff',
     ]);
     graph.metadata.time_budget = 5;
+    expect(issues(graph)).toEqual([
+      'conclusions.culprit_toby.rule: Conclusion "culprit_toby" has one route to the culprit within the turn budget; it needs two',
+    ]);
+    // The confession's route needs a talk before the last turn.
+    graph.metadata.time_budget = 7;
     expect(issues(graph)).toEqual([]);
   });
 
@@ -304,7 +309,9 @@ describe("the culprit route", () => {
   });
 
   it("gives a last-turn greeting only its first three first words", () => {
+    // Four first words for Toby, one more than the validator allows.
     const graph = greenhouse();
+    set(graph, "clues.react_toby_trainers.reached", { by: "first_meeting" });
     graph.metadata.time_budget = 2;
     expect(cheapestRoute(graph, "toby_blames_thorne")).toBe(2);
     expect(cheapestRoute(graph, "clue_toby_thorne_ladder")).toBeNull();
@@ -327,6 +334,7 @@ describe("the culprit route", () => {
             kind: "evidence",
             fact: "Nothing much.",
             source: spot === undefined ? { location } : { location, spot },
+            colour: true,
           };
     const story = { all: ["toby_confession", "thorne_cleared", "motive", "how"] };
     graph.metadata.time_budget = 9;

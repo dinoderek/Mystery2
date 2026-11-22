@@ -255,7 +255,10 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(accusationLine),
     events: ["accuse_start", "accuse_round", "accuse_resolved"],
     roleInput: (g, a, bp, history = []) => {
-      const role = resolveAccusationRole(a.player_reasoning);
+      // A clue-graph round's one judgement is its first call: who was named, and what was cited.
+      const role = bp.clue_graph && resolveAccusationRole(a.player_reasoning) === "accusation_judge"
+        ? "graph_accusation"
+        : resolveAccusationRole(a.player_reasoning);
       const base = {
         role,
         game_id: "case",
@@ -264,6 +267,7 @@ export const ACTIONS: Record<string, ActionSpec> = {
         conversation_history: history,
         ...(a.accusation_history_mode ? { history_mode: a.accusation_history_mode } : {}),
       };
+      if (role === "graph_accusation") return { ...base, player_input: a.player_reasoning };
       return role === "accusation_judge"
         ? {
           ...base,
@@ -315,7 +319,7 @@ export function resolveRoleName(
 
 /** Whether a role name belongs to the endgame, where the solution is discussed. */
 export function isAccusationRole(roleName: unknown): boolean {
-  return typeof roleName === "string" && roleName.startsWith("accusation");
+  return typeof roleName === "string" && (roleName.startsWith("accusation") || roleName.startsWith("graph_accusation") || roleName === "graph_ending");
 }
 
 export function getAction(type: string): ActionSpec {

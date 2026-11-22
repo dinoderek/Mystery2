@@ -21,7 +21,7 @@ import { readBlueprint, type TurnCase } from "../../../evaluation/runtime/lib/ca
 import { outputSays } from "../../../evaluation/runtime/lib/expect.ts";
 import { casesFromTrace } from "../../../evaluation/runtime/cases.ts";
 import { buildRoleRequest } from "../../../evaluation/runtime/lib/prompt-build.ts";
-import { getAction, normalizeHistory, resolveRoleName } from "../../../evaluation/runtime/lib/roles.ts";
+import { getAction, isAccusationRole, normalizeHistory, resolveRoleName } from "../../../evaluation/runtime/lib/roles.ts";
 import { seedSessionWithHistory } from "../../../evaluation/runtime/lib/seed.ts";
 import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
@@ -116,8 +116,10 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(talks[0].character_id).toBe("dobbs");
     const search = reconstruction.turns.find((turn) => turn.event_type === "search");
     expect(search?.reconstructed_context?.graph_search_context).toBeDefined();
-    const judge = reconstruction.turns.filter((turn) => turn.role_name === "accusation_judge").at(-1);
-    expect(judge?.reconstructed_context?.accusation_judge_context?.clue_graph_progress).toBeDefined();
+    // An accusation turn is rebuilt as the role that wrote it: the closing scene holds the truth.
+    const ending = reconstruction.turns.at(-1);
+    expect(ending?.role_name).toBe("graph_ending");
+    expect(ending?.reconstructed_context?.graph_accusation_context).toMatchObject({ ending: { outcome: "win" } });
   });
 
   it("accounts a played game's clues by the engine's rules, and flags one that was not offered", async () => {
@@ -201,6 +203,12 @@ describe("the runtime harness on a clue-graph case", () => {
     expect(resolveRoleName("talk", given, { type: "talk", character_id: "toby" }, blueprint, [])).toBe("graph_talk");
     expect(resolveRoleName("ask", { ...given, mode: "talk", talk_character_id: "toby" }, { type: "ask", player_input: "Hi" }, blueprint, [])).toBe("graph_talk");
     expect(resolveRoleName("search", given, { type: "search", search_query: "the pegs" }, blueprint, [])).toBe("search");
+    // An accusation's one judgement is who was named and what was cited; an endgame role.
+    const accusing = { ...given, mode: "accuse" };
+    const accused = resolveRoleName("accuse", accusing, { type: "accuse", player_reasoning: "It was Toby." }, blueprint, []);
+    expect(accused).toBe("graph_accusation");
+    expect(isAccusationRole(accused)).toBe(true);
+    expect(resolveRoleName("accuse", accusing, { type: "accuse" }, blueprint, [])).toBe("accusation_start");
   });
 
   it("reads what a clue-graph talk reply opened and answered, and the line it wrote for each", () => {

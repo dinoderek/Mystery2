@@ -38,8 +38,10 @@ import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
   buildArrivalCharacterContexts,
+  buildGraphAccusationAIContext,
   buildGraphSearchAIContext,
   buildGraphTalkAIContext,
+  buildGraphVerdictAIContext,
   buildSearchContext,
   buildTalkConversationContext,
   buildTalkEndContext,
@@ -64,6 +66,7 @@ import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
 import { GRAPH_TALK_EARLIER_LINES, GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
 import { linesThisConversation, playOf } from "./clue-graph/history.ts";
 import { visibleSpots } from "./clue-graph/play.ts";
+import type { AccusationVerdict } from "./clue-graph/accusation.ts";
 
 /**
  * The two narrator outputs that are plain narration rather than a role-output
@@ -138,6 +141,10 @@ export type RoleRequestInput =
     player_input: string | null;
   } & SessionInput)
   | ({ role: "graph_search"; location_id: string; search_query: string | null } & SessionInput)
+  // A clue-graph accusation round: the judge, then what the engine decided, worded.
+  | ({ role: "graph_accusation"; player_input: string } & SessionInput)
+  | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict } & SessionInput)
+  | ({ role: "graph_ending"; player_input: string; verdict: AccusationVerdict; cited: string[] } & SessionInput)
   | ({
     role: "accusation_start";
     forced_by_timeout?: boolean;
@@ -408,10 +415,30 @@ const REGISTRY: Record<RoleRequestName, any> = {
     }),
   } satisfies TemplateRoleSpec<"accusation_start">,
 
+  graph_accusation: {
+    kind: "template",
+    context: (input: InputFor<"graph_accusation">) => buildGraphAccusationAIContext(input),
+    vars: (input: InputFor<"graph_accusation">) => ({ player_input: input.player_input }),
+  } satisfies TemplateRoleSpec<"graph_accusation">,
+
+  graph_accusation_round: {
+    kind: "template",
+    context: (input: InputFor<"graph_accusation_round">) => buildGraphVerdictAIContext(input),
+    vars: (input: InputFor<"graph_accusation_round">) => ({ player_input: input.player_input }),
+  } satisfies TemplateRoleSpec<"graph_accusation_round">,
+
+  graph_ending: {
+    kind: "template",
+    context: (input: InputFor<"graph_ending">) => buildGraphVerdictAIContext(input),
+    vars: (input: InputFor<"graph_ending">) => ({ player_input: input.player_input }),
+  } satisfies TemplateRoleSpec<"graph_ending">,
+
   accusation_judge: {
     kind: "template",
-    context: (input: InputFor<"accusation_judge">) =>
-      buildAccusationJudgeContext({
+    context: (input: InputFor<"accusation_judge">) => {
+      // A clue-graph accusation is decided by the engine, never by this judge.
+      if (input.blueprint.clue_graph) throw new Error("A clue-graph accusation uses graph_accusation, not accusation_judge");
+      return buildAccusationJudgeContext({
         game_id: input.game_id,
         session: input.session,
         blueprint: input.blueprint,
@@ -419,7 +446,8 @@ const REGISTRY: Record<RoleRequestName, any> = {
         round: input.round,
         conversation_history: input.conversation_history,
         history_mode: input.history_mode,
-      }),
+      });
+    },
     vars: (input: InputFor<"accusation_judge">) => ({
       forced_context: "",
       target_age: input.blueprint.metadata.target_age,

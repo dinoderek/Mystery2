@@ -36,6 +36,7 @@ import {
   buildAccusationStartContext,
   buildGraphSearchAIContext,
   buildGraphTalkAIContext,
+  buildGraphVerdictAIContext,
   buildMoveContext,
   buildSearchContext,
   buildTalkConversationContext,
@@ -45,6 +46,7 @@ import {
   selectLocationConversationHistory,
 } from "../../../packages/game-engine/src/ai-context.ts";
 import { buildDiscoveredClueIdSet } from "../../../packages/game-engine/src/clue-discovery.ts";
+import type { AccusationVerdict, SavedAccusation } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import type { Payload, RawEvent, RawTrace } from "./normalize.ts";
 
 // Re-exported so this module stays the trace pipeline's entry point for
@@ -110,6 +112,9 @@ interface ReconstructInput {
   priorEvents: RawEvent[];
   forcedByTimeout: boolean;
   round: number;
+  /** A clue-graph accusation round's saved decision. */
+  verdict: AccusationVerdict | null;
+  cited: string[];
 }
 
 function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext | null {
@@ -135,6 +140,12 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
     }
     if (roleName === "search") {
       return buildGraphSearchAIContext({ ...common, location_id: locationId, search_query: ctx.searchQuery ?? null });
+    }
+    // A round is worded from the engine's saved decision. One saved before the
+    // engine decided was judged on the full blueprint, which is not rebuilt.
+    if (roleName === "accusation_judge") {
+      if (!ctx.verdict) return null;
+      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict, cited: ctx.cited });
     }
   }
 
@@ -242,6 +253,9 @@ function notebookOf(event: RawEvent): { notebook?: Record<string, string> } {
   return lines ? { notebook: lines } : {};
 }
 
+/** The roles a clue-graph turn saves under its own name. */
+const GRAPH_ROLES = new Set(["graph_talk", "graph_accusation_round", "graph_ending"]);
+
 export interface ReconstructionIssue {
   sequence: number;
   stage: "reconstruct";
@@ -326,6 +340,8 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
           priorEvents,
           forcedByTimeout,
           round: accusationRound,
+          verdict: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict ?? null,
+          cited: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.cited ?? [],
         });
       } catch (err) {
         contextError = String((err as Error)?.message ?? err);
@@ -337,8 +353,8 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       sequence: event.sequence,
       event_type: event.event_type,
       actor: event.actor,
-      // A clue-graph conversation turn names its own role, `graph_talk`.
-      role_name: roleName && payload?.role === "graph_talk" ? "graph_talk" : roleName,
+      // A clue-graph conversation or accusation turn names its own role.
+      role_name: roleName && typeof payload?.role === "string" && GRAPH_ROLES.has(payload.role) ? payload.role : roleName,
       player_input: playerInput,
       search_query: searchQuery,
       narration: event.narration,

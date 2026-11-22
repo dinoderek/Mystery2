@@ -3,6 +3,9 @@ import {
   type AIRoleName,
   parseAccusationJudgeOutput,
   parseAccusationStartOutput,
+  parseGraphAccusationOutput,
+  parseGraphAccusationRoundOutput,
+  parseGraphEndingOutput,
   parseGraphSearchOutput,
   parseGraphTalkOutput,
   parseSearchOutput,
@@ -78,6 +81,21 @@ const MINIMAL_OUTPUTS: Record<
     fields: ["narration", "revealed_clue_id", "costs_turn", "input_understood", "notebook"],
     sample: { narration: "Dust.", revealed_clue_id: null, costs_turn: true, input_understood: true, notebook: [] },
     parse: parseGraphSearchOutput,
+  },
+  graph_accusation: {
+    fields: ["accused_character_id", "cited_clue_ids"],
+    sample: { accused_character_id: null, cited_clue_ids: [] },
+    parse: parseGraphAccusationOutput,
+  },
+  graph_accusation_round: {
+    fields: ["narration"],
+    sample: { narration: "Not yet. Which clue shows it?" },
+    parse: parseGraphAccusationRoundOutput,
+  },
+  graph_ending: {
+    fields: ["narration"],
+    sample: { narration: "Case closed." },
+    parse: parseGraphEndingOutput,
   },
 };
 

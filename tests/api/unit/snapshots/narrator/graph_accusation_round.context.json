@@ -1,0 +1,74 @@
+{
+  "game_id": "case",
+  "role_name": "graph_accusation_round",
+  "mode": "accuse",
+  "forced_by_timeout": false,
+  "location_id": "thorne_garden",
+  "character_id": null,
+  "player_input": "It was Toby.",
+  "conversation_history": [],
+  "shared_mystery_context": {
+    "target_age": 10
+  },
+  "move_context": null,
+  "search_context": null,
+  "talk_context": null,
+  "accusation_start_context": null,
+  "accusation_judge_context": null,
+  "graph_accusation_context": {
+    "people": [
+      {
+        "id": "hale",
+        "name": "Ms. Hale"
+      },
+      {
+        "id": "toby",
+        "name": "Toby"
+      },
+      {
+        "id": "mia",
+        "name": "Mia"
+      },
+      {
+        "id": "dobbs",
+        "name": "Mr. Dobbs"
+      },
+      {
+        "id": "thorne",
+        "name": "Mr. Thorne"
+      }
+    ],
+    "held": [
+      {
+        "id": "thorne_alibi",
+        "kind": "statement",
+        "text": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "clue_thorne_mia_cake",
+        "kind": "statement",
+        "text": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "thorne_never_set_foot",
+        "kind": "statement",
+        "text": "Mr. Thorne says he has never set foot in the school garden.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "react_thorne_boot",
+        "kind": "tell",
+        "text": "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      }
+    ],
+    "lead": "You have not talked to Ms. Hale yet.",
+    "earlier_reasoning": []
+  }
+}

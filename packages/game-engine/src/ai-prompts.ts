@@ -8,6 +8,7 @@ import {
 } from "../../shared/src/age-profile.ts";
 import { buildTalkConversationTemplate, FULL_TALK_PROFILE, type TalkPromptProfile } from "./talk-prompt.ts";
 import { GRAPH_SEARCH_PROMPT, GRAPH_TALK_PROMPT } from "./clue-graph/prompts.ts";
+import { GRAPH_ACCUSATION_PROMPT, GRAPH_ACCUSATION_ROUND_PROMPT, GRAPH_ENDING_PROMPT } from "./clue-graph/judge-guidance.ts";
 
 // Each runtime role maps to one interaction, which sets its length guidance.
 // `search_bare` defaults to the lean "nothing found" budget; the search handler
@@ -26,6 +27,10 @@ const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
   // is known picks its budget (role-request.ts).
   graph_talk: "talk_round",
   graph_search: "search_find",
+  // Writes no narration, so its prompt has no length.
+  graph_accusation: "accusation_verdict",
+  graph_accusation_round: "accusation_verdict",
+  graph_ending: "accusation_verdict",
 };
 
 // Roles whose word budget depends on an outcome the model itself decides, so
@@ -312,6 +317,9 @@ Return JSON:
 }`,
   graph_talk: GRAPH_TALK_PROMPT,
   graph_search: GRAPH_SEARCH_PROMPT,
+  graph_accusation: GRAPH_ACCUSATION_PROMPT,
+  graph_accusation_round: GRAPH_ACCUSATION_ROUND_PROMPT,
+  graph_ending: GRAPH_ENDING_PROMPT,
 };
 
 export interface LoadPromptOptions {

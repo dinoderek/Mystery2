@@ -17,11 +17,12 @@ Each harness has its README beside its code:
 ## Bindings
 
 Every model call goes through a binding, named in `evaluation/config.json`
-(gitignored), else `evaluation/config.example.json`; `--config <file>` replaces both. `--model-override <binding>=<model>` changes
-one binding's model for one run. A missing binding, or one that cannot run,
-stops the command, naming it. Wrappers may
-stream to `$EVAL_STREAM_FILE`, never affecting the result. A turn judge hands its answer
-schema in `$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds answers to it.
+(gitignored), else `evaluation/config.example.json`; `--config <file>`
+replaces both. `--model-override <binding>=<model>` changes one binding's
+model for one run. A missing binding, or one that cannot run, stops the
+command, naming it. Wrappers may stream to `$EVAL_STREAM_FILE`, never
+affecting the result. A turn judge hands its answer schema in
+`$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds answers to it.
 
 ## Judges
 
@@ -56,8 +57,9 @@ the last round's, and installs only if it passed everything.
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`, never overwriting. A run folder,
 `<root>/<date>/<time>-<command>/`, holds `run.json` (the index) and a folder per
-subject: its `result.json`, inputs, prompts, logs and agent workspaces. A suite keeps its journal and runs in
-`<root>/suites/<name>/`; only its results file goes in the repo.
+subject: its `result.json`, inputs, prompts, logs and agent workspaces. A
+suite keeps its journal and runs in `<root>/suites/<name>/`; only its results
+file goes in the repo.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
 aborts. `logs/<step>*.stream.jsonl` is for watching only.
@@ -65,8 +67,8 @@ aborts. `logs/<step>*.stream.jsonl` is for watching only.
 ## Exit codes
 
 For every command, **0**: everything passed. **1**: the run broke (a bad
-file or binding, `run_error` in the result, the usage limit). **2**: a check or judge failed, or could not judge (`suite`: a
-threshold was not met).
+file or binding, `run_error` in the result, the usage limit). **2**: a check
+or judge failed, or could not judge (`suite`: a threshold was not met).
 
 ## Retries
 

@@ -4,7 +4,7 @@ A one-shot workspace created by the evaluation pipeline to run a Claude
 agent as a single-dimension judge. Each `evaluateDimension` call produces a
 workspace under `~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>/<dimension>/`.
 All dimensions for one run share the `evaluators-<brief>` parent, and every run
-gets its own `<run-stamp>` subtree, so prior runs are never overwritten.
+gets its own `<run-stamp>` subtree, never overwritten.
 
 ## Layout
 
@@ -28,6 +28,10 @@ gets its own `<run-stamp>` subtree, so prior runs are never overwritten.
 └── scripts/
     └── validate-judge-output.ts      Symlink: schema + reference validator
 ```
+
+A clue-graph case's workspace holds `case.json` (and `player_view.json` for
+`cg_step_sense`) instead of the brief and blueprint, and takes its `CLAUDE.md`
+and preamble from `clue-graph/`.
 
 ## Symlinks vs copies
 

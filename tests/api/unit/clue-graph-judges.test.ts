@@ -115,6 +115,13 @@ describe("each judge's prompt and answer", () => {
     expect((answer as { messages: string[] }).messages.join("\n")).toMatch(/no_such_clue/);
   });
 
+  it("lets a finding cite the opening, which a step can lead from", async () => {
+    const definition = await loadJudge("cg_step_sense");
+    const good = ANSWERS["blueprint.cg_step_sense"];
+    const finding = { severity: "minor", kind: "weak_way", ids: ["clue_hale_key_last_seen", "opening"], explanation: "The opening only hints." };
+    expect(validateJudgeAnswer(definition, { ...good, findings: [finding] }, greenhouse)).toMatchObject({ ok: true });
+  });
+
   it.each([
     ["cg_soundness", "conclusions", "conclusion_id"],
     ["cg_character_grounding", "characters", "character_id"],

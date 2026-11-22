@@ -250,8 +250,13 @@ function gameCheck(id: string, context?: Readonly<Record<string, unknown>>): Che
   };
 }
 
-/** The ids a clue-graph finding may cite: any clue, conclusion, character or location of the case. */
-const CASE_FINDING_IDS = { kind: "ref", at: "findings[].ids[]", set: "case_ids", label: "case clue, conclusion, character or location id" } as const;
+/** The ids a clue-graph finding may cite: any clue, conclusion, character or location of the case, or `opening`. */
+const CASE_FINDING_IDS = {
+  kind: "ref",
+  at: "findings[].ids[]",
+  set: "case_ids",
+  label: "case clue, conclusion, character or location id, or opening",
+} as const;
 
 /** A reference to a blueprint character id; the rule it is spread into says where in the answer. */
 const CHARACTER_REF = {

@@ -91,7 +91,8 @@ function blueprintSet(name: IdSetName, blueprint: Blueprint, context: Record<str
     case "case_character_ids":
       return new Set(caseKeys(blueprint.characters));
     case "case_ids":
-      return new Set([blueprint.clues, blueprint.conclusions, blueprint.characters, blueprint.locations].flatMap(caseKeys));
+      // `opening` stands for the opening's facts, as a lead and as a prompt.
+      return new Set([...[blueprint.clues, blueprint.conclusions, blueprint.characters, blueprint.locations].flatMap(caseKeys), "opening"]);
     case "case_step_ids":
       return stepIds(blueprint);
   }

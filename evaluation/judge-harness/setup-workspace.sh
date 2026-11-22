@@ -15,8 +15,9 @@
 #     docs/                              (only for dims that need it)
 #       runtime-consumption.md           (symlink -> generator-harness curated)
 #
-# The wrapper then writes brief.json / blueprint.json / context.json before
-# invoking claude. The agent writes verdict.json.
+# The wrapper then writes brief.json / blueprint.json / context.json (for a
+# clue-graph case: case.json, player_view.json for the step judge, and
+# context.json) before invoking claude. The agent writes verdict.json.
 
 set -euo pipefail
 

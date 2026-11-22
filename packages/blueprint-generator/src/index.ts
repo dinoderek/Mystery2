@@ -6,7 +6,8 @@ import {
   type BlueprintV2,
 } from "../../shared/src/blueprint-schema-v2.ts";
 import { BlueprintGenerationError } from "./errors.ts";
-import { loadBlueprintGeneratorPrompt } from "./prompt.ts";
+import { ClueGraphBriefSchema, type ClueGraphBrief } from "./clue-graph-brief.ts";
+import { loadBlueprintGeneratorPrompt, loadClueGraphGeneratorPrompt } from "./prompt.ts";
 import { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -16,6 +17,7 @@ const BLUEPRINT_GENERATION_INSTRUCTIONS =
 
 export { BlueprintGenerationError } from "./errors.ts";
 export { StoryBriefSchema, type StoryBrief } from "./story-brief.ts";
+export { ClueGraphBriefSchema, type ClueGraphBrief } from "./clue-graph-brief.ts";
 
 export interface BlueprintGenerationChatInput {
   responseSchema: Record<string, unknown>;
@@ -364,6 +366,33 @@ export async function buildBlueprintGenerationChatInput(
       instructions: BLUEPRINT_GENERATION_INSTRUCTIONS,
     }),
     responseSchema: buildBlueprintJsonSchema(),
+  };
+}
+
+/** What a clue-graph case's agent is told to do with its brief; the craft is in the prompt. */
+export const CLUE_GRAPH_GENERATION_INSTRUCTIONS =
+  "Write one clue-graph/2 case for story_brief to ./case.json, following ./CLAUDE.md. Set metadata.target_age to targetAge, metadata.size to size, and metadata.size_overrides to sizeOverrides when it is given.";
+
+/**
+ * The prompt for a clue-graph case: the clue-graph generator prompt alone, as
+ * the system prompt, and the brief with its instructions. Only the agent
+ * backend writes clue graphs, so there is no response schema.
+ */
+export async function buildClueGraphGenerationChatInput(
+  storyBrief: ClueGraphBrief,
+): Promise<{ systemPrompt: string; userMessageContent: string }> {
+  const parsedBrief = ClueGraphBriefSchema.safeParse(storyBrief);
+  if (!parsedBrief.success) {
+    throw new BlueprintGenerationError("INVALID_STORY_BRIEF", "Story brief failed validation", {
+      issues: parsedBrief.error.issues,
+    });
+  }
+  return {
+    systemPrompt: await loadClueGraphGeneratorPrompt(),
+    userMessageContent: JSON.stringify({
+      story_brief: parsedBrief.data,
+      instructions: CLUE_GRAPH_GENERATION_INSTRUCTIONS,
+    }),
   };
 }
 

@@ -7,7 +7,9 @@
  *
  * The judges are the battery `generate --judge` runs, through the same binding,
  * so they are the judges the truth set measures; they are sent the brief and
- * the blueprint only, never the generator's work or an earlier round.
+ * the blueprint only, never the generator's work or an earlier round. A
+ * clue-graph case may be repaired without judges: its rounds then rerun only
+ * its mechanical check, the validator.
  *
  * A report reaches the generator as quoted data inside its user message
  * (`repair.reports`), under a notice that it is not an instruction. Each round
@@ -19,16 +21,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { STORED_BLUEPRINT, STORED_BRIEF } from "../blueprint/inputs.ts";
-import { judgeBlueprint } from "../blueprint/judge.ts";
+import { judgeBlueprint, runMechanical } from "../blueprint/judge.ts";
 import { runErrorOf, writeBlueprintResult } from "../blueprint/subject.ts";
 import type { BlueprintSubject } from "../blueprint/subject.ts";
 import type { ResolvedBinding } from "../core/config.ts";
+import type { BlueprintFormat } from "../core/registry.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { summarize } from "../core/result.ts";
 import type { ModelCall, Result, Round, RunError, Verdict } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
 import { createRunTimer } from "../core/timing.ts";
-import { blueprintParser } from "./blueprint-answer.ts";
+import type { AnswerParser } from "./blueprint-answer.ts";
 
 /** Says what the reports are, inside the message that carries them. */
 export const REPORTS_NOTICE =
@@ -167,7 +170,14 @@ export function runCostLine(results: readonly Result[]): string {
 export interface RepairSettings {
   /** The generator binding, with the job's model. */
   binding: ResolvedBinding;
-  judge: ResolvedBinding;
+  /** The judge binding; null for a round that reruns only the mechanical checks. */
+  judge: ResolvedBinding | null;
+  /** Reads the generator's answer, as the generation did. */
+  parser: () => AnswerParser;
+  /** The format every round is checked as, whatever the generator wrote. */
+  format: BlueprintFormat;
+  /** The environment the generator's wrapper is started with, besides the round's folder. */
+  env?: Record<string, string>;
   /** The most repair rounds to run. */
   rounds: number;
   brief: unknown;
@@ -190,7 +200,7 @@ interface RepairRequest {
 async function repairCall(subject: BlueprintSubject, settings: RepairSettings, { round, blueprint, verdicts, dir }: RepairRequest) {
   const step = `repair-${round}`;
   const digest = startDigest(`${subject.id} ${step}`, [step], { logDir: path.join(dir, "logs"), quiet: settings.quiet, write: settings.write });
-  const parser = blueprintParser();
+  const parser = settings.parser();
   try {
     const outcome = await runModel({
       binding: settings.binding,
@@ -198,7 +208,7 @@ async function repairCall(subject: BlueprintSubject, settings: RepairSettings, {
       systemPrompt: settings.systemPrompt,
       userMessage: repairMessage(settings.userMessage, round, blueprint, verdicts),
       logDir: path.join(dir, "logs"),
-      env: { EVAL_RUN_DIR: dir },
+      env: { ...settings.env, EVAL_RUN_DIR: dir },
       parse: parser.parse,
     });
     subject.production = [...(subject.production ?? []), outcome.call];
@@ -255,17 +265,20 @@ export async function repairLoop(subject: BlueprintSubject, settings: RepairSett
           await fs.writeFile(path.join(dir, STORED_BLUEPRINT), JSON.stringify(made.blueprint, null, 2), "utf8");
           await fs.writeFile(path.join(dir, STORED_BRIEF), JSON.stringify(settings.brief, null, 2), "utf8");
         });
-        const verdicts = await judgeBlueprint({
-          brief: settings.brief,
-          blueprint: made.blueprint,
-          binding: settings.judge,
-          selection: "all",
-          logDir: path.join(dir, "logs"),
-          runDir: dir,
-          timer,
-          quiet: settings.quiet,
-          write: settings.write,
-        });
+        const verdicts = settings.judge
+          ? await judgeBlueprint({
+              brief: settings.brief,
+              blueprint: made.blueprint,
+              binding: settings.judge,
+              selection: "all",
+              logDir: path.join(dir, "logs"),
+              runDir: dir,
+              timer,
+              quiet: settings.quiet,
+              write: settings.write,
+              format: settings.format,
+            })
+          : await timer.stage("mechanical", () => runMechanical(settings.brief, made.blueprint, settings.format), (checks) => ({ checks: checks.length }));
         return { ...made, verdicts };
       });
       blueprint = repaired.blueprint;

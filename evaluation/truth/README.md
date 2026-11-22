@@ -50,7 +50,7 @@ subject's hash, and each finding's turn, kinds, severity, `kind`, `quote`,
 `why` and `refers_to`. Once either moves on, a verdict is **stale**: `score`
 lists it unscored; a subject without a current one is **unmeasured**. `./dev
 eval suite <suite>` (into `results/<suite>.json`) makes only those calls. The
-gate regenerates `scores/<name>.json` from its `inputs`. The blueprint side, one sample,
+gate regenerates `scores/<name>.json` from its `inputs`. One blueprint sample
 measures no variation.
 
 ## Made live
@@ -58,7 +58,7 @@ measures no variation.
 On temporary roots, from `evaluation/specs/` briefs and Haiku self-play:
 
 ```bash
-./dev generate evaluation/specs/<brief> --judge
+./dev generate --format v2 evaluation/specs/<brief> --judge
 node evaluation/lib/truth/store.ts base <base> <result.json>
 ./dev eval play --blueprint <file> --persona <detective|kid-7> --narrator-model haiku
 ./dev eval judge game <session> --database <run>/game.db --no-judges

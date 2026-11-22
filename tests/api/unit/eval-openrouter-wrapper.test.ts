@@ -214,7 +214,7 @@ describe("generate --backend api through the real wrapper", () => {
       fs.writeFileSync(brief, JSON.stringify({ ...generatorBrief, witnesses: 0 }));
       const out: string[] = [];
       const code = await runEval(
-        ["generate", brief, "--backend", "api", "--config", config, "--output-root", path.join(dir, "out"), "--quiet"],
+        ["generate", brief, "--format", "v2", "--backend", "api", "--config", config, "--output-root", path.join(dir, "out"), "--quiet"],
         { root: process.cwd(), out: (t) => out.push(t), err: (t) => out.push(t), env: { OPENROUTER_API_KEY: KEY } },
         [generateCommand],
       );

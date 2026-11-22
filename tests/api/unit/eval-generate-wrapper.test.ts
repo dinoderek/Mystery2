@@ -27,11 +27,14 @@ const FIXTURE_BLUEPRINT = { title: "Stand-in blueprint" };
 // A stand-in `claude`: it records its arguments and the prompt the workspace
 // holds at the moment the agent would start, then writes the blueprint the way
 // the agent does. No model is called.
+// In a clue-graph workspace, which holds the case validator, it writes ./case.json.
 const STAND_IN_CLAUDE = `#!/usr/bin/env bash
 node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify(process.argv.slice(2)))' claude-args.json "$@"
 cp prompts/generator-prompt.md prompt-seen-by-agent.md
-if [[ -f blueprint.json ]]; then cp blueprint.json blueprint-seen-by-agent.json; fi
-printf '%s' '${JSON.stringify(FIXTURE_BLUEPRINT)}' > blueprint.json
+OUTPUT=blueprint.json
+if [[ -e scripts/validate-case.ts ]]; then OUTPUT=case.json; fi
+if [[ -f "$OUTPUT" ]]; then cp "$OUTPUT" "seen-by-agent-$OUTPUT"; fi
+printf '%s' '${JSON.stringify(FIXTURE_BLUEPRINT)}' > "$OUTPUT"
 `;
 
 const tmpDirs: string[] = [];
@@ -48,7 +51,7 @@ async function tmpDir() {
   return dir;
 }
 
-async function runWrapper(options: { renderedPrompt?: string | null; userMessage?: unknown }) {
+async function runWrapper(options: { renderedPrompt?: string | null; userMessage?: unknown; format?: string }) {
   const dir = await tmpDir();
   const binDir = path.join(dir, "bin");
   const runDir = path.join(dir, "run");
@@ -78,6 +81,7 @@ async function runWrapper(options: { renderedPrompt?: string | null; userMessage
       ...process.env,
       PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
       EVAL_MODEL: "stand-in-model",
+      ...(options.format ? { EVAL_GENERATE_FORMAT: options.format } : {}),
       EVAL_RUN_DIR: runDir,
       EVAL_STREAM_FILE: path.join(runDir, "logs", "generate.stream.jsonl"),
     },
@@ -123,7 +127,7 @@ describe("claude-generate.sh wrapper", () => {
 
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(await fs.readFile(path.join(workspace, "brief.json"), "utf8"))).toEqual({ story_brief: { brief: "b" }, instructions: "i" });
-    expect(JSON.parse(await fs.readFile(path.join(workspace, "blueprint-seen-by-agent.json"), "utf8"))).toEqual({ title: "earlier" });
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "seen-by-agent-blueprint.json"), "utf8"))).toEqual({ title: "earlier" });
     expect(JSON.parse(await fs.readFile(path.join(workspace, "repair.json"), "utf8"))).toEqual({ round: 1, notice: "quoted data", reports: repair.reports });
     const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
     expect(args.at(-1)).toContain("follow the repair protocol");
@@ -131,11 +135,38 @@ describe("claude-generate.sh wrapper", () => {
     expect(JSON.parse(result.stdout)).toEqual({ result: JSON.stringify(FIXTURE_BLUEPRINT, null, 2) + "\n" });
   });
 
+  it("builds a clue-graph workspace for a clue-graph generation, and returns the agent's case", async () => {
+    const { result, workspace } = await runWrapper({ renderedPrompt: "case prompt", format: "clue-graph" });
+    expect(result.status, result.stderr).toBe(0);
+    expect(await fs.readFile(path.join(workspace, "prompt-seen-by-agent.md"), "utf8")).toBe("case prompt");
+    expect(await fs.readFile(path.join(workspace, "CLAUDE.md"), "utf8")).toContain("Clue-graph generator workspace");
+    await expect(fs.access(path.join(workspace, "blueprint.json"))).rejects.toThrow();
+    const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
+    expect(args.at(-1)).toContain("Write ./case.json");
+    expect(JSON.parse(result.stdout)).toEqual({ result: JSON.stringify(FIXTURE_BLUEPRINT, null, 2) + "\n" });
+  });
+
+  it("seeds a clue-graph repair round's case and reports", async () => {
+    const repair = { round: 2, blueprint: { format: "clue-graph/2" }, notice: "quoted data", reports: [] };
+    const { result, workspace } = await runWrapper({ renderedPrompt: "p", format: "clue-graph", userMessage: { story_brief: { brief: "b" }, instructions: "i", repair } });
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "seen-by-agent-case.json"), "utf8"))).toEqual({ format: "clue-graph/2" });
+    expect(JSON.parse(await fs.readFile(path.join(workspace, "repair.json"), "utf8"))).toEqual({ round: 2, notice: "quoted data", reports: [] });
+    const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
+    expect(args.at(-1)).toContain("./case.json is your earlier case");
+  });
+
+  it("refuses an unknown format", async () => {
+    const { result } = await runWrapper({ renderedPrompt: "p", format: "msf" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("unknown EVAL_GENERATE_FORMAT: msf");
+  });
+
   it("starts a generation without a repair file, on the iteration protocol", async () => {
     const { result, workspace } = await runWrapper({ renderedPrompt: "prompt" });
     expect(result.status, result.stderr).toBe(0);
     await expect(fs.access(path.join(workspace, "repair.json"))).rejects.toThrow();
-    await expect(fs.access(path.join(workspace, "blueprint-seen-by-agent.json"))).rejects.toThrow();
+    await expect(fs.access(path.join(workspace, "seen-by-agent-blueprint.json"))).rejects.toThrow();
     const args = JSON.parse(await fs.readFile(path.join(workspace, "claude-args.json"), "utf8")) as string[];
     expect(args.at(-1)).toContain("mandatory iteration protocol");
   });

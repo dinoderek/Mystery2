@@ -19,8 +19,7 @@ Each harness has its README beside its code:
 Every model call goes through a binding, named in `evaluation/config.json`
 (gitignored), else `evaluation/config.example.json`; `--config <file>`
 replaces both. `--model-override <binding>=<model>` changes one binding's
-model for one run. A missing binding, or one that cannot run, stops the
-command, naming it. Wrappers may stream to `$EVAL_STREAM_FILE`, never
+model for one run. A missing or broken binding stops the command, naming it. Wrappers may stream to `$EVAL_STREAM_FILE`, never
 affecting the result. A turn judge hands its answer schema in
 `$EVAL_JSON_SCHEMA_FILE`; `claude-runtime.sh` holds answers to it.
 
@@ -43,15 +42,15 @@ the gate until its new hash is appended; append one by hand otherwise.
 
 ## Generation
 
-`./dev generate` creates blueprints; `./dev eval judge blueprint` judges saved ones.
-Schema failures remain.
-`--install` copies a blueprint that passed its mechanical checks into
-`blueprints/` in the config root; it never replaces files; a failed
-install exits 1.
+`./dev generate` creates clue-graph cases (`--format v2`: blueprints), kept
+even when invalid; `./dev eval judge blueprint` judges saved ones.
+`--install` copies a blueprint that passed its mechanical checks, or a case
+that passed everything, into the config root's `blueprints/` (cases:
+`clue-graph/`), never replacing files; a failed install exits 1.
 
-**Repair.** With `--repair <n>` (`docs/blueprint-generation-flows.md`), round
-`n` is kept in `rounds/<n>/` and in `result.json`'s `rounds[]`; the result is
-the last round's, and installs only if it passed everything.
+**Repair** (`docs/blueprint-generation-flows.md`): round `n` is kept in
+`rounds/<n>/` and `result.json`'s `rounds[]`; the result is the last round's,
+installed only if it passed everything.
 
 ## Output
 

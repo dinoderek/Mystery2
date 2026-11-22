@@ -1,6 +1,6 @@
 /**
  * `./dev worktree create|release`: the one way a worktree is provisioned and
- * removed, for engine and for people.
+ * removed.
  *
  * Worktrees live beside the clone, at `<clone>-worktrees/<branch>` with `/` in
  * the branch replaced by `-`. The directory name is the worktree's identity:

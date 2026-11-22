@@ -52,6 +52,7 @@ function fixture(): ClueGraphCase {
   graph.metadata.id = "greenhouse-fixture";
   const butt = graph.locations.greenhouse.spots.find((spot) => spot.name === "the water butt by the door")!;
   butt.revealed_by = "react_toby_pocket";
+  delete graph.clues.react_toby_pocket.colour;
   const ladder = graph.clues.thorne_ladder_thursday;
   if (ladder.kind !== "statement" || ladder.reached.by !== "gated") throw new Error("The ladder clue is gated");
   ladder.reached.gate.physical = true;
@@ -60,6 +61,7 @@ function fixture(): ClueGraphCase {
     fact: "Toby tucks his feet under the bench.",
     source: { character: "toby" },
     reached: { by: "seen", subject: "wellies" },
+    colour: true,
   };
   return validateClueGraph(graph);
 }
@@ -302,12 +304,11 @@ describe("clue-graph sessions and turns", () => {
     await play(opened.game_id, "go to the potting shed");
     await play(opened.game_id, "talk to Toby");
     const asked = await play(opened.game_id, "What about the missing key?");
-    // The next first word, then the answer and the tell that rides on it: every tell is recorded.
-    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["clue_toby_thorne_ladder", "toby_no_key", "react_toby_pocket"]);
+    // The answer, and the tell that rides on it: every tell is recorded.
+    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["toby_no_key", "react_toby_pocket"]);
     const { graph, events } = await derived(opened.game_id);
     const line = events.at(-1);
     expect(line?.type === "line" && line.notebook).toEqual({
-      clue_toby_thorne_ladder: mockNotebookLine(graph.clues.clue_toby_thorne_ladder.fact),
       toby_no_key: mockNotebookLine(graph.clues.toby_no_key.fact),
       react_toby_pocket: mockNotebookLine(graph.clues.react_toby_pocket.fact),
     });
@@ -332,10 +333,7 @@ describe("clue-graph sessions and turns", () => {
       opened: [],
       asked: [],
       seen: ["react_toby_wellies"],
-      notebook: {
-        clue_toby_thorne_ladder: mockNotebookLine(graph.clues.clue_toby_thorne_ladder.fact),
-        react_toby_wellies: mockNotebookLine(graph.clues.react_toby_wellies.fact),
-      },
+      notebook: { react_toby_wellies: mockNotebookLine(graph.clues.react_toby_wellies.fact) },
     });
     // The pocket tell points at the hidden water butt: its words and its line name the spot.
     const pointer = mockNotebookLine(graph.clues.react_toby_pocket.fact, { spot: "the water butt by the door", location: "The Greenhouse" });
@@ -610,7 +608,10 @@ describe("clue-graph sessions and turns", () => {
       }));
       const greeting = await play(opened.game_id, "talk to Toby", confused);
       expect(greeting.revealed_clues.map((clue) => [clue.id, clue.text])).toEqual(
-        ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne"].map((id) => [id, noted(id)]),
+        ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne", "clue_toby_thorne_ladder"].map((id) => [
+          id,
+          noted(id),
+        ]),
       );
     });
 

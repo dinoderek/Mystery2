@@ -108,16 +108,16 @@ const SCRIPT: Step[] = [
   {
     event: { type: "talk", character: "toby" },
     turns: 5,
-    revealed: ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne"],
+    revealed: ["toby_alibi", "react_toby_sweeping", "react_toby_trainers", "toby_blames_thorne", "clue_toby_thorne_ladder"],
     leads: ["meet:hale", "*talk:toby", "meet:mia", "meet:dobbs", "meet:thorne"],
     retracted: [],
     conclusions: ["nobody_broke_in"],
     talk: {
       stance: "guarded",
-      says_first: ["clue_toby_thorne_ladder"],
+      says_first: [],
       asks: ["toby_no_key"],
       gates: ["clue_toby_mia_splat~", "toby_drops_burglar~", "toby_blames_mia~"],
-      story: ["toby_alibi", "toby_blames_thorne"],
+      story: ["toby_alibi", "toby_blames_thorne", "clue_toby_thorne_ladder"],
       established: 2,
       keeps_back: 1,
     },
@@ -125,7 +125,7 @@ const SCRIPT: Step[] = [
   {
     event: line("toby", { opened: ["toby_drops_burglar"] }),
     turns: 5,
-    revealed: ["clue_toby_thorne_ladder", "toby_drops_burglar"],
+    revealed: ["toby_drops_burglar"],
     leads: ["meet:hale", "talk:toby", "meet:mia", "meet:dobbs", "meet:thorne"],
     retracted: ["toby_blames_thorne"],
     conclusions: ["nobody_broke_in"],
@@ -363,7 +363,7 @@ describe("the greenhouse scripted play", () => {
       ALL_MEET.map((key) => expect.objectContaining({ key, new: true })),
     );
     expect(talkState(graph, replay(graph, [{ type: "move", location: "potting_shed" }]), "toby").says_first.map((entry) => entry.id)).toEqual(
-      ["toby_alibi", "react_toby_trainers", "toby_blames_thorne"],
+      ["toby_alibi", "toby_blames_thorne", "clue_toby_thorne_ladder"],
     );
   });
 
@@ -406,10 +406,35 @@ describe("the greenhouse scripted play", () => {
     const greeted = talkState(graph, replay(graph, [SHED, { type: "talk", character: "toby" }]), "toby");
     expect(greeted.keeps_back).toEqual([graph.clues.toby_alibi.fact]);
     expect(greeted.established).toEqual([graph.clues.react_toby_sweeping.fact, graph.clues.react_toby_trainers.fact]);
-    expect(state.says_first[0]).toEqual({ id: "toby_alibi", says: graph.clues.toby_alibi.fact, with: [{ id: "react_toby_sweeping", does: graph.clues.react_toby_sweeping.fact }] });
+    expect(state.says_first[0]).toEqual({
+      id: "toby_alibi",
+      says: graph.clues.toby_alibi.fact,
+      with: [
+        { id: "react_toby_sweeping", does: graph.clues.react_toby_sweeping.fact },
+        { id: "react_toby_trainers", does: graph.clues.react_toby_trainers.fact },
+      ],
+    });
     expect(greeted.answers_if_asked).toEqual([
       { id: "toby_no_key", about: "the missing key", says: graph.clues.toby_no_key.fact, with: [{ id: "react_toby_pocket", does: graph.clues.react_toby_pocket.fact }] },
     ]);
+  });
+});
+
+describe("first words past a greeting's worth", () => {
+  it("hands the rest out a line's worth at a time, for a case the validator would refuse", () => {
+    // Four first words for Toby: the validator rejects it, the engine still plays it.
+    const graph = greenhouse();
+    graph.clues.react_toby_trainers = { ...graph.clues.react_toby_trainers, reached: { by: "first_meeting" } } as typeof graph.clues.react_toby_trainers;
+    const shed = replay(graph, [SHED]);
+    expect(talkState(graph, shed, "toby").says_first.map((entry) => entry.id)).toEqual([
+      "toby_alibi",
+      "react_toby_trainers",
+      "toby_blames_thorne",
+    ]);
+    const greeted = applyEvent(graph, shed, { type: "talk", character: "toby" });
+    expect(greeted.revealed).not.toContain("clue_toby_thorne_ladder");
+    expect(talkState(graph, greeted.play, "toby").says_first.map((entry) => entry.id)).toEqual(["clue_toby_thorne_ladder"]);
+    expect(applyEvent(graph, greeted.play, line("toby", {})).revealed).toEqual(["clue_toby_thorne_ladder"]);
   });
 });
 
@@ -514,7 +539,7 @@ describe("narrator reports", () => {
   it("drops what the state did not offer, and says so", () => {
     const step = applyEvent(graph, met, line("toby", { opened: ["toby_confession", "toby_alibi", "nothing"], asked: ["toby_alibi", "toby_no_key"], seen: ["react_toby_pocket"] }));
     expect(step.rejected).toEqual(["toby_confession", "toby_alibi", "nothing", "toby_alibi", "react_toby_pocket"]);
-    expect(step.revealed).toEqual(["clue_toby_thorne_ladder", "toby_no_key", "react_toby_pocket"]);
+    expect(step.revealed).toEqual(["toby_no_key", "react_toby_pocket"]);
   });
 
   it("refuses an event the game could never record", () => {

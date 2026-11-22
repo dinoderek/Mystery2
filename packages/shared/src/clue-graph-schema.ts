@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MAX_TARGET_AGE, MIN_TARGET_AGE } from "./age-profile.ts";
+import { CLUE_GRAPH_SIZES, SizeOverridesSchema } from "./clue-graph-sizes.ts";
 
 /**
  * The clue graph case format: an opening, clues and conclusions, with the
@@ -170,12 +171,16 @@ const Seen = z
   .object({ by: z.literal("seen"), with: id.optional(), subject: text.optional() })
   .strict();
 
+/** Marks a clue nothing depends on by design: atmosphere, not a step. */
+const colour = z.literal(true).optional();
+
 const EvidenceSchema = z
   .object({
     kind: z.literal("evidence"),
     /** What the finding establishes, stated plainly and completely. */
     fact: text,
     source: z.object({ location: id, spot: text.optional() }).strict(),
+    colour,
   })
   .strict();
 
@@ -191,6 +196,7 @@ const StatementSchema = z
     why: text.optional(),
     reached: z.discriminatedUnion("by", [FirstMeeting, Asked, Gated]),
     takes_back: ids(1).optional(),
+    colour,
   })
   .strict();
 
@@ -201,6 +207,7 @@ const TellSchema = z
     fact: text,
     source: characterSource,
     reached: z.discriminatedUnion("by", [FirstMeeting, Seen]),
+    colour,
   })
   .strict();
 
@@ -295,8 +302,15 @@ export const ClueGraphCaseSchema = z
         image_id: text.optional(),
         target_age: z.number().int().min(MIN_TARGET_AGE).max(MAX_TARGET_AGE),
         time_budget: z.number().int().positive().safe(),
+        /** The story size the case is held to; none, no size checks. */
+        size: z.enum(CLUE_GRAPH_SIZES).optional(),
+        size_overrides: SizeOverridesSchema.optional(),
       })
-      .strict(),
+      .strict()
+      .refine(
+        (metadata) => metadata.size !== undefined || metadata.size_overrides === undefined,
+        { path: ["size_overrides"], message: "Size overrides need a size" },
+      ),
     /** The public facts at the start. */
     opening: z.object({ location: id, facts: facts() }).strict(),
     /** What the ending tells: the timeline, and why the culprit did it. */

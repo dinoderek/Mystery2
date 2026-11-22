@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { has, reachClues, ruleMet } from "./clue-graph-reach.ts";
 import { cheapestRoute } from "./clue-graph-route.ts";
+import { checkStory } from "./clue-graph-story.ts";
 import {
   ClueGraphCaseSchema,
   OPENING_PROMPT,
@@ -278,7 +279,7 @@ function checkRetractionOrder(graph: ClueGraphCase, reached: Set<string>, report
   }
 }
 
-function checkGraph(graph: ClueGraphCase, report: Report) {
+function checkGraph(graph: ClueGraphCase, report: Report, story: boolean) {
   checkShape(graph, report);
   const reached = new Set(reachClues(graph).map((entry) => entry.id));
   const holds = (id: string) => reached.has(id);
@@ -308,15 +309,26 @@ function checkGraph(graph: ClueGraphCase, report: Report) {
       ["metadata", "time_budget"],
       `Conclusion "${culprit}" has no route within ${graph.metadata.time_budget} turns without a bluff`,
     );
+  if (story) checkStory(graph, reached, report);
+}
+
+export interface ValidateOptions {
+  /**
+   * The story checks, for an authored case (`clue-graph-story.ts`); on by
+   * default. A saved game's snapshot leaves them out: they judge how good a
+   * case is, not whether a game started on it can be played, and a stricter
+   * check must not lock a saved game out.
+   */
+  story?: boolean;
 }
 
 /** Shape, references and graph checks; returns the typed case or throws ZodError. */
-export function validateClueGraph(value: unknown): ClueGraphCase {
+export function validateClueGraph(value: unknown, { story = true }: ValidateOptions = {}): ClueGraphCase {
   const graph = ClueGraphCaseSchema.parse(value);
   const issues: z.ZodIssue[] = [];
   const report: Report = (path, message) =>
     issues.push({ code: z.ZodIssueCode.custom, path, message });
-  if (checkReferences(graph, report)) checkGraph(graph, report);
+  if (checkReferences(graph, report)) checkGraph(graph, report, story);
   if (issues.length > 0) throw new z.ZodError(issues);
   return graph;
 }

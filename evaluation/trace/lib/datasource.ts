@@ -152,7 +152,7 @@ export async function extractSessionTrace(
   // start, never the file as it is now; its format and what the player had
   // earned by the end go beside it.
   if (session.clue_graph_snapshot != null) {
-    const graph = validateClueGraph(JSON.parse(String(session.clue_graph_snapshot)));
+    const graph = validateClueGraph(JSON.parse(String(session.clue_graph_snapshot)), { story: false });
     const history = events.map((event) => ({
       sequence: event.sequence as number,
       event_type: event.event_type as string,

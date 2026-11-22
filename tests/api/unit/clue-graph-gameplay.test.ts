@@ -546,4 +546,125 @@ describe("clue-graph sessions and turns", () => {
     ];
     for (const secret of secrets) expect(seen, secret).not.toContain(secret);
   });
+
+  /**
+   * The mock narrator with every notebook line replaced by `noted`, and each
+   * structured request's context kept by role, so a test can see what a later
+   * turn is handed.
+   */
+  function notingAll(seen: Map<string, Record<string, unknown>>) {
+    return (profile: Profile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile);
+      return {
+        profile: inner.profile,
+        resolvedModel: inner.resolvedModel,
+        generateNarration: inner.generateNarration.bind(inner),
+        generateRoleOutput: async (request) => {
+          seen.set(request.role, request.context);
+          const parse = request.parse;
+          return inner.generateRoleOutput({
+            ...request,
+            parse: (payload) => {
+              const output = payload as { notebook?: Array<{ id: string; line: string }> };
+              const notebook = output.notebook?.map(({ id }) => ({ id, line: noted(id) }));
+              return parse(notebook ? { ...output, notebook } : output);
+            },
+          });
+        },
+      };
+    };
+  }
+
+  describe("notebook lines", () => {
+    it.each([
+      ["leaves out a line for a clue it reveals", (lines: Array<{ id: string; line: string }>) => lines.slice(1)],
+      ["gives a line for a clue it does not reveal", (lines: Array<{ id: string; line: string }>) => [...lines, { id: "toby_confession", line: "No." }]],
+      ["gives an empty line", (lines: Array<{ id: string; line: string }>) => [{ ...lines[0], line: "  " }, ...lines.slice(1)]],
+      ["gives one clue two lines", (lines: Array<{ id: string; line: string }>) => [...lines, lines[0]]],
+    ])("fails a turn whose reply %s, before anything is saved", async (_name, change) => {
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      await play(opened.game_id, "go to the potting shed");
+      const events = await ctx.events.listBySession(opened.game_id);
+      const session = await ctx.sessions.getById(opened.game_id);
+      const greeting = answering((request) => ({
+        narration: "Toby looks up.",
+        opened: [],
+        answered: [],
+        notebook: change(owedNotebook(request, [])),
+        input_understood: true,
+      }));
+      await expect(play(opened.game_id, "talk to Toby", greeting)).rejects.toBeInstanceOf(RetriableAIError);
+      expect(await ctx.events.listBySession(opened.game_id)).toEqual(events);
+      expect(await ctx.sessions.getById(opened.game_id)).toEqual(session);
+    });
+
+    it("fails a search that finds a clue but writes no line for it", async () => {
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      const events = await ctx.events.listBySession(opened.game_id);
+      const unwritten = answering(() => ({ narration: "Found!", revealed_clue_id: "clue_welly_prints", costs_turn: true, input_understood: true, notebook: [] }));
+      await expect(play(opened.game_id, "search the smashed pumpkin", unwritten)).rejects.toBeInstanceOf(RetriableAIError);
+      expect(await ctx.events.listBySession(opened.game_id)).toEqual(events);
+    });
+
+    it("drops a line for a clue already held that the narrator restated", async () => {
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      await play(opened.game_id, "go to the garden");
+      await play(opened.game_id, "talk to Mr. Thorne");
+      const restating = answering(() => ({
+        narration: "Again.",
+        opened: [],
+        answered: ["thorne_alibi"],
+        notebook: [{ id: "thorne_alibi", line: "A second wording." }],
+        input_understood: true,
+      }));
+      expect((await play(opened.game_id, "Where were you?", restating)).revealed_clues).toEqual([]);
+      const { graph, events } = await derived(opened.game_id);
+      expect(deriveClueGraph(graph, events).notebook.find((entry) => entry.id === "thorne_alibi")?.text).toBe(
+        mockNotebookLine(graph.clues.thorne_alibi.fact),
+      );
+    });
+
+    it("is what the notebook, later turns and the accusation read for a clue, a tell's included", async () => {
+      const seen = new Map<string, Record<string, unknown>>();
+      const noting = notingAll(seen);
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      await play(opened.game_id, "search", noting);
+      await play(opened.game_id, "go to the garden", noting);
+      const greeting = await play(opened.game_id, "talk to Mr. Thorne", noting);
+      expect(greeting.revealed_clues.map((clue) => [clue.id, clue.text])).toContainEqual(["react_thorne_boot", noted("react_thorne_boot")]);
+      const { events } = await derived(opened.game_id);
+      expect(events.at(-1)).toMatchObject({ type: "talk", notebook: { react_thorne_boot: noted("react_thorne_boot"), thorne_alibi: noted("thorne_alibi") } });
+
+      // A later line is handed the saved lines: what was said, what was seen, and a held clue to show.
+      await play(opened.game_id, "Hello", noting);
+      const { state } = (seen.get("graph_talk") as { graph_talk_context: GraphTalkContext }).graph_talk_context;
+      expect(state.story_so_far.map((entry) => entry.says)).toEqual(["thorne_alibi", "clue_thorne_mia_cake", "thorne_never_set_foot"].map(noted));
+      expect(state.established).toEqual([noted("react_thorne_boot")]);
+      const shown = state.gates.flatMap((gate) => gate.opens_with.show?.clues ?? []).find((clue) => clue.id === "clue_boot_prints");
+      expect(shown).toMatchObject({ held: true, text: noted("clue_boot_prints") });
+
+      const resumed = GameGetResponseSchema.parse(await (await getGame(new Request(`http://test/api/game-get?game_id=${opened.game_id}`), ctx)).json());
+      expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual(resumed.state.discovered_clues?.map((clue) => noted(clue.id)));
+
+      await play(opened.game_id, "bye", noting);
+      await play(opened.game_id, "accuse", noting);
+      await play(opened.game_id, "It was Toby", noting);
+      const judge = (seen.get("accusation_judge") as { accusation_judge_context: { player_known_clues: Array<{ id: string; text: string }> } })
+        .accusation_judge_context;
+      expect(judge.player_known_clues.length).toBeGreaterThan(0);
+      for (const clue of judge.player_known_clues) expect(clue.text).toBe(noted(clue.id));
+    });
+
+    it("tells a farewell narrator the saved lines", async () => {
+      const seen = new Map<string, Record<string, unknown>>();
+      const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+      await play(opened.game_id, "go to the potting shed", notingAll(seen));
+      await play(opened.game_id, "talk to Toby", notingAll(seen));
+      await play(opened.game_id, "bye", notingAll(seen));
+      const farewell = seen.get("talk_end") as { talk_context: { active_character: { clues: Array<{ id: string; text: string }> } } };
+      const clues = farewell.talk_context.active_character.clues;
+      expect(clues.map((clue) => clue.id)).toContain("toby_alibi");
+      for (const clue of clues) expect(clue.text).toBe(noted(clue.id));
+    });
+  });
 });

@@ -5,6 +5,7 @@ import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
   createGameState,
+  createGameGetResponse,
   createGameStartResponse,
   createBlueprintSummary,
   createSessionSummary,
@@ -232,7 +233,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/api/game-get?game_id=00000000-0000-0000-0000-000000000014*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createGameGetResponse({
           blueprint_id: '00000000-0000-0000-0000-000000000002',
           state: baseGameState,
           narration_events: [
@@ -247,7 +248,7 @@ test.describe('Sessions navigation', () => {
               narration_parts: [{ text: 'You return to the investigation.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 
@@ -301,7 +302,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/api/game-get?game_id=00000000-0000-0000-0000-000000000015*', async (route) => {
       await route.fulfill({
-        json: {
+        json: createGameGetResponse({
           blueprint_id: '00000000-0000-0000-0000-000000000003',
           state: {
             ...baseGameState,
@@ -320,7 +321,7 @@ test.describe('Sessions navigation', () => {
               narration_parts: [{ text: 'Case closed. Reviewing log.', speaker: narratorSpeaker }],
             }),
           ],
-        },
+        }),
       });
     });
 

@@ -43,6 +43,7 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
     id,
     name: place.name,
     description: place.facts.join(" "),
+    ...(place.location_image_id ? { location_image_id: place.location_image_id } : {}),
     clues: evidence
       .filter((clue) => clue.source.location === id && clue.source.spot === undefined)
       .map(({ id: clueId, text }) => ({ id: clueId, text })),
@@ -75,6 +76,7 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
     location_id: person.location,
     sex: person.sex,
     appearance: person.appearance.join(" "),
+    ...(person.portrait_image_id ? { portrait_image_id: person.portrait_image_id } : {}),
     background: "",
     personality: person.personality,
     initial_attitude_towards_investigator: Object.values(person.demeanor).find(Boolean) ?? "",
@@ -100,6 +102,7 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
       title: `${graph.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`,
       one_liner: graph.opening.facts[0],
       target_age: graph.metadata.target_age,
+      ...(graph.metadata.image_id ? { image_id: graph.metadata.image_id } : {}),
       time_budget: graph.metadata.time_budget,
       ...(graph.visual_direction ? { visual_direction: graph.visual_direction } : {}),
     },

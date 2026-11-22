@@ -133,6 +133,10 @@ call.
 - **Accusation**: the judge gets the graph and `clue_graph_progress`
   (supported conclusions, whether one names the culprit, what was taken back).
 
+Artwork is optional: `./dev gen-images` saves `metadata.image_id`,
+`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`.
+Inputs and phases: [generation flows](blueprint-generation-flows.md).
+
 ## The narrator's judgement
 
 One talk prompt serves everyone: generous on how the investigator puts things,

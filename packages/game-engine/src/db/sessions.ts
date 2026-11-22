@@ -61,7 +61,7 @@ function readClueGraphSnapshot(value: unknown): ClueGraphCase | undefined {
   if (typeof value !== "string") return undefined;
   const saved = JSON.parse(value);
   if (saved?.format !== CLUE_GRAPH_FORMAT) throw retiredCaseFormat(String(saved?.format));
-  return validateClueGraph(saved);
+  return validateClueGraph(saved, { story: false });
 }
 
 function toSessionRow(row: Record<string, unknown>): GameSessionRow {
@@ -128,7 +128,7 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     now,
     now,
     session.msf_snapshot ? JSON.stringify(validateMsfCaseFile(session.msf_snapshot)) : null,
-    session.clue_graph_snapshot ? JSON.stringify(validateClueGraph(session.clue_graph_snapshot)) : null,
+    session.clue_graph_snapshot ? JSON.stringify(validateClueGraph(session.clue_graph_snapshot, { story: false })) : null,
     ReadingAgeSchema.parse(session.reading_age),
   );
 }

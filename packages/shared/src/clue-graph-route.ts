@@ -44,12 +44,16 @@ export function prerequisites(graph: ClueGraphCase, id: string): string[] {
  * what each needs in turn. Searching or asking for anything else never helps,
  * so the route search leaves it out.
  */
-function relevantClues(graph: ClueGraphCase, rule: ClueGraphRule): Set<string> {
+export function relevantClues(
+  graph: ClueGraphCase,
+  rule: ClueGraphRule,
+  without: ReadonlySet<string> = new Set(),
+): Set<string> {
   const out = new Set<string>();
   const visit = (part: ClueGraphRule) => {
     if (typeof part !== "string") return ("all" in part ? part.all : part.any).forEach(visit);
     if (Object.hasOwn(graph.conclusions, part)) return visit(graph.conclusions[part].rule);
-    if (out.has(part) || !Object.hasOwn(graph.clues, part)) return;
+    if (out.has(part) || !Object.hasOwn(graph.clues, part) || without.has(part)) return;
     out.add(part);
     prerequisites(graph, part).forEach(visit);
   };
@@ -123,10 +127,11 @@ class Router {
   private readonly greeting = new Set<string>();
   private readonly mandatory: string[][];
 
-  constructor(graph: ClueGraphCase, rule: ClueGraphRule) {
+  constructor(graph: ClueGraphCase, rule: ClueGraphRule, without: ReadonlySet<string>) {
     this.graph = graph;
     this.rule = rule;
-    const relevant = relevantClues(graph, rule);
+    // A clue left out is never held, so nothing that needs it is reached.
+    const relevant = relevantClues(graph, rule, without);
     this.mandatory = mandatorySets(graph, rule).map((set) => [...set]);
     for (const [index, [id, clue]] of Object.entries(graph.clues).entries()) {
       if (!relevant.has(id)) continue;
@@ -286,10 +291,15 @@ function routeWithin(router: Router, start: State, limit: number, budget: number
 /**
  * The fewest turns that support `rule` within the case's turn budget, never
  * relying on a bluff, or null when no route fits. Deepens one turn at a time,
- * so each search is bounded by the turns it may still spend.
+ * so each search is bounded by the turns it may still spend. `without` names
+ * clues the route may not hold, even on the way.
  */
-export function cheapestRoute(graph: ClueGraphCase, rule: ClueGraphRule): number | null {
-  const router = new Router(graph, rule);
+export function cheapestRoute(
+  graph: ClueGraphCase,
+  rule: ClueGraphRule,
+  without: ReadonlySet<string> = new Set(),
+): number | null {
+  const router = new Router(graph, rule, without);
   const start: State = { held: 0n, at: graph.opening.location };
   const budget = graph.metadata.time_budget;
   for (let limit = router.atLeast(start); limit <= budget; limit++)

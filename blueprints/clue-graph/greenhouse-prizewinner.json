@@ -318,7 +318,8 @@
       "truth": true,
       "reached": {
         "by": "first_meeting"
-      }
+      },
+      "colour": true
     },
     "clue_hale_key_last_seen": {
       "kind": "statement",
@@ -432,7 +433,8 @@
       "reached": {
         "by": "seen",
         "with": "toby_alibi"
-      }
+      },
+      "colour": true
     },
     "react_toby_trainers": {
       "kind": "tell",
@@ -441,8 +443,10 @@
         "character": "toby"
       },
       "reached": {
-        "by": "first_meeting"
-      }
+        "by": "seen",
+        "with": "toby_alibi"
+      },
+      "colour": true
     },
     "toby_blames_thorne": {
       "kind": "statement",
@@ -494,7 +498,8 @@
       "reached": {
         "by": "seen",
         "with": "toby_no_key"
-      }
+      },
+      "colour": true
     },
     "clue_toby_mia_splat": {
       "kind": "statement",
@@ -623,7 +628,8 @@
       "reached": {
         "by": "seen",
         "with": "mia_alibi"
-      }
+      },
+      "colour": true
     },
     "clue_mia_thorne_barbecue": {
       "kind": "statement",
@@ -658,7 +664,8 @@
             ]
           }
         }
-      }
+      },
+      "colour": true
     },
     "dobbs_rounds": {
       "kind": "statement",
@@ -669,7 +676,8 @@
       "truth": true,
       "reached": {
         "by": "first_meeting"
-      }
+      },
+      "colour": true
     },
     "react_dobbs_slippers": {
       "kind": "tell",
@@ -739,7 +747,8 @@
       "reached": {
         "by": "seen",
         "with": "thorne_never_set_foot"
-      }
+      },
+      "colour": true
     },
     "clue_thorne_measured": {
       "kind": "statement",
@@ -782,7 +791,8 @@
             ]
           }
         }
-      }
+      },
+      "colour": true
     }
   },
   "conclusions": {

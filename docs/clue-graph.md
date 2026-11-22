@@ -92,43 +92,44 @@ started on the last turn gives only the greeting.
 The loader reads `clue-graph/` beside `msf/` and builds a rule-free world
 view, its catalog ID a UUID from `metadata.id`. A start saves the
 validated case in `game_sessions.clue_graph_snapshot`, which resume and every
-turn play. Each turn that counts saves its event (move, search, talk, line) in
+turn play. Each turn that counts saves its event (move, search, talk, line) as
 `payload.clue_graph`; the engine folds those, deriving the rest each call.
 
 - **Gates.** Available once every `after` clue is out. A physical gate with
   `use` also needs those clues held; a non-physical one is bluffable.
 - **Talk** (`graph_talk`, one call a line): the narrator gets the character's
-  derived state (`talkState`; first words three a line from the greeting on),
+  state (`talkState`; first words three a line from the greeting on),
   `knows`, appearance on a first meeting, and reports what the line `opened`
   and `answered`. A report the state did not offer fails the turn before
   anything is saved; one already held is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words; the narrator reports what it holds, or for words naming none,
   picks a visible spot's clue, the room's, or none. A hidden spot shows once its
-  pointer is held. Before, it wins the words only by fitting them better than
-  every visible spot, finds nothing, and is never named to the narrator.
+  pointer is held. Before, it wins only words fitting it better than every
+  visible spot, finds nothing, and is never named to the narrator.
 - **Notebook lines.** Each clue a turn brings out, tells included, gets a
   line, saved in the event's `notebook`; a missing, extra or blank line fails
-  the turn. Every reader then uses that line: notebook, later turns, farewell,
-  accusation. A pointer's line names its spot.
+  the turn; one for a clue already held is dropped. Every reader then uses
+  that line: notebook, later turns, farewell, accusation. A pointer's line
+  names its spot.
 - **Retraction** marks a statement taken back; a conclusion holds only on
-  clues held, not taken back.
+  clues held and standing.
 - **Leads** name someone unmet, someone with more to give, or a hidden spot
-  newly visible; each new when it appears.
+  newly visible, each new on its turn.
 - **Notebook**: every held clue, with its kind and whether taken back, then
   the leads. No conclusion, truth, rule or gate wording reaches the browser.
   A farewell narrator sees only clues found.
-- **Accusation**: the judge gets the graph and `clue_graph_progress`
-  (supported conclusions, whether one names the culprit, what was taken back).
+- **Accusation**: the judge gets the graph and `clue_graph_progress`:
+  conclusions supported, whether one names the culprit, what was taken back.
 
 Artwork is optional: `./dev gen-images` saves `metadata.image_id`,
-`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`.
-Inputs and phases: [generation flows](blueprint-generation-flows.md).
+`characters.<id>.portrait_image_id` and `locations.<id>.location_image_id`
+([generation flows](blueprint-generation-flows.md)).
 
 ## The narrator's judgement
 
 The narrator writes every word the child reads, from facts. It may add
-scenery and manner, never anything that looks like evidence or bears on who,
+scenery and manner, never what looks like evidence or bears on who,
 when or where, and keeps what earlier narration established: talk carries the
 history with that person, search the history there, an arrival the last
 arrival. Asked about anything beyond their clues and `knows` that bears on

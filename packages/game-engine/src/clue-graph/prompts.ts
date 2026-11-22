@@ -71,7 +71,7 @@ A clue with names_spot points at a place to search: name that spot, and where it
 Mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or anything a clue does not say.
 
 ## The notebook
-A clue found goes in the investigator's notebook: give it one notebook entry, its id and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Finding nothing, the notebook is empty.
+A clue found goes in the investigator's notebook: give it one notebook entry, its id and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Finding nothing, the notebook is empty: [].
 
 Return JSON:
 {
@@ -79,6 +79,6 @@ Return JSON:
   "revealed_clue_id": null,
   "costs_turn": true,
   "input_understood": true,
-  "notebook": []
+  "notebook": [{ "id": "the id found", "line": "..." }]
 }
 Set input_understood to false only when the search words are gibberish: then narrate a puzzled look around and find nothing.`;

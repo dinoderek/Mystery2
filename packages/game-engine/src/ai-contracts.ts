@@ -10,7 +10,12 @@ export type AIRoleName =
   | "accusation_judge"
   | "graph_talk"
   // A clue-graph search: the "search" contract, plus a notebook line.
-  | "graph_search";
+  | "graph_search"
+  // A clue-graph accusation round: who was named and what was cited, then the
+  // narration of what the engine decided, before or at the end of the case.
+  | "graph_accusation"
+  | "graph_accusation_round"
+  | "graph_ending";
 
 // Prompt templates are keyed per concrete prompt. The "search" ROLE (output
 // contract) stays, but it has no template of its own: the handler always picks
@@ -98,6 +103,19 @@ export interface AccusationStartOutput {
 export interface AccusationJudgeOutput {
   narration: string;
   accusation_resolution: AccusationResolution;
+}
+
+// What the narrator reads from a clue-graph accusation: the character named,
+// or null, and the held clues the investigator cited. No narration: the engine
+// decides the round (`clue-graph/accusation.ts`), and another call words it.
+export interface GraphAccusationOutput {
+  accused_character_id: string | null;
+  cited_clue_ids: string[];
+}
+
+// The narration of a clue-graph accusation round, or of its closing scene.
+export interface GraphVerdictOutput {
+  narration: string;
 }
 
 // Each role's output contract is one Zod schema doing two jobs:
@@ -302,6 +320,15 @@ const AccusationJudgeOutputSchema = roleObject({
   ),
 });
 
+const GraphAccusationOutputSchema = roleObject({
+  accused_character_id: nullableNonEmptyString("accused_character_id"),
+  cited_clue_ids: idList,
+}).transform((output): GraphAccusationOutput => ({ ...output, cited_clue_ids: [...new Set(output.cited_clue_ids)] }));
+
+const GraphVerdictOutputSchema = roleObject({
+  narration: narrationText(),
+});
+
 const ROLE_OUTPUT_SCHEMAS = {
   talk_start: TalkStartOutputSchema,
   talk_conversation: TalkConversationOutputSchema,
@@ -311,6 +338,9 @@ const ROLE_OUTPUT_SCHEMAS = {
   accusation_judge: AccusationJudgeOutputSchema,
   graph_talk: GraphTalkOutputSchema,
   graph_search: GraphSearchOutputSchema,
+  graph_accusation: GraphAccusationOutputSchema,
+  graph_accusation_round: GraphVerdictOutputSchema,
+  graph_ending: GraphVerdictOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
 function parseRoleOutput<S extends z.ZodTypeAny>(
@@ -381,4 +411,16 @@ export function parseAccusationJudgeOutput(
   value: unknown,
 ): AccusationJudgeOutput {
   return parseRoleOutput("accusation_judge", AccusationJudgeOutputSchema, value);
+}
+
+export function parseGraphAccusationOutput(value: unknown): GraphAccusationOutput {
+  return parseRoleOutput("graph_accusation", GraphAccusationOutputSchema, value);
+}
+
+export function parseGraphAccusationRoundOutput(value: unknown): GraphVerdictOutput {
+  return parseRoleOutput("graph_accusation_round", GraphVerdictOutputSchema, value);
+}
+
+export function parseGraphEndingOutput(value: unknown): GraphVerdictOutput {
+  return parseRoleOutput("graph_ending", GraphVerdictOutputSchema, value);
 }

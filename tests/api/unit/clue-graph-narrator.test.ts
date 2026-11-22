@@ -214,13 +214,16 @@ describe("the clue-graph prompts", () => {
     { type: "move", location: "thorne_garden" },
     { type: "talk", character: "thorne" },
   ]);
+  const accusing = { ...talking, mode: "accuse" as const, current_talk_character_id: null };
 
   it.each([
     ["graph_talk.greeting", { role: "graph_talk", character_id: "thorne", player_input: null, conversation_history: met.slice(0, 1) }],
     ["graph_talk.line", { role: "graph_talk", character_id: "thorne", player_input: "Whose boot prints are these?", conversation_history: met }],
     ["graph_search.known", { role: "graph_search", search_query: "the ladder", conversation_history: met }],
     ["graph_search.judge", { role: "graph_search", search_query: "the muddy bits", conversation_history: met }],
-    ["graph.accusation_judge", { role: "accusation_judge", player_input: "It was Toby.", round: 1, conversation_history: met }],
+    ["graph_accusation", { role: "graph_accusation", session: accusing, player_input: "It was Toby.", conversation_history: met }],
+    ["graph_accusation_round.question", { role: "graph_accusation_round", session: accusing, player_input: "It was Toby.", verdict: "question", conversation_history: met }],
+    ["graph_ending.lose", { role: "graph_ending", session: accusing, player_input: "It was Mr. Thorne.", verdict: "lose", conversation_history: met }],
   ] as const)("%s is as recorded", async (name, input) => {
     const request = await buildRoleRequest({
       game_id: "case",
@@ -231,8 +234,7 @@ describe("the clue-graph prompts", () => {
     } as Parameters<typeof buildRoleRequest>[0]);
     expect(request.prompt).not.toMatch(/\{\{\s*\w+\s*\}\}/);
     await expect(request.prompt).toMatchFileSnapshot(`snapshots/narrator/${name}.prompt.txt`);
-    if (name !== "graph.accusation_judge")
-      await expect(JSON.stringify(request.context, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${name}.context.json`);
+    await expect(JSON.stringify(request.context, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${name}.context.json`);
   });
 });
 

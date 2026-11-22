@@ -6,15 +6,14 @@ contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
 
 ## Who is who
 
-- **The investigator** is the child, typing commands and theories.
+- **The investigator** is the child, typing commands.
 - **The narrator** is the AI: it describes, speaks as each character,
   judges searches and accusations, never contradicting the blueprint.
-- **The blueprint** is the case: what happened, who did what and why, and
-  where the clues are. Schemas: `packages/shared/src/blueprint-schema-v2.ts`, [clue graph](clue-graph.md).
+- **The blueprint** is the case: who did what, why, and where the clues are
+  ([V2](../packages/shared/src/blueprint-schema-v2.ts), [clue graph](clue-graph.md)).
 - **The turn budget** (`metadata.time_budget`) bounds the investigation.
-- **The reading age** narration is written for is saved when a game starts:
-  the profile's (settings page), else the case's `metadata.target_age`.
-  Changing it moves new games only.
+- **The reading age** narration is written for is the profile's (settings
+  page), else the case's `metadata.target_age`, saved when a game starts.
 
 ## Starting a case
 <!-- extract:starting -->
@@ -130,8 +129,11 @@ the case as a loss, with a gentle reveal. Either way the explanation must agree
 with the timeline, alibis, clue placement and motives.
 <!-- /extract:accusation -->
 
+A clue-graph case is won by [its own rule](clue-graph.md#accusation); its
+ending tells everything.
+
 ## When a case ends
 
 After a win, loss or `quit`, input becomes
 `Tab: review notebook · any other key: back to the mystery list`. Finished
-cases reopen read-only from the completed list.
+cases reopen read-only.

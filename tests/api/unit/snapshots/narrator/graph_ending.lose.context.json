@@ -1,0 +1,89 @@
+{
+  "game_id": "case",
+  "role_name": "graph_ending",
+  "mode": "accuse",
+  "forced_by_timeout": false,
+  "location_id": "thorne_garden",
+  "character_id": null,
+  "player_input": "It was Mr. Thorne.",
+  "conversation_history": [],
+  "shared_mystery_context": {
+    "target_age": 10
+  },
+  "move_context": null,
+  "search_context": null,
+  "talk_context": null,
+  "accusation_start_context": null,
+  "accusation_judge_context": null,
+  "graph_accusation_context": {
+    "people": [
+      {
+        "id": "hale",
+        "name": "Ms. Hale"
+      },
+      {
+        "id": "toby",
+        "name": "Toby"
+      },
+      {
+        "id": "mia",
+        "name": "Mia"
+      },
+      {
+        "id": "dobbs",
+        "name": "Mr. Dobbs"
+      },
+      {
+        "id": "thorne",
+        "name": "Mr. Thorne"
+      }
+    ],
+    "held": [
+      {
+        "id": "thorne_alibi",
+        "kind": "statement",
+        "text": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "clue_thorne_mia_cake",
+        "kind": "statement",
+        "text": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "thorne_never_set_foot",
+        "kind": "statement",
+        "text": "Mr. Thorne says he has never set foot in the school garden.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      },
+      {
+        "id": "react_thorne_boot",
+        "kind": "tell",
+        "text": "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass.",
+        "from": "Mr. Thorne",
+        "taken_back": false
+      }
+    ],
+    "verdict": "lose",
+    "ending": {
+      "outcome": "lose",
+      "culprit": "Toby",
+      "what_happened": "Toby smashed Bertha by accident and faked the break-in.",
+      "timeline": [
+        "Monday: Toby forgets to lock the greenhouse after his watering shift, and a squirrel nibbles the seedlings.",
+        "Wednesday 3:30pm: in the potting shed, Ms. Hale changes the watering rota, giving Toby's Thursday, Friday and Saturday shifts to Mia. Her pen has run dry, so she writes with Mia's sparkly purple pen. She tells Toby not to go into the greenhouse without a grown-up. The greenhouse key is on its hook.",
+        "Wednesday about 3:50pm: while Ms. Hale makes tea and Mia carries seed trays to the compost heap, Toby slips the greenhouse key into his pocket. Ms. Hale locks the shed at 4:15 without noticing.",
+        "Thursday: Mia grumbles to Toby that she wishes Bertha would go splat. At 4:30pm Mr. Thorne eyes Bertha from his ladder with a tape measure and says, 'Enjoy her while she lasts!' At 5pm the key hook is found empty, and from then on Mia borrows Mr. Dobbs's spare key, which he writes in his key book.",
+        "Friday: at 4pm Mr. Thorne climbs over the fence to measure Bertha through the side window, leaving huge boot prints. At 5pm Mia waters Bertha, sees the prints, locks up and returns the spare at 5:20. Mr. Thorne takes Goliath to the fair at 6:30pm and is at the growers' barbecue from 7 to 11; Mia serves at the cake tent from 6 to 10 and sells him carrot cake at 9. At 8pm Mr. Dobbs sees Bertha whole and the door locked.",
+        "Friday 8:40pm to 8:55pm: Toby sneaks in with the hidden key. At about 8:50 he trips on the hose and the rotten bench collapses onto Bertha, smashing her. He steps in the mush in his club wellies, knocks a side window out from inside, locks the door, drops the key in the water butt and runs home. Mr. Dobbs hears the thud and the glass but blames the fox.",
+        "Saturday: at 7:30am Ms. Hale unlocks the still-locked door with the spare and finds Bertha smashed. Toby arrives in trainers and blames Mr. Thorne. The fair says the pumpkin contest will be canceled unless the truth is known by noon."
+      ],
+      "motive": "Bertha was Toby's pumpkin. After Ms. Hale took him off the last watering shifts and told him not to go in without a grown-up, he took the key to sneak in and give her extra water. When the rotten bench fell on her by accident, he faked a break-in and blamed Mr. Thorne because he was scared of getting into trouble."
+    },
+    "earlier_reasoning": []
+  }
+}

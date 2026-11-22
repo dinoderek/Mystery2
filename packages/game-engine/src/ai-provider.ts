@@ -8,6 +8,7 @@ import {
 import { RetriableAIError } from "./errors.ts";
 import { searchNamesSpot } from "./search-target.ts";
 import type { GraphSearchContext, GraphTalkContext } from "./clue-graph/narrator-context.ts";
+import type { GraphAccusationContext, GraphVerdictContext } from "./clue-graph/accusation.ts";
 import type { NamedSpot, Rider } from "./clue-graph/talk-state.ts";
 
 export type AIProviderName = "mock" | "openrouter" | "claude-cli";
@@ -163,6 +164,53 @@ function mockUseAndCommitments(
 /** A clue as the mock words it: the fact as given, and a pointer's spot named. */
 function mockWording(text: string, spot?: NamedSpot): string {
   return spot ? `${text} (That points to ${spot.spot} in ${spot.location}.)` : text;
+}
+
+/** Words too common, in a mock line, to show that the investigator cited it. */
+const MOCK_PLAIN_WORDS = new Set(["says", "said", "that", "this", "with", "they", "there", "were", "from", "have", "when", "what", "then", "mock"]);
+
+function mockWords(text: string): Set<string> {
+  return new Set(text.toLowerCase().match(/[a-z]{4,}/g) ?? []);
+}
+
+/**
+ * The mock's reading of an accusation: the person named earliest in the line,
+ * and the held clues the investigator cited, in this line or an earlier one:
+ * named by ID, or sharing two telling words with the clue's line.
+ */
+function mockGraphAccusation(context: GraphAccusationContext, playerInput: string): Record<string, unknown> {
+  const line = playerInput.toLowerCase();
+  const nameWords = (name: string) => name.toLowerCase().match(/[a-z]{3,}/g)?.filter((word) => !["mrs", "miss"].includes(word)) ?? [];
+  const named = context.people
+    .map((person) => ({
+      id: person.id,
+      at: Math.min(...nameWords(person.name).map((word) => line.search(new RegExp(`\\b${word}\\b`))).filter((at) => at >= 0)),
+    }))
+    .filter((person) => Number.isFinite(person.at))
+    .sort((a, b) => a.at - b.at);
+  const names = new Set(context.people.flatMap((person) => nameWords(person.name)));
+  const said = [playerInput, ...(context.earlier_reasoning ?? [])].join(" ");
+  const saidWords = mockWords(said);
+  const cited = context.held
+    .filter((entry) => {
+      if (said.toLowerCase().includes(entry.id.toLowerCase())) return true;
+      const shared = [...mockWords(entry.text)].filter((word) => saidWords.has(word) && !names.has(word) && !MOCK_PLAIN_WORDS.has(word));
+      return shared.length >= 2;
+    })
+    .map((entry) => entry.id);
+  return { accused_character_id: named[0]?.id ?? null, cited_clue_ids: cited };
+}
+
+/** The mock's wording of what the engine decided: a round, or the whole account at the end. */
+function mockGraphVerdict(context: GraphVerdictContext): string {
+  if (context.ending) {
+    const { outcome, culprit, what_happened, timeline, motive } = context.ending;
+    const opening = outcome === "win" ? "You solved it!" : "The case ends here. This time the answer got away.";
+    return `[Mock] ${opening} ${culprit} did it. ${what_happened} ${timeline.join(" ")} Why: ${motive}`;
+  }
+  if (context.verdict === "question")
+    return `[Mock] Not proven yet. ${context.lead ? `Think about this: ${context.lead} ` : ""}Which of your clues shows who did it?`;
+  return "[Mock] Not proven yet. Who did it, and which clue shows it?";
 }
 
 /** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */
@@ -587,6 +635,17 @@ class MockAIProvider implements AIProvider {
         if (!graphSearch) throw new Error("Mock AI graph_search requires graph_search_context");
         return mockGraphSearch(graphSearch);
       }
+      case "graph_accusation": {
+        const accusation = context.graph_accusation_context as GraphAccusationContext | undefined;
+        if (!accusation) throw new Error("Mock AI graph_accusation requires graph_accusation_context");
+        return mockGraphAccusation(accusation, readOptionalContextString(context, "player_input") ?? "");
+      }
+      case "graph_accusation_round":
+      case "graph_ending": {
+        const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
+        if (!verdict?.verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context with a verdict`);
+        return { narration: mockGraphVerdict(verdict) };
+      }
       case "search": {
         const searchContext = context.search_context as
           | {
@@ -674,7 +733,6 @@ class MockAIProvider implements AIProvider {
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
             msf_progress?: { solution_supported: boolean };
-            clue_graph_progress?: { culprit_supported: boolean };
           }
           | undefined;
         const round = accusationJudgeContext?.round ??
@@ -704,11 +762,9 @@ class MockAIProvider implements AIProvider {
         // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
         const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
           (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
-        // A clue-graph accusation needs the culprit conclusion supported.
-        const graphSupported = accusationJudgeContext?.clue_graph_progress?.culprit_supported ?? true;
         const accusationResolution: AccusationResolution = round < 1
           ? "continue"
-          : isCulprit && msfSupported && graphSupported
+          : isCulprit && msfSupported
           ? "win"
           : round >= 3
           ? "lose"

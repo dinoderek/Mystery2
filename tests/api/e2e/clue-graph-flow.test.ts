@@ -1,9 +1,11 @@
 // The clue-graph cases played start to finish over HTTP on the mock narrator:
-// the greenhouse to a win on a supported culprit and to a loss, and the dragon
-// crown to a win through a retracted alibi and a hidden spot.
+// the greenhouse to a win on a supported culprit and to a loss told in full,
+// the kid-7 self-play loss replayed into a win, and the dragon crown to a win
+// through a retracted alibi and a hidden spot.
 
 import { describe, expect, it } from "vitest";
-import { clueGraphCaseId, GameTurnResponseSchema } from "@my2/shared";
+import fs from "node:fs";
+import { clueGraphCaseId, GameTurnResponseSchema, validateClueGraph } from "@my2/shared";
 import { API_URL, sendLine, setupApiTestAuth } from "../integration/helpers";
 
 async function playThrough(tag: string, lines: string[], caseId = "greenhouse-prizewinner") {
@@ -29,8 +31,12 @@ async function playThrough(tag: string, lines: string[], caseId = "greenhouse-pr
       takenBack.push(...(last.taken_back ?? []));
     }
   }
-  return { last, clues, takenBack };
+  const narration = last?.kind === "turn" ? last.events.flatMap((event) => event.narration_parts.map((part) => part.text)).join(" ") : "";
+  return { last, clues, takenBack, narration };
 }
+
+const greenhouse = () =>
+  validateClueGraph(JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8")));
 
 describe("the greenhouse clue-graph case", () => {
   it("is won on the welly prints with Mia cleared", async () => {
@@ -52,8 +58,8 @@ describe("the greenhouse clue-graph case", () => {
     expect(last?.kind === "turn" && last.state.mode).toBe("ended");
   });
 
-  it("is lost on an unsupported guess and the wrong suspect", async () => {
-    const { last } = await playThrough("clue-graph-loss", [
+  it("is lost on an unsupported guess and the wrong suspect, and the ending tells the whole account", async () => {
+    const { last, narration } = await playThrough("clue-graph-loss", [
       "accuse",
       "It was Toby",
       "Toby, because I say so",
@@ -61,6 +67,52 @@ describe("the greenhouse clue-graph case", () => {
       "Mr. Thorne, I am sure",
     ]);
     expect(last?.kind === "turn" && last.result).toBe("lose");
+    const { truth, conclusions } = greenhouse();
+    for (const told of [conclusions.culprit_toby.text, truth.motive, ...truth.timeline]) expect(narration).toContain(told);
+  });
+
+  // PR #310's self-play report, "The two losses": kid-7 accused Mr. Dobbs first,
+  // then named Toby with the key and his pocket, and lost. Its run output is not
+  // on disk, so the game is rebuilt from that account, holding the route the
+  // key belongs to: the glass outside, the key in the water butt, the spare-key
+  // book, Ms. Hale's key on its hook, and Mia cleared.
+  it("is won by the kid-7 self-play game that phase 1 lost", async () => {
+    const { last, clues, narration } = await playThrough("clue-graph-kid-7", [
+      "talk to Ms. Hale",
+      "What about the missing key?",
+      "bye",
+      "search the broken side window",
+      "search the water butt by the door",
+      "go to the workshop",
+      "talk to Mr. Dobbs",
+      "What about the noise last night?",
+      "bye",
+      "search",
+      "go to the garden",
+      "talk to Mr. Thorne",
+      "bye",
+      "go to the potting shed",
+      "talk to Toby",
+      "What about the missing key?",
+      "bye",
+      "accuse",
+      "It was Mr. Dobbs. He would not give me a straight answer.",
+      "No, Toby did it! The key was hidden in the water butt, and he kept patting his pocket.",
+    ]);
+    expect(clues).toEqual(
+      expect.arrayContaining([
+        "clue_glass_outside",
+        "clue_key_in_water_butt",
+        "clue_spare_key_book",
+        "clue_hale_key_last_seen",
+        "clue_dobbs_crash_time",
+        "clue_thorne_mia_cake",
+        "react_toby_pocket",
+      ]),
+    );
+    expect(clues).not.toContain("toby_confession");
+    expect(last?.kind === "turn" && last.result).toBe("win");
+    expect(narration).toContain(greenhouse().truth.motive);
   });
 });
 
